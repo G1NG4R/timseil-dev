@@ -9,6 +9,7 @@ wird triagiert und geleert.
 |---|---|---|---|
 | 2026-08-16 | A1 | `required_status_checks` in der Branch Protection nachziehen — Kontextnamen existieren erst mit der Pipeline | E1 |
 | 2026-08-16 | A1 | `make design` nur angelegt, nicht verifiziert (Homepage muss sichtbar rendern, nicht schwarz) | A2 |
+| 2026-08-16 | A1 | Offene Handgriffe von Tim: `sh tools/github-setup.sh` ausführen, `git push -u origin ops-data` (Branch liegt lokal) | vor dem A1-Merge |
 
 ## Gefunden — Bug oder Unklarheit
 
