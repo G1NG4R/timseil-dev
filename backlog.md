@@ -9,7 +9,9 @@ wird triagiert und geleert.
 |---|---|---|---|
 | 2026-08-16 | A1 | `required_status_checks` in der Branch Protection nachziehen — Kontextnamen existieren erst mit der Pipeline | E1 |
 | 2026-08-16 | A1 | ~~`make design` nur angelegt, nicht verifiziert~~ — in A2 belegt: Homepage und Foundations rendern sichtbar, Konsole fehlerfrei | erledigt 2026-08-16 |
-| 2026-08-16 | A1 | Offene Handgriffe von Tim: `sh tools/github-setup.sh` ausführen, `git push -u origin ops-data` (Branch liegt lokal) | vor dem A1-Merge |
+| 2026-08-16 | A1 | ~~Offene Handgriffe von Tim: `sh tools/github-setup.sh` ausführen, `git push -u origin ops-data`~~ — in A3 nachgeprüft: Protection auf `main` ist aktiv (`enforce_admins: true`, kein Force-Push, linear history, PR erforderlich), `origin/ops-data` liegt auf GitHub | erledigt 2026-08-17 |
+| 2026-08-17 | A3 | `sh tools/issues-design-corrections.sh` ausführen — legt Label, Milestones K1/M6 und zehn Issues an. Lokal gegen eine `gh`-Attrappe zweimal gelaufen, zweiter Lauf erzeugt nichts | nach dem A3-Merge |
+| 2026-08-17 | A3 | Live-Badges im README sind auskommentiert, Freischaltung in M6 — hängt am Issue *docs: enable the live badges in the README* | M6 |
 | 2026-08-16 | A1 | Node 26 prüfen: wird am 28.10.2026 LTS, Node 24 geht am 20.10.2026 in Maintenance. Erst dann `.nvmrc` anfassen, nicht früher | nach dem 28.10.2026 |
 
 ## Gefunden — Bug oder Unklarheit
@@ -26,6 +28,12 @@ wird triagiert und geleert.
 | 2026-08-16 | A2 | Blätter sind Canvases mit **festen Artboards**, kein Reflow. Die sieben Prüfbreiten lassen sich am Blatt nicht durch Fensterresize prüfen, nur die abgebildeten Breiten (1440, 390) — die Vergleichsbasis für H1 ist also schmaler als die Prüfliste — in 6.2 festgehalten | erledigt 2026-08-17 |
 | 2026-08-16 | A2 | **Kapitel 6.2 stimmt nicht: `file://` bleibt nicht schwarz.** Headless mit Chromium gegen `http://` gemessen — das Blatt rendert vollständig, DOM strukturell identisch. Die CDN-Skripte kommen über klassische `<script src>`-Tags, die vom `file:`-Ursprung laden; der einzige `fetch()`-Pfad in `support.js` ist ein Nachlade-Zweig mit `.catch()`, und `x-import` benutzt kein einziges Blatt. **Das Abnahmekriterium von A2 ruht damit auf einer falschen Prämisse.** `make design` behalten wir für die stabile, rechnerunabhängige URL (Playwright ab H1) — nicht, weil `file://` bräche. 6.2 ist neu geschrieben: Ursache ist das Netz, nicht das Protokoll | erledigt 2026-08-17 |
 | 2026-08-16 | A2 | Gegenprobe zur Netz-Abhängigkeit: mit blockiertem unpkg wird `<x-dc>` nicht ersetzt, kein `#dc-root`, die Seite bleibt dunkel. **Schwarz heißt kein Netz** — diese Hälfte von 6.2 stimmt | erledigt |
+| 2026-08-17 | A3 | **M3 und F4 widersprechen sich bei `/api/internal/*`.** M3 nimmt ab, dass der Pfad von außen `404` liefert; F4 lässt den GitHub-Actions-Probe genau dort anklopfen — von außen. Beides zugleich geht nicht. Auflösung gehört nach **L3**: IP-Allowlist für GitHubs Runner-Bereiche (ändern sich, Meta-API), eigener Pfad außerhalb `/api/internal/*`, oder der Probe misst nur und meldet über den Datenbranch. Steht als offene Frage im Container-Diagramm | offen |
+| 2026-08-17 | A3 | **Die `/api/badge/*`-Handler aus Kapitel 12.4 sind keiner Phase zugewiesen.** Stufe C hat sieben Phasen, keine nennt sie. Ohne Zuordnung (C2 oder C7) bleiben die README-Badges dauerhaft auskommentiert | offen |
+| 2026-08-17 | A3 | Die Meldeadresse steht künftig an drei Orten: `SECURITY.md`, `/.well-known/security.txt` (L4) und das Postfach aus L1. **L4 muss angleichen**, sonst zeigt eine der drei ins Leere. In `SECURITY.md` steht bis dahin die Protonmail-Adresse und daneben, warum | offen |
+| 2026-08-17 | A3 | `.githooks/pre-push` meldet auf Deutsch, CLAUDE.md verlangt Englisch für Code und Kommentare. Zweizeiler, aber nicht in A3 — gehört in einen `chore/`-Branch | offen |
+| 2026-08-17 | A3 | Die Sprache der Root-Dokumente war ungeregelt. Entschieden: **Englisch** für `README.md`, `CONTRIBUTING.md`, `SECURITY.md` (Leser kommt von außen), `docs/` bleibt Deutsch. Gehört als Zeile in `CLAUDE.md`, nicht nur hierhin | offen |
+| 2026-08-17 | A3 | In der nicht-interaktiven Session-Shell lag `~/.local/share/mise/installs/node/25.1.0/bin` im PATH, `make check-node` schlug an. `mise current node` sagt korrekt 24.19.0, `mise exec -- make check` ist grün — der Pin aus A1 stimmt, die Shell war es. Verwandt mit dem offenen `/usr/bin/node`-Eintrag oben: **beide Male gewinnt in einer nicht-interaktiven Shell das falsche Node** | offen |
 | 2026-08-16 | A2 | `du -ck` überschätzte `code/` um fast das Doppelte (52K statt 27K, 4K-Blockrundung bei zehn kleinen Dateien) und die Zahl steckte in drei Summen im `INDEX.md`. Korrigiert; alle Summen werden jetzt aus `stat`-Bytes gerechnet | erledigt |
 
 ## Idee — noch nicht entschieden
@@ -33,3 +41,5 @@ wird triagiert und geleert.
 | Datum | Was | Bewertung |
 |---|---|---|
 | 2026-08-16 | React, Babel und Fonts neben die Blätter legen, damit `make design` offline läuft | Kostet einen Eingriff in den read-only-Handoff und CDN-Artefakte im Repo. Nur aufgreifen, falls Stufe H es wirklich braucht |
+| 2026-08-17 | **Keine `LICENSE` im Repo.** Öffentlich sichtbar heißt ohne Lizenz: alle Rechte vorbehalten, niemand darf etwas übernehmen. Für ein Portfolio ist das vertretbar — aber als Entscheidung, nicht als Versäumnis | Drei Wege: bewusst ohne Lizenz lassen und das im README sagen · MIT/Apache-2.0 für den Code · getrennt: Code offen, Texte und Design vorbehalten. Entscheidung vor M6, das README nennt sie dann |
+| 2026-08-17 | Mermaid-Diagramme in CI rendern lassen, statt nur in der GitHub-Vorschau zu prüfen | In A3 lokal mit `npx @mermaid-js/mermaid-cli` gegen das installierte Chromium gerendert — ging ohne Puppeteer-Download. In CI wäre es ein Job, der einen kaputten Graphen findet, bevor er im PR landet. Erst mit E1 sinnvoll |
