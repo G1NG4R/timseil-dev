@@ -77,6 +77,22 @@ migrate: ## Run goose migrations — phase B2
 e2e: ## Playwright end-to-end, a11y and visual regression — stage H
 	@printf 'make e2e arrives before H1 (playwright at 1440·1081·1079·1024·899·719·390).\n'
 
+# The sheets pull react@18.3.1 and @babel/standalone from unpkg at runtime, so
+# this needs network: with unpkg blocked, <x-dc> is never replaced and the page
+# stays dark. It does NOT need a server to render at all — file:// works,
+# measured headless against http://, contrary to build plan 6.2. The server is
+# here for a stable URL that no absolute machine path leaks into, which is what
+# the Playwright comparison from H1 hangs on. The version is pinned so two
+# sessions see the same server.
+#
+# The port check is ours because serve's --no-port-switching does not work in
+# 14.2.5: with 4000 taken it moves to a random port and still reports success.
+# A session would then read localhost:4000 and review whatever else answers.
 .PHONY: design
 design: ## Serve the read-only design handoff on port 4000
-	@npx --yes serve docs/design -p 4000
+	@if command -v ss >/dev/null 2>&1 && ss -ltnH 2>/dev/null | grep -q ':4000[[:space:]]'; then \
+		printf '  ✗ port 4000 is in use — stop that server first.\n'; \
+		printf '    serve would move to a random port without saying so.\n'; \
+		exit 1; \
+	fi
+	@npx --yes serve@14.2.5 docs/design -l 4000 --no-clipboard

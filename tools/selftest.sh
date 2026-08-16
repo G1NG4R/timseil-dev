@@ -56,6 +56,20 @@ git add doc.md
 accepts "markdown keeps its trailing spaces" tools/check-repo.sh --staged
 git rm -q --cached doc.md && rm doc.md
 
+# The imported handoff is exempt from hygiene, INDEX.md is not — we write that
+# one. An exemption nobody tests is an exemption that silently widens.
+mkdir -p docs/design
+printf '<html>\r\n' > "docs/design/Sheet - timseil.dev.dc.html"
+git add "docs/design/Sheet - timseil.dev.dc.html"
+accepts "imported design sheet skipped despite CRLF" tools/check-repo.sh --staged
+git rm -q --cached "docs/design/Sheet - timseil.dev.dc.html"
+
+printf 'no newline' > docs/design/INDEX.md
+git add docs/design/INDEX.md
+rejects "docs/design/INDEX.md still checked" tools/check-repo.sh --staged
+git rm -q --cached docs/design/INDEX.md
+rm -rf docs
+
 git config --unset core.hooksPath
 rejects "unset core.hooksPath rejected" tools/check-repo.sh --staged
 git config core.hooksPath .githooks

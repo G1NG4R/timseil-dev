@@ -368,48 +368,34 @@ docs/design/
 ├── INDEX.md          ← Phase A2
 ├── README.md         ← Original-Handoff
 ├── support.js        ← MUSS neben den HTML-Dateien liegen
-├── *.dc.html         ← 28 Blätter
+├── doc-page.js       ← Laufzeit für CV und Handoff
+├── *.dc.html         ← 29 Blätter
 └── code/             ← tokens.css, globals.css, layout.css, tokens.ts, components/
 ```
 
-`.gitattributes`: `docs/design/** linguist-documentation` — sonst verzerren 3 MB HTML deine Sprachstatistik.
+`.gitattributes`: `docs/design/** linguist-documentation` — sonst verzerren 1,4 MB HTML deine Sprachstatistik.
 
 ### 6.2 Die Blätter sichtbar machen
 
-Die Blätter laden React von unpkg. Über `file://` blockiert CORS das und die Seite bleibt **schwarz**. Über einen lokalen Server läuft es:
+Die Blätter laden `react@18.3.1`, `react-dom@18.3.1` und `@babel/standalone` zur Laufzeit von unpkg, dazu Google Fonts. **Ohne Netz bleibt die Seite schwarz:** `<x-dc>` wird nie ersetzt, es entsteht kein `#dc-root`. In A2 mit blockiertem unpkg nachgemessen.
+
+**Korrektur gegenüber der ersten Fassung dieses Kapitels:** `file://` ist nicht die Ursache. Per Doppelklick geöffnet rendert ein Blatt vollständig — headless gegen `http://` geprüft, DOM strukturell identisch. Die CDN-Skripte kommen über klassische `<script src>`-Tags, die vom `file:`-Ursprung laden; der einzige `fetch()`-Pfad in `support.js` ist ein Nachlade-Zweig hinter `.catch()`, und `x-import` benutzt kein Blatt.
 
 ```bash
-npx serve docs/design -p 4000     # → make design
+make design       # serve@14.2.5, Port 4000
 ```
 
-Damit kann Claude Code per Playwright gegen die Referenz screenshotten und bei allen sieben Prüfbreiten vergleichen. Das ist der produktivste Prompt der ganzen Stufe H.
+**Wofür der Server dann gut ist:** für eine stabile, rechnerunabhängige URL. Daran hängt der Playwright-Vergleich ab H1 — ein Screenshot-Lauf soll keinen absoluten Pfad deines Rechners einbacken. Zwei Eigenheiten: `serve` schneidet `.html` in der URL ab, und sein `--no-port-switching` ist in 14.2.5 wirkungslos (bei belegtem Port bindet es wortlos einen anderen) — deshalb prüft das Make-Target den Port selbst.
+
+**Was der Vergleich nicht leisten kann:** die Blätter sind Canvases mit **festen Artboards**. Gezeichnet sind 1440 und 390, mehr nicht — ein schmaleres Fenster löst keinen Reflow aus. Gegen die Referenz vergleichbar sind also zwei der sieben Prüfbreiten; die übrigen fünf laufen gegen die eigenen Baselines der Seite. Das ist trotzdem der produktivste Prompt der ganzen Stufe H.
 
 ### 6.3 `docs/design/INDEX.md`
 
-30 Blätter sind zu viel Kontext für eine Session. **Claude Code liest pro Phase nur die Blätter dieser Phase:**
+29 Blätter mit 1,38 MB HTML sind zu viel Kontext für eine Session. **Claude Code liest pro Phase nur die Blätter dieser Phase** — so steht es auch im Session-Prompt aus 8.5.
 
-| Blatt | Phasen |
-|---|---|
-| `README.md` (Handoff) | alle, zuerst |
-| `Foundations`, `code/*` | G1, G2 |
-| `Chrome` | G3 |
-| `Language Switcher` | G5 |
-| `Intermediate Widths` (LAYOUT.03) | G1, H* |
-| `Consistency Check` | G3, H* |
-| `State Language` (STATE.05) | G6, H* |
-| `Homepage`, `Homepage Themes` | H2, G2 |
-| `Work Index` | H3 |
-| `Case Study Template`, `Case Study 02` | H1 |
-| `Operation Grid` | H1, H2 |
-| `SYS.01 Training Log` | H2 |
-| `Blog Index`, `Blog Post` | H6 |
-| `About` · `Contact` · `404` · `Legal` | H4 · H5 · H7 · H8 |
-| `Boot Sequence` | I1 |
-| `Scroll Choreography` | I2, I3 |
-| `Routes and Paths`, `Case Study Map` | G5, H3 |
-| `Content Checklist`, `CV` | K1–K4 |
-| `Operations` | D3, F*, L* |
-| `Code Handoff`, `Handoff` | alle |
+**Die Zuordnung steht in `docs/design/INDEX.md`,** in beiden Richtungen (Phase → Blatt für den Prompt, Blatt → Phase zum Nachschlagen), mit gemessener Lesegröße je Blatt. Die Phasennummern dort folgen **Teil II**.
+
+Sie steht hier bewusst **nicht** ein zweites Mal. Die frühere Fassung dieses Kapitels trug eine eigene Tabelle, und genau die ist gedriftet: sie nannte die Homepage H2, den Work Index H3 und den Blog H6, während Teil II inzwischen 13 H-Phasen hat. Zwei Kopien derselben Zuordnung sind der Fehler, den 12.2 verhindern soll.
 
 ---
 
@@ -1528,7 +1514,7 @@ Sieh dir docs/design/code/tokens.css und tokens.ts an.
 
 Leg dann an:
 1. CLAUDE.md — Inhalt steht in Abschnitt 8.3
-2. docs/design/INDEX.md — Tabelle aus Abschnitt 6.3
+2. docs/design/INDEX.md — die Zuordnung Phase ↔ Blatt, Regel in Abschnitt 6.3
 3. backlog.md — Vorlage aus Abschnitt 8.7
 4. .github/pull_request_template.md — Vorlage aus Abschnitt 8.8
 
