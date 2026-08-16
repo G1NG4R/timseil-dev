@@ -1,0 +1,136 @@
+# timseil.dev
+
+A backend and DevOps portfolio that runs on the stack it describes and measures
+itself by the rules it explains. The site is its own reference system.
+
+<!--
+Live badges (build plan 12.4) read https://timseil.dev/api/badge/* — endpoints
+that do not exist yet and a domain that is not live yet. Enabling them now would
+put three broken images at the top of a repository whose entire argument is that
+claims are checkable. They get switched on in phase M6, tracked by the issue
+"docs: enable the live badges in the README".
+
+![uptime](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/uptime)
+![version](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/version)
+![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
+-->
+
+> **Status:** in build — stage A of 13, phase A3. Nothing is deployed yet.
+> There is no running site behind this repository today, and this line will say
+> so until there is. See [the build plan](docs/build-plan.md) (German).
+
+## The one rule
+
+**Every claim is tied to evidence, and the evidence is a running system.**
+
+That rule has teeth, because the boring cases are where portfolios lie:
+
+- No invented numbers. `*float64` in Go, `number | null` in TypeScript.
+  `null` renders as `— NO DATA`, never as `0`.
+- Metrics exist only for systems in state `live`.
+- Skill states are **derived in SQL**, never stored. Two live systems make a
+  skill `core`, one makes it `applied`. There is no column to set by hand.
+- A day without a measurement is `nodata` — not 100 %.
+- No incident notch without a post-mortem. Cause, fix and post are `NOT NULL`.
+
+At launch that means the site shows **zero** `core` skills, because only one
+system will be live. That is the point, not a defect.
+
+## Checkable from the outside
+
+The read API is public and documented ([ADR 0004](docs/adr/0004-public-read-api.md)).
+Once it is live, this returns the same numbers the pages render:
+
+```bash
+curl https://timseil.dev/api/systems
+```
+
+If a number on the site is not in that response, it is an invention — and anyone
+can tell. That is the whole thesis, and it is why the API is not behind a key.
+
+## Stack
+
+| Layer | Choice |
+|---|---|
+| Frontend | Next.js 16.3 LTS · React 19.2 · TypeScript strict · Tailwind 4.3 |
+| Backend | Go 1.26 stdlib · pgx v5 · sqlc · goose · OpenTelemetry |
+| Data | PostgreSQL 18.6 |
+| Contract | OpenAPI 3.1 — types are generated, never hand-written |
+| Infra | Docker Compose · Traefik via Dokploy · one OVH VPS · Node 24 LTS |
+| CI/CD | GitHub Actions · GHCR |
+| Observability | Grafana Alloy · Prometheus 3.13 LTS · Loki 3.7 · Grafana |
+
+No CDN, no WAF, no tracker, no CMS, no Kubernetes, no Redis. Each omission has a
+reason written down — that is what `docs/adr/` is for.
+
+## Architecture
+
+- [C4 context](docs/architecture/c4-context.md) — who talks to this system
+- [C4 container](docs/architecture/c4-container.md) — what runs on the host, and
+  what is reachable from outside
+
+Short version: Traefik terminates TLS, Next.js renders, **Go owns the database,
+the contract and every derivation**, Postgres stores it. Prometheus measures,
+Postgres serves — so the site keeps showing the last valid value with its age
+when the metrics stack is down, instead of inventing a zero.
+
+## Quickstart
+
+Requires Node 24 (see `.nvmrc`), GNU Make and a POSIX shell.
+
+```bash
+git clone https://github.com/G1NG4R/timseil-dev.git
+cd timseil-dev
+git config core.hooksPath .githooks   # arms the commit and push hooks
+make check                            # every check that applies today
+make design                           # design handoff on http://localhost:4000
+```
+
+`make help` lists all targets. **Targets that belong to a later phase say so and
+exit instead of pretending they checked something** — `make dev` arrives in A4,
+`make gen` in B1, `make migrate` in B2, `make e2e` before stage H. That is
+deliberate: a quickstart that lies is the failure mode this project is built to
+avoid, and CI will run these commands from stage E5 onwards to keep this section
+honest.
+
+`make design` needs network access — the design sheets load React and fonts from
+a CDN at runtime. **A black page means no network, not a broken sheet.**
+
+## Repository
+
+| Path | Reader |
+|---|---|
+| `README.md` | you, right now |
+| `CONTRIBUTING.md` · `SECURITY.md` | anyone who wants to file something |
+| `docs/build-plan.md` | the author, every session (German) |
+| `docs/adr/` | the author in six months, asking "why did I do that?" |
+| `docs/architecture/` | anyone who wants the shape before the code |
+| `docs/runbooks/` | the author at three in the morning (from D3) |
+| `docs/design/` | **read-only** imported design handoff, 29 sheets |
+| `contract/openapi.yaml` | the single source of truth for API types (from B1) |
+| `backlog.md` | the notepad between sessions |
+
+Branch `ops-data` is machine-written and has no shared history with `main`: it
+carries the uptime log committed by the probe workflow, so an outage is recorded
+**outside** the infrastructure that went down.
+
+## Decisions
+
+| ADR | Decision |
+|---|---|
+| [0001](docs/adr/0001-nextjs-app-router.md) | Next.js 16 App Router, not React Router 7 |
+| [0002](docs/adr/0002-mdx-blog-in-repo.md) | Blog as MDX in the repository, no CMS |
+| [0003](docs/adr/0003-track-states-as-sql-view.md) | Skill states derived in SQL, never stored |
+| [0004](docs/adr/0004-public-read-api.md) | The read API is public |
+| [0005](docs/adr/0005-container-split-api-owns-postgres.md) | Go owns the data, Next.js renders |
+| [0006](docs/adr/0006-no-cdn.md) | No CDN, no third party in the request path |
+| [0007](docs/adr/0007-prometheus-instead-of-log-parsing.md) | Prometheus measures, Postgres serves |
+| [0008](docs/adr/0008-single-host-at-launch.md) | One host at launch, outage log kept outside |
+
+Every ADR names what the decision **costs**. One without a price tag is an
+advertisement.
+
+## Contact
+
+Security reports: see [SECURITY.md](SECURITY.md). Everything else:
+[open an issue](https://github.com/G1NG4R/timseil-dev/issues).
