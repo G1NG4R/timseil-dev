@@ -1,0 +1,11 @@
+#!/bin/sh
+# Hygiene on what is actually being committed. The full sweep is `make check`,
+# which CI runs — this one has to stay fast enough that nobody skips it.
+set -eu
+
+if ! make --no-print-directory check-fast; then
+  echo ""
+  echo "✗ Commit blocked by repo hygiene."
+  echo "  Fix the files above, or bypass once with --no-verify."
+  exit 1
+fi

@@ -1,0 +1,38 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+
+# Build output
+dist/
+bin/
+*.exe
+
+# Go
+*.test
+*.out
+
+# Tests & reports
+coverage/
+coverage.*
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# Secrets — runtime only, never in the image, never in the repo
+.env
+.env.*
+!.env.example
+
+# Local scratch
+tmp/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
