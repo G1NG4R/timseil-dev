@@ -77,11 +77,19 @@ migrate: ## Run goose migrations — phase B2
 e2e: ## Playwright end-to-end, a11y and visual regression — stage H
 	@printf 'make e2e arrives before H1 (playwright at 1440·1081·1079·1024·899·719·390).\n'
 
+# The sheets pull react@18.3.1 and @babel/standalone from unpkg at runtime, and
+# several paths in support.js go through fetch(), which the browser refuses on
+# file: — that is why this target exists, and why it needs network. The version
+# is pinned so two sessions see the same server.
+#
+# The port check is ours because serve's --no-port-switching does not work in
+# 14.2.5: with 4000 taken it moves to a random port and still reports success.
+# A session would then read localhost:4000 and review whatever else answers.
 .PHONY: design
 design: ## Serve the read-only design handoff on port 4000
-	# The sheets pull react@18.3.1 and @babel/standalone from unpkg at runtime.
-	# Over file:// the browser blocks that and the page stays black — that is
-	# the whole reason this target exists. It needs network for the same reason.
-	# The version is pinned so two sessions review against the same server.
-	# --no-port-switching: a taken 4000 must fail loudly, not move the URL.
-	@npx --yes serve@14.2.5 docs/design -l 4000 --no-clipboard --no-port-switching
+	@if command -v ss >/dev/null 2>&1 && ss -ltnH 2>/dev/null | grep -q ':4000[[:space:]]'; then \
+		printf '  ✗ port 4000 is in use — stop that server first.\n'; \
+		printf '    serve would move to a random port without saying so.\n'; \
+		exit 1; \
+	fi
+	@npx --yes serve@14.2.5 docs/design -l 4000 --no-clipboard
