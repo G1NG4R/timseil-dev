@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Inhalts-Checkliste — jeder Platzhalter mit Format, Länge und Beispiel · Stand 16.08.2026</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Checkliste · 1400 — nach Seite, mit Dringlichkeit</div>
+<div class="dv-card" style="width:1400px">
+<div data-screen-label="Content checklist" style="width:1400px;box-sizing:border-box;padding:36px 40px 40px;background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:16px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CNT.01</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">WAS NOCH FEHLT</span>
+<span style="flex:1"></span>
+<span style="flex:none;white-space:nowrap;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ tally }}</span>
+</div>
+<div style="display:grid;grid-template-columns:118px 210px 168px 1fr 96px;border-top:1px solid rgba(139,152,166,.16)">
+<div style="padding:9px 10px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">SEITE</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ELEMENT</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">FORMAT UND LÄNGE</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">BEISPIEL ODER HINWEIS</div>
+<div style="padding:9px 0 9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">WANN</div>
+<sc-for list="{{ items }}" as="i" hint-placeholder-count="36">
+<div style="{{ i.pageStyle }}">{{ i.page }}</div>
+<div style="padding:11px 10px;font:500 10.5px/1.45 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">{{ i.what }}</div>
+<div style="padding:11px 10px;font:400 10px/1.5 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">{{ i.format }}</div>
+<div style="padding:11px 10px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">{{ i.example }}</div>
+<div style="padding:11px 0 11px 10px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:{{ i.color }};border-bottom:1px solid rgba(139,152,166,.08)">{{ i.when }}</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px 30px;margin-top:18px;padding-top:14px;border-top:1px solid rgba(139,152,166,.16);font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">
+<span><span style="color:#FF2D55;font-weight:600">SPERRT</span> — ohne das kann die Seite nicht live gehen</span>
+<span><span style="color:#FFB000;font-weight:600">VOR START</span> — sichtbar leer, aber kein Rechtsproblem</span>
+<span><span style="color:#8B98A6;font-weight:600">DANACH</span> — wächst mit dem Betrieb</span>
+<span><span style="color:#00E5FF;font-weight:600">FERTIG</span> — kein Platzhalter mehr auf dieser Seite</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Vier Sperren — was den Start wirklich blockiert</div>
+<div class="dv-card" style="width:600px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CNT.02</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">SPERREN</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">IN DIESER REIHENFOLGE</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:18px">
+<div style="border-left:1px solid rgba(255,45,85,.5);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FF2D55;margin-bottom:5px">01 · IMPRESSUM UND DATENSCHUTZ</div>
+<div style="font:400 11px/1.65 'Geist',sans-serif;color:#8B98A6">Anschrift, Hosting-Provider mit Rechtsform und Adresse, Registrar, Mail-Provider samt Standort. In Luxemburg ist die Anbieterkennzeichnung Pflicht, und der Datenschutztext muss das Kontaktformular abdecken — Name, Adresse, Nachricht, Zeitpunkt, IP fürs Rate-Limit. <span style="color:#C6D1DB">Neun Lücken, alle in Legal.</span></div>
+</div>
+<div style="border-left:1px solid rgba(255,45,85,.5);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FF2D55;margin-bottom:5px">02 · MAIL-PROVIDER</div>
+<div style="font:400 11px/1.65 'Geist',sans-serif;color:#8B98A6">Keine Textaufgabe, aber sie sperrt genauso: ohne Provider mit MX, SPF, DKIM und DMARC ist das Formular gebaut und nicht zustellbar. Der Name des Providers steht danach im Datenschutztext.</div>
+</div>
+<div style="border-left:1px solid rgba(255,176,0,.5);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FFB000;margin-bottom:5px">03 · BIO UND PORTRÄT</div>
+<div style="font:400 11px/1.65 'Geist',sans-serif;color:#8B98A6">Startseite und About tragen beide eine leere Fläche mit <span style="font-family:'JetBrains Mono',monospace">[ASSET]</span>. Ein Foto, zwei Textlängen — die kurze für die Startseite, die lange für About. Das ist die einzige Stelle, an der die Seite persönlich wird.</div>
+</div>
+<div style="border-left:1px solid rgba(255,176,0,.5);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FFB000;margin-bottom:5px">04 · DER ERSTE ECHTE BEITRAG</div>
+<div style="font:400 11px/1.65 'Geist',sans-serif;color:#8B98A6">Der Blog zeigt zehn Platzhaltertitel. Besser ein einziger echter Beitrag und der gebaute Leerzustand für den Rest, als zehn Überschriften ohne Text. <span style="color:#C6D1DB">Der Leerzustand ist dafür da.</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Schreibregeln — damit die Texte zur Seite passen</div>
+<div class="dv-card" style="width:600px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:18px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CNT.03</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">TONFALL</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">AUS DEN VORHANDENEN TEXTEN ABGELEITET</span>
+</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px;margin-bottom:22px">
+<div><span style="color:#00E5FF">▸</span> BEHAUPTUNG BRAUCHT BELEG: jede Fähigkeit nennt das System, in dem sie läuft. Steht kein System dahinter, heißt der Zustand <span style="color:#C6D1DB">LEARNING</span> — das ist keine Schwäche, das ist die Idee der Seite</div>
+<div><span style="color:#00E5FF">▸</span> KEINE WERBESPRACHE: keine „leidenschaftlichen“ Entwickler, keine „innovativen Lösungen“. Was gebaut wurde, was es tut, was schiefging</div>
+<div><span style="color:#00E5FF">▸</span> ZAHLEN NUR, WENN GEMESSEN: <span style="color:#C6D1DB">p95 142 ms</span> ist ein Beleg, <span style="color:#C6D1DB">blitzschnell</span> ist keiner. Fehlt die Messung, steht dort <span style="color:#C6D1DB">— NO DATA</span></div>
+<div><span style="color:#00E5FF">▸</span> ERSTE PERSON, KURZE SÄTZE: die Seite spricht als Betreiber, nicht als Agentur. Kein „wir“</div>
+<div><span style="color:#00E5FF">▸</span> ENGLISCH IST DIE GRUNDFASSUNG. Ausnahme: die Rechtstexte, die auf Deutsch entstehen und später auf FR übersetzt werden</div>
+<div><span style="color:#00E5FF">▸</span> FEHLER GEHÖREN DAZU: ein Post-Mortem mit Ursache und Behebung wirkt stärker als ein Tutorial. Der Log heißt Log, nicht Blog</div>
+</div>
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">LÄNGEN AUF EINEN BLICK</div>
+<div style="display:grid;grid-template-columns:130px 1fr;gap:7px 16px;font:400 10px/1.5 'JetBrains Mono',monospace;color:#8B98A6">
+<span style="color:#C6D1DB">Bio kurz</span><span>2 Sätze · 180–260 Zeichen · Startseite</span>
+<span style="color:#C6D1DB">Bio lang</span><span>4–6 Sätze · 500–700 Zeichen · About</span>
+<span style="color:#C6D1DB">Beitrags-Titel</span><span>max 58 Zeichen, sonst bricht die Zeile mobil</span>
+<span style="color:#C6D1DB">Beitrags-Teaser</span><span>max 90 Zeichen · ein Satz, kein Punkt am Ende nötig</span>
+<span style="color:#C6D1DB">System-Zeile</span><span>max 70 Zeichen · was es ist, nicht was es könnte</span>
+<span style="color:#C6D1DB">Jahreszeile About</span><span>max 46 Zeichen · ein Ereignis pro Jahr</span>
+<span style="color:#C6D1DB">CV-Zeile</span><span>max 80 Zeichen · Zeitraum, Rolle, Ort</span>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Wie diese Liste entstand</div>
+<div class="dv-card" style="width:430px;padding:24px 26px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:14px">METHODE</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px">
+<div><span style="color:#00E5FF">▸</span> GEZÄHLT, NICHT GESCHÄTZT: alle elf Seiten wurden nach Platzhaltern in eckigen Klammern durchsucht. Doppelte Treffer aus Desktop und Mobil sind zu einer Zeile zusammengefasst</div>
+<div><span style="color:#00E5FF">▸</span> ZWEI SEITEN SIND FERTIG: Contact und 404 tragen keinen einzigen Platzhalter</div>
+<div><span style="color:#00E5FF">▸</span> LÄNGEN AUS DEM ENTWURF: die Zeichenzahlen stammen aus den gebauten Flächen, nicht aus einer Faustregel. Wer sie überschreitet, bekommt einen Umbruch, kein Abschneiden</div>
+<div><span style="color:#00E5FF">▸</span> AUFNAHMEN SIND KEINE BILDER: <span style="color:#C6D1DB">[TERMINAL CAPTURE]</span> und <span style="color:#C6D1DB">[UI CAPTURE]</span> sind Screenshots aus dem echten Betrieb — sie entstehen beim Bauen, nicht davor</div>
+<div><span style="color:#00E5FF">▸</span> ICH KANN KEINE BILDER ERZEUGEN: Porträt und Aufnahmen musst du liefern; die Flächen dafür stehen samt Maß in den Entwürfen</div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: „Rechtstexte als Rohfassung“ · „Bio in drei Varianten“ · „mit dem Bauen anfangen“</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  I = [
+    ["Startseite","Bio, kurze Fassung","2 Sätze · 180–260 Zeichen","Self-taught since 2021. I run timseil.dev on my own VPS — Go API, Postgres, Docker, deploy on push.","VOR START"],
+    ["Startseite","Porträt","1 Foto · quadratisch · ab 400 × 400 · dunkler Hintergrund","Fläche steht bereit: 92 × 92 Desktop, 64 × 64 mobil","VOR START"],
+    ["Startseite","Adresse bestätigen","eine Zeile","contact@timseil.dev ist im Entwurf angenommen, nicht bestätigt","SPERRT"],
+    ["Startseite","Trainings-Log: Stand","Datum ISO","2026-08-16 — das Datum der letzten Pflege, nicht des Deploys","DANACH"],
+    ["Startseite","Contribution-Graph","GitHub-API, 365 Tage","bis dahin bleibt sichtbar, dass die Daten erfunden sind","DANACH"],
+    ["Startseite","Drei Log-Einträge","Titel max 58 · Teaser max 90 Zeichen","The queue that lost 400 jobs — what the retry storm actually cost","VOR START"],
+    ["Startseite","LinkedIn und X","URL oder Zeile streichen","[SOON] ist ehrlich, aber zwei tote Zeilen wirken unfertig","DANACH"],
+    ["Work Index","Repo-Adressen je System","URL oder Grund","github.com/G1NG4R/… — oder <> PRIVATE · NDA, wenn kein Repo öffentlich wird","VOR START"],
+    ["Work Index","Vier Vorschaubilder","Screenshot · 16:10 · ab 800px breit","Fläche pro Systemzeile, erscheint beim Überfahren","DANACH"],
+    ["Work Index","Kennzahlen der Systeme","aus /api/health","solange NO DATA steht, ist die Zeile korrekt — nicht erfinden","DANACH"],
+    ["Fallstudie 02","Startdatum","Datum ISO","seit wann timseil.dev läuft — trägt die ganze Betriebsrechnung","VOR START"],
+    ["Fallstudie 02","Commit-SHA","7 Zeichen","a41f9c2 — der Stand, den die Fallstudie beschreibt","DANACH"],
+    ["Fallstudie — Vorlage","Repo-URL","github.com/…","öffentlich oder Zeile streichen","VOR START"],
+    ["Fallstudie — Vorlage","Terminal-Aufnahme","Screenshot · echte Ausgabe","kein nachgestelltes Bild — die Fallstudie lebt vom Beleg","DANACH"],
+    ["Fallstudie — Vorlage","UI-Aufnahme","Screenshot · 16:10","zeigt das Ergebnis, nicht den Editor","DANACH"],
+    ["Fallstudie — Vorlage","Handle und Kanal","je eine Zeile","wo das Projekt lief und wer es sah","DANACH"],
+    ["Fallstudie — Vorlage","Zwei Daten","Datum ISO","Beginn und Abschluss","VOR START"],
+    ["Log-Index","Zehn Einträge","Titel max 58 · Teaser max 90 Zeichen","besser ein echter Beitrag plus Leerzustand als zehn leere Titel — Bausteine des Beitrags stehen in LOG.01","VOR START"],
+    ["Log-Beitrag","VPS-Spezifikation","eine Zeile","8 GB RAM, 4 vCPU, 160 GB NVMe — echte Werte","VOR START"],
+    ["Log-Beitrag","Zeitraum","Monat und Jahr","Zeitraum, über den gemessen wurde","VOR START"],
+    ["Log-Beitrag","Terminal-Aufnahme","Screenshot","die Ausgabe, über die der Beitrag spricht","DANACH"],
+    ["Log-Beitrag","Porträt in der Autorenzeile","1 Foto · quadratisch · ab 200 × 200","dasselbe Bild wie auf der Startseite, nur kleiner beschnitten — kein zweiter Termin","VOR START"],
+    ["About","Porträt","1 Foto · ab 600 × 600","größere Fläche als auf der Startseite","VOR START"],
+    ["About","Bio, lange Fassung","4–6 Sätze · 500–700 Zeichen","Weg vom ersten Skript zum laufenden System, in eigenen Worten","VOR START"],
+    ["About","Persönlicher Absatz","2 Sätze","was außerhalb des Rechners passiert — eine Zeile Mensch","VOR START"],
+    ["About","Trajektorie Y1–Y5","5 Zeilen · je max 46 Zeichen","2021 — erste Zeile Bash, die etwas kaputt machte","VOR START"],
+    ["About","Sprachen","eine Zeile","Deutsch (Muttersprache) · Englisch (C1) · Französisch (B1)","SPERRT"],
+    ["About","Rechner-Spezifikation","eine Zeile","womit gearbeitet wird — kurz, ohne Marken-Prosa","DANACH"],
+    ["About","Buch oder Paper","Titel und Autor","was gerade gelesen wird, kein Bestseller-Signal","DANACH"],
+    ["About","Ein-Zeiler","max 60 Zeichen","der Satz unter dem Namen","VOR START"],
+    ["CV","Telefon","+352 …","oder Zeile streichen, wenn nur Mail gelten soll","VOR START"],
+    ["CV","Arbeitserlaubnis","eine Zeile","EU-Bürger · in Luxemburg uneingeschränkt arbeitsberechtigt","SPERRT"],
+    ["CV","Verfügbarkeit","ab wann, Umfang","ab sofort · Vollzeit · Luxemburg oder Remote","SPERRT"],
+    ["CV","Gesuchte Rolle","eine Zeile","Backend- oder DevOps-Rolle, Junior","SPERRT"],
+    ["CV","Ausbildung","Zeitraum, Abschluss, Ort","zwei Zeilen: Schule und Weiterbildung","VOR START"],
+    ["CV","Berufserfahrung","Zeitraum, Rolle, Ort","auch fachfremd — Lücken erklären ist besser als Lücken lassen","VOR START"],
+    ["CV","Satz zu 2025","max 80 Zeichen","was in dem Jahr dazukam","VOR START"],
+    ["CV","Stand des Dokuments","Datum ISO","erscheint im Fuß der PDF","DANACH"],
+    ["Legal","Anschrift","Straße, PLZ, Ort","Pflichtangabe der Anbieterkennzeichnung","SPERRT"],
+    ["Legal","Hosting-Provider","Rechtsform, Name, Adresse","der Anbieter des VPS, vollständig","SPERRT"],
+    ["Legal","Registrar","Name","wo timseil.dev registriert ist","SPERRT"],
+    ["Legal","Mail-Provider","Name und Standort","steht als Auftragsverarbeiter im Datenschutztext","SPERRT"],
+    ["Legal","Analytics","Name oder „keins“","wenn keins läuft, ist das die stärkere Aussage","SPERRT"],
+    ["Legal","Stand der Texte","Datum ISO","drei Stellen, alle dasselbe Datum","SPERRT"],
+    ["Contact","—","kein Platzhalter","Formular, Zustände und Fußzeile tragen fertigen Text","FERTIG"],
+    ["404","—","kein Platzhalter","Fehlercode, Routenliste und Fußzeile tragen fertigen Text","FERTIG"]
+  ];
+  renderVals() {
+    const C = { "SPERRT": "#FF2D55", "VOR START": "#FFB000", "DANACH": "#8B98A6", "FERTIG": "#00E5FF" };
+    const n = { "SPERRT": 0, "VOR START": 0, "DANACH": 0, "FERTIG": 0 };
+    let last = "";
+    const items = this.I.map(([page, what, format, example, when]) => {
+      n[when]++;
+      const first = page !== last; last = page;
+      return { page: first ? page : "", what, format, example, when, color: C[when],
+        pageStyle: "padding:11px 10px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:" + (first ? "#00E5FF" : "transparent") + ";border-bottom:1px solid rgba(139,152,166,.08)" };
+    });
+    return { items,
+      tally: (this.I.length - n["FERTIG"]) + " OFFENE EINTRÄGE · " + n["SPERRT"] + " SPERREN · " + n["VOR START"] + " VOR DEM START · " + n["DANACH"] + " DANACH · " + n["FERTIG"] + " SEITEN FERTIG" };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Imprint + Privacy — der Live-Readout auf 1b zeigt echte Werte aus deinem Browser</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>/imprint · Desktop 1440 — Privatperson, kein Gewerbe</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Imprint — Desktop" style="width:1440px;background-color:#0A0E14;position:relative;overflow:hidden;cursor:crosshair;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.028) 1px,transparent 1px);background-size:88px 88px"></div>
+<div style="position:relative;z-index:1;width:1160px;margin:0 auto">
+
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:32px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+
+<div style="padding:56px 0 40px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:56px">
+<div style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:22px"><span style="color:#00E5FF">SYS.06</span> — IMPRINT</div>
+<h1 style="margin:0 0 20px;font:500 52px/1.06 'Chakra Petch',sans-serif;color:#E8EEF4">Who runs this</h1>
+<p style="margin:0;max-width:62ch;font:400 15.5px/1.7 'Geist',sans-serif;color:#8B98A6">A private site, operated by one person, on infrastructure that person administers. No company behind it, nothing sold on it.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 380px;gap:80px;align-items:start;margin-bottom:88px">
+<div>
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:24px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">06.01</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Operator and responsible party</span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:24px 26px;margin-bottom:44px;background-image:linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5)),linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5)),linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5)),linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5)),linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5)),linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5)),linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5)),linear-gradient(rgba(0,229,255,.5),rgba(0,229,255,.5));background-repeat:no-repeat;background-size:14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:grid;grid-template-columns:150px 1fr;gap:14px 20px;font:400 12.5px/1.6 'JetBrains Mono',monospace">
+<span style="color:#7C8996;letter-spacing:.08em">NAME</span><span style="color:#E8EEF4">Tim Seil</span>
+<span style="color:#7C8996;letter-spacing:.08em">ADDRESS</span><span style="color:#C6D1DB">[STRASSE UND HAUSNUMMER]<br>[POSTLEITZAHL] [ORT]<br>Luxembourg</span>
+<span style="color:#7C8996;letter-spacing:.08em">EMAIL</span><span style="color:#C6D1DB">contact@timseil.dev</span>
+<span style="color:#7C8996;letter-spacing:.08em">PHONE</span><span style="color:#7C8996">[OPTIONAL — WEGLASSEN IST ZULÄSSIG]</span>
+<span style="color:#7C8996;letter-spacing:.08em">CAPACITY</span><span style="color:#C6D1DB">Private individual — no registered business, no commercial activity</span>
+<span style="color:#7C8996;letter-spacing:.08em">CONTENT</span><span style="color:#C6D1DB">Tim Seil, address as above</span>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">06.02</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Where it is hosted</span></div>
+<p style="margin:0 0 18px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">The site runs in containers on a virtual private server rented from <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#E8EEF4">[HOSTING PROVIDER, LEGAL NAME AND ADDRESS]</span>. The server is configured and maintained by me; the provider supplies the hardware and the network. Fragen dazu gern über das <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#00E5FF;cursor:pointer">Formular auf /contact →</span>.</p>
+<p style="margin:0 0 44px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#8B98A6">The domain is registered through <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C6D1DB">[REGISTRAR]</span>. Everything the site serves — pages, fonts, images — comes from that one server. There is no CDN and no third party in the request path.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">06.03</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Content and links</span></div>
+<p style="margin:0 0 18px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Everything published here is written by me and reflects my own view at the time of writing. Technical descriptions are accounts of what I built and how it behaved, not advice — copy anything from here into your own production system at your own risk.</p>
+<p style="margin:0 0 44px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#8B98A6">External links point to material I do not control. I check a link when I place it; I cannot check it afterwards, and I am not responsible for what appears there later.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">06.04</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Reuse</span></div>
+<p style="margin:0 0 18px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Text and images on this site belong to me unless marked otherwise. Quote a paragraph with a link back and we are fine. Republishing a whole piece needs a short mail first.</p>
+<p style="margin:0;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#8B98A6">Source code linked from the project pages carries its own licence in its repository. That licence governs the code, not this text.</p>
+</div>
+
+<div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:22px 24px;margin-bottom:20px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:16px">ON THIS PAGE</div>
+<div style="display:flex;flex-direction:column;gap:11px;font:400 11.5px 'JetBrains Mono',monospace">
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#00E5FF;cursor:pointer"><span>06.01</span><span>Operator</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">06.02</span><span>Hosting</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">06.03</span><span>Content and links</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">06.04</span><span>Reuse</span></span>
+</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.16);padding:20px 22px;margin-bottom:20px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:14px">NOT APPLICABLE</div>
+<div style="display:flex;flex-direction:column;gap:10px;font:400 11.5px/1.5 'JetBrains Mono',monospace;color:#8B98A6">
+<span><span style="color:#7C8996">·</span> Trade register entry</span>
+<span><span style="color:#7C8996">·</span> VAT identification number</span>
+<span><span style="color:#7C8996">·</span> Supervisory authority</span>
+<span><span style="color:#7C8996">·</span> Consumer dispute resolution</span>
+</div>
+<div style="font:400 11px/1.6 'Geist',sans-serif;color:#7C8996;margin-top:14px">None of these apply to a private site with no commercial activity. Listed so the absence reads as deliberate.</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.16);padding:20px 22px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:12px">SEE ALSO</div>
+<div style="font:500 12px 'JetBrains Mono',monospace;color:#00E5FF;cursor:pointer" style-hover="color:#9DF4FF">SYS.07 — PRIVACY →</div>
+<div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:8px">What the server records, and for how long.</div>
+</div>
+</div>
+</div>
+
+<div>
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);padding:14px 0 24px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1 · #A41F9C2</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CV → TERMINAL AUF <span style="color:#8B98A6">/</span> : <span style="color:#8B98A6">cv</span></span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span><span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span><span>LAST REVISED [DATE]</span><span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#E8EEF4;cursor:default">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>/privacy · Desktop 1440 — der Live-Readout liest deinen echten Browser aus</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Privacy — Desktop" style="width:1440px;background-color:#0A0E14;position:relative;overflow:hidden;cursor:crosshair;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.028) 1px,transparent 1px);background-size:88px 88px"></div>
+<div style="position:relative;z-index:1;width:1160px;margin:0 auto">
+
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:32px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+
+<div style="display:grid;grid-template-columns:1fr 470px;gap:72px;align-items:start;padding:56px 0 52px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:56px">
+<div>
+<div style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:22px"><span style="color:#00E5FF">SYS.07</span> — PRIVACY</div>
+<h1 style="margin:0 0 20px;font:500 52px/1.06 'Chakra Petch',sans-serif;color:#E8EEF4;max-width:16ch">What this server knows</h1>
+<p style="margin:0 0 16px;max-width:58ch;font:400 15.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Rather than describe it in the abstract, here is the actual record of your visit, read from your own browser as you read this.</p>
+<p style="margin:0;max-width:58ch;font:400 15.5px/1.7 'Geist',sans-serif;color:#8B98A6">No cookie was set to produce it. Nothing below is stored beyond the retention period stated in 07.02.</p>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);box-shadow:0 0 44px rgba(0,229,255,.05);background-image:linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55));background-repeat:no-repeat;background-size:14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;align-items:center;gap:7px;padding:11px 16px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.55)"></span>
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="flex:1;text-align:center;font:500 10px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.08em">tail -f access.log — your request</span>
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.7)">LIVE</span>
+</div>
+<div style="position:relative">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px)"></div>
+<div style="padding:18px 20px 20px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:112px 1fr;gap:14px;padding:5px 0;font:400 11.5px/1.6 'JetBrains Mono',monospace">
+<span style="color:#7C8996;letter-spacing:.06em">{{ f.k }}</span>
+<span style="color:{{ f.c }};word-break:break-all">{{ f.v }}</span>
+</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:12px;border-top:1px solid rgba(139,152,166,.12)">
+<span style="font:600 11.5px 'JetBrains Mono',monospace;color:#00E5FF">EOF</span>
+<span style="width:7px;height:13px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span>
+<span style="flex:1"></span>
+<span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">8 FIELDS · NOTHING ELSE</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 380px;gap:80px;align-items:start;margin-bottom:88px">
+<div>
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">07.01</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Who is responsible</span></div>
+<p style="margin:0 0 44px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Tim Seil, [ADRESSE], Luxembourg — reachable at <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#E8EEF4">contact@timseil.dev</span>. There is no data protection officer, because the scale of processing here does not require one.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">07.02</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Server logs</span></div>
+<p style="margin:0 0 22px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Every request to this server is written to a log file, the same way every web server on the internet does it. That record is what makes it possible to see that the site is up, to find out why a page returned an error, and to notice when someone is probing for a way in.</p>
+<div style="border:1px solid rgba(139,152,166,.14);margin-bottom:22px">
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996"><span style="flex:1">FIELD</span><span style="width:190px">WHY IT IS KEPT</span><span style="width:96px;text-align:right">RETENTION</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">IP address</span><span style="width:190px;color:#8B98A6">Abuse and rate limiting</span><span style="width:96px;text-align:right;color:#8B98A6">14 DAYS</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Timestamp</span><span style="width:190px;color:#8B98A6">Ordering, incident review</span><span style="width:96px;text-align:right;color:#8B98A6">14 DAYS</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Method and path</span><span style="width:190px;color:#8B98A6">Which route was hit</span><span style="width:96px;text-align:right;color:#8B98A6">14 DAYS</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Status code and size</span><span style="width:190px;color:#8B98A6">Error detection</span><span style="width:96px;text-align:right;color:#8B98A6">14 DAYS</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">User agent</span><span style="width:190px;color:#8B98A6">Rendering and bot filtering</span><span style="width:96px;text-align:right;color:#8B98A6">14 DAYS</span></div>
+<div style="display:flex;padding:12px 16px;font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Referrer</span><span style="width:190px;color:#8B98A6">Where a link came from</span><span style="width:96px;text-align:right;color:#8B98A6">14 DAYS</span></div>
+</div>
+<p style="margin:0 0 44px;max-width:68ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Legal basis: legitimate interest in operating and securing the service, Art. 6(1)(f) GDPR. Logs are rotated automatically and are not combined with anything else. Nobody but me reads them.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">07.03</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Visitor counting</span></div>
+<p style="margin:0 0 22px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">I count page views with <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#E8EEF4">[ANALYTICS TOOL]</span>, which runs on the same server as the rest of the site. It sets no cookie, assigns no identifier, and stores no profile. What it produces is a daily count per page and a list of referring domains.</p>
+<p style="margin:0 0 44px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#8B98A6">The counter sets nothing on your device, and no individual can be singled out from the result — see 07.04 for the two entries the site does keep locally. There is no consent banner. A banner would be a worse trade for you than the thing it asks about.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">07.04</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">What is stored on your device</span></div>
+<p style="margin:0 0 22px;max-width:68ch;font:400 15px/1.75 'Geist',sans-serif;color:#C6D1DB">Two entries, both in local storage, both written only when you do something. No cookie, no identifier, and neither is ever sent back to the server — I cannot read them.</p>
+<div style="border:1px solid rgba(139,152,166,.14);margin-bottom:22px">
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996"><span style="width:150px">KEY</span><span style="flex:1">WHAT IT HOLDS</span><span style="width:150px">WHEN IT IS WRITTEN</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="width:150px">ts.theme</span><span style="flex:1;color:#8B98A6">Which of the seven colour schemes you picked</span><span style="width:150px;color:#8B98A6">On clicking a swatch</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="width:150px">ts404.best</span><span style="flex:1;color:#8B98A6">Your best score in the game on the 404 page</span><span style="flex:none;width:150px;color:#8B98A6">On playing it</span></div>
+<div style="display:flex;padding:12px 16px;font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="width:150px">ts.lang</span><span style="flex:1;color:#8B98A6">Your language choice — only if you pick one. The URL decides which language is shown; this entry only highlights it in the switcher.</span></div>
+</div>
+<p style="margin:0 0 44px;max-width:68ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Clearing your browser storage removes all three. Without them the site still works: it then follows your system setting for light or dark, and the game starts at zero.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">07.05</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">What never leaves this server</span></div>
+<div style="display:flex;flex-direction:column;gap:14px;max-width:68ch;margin-bottom:44px">
+<div style="display:grid;grid-template-columns:22px 1fr;gap:14px;font:400 15px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">01</span><span><strong style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">Fonts.</strong> Served from this domain. Your browser makes no request to a font provider.</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr;gap:14px;font:400 15px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">02</span><span><strong style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">The contribution graph.</strong> Fetched server-side from the GitHub API and cached here. Your browser never talks to GitHub.</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr;gap:14px;font:400 15px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">03</span><span><strong style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">No embeds.</strong> No third-party video, no comment widget, no social buttons, no tag manager.</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr;gap:14px;font:400 15px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">04</span><span><strong style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">Media files.</strong> Images come from this server, not from a CDN. That costs a few milliseconds and keeps the request path free of third parties.</span></div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">07.06</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Form and mail</span></div>
+<p style="margin:0 0 22px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Two ways in: the form on <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#E8EEF4">/contact</span>, or plain mail to the address above. Both end in the same mailbox. The form exists because a <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C6D1DB">mailto:</span> link fails silently on any device without a mail client configured — it is convenience, not data collection.</p>
+<div style="border:1px solid rgba(139,152,166,.14);margin-bottom:22px">
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996"><span style="flex:1">WHAT THE FORM SENDS</span><span style="width:210px">WHY</span><span style="width:112px;text-align:right">RETENTION</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Name</span><span style="width:210px;color:#8B98A6">So I know who I am answering</span><span style="width:112px;text-align:right;color:#8B98A6">Mailbox</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Email address</span><span style="width:210px;color:#8B98A6">The only way to reply</span><span style="width:112px;text-align:right;color:#8B98A6">Mailbox</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Message</span><span style="width:210px;color:#8B98A6">The reason you wrote</span><span style="width:112px;text-align:right;color:#8B98A6">Mailbox</span></div>
+<div style="display:flex;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Timestamp</span><span style="width:210px;color:#8B98A6">Ordering, duplicate detection</span><span style="width:112px;text-align:right;color:#8B98A6">Mailbox</span></div>
+<div style="display:flex;padding:12px 16px;font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">IP address</span><span style="width:210px;color:#8B98A6">Rate limit, three per window</span><span style="width:112px;text-align:right;color:#8B98A6">10 minutes</span></div>
+</div>
+<p style="margin:0 0 22px;max-width:68ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Two more fields travel with the request and are discarded on arrival: a hidden field that must stay empty, and how long you had the form open. Both exist to tell a person from a bot; neither is stored.</p>
+<p style="margin:0 0 22px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Nothing is written to a database here. The submission is handed straight to <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#E8EEF4">[MAIL PROVIDER]</span> in <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#C6D1DB">[PROVIDER LOCATION]</span>, which delivers it and acts as a processor under Art. 28 GDPR. It sits in my mailbox for as long as the conversation is useful and is deleted afterwards. It is used to answer you and for nothing else — no newsletter, no list, no forwarding.</p>
+<p style="margin:0 0 44px;max-width:68ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Legal basis: Art. 6(1)(b) GDPR where your message concerns work, otherwise legitimate interest under Art. 6(1)(f); the rate-limit record rests on Art. 6(1)(f). Filling the form is voluntary, and every field is one I need to answer you — without an address there is no reply. If you would rather not use it, the address above works just as well.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.75)">07.07</span><span style="font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4">Your rights</span></div>
+<p style="margin:0 0 18px;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">You can ask what is stored about you, ask for it to be corrected or deleted, object to the processing, and request a copy. Schreib mir über das <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#00E5FF;cursor:pointer">Formular auf /contact →</span> oder direkt an die Adresse oben; ich antworte innerhalb eines Monats, meist in derselben Woche.</p>
+<p style="margin:0;max-width:68ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#8B98A6">In practice there is very little to hand over: log entries are keyed by IP and time, not by a person, so I will need you to tell me roughly when you visited. You can also complain to the Luxembourg supervisory authority, the CNPD.</p>
+</div>
+
+<div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:22px 24px;margin-bottom:20px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:16px">ON THIS PAGE</div>
+<div style="display:flex;flex-direction:column;gap:11px;font:400 11.5px 'JetBrains Mono',monospace">
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#00E5FF;cursor:pointer"><span>07.01</span><span>Responsible</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">07.02</span><span>Server logs</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">07.03</span><span>Visitor counting</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">07.04</span><span>On your device</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">07.05</span><span>Nothing leaves</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">07.06</span><span>Form and mail</span></span>
+<span style="display:grid;grid-template-columns:44px 1fr;gap:10px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">07.07</span><span>Your rights</span></span>
+</div>
+</div>
+<div style="border:1px solid rgba(0,229,255,.28);padding:20px 22px;margin-bottom:20px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(0,229,255,.8);margin-bottom:14px">THE SHORT VERSION</div>
+<div style="display:flex;flex-direction:column;gap:11px;font:400 12px/1.55 'JetBrains Mono',monospace;color:#C6D1DB">
+<span><span style="color:#00E5FF">✓</span> Standard server logs, 14 days</span>
+<span><span style="color:#00E5FF">✓</span> Page counts, no identifier</span>
+<span><span style="color:#7C8996">✗</span> No cookies</span>
+<span><span style="color:#00E5FF">✓</span> 2 local entries: theme, game score</span>
+<span><span style="color:#7C8996">✗</span> No third-party tracking</span>
+<span><span style="color:#00E5FF">✓</span> Contact form → mailbox, nothing stored on the server</span>
+<span><span style="color:#7C8996">✗</span> No advertising, no profiling</span>
+<span><span style="color:#7C8996">✗</span> Nothing sold or shared</span>
+</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.16);padding:20px 22px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:12px">SEE ALSO</div>
+<div style="font:500 12px 'JetBrains Mono',monospace;color:#00E5FF;cursor:pointer" style-hover="color:#9DF4FF">SYS.06 — IMPRINT →</div>
+<div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:8px">Who operates the site and where it runs.</div>
+</div>
+</div>
+</div>
+
+<div>
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);padding:14px 0 24px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1 · #A41F9C2</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CV → TERMINAL AUF <span style="color:#8B98A6">/</span> : <span style="color:#8B98A6">cv</span></span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span><span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span><span>LAST REVISED [DATE]</span><span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#E8EEF4;cursor:default">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Mobile · 390 — Privacy mit Readout, Imprint darunter</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Legal — Mobile" style="width:390px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.025) 1px,transparent 1px);background-size:64px 64px"></div>
+<div style="position:relative;z-index:1;padding:0 22px">
+
+<div style="display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+
+<div style="padding:34px 0 24px">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:16px"><span style="color:#00E5FF">SYS.07</span> — PRIVACY</div>
+<h2 style="margin:0 0 14px;font:500 34px/1.08 'Chakra Petch',sans-serif;color:#E8EEF4">What this server knows</h2>
+<p style="margin:0;font:400 13.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Rather than describe it in the abstract, here is the record of your visit, read from your own browser. No cookie was set to produce it.</p>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);margin-bottom:36px">
+<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.55)"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="flex:1;text-align:center;font:500 8.5px 'JetBrains Mono',monospace;color:#7C8996">tail -f access.log</span>
+<span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:rgba(0,229,255,.7)">LIVE</span>
+</div>
+<div style="padding:14px 16px">
+<sc-for list="{{ fields }}" as="f" hint-placeholder-count="8">
+<div style="padding:5px 0;font:400 10px/1.5 'JetBrains Mono',monospace">
+<span style="display:block;color:#7C8996;letter-spacing:.06em;font-size:8.5px">{{ f.k }}</span>
+<span style="display:block;color:{{ f.c }};word-break:break-all;margin-top:2px">{{ f.v }}</span>
+</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(139,152,166,.12)">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;color:#00E5FF">EOF</span>
+<span style="width:6px;height:12px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">8 FIELDS · NOTHING ELSE</span>
+</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(0,229,255,.28);padding:16px 18px;margin-bottom:36px">
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(0,229,255,.8);margin-bottom:12px">THE SHORT VERSION</div>
+<div style="display:flex;flex-direction:column;gap:9px;font:400 11px/1.5 'JetBrains Mono',monospace;color:#C6D1DB">
+<span><span style="color:#00E5FF">✓</span> Standard server logs, 14 days</span>
+<span><span style="color:#00E5FF">✓</span> Page counts, no identifier</span>
+<span><span style="color:#7C8996">✗</span> No cookies</span>
+<span><span style="color:#00E5FF">✓</span> 2 local entries: theme, game score</span>
+<span><span style="color:#7C8996">✗</span> No third-party tracking</span>
+<span><span style="color:#00E5FF">✓</span> Contact form → mailbox, nothing stored on the server</span>
+<span><span style="color:#7C8996">✗</span> No advertising, no profiling</span>
+<span><span style="color:#7C8996">✗</span> Nothing sold or shared</span>
+</div>
+</div>
+
+<div style="margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:rgba(0,229,255,.75)">07.02</span> <span style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">Server logs</span></div>
+<p style="margin:0 0 16px;font:400 13.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Every request is written to a log file, the same way every web server does it. That record shows the site is up, why a page errored, and when someone is probing for a way in.</p>
+<div style="border:1px solid rgba(139,152,166,.14);margin-bottom:16px">
+<div style="display:flex;padding:10px 13px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C;font:600 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996"><span style="flex:1">FIELD</span><span style="width:78px;text-align:right">RETENTION</span></div>
+<div style="display:flex;padding:10px 13px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">IP address</span><span style="width:78px;text-align:right;color:#8B98A6">14 D</span></div>
+<div style="display:flex;padding:10px 13px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Timestamp</span><span style="width:78px;text-align:right;color:#8B98A6">14 D</span></div>
+<div style="display:flex;padding:10px 13px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Method and path</span><span style="width:78px;text-align:right;color:#8B98A6">14 D</span></div>
+<div style="display:flex;padding:10px 13px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Status and size</span><span style="width:78px;text-align:right;color:#8B98A6">14 D</span></div>
+<div style="display:flex;padding:10px 13px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">User agent</span><span style="width:78px;text-align:right;color:#8B98A6">14 D</span></div>
+<div style="display:flex;padding:10px 13px;font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Referrer</span><span style="width:78px;text-align:right;color:#8B98A6">14 D</span></div>
+</div>
+<p style="margin:0 0 32px;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6">Legal basis: legitimate interest, Art. 6(1)(f) GDPR. Rotated automatically, combined with nothing.</p>
+
+<div style="margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:rgba(0,229,255,.75)">07.03</span> <span style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">Visitor counting</span></div>
+<p style="margin:0 0 32px;font:400 13.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Page views are counted by <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#E8EEF4">[ANALYTICS TOOL]</span> on the same server. No cookie, no identifier, no profile — a daily count per page. That is why there is no consent banner.</p>
+
+<div style="margin-bottom:12px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:rgba(0,229,255,.75)">07.04</span> <span style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">On your device</span></div>
+<p style="margin:0 0 44px;font:400 13px/1.75 'Geist',sans-serif;color:#C6D1DB">Three local entries, each only after you act: <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E8EEF4">ts.theme</span> for your colour scheme, <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E8EEF4">ts404.best</span> for the game score, <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E8EEF4">ts.lang</span> for your language choice. No cookie, no identifier, never sent to the server.</p>
+
+<div style="margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:rgba(0,229,255,.75)">07.06</span> <span style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">Form and mail</span></div>
+<p style="margin:0 0 12px;font:400 13.5px/1.75 'Geist',sans-serif;color:#C6D1DB">The form on <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#E8EEF4">/contact</span> sends name, address, message and a timestamp to my mailbox at <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#E8EEF4">[MAIL PROVIDER]</span>, which acts as a processor. Your IP is kept <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#C6D1DB">10 minutes</span> for the rate limit. Nothing is written to a database here.</p>
+<p style="margin:0 0 44px;font:400 13px/1.75 'Geist',sans-serif;color:#8B98A6">Voluntary, used only to answer you, deleted when the conversation is done. Art. 6(1)(b) and (f) GDPR.</p>
+
+<div style="margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:rgba(0,229,255,.75)">07.07</span> <span style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4">Your rights</span></div>
+<p style="margin:0 0 44px;font:400 13.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Ask what is stored, ask for correction or deletion, object, request a copy. Über <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#00E5FF">/contact</span> oder <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#E8EEF4">contact@timseil.dev</span>. You can also complain to the CNPD.</p>
+
+<div style="border-top:1px solid rgba(139,152,166,.16);padding-top:34px">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:16px"><span style="color:#00E5FF">SYS.06</span> — IMPRINT</div>
+<h2 style="margin:0 0 14px;font:500 28px/1.1 'Chakra Petch',sans-serif;color:#E8EEF4">Who runs this</h2>
+<p style="margin:0 0 20px;font:400 13.5px/1.7 'Geist',sans-serif;color:#8B98A6">A private site, operated by one person, on infrastructure that person administers. No company behind it, nothing sold on it.</p>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px;margin-bottom:24px">
+<div style="display:flex;flex-direction:column;gap:12px;font:400 11.5px/1.55 'JetBrains Mono',monospace">
+<div><span style="display:block;color:#7C8996;letter-spacing:.1em;font-size:8.5px;margin-bottom:3px">NAME</span><span style="color:#E8EEF4">Tim Seil</span></div>
+<div><span style="display:block;color:#7C8996;letter-spacing:.1em;font-size:8.5px;margin-bottom:3px">ADDRESS</span><span style="color:#C6D1DB">[STRASSE UND HAUSNUMMER]<br>[PLZ] [ORT], Luxembourg</span></div>
+<div><span style="display:block;color:#7C8996;letter-spacing:.1em;font-size:8.5px;margin-bottom:3px">EMAIL</span><span style="color:#C6D1DB">contact@timseil.dev</span></div>
+<div><span style="display:block;color:#7C8996;letter-spacing:.1em;font-size:8.5px;margin-bottom:3px">CAPACITY</span><span style="color:#C6D1DB">Private individual — no registered business</span></div>
+</div>
+</div>
+<p style="margin:0 0 16px;font:400 13.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Hosted in containers on a VPS rented from <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#E8EEF4">[HOSTING PROVIDER]</span>, configured and maintained by me. Domain through <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#C6D1DB">[REGISTRAR]</span>.</p>
+<p style="margin:0 0 16px;font:400 13.5px/1.75 'Geist',sans-serif;color:#8B98A6">Everything published here is mine and reflects my own view at the time of writing. Technical descriptions are accounts of what I built, not advice. External links point to material I do not control.</p>
+<div style="border:1px solid rgba(139,152,166,.16);padding:16px 18px">
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:12px">NOT APPLICABLE</div>
+<div style="font:400 11px/1.8 'JetBrains Mono',monospace;color:#8B98A6">· Trade register entry<br>· VAT identification number<br>· Supervisory authority<br>· Consumer dispute resolution</div>
+</div>
+</div>
+
+<div style="margin-top:44px">
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid rgba(139,152,166,.16);padding:12px 0 22px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span tabIndex="0" role="link" aria-label="CV als PDF laden" style="display:inline-flex;align-items:center;min-height:44px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer;flex-basis:100%;min-height:44px;padding:14px 0;margin:0;display:flex;align-items:center" style-hover="color:#00E5FF">CV → cv.pdf</span><span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:14px;min-height:44px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="display:flex;align-items:center;min-height:32px">49.6117° N · 6.1300° E</span><span>LAST REVISED [DATE]</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6">--:--:--</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Design notes — und zwei Dinge, die du im Build erledigen musst</div>
+<div class="dv-card" style="width:440px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">SYS.06 / SYS.07</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6;margin-bottom:22px">
+<div><span style="color:#00E5FF">▸</span> Der Moment der Seite: der <span style="color:#C6D1DB">Live-Readout</span> zeigt echte Werte aus dem Browser des Besuchers statt einer abstrakten Aufzählung. Rechtstext wird zur Vorführung des Systems — und beweist die Aussage im selben Atemzug</div>
+<div><span style="color:#00E5FF">▸</span> Die IP steht bewusst als <span style="color:#C6D1DB">[serverseitig]</span> drin: der Browser kennt sie nicht, und so zu tun als ob wäre unehrlich</div>
+<div><span style="color:#00E5FF">▸</span> Kein Alert-Rot. Nichts hier ist ein Fehlerzustand</div>
+<div><span style="color:#00E5FF">▸</span> Prosa in Geist auf 68 Zeichen, Rechtsbegriffe und Felder in Mono. Keine Juristensprache, wo ein normaler Satz reicht</div>
+<div><span style="color:#00E5FF">▸</span> „NOT APPLICABLE" listet die fehlenden Pflichtangaben auf, damit ihr Fehlen als Entscheidung lesbar ist, nicht als Versäumnis</div>
+<div><span style="color:#00E5FF">▸</span> „THE SHORT VERSION" mit ✓ und ✗ steht vor dem Fließtext — die meisten lesen nur das</div>
+<div><span style="color:#00E5FF">▸</span> Beide Seiten teilen eine Sprungliste und verlinken einander</div>
+</div>
+<div style="border:1px solid rgba(255,45,85,.3);padding:16px 18px;margin-bottom:18px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FF2D55;margin-bottom:10px">ZWEI OFFENE PUNKTE FÜR DEN BUILD</div>
+<div style="font:400 11px/1.7 'JetBrains Mono',monospace;color:#C6D1DB"><span style="color:#00E5FF">01</span> Diese Mocks laden Schriften noch von Google. Abschnitt 07.04 behauptet das Gegenteil — <span style="color:#E8EEF4">Fonts selbst hosten</span>, sonst wird die Aussage falsch.<br><br><span style="color:#00E5FF">02</span> Sprachfassung klären: die Seite ist englisch, in Luxemburg sind Rechtstexte oft französisch. <span style="color:#E8EEF4">Prüfen, ob FR oder DE nötig ist.</span></div>
+</div>
+<div style="font:400 10.5px/1.8 'JetBrains Mono',monospace;color:#7C8996">Kein Rechtsrat — Struktur und Ton sind Design, die Prüfung der Pflichtangaben nicht. Alle <span style="color:#C6D1DB">[Klammern]</span>: Adresse, Provider, Registrar, Analytics-Tool, Mail-Provider, Aufbewahrungsfristen, Datum.</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "Terminal-Befehle work/blog/about" · "SYS.04 überall auf LOG" · "Boot-Sequenz-Storyboard"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { f: [] };
+  clocks = new Set();
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.iv = setInterval(tick, 1000);
+    const S = "#C6D1DB", D = "#7C8996", I = "#E8EEF4";
+    const nav = window.navigator || {}, scr = window.screen || {};
+    let tz = "—"; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "—"; } catch (e) {}
+    const rows = [
+      { k: "IP", v: "[recorded server-side — your browser cannot read it]", c: D },
+      { k: "TIMESTAMP", v: new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC", c: I },
+      { k: "REQUEST", v: "GET /privacy HTTP/2 · 200", c: S },
+      { k: "USER-AGENT", v: (nav.userAgent || "—").slice(0, 96), c: S },
+      { k: "REFERRER", v: document.referrer || "(none — typed or bookmarked)", c: S },
+      { k: "LANGUAGE", v: (nav.languages && nav.languages.join(", ")) || nav.language || "—", c: S },
+      { k: "VIEWPORT", v: (scr.width || 0) + "×" + (scr.height || 0) + " screen · " + window.innerWidth + "×" + window.innerHeight + " window", c: S },
+      { k: "TIME ZONE", v: tz, c: S }
+    ];
+    rows.forEach((r, i) => setTimeout(() => this.setState(s => ({ f: [...s.f, r] })), 260 + i * 130));
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    return { clockRef: el => { if (el) this.clocks.add(el); }, fields: this.state.f };
+  }
+}
+</script>
+</body>
+</html>

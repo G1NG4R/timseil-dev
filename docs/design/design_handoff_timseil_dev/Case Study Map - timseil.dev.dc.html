@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+</style>
+</helmet>
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Systemdesign in der Tiefe — was vorne steht, was hinten läuft, und wie die Daten liegen</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Schichtenbild · 1440 — von vorne nach hinten: Browser, DNS, Proxy, Frontend, API, Datenbank, Speicher</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Layer map" style="width:1440px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:14px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">MAP.03</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">SCHICHTEN — VORNE NACH HINTEN</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">7 SCHICHTEN · SPRACHE UND ROLLE PRO SCHICHT</span>
+</div>
+<div style="display:flex;align-items:center;gap:22px;margin-bottom:26px">
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">JE WEITER EINGERÜCKT, DESTO WEITER HINTEN — <span style="color:#C6D1DB">nur die oberste Schicht sieht der Besucher</span></span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">SPRACHE ALS CHIP · EXTERN ALS WORT</span>
+</div>
+
+<div style="display:grid;grid-template-columns:96px 1fr;gap:0 20px">
+
+<div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;padding:6px 0 6px">
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#00E5FF">VORNE</span>
+<span style="width:1px;flex:1;background:linear-gradient(#00E5FF,rgba(139,152,166,.25));margin:10px 0"></span>
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996">HINTEN</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+
+<div style="margin-left:0;background-color:#0E141C;border:1px solid rgba(0,229,255,.4);border-left:3px solid #00E5FF;padding:14px 18px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">01 · BROWSER</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">HTML · CSS · WENIG JS</span>
+<span style="flex:1"></span>
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">BEIM BESUCHER</span>
+</div>
+<div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6">Bekommt fertiges HTML und ein kleines Bündel JavaScript für Terminal, Filter und das 404-Spiel. Kein Framework-Ballast, keine Einbettung von außen.</div>
+</div>
+
+<div style="margin-left:36px;background-color:#0E141C;border:1px solid rgba(139,152,166,.16);border-left:3px solid rgba(0,229,255,.7);padding:14px 18px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">02 · NAMENSAUFLÖSUNG</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">DNS · A-RECORD</span>
+<span style="flex:1"></span>
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EXTERN · REGISTRAR</span>
+</div>
+<div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6">Name auf Adresse, ohne Proxy dazwischen. Das ist eine Entscheidung: kein CDN im Anfrageweg, also kein Dritter, der Besucherdaten sieht — und kein fremder DDoS-Schutz.</div>
+</div>
+
+<div style="margin-left:72px;background-color:#0E141C;border:1px solid rgba(139,152,166,.16);border-left:3px solid rgba(0,229,255,.55);padding:14px 18px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">03 · EINGANG</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">TRAEFIK · GO-BINARY</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">TLS · ACME</span>
+<span style="flex:1"></span>
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN · CONTAINER 1 — PROXY</span>
+</div>
+<div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6">Beendet TLS, verteilt nach Route, schreibt für jede Anfrage eine Log-Zeile. Diese Zeile ist später die Quelle für p95 und Fehlerrate — die Messung kostet keinen zusätzlichen Dienst.</div>
+</div>
+
+<div style="margin-left:108px;background-color:#0E141C;border:1px solid rgba(139,152,166,.16);border-left:3px solid rgba(0,229,255,.42);padding:14px 18px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">04 · FRONTEND</span>
+<span style="padding:3px 8px;border:1px solid rgba(0,229,255,.35);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">TYPESCRIPT</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">NEXT.JS APP ROUTER</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">REACT</span>
+<span style="flex:1"></span>
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN · CONTAINER 2 — WEB</span>
+</div>
+<div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6">Rendert die Seiten auf dem Server und schickt Markup, nicht Datenbankzugriffe. Was der Browser bekommt, ist bereits fertig — deshalb bleibt die Seite auch ohne JavaScript lesbar.</div>
+</div>
+
+<div style="margin-left:144px;background-color:#0E141C;border:1px solid rgba(139,152,166,.16);border-left:3px solid rgba(0,229,255,.3);padding:14px 18px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">05 · API</span>
+<span style="padding:3px 8px;border:1px solid rgba(0,229,255,.35);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">TYPESCRIPT</span>
+<span style="padding:3px 8px;border:1px solid rgba(0,229,255,.35);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">GO</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">SQLITE-AGGREGAT</span>
+<span style="flex:1"></span>
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN · CONTAINER 2 + 3 — WEB, HEALTH</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 20px;margin-bottom:8px">
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:84px;flex:none">/api/health</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">eigener Go-Container: liest das Access-Log, schreibt das SQLite-Aggregat, liefert die Zahlen</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:84px;flex:none">/api/contact</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Route Handler in TypeScript: prüft Felder, begrenzt die Rate, verschickt Mail</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:84px;flex:none">/api/training</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Tracks und Belege, Zustand serverseitig abgeleitet</span></div>
+</div>
+<div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6">Die API ist die einzige Stelle, die Daten liest oder schreibt. Nichts auf der Seite hat einen zweiten Weg zur Datenbank — deshalb kann Angezeigtes nicht von Gemessenem abweichen.</div>
+</div>
+
+<div style="margin-left:180px;background-color:#0E141C;border:1px solid rgba(139,152,166,.16);border-left:3px solid rgba(139,152,166,.4);padding:14px 18px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">06 · DATEN</span>
+<span style="padding:3px 8px;border:1px solid rgba(0,229,255,.35);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">SQL</span>
+<span style="padding:3px 8px;border:1px solid rgba(139,152,166,.3);font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">POSTGRES 16</span>
+<span style="flex:1"></span>
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN · CONTAINER 4 — DATENBANK</span>
+</div>
+<div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6">Postgres hält, was sich im Betrieb ändert: Systeme, Tracks, Belege, Vorfälle, Deploys. Texte liegen als MDX im Repo, das Betriebsaggregat als SQLite-Datei beim Health-Container. Kein Zugriff von außen, nur über die API — Details in <span style="color:#C6D1DB">2b</span>.</div>
+</div>
+
+<div style="margin-left:216px;background-color:#0E141C;border:1px dashed rgba(139,152,166,.3);border-left:3px solid rgba(139,152,166,.28);padding:14px 18px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">07 · UNTEN UND DANEBEN</span>
+<span style="flex:1"></span>
+<span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EXTERN · 4 DIENSTE</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px 20px">
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:74px;flex:none">Monitor</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">prüft von außen, jede Minute</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:74px;flex:none">Actions</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">baut, testet, ruft den Webhook</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:74px;flex:none">S3</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">nächtliche Sicherung, 30 Tage</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);width:74px;flex:none">Mail</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Formularversand, <span style="color:rgba(255,176,0,.9)">Anbieter offen</span></span></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div style="margin-top:26px;padding-top:20px;border-top:1px solid rgba(139,152,166,.16);display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">EINE ANFRAGE, DURCH ALLE SCHICHTEN</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">01 → 02 → 03 → 04 → 05 → 06 und zurück. Alles auf einem Host, vier Container, ein Netz.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.3);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">WAS DER BROWSER NIE SIEHT</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">Datenbank, Aggregat, Panel, Log. Nach außen sind nur 80 und 443 offen, alles andere hört nur im Docker-Netz.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.3);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">SPRACHEN, EHRLICH GEZÄHLT</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">TypeScript für Seite und Handler, Go für den Health-Dienst, SQL für die Abfragen. Alles andere ist Konfiguration.</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Datenbild · 1440 — zwei Speicher nebeneinander, Tabellen mit Spalten und Beziehungen</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Data map" style="width:1440px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:14px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">MAP.04</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">DATEN — WAS WO LIEGT</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">3 ORTE · 7 TABELLEN · 1 BEWUSSTE LEERSTELLE</span>
+</div>
+<div style="display:flex;align-items:center;gap:22px;margin-bottom:26px">
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="color:#00E5FF">PK</span> Primärschlüssel · <span style="color:#C6D1DB">FK →</span> zeigt auf eine andere Tabelle · Vorschlag, kein fertiges Schema</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">SCHREIBT NUR DIE API</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start">
+
+<div>
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">POSTGRES 16</span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">SYSTEME, TRACKS, VORFÄLLE · 5 TABELLEN · nächtliche Sicherung</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+<div style="background-color:#0E141C;border:1px solid rgba(0,229,255,.3);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF;margin-bottom:9px">systems</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">PK</span> id</div>
+<div>slug · name</div>
+<div>state <span style="color:#7C8996">live · in_build · queued</span></div>
+<div>stack[] · summary</div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px dashed rgba(139,152,166,.3);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;margin-bottom:9px">keine posts-Tabelle</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div style="color:#7C8996">Texte liegen als MDX im Repo</div>
+<div><span style="color:#C6D1DB">content/blog/*.mdx</span></div>
+<div><span style="color:#C6D1DB">content/work/*.mdx</span></div>
+<div style="color:#7C8996">Frontmatter: slug, title, tags, system</div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.16);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;margin-bottom:9px">tracks</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">PK</span> id</div>
+<div>module <span style="color:#7C8996">01–05</span> · name</div>
+<div>note <span style="color:#7C8996">nur ohne Beleg</span></div>
+<div style="color:#7C8996">state wird nicht gespeichert</div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.16);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;margin-bottom:9px">track_evidence</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#C6D1DB">FK →</span> tracks</div>
+<div><span style="color:#C6D1DB">FK →</span> systems</div>
+<div>detail <span style="color:#7C8996">„BUILD + DEPLOY"</span></div>
+<div style="color:#7C8996">0 Zeilen = LEARNING</div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(255,45,85,.3);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;margin-bottom:9px">incidents</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">PK</span> id</div>
+<div>started_at · duration_sec</div>
+<div>cause · fix</div>
+<div><span style="color:#C6D1DB">FK →</span> systems</div>
+<div>post_slug <span style="color:#7C8996">zeigt auf eine MDX-Datei</span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.16);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;margin-bottom:9px">deploys</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">PK</span> id</div>
+<div>sha · duration_sec</div>
+<div>result <span style="color:#7C8996">ok · rollback</span></div>
+<div><span style="color:#C6D1DB">FK →</span> systems</div>
+</div>
+</div>
+
+</div>
+<div style="margin-top:12px;padding:11px 14px;border-left:1px solid rgba(0,229,255,.35);background-color:#0E141C;font:400 11.5px/1.6 'Geist',sans-serif;color:#C6D1DB">Der dritte Ort ist das Repo: Post- und Fallstudientexte sind MDX-Dateien mit Frontmatter, versioniert wie Code. Die Datenbank hält nur, was sich im Betrieb ändert — <span style="color:#E8EEF4">kein CMS, keine Redaktionsoberfläche</span>.</div>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">SQLITE</span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">BETRIEB · 2 TABELLEN · jederzeit neu berechenbar</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+
+<div style="background-color:#0E141C;border:1px solid rgba(0,229,255,.3);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF;margin-bottom:9px">samples</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">PK</span> bucket_start <span style="color:#7C8996">5 min</span></div>
+<div>requests · p95_ms</div>
+<div>err_5xx <span style="color:#7C8996">zählt als Fehler</span></div>
+<div>err_4xx <span style="color:#7C8996">zählt nicht</span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.16);padding:12px 14px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;margin-bottom:9px">days</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">PK</span> (d, system) <span style="color:#7C8996">ein Tag je System</span></div>
+<div>state <span style="color:#7C8996">ok · degraded · outage · nodata</span></div>
+<div>down_sec</div>
+<div>incident_id <span style="color:#7C8996">optional</span></div>
+</div>
+</div>
+
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.16);padding:14px 16px;margin-bottom:18px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;margin-bottom:10px">WIE AUS ZEILEN ZAHLEN WERDEN</div>
+<div style="font:400 11px/1.75 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> uptime = 1 − Σ down_sec / (gemessene Tage × 86400)</div>
+<div><span style="color:#00E5FF">▸</span> p95 = p95 über die samples des Fensters</div>
+<div><span style="color:#00E5FF">▸</span> MTTR = Σ duration_sec / Anzahl incidents</div>
+<div><span style="color:#00E5FF">▸</span> track.state = 0 Belege lernend · 1 applied · ab 2 core</div>
+<div><span style="color:#7C8996">▸</span> fehlt eine Zeile: <span style="color:#C6D1DB">— NO DATA</span>, nie 0 und nie 100 %</div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px dashed rgba(255,176,0,.4);padding:14px 16px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(255,176,0,.9)">DIE LEERSTELLE</span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">KONTAKTNACHRICHTEN</span>
+</div>
+<div style="font:400 11.5px/1.65 'Geist',sans-serif;color:#C6D1DB">Es gibt keine Tabelle dafür. Eine Nachricht wird geprüft, per Mail verschickt und dann vergessen; die IP für das Rate-Limit steht zehn Minuten im Arbeitsspeicher und nirgends auf der Platte. Genau so steht es in der Datenschutzseite — die Datenbank ist der Beleg dafür.</div>
+</div>
+
+</div>
+</div>
+
+<div style="margin-top:26px;padding-top:20px;border-top:1px solid rgba(139,152,166,.16);display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">TRENNUNG MIT GRUND</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">Inhalte sind wertvoll und werden gesichert. Betriebswerte sind nachrechenbar — dafür braucht es keine zweite Postgres-Instanz.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.3);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">KEIN ZUSTAND OHNE ZEILE</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">tracks kennt kein state-Feld und days kein uptime-Feld. Beides wird gerechnet, damit Anzeige und Wahrheit nicht auseinanderlaufen.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.3);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">VORSCHLAG, NICHT GESETZ</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">Die Spalten folgen den Datenverträgen in README 9.1 bis 9.5. Wer beim Bauen umbenennt, ändert dort mit.</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Systemkarte zur Case Study — was auf dem Server steht und wer es bewegt</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Karte · 1440 — acht Zweige um ein System, jede Kachel mit Rolle und Herkunft</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Case study map" style="width:1440px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:14px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">MAP.02</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">TIMSEIL.DEV — SYSTEMKARTE</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">GEHÖRT ZU /work/timseil-dev · 8 ZWEIGE · 26 BAUSTEINE</span>
+</div>
+<div style="display:flex;align-items:center;gap:22px;margin-bottom:30px">
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">HERKUNFT STEHT ALS WORT IN JEDER KACHELZEILE — <span style="color:#C6D1DB">EIGEN</span> läuft auf meinem Server, <span style="color:#C6D1DB">EXTERN</span> ist ein Dienst von außen, <span style="color:rgba(255,176,0,.9)">OFFEN</span> heißt Anbieter noch nicht gewählt</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">LINIE = ABHÄNGIGKEIT · RICHTUNG STEHT IN DEN DREI WEGEN UNTEN</span>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 44px 316px 44px minmax(0,1fr);align-items:stretch;row-gap:22px">
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">01</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">HOST</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">VPS</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">ein gemieteter Rechner, den ich selbst einrichte und aktuell halte</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Linux</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Betriebssystem, Paketstand, Neustart-Verhalten der Dienste</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Firewall · SSH</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">nur 80, 443 und ein Schlüssel-Zugang offen, kein Passwort</span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><span style="width:1px;flex:1;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">02</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">LAUFZEIT</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Docker</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">jeder Dienst in einer geschlossenen Kiste, lokal wie in Produktion</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Compose</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">vier Container: Proxy, Web, Health, Datenbank — eine Datei beschreibt alles</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Next.js</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Seiten und die eigenen API-Routen im selben Container</span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">03</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">EINGANG</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Traefik</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">der Türsteher: nimmt jede Anfrage an und leitet sie zum richtigen Container</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">TLS · ACME</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Zertifikate von Let's Encrypt, Erneuerung in einem festen Fenster</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Access-Log</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">jede Anfrage eine Zeile — daraus kommen p95 und Fehlerrate</span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(0,229,255,.45)"></span></div>
+<div style="display:flex;align-items:center;justify-content:center;padding:6px 0">
+<div style="width:100%;background-color:#0E141C;border:1px solid rgba(0,229,255,.5);box-shadow:0 0 0 1px rgba(0,229,255,.12);padding:20px 22px">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+<span style="width:7px;height:7px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.4s ease-in-out infinite"></span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">● LIVE · SYSTEM 02</span>
+</div>
+<div style="font:500 30px/1.1 'Chakra Petch',sans-serif;color:#E8EEF4;margin-bottom:10px">timseil.dev</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#C6D1DB;margin-bottom:14px">Die Seite ist das System, das sie beschreibt. Alles ringsherum ist die Antwort auf eine Frage: wer hält sie am Laufen, und was passiert, wenn etwas fehlschlägt.</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">1 HOST</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">4 CONTAINER</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">1 PIPELINE</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">4 DIENSTE VON AUSSEN</span>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(0,229,255,.45)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">04</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">STEUERUNG</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Dokploy</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">die Schaltzentrale auf dem Server: startet, stoppt, rollt zurück</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Health-Gate</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">neue Version geht nur live, wenn sie drei Prüfungen besteht</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Rollback</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">sonst läuft die vorige weiter — Besucher sehen keinen Fehler</span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">05</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">DATEN</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Postgres 16</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Systeme, Tracks, Belege, Vorfälle, Deploys — Texte liegen als MDX im Repo</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">SQLite</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Betriebswerte im Fünf-Minuten-Raster, gelesen von /api/health</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Kein Tracker</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">keine Analytics-Datenbank, keine Besucherprofile</span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;flex-direction:column;align-items:center"><span style="width:1px;flex:1;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">06</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">AUSLIEFERUNG</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EXTERN + EIGEN</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">GitHub</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">der Ort, an dem der Code liegt und die Historie sichtbar ist</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Actions</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">baut und testet bei jedem Push, schiebt ein fertiges Abbild</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:104px;flex:none">Webhook</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">der Klingelknopf: sagt dem Server, dass etwas Neues bereitsteht</span></div>
+</div>
+</div>
+
+</div>
+
+<div style="display:flex;justify-content:center;margin:22px 0 0"><span style="width:1px;height:26px;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:22px">
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">07</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">MESSUNG</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EIGEN + EXTERN</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px 20px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Monitor</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">prüft von außen jede Minute — ein Server kann seinen Ausfall nicht melden</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Rollup</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">fasst das Access-Log alle fünf Minuten zusammen</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">/api/health</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">die eine Quelle, aus der die Seite ihre Zahlen liest</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Post-Mortem</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">jeder Ausfall bekommt einen Log-Eintrag — ohne den keine Kerbe im Raster</span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">08</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">AUSSEN</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EXTERN · 4 DIENSTE</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px 20px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">DNS</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">das Telefonbuch: Name auf Adresse, ohne Proxy dazwischen</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Let's Encrypt</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">stellt die Zertifikate aus, die Traefik erneuert</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">S3</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">nächtliche Sicherung, 30 Tage, monatlicher Rückspiel-Test</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11.5px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);width:96px;flex:none">Mail</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Versand des Formulars mit SPF, DKIM, DMARC — <span style="color:rgba(255,176,0,.9)">Anbieter offen</span></span></div>
+</div>
+</div>
+
+</div>
+
+<div style="margin-top:30px;padding-top:22px;border-top:1px solid rgba(139,152,166,.16)">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996;margin-bottom:14px">DREI WEGE DURCH DIE KARTE</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">EIN BESUCHER RUFT DIE SEITE AUF</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">DNS → Traefik → TLS → Next.js → Postgres → Antwort. Eine Zeile im Access-Log, nach fünf Minuten im Rollup.</div>
+</div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">ICH ÄNDERE ETWAS</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">git push → Actions baut und testet → Webhook → Dokploy holt das Abbild → Health-Gate → live, sonst Rollback.</div>
+</div>
+<div style="border-left:1px solid rgba(255,45,85,.4);padding-left:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">ETWAS FÄLLT AUS</div>
+<div style="font:400 11.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">Monitor merkt es von außen → Kerbe im Betriebsraster → Post-Mortem im Log → Ursache und Fix stehen öffentlich.</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Gesamtkarte · 1440 — das ganze Projekt: Design, Seiten, Inhalt, Daten, Technik, Betrieb, Recht, Übergabe</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Project map" style="width:1440px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:14px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">MAP.00</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">DAS GANZE PROJEKT</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">9 ZWEIGE · DESIGN, INHALT, TECHNIK, BETRIEB, RECHT, ÜBERGABE</span>
+</div>
+<div style="display:flex;align-items:center;gap:22px;margin-bottom:30px">
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">JEDER ZWEIGKOPF NENNT SEINE QUELLE — BLATT, SEITENZAHL ODER DATEI</span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">·</span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(255,176,0,.9)">ZWEIG 09: OFFEN — braucht eine Angabe von dir</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">MAP.02 ZEIGT DEN SERVER · DIESE KARTE ZEIGT DAS PRODUKT</span>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 40px 300px 40px minmax(0,1fr);align-items:stretch;row-gap:20px">
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">01</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">DESIGN-SYSTEM</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">FOUNDATIONS-BLATT</span></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Farbe</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Terminal Noir als Basis, Cyan unter 3 % Fläche, Rot nur bei echtem Zustandswechsel</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Schrift</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Chakra Petch für Überschriften, Geist für Text, JetBrains Mono für alles Technische</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Maß</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">13 Größen, 14 Abstände auf Vierer-Basis, Mono 9 als Untergrenze</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Themes</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">sieben Paletten in der Fußzeile, Wahl liegt lokal in <span style="color:#C6D1DB">ts.theme</span></span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><span style="width:1px;flex:1;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">02</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">BEWEGUNG &amp; ZUSTÄNDE</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">3 BLÄTTER</span></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Start</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Boot-Kaskade in sechs Frames, Überschrift dekodiert aus Zufallszeichen</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Scroll</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Choreografie über die ganze Seite, mit Fallback ohne <span style="color:#C6D1DB">animation-timeline</span></span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Zustände</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Matrix aus 9 Bausteinen × 5 Zuständen, acht Moves mit Dauer und Kurve</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Regeln</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">nie nur Farbe, Hover verschiebt nichts, <span style="color:#C6D1DB">focus-visible</span>, Touch ist Ruhezustand</span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">03</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">SEITEN</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">11 SEITEN · 23 SCREENS</span></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Eingang</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6"><span style="color:#C6D1DB">/</span> mit Terminal, Trainings-Log, Systemliste, Betriebsstreifen, Log</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Arbeit</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6"><span style="color:#C6D1DB">/work</span> mit Filtern, <span style="color:#C6D1DB">/work/[slug]</span> als Fallstudie mit Betriebsraster</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Schreiben</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6"><span style="color:#C6D1DB">/blog</span> mit Suche, <span style="color:#C6D1DB">/blog/[slug]</span> als Post-Mortem</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Rest</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6"><span style="color:#C6D1DB">/about · /contact · /imprint · /privacy · 404</span> mit Mini-Spiel</span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(0,229,255,.45)"></span></div>
+<div style="display:flex;align-items:center;justify-content:center;padding:6px 0">
+<div style="width:100%;background-color:#0E141C;border:1px solid rgba(0,229,255,.5);box-shadow:0 0 0 1px rgba(0,229,255,.12);padding:20px 22px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;margin-bottom:12px">DER KERN</div>
+<div style="font:500 26px/1.14 'Chakra Petch',sans-serif;color:#E8EEF4;margin-bottom:12px">Jede Behauptung hängt an einem System, das läuft.</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#C6D1DB;margin-bottom:14px">Zustände werden abgeleitet, nicht behauptet. Zahlen werden gerechnet, nicht getippt. Eine Lücke bleibt eine Lücke.</div>
+<div style="display:flex;flex-direction:column;gap:7px">
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 9px 'JetBrains Mono',monospace;color:rgba(0,229,255,.7);width:16px">01</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Beleg ist ein System im Betrieb, kein Prozentwert</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 9px 'JetBrains Mono',monospace;color:rgba(0,229,255,.7);width:16px">02</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Betriebszahlen nur für <span style="color:#C6D1DB">live</span>, sonst <span style="color:#C6D1DB">— NO DATA</span></span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 9px 'JetBrains Mono',monospace;color:rgba(0,229,255,.7);width:16px">03</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Ohne Post-Mortem keine Kerbe im Raster</span></div>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(0,229,255,.45)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">04</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">INHALT</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">/api/training · 2 SYSTEME</span></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Log</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">22 Tracks in fünf Modulen, heute 13 belegt, 9 lernend, keiner auf CORE</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Systeme</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">zwei: <span style="color:#C6D1DB">timseil.dev</span> live, <span style="color:#C6D1DB">vat-check</span> in der Warteschlange</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Texte</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Post-Mortems statt Tutorials, eine Fallstudie pro System</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);width:96px;flex:none">CV</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">einseitig A4, nur über den Terminal-Befehl <span style="color:#C6D1DB">cv</span> — <span style="color:rgba(255,176,0,.9)">Angaben offen</span></span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">05</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">DATENVERTRÄGE</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">5 QUELLEN + REGEL</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px 18px">
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:88px;flex:none">/api/health</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Ops-Zahlen und Betriebsraster, pro System</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:88px;flex:none">/api/training</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Tracks, Zustand aus Belegen abgeleitet</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:88px;flex:none">/api/contact</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Formular, Rate-Limit, sechs Zustände</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:88px;flex:none">GitHub-API</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Contribution-Graph, serverseitig gecacht</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:88px;flex:none">cv.pdf</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">statische Datei, keine Route, keine Seite</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:88px;flex:none">Regel</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">fehlt ein Wert: <span style="color:#C6D1DB">— NO DATA</span>, nie 0</span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;flex-direction:column;align-items:center"><span style="width:1px;flex:1;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">06</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">TECHNIK &amp; BETRIEB</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DETAILS IN MAP.02</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px 18px">
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:76px;flex:none">Frontend</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Next.js App Router, TypeScript</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:76px;flex:none">Server</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">eigener VPS, Linux, Docker Compose</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:76px;flex:none">Betrieb</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Dokploy und Traefik, TLS automatisch</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:76px;flex:none">Deploy</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Actions baut, Webhook löst aus</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:76px;flex:none">Daten</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">Postgres 16, SQLite fürs Ops-Aggregat</span></div>
+<div style="display:flex;align-items:baseline;gap:9px"><span style="font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;width:76px;flex:none">Sicherung</span><span style="font:400 11px/1.5 'Geist',sans-serif;color:#8B98A6">nächtlich nach S3, monatlicher Test</span></div>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">07</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">RECHT &amp; VERTRAUEN</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">2 SEITEN</span></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Impressum</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Pflichtangaben, ein Server, kein Dritter im Anfrageweg</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Datenschutz</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Logs 14 Tage, App-Logs 7, Rate-Limit-IP 10 Minuten im Speicher</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Lokal</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">drei Einträge: <span style="color:#C6D1DB">ts.theme</span>, <span style="color:#C6D1DB">ts404.best</span> und <span style="color:#C6D1DB">ts.lang</span>, alle drei genannt</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Nicht dabei</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">keine Analytics, keine Cookies, keine Einbettungen von außen</span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start"><span style="width:1px;flex:1;background:rgba(139,152,166,.3)"></span></div>
+<div style="display:flex;align-items:center"><span style="width:100%;height:1px;background:rgba(139,152,166,.3)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:15px 17px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:11px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">08</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">ÜBERGABE</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">29 DATEIEN</span></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">README</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">Tokens, Verträge, Regeln, offene Punkte, geprüfte Befunde</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">code/</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6"><span style="color:#C6D1DB">tokens.css</span>, <span style="color:#C6D1DB">layout.css</span>, <span style="color:#C6D1DB">tokens.ts</span> und sechs Komponenten zum Kopieren</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Blätter</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">siebzehn Referenzen neben dem Übergabeblatt: Start, Scroll, Zustände, Wege, Fundament, Zwischenbreiten, Betrieb, Raster, Mindmap, Themes, Sprache, Vorlage, Chrome, Inhalt, Prüfung, Code, Trainings-Log</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'JetBrains Mono',monospace;color:#C6D1DB;width:96px;flex:none">Prüfung</span><span style="font:400 11.5px/1.5 'Geist',sans-serif;color:#8B98A6">jede Zahl im Paket ist nachzählbar oder als Platzhalter markiert</span></div>
+</div>
+</div>
+
+</div>
+
+<div style="display:flex;justify-content:center;margin:20px 0 0"><span style="width:1px;height:24px;background:rgba(255,176,0,.5)"></span></div>
+<div style="background-color:#0E141C;border:1px solid rgba(255,176,0,.35);padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(255,176,0,.9)">09</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">OFFEN — BRAUCHT EINE ANGABE VON DIR</span><span style="flex:1"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">5 PUNKTE · KEINER BLOCKIERT DAS BAUEN, EINER DEN LIVEGANG</span></div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:18px">
+<div><div style="font:500 10.5px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);margin-bottom:6px">Mail-Anbieter</div><div style="font:400 11px/1.55 'Geist',sans-serif;color:#8B98A6">ohne Provider mit SPF und DKIM ist das Formular gebaut, aber nicht zustellbar — vor dem Livegang</div></div>
+<div><div style="font:500 10.5px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);margin-bottom:6px">CV-Angaben</div><div style="font:400 11px/1.55 'Geist',sans-serif;color:#8B98A6">Ausbildung, Zeiträume, Sprachen, Arbeitserlaubnis, Verfügbarkeit</div></div>
+<div><div style="font:500 10.5px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);margin-bottom:6px">Handles</div><div style="font:400 11px/1.55 'Geist',sans-serif;color:#8B98A6">LinkedIn und X stehen als <span style="color:#C6D1DB">[FOLGT]</span> — Zeile erst rendern, wenn es sie gibt</div></div>
+<div><div style="font:500 10.5px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);margin-bottom:6px">Blog-Inhalte</div><div style="font:400 11px/1.55 'Geist',sans-serif;color:#8B98A6">Titel und Themen sind Platzhalter; die Form steht, der Text fehlt</div></div>
+<div><div style="font:500 10.5px 'JetBrains Mono',monospace;color:rgba(255,176,0,.9);margin-bottom:6px">Verfügbarkeit</div><div style="font:400 11px/1.55 'Geist',sans-serif;color:#8B98A6">die Zeile ist von mir vorläufig gesetzt und gehört von dir bestätigt</div></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Design notes</div>
+<div class="dv-card" style="width:400px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">DESIGN NOTES — BEIDE KARTEN</div>
+<div style="font:400 10.5px/1.8 'JetBrains Mono',monospace;color:#8B98A6;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(139,152,166,.12)"><span style="color:#00E5FF">▸</span> ZWEI EBENEN, EINE SPRACHE: <span style="color:#C6D1DB">MAP.00</span> zeigt das Produkt — Design, Seiten, Inhalt, Daten, Recht, Übergabe. <span style="color:#C6D1DB">MAP.02</span> zeigt den Server darunter. Gleiche Kacheln, gleiche Linien, unterschiedliche Höhe über dem Boden</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px">
+<div><span style="color:#00E5FF">▸</span> ACHT ZWEIGE UM EIN SYSTEM: Host, Laufzeit, Eingang, Steuerung, Daten, Auslieferung, Messung, Außen — die Reihenfolge folgt der Frage „wer hält es am Laufen", nicht dem Stack-Diagramm</div>
+<div><span style="color:#00E5FF">▸</span> JEDER BAUSTEIN MIT ROLLE IN EINEM SATZ, ohne weiteren Fachbegriff darin — Traefik ist der Türsteher, ein Webhook der Klingelknopf, DNS das Telefonbuch</div>
+<div><span style="color:#00E5FF">▸</span> HERKUNFT ALS WORT, NICHT ALS FARBE: <span style="color:#C6D1DB">EIGEN · EXTERN · OFFEN</span> stehen als Text in der Kachelzeile — dieselbe Regel wie im Betriebsblatt</div>
+<div><span style="color:#00E5FF">▸</span> EIN AMBER-PUNKT: der Mail-Anbieter ist die einzige offene Entscheidung in der Karte, deshalb trägt nur er den Warnton</div>
+<div><span style="color:#00E5FF">▸</span> DREI WEGE UNTER DER KARTE statt Pfeilgewirr darin: Aufruf, Änderung, Ausfall — der Ausfall-Weg endet öffentlich, das ist der Kern der Seite</div>
+<div><span style="color:#00E5FF">▸</span> KEINE ZAHL, DIE ES NICHT GIBT: die Karte nennt Mengen (1 Host, 4 Container, 1 Pipeline, 4 externe Dienste), keine Uptime und keinen p95 — die stehen in der Fallstudie und sind heute <span style="color:#C6D1DB">— NO DATA</span></div>
+<div><span style="color:#00E5FF">▸</span> ABGRENZUNG: <span style="color:#C6D1DB">Mindmap</span> erklärt die Begriffe für dich in Alltagssprache, diese Karte zeigt das gebaute System für Leser der Fallstudie. Kein Glossar auf der Seite</div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</x-dc>
+</body>
+</html>

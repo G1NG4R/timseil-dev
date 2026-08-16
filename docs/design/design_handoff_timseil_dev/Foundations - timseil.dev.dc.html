@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:3px}
+::selection{background:rgba(0,229,255,.25)}
+input::placeholder,textarea::placeholder{color:#7C8996}
+@keyframes tn-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes tn-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 11px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Fundament — Skalen und die Bauteile, die nirgends spezifiziert sind · Zustände stehen in Blatt 03</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Fundament-Blatt · Typo, Abstände, Linien, Bauteile — in echter Größe</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Foundations" style="width:1360px;box-sizing:border-box;padding:36px 40px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:8px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.07</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">FUNDAMENT</span>
+<span style="flex:1"></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">13 GRÖSSEN · 14 ABSTÄNDE · RADIUS 0 · KEIN SCHATTEN AUSSER LICHT AUF SCHRIFT</span>
+</div>
+<p style="margin:0 0 12px;max-width:84ch;font:400 15px/1.7 'Geist',sans-serif;color:#8B98A6">Die Entwürfe verwenden 20 bis 23 verschiedene Schriftgrößen pro Seite, darunter Halb-Pixel-Werte. Das ist gewachsen und keine Skala. Dieses Blatt legt sie fest, in echter Größe, damit beim Bauen niemand raten muss. Dazu die Bauteile, die in den Seiten je nur einmal vorkommen und sonst neu erfunden werden.</p>
+<p style="margin:0 0 34px;max-width:84ch;font:400 13px/1.7 'Geist',sans-serif;color:#7C8996">Was hier <span style="color:#C6D1DB">nicht</span> steht: Zustände. Ruhe, Hover, Fokus, Aktiv, Disabled, Loading, Empty, Error und alle Bewegungen stehen vollständig in <span style="color:#C6D1DB">Referenzblatt 03 · State Language</span>. Dieses Blatt zeigt Größen und Formen, Blatt 03 zeigt Verhalten. Kein Wert steht an beiden Stellen.</p>
+<p style="margin:0 0 34px;max-width:84ch;font:400 13px/1.7 'Geist',sans-serif;color:#7C8996">Geltungsbereich: die Skala bindet die neun Seiten. Die Referenzblätter sind Werkzeug-Oberfläche, dichter gesetzt als die Seiten — dieses Blatt hält sich trotzdem an die Skala, damit die Stufen im echten Einsatz zu sehen sind und nicht nur als Behauptung dastehen. Die übrigen Blätter werden nachgezogen, wenn sie ohnehin angefasst werden.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:22px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.07.01</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">TYPO-SKALA</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DREI FAMILIEN, DREI AUFGABEN · KEINE HALBEN PIXEL MEHR</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:0;margin-bottom:14px;border-top:1px solid rgba(139,152,166,.1)">
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:14px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">DISPLAY 108</span>
+<span style="font:600 108px/.94 'Chakra Petch',sans-serif;letter-spacing:-.01em;color:#E8EEF4">404</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Chakra Petch 600 · lh .94 · ls −.01em<br><span style="color:#8B98A6">nur der Fehlercode auf der 404</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:14px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">DISPLAY 62</span>
+<span style="font:500 62px/1.06 'Chakra Petch',sans-serif;letter-spacing:-.005em;color:#E8EEF4">I build the systems</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Chakra Petch 500 · lh 1.06 · ls −.005em<br><span style="color:#8B98A6">H1, eine pro Seite, max 16ch</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:14px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">DISPLAY 52</span>
+<span style="font:600 52px 'Chakra Petch',sans-serif;letter-spacing:.01em;color:#E8EEF4">contact@timseil.dev</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Chakra Petch 600 · ls +.01em<br><span style="color:#8B98A6">der eine CTA, H1 auf Mobil</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:14px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">DISPLAY 34</span>
+<span style="font:500 34px/1.1 'Chakra Petch',sans-serif;color:#E8EEF4">What this server knows</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Chakra Petch 500 · lh 1.1<br><span style="color:#8B98A6">H2, Sektionstitel mit Gewicht</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:14px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">DISPLAY 26</span>
+<span style="font:500 26px/1.14 'Chakra Petch',sans-serif;color:#E8EEF4">relay — social json api</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Chakra Petch 500 · lh 1.14<br><span style="color:#8B98A6">H3, Systemnamen in Listen</span></span>
+</div>
+
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:16px 0;border-bottom:1px solid rgba(139,152,166,.08);border-top:1px solid rgba(139,152,166,.16)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">BODY 16.5</span>
+<span style="font:400 16.5px/1.75 'Geist',sans-serif;color:#C6D1DB;max-width:64ch">Backend and DevOps engineer in Luxembourg, working in Go and TypeScript. Self-taught, from systems fundamentals through to production.</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Geist 400 · lh 1.75 · max 64ch<br><span style="color:#8B98A6">Einleitungsabsatz, einer pro Seite</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:16px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">BODY 15</span>
+<span style="font:400 15px/1.75 'Geist',sans-serif;color:#C6D1DB;max-width:68ch">Every request to this server is written to a log file, the same way every web server on the internet does it. That record is what makes it possible to see that the site is up.</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Geist 400 · lh 1.75 · max 68ch<br><span style="color:#8B98A6">Fließtext, Lesemaß 64–68 Zeichen</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:16px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">BODY 13</span>
+<span style="font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6;max-width:72ch">Legal basis: legitimate interest in operating and securing the service. Logs are rotated automatically and are not combined with anything else.</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">Geist 400 · lh 1.7<br><span style="color:#8B98A6">Nebentext, Fußnoten, Mobil-Fließtext</span></span>
+</div>
+
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:15px 0;border-bottom:1px solid rgba(139,152,166,.08);border-top:1px solid rgba(139,152,166,.16)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">MONO 13</span>
+<span style="font:400 13px/1.85 'JetBrains Mono',monospace;color:#C6D1DB">&gt; uplink established — luxembourg [LU]</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">JetBrains Mono 400 · lh 1.85<br><span style="color:#8B98A6">Terminal-Ausgabe, Codeblock</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:15px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">MONO 12</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">WORK · BLOG · ABOUT · CONTACT</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">500 · ls .14em · Versalien<br><span style="color:#8B98A6">Navigation, Sektionstitel, Tabellenwerte</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:15px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">MONO 11</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4"><span style="color:#00E5FF">SYS.01</span> TRAINING LOG</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">600 · ls .16em<br><span style="color:#8B98A6">Modulköpfe, Buttons, Status</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:15px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">MONO 10</span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6">UPTIME 90D · P95 142MS · ERR 0.07%</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">500 · ls .13em · tabular-nums<br><span style="color:#8B98A6">Metriken, Labels, Meta-Zeilen</span></span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr 250px;gap:20px;align-items:baseline;padding:15px 0;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">MONO 9</span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">SOURCE: OPS-API /V1/HEALTH · CACHE 60S</span>
+<span style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#7C8996">400 · ls .12em<br><span style="color:#8B98A6">Untergrenze. Nichts darunter trägt Inhalt</span></span>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px">
+<div style="padding:14px 16px;border-left:1px solid rgba(0,229,255,.4);background-color:#0E141C;font:400 11px/1.8 'JetBrains Mono',monospace;color:#8B98A6">Dreizehn Größen statt dreiundzwanzig. Alle Halb-Pixel-Werte fallen weg: <span style="color:#C6D1DB">8.5 → 9</span>, <span style="color:#C6D1DB">9.5 → 10</span>, <span style="color:#C6D1DB">10.5 → 11</span>, <span style="color:#C6D1DB">11.5 → 12</span>, <span style="color:#C6D1DB">12.5 → 13</span>, <span style="color:#C6D1DB">13.5 → 13</span>, <span style="color:#C6D1DB">15.5 → 15</span>.</div>
+<div style="padding:14px 16px;border-left:1px solid rgba(255,176,0,.5);background-color:#0E141C;font:400 11px/1.8 'JetBrains Mono',monospace;color:#8B98A6">Mobil bleiben die Größen gleich, nur Display fällt eine Stufe: <span style="color:#C6D1DB">62 → 34</span>, <span style="color:#C6D1DB">108 → 58</span>. Mono wird nie kleiner als 9, auch nicht auf Mobil — dort trägt es Metriken.</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:22px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.07.02</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">ABSTÄNDE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">4ER-RASTER · GAP STATT MARGIN, WO ES GESCHWISTER SIND</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">
+<sc-for list="{{ space }}" as="s" hint-placeholder-count="14">
+<div style="display:grid;grid-template-columns:54px 1fr 300px;gap:16px;align-items:center">
+<span style="font:600 10px 'JetBrains Mono',monospace;color:#C6D1DB;font-variant-numeric:tabular-nums">{{ s.v }}</span>
+<span style="height:10px;background:rgba(232,238,244,.04);position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ s.w }};background:{{ s.c }}"></span></span>
+<span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">{{ s.use }}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:40px">
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 11px/1.8 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB">Sektionen</span><br>Desktop 96 zwischen Modulen, 12 unter dem Sektionskopf, 34 über der ersten Zeile<br>Mobil 64 / 10 / 24</div>
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 11px/1.8 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB">Raster</span><br>Frame 1440, Inhalt 1160, Rand 140<br>Mobil 390 mit Rand 20–22<br>Hintergrundraster 28px bei 2.8 % Deckkraft</div>
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 11px/1.8 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB">Innenabstand</span><br>Panel 18–22, Karte 14, Tabellenzelle 11 × 14, Button 12 × 20, Feld 13 × 15, Chip 6 × 11</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:22px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.07.03</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">LINIEN, FLÄCHEN, FORM</span>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px">
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">LINIEN</div>
+<div style="padding:14px">
+<div style="margin-bottom:12px"><div style="height:1px;background:rgba(139,152,166,.25);margin-bottom:5px"></div><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">.25 — Trenner in der Nav</span></div>
+<div style="margin-bottom:12px"><div style="height:1px;background:rgba(139,152,166,.16);margin-bottom:5px"></div><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">.16 — Sektionsgrenze, Panelrahmen</span></div>
+<div style="margin-bottom:12px"><div style="height:1px;background:rgba(139,152,166,.10);margin-bottom:5px"></div><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">.10 — Zeilen in Listen</span></div>
+<div><div style="height:1px;background:rgba(139,152,166,.07);margin-bottom:5px"></div><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">.07 — Matrixzeilen, dichte Tabellen</span></div>
+</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">FLÄCHEN</div>
+<div style="padding:14px;font:400 10px 'JetBrains Mono',monospace;color:#7C8996">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="width:34px;height:20px;background:#0A0E14;border:1px solid rgba(139,152,166,.3)"></span>#0A0E14 Seite</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="width:34px;height:20px;background:#0E141C;border:1px solid rgba(139,152,166,.3)"></span>#0E141C Panel</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="width:34px;height:20px;background:#121A24;border:1px solid rgba(139,152,166,.3)"></span>#121A24 aktive Zeile</div>
+<div style="line-height:1.7">Flächen liegen nie übereinander gestapelt: eine Ebene Panel, mehr nicht.</div>
+</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">FORM</div>
+<div style="padding:14px;font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">
+<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+<span style="position:relative;width:52px;height:32px;background:#0A0E14;border:1px solid rgba(0,229,255,.28)"><span style="position:absolute;top:-1px;left:-1px;width:11px;height:11px;border-top:1px solid #00E5FF;border-left:1px solid #00E5FF"></span><span style="position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-bottom:1px solid #00E5FF;border-right:1px solid #00E5FF"></span></span>
+<span>Ecken-Brackets 11px</span>
+</div>
+<div><span style="color:#C6D1DB">border-radius: 0</span> überall</div>
+<div>Ausnahme: Statuspunkt, 50 %</div>
+<div><span style="color:#C6D1DB">box-shadow: none</span></div>
+<div>Licht nur auf Schrift: text-shadow 0 0 28px</div>
+</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">DAUERN</div>
+<div style="padding:14px;font:400 10px/1.85 'JetBrains Mono',monospace;color:#7C8996">
+<div><span style="color:#C6D1DB">90</span> Zeile aufhellen</div>
+<div><span style="color:#C6D1DB">120</span> Farbe, Chip</div>
+<div><span style="color:#C6D1DB">140</span> Brackets · cubic-bezier(.2,.9,.1,1)</div>
+<div><span style="color:#C6D1DB">160</span> Glow · ease-out</div>
+<div><span style="color:#C6D1DB">220</span> Scramble · steps</div>
+<div><span style="color:#C6D1DB">280</span> Glitch · steps(2), max 300</div>
+<div><span style="color:#C6D1DB">340</span> Wipe · cubic-bezier(.4,0,.2,1)</div>
+<div style="margin-top:6px;color:#8B98A6">Vollständig in Blatt 03</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:22px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.07.04</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">BAUTEILE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">NUR WAS IN DEN SEITEN JE EINMAL VORKOMMT UND SONST NEU ERFUNDEN WIRD</span>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
+
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">BUTTONS</div>
+<div style="padding:16px 14px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+<span style="padding:12px 20px;background:#00E5FF;color:#08131A;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.13em;cursor:pointer" style-hover="background:#9DF4FF">← RETURN TO ROOT</span>
+<span style="padding:12px 20px;border:1px solid rgba(139,152,166,.3);color:#C6D1DB;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.13em;cursor:pointer" style-hover="color:#00E5FF;border-color:rgba(0,229,255,.5)">SELECTED WORK →</span>
+<span style="padding:12px 4px;color:#7C8996;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.13em;cursor:pointer" style-hover="color:#00E5FF">REPLAY GLITCH</span>
+<div style="font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996;margin-top:2px">primär cyan-Fläche · sekundär Rahmen · ghost ohne Rahmen, nur Textwechsel. Höhe 43, Padding 12 × 20, keine Ecken, kein Schatten</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">FELDER</div>
+<div style="padding:16px 14px;display:flex;flex-direction:column;gap:12px">
+<div>
+<div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:7px">LABEL</div>
+<input value="anna.keller@firma.lu" readOnly="{{ true }}" style="width:100%;box-sizing:border-box;padding:13px 15px;background-color:#0A0E14;border:1px solid rgba(139,152,166,.2);color:#E8EEF4;font:400 13px 'JetBrains Mono',monospace;outline:none" style-focus="border-color:#00E5FF" />
+</div>
+<div style="display:flex;align-items:center;gap:10px;padding:13px 15px;background-color:#0A0E14;border:1px solid rgba(139,152,166,.2)">
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#C6D1DB">alle Zustände</span><span style="flex:1"></span><span style="font:400 11px 'JetBrains Mono',monospace;color:#7C8996">▾</span>
+</div>
+<div style="font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">Label immer über dem Feld, Versalien Mono 10. Feldfläche ist <span style="color:#C6D1DB">dunkler</span> als das Panel, nicht heller. Auswahl trägt ▾ statt eines Icons</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">TAGS UND BLÄTTERUNG</div>
+<div style="padding:16px 14px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<span style="padding:6px 11px;border:1px solid rgba(139,152,166,.22);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">GO</span>
+<span style="padding:6px 11px;background:#00E5FF;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#08131A">POSTGRES ×</span>
+<span style="padding:6px 11px;border:1px solid rgba(139,152,166,.12);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(124,137,150,.6);text-decoration:line-through">RUST</span>
+</div>
+<div style="display:flex;align-items:center;gap:14px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em">
+<span style="color:#7C8996">← PREV</span>
+<span style="color:#00E5FF">01</span><span style="color:#8B98A6">02</span><span style="color:#8B98A6">03</span>
+<span style="color:#C6D1DB">NEXT →</span>
+</div>
+<div style="font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">Tag gesetzt = invertiert mit ×, ohne Treffer durchgestrichen. Blätterung nur Mono-Zahlen, keine Kästchen</div>
+</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:16px">
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">TABELLE</div>
+<div style="padding:14px">
+<div style="display:grid;grid-template-columns:1fr 190px 96px;border-bottom:1px solid rgba(139,152,166,.16);background-color:#0A0E14">
+<span style="padding:11px 14px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">FIELD</span>
+<span style="padding:11px 14px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">WHY IT IS KEPT</span>
+<span style="padding:11px 14px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996;text-align:right">RETENTION</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 190px 96px;border-bottom:1px solid rgba(139,152,166,.1)">
+<span style="padding:11px 14px;font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">IP address</span>
+<span style="padding:11px 14px;font:400 12px 'JetBrains Mono',monospace;color:#8B98A6">Abuse and rate limiting</span>
+<span style="padding:11px 14px;font:400 12px 'JetBrains Mono',monospace;color:#8B98A6;text-align:right;font-variant-numeric:tabular-nums">30 DAYS</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 190px 96px">
+<span style="padding:11px 14px;font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Timestamp</span>
+<span style="padding:11px 14px;font:400 12px 'JetBrains Mono',monospace;color:#8B98A6">Ordering, incident review</span>
+<span style="padding:11px 14px;font:400 12px 'JetBrains Mono',monospace;color:#8B98A6;text-align:right;font-variant-numeric:tabular-nums">30 DAYS</span>
+</div>
+<div style="margin-top:12px;font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">Kopf auf Seitenfläche, Zeilen ohne Zebra, Zahlen rechts und tabular. Zellpadding 11 × 14. Keine vertikalen Linien</div>
+</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">IM FLIESSTEXT</div>
+<div style="padding:14px;display:flex;flex-direction:column;gap:12px">
+<div style="padding:12px 14px;background-color:#0A0E14;border-left:1px solid #00E5FF;font:400 13px/1.7 'Geist',sans-serif;color:#C6D1DB">Callout: eine Linie links, keine Fläche, kein Icon.</div>
+<div style="padding:0 0 0 16px;border-left:1px solid rgba(139,152,166,.3);font:400 15px/1.7 'Geist',sans-serif;color:#8B98A6;font-style:normal">Zitat: dieselbe Form in Steel, Text kursiv-frei — Kursive gibt es im System nicht.</div>
+<div style="padding:12px 14px;background-color:#0A0E14;border:1px solid rgba(139,152,166,.12);font:400 12px/1.85 'JetBrains Mono',monospace;color:#B9C6D4;white-space:pre">ack := <span style="color:#00E5FF">false</span>
+<span style="color:#7C8996">// commit before ack</span></div>
+<div style="font:400 12px/1.7 'Geist',sans-serif;color:#C6D1DB">Inline-Code sieht so aus: <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E8EEF4;background:rgba(232,238,244,.06);padding:1px 5px">at-least-once</span> — keine Rahmen, nur Fläche.</div>
+</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:34px">
+<div style="padding:18px 20px;border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">REGELN</div>
+<div style="font:400 11px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> Dreizehn Größen, keine halben Pixel. Wer eine vierzehnte braucht, hat ein Layoutproblem, kein Typografieproblem</div>
+<div><span style="color:#00E5FF">▸</span> Mono ist die Systemstimme: Labels, Metriken, Terminal, Tabellen. Geist ist für Sätze. Chakra Petch nur für Überschriften und den einen CTA</div>
+<div><span style="color:#00E5FF">▸</span> Geschwister werden mit <span style="color:#C6D1DB">gap</span> gesetzt, nicht mit margin — sonst brechen Reihenfolge und Löschen im Editor</div>
+<div><span style="color:#00E5FF">▸</span> Radius 0, kein Schatten. Tiefe entsteht durch Fläche und Linie, nicht durch Weichzeichnung</div>
+<div><span style="color:#00E5FF">▸</span> Keine Kursive, keine Ikonografie außer Pfeilen, ▸ und ▾</div>
+</div>
+</div>
+<div style="padding:18px 20px;border:1px solid rgba(0,229,255,.25);background-color:#0E141C">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#00E5FF;margin-bottom:12px">ABGRENZUNG</div>
+<div style="font:400 11px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#7C8996">▸</span> Zustände und Bewegung: Blatt 03 · State Language</div>
+<div><span style="color:#7C8996">▸</span> Farben mit gemessenen Kontrasten: Themes-Palettenblatt</div>
+<div><span style="color:#7C8996">▸</span> Startsequenz und Scroll: Blatt 01 und 02</div>
+<div><span style="color:#7C8996">▸</span> Verweise zwischen Seiten: Blatt 04 · Wege</div>
+<div><span style="color:#7C8996">▸</span> Dieselben Werte als Code: <span style="color:#C6D1DB">Code Handoff</span> — dort sind sie ausführbar, hier sichtbar</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Zuordnungsregel — welche Seite bekommt welche Stufe</div>
+<div class="dv-card" style="width:640px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:18px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">TYPE.02</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">ÜBERSCHRIFTEN JE SEITE</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">ENTSCHIEDEN · 16.08.2026</span>
+</div><div style="display:grid;grid-template-columns:92px 1fr;gap:12px 18px;align-items:baseline;margin-bottom:20px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">62 / 34</span>
+<span style="font:400 11px/1.6 'Geist',sans-serif;color:#C6D1DB">Startseite und About — die zwei Seiten, die eine Behauptung aufstellen. Dort steht ein Satz über eine Person.</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">52 / 34</span>
+<span style="font:400 11px/1.6 'Geist',sans-serif;color:#C6D1DB">Work Index, Blog Index, Blog Post, beide Fallstudien, Legal — alles, was auflistet oder erklärt.</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">108</span>
+<span style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Nur der Fehlercode auf der 404. Keine zweite Verwendung.</span>
+</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> KEINE STUFE 56: der Abstand zu 62 sind zehn Prozent und damit unsichtbar, der zu 52 ist eine Aussage. Vier Display-Stufen für elf Seiten hießen, dass jede neue Seite wieder eine Wahl ist</div>
+<div><span style="color:#00E5FF">▸</span> MOBIL EINE STUFE: <span style="color:#C6D1DB">34</span> überall. 30 gegen 34 ist auf dem Telefon ein Haar</div>
+<div><span style="color:#00E5FF">▸</span> AUSNAHME MIT GRUND: wird eine Überschrift ein langer Satz statt drei Wörtern, liest sie sich auf 52 besser. Das entscheidet der Text — und bleibt eine Ausnahme, keine neue Stufe</div>
+<div><span style="color:#00E5FF">▸</span> VORHER IM EINSATZ: 64 · 62 · 56 · 52 · 50, mobil 36 · 34 · 32 · 30. Seit dem Konsistenz-Check liegen alle zehn Seiten auf den zwei Stufen</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Breakpoints — drei Zahlen, aus dem Inhalt abgeleitet</div>
+<div class="dv-card" style="width:880px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:18px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">LAYOUT.02</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">BREAKPOINTS</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">1080 · 900 · 720 · 560 · ERGÄNZT 16.08.2026 DURCH LAYOUT.03</span>
+</div>
+<div style="display:grid;grid-template-columns:132px 1fr 1fr;border-top:1px solid rgba(139,152,166,.16);margin-bottom:20px">
+<div style="padding:9px 12px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">BEREICH</div>
+<div style="padding:9px 12px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">WAS PASSIERT</div>
+<div style="padding:9px 0 9px 12px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">WARUM DIESE ZAHL</div>
+<div style="padding:11px 12px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">≥ 1440</div>
+<div style="padding:11px 12px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Spalte steht bei 1160, die Ränder wachsen mit. Nichts skaliert.</div>
+<div style="padding:11px 0 11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Die Entwürfe sind auf 1160 gezeichnet. Text, der breiter läuft, wird unlesbar.</div>
+<div style="padding:11px 12px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">1440 – 1080</div>
+<div style="padding:11px 12px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Spalte ist <span style="color:#E8EEF4">min(1160, 100% − 80)</span>. Kopf, Fußzeile, Raster und alle Zweispalter bleiben wie gezeichnet.</div>
+<div style="padding:11px 0 11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Zwischen den Entwürfen wird interpoliert, nicht umgebaut. Die Formel ersetzt die frühere Doppelangabe „fließt 1160 → 800" plus „Rand 40" — dasselbe Verhalten, eine Zeile.</div>
+<div style="padding:11px 12px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">&lt; 1080</div>
+<div style="padding:11px 12px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Alle fünf Zweispalter lösen sich auf: Hero-Terminal, Fallstudien-Hero, Spec-Rail, Constraints, Architektur — was rechts stand, steht darunter. Spec-Rails sind nicht mehr sticky. Die Vorschauspalte der Work-Zeile entfällt. Kopf bleibt vollständig.</div>
+<div style="padding:11px 0 11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Die Spec-Rail braucht 400px, der Fließtext daneben sein Lesemaß von 517px — zusammen mit 80px Abstand ergibt das 1077. Aufgerundet auf 1080, und bewusst über 1024, damit ein iPad im Querformat nicht im Grenzfall liegt. Vollständig in <span style="color:#C6D1DB">LAYOUT.03</span>.</div>
+<div style="padding:11px 12px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">&lt; 900</div>
+<div style="padding:11px 12px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Kopf schaltet auf den Menüknopf. Hero wird einspaltig, das Terminal rückt unter den Text. Die Meta-Leiste der Fußzeile wächst von zwei auf drei Zeilen, die Rechtszeile stapelt.</div>
+<div style="padding:11px 0 11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Vier Nav-Einträge, Umschalter und Uhr brauchen rund 520px. Darunter drängen sie den Seitentitel.</div>
+<div style="padding:11px 12px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">&lt; 720</div>
+<div style="padding:11px 12px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Alles einspaltig. H1 auf 34. Spec-Rails der Fallstudien wandern über den Inhalt. Kennzahlen untereinander.</div>
+<div style="padding:11px 0 11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Ab hier bleibt für eine zweite Spalte unter 300px — das ist keine Spalte mehr, sondern ein Rest.</div>
+<div style="padding:11px 12px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">&lt; 560</div>
+<div style="padding:11px 12px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Tabellenzeilen werden Karten: Work Index, Systemliste, Log-Liste. Der Deploy-Streifen scrollt waagerecht, die fünf Ops-Kacheln brechen auf zwei.</div>
+<div style="padding:11px 0 11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Sechs Rasterspalten unter 560px erzeugen Spalten von 60px. Karten lesen sich dort besser als gequetschte Zeilen. Das Betriebsraster selbst ist bei 91 Tagen nur 243px breit und war hier nie betroffen — Korrektur aus LAYOUT.03.</div>
+<div style="padding:11px 12px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">390</div>
+<div style="padding:11px 12px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Referenzbreite der Mobil-Entwürfe, Rand 22px.</div>
+<div style="padding:11px 0 11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Kleinstes Gerät, das die Entwürfe zeigen. Darunter greifen dieselben Regeln, nur enger.</div>
+</div>
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">REGELN</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> AUS DEM INHALT, NICHT VOM GERÄT: die vier Zahlen stehen dort, wo ein konkretes Element bricht — Spec-Rail bei 1080, Kopfzeile bei 900, zweite Spalte bei 720, Rasterzeile bei 560. Keine Tablet- oder Phone-Namen, und kein Schalter auf einer verbreiteten Gerätebreite</div>
+<div><span style="color:#00E5FF">▸</span> DAZWISCHEN WIRD GEFLOSSEN, NICHT GESPRUNGEN: Spaltenbreite und Ränder sind fließend, nur die genannten Umbauten sind Schalter</div>
+<div><span style="color:#00E5FF">▸</span> DER BREAKPOINT IST DER SCHALTER, DIE GRÖSSE KOMMT VON DER SEITE: H1 wechselt bei 720 auf 34. Oberhalb gilt die Zuordnung aus <span style="color:#C6D1DB">TYPE.02</span> — 62 auf Startseite und About, 52 auf allen übrigen. Fließtext und Mono-Labels ändern sich gar nicht</div>
+<div><span style="color:#00E5FF">▸</span> TOUCH HÄNGT NICHT AN DER BREITE: die 44px-Regel greift über <span style="color:#C6D1DB">pointer: coarse</span>. Ein Tablet mit 1000px bekommt große Ziele, ein schmales Desktop-Fenster nicht</div>
+<div><span style="color:#00E5FF">▸</span> DAS TERMINAL bleibt auf <span style="color:#C6D1DB">pointer: coarse</span> nur lesbar — dieselbe Bedingung, nicht die Breite</div>
+<div><span style="color:#00E5FF">▸</span> GEPRÜFT WIRD AN SIEBEN BREITEN, JEDER SCHALTER BEIDSEITIG: 1440 · 1081 · 1079 · 1024 · 899 · 719 · 390. Protokoll mit Prüfblick je Breite in <span style="color:#C6D1DB">LAYOUT.03</span></div>
+</div>
+</div>
+</div>
+</div>
+<p class="dv-next">Try next: "Skala in die Entwürfe zurückspielen" · "Bauteile als Storybook-Stories" · "Icon-Set festlegen, falls doch Icons kommen"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  SPACE = [
+    [4, "Innenabstand von Mikro-Labels, Lücke zwischen Statuspunkt und Wort"],
+    [6, "Gap in Chip-Reihen, Bracket-Größe im Ruhezustand"],
+    [8, "Gap zwischen Metrik-Kacheln, Padding von Inline-Code"],
+    [10, "Gap in Zeilenlisten, Abstand Label → Wert"],
+    [12, "Padding vertikal in Buttons und Zellen, Gap in Karten"],
+    [14, "Karten-Padding, Gap zwischen Feldern im Formular"],
+    [16, "Gap zwischen Karten in einem Raster"],
+    [20, "Padding horizontal in Buttons, Gap zwischen Modulen einer Zeile"],
+    [26, "Abstand Überschrift → Absatz"],
+    [34, "Sektionskopf → erste Zeile"],
+    [44, "Absatz → nächstes Element in Prosa"],
+    [56, "Blockgrenze innerhalb einer Sektion"],
+    [72, "Spaltenabstand im Hauptraster"],
+    [96, "Sektionsabstand Desktop, mobil 64"]
+  ];
+  renderVals() {
+    return {
+      space: this.SPACE.map(([v, use]) => ({
+        v: v + "px",
+        w: Math.round((v / 96) * 100) + "%",
+        c: v >= 56 ? "#00E5FF" : v >= 20 ? "rgba(0,229,255,.55)" : "rgba(139,152,166,.5)",
+        use
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

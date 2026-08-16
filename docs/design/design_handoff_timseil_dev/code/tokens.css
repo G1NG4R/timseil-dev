@@ -1,0 +1,201 @@
+/* timseil.dev — Design Tokens · Terminal Noir
+   Quelle: Foundations- und State-Language-Blatt des Design-Handoffs.
+   Kontrastwerte in Kommentaren sind gegen --bg gerechnet (WCAG 2.1).
+   Regel: keine Farbe, kein Radius, keine Dauer außerhalb dieser Datei. */
+
+:root {
+  /* Flächen */
+  --bg:            #0A0E14;
+  --panel:         #0E141C;
+  --panel-active:  #121A24;
+  --on-cyan:       #08131A;
+
+  /* Text */
+  --ink:           #E8EEF4; /* 16.55 */
+  --ink-2:         #C6D1DB; /* 12.47 */
+  --ink-3:         #B9C6D4; /* 11.14 */
+  --steel:         #8B98A6; /*  6.58 */
+  --dim:           #7C8996; /*  5.41 — Untergrenze für Text */
+
+  /* Signale */
+  --acc:           #00E5FF; /* 12.57 */
+  --acc-hi:        #9DF4FF; /* 15.49 */
+  --alert:         #FF2D55; /*  5.30 — ein Moment pro Seite */
+  --amber:         #FFB000; /* 10.56 */
+
+  /* Linien */
+  --line-strong:   rgba(139,152,166,.25);
+  --line:          rgba(139,152,166,.16);
+  --line-soft:     rgba(139,152,166,.10);
+  --line-faint:    rgba(139,152,166,.07);
+  --grid:          rgba(139,152,166,.028);
+
+  /* Graph-Stufen: Akzent in vier Deckkraften, l0 ist Text */
+  --l0: rgba(232,238,244,.05);
+  --l1: rgba(0,229,255,.16);
+  --l2: rgba(0,229,255,.34);
+  --l3: rgba(0,229,255,.58);
+  --l4: rgba(0,229,255,.90);
+
+  /* Familien */
+  --mono:    'JetBrains Mono', ui-monospace, monospace;
+  --display: 'Chakra Petch', system-ui, sans-serif;
+  --body:    'Geist', system-ui, sans-serif;
+
+  /* Größen — 13 Stufen, keine halben Pixel */
+  --t-mono-9:  9px;
+  --t-mono-10: 10px;
+  --t-mono-11: 11px;
+  --t-mono-12: 12px;
+  --t-mono-13: 13px;
+  --t-body-13: 13px;
+  --t-body-15: 15px;
+  --t-body-17: 16.5px;
+  --t-disp-26: 26px;
+  --t-disp-34: 34px;
+  --t-disp-52: 52px;
+  --t-disp-62: 62px;
+  --t-disp-108: 108px;
+
+  /* Zeilenhöhen und Laufweiten */
+  --lh-mono: 1.85;
+  --lh-body: 1.75;
+  --lh-disp: 1.06;
+  --ls-label: .14em;
+  --ls-head:  .16em;
+  --ls-disp:  -.005em;
+
+  /* Abstände — 4er-Raster */
+  --s-4: 4px;  --s-6: 6px;   --s-8: 8px;   --s-10: 10px;
+  --s-12: 12px; --s-14: 14px; --s-16: 16px; --s-20: 20px;
+  --s-26: 26px; --s-34: 34px; --s-44: 44px; --s-56: 56px;
+  --s-72: 72px; --s-96: 96px;
+
+  /* Raster */
+  --frame: 1440px;
+  --content: 1160px;
+  --gutter: 140px;
+  --gutter-mobile: 20px;
+  --grid-cell: 28px;
+
+  /* Form */
+  --radius: 0;
+  --radius-dot: 50%;
+  --bracket: 11px;
+  --bracket-rest: 6px;
+  --focus-ring: 1px solid var(--acc);
+  --focus-offset: 3px;
+  --glow: 0 0 28px rgba(0,229,255,.45);
+
+  /* Dauern */
+  --d-row: 90ms;
+  --d-color: 120ms;
+  --d-bracket: 140ms;
+  --d-glow: 160ms;
+  --d-scramble: 220ms;
+  --d-glitch: 280ms; /* Obergrenze 300ms */
+  --d-wipe: 340ms;
+  --d-reveal: 420ms;
+  --d-decode: 540ms;
+
+  /* Easings */
+  --e-snap: cubic-bezier(.2,.9,.1,1);
+  --e-wipe: cubic-bezier(.4,0,.2,1);
+  --e-out:  ease-out;
+}
+
+
+
+/* ── Themes ────────────────────────────────────────────────────────────────
+   Verbindlich ist Terminal Noir (die Werte oben in :root).
+   Ein Theme tauscht nur Farben — Struktur, Typografie und Timings bleiben.
+   Umschaltung über data-theme am <html>-Element; die Wahl liegt in
+   localStorage["ts.theme"] und wird vor dem ersten Paint gesetzt.
+   In hellen Themes tragen nur drei Textstufen über AA: steel und dim fallen
+   zusammen. Kontrastwerte in Klammern gegen --bg, selbst gerechnet.        */
+
+[data-theme="mocha"] {           /* Catppuccin Mocha, offizielle Werte */
+  --bg:#1E1E2E; --panel:#181825; --panel-active:#1F1F30;
+  --ink:#CDD6F4; --ink-2:#BAC2DE; --ink-3:#BAC2DE; --steel:#A6ADC8; --dim:#828BB8;
+  --acc:#CBA6F7; --acc-hi:#B4BEFE; --alert:#F38BA8; --amber:#FAB387; --on-cyan:#181825;
+  --line-strong:rgba(166,173,200,.32); --line:rgba(166,173,200,.22);
+  --line-soft:rgba(166,173,200,.13); --line-faint:rgba(166,173,200,.09);
+  --l0:rgba(205,214,244,.08); --l1:rgba(203,166,247,.22); --l2:rgba(203,166,247,.42);
+  --l3:rgba(203,166,247,.66); --l4:#CBA6F7;
+}
+
+[data-theme="amber"] {           /* Amber CRT — Degraded wandert auf Mint */
+  --bg:#0C0A07; --panel:#14100B; --panel-active:#1B1610;
+  --ink:#F5E9D0; --ink-2:#DCCBA8; --ink-3:#DCCBA8; --steel:#A2937A; --dim:#8C7E68;
+  --acc:#FFB74A; --acc-hi:#FFD08A; --alert:#FF5C4D; --amber:#7FD1AE; --on-cyan:#160F04;
+  --line-strong:rgba(162,147,122,.34); --line:rgba(162,147,122,.24);
+  --line-soft:rgba(162,147,122,.14); --line-faint:rgba(162,147,122,.09);
+  --l0:rgba(245,233,208,.07); --l1:rgba(255,183,74,.20); --l2:rgba(255,183,74,.40);
+  --l3:rgba(255,183,74,.64); --l4:#FFB74A;
+}
+
+[data-theme="phosphor"] {        /* Phosphor — gleiche Helligkeiten wie Noir */
+  --bg:#060A07; --panel:#0B120D; --panel-active:#111A14;
+  --ink:#DDEFE2; --ink-2:#B6D6C0; --ink-3:#B6D6C0; --steel:#7E9A88; --dim:#6C8676;
+  --acc:#2EE6A6; --acc-hi:#8CFFD2; --alert:#FF4D6D; --amber:#FFC24B; --on-cyan:#04140C;
+  --line-strong:rgba(126,154,136,.34); --line:rgba(126,154,136,.24);
+  --line-soft:rgba(126,154,136,.14); --line-faint:rgba(126,154,136,.09);
+  --l0:rgba(221,239,226,.07); --l1:rgba(46,230,166,.20); --l2:rgba(46,230,166,.40);
+  --l3:rgba(46,230,166,.64); --l4:#2EE6A6;
+}
+
+[data-theme="tokyo"] {           /* Tokyo Night — comment #565F89 fällt durch AA */
+  --bg:#1A1B26; --panel:#16161E; --panel-active:#1F2233;
+  --ink:#C0CAF5; --ink-2:#A9B1D6; --ink-3:#A9B1D6; --steel:#9AA5CE; --dim:#828BB8;
+  --acc:#7AA2F7; --acc-hi:#7DCFFF; --alert:#F7768E; --amber:#FF9E64; --on-cyan:#16161E;
+  --line-strong:rgba(154,165,206,.32); --line:rgba(154,165,206,.22);
+  --line-soft:rgba(154,165,206,.13); --line-faint:rgba(154,165,206,.09);
+  --l0:rgba(192,202,245,.08); --l1:rgba(122,162,247,.22); --l2:rgba(122,162,247,.44);
+  --l3:rgba(122,162,247,.68); --l4:#7AA2F7;
+}
+
+[data-theme="latte"] {           /* Catppuccin Latte — hell, drei Textstufen */
+  --bg:#EFF1F5; --panel:#E6E9EF; --panel-active:#DCE0E8;
+  --ink:#4C4F69; --ink-2:#5C5F77; --ink-3:#5C5F77; --steel:#62657C; --dim:#62657C;
+  --acc:#7C2FD4; --acc-hi:#5E1FA8; --alert:#C90E36; --amber:#8C5100; --on-cyan:#EFF1F5;
+  --line-strong:rgba(76,79,105,.30); --line:rgba(76,79,105,.20);
+  --line-soft:rgba(76,79,105,.11); --line-faint:rgba(76,79,105,.08);
+  --l0:rgba(76,79,105,.12); --l1:rgba(124,47,212,.24); --l2:rgba(124,47,212,.46);
+  --l3:rgba(124,47,212,.70); --l4:#7C2FD4;
+  --glow:none;                   /* kein Leuchten auf hellem Grund */
+}
+
+[data-theme="gruvbox"] {         /* Gruvbox Light — Orange auf #9C3403 abgedunkelt */
+  --bg:#FBF1C7; --panel:#EBDBB2; --panel-active:#E4D4A7;
+  --ink:#3C3836; --ink-2:#504945; --ink-3:#504945; --steel:#665C54; --dim:#665C54;
+  --acc:#076678; --acc-hi:#054C5A; --alert:#9D0006; --amber:#9C3403; --on-cyan:#FBF1C7;
+  --line-strong:rgba(60,56,54,.34); --line:rgba(60,56,54,.24);
+  --line-soft:rgba(60,56,54,.13); --line-faint:rgba(60,56,54,.09);
+  --l0:rgba(60,56,54,.14); --l1:rgba(7,102,120,.24); --l2:rgba(7,102,120,.46);
+  --l3:rgba(7,102,120,.70); --l4:#076678;
+  --glow:none;
+}
+
+/* Ohne gespeicherte Wahl folgt die Seite dem System: hell → Gruvbox Light.
+   Steht data-theme, gewinnt es — deshalb :root:not([data-theme]).          */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg:#FBF1C7; --panel:#EBDBB2; --panel-active:#E4D4A7;
+    --ink:#3C3836; --ink-2:#504945; --ink-3:#504945; --steel:#665C54; --dim:#665C54;
+    --acc:#076678; --acc-hi:#054C5A; --alert:#9D0006; --amber:#9C3403; --on-cyan:#FBF1C7;
+    --line-strong:rgba(60,56,54,.34); --line:rgba(60,56,54,.24);
+    --line-soft:rgba(60,56,54,.13); --line-faint:rgba(60,56,54,.09);
+    --l0:rgba(60,56,54,.14); --l1:rgba(7,102,120,.24); --l2:rgba(7,102,120,.46);
+    --l3:rgba(7,102,120,.70); --l4:#076678;
+    --glow:none;
+  }
+}
+
+/* Breakpoints stehen nicht hier, sondern vollständig in layout.css:
+   vier Schalter 1080 · 900 · 720 · 560, dazu die Spaltenformel
+   min(1160px, 100% - 80px). Herleitung jeder Zahl im Blatt
+   "Intermediate Widths" (LAYOUT.03).
+
+   Frühere Fassung dieses Kommentars nannte 1200 und 768 — beides war
+   geraten und stimmte mit keinem Entwurf überein. Keine Zahl aus dieser
+   Datei ableiten, die nicht in layout.css steht.                            */

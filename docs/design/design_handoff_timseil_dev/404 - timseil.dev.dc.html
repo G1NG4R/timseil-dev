@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(255,45,85,.6)}50%{opacity:.45;box-shadow:0 0 2px rgba(255,45,85,.15)}}
+@keyframes tn-glitch{0%{transform:translate(0);clip-path:inset(0 0 0 0)}18%{transform:translate(-3px,1px);clip-path:inset(22% 0 46% 0)}34%{transform:translate(2px,-1px);clip-path:inset(58% 0 14% 0)}52%{transform:translate(-1px,0);clip-path:inset(8% 0 72% 0)}70%{transform:translate(2px,1px);clip-path:inset(40% 0 30% 0)}100%{transform:translate(0);clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">404 — SIGNAL LOST · ein 300ms-Glitch beim Laden, danach still</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1440 — REPLAY GLITCH klicken, um den Ladeeffekt erneut zu sehen</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="404 — Desktop" style="width:1440px;height:900px;background-color:#0A0E14;position:relative;overflow:hidden;cursor:crosshair;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.028) 1px,transparent 1px);background-size:88px 88px"></div>
+<div style="position:absolute;inset:0;pointer-events:none;opacity:.55;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 3px)"></div>
+<div style="position:relative;z-index:1;width:1160px;margin:0 auto;height:100%;display:flex;flex-direction:column">
+
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16);flex:none">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:32px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;flex:none;background-image:repeating-linear-gradient(90deg,rgba(255,45,85,.3) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+
+<div style="flex:1;display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:center;padding-bottom:40px">
+<div>
+<div style="display:flex;align-items:center;gap:11px;margin-bottom:30px">
+<span style="width:7px;height:7px;border-radius:50%;background:#FF2D55;animation:tn-pulse 2s ease-in-out infinite"></span>
+<span style="font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#FF2D55">ERR 404</span>
+<span style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">— ROUTE NOT RESOLVED</span>
+</div>
+<h1 ref="{{ glitchRef }}" style="margin:0 0 30px;font:600 108px/.94 'Chakra Petch',sans-serif;letter-spacing:-.01em;color:#E8EEF4">SIGNAL<br>LOST</h1>
+<p style="margin:0 0 34px;max-width:52ch;font:400 15.5px/1.7 'Geist',sans-serif;color:#8B98A6">404 — this route does not resolve. The request reached the server; there is simply nothing mounted at that path.</p>
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:40px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#08131A;background:#00E5FF;padding:12px 20px;cursor:pointer" style-hover="background:#9DF4FF">← RETURN TO ROOT</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#C6D1DB;border:1px solid rgba(139,152,166,.3);padding:12px 20px;cursor:pointer" style-hover="color:#00E5FF;border-color:rgba(0,229,255,.5)">SELECTED WORK →</span>
+<span onClick="{{ onReplay }}" style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;cursor:pointer;padding:12px 4px" style-hover="color:#00E5FF">REPLAY GLITCH</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:26px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>REQUESTED <span style="color:#C6D1DB">/{{ badPath }}</span></span>
+<span>METHOD <span style="color:#C6D1DB">GET</span></span>
+<span>TRACE <span style="color:#C6D1DB;font-variant-numeric:tabular-nums">{{ traceId }}</span></span>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:18px">
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);background-image:linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45)),linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45)),linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45)),linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45)),linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45)),linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45)),linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45)),linear-gradient(rgba(255,45,85,.45),rgba(255,45,85,.45));background-repeat:no-repeat;background-size:14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;align-items:center;gap:7px;padding:11px 16px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.55)"></span>
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="flex:1;text-align:center;font:500 10px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.08em">tim@vps: ~ — router trace</span>
+</div>
+<div style="position:relative">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px)"></div>
+<div style="padding:18px 20px 20px">
+<sc-for list="{{ lines }}" as="ln" hint-placeholder-count="7">
+<div style="white-space:pre-wrap;font:400 12px/1.8 'JetBrains Mono',monospace;color:{{ ln.color }}">{{ ln.t }}</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+<span style="font:600 12px 'JetBrains Mono',monospace;color:#00E5FF">tim@vps:~$</span>
+<span style="width:8px;height:14px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span>
+</div>
+</div>
+</div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14)">
+<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.404.01</span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">ERROR BUDGET</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">WHILE YOU ARE HERE — SERVE THE REQUESTS</span>
+</div>
+<canvas ref="{{ gameRef }}" tabIndex="0" role="application" aria-label="Mini-Spiel: eingehende Anfragen bedienen" style="display:block;width:100%;height:196px;background:#0A0E14;cursor:pointer"></canvas>
+<div style="display:flex;align-items:center;gap:16px;padding:9px 14px;border-top:1px solid rgba(139,152,166,.12);font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span><span style="color:#C6D1DB">A S D F</span> ODER <span style="color:#C6D1DB">← ↑ ↓ →</span></span>
+<span style="flex:1"></span>
+<span>ENTER ODER KLICK STARTET</span>
+</div>
+</div>
+</div>
+</div>
+
+<div style="flex:none;border-top:1px solid rgba(139,152,166,.16);padding:22px 0 26px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:16px"><span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996">MOUNTED ROUTES</span><span style="flex:1"></span><span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DER CV IST KEINE ROUTE — AUF <span style="color:#C6D1DB">/</span> IM TERMINAL <span style="color:#00E5FF">cv</span></span></div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:20px">
+<div style="display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:baseline;padding-right:20px;border-right:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="--tn-a:#00E5FF"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6)">/</span><span><span style="display:block;font:500 12.5px 'JetBrains Mono',monospace;color:var(--tn-a,#E8EEF4)">Home</span><span style="display:block;font:400 11px 'JetBrains Mono',monospace;color:#7C8996;margin-top:4px">terminal, training log, systems</span></span></div>
+<div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:baseline;padding-right:20px;border-right:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="--tn-a:#00E5FF"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6)">/work</span><span><span style="display:block;font:500 12.5px 'JetBrains Mono',monospace;color:var(--tn-a,#E8EEF4)">Selected work</span><span style="display:block;font:400 11px 'JetBrains Mono',monospace;color:#7C8996;margin-top:4px">05 systems, 01 auxiliary</span></span></div>
+<div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:baseline;padding-right:20px;border-right:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="--tn-a:#00E5FF"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6)">/blog</span><span><span style="display:block;font:500 12.5px 'JetBrains Mono',monospace;color:var(--tn-a,#E8EEF4)">Writing</span><span style="display:block;font:400 11px 'JetBrains Mono',monospace;color:#7C8996;margin-top:4px">10 entries, RSS feed</span></span></div>
+<div style="display:grid;grid-template-columns:38px 1fr;gap:12px;align-items:baseline;padding-right:20px;border-right:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="--tn-a:#00E5FF"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6)">/about</span><span><span style="display:block;font:500 12.5px 'JetBrains Mono',monospace;color:var(--tn-a,#E8EEF4)">About</span><span style="display:block;font:400 11px 'JetBrains Mono',monospace;color:#7C8996;margin-top:4px">bio, contact, imprint</span></span></div>
+<div style="display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:baseline;cursor:pointer" style-hover="--tn-a:#00E5FF"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6)">/contact</span><span><span style="display:block;font:500 12.5px 'JetBrains Mono',monospace;color:var(--tn-a,#E8EEF4)">Open a channel</span><span style="display:block;font:400 11px 'JetBrains Mono',monospace;color:#7C8996;margin-top:4px">form, arrives directly</span></span></div>
+</div>
+</div>
+
+<div style="flex:none">
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);padding:14px 0 18px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1 · #A41F9C2</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CV → TERMINAL AUF <span style="color:#8B98A6">/</span> : <span style="color:#8B98A6">cv</span></span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span><span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span><span style="color:#FF2D55">STATUS 404</span><span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Mobile · 390 — Trace bleibt, Spiel direkt darunter, Routenliste teilt sich an der Falte</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="404 — Mobile" style="width:390px;height:952px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;left:0;right:0;top:844px;border-top:1px dashed rgba(139,152,166,.35);pointer-events:none;z-index:2"><span style="position:absolute;right:6px;top:4px;font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">FOLD · 844</span></div>
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.025) 1px,transparent 1px);background-size:64px 64px"></div>
+<div style="position:relative;z-index:1;padding:0 22px;height:100%;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(139,152,166,.16);flex:none">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:16px 0">
+<div style="display:flex;align-items:center;gap:9px;margin-bottom:20px">
+<span style="width:6px;height:6px;border-radius:50%;background:#FF2D55;animation:tn-pulse 2s ease-in-out infinite"></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.15em;color:#FF2D55">ERR 404</span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">— ROUTE NOT RESOLVED</span>
+</div>
+<h2 style="margin:0 0 20px;font:600 58px/.94 'Chakra Petch',sans-serif;color:#E8EEF4">SIGNAL<br>LOST</h2>
+<p style="margin:0 0 26px;font:400 13.5px/1.7 'Geist',sans-serif;color:#8B98A6">404 — this route does not resolve. The request reached the server; there is nothing mounted at that path.</p>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:22px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#08131A;background:#00E5FF;padding:13px 18px;text-align:center">← RETURN TO ROOT</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#C6D1DB;border:1px solid rgba(139,152,166,.3);padding:13px 18px;text-align:center">SELECTED WORK →</span>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);margin-bottom:18px">
+<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.55)"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="flex:1;text-align:center;font:500 8.5px 'JetBrains Mono',monospace;color:#7C8996">router trace</span>
+</div>
+<div style="padding:14px 16px">
+<sc-for list="{{ linesM }}" as="ln" hint-placeholder-count="5">
+<div style="white-space:pre-wrap;font:400 10.5px/1.8 'JetBrains Mono',monospace;color:{{ ln.color }}">{{ ln.t }}</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:7px;margin-top:3px"><span style="font:600 10.5px 'JetBrains Mono',monospace;color:#00E5FF">tim@vps:~$</span><span style="width:7px;height:12px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span></div>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 18px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>REQUESTED <span style="color:#C6D1DB">/{{ badPath }}</span></span><span>TRACE <span style="color:#C6D1DB">{{ traceId }}</span></span>
+</div>
+</div>
+
+<div style="flex:none;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);margin-bottom:10px">
+<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.404.01</span>
+<span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">ERROR BUDGET</span>
+<span style="flex:1"></span>
+<span style="font:400 8px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">SPUR ANTIPPEN</span>
+</div>
+<canvas ref="{{ gameRef }}" tabIndex="0" role="application" aria-label="Mini-Spiel: eingehende Anfragen bedienen" style="display:block;width:100%;height:96px;background:#0A0E14"></canvas>
+</div>
+
+<div style="flex:none;border-top:1px solid rgba(139,152,166,.16);padding:18px 0">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:12px">MOUNTED ROUTES</div>
+<div style="display:flex;flex-direction:column;gap:11px">
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:44px">/</span><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Home</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">→</span></div>
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:44px">/work</span><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Selected work</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">→</span></div>
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:44px">/blog</span><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Writing</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">→</span></div>
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:44px">/about</span><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">About</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">→</span></div>
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:44px">/contact</span><span style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Open a channel</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">→</span></div>
+</div>
+</div>
+<div style="flex:none">
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 18px;border-top:1px solid rgba(139,152,166,.16);padding:11px 0 16px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span tabIndex="0" role="link" aria-label="CV als PDF laden" style="display:inline-flex;align-items:center;min-height:44px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer;flex-basis:100%;min-height:44px;padding:14px 0;margin:0;display:flex;align-items:center" style-hover="color:#00E5FF">CV → cv.pdf</span><span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:14px;min-height:44px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="display:flex;align-items:center;min-height:32px">49.6117° N · 6.1300° E</span><span style="color:#FF2D55">STATUS 404</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6">--:--:--</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Design notes</div>
+<div class="dv-card" style="width:420px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">404</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> Glitch feuert einmal beim Laden, 300ms, dann nie wieder von selbst — Interpunktion, keine Tapete</div>
+<div><span style="color:#00E5FF">▸</span> Alert-Rot ist hier das Thema, nicht die Ausnahme: Statuspunkt, Panel-Brackets, Footer-Status. Cyan bleibt für Handlungen</div>
+<div><span style="color:#00E5FF">▸</span> Die Seite bleibt in der Erzählung: Router-Trace zeigt, dass die Anfrage ankam und nur kein Handler passte</div>
+<div><span style="color:#00E5FF">▸</span> Kein Sackgassen-404: vier gemountete Routen mit Beschreibung, primärer Weg zurück zur Root</div>
+<div><span style="color:#00E5FF">▸</span> Trace-ID und Pfad sind echt gerendert — im Build kommen sie aus der Antwort der Go-API</div>
+<div><span style="color:#00E5FF">▸</span> Desktop bleibt eine Bildschirmhöhe ohne Scrollen. Mobil reicht eine Höhe seit dem Spiel nicht mehr — der Rahmen zeigt die volle Seite mit markierter Falte bei 844px. Im ersten Viewport stehen Fehler, Ausweg, Trace, das Spiel (endet bei 742) sowie der Anfang der Routenliste mit /Home und /work; unter die Falte fallen /blog, /about und der Footer</div>
+<div><span style="color:#00E5FF">▸</span> <span style="color:#C6D1DB">SYS.404.01 ERROR BUDGET</span> ist ein echtes Mini-Spiel im Canvas: vier Spuren (API, DB, QUEUE, CACHE), Anfragen fallen, Treffer im Fenster von ±10 % bedient sie. A S D F oder Pfeiltasten, am Handy Spur antippen</div>
+<div><span style="color:#00E5FF">▸</span> Das HUD ist echte Telemetrie, keine Punktzahl-Deko: SERVED, live gerechnetes <span style="color:#C6D1DB">P95</span> aus der Reaktionszeit, UPTIME aus bedient/verworfen, dazu fünf Kästchen Error-Budget. Ende ist kein „Game over", sondern <span style="color:#C6D1DB">PAGED</span> mit Incident-Zusammenfassung</div>
+<div><span style="color:#00E5FF">▸</span> Kein Gate: das Spiel blockiert nichts, startet nie von selbst und liegt neben den Ausgängen — die 404 bleibt zuerst eine Wegbeschreibung. Bestwert in <span style="color:#C6D1DB">localStorage</span>, ein Schlüssel</div>
+<div><span style="color:#00E5FF">▸</span> Rot im Spiel ist Zustandswechsel, nicht Dekoration: Spurblitz bei verworfener Anfrage, PAGED am Ende. Auf dieser Seite ist Rot ohnehin das Thema</div>
+<div><span style="color:#00E5FF">▸</span> <span style="color:#C6D1DB">prefers-reduced-motion</span>: Glitch, Puls und Cursor stehen still, Layout unverändert</div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "Highscore-Zeile im Terminal-Befehl stats" · "500er-Variante" · "Spiel als eigener Terminal-Befehl play"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { lines: [] };
+  clocks = new Set();
+  C = { ink:"#E8EEF4", steel:"#8B98A6", dim:"#7C8996", cyan:"#00E5FF", err:"#FF2D55", amber:"#FFB000" };
+  path = "systems/relay/v2";
+  trace = "4F2A-91C7";
+  log = [
+    ["GET /systems/relay/v2 HTTP/2","steel"],
+    ["→ router: matching 4 mounted routes … no match","steel"],
+    ["→ static: no file at that path … miss","steel"],
+    ["→ handler: fallback 404","err"],
+    ["\u00A0","steel"],
+    ["warn: nothing is broken — the path is empty","amber"],
+    ["hint: try / · /work · /blog · /about","dim"]
+  ];
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.iv = setInterval(tick, 1000);
+    this.gameInit();
+    this.log.forEach((l,i) => setTimeout(() => {
+      this.setState(s => ({ lines: [...s.lines, { t: l[0], color: this.C[l[1]] || this.C.steel }] }));
+    }, 420 + i*150));
+    this.fire();
+  }
+  componentWillUnmount() {
+    clearInterval(this.iv); clearTimeout(this.gt);
+    cancelAnimationFrame(this.raf); window.removeEventListener("keydown", this.onKey);
+  }
+
+  canvases = [];
+  LANES = ["API", "DB", "QUEUE", "CACHE"];
+  KEYS = { a: 0, s: 1, d: 2, f: 3, arrowleft: 0, arrowup: 1, arrowdown: 2, arrowright: 3 };
+  G = { on: false, over: false, blocks: [], served: 0, dropped: 0, budget: 5, lat: [], next: 0.9, speed: 0.38, best: 0, flash: [0, 0, 0, 0], hit: [0, 0, 0, 0] };
+
+  gameInit() {
+    try { this.G.best = parseInt(localStorage.getItem("ts404.best") || "0", 10) || 0; } catch (e) {}
+    this.onKey = e => {
+      const t = e.target;
+      if (t && t.closest && t.closest("input,textarea,select,[contenteditable]")) return;
+      const k = (e.key || "").toLowerCase();
+      if (k === "enter" || k === " ") { if (!this.G.on) { this.gameStart(); e.preventDefault(); } return; }
+      const l = this.KEYS[k];
+      if (l === undefined || !this.G.on) return;
+      e.preventDefault(); this.serve(l);
+    };
+    window.addEventListener("keydown", this.onKey);
+    this.last = 0;
+    const loop = ts => {
+      const dt = this.last ? Math.min(0.05, (ts - this.last) / 1000) : 0;
+      this.last = ts;
+      this.step(dt);
+      this.canvases.forEach(cv => this.paint(cv));
+      this.raf = requestAnimationFrame(loop);
+    };
+    this.raf = requestAnimationFrame(loop);
+  }
+
+  gameStart() {
+    const g = this.G;
+    g.on = true; g.over = false; g.blocks = []; g.served = 0; g.dropped = 0;
+    g.budget = 5; g.lat = []; g.next = 0.8; g.speed = 0.38; g.t = 0;
+  }
+
+  serve(lane) {
+    const g = this.G;
+    let best = null;
+    g.blocks.forEach(b => { if (b.lane === lane && b.live && Math.abs(b.p - 1) < 0.1 && (!best || Math.abs(b.p - 1) < Math.abs(best.p - 1))) best = b; });
+    if (!best) { g.flash[lane] = 0.18; return; }
+    best.live = false;
+    g.served++; g.hit[lane] = 0.22;
+    g.lat.push(Math.round(Math.abs(best.p - 1) / 0.1 * 240) + 18);
+  }
+
+  step(dt) {
+    const g = this.G;
+    if (!g.on || !dt) return;
+    g.t += dt;
+    g.speed = Math.min(0.86, 0.38 + g.t * 0.011);
+    for (let i = 0; i < 4; i++) { g.flash[i] = Math.max(0, g.flash[i] - dt); g.hit[i] = Math.max(0, g.hit[i] - dt); }
+    g.next -= dt;
+    if (g.next <= 0) {
+      g.next = Math.max(0.34, 0.9 - g.t * 0.013) * (0.75 + Math.random() * 0.5);
+      g.blocks.push({ lane: (Math.random() * 4) | 0, p: -0.06, live: true, m: Math.random() < 0.55 ? "GET" : "POST" });
+    }
+    g.blocks.forEach(b => { b.p += g.speed * dt; });
+    g.blocks = g.blocks.filter(b => {
+      if (b.live && b.p > 1.13) {
+        b.live = false; g.dropped++; g.budget--; g.flash[b.lane] = 0.35;
+        if (g.budget <= 0) {
+          g.on = false; g.over = true;
+          if (g.served > g.best) { g.best = g.served; try { localStorage.setItem("ts404.best", String(g.best)); } catch (e) {} }
+        }
+        return false;
+      }
+      return b.live && b.p < 1.2;
+    });
+  }
+
+  p95() {
+    const l = this.G.lat.slice().sort((a, b) => a - b);
+    if (!l.length) return 0;
+    return l[Math.min(l.length - 1, Math.floor(0.95 * (l.length - 1)))];
+  }
+
+  paint(cv) {
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !h) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const x = cv.getContext("2d");
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const g = this.G, sm = h < 140, mono = q => q + "px 'JetBrains Mono',monospace";
+    const hud = sm ? 15 : 20, top = hud + (sm ? 12 : 18), bar = h - (sm ? 12 : 20), lw = w / 4;
+    x.clearRect(0, 0, w, h);
+    x.fillStyle = "#0A0E14"; x.fillRect(0, 0, w, h);
+
+    x.font = "600 " + mono(sm ? 7 : 8.5); x.textBaseline = "middle";
+    const up = g.served + g.dropped ? (g.served / (g.served + g.dropped)) * 100 : 100;
+    x.fillStyle = "#7C8996"; x.fillText("SERVED", 10, hud / 2 + 1);
+    x.fillStyle = "#E8EEF4"; x.fillText(String(g.served).padStart(3, "0"), 10 + (sm ? 40 : 48), hud / 2 + 1);
+    x.fillStyle = "#7C8996"; x.fillText("P95", 10 + (sm ? 74 : 90), hud / 2 + 1);
+    x.fillStyle = this.p95() > 200 ? "#FFB000" : "#C6D1DB"; x.fillText(this.p95() ? this.p95() + "MS" : "—", 10 + (sm ? 96 : 116), hud / 2 + 1);
+    if (!sm) { x.fillStyle = "#7C8996"; x.fillText("UPTIME", 200, hud / 2 + 1); x.fillStyle = up < 99 ? "#FFB000" : "#C6D1DB"; x.fillText(up.toFixed(1) + "%", 246, hud / 2 + 1); }
+    for (let i = 0; i < 5; i++) {
+      x.fillStyle = i < g.budget ? "#00E5FF" : "rgba(255,45,85,.5)";
+      x.fillRect(w - 10 - (5 - i) * 9, hud / 2 - 3, 6, 6);
+    }
+    x.fillStyle = "rgba(139,152,166,.16)"; x.fillRect(0, hud, w, 1);
+
+    for (let i = 1; i < 4; i++) { x.fillStyle = "rgba(139,152,166,.1)"; x.fillRect(i * lw, hud + 1, 1, h - hud - 1); }
+    x.font = "500 " + mono(sm ? 6.5 : 8);
+    for (let i = 0; i < 4; i++) {
+      if (g.flash[i] > 0) { x.fillStyle = "rgba(255,45,85," + (g.flash[i] * 0.5).toFixed(3) + ")"; x.fillRect(i * lw, hud + 1, lw, h - hud - 1); }
+      if (g.hit[i] > 0) { x.fillStyle = "rgba(0,229,255," + (g.hit[i] * 0.35).toFixed(3) + ")"; x.fillRect(i * lw, hud + 1, lw, h - hud - 1); }
+      x.fillStyle = "#7C8996"; x.textAlign = "center";
+      x.fillText(this.LANES[i], i * lw + lw / 2, hud + (sm ? 7 : 10));
+      x.fillStyle = "rgba(0,229,255,.45)";
+      x.fillText(["A", "S", "D", "F"][i], i * lw + lw / 2, bar + (sm ? 7 : 11));
+    }
+    x.textAlign = "left";
+
+    x.fillStyle = "rgba(0,229,255,.1)"; x.fillRect(0, bar - 0.1 * (bar - top), w, 0.2 * (bar - top));
+    x.fillStyle = "rgba(0,229,255,.55)"; x.fillRect(0, bar, w, 1);
+
+    const bh = sm ? 12 : 17;
+    g.blocks.forEach(b => {
+      const y = top + b.p * (bar - top) - bh / 2, near = Math.abs(b.p - 1) < 0.1;
+      const bx = b.lane * lw + (sm ? 6 : 10), bw = lw - (sm ? 12 : 20);
+      x.fillStyle = near ? "#00E5FF" : "rgba(14,20,28,.9)"; x.fillRect(bx, y, bw, bh);
+      x.strokeStyle = near ? "#00E5FF" : "rgba(139,152,166,.45)"; x.lineWidth = 1;
+      x.strokeRect(bx + 0.5, y + 0.5, bw - 1, bh - 1);
+      x.font = "600 " + mono(sm ? 6.5 : 8.5); x.textAlign = "center";
+      x.fillStyle = near ? "#08131A" : "#8B98A6";
+      x.fillText(b.m, bx + bw / 2, y + bh / 2 + 1);
+      x.textAlign = "left";
+    });
+
+    if (!g.on) {
+      x.fillStyle = "rgba(10,14,20,.86)"; x.fillRect(0, hud + 1, w, h - hud - 1);
+      x.textAlign = "center";
+      if (g.over) {
+        x.fillStyle = "#FF2D55"; x.font = "700 " + mono(sm ? 13 : 20);
+        x.fillText("PAGED", w / 2, h / 2 - (sm ? 16 : 26));
+        x.fillStyle = "#C6D1DB"; x.font = "400 " + mono(sm ? 7 : 9.5);
+        x.fillText("INCIDENT #404 · " + g.served + " SERVED · " + g.dropped + " DROPPED", w / 2, h / 2 + (sm ? 0 : 2));
+        x.fillStyle = "#8B98A6";
+        x.fillText("P95 " + (this.p95() || 0) + "MS · UPTIME " + up.toFixed(1) + "% · BEST " + g.best, w / 2, h / 2 + (sm ? 12 : 18));
+        x.fillStyle = "rgba(0,229,255,.8)"; x.font = "600 " + mono(sm ? 7 : 9);
+        x.fillText(sm ? "TAP · NOCHMAL" : "ENTER ODER KLICK · NOCHMAL", w / 2, h / 2 + (sm ? 26 : 40));
+      } else {
+        x.fillStyle = "#E8EEF4"; x.font = "600 " + mono(sm ? 11 : 16);
+        x.fillText("ERROR BUDGET", w / 2, h / 2 - (sm ? 12 : 20));
+        x.fillStyle = "#8B98A6"; x.font = "400 " + mono(sm ? 7 : 9.5);
+        x.fillText("Anfragen bedienen, bevor sie 5xx werden.", w / 2, h / 2 + (sm ? 3 : 4));
+        x.fillStyle = "#7C8996";
+        x.fillText("Fünf Fehlversuche und du wirst geweckt.", w / 2, h / 2 + (sm ? 15 : 22));
+        x.fillStyle = "rgba(0,229,255,.8)"; x.font = "600 " + mono(sm ? 7 : 9);
+        x.fillText(sm ? "TAP · START" : "ENTER ODER KLICK · START", w / 2, h / 2 + (sm ? 30 : 44));
+      }
+      x.textAlign = "left";
+      if (g.best) { x.fillStyle = "#7C8996"; x.font = "400 " + mono(sm ? 6.5 : 8.5); x.fillText("BEST " + g.best, 10, h - (sm ? 6 : 8)); }
+    }
+  }
+  fire() {
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const el = this.glitch; if (!el) return;
+    el.style.animation = "none"; void el.offsetWidth;
+    el.style.animation = "tn-glitch .3s steps(2,end) 1";
+    el.style.textShadow = "2px 0 rgba(255,45,85,.75), -2px 0 rgba(0,229,255,.55)";
+    clearTimeout(this.gt);
+    this.gt = setTimeout(() => { el.style.animation = "none"; el.style.textShadow = "none"; }, 320);
+  }
+  renderVals() {
+    return {
+      clockRef: el => { if (el) this.clocks.add(el); },
+      glitchRef: el => { this.glitch = el; },
+      gameRef: el => {
+        if (!el || this.canvases.indexOf(el) >= 0) return;
+        this.canvases.push(el);
+        el.addEventListener("pointerdown", ev => {
+          if (!this.G.on) { this.gameStart(); return; }
+          const r = el.getBoundingClientRect();
+          this.serve(Math.max(0, Math.min(3, Math.floor((ev.clientX - r.left) / (r.width / 4)))));
+        });
+      },
+      lines: this.state.lines,
+      linesM: this.state.lines.filter((_, i) => i !== 4 && i !== 5),
+      badPath: this.path, traceId: this.trace,
+      onReplay: () => this.fire()
+    };
+  }
+}
+</script>
+</body>
+</html>

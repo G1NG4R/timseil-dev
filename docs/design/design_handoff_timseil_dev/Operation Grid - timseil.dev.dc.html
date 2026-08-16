@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@keyframes og-notch{0%{transform:scaleY(1)}50%{transform:scaleY(1.35)}100%{transform:scaleY(1)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">SYS.03 OPERATION — Betriebsraster neben dem Contribution-Graph · Ausfälle sind anklickbar</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1360 — bedienbar: Kerbe anklicken öffnet den Vorfall</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Operation grid" style="width:1360px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:20px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.03</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">OPERATION</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">{{ head }}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 396px;gap:36px;align-items:start">
+<div>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:12px">
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">UPTIME · ONE CELL IS ONE DAY</span>
+<span style="flex:1"></span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;background:#00E5FF;box-shadow:0 0 6px rgba(0,229,255,.4)"></span>NO INCIDENT</span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;background:#FFB000"></span>DEGRADED</span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;background:#FF2D55"></span>OUTAGE</span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;border:1px dashed rgba(139,152,166,.4)"></span>NO DATA</span>
+</div>
+
+<div style="display:flex;gap:0;margin-bottom:9px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">
+<sc-for list="{{ months }}" as="m" hint-placeholder-count="4"><span style="{{ m.style }}">{{ m.label }}</span></sc-for>
+</div>
+
+<div style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,15px);grid-auto-columns:15px;gap:4px;margin-bottom:14px">
+<sc-for list="{{ cells }}" as="c" hint-placeholder-count="91"><span tabIndex="0" role="button" onClick="{{ c.click }}" onKeyDown="{{ c.key }}" title="{{ c.title }}" style="{{ c.style }}"></span></sc-for>
+</div>
+
+<div style="font:400 11px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996;margin-bottom:30px">{{ gridHint }}</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:12px">
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">DEPLOYS · BAR HEIGHT IS DURATION</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ depHead }}</span>
+</div>
+<div style="display:flex;align-items:flex-end;gap:5px;height:74px;padding-bottom:9px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:12px">
+<sc-for list="{{ deploys }}" as="d" hint-placeholder-count="34"><span tabIndex="0" role="button" onClick="{{ d.click }}" onKeyDown="{{ d.key }}" title="{{ d.title }}" style="{{ d.style }}"></span></sc-for>
+</div>
+<div style="font:400 11px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996;margin-bottom:30px">{{ depHint }}</div>
+
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+<sc-for list="{{ tiles }}" as="t" hint-placeholder-count="5">
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:15px 16px">
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:9px">{{ t.label }}</div>
+<div style="font:500 21px 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;color:{{ t.color }}">{{ t.value }}</div>
+<div style="margin-top:6px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">{{ t.note }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:12px;font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Diese fünf Werte sind nicht getippt. Sie werden aus demselben Array gerechnet, das das Raster zeichnet — ändert sich ein Tag, ändern sich die Zahlen.</div>
+
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:20px 22px;position:sticky;top:20px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px">
+<span style="width:6px;height:6px;border-radius:50%;background:{{ panelDot }}"></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">{{ panelTitle }}</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ panelMeta }}</span>
+</div>
+<div style="font:400 11px/1.85 'JetBrains Mono',monospace;color:#8B98A6;min-height:232px">
+<sc-for list="{{ panelLines }}" as="l" hint-placeholder-count="9"><div style="color:{{ l.color }}">{{ l.t }}</div></sc-for>
+</div>
+<div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(139,152,166,.12);display:flex;align-items:baseline;gap:12px">
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:{{ linkColor }};cursor:pointer" style-hover="color:#00E5FF">{{ panelLink }}</span>
+<span style="flex:1"></span>
+<span onClick="{{ clear }}" style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;cursor:pointer" style-hover="color:#C6D1DB">{{ clearLabel }}</span>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Tag 1 — derselbe Baustein, bevor Daten existieren</div>
+<div class="dv-card" style="width:640px">
+<div data-screen-label="Operation grid — day one" style="width:640px;box-sizing:border-box;padding:28px 30px;background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:18px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.03</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">OPERATION</span>
+<span style="flex:1"></span>
+<span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">DAY 1 · NO HISTORY YET</span>
+</div>
+<div style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);grid-auto-columns:13px;gap:4px;margin-bottom:16px">
+<sc-for list="{{ emptyCells }}" as="c" hint-placeholder-count="91"><span style="border:1px dashed rgba(139,152,166,.22)"></span></sc-for>
+</div>
+<div style="display:flex;align-items:baseline;gap:12px;padding:12px 14px;border-left:1px solid rgba(255,176,0,.5);background-color:#0E141C;margin-bottom:18px">
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#FFB000">— NO DATA</span>
+<span style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">Der Baustein startet leer und füllt sich pro Betriebstag. Er zeigt nie 100 %, wo nichts gemessen wurde — das ist dieselbe Regel wie bei den Ops-Kacheln und beim Trainings-Log.</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">
+<div><div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">FÜLLT SICH AB</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">Erster Tag Betrieb. Nach 30 Tagen trägt das Raster eine Aussage, nach 90 die Kennzahl darüber.</div></div>
+<div><div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">ERSETZT NICHT</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">Der Contribution-Graph bleibt daneben stehen. Er misst Aktivität, dieses Raster misst Betrieb — zwei Aussagen, nicht zwei Versionen derselben.</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Datenvertrag · Regeln · Design notes</div>
+<div class="dv-card" style="width:520px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:14px">DATENVERTRAG — ERWEITERUNG VON /api/health</div>
+<div style="font:400 10px/1.7 'JetBrains Mono',monospace;color:#8B98A6;white-space:pre;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:14px 16px;margin-bottom:20px">GET /api/health   s-maxage=300
+
+{ "systems": [
+  { "slug": "timseil.dev",
+    "state": "live",
+    "days": [
+      { "d": "2026-06-12",
+        "state": "outage",
+        "downSec": 2520,
+        "incidentId": "INC-001" } ],
+    "incidents": [
+      { "id": "INC-001",
+        "startedAt": "2026-06-12T02:14:00Z",
+        "durationSec": 2520,
+        "cause": "…", "fix": "…",
+        "postSlug": "011-migration-lock" } ],
+    "deploys": [
+      { "sha": "a41f9c2",
+        "durationSec": 42,
+        "result": "ok" } ] },
+  { "slug": "vat-check",
+    "state": "queued" } ] }</div>
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">REGELN</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+<div><span style="color:#00E5FF">▸</span> EIN RASTER PRO SYSTEM: <span style="color:#C6D1DB">days</span>, <span style="color:#C6D1DB">incidents</span> und <span style="color:#C6D1DB">deploys</span> hängen am System, nicht am Endpoint. Nur <span style="color:#C6D1DB">live</span> bekommt einen Streifen — <span style="color:#C6D1DB">queued</span> liefert die Felder nicht und rendert <span style="color:#C6D1DB">— NO DATA</span>. Orte: Startseite (30 Tage einreihig, die Seite selbst, <span style="color:#C6D1DB">reine Anzeige ohne Klick</span>) und jede Fallstudie (91 Tage = 13 Wochen à 7 Zellen, ihr System, Kerben anklickbar). Ein Raster mit sieben Reihen fasst nur Vielfache von sieben — deshalb 91, nicht 90</div>
+<div><span style="color:#00E5FF">▸</span> Ein Tag ohne Messung ist <span style="color:#C6D1DB">NO DATA</span>, nie 100 % — gestrichelte Zelle, kein Wert</div>
+<div><span style="color:#00E5FF">▸</span> Rot nur für einen echten Ausfall, Amber für Degradiert. Kein Rot als Dekoration, ein Vorfall zur Zeit geöffnet</div>
+<div><span style="color:#00E5FF">▸</span> Jeder Vorfall braucht <span style="color:#C6D1DB">cause</span>, <span style="color:#C6D1DB">fix</span> und einen Log-Eintrag. Ohne Post-Mortem keine Kerbe — sonst ist es eine rote Zelle ohne Aussage</div>
+<div><span style="color:#00E5FF">▸</span> Kennzahlen werden aus <span style="color:#C6D1DB">days[]</span> gerechnet, nie separat geliefert</div>
+<div><span style="color:#00E5FF">▸</span> Touch: Tap statt Hover, Zelle mindestens 15px mit 4px Abstand — Trefferfläche über eine unsichtbare Hülle, nicht über größere Zellen</div>
+</div>
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">DESIGN NOTES</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> GLEICHE GRAMMATIK, ANDERE MESSUNG: das Raster des Contribution-Graphs bleibt, die Zelle bedeutet einen Tag Betrieb statt einen Tag Commits</div>
+<div><span style="color:#00E5FF">▸</span> DER WOW-MOMENT IST DIE KERBE: ein Ausfall ist anklickbar und führt zum Post-Mortem. Eine Mappe, in der ein Fehler dokumentiert ist statt versteckt, prüft genau das, was Arbeitgeber wissen wollen</div>
+<div><span style="color:#00E5FF">▸</span> ZAHLEN AUS DEN DATEN: Uptime, Vorfälle, MTTR, Deploys und Rollback-Rate rechnet die Seite aus demselben Array — deshalb können sie nicht auseinanderlaufen</div>
+<div><span style="color:#00E5FF">▸</span> ILLUSTRATION IST MARKIERT: die gezeigten 91 Tage sind deterministisch erzeugt, nicht gemessen. Die Kopfzeile sagt das, damit niemand die Zahlen für echt nimmt</div>
+<div><span style="color:#00E5FF">▸</span> KEINE FLOTTENANSICHT vor zwei laufenden Systemen — eine Zeile über alle Systeme wäre ein Dashboard ohne Inhalt</div>
+<div><span style="color:#00E5FF">▸</span> MOBIL: das Raster kippt auf 30 Tage, umbrechend, Deploy-Streifen auf die letzten zehn — folgt, wenn der Baustein freigegeben ist</div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;window&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;91&quot;,&quot;182&quot;],&quot;default&quot;:&quot;91&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Raster&quot;},&quot;showDeploys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Raster&quot;}}">
+class Component extends DCLogic {
+  state = { sel: null, dep: null };
+
+  build() {
+    const days = this.props.window === "182" ? 182 : 91;
+    const end = new Date("2026-08-16T00:00:00Z");
+    const rnd = (s) => { let a = s + 0x6D2B79F5; a = Math.imul(a ^ (a >>> 15), a | 1); a ^= a + Math.imul(a ^ (a >>> 7), a | 61); return ((a ^ (a >>> 14)) >>> 0) / 4294967296; };
+    const inc = [
+      { id: "INC-001", off: 65, state: "outage", downSec: 2520, cause: "postgres container hit its memory limit while a migration held a lock", fix: "limit raised, migration split into two steps, lock timeout set", post: "011 · the migration that locked the table", budget: 34 },
+      { id: "INC-002", off: 32, state: "degraded", downSec: 1080, cause: "TLS renewal raced a container restart, proxy served a stale certificate", fix: "renewal moved into a fixed window, restart waits for acme.json", post: "012 · acme.json and the 3 a.m. restart", budget: 15 }
+    ];
+    const list = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(end.getTime() - (days - 1 - i) * 86400000);
+      const hit = inc.find(x => x.off === days - 1 - i);
+      list.push({
+        i, iso: d.toISOString().slice(0, 10),
+        state: hit ? hit.state : (rnd(i) < 0.011 ? "nodata" : "ok"),
+        downSec: hit ? hit.downSec : 0,
+        inc: hit || null
+      });
+    }
+    const deploys = [];
+    for (let i = 0; i < 34; i++) {
+      const bad = i === 11 || i === 27;
+      deploys.push({
+        i, sha: Math.floor(rnd(i * 7 + 3) * 0xfffffff).toString(16).padStart(7, "0"),
+        sec: 38 + Math.round(rnd(i * 3 + 11) * 58) + (bad ? 40 : 0),
+        result: bad ? "rollback" : "ok",
+        iso: new Date(end.getTime() - (33 - i) * 2.6 * 86400000).toISOString().slice(0, 10)
+      });
+    }
+    return { list, deploys, days };
+  }
+
+  COL = { ok: "#00E5FF", degraded: "#FFB000", outage: "#FF2D55" };
+
+  renderVals() {
+    const { list, deploys, days } = this.build();
+    const sel = this.state.sel === null ? null : list[this.state.sel];
+    const dep = this.state.dep === null ? null : deploys[this.state.dep];
+
+    const cellStyle = (c, active) => {
+      const base = "width:15px;height:15px;cursor:pointer;transition:transform .12s,box-shadow .12s;";
+      const ring = active ? "outline:1px solid #00E5FF;outline-offset:2px;" : "";
+      if (c.state === "nodata") return base + ring + "border:1px dashed rgba(139,152,166,.3);box-sizing:border-box";
+      if (c.state === "ok") return base + ring + "background:rgba(0,229,255,.55)";
+      const col = this.COL[c.state];
+      return base + ring + "background:" + col + ";box-shadow:0 0 8px " + (c.state === "outage" ? "rgba(255,45,85,.55)" : "rgba(255,176,0,.45)") + ";animation:og-notch 2.6s ease-in-out infinite";
+    };
+    const cells = list.map(c => ({
+      style: cellStyle(c, this.state.sel === c.i),
+      title: c.iso + " · " + (c.state === "ok" ? "no incident" : c.state === "nodata" ? "no data" : c.state.toUpperCase() + " · " + Math.round(c.downSec / 60) + " min"),
+      click: () => this.setState({ sel: c.i, dep: null }),
+      key: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.setState({ sel: c.i, dep: null }); } }
+    }));
+
+    const maxSec = Math.max.apply(null, deploys.map(d => d.sec));
+    const deployVals = deploys.map(d => ({
+      style: "width:16px;height:" + Math.round(18 + (d.sec / maxSec) * 46) + "px;cursor:pointer;background:" + (d.result === "ok" ? "rgba(0,229,255,.4)" : "#FF2D55") + (this.state.dep === d.i ? ";outline:1px solid #00E5FF;outline-offset:2px" : ""),
+      title: d.iso + " · #" + d.sha + " · " + d.sec + "s · " + d.result,
+      click: () => this.setState({ dep: d.i, sel: null }),
+      key: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.setState({ dep: d.i, sel: null }); } }
+    }));
+
+    const downSec = list.reduce((a, c) => a + c.downSec, 0);
+    const measured = list.filter(c => c.state !== "nodata").length;
+    const incidents = list.filter(c => c.inc).length;
+    const mttr = incidents ? Math.round(downSec / incidents / 60) : 0;
+    const rollbacks = deploys.filter(d => d.result === "rollback").length;
+    const up = (100 - (downSec / (measured * 86400)) * 100).toFixed(3);
+
+    const tiles = [
+      { label: "UPTIME · " + days + " D", value: up + "%", color: "#E8EEF4", note: measured + " days measured" },
+      { label: "INCIDENTS", value: String(incidents).padStart(2, "0"), color: incidents ? "#FFB000" : "#E8EEF4", note: "both documented" },
+      { label: "MTTR", value: mttr + " min", color: "#E8EEF4", note: "mean time to restore" },
+      { label: "DEPLOYS", value: String(deploys.length), color: "#E8EEF4", note: "median " + deploys.map(d => d.sec).sort((a, b) => a - b)[Math.floor(deploys.length / 2)] + "s" },
+      { label: "ROLLBACK RATE", value: ((rollbacks / deploys.length) * 100).toFixed(1) + "%", color: "#E8EEF4", note: rollbacks + " of " + deploys.length }
+    ];
+
+    let panelTitle = "INCIDENT DETAIL", panelMeta = "CLICK A CELL", panelDot = "#7C8996", panelLink = "NOTHING SELECTED", linkColor = "#7C8996", clearLabel = "", lines;
+    if (dep) {
+      panelTitle = "DEPLOY #" + dep.sha.toUpperCase();
+      panelMeta = dep.result === "ok" ? "OK" : "ROLLED BACK";
+      panelDot = dep.result === "ok" ? "#00E5FF" : "#FF2D55";
+      panelLink = "COMMIT ON GITHUB →";
+      linkColor = "#C6D1DB";
+      clearLabel = "CLEAR ✕";
+      lines = [
+        { t: "$ deploy " + dep.sha, color: "#C6D1DB" },
+        { t: "  date       " + dep.iso, color: "#8B98A6" },
+        { t: "  build      actions · test + image push", color: "#8B98A6" },
+        { t: "  transfer   webhook → dokploy", color: "#8B98A6" },
+        { t: "  duration   " + dep.sec + "s", color: "#E8EEF4" },
+        { t: "  health     " + (dep.result === "ok" ? "200 in 3 checks" : "failed 3 checks"), color: dep.result === "ok" ? "#8B98A6" : "#FF2D55" },
+        { t: dep.result === "ok" ? "< live" : "< rolled back to previous image", color: dep.result === "ok" ? "#00E5FF" : "#FF2D55" },
+        { t: "", color: "#8B98A6" },
+        { t: dep.result === "ok" ? "  no traffic served from a failing build" : "  visitors saw the previous version, not an error", color: "#7C8996" }
+      ];
+    } else if (sel && sel.inc) {
+      const x = sel.inc;
+      panelTitle = x.id;
+      panelMeta = x.state.toUpperCase() + " · " + Math.round(x.downSec / 60) + " MIN";
+      panelDot = this.COL[x.state];
+      panelLink = "READ THE POST-MORTEM: " + x.post + " →";
+      linkColor = "#00E5FF";
+      clearLabel = "CLEAR ✕";
+      lines = [
+        { t: "$ incident " + x.id, color: "#C6D1DB" },
+        { t: "  date       " + sel.iso, color: "#8B98A6" },
+        { t: "  duration   " + Math.round(x.downSec / 60) + " min", color: "#E8EEF4" },
+        { t: "  budget     " + x.budget + "% of the month consumed", color: "#FFB000" },
+        { t: "", color: "#8B98A6" },
+        { t: "  cause", color: "#7C8996" },
+        { t: "  " + x.cause, color: "#C6D1DB" },
+        { t: "  fix", color: "#7C8996" },
+        { t: "  " + x.fix, color: "#C6D1DB" }
+      ];
+    } else if (sel) {
+      panelTitle = sel.iso;
+      panelMeta = sel.state === "nodata" ? "NO DATA" : "NO INCIDENT";
+      panelDot = sel.state === "nodata" ? "#7C8996" : "#00E5FF";
+      clearLabel = "CLEAR ✕";
+      lines = sel.state === "nodata"
+        ? [{ t: "$ day " + sel.iso, color: "#C6D1DB" }, { t: "  monitor    no samples", color: "#8B98A6" }, { t: "  uptime     — NO DATA", color: "#7C8996" }, { t: "", color: "#8B98A6" }, { t: "  A gap is shown as a gap. Filling it with 100%", color: "#7C8996" }, { t: "  would be the one lie this page cannot afford.", color: "#7C8996" }]
+        : [{ t: "$ day " + sel.iso, color: "#C6D1DB" }, { t: "  uptime     100.000%", color: "#E8EEF4" }, { t: "  checks     1440 · all 200", color: "#8B98A6" }, { t: "  p95        [FROM LOG]", color: "#8B98A6" }, { t: "", color: "#8B98A6" }, { t: "  Nothing happened. Most days look like this,", color: "#7C8996" }, { t: "  and that is the point of the strip.", color: "#7C8996" }];
+    } else {
+      lines = [
+        { t: "$ operation --window " + days + "d", color: "#C6D1DB" },
+        { t: "  " + days + " cells, one per day", color: "#8B98A6" },
+        { t: "  " + incidents + " incidents, both with a post-mortem", color: "#8B98A6" },
+        { t: "", color: "#8B98A6" },
+        { t: "  Click a red or amber notch to open the incident:", color: "#7C8996" },
+        { t: "  cause, fix, error budget consumed, and the entry", color: "#7C8996" },
+        { t: "  in the log that explains it.", color: "#7C8996" },
+        { t: "", color: "#8B98A6" },
+        { t: "  Green squares prove activity. These prove operation.", color: "#00E5FF" }
+      ];
+    }
+
+    // Monatsachse an das Spaltenraster binden: Pitch 19px (15px Zelle + 4px Lücke)
+    const PITCH = 19, cols = Math.ceil(list.length / 7);
+    const firstCol = {};
+    list.forEach((c, i) => { const m = c.iso.slice(0, 7); const col = Math.floor(i / 7); if (firstCol[m] === undefined) firstCol[m] = col; });
+    const keys = Object.keys(firstCol).sort();
+    const months = keys.map((m, n) => {
+      const start = firstCol[m], next = n + 1 < keys.length ? firstCol[keys[n + 1]] : cols;
+      return {
+        label: new Date(m + "-02").toLocaleString("en", { month: "short" }).toUpperCase(),
+        style: "width:" + (next - start) * PITCH + "px;flex:none;overflow:hidden"
+      };
+    });
+
+    return {
+      head: days + " DAYS (" + (days / 7) + " WEEKS) · SOURCE /api/health · ILLUSTRATION, DETERMINISTICALLY GENERATED",
+      cells, months,
+      gridHint: "Zwei Kerben in " + days + " Tagen — beide anklickbar, beide mit Post-Mortem verlinkt.",
+      deploys: this.props.showDeploys === false ? [] : deployVals,
+      depHead: deploys.length + " DEPLOYS · " + rollbacks + " ROLLED BACK",
+      depHint: "Ein Balken ist ein Deploy. Rot heißt: Health-Check nicht bestanden, automatisch zurückgerollt — Besucher sahen die vorige Version.",
+      tiles, panelTitle, panelMeta, panelDot, panelLines: lines, panelLink, linkColor, clearLabel,
+      clear: () => this.setState({ sel: null, dep: null }),
+      emptyCells: list.map(() => ({}))
+    };
+  }
+}
+</script>
+</body>
+</html>

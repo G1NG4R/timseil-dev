@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-sheet{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tn-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Chrome — Kopf, Menü und Fußzeile als ein Bauteil · verbindliche Fassung, bevor die zehn Seiten nachgezogen werden</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Kopf Desktop · 1440 — Startseite, Unterseite, Zustände</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Header desktop" style="width:1440px;box-sizing:border-box;padding:0 0 32px;background-color:#0A0E14">
+
+<div style="padding:26px 140px 10px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996">01 · STARTSEITE — KEIN EINTRAG AKTIV · UMSCHALTER LIVE, EN ▾ ANKLICKEN</div>
+<div style="{{ hdrWrap }}">
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:30px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<div ref="{{ ddRef }}" style="position:relative">
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="{{ ddOpen }}" aria-label="Language — English" onClick="{{ ddToggle }}" onKeyDown="{{ ddKey }}" style="{{ ddBtn }}" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="{{ ddCaret }}">▾</span></span>
+<sc-if value="{{ ddOpen }}" hint-placeholder-val="{{ false }}">
+<div role="listbox" aria-label="Language" style="position:absolute;top:calc(100% + 7px);right:0;z-index:20;min-width:216px;background-color:#0E141C;border:1px solid rgba(139,152,166,.3);box-shadow:0 14px 34px rgba(0,0,0,.55)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px 8px;border-bottom:1px solid rgba(139,152,166,.16)"><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#7C8996">LANGUAGE</span><span style="font:400 8.5px 'JetBrains Mono',monospace;color:rgba(124,137,150,.75)">ESC</span></div>
+<sc-for list="{{ langs }}" as="l" hint-placeholder-count="3">
+<div role="option" aria-selected="{{ l.sel }}" title="{{ l.title }}" onClick="{{ l.pick }}" onMouseEnter="{{ l.enter }}" style="{{ l.row }}">
+<span style="{{ l.code }}">{{ l.c }}</span><span style="{{ l.name }}">{{ l.n }}</span><span style="{{ l.route }}">{{ l.r }}</span>
+</div>
+</sc-for>
+<div style="padding:8px 12px 9px;border-top:1px solid rgba(139,152,166,.16);font:400 8.5px/1.5 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">DIE URL ENTSCHEIDET · KEINE UMLEITUNG</div>
+</div>
+</sc-if>
+</div>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+</div>
+
+<div style="padding:34px 140px 10px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996">02 · UNTERSEITE — AKTIV IN WEISS, CYAN BLEIBT FÜR AKTIONEN</div>
+<div style="width:1160px;margin:0 auto">
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:30px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;cursor:default">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+</div>
+
+<div style="width:1160px;margin:30px auto 0;display:flex;align-items:center;gap:46px;padding:16px 0;border-top:1px solid rgba(139,152,166,.12);border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="display:flex;align-items:center;gap:12px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">RUHE</span><span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">LOG</span></span>
+<span style="display:flex;align-items:center;gap:12px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">HOVER</span><span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">LOG</span></span>
+<span style="display:flex;align-items:center;gap:12px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">FOKUS</span><span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;outline:1px solid #00E5FF;outline-offset:3px">LOG</span></span>
+<span style="display:flex;align-items:center;gap:12px"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">AKTIV</span><span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">LOG</span></span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">HOVER UND AKTIV SIND NIE DIESELBE FARBE — SONST LIEST SICH DER MAUSZEIGER ALS ORT</span>
+</div>
+
+<div style="width:1160px;margin:24px auto 0;display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px"><div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;margin-bottom:5px">HÖHE 66PX</div><div style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8B98A6">Auf jeder Seite gleich, darunter das 5px-Lineal. Keine Kopfzeile über Padding, keine Ausnahme für Fallstudien oder Kontakt.</div></div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px"><div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;margin-bottom:5px">VIER EINTRÄGE</div><div style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8B98A6">WORK · LOG · ABOUT · CONTACT — 12px, .14em, Abstand 30px, Reihenfolge fest. Fallstudien zählen zu WORK, Beiträge zu LOG.</div></div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px"><div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;margin-bottom:5px">UHR, KEIN STATUS</div><div style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8B98A6">Der Kopf trägt UTC. Der Systemstatus ONLINE steht in der Meta-Leiste unten, einmal pro Seite. Der pulsende Punkt im Hero heißt AVAILABLE und meint den Betreiber, nicht die Seite.</div></div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px"><div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;margin-bottom:5px">LOGO FÜHRT HEIM</div><div style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8B98A6">TS:// ist auf jeder Seite der Weg auf /. Auf der Startseite bleibt es sichtbar, aber ohne Zeiger.</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Kopf Mobil · 390 — geschlossen, Menüknopf antippen</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Header mobile" style="width:390px;height:720px;box-sizing:border-box;background-color:#0A0E14;position:relative;overflow:hidden">
+<div style="padding:0 22px">
+<div style="display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<span style="flex:1"></span>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="{{ menuOpen }}" aria-label="Menü und Sprache" onClick="{{ menuToggle }}" onKeyDown="{{ menuKey }}" style="{{ burgerStyle }}"><span style="{{ burgerIcon }}"></span></span>
+</div>
+<div style="padding:26px 0 0">
+<div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:14px"><span style="color:#00E5FF">SYS.INIT</span> — BACKEND &amp; DEVOPS · LUXEMBOURG</div>
+<div style="font:500 31px/1.12 'Chakra Petch',sans-serif;color:#E8EEF4">Seiteninhalt beginnt hier.</div>
+<div style="margin-top:16px;font:400 11.5px/1.7 'Geist',sans-serif;color:#8B98A6">Der Kopf trägt mobil genau ein Ziel: den Knopf rechts, 44 × 44 und ohne Beschriftung. Sprache und Thema stehen dahinter im Menü, wo sie geändert werden.</div>
+<div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(139,152,166,.12);display:flex;flex-direction:column;gap:9px;font:400 10px/1.6 'JetBrains Mono',monospace;color:#7C8996">
+<div><span style="color:#00E5FF">▸</span> KOPFHÖHE 52PX auf allen zehn Seiten</div>
+<div><span style="color:#00E5FF">▸</span> KEINE NAV-REIHE MEHR: vier 10px-Wörter nebeneinander waren rund 14px hoch — jetzt liegt die Navigation im Menü</div>
+<div><span style="color:#00E5FF">▸</span> 44 × 44 GILT FÜR JEDES ZIEL: Kopfknopf, Menüzeilen, Sprachchips, Theme-Felder, Filter- und Tag-Chips. <span style="color:#C6D1DB">Geprüft wird gemessen, nicht gezählt</span> — ein Chip, der seine Höhe über Padding bekommt, erfüllt die Regel nicht, nur weil er keinen min-height-Eintrag trägt</div>
+<div><span style="color:#00E5FF">▸</span> KNOPF OHNE BESCHRIFTUNG: kein Sprachkürzel im Kopf — es stünde neben einem Symbol, das ohnehin ins Menü führt</div>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-modal="true" aria-label="Menü und Sprache" style="position:absolute;inset:0;z-index:30;background-color:rgba(6,9,13,.97);display:flex;flex-direction:column;animation:tn-sheet .16s ease-out">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px)"></div>
+<div style="position:relative;display:flex;align-items:center;height:52px;padding:0 22px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<span style="flex:1"></span>
+<span tabIndex="0" role="button" aria-label="Menü schließen" onClick="{{ menuToggle }}" onKeyDown="{{ menuKey }}" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer">CLOSE<span style="font:400 16px 'JetBrains Mono',monospace;color:#E8EEF4">✕</span></span>
+</div>
+<div style="position:relative;flex:1;overflow-y:auto;padding:8px 22px 24px">
+<sc-for list="{{ navRows }}" as="n" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:16px;min-height:60px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-active="background:rgba(0,229,255,.06)">
+<span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">{{ n.i }}</span>
+<span style="font:500 25px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:{{ n.color }}">{{ n.label }}</span>
+<span style="flex:1"></span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">{{ n.mark }}</span>
+</div>
+</sc-for>
+<div style="margin-top:28px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#7C8996">LANGUAGE</span><span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span><span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">IM BAU</span></div>
+<div style="display:flex;gap:10px">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;border:1px solid #00E5FF;background:rgba(0,229,255,.12)"><span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">EN</span><span style="font:400 9px 'Geist',sans-serif;color:#E8EEF4">English</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;border:1px solid rgba(139,152,166,.24)"><span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">DE</span><span style="font:400 9px 'Geist',sans-serif;color:#7C8996">Deutsch</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;border:1px solid rgba(139,152,166,.24)"><span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">FR</span><span style="font:400 9px 'Geist',sans-serif;color:#7C8996">Français</span></div>
+</div>
+</div>
+<div style="margin-top:26px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#7C8996">OPEN A CHANNEL</span><span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span></div>
+<a href="mailto:contact@timseil.dev" style="display:flex;align-items:center;min-height:52px;font:600 21px 'Chakra Petch',sans-serif;color:#E8EEF4;word-break:break-all">contact@timseil.dev</a>
+<div style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">USUALLY UNDER 24 H</div>
+</div>
+<div style="margin-top:26px;padding-top:14px;border-top:1px solid rgba(139,152,166,.16);display:flex;align-items:center;gap:14px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.4s ease-in-out infinite"></span>ONLINE</span>
+<span style="flex:1"></span>
+<span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Menü offen · 390 — fester Zustand, WORK als aktive Seite</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Mobile menu open" style="width:390px;height:720px;box-sizing:border-box;background-color:#06090D;position:relative;overflow:hidden">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px)"></div>
+<div style="position:relative;display:flex;align-items:center;height:52px;padding:0 22px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<span style="flex:1"></span>
+<span style="display:flex;align-items:center;gap:8px;min-height:44px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">CLOSE<span style="font:400 16px 'JetBrains Mono',monospace;color:#E8EEF4">✕</span></span>
+</div>
+<div style="position:relative;padding:8px 22px 0">
+<sc-for list="{{ navRows }}" as="n" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:16px;min-height:60px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">{{ n.i }}</span>
+<span style="font:500 25px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:{{ n.color }}">{{ n.label }}</span>
+<span style="flex:1"></span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">{{ n.mark }}</span>
+</div>
+</sc-for>
+<div style="margin-top:28px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#7C8996">LANGUAGE</span><span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span><span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">IM BAU</span></div>
+<div style="display:flex;gap:10px">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;border:1px solid #00E5FF;background:rgba(0,229,255,.12)"><span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">EN</span><span style="font:400 9px 'Geist',sans-serif;color:#E8EEF4">English</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;border:1px solid rgba(139,152,166,.24)"><span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">DE</span><span style="font:400 9px 'Geist',sans-serif;color:#7C8996">Deutsch</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;border:1px solid rgba(139,152,166,.24)"><span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">FR</span><span style="font:400 9px 'Geist',sans-serif;color:#7C8996">Français</span></div>
+</div>
+</div>
+<div style="margin-top:26px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#7C8996">OPEN A CHANNEL</span><span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span></div>
+<a href="mailto:contact@timseil.dev" style="display:flex;align-items:center;min-height:52px;font:600 21px 'Chakra Petch',sans-serif;color:#E8EEF4;word-break:break-all">contact@timseil.dev</a>
+<div style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">USUALLY UNDER 24 H</div>
+</div>
+<div style="margin-top:26px;padding-top:14px;border-top:1px solid rgba(139,152,166,.16);display:flex;align-items:center;gap:14px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span>
+<span style="flex:1"></span>
+<span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Fußzeile · 1440 — lange Fassung, dann kurze</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Footer desktop" style="width:1440px;box-sizing:border-box;padding:0 0 34px;background-color:#0A0E14">
+
+<div style="padding:26px 140px 10px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996">LANG — STARTSEITE · ABOUT · WORK INDEX · BLOG INDEX · BLOG POST</div>
+<div style="width:1160px;margin:0 auto;border-top:1px solid rgba(139,152,166,.16);padding-top:40px">
+<div style="display:flex;align-items:flex-end;gap:60px;flex-wrap:wrap">
+<div>
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="font:600 34px 'Chakra Petch',sans-serif;color:#E8EEF4">contact@timseil.dev</a>
+<div style="margin-top:9px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">USUALLY UNDER 24 H</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">GITHUB ↗ <span style="color:#7C8996">github.com/G1NG4R</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">[SOON]</span></span>
+</div>
+</div>
+<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px 26px;border-top:1px solid rgba(139,152,166,.16);margin-top:34px;padding:14px 0 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span>
+<span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span>
+<span>UPTIME 99.98%</span>
+<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">CV → TERMINAL AUF / : cv</span>
+<span style="display:flex;align-items:center;gap:9px">THEME<sc-for list="{{ themesSm }}" as="t" hint-placeholder-count="7"><span tabIndex="0" title="{{ t.name }}" style="{{ t.dot }}"></span></sc-for></span>
+<span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span>
+<span style="flex:1"></span>
+<span>49.6117° N · 6.1300° E</span>
+<span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+<span style="flex-basis:100%;display:flex;gap:20px;padding-top:4px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+
+<div style="padding:38px 140px 10px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996">KURZ — FALLSTUDIEN · LEGAL · 404 · CONTACT</div>
+<div style="width:1160px;margin:0 auto;border-top:1px solid rgba(139,152,166,.16);padding-top:16px">
+<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px 26px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span>
+<span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span>
+<span>UPTIME 99.98%</span>
+<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">CV → TERMINAL AUF / : cv</span>
+<span style="display:flex;align-items:center;gap:9px">THEME<sc-for list="{{ themesSm }}" as="t" hint-placeholder-count="7"><span tabIndex="0" title="{{ t.name }}" style="{{ t.dot }}"></span></sc-for></span>
+<span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span>
+<span style="flex:1"></span>
+<span>49.6117° N · 6.1300° E</span>
+<span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+<span style="flex-basis:100%;display:flex;gap:20px;padding-top:4px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+
+<div style="width:1160px;margin:26px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px"><div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;margin-bottom:5px">DER UNTERSCHIED IST EIN BLOCK</div><div style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8B98A6">Kurz heißt: ohne Kontaktblock und ohne Sozial-Zeile. Die Meta-Leiste und die Rechtslinks stehen auf jeder Seite, sonst ist das Impressum nur über Umwege erreichbar.</div></div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px"><div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;margin-bottom:5px">EIN KOORDINATENFORMAT</div><div style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8B98A6">49.6117° N · 6.1300° E auf Desktop und Mobil. Die zweistellige Kurzform von heute entfällt.</div></div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:14px"><div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;margin-bottom:5px">STATUS GEHÖRT HIERHER</div><div style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#8B98A6">Der Punkt steht in der Meta-Leiste jeder Seite. Groß im Hero trägt ihn nur die Startseite — dort ist er Aussage, hier Beleg.</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Fußzeile mobil · 390 — lang und kurz, alles ab 44px</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Footer mobile" style="width:390px;box-sizing:border-box;padding:0 22px 26px;background-color:#0A0E14">
+<div style="padding:22px 0 8px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">LANG</div>
+<div style="border-top:1px solid rgba(139,152,166,.16);padding-top:22px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="display:inline-flex;align-items:center;min-height:44px;font:600 24px 'Chakra Petch',sans-serif;color:#E8EEF4;word-break:break-all">contact@timseil.dev</a>
+<div style="display:flex;flex-direction:column;margin-top:14px">
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">GITHUB ↗ <span style="color:#7C8996">&nbsp;github.com/G1NG4R</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+</div>
+</div>
+<div style="border-top:1px solid rgba(139,152,166,.16);margin-top:14px;padding-top:10px;display:flex;flex-wrap:wrap;gap:6px 18px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span style="display:flex;align-items:center;min-height:32px">BUILD v3.2.1</span>
+<span style="display:flex;align-items:center;gap:7px;min-height:32px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span>
+<span style="display:flex;align-items:center;min-height:32px">UPTIME 99.98%</span>
+<span style="flex-basis:100%;display:flex;align-items:center;min-height:44px;color:#C6D1DB">CV → cv.pdf</span>
+<span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<sc-for list="{{ themesSm }}" as="t" hint-placeholder-count="7"><span tabIndex="0" title="{{ t.name }}" style="{{ t.tile }}"><span style="{{ t.tileChip }}"></span></span></sc-for></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:14px;min-height:44px">ALT<span style="color:#C6D1DB">/de</span><span style="color:#C6D1DB">/fr</span></span>
+<span style="display:flex;align-items:center;min-height:32px">49.6117° N · 6.1300° E</span>
+<span style="display:flex;align-items:center;min-height:32px">UTC <span ref="{{ clockRef }}" style="color:#8B98A6">--:--:--</span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px">BASED IN LUXEMBOURG<span style="color:#C6D1DB">PRIVACY</span><span style="color:#C6D1DB">IMPRINT</span></span>
+</div>
+
+<div style="padding:26px 0 8px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">KURZ</div>
+<div style="border-top:1px solid rgba(139,152,166,.16);padding-top:10px;display:flex;flex-wrap:wrap;gap:6px 18px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span style="display:flex;align-items:center;min-height:32px">BUILD v3.2.1</span>
+<span style="display:flex;align-items:center;gap:7px;min-height:32px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span>
+<span style="display:flex;align-items:center;min-height:32px">UPTIME 99.98%</span>
+<span style="flex-basis:100%;display:flex;align-items:center;min-height:44px;color:#C6D1DB">CV → cv.pdf</span>
+<span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<sc-for list="{{ themesSm }}" as="t" hint-placeholder-count="7"><span tabIndex="0" title="{{ t.name }}" style="{{ t.tile }}"><span style="{{ t.tileChip }}"></span></span></sc-for></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px">BASED IN LUXEMBOURG<span style="color:#C6D1DB">PRIVACY</span><span style="color:#C6D1DB">IMPRINT</span></span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1f">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Anwendung je Seite — was wo eingesetzt wird</div>
+<div class="dv-card" style="width:640px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CHR.01</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">EINSATZPLAN</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">10 BILDSCHIRMSEITEN · CV IST DRUCK</span>
+</div>
+<div style="display:grid;grid-template-columns:150px 96px 1fr;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="padding:9px 10px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">SEITE</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">AKTIV</div>
+<div style="padding:9px 0 9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">FUSSZEILE UND HINWEIS</div>
+</div>
+<sc-for list="{{ plan }}" as="p" hint-placeholder-count="11">
+<div style="display:grid;grid-template-columns:150px 96px 1fr;border-bottom:1px solid rgba(139,152,166,.08)">
+<div style="padding:10px 10px 10px 0;font:500 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">{{ p.page }}</div>
+<div style="padding:10px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ p.color }}">{{ p.active }}</div>
+<div style="padding:10px 0 10px 10px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6">{{ p.note }}</div>
+</div>
+</sc-for>
+<div style="margin-top:20px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">MITGEZOGEN AUS STUFE 2</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> STATUSPUNKT <span style="color:#C6D1DB">ONLINE</span> steht in der Meta-Leiste jeder Seite. Der große Punkt im Hero heißt <span style="color:#C6D1DB">AVAILABLE</span> und trägt die Verfügbarkeit des Betreibers — Startseite und About</div>
+<div><span style="color:#00E5FF">▸</span> KOORDINATEN einheitlich <span style="color:#C6D1DB">49.6117° N · 6.1300° E</span></div>
+<div><span style="color:#00E5FF">▸</span> PLATZHALTER in drei Klassen, alle englisch: <span style="color:#C6D1DB">[SOON]</span> für Fehlendes mit Termin, <span style="color:#C6D1DB">[PLACEHOLDER]</span> für erfundene Zahlen, <span style="color:#C6D1DB">[ASSET]</span> für fehlendes Material wie Porträt oder Aufnahme</div>
+<div><span style="color:#00E5FF">▸</span> LEERZUSTÄNDE für Blog Index und Blog Post nach dem Zustands-Blatt: <span style="color:#C6D1DB">EMPTY</span> mit Wortlaut statt leerer Fläche</div>
+<div><span style="color:#00E5FF">▸</span> ÜBERSCHRIFTEN nach der vorhandenen Skala, keine neue Stufe: <span style="color:#C6D1DB">62</span> Startseite und About, <span style="color:#C6D1DB">52</span> alle übrigen, mobil durchgehend <span style="color:#C6D1DB">34</span></div>
+<div><span style="color:#00E5FF">▸</span> SPRACHE: Englisch als Gerüst. Die deutschen Erklärabsätze bleiben stehen, bis der Umschalter sie ablöst — nur <span style="color:#C6D1DB">DATENSCHUTZ</span> in der Contact-Fußzeile wird <span style="color:#C6D1DB">PRIVACY</span></div>
+<div><span style="color:#00E5FF">▸</span> MENÜ trägt Navigation, Sprache, Adresse und Uhr. Die Theme-Wahl steht in der Fußzeile, nicht zweimal</div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: „Seiten nachziehen“ · „E-01 entscheiden“ · „Menü mit Boot-Zeile öffnen“</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { menuOpen: false, ddOpen: false, hi: 0 };
+  LANGS = [["EN","English","/"],["DE","Deutsch","/de"],["FR","Français","/fr"]];
+  clocks = new Set();
+  THEMES = [["Terminal Noir","#00E5FF",1],["Catppuccin Mocha","#CBA6F7",0],["Amber CRT","#FFB74A",0],["Phosphor","#2EE6A6",0],["Tokyo Night","#7AA2F7",0],["Catppuccin Latte","#EFF1F5",0],["Gruvbox Light","#FBF1C7",0]];
+  NAV = [["WORK",1],["LOG",0],["ABOUT",0],["CONTACT",0]];
+  PLAN = [
+    ["Homepage","—","lang · kein Eintrag aktiv, Statuspunkt zusätzlich im Hero"],
+    ["Work Index","WORK","lang · Systemliste trägt LIVE und QUEUED"],
+    ["Blog Index","LOG","lang · Leerzustände gebaut"],
+    ["Blog Post","LOG","lang · Leerzustand für fehlende Folgebeiträge"],
+    ["About","ABOUT","lang · Platzhalter auf [ASSET] und [SOON] umstellen"],
+    ["Case Study 02","WORK","kurz · Kopf-Bauteil ersetzt die eigene Leiste"],
+    ["Case Study — Vorlage","WORK","kurz · Kopf bleibt, Fußzeile wird vollständig"],
+    ["Contact","CONTACT","kurz · Kopf-Bauteil ersetzt die eigene Leiste, DATENSCHUTZ wird PRIVACY"],
+    ["Legal","—","kurz · Rechtslinks markieren die eigene Seite in Weiß"],
+    ["404","—","kurz · nichts aktiv, Routenliste bleibt"],
+    ["CV","—","kein Chrome — Druckseite, A4, eigenes helles Theme"]
+  ];
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.iv = setInterval(tick, 1000);
+    this.onDoc = e => { if (this.state.ddOpen && this.dd && !this.dd.contains(e.target)) this.setState({ ddOpen: false }); };
+    document.addEventListener("mousedown", this.onDoc);
+  }
+  componentWillUnmount() { clearInterval(this.iv); document.removeEventListener("mousedown", this.onDoc); }
+  renderVals() {
+    const open = this.state.menuOpen, dd = this.state.ddOpen, hi = this.state.hi;
+    return {
+      menuOpen: open, ddOpen: dd,
+      hdrWrap: "width:1160px;margin:0 auto" + (dd ? ";padding-bottom:262px" : ""),
+      ddRef: el => { this.dd = el; },
+      ddToggle: () => this.setState(s => ({ ddOpen: !s.ddOpen, hi: 0 })),
+      ddKey: e => {
+        const n = 3, k = e.key;
+        if (k === "Enter" || k === " ") { e.preventDefault(); this.setState(s => ({ ddOpen: !s.ddOpen, hi: 0 })); }
+        else if (k === "ArrowDown" || k === "ArrowUp") { e.preventDefault(); this.setState(s => s.ddOpen ? ({ hi: (s.hi + (k === "ArrowDown" ? 1 : n - 1)) % n }) : ({ ddOpen: true, hi: 0 })); }
+        else if (k === "Escape") this.setState({ ddOpen: false });
+      },
+      ddBtn: "display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer;border:1px solid " + (dd ? "rgba(0,229,255,.55);background:rgba(0,229,255,.08);color:#E8EEF4" : "rgba(139,152,166,.28);color:#C6D1DB"),
+      ddCaret: "font:400 8px 'JetBrains Mono',monospace;color:" + (dd ? "#00E5FF" : "#7C8996"),
+      langs: this.LANGS.map(([c, n, r], i) => {
+        const sel = i === 0, mark = i === hi && !sel;
+        return {
+          c, n, r, sel, title: n + " — " + r,
+          pick: () => this.setState({ ddOpen: false }),
+          enter: () => this.setState({ hi: i }),
+          row: "display:grid;grid-template-columns:30px 1fr auto;gap:11px;align-items:center;padding:9px 12px;min-height:40px;cursor:pointer" + (sel ? ";background:rgba(0,229,255,.09);box-shadow:inset 2px 0 0 #00E5FF" : mark ? ";background:rgba(232,238,244,.06)" : ""),
+          code: "font:600 10.5px 'JetBrains Mono',monospace;color:" + (sel ? "#00E5FF" : mark ? "#E8EEF4" : "#8B98A6"),
+          name: "font:400 11px 'Geist',sans-serif;color:" + (sel || mark ? "#E8EEF4" : "#C6D1DB"),
+          route: "font:400 9px 'JetBrains Mono',monospace;color:" + (sel ? "rgba(0,229,255,.7)" : "#7C8996")
+        };
+      }),
+      menuToggle: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      menuKey: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this.setState(s => ({ menuOpen: !s.menuOpen })); } else if (e.key === "Escape") this.setState({ menuOpen: false }); },
+      burgerStyle: "display:flex;align-items:center;justify-content:flex-end;gap:9px;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer;color:" + (open ? "#00E5FF" : "#E8EEF4"),
+      burgerIcon: "display:block;width:19px;height:1px;background:" + (open ? "#00E5FF" : "#C6D1DB") + (open ? "" : ";box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"),
+      navRows: this.NAV.map(([label, act], i) => ({
+        label, i: "0" + (i + 1),
+        color: act ? "#E8EEF4" : "#C6D1DB",
+        mark: act ? "●" : "→"
+      })),
+      themes: this.THEMES.map(([name, col, act]) => ({
+        name,
+        box: "width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid " + (act ? "rgba(0,229,255,.55)" : "rgba(139,152,166,.22)"),
+        chip: "width:16px;height:16px;background:" + col + (act ? "" : ";opacity:.8")
+      })),
+      themesSm: this.THEMES.map(([name, col, act]) => ({
+        name,
+        dot: "width:10px;height:10px;background:" + col + ";cursor:pointer;border:1px solid " + (act ? col : "rgba(139,152,166,.3)") + (act ? "" : ";opacity:.55"),
+        tile: "width:44px;height:44px;display:flex;flex:none;align-items:center;justify-content:center;cursor:pointer;border:1px solid " + (act ? "rgba(0,229,255,.55)" : "rgba(139,152,166,.22)"),
+        tileChip: "width:16px;height:16px;background:" + col + (act ? "" : ";opacity:.8")
+      })),
+      plan: this.PLAN.map(([page, active, note]) => ({ page, active, note, color: active === "—" ? "#7C8996" : "#E8EEF4" })),
+      clockRef: el => { if (el) this.clocks.add(el); }
+    };
+  }
+}
+</script>
+</body>
+</html>

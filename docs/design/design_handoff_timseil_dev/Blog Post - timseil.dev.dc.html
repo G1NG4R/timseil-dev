@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Post template — SYS.04 LOG · Lesemaß 68 Zeichen, Prosa in Geist</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1440 — TOC-Schiene links, Copy-Button funktioniert</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Blog post — Desktop" style="width:1440px;background-color:#0A0E14;position:relative;overflow:hidden;cursor:crosshair;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.028) 1px,transparent 1px);background-size:88px 88px"></div>
+<div style="position:relative;z-index:1;width:1160px;margin:0 auto">
+
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:32px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;cursor:default">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:2px;background:rgba(139,152,166,.14)"><div style="height:2px;width:38%;background:#00E5FF;box-shadow:0 0 8px rgba(0,229,255,.5)"></div></div>
+
+<div style="display:flex;align-items:center;gap:10px;padding:24px 0 0;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span style="cursor:pointer" style-hover="color:#00E5FF">LOG</span><span>/</span><span style="color:#C6D1DB">2026-07-21</span><span>/</span><span style="color:#C6D1DB">GO CONCURRENCY PATTERNS</span>
+</div>
+
+<div style="padding:34px 0 48px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:56px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:24px">
+<span style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.04 · LOG</span>
+<span style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">ENTRY 010</span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;cursor:pointer" style-hover="color:#9DF4FF">SYSTEM 02 · RELAY →</span>
+</div>
+<h1 style="margin:0 0 26px;font:500 52px/1.1 'Chakra Petch',sans-serif;color:#E8EEF4;max-width:20ch;text-wrap:pretty">Go concurrency patterns in production</h1>
+<p style="margin:0 0 30px;max-width:68ch;font:400 17.5px/1.65 'Geist',sans-serif;color:#C6D1DB">Worker pools, bounded queues, and what actually breaks under load — starting with the goroutine leak that took my own API down.</p>
+<div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span style="font-variant-numeric:tabular-nums">PUBLISHED <span style="color:#C6D1DB">2026-07-21</span></span>
+<span style="font-variant-numeric:tabular-nums">UPDATED <span style="color:#C6D1DB">2026-08-02</span></span>
+<span style="font-variant-numeric:tabular-nums">12 MIN · 2 480 WORDS</span>
+<span>TAGS <span style="color:#C6D1DB">GO · OBSERVABILITY</span></span>
+<span style="flex:1"></span>
+<span style="cursor:pointer" style-hover="color:#00E5FF">EDIT ON GITHUB ↗</span>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:196px 700px;gap:64px;align-items:start;margin-bottom:88px">
+
+<div style="display:flex;flex-direction:column;gap:26px">
+<div>
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:14px">CONTENTS</div>
+<div style="display:flex;flex-direction:column;gap:10px;font:400 11px/1.5 'JetBrains Mono',monospace">
+<span style="display:grid;grid-template-columns:22px 1fr;gap:8px;color:#00E5FF;cursor:pointer"><span>01</span><span>The failure</span></span>
+<span style="display:grid;grid-template-columns:22px 1fr;gap:8px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">02</span><span>A pool, not a goroutine per item</span></span>
+<span style="display:grid;grid-template-columns:22px 1fr;gap:8px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">03</span><span>Backpressure is the real fix</span></span>
+<span style="display:grid;grid-template-columns:22px 1fr;gap:8px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">04</span><span>What I watch now</span></span>
+<span style="display:grid;grid-template-columns:22px 1fr;gap:8px;color:#8B98A6;cursor:pointer" style-hover="color:#E8EEF4"><span style="color:#7C8996">05</span><span>What I would do differently</span></span>
+</div>
+</div>
+<div style="border-top:1px solid rgba(139,152,166,.14);padding-top:20px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:12px">SERIES</div>
+<div style="font:400 11px/1.6 'JetBrains Mono',monospace;color:#C6D1DB">RUNNING THINGS YOURSELF</div>
+<div style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996;margin-top:6px">PART 04 OF 04</div>
+</div>
+<div style="border-top:1px solid rgba(139,152,166,.14);padding-top:20px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:12px">RUNS IN</div>
+<div style="display:flex;flex-direction:column;gap:7px;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB">
+<span style="cursor:pointer" style-hover="color:#00E5FF">03 FEEDHOUND →</span>
+<span style="cursor:pointer" style-hover="color:#00E5FF">02 RELAY →</span>
+</div>
+</div>
+</div>
+
+<div>
+<div style="background-color:#0E141C;border-left:2px solid #00E5FF;padding:22px 26px;margin-bottom:44px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#00E5FF;margin-bottom:12px">SUMMARY</div>
+<p style="margin:0;font:400 15px/1.7 'Geist',sans-serif;color:#C6D1DB">One goroutine per feed item is fine until a slow host holds a thousand of them open. The fix was not a bigger box: it was a bounded pool, a queue with a depth I watch, and a memory limit that turns a leak into a restart instead of an outage.</p>
+</div>
+
+<h2 style="margin:0 0 18px;display:flex;align-items:baseline;gap:14px;font:500 21px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 11px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">01</span>The failure</h2>
+<p style="margin:0 0 20px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">Feedhound polls a list of RSS sources on a schedule. The first version did the obvious thing: for every source in the list, start a goroutine, fetch, parse, write. On my machine with twelve feeds it finished in under a second, so I shipped it.</p>
+<p style="margin:0 0 20px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">In production the list grew and one host started answering in forty seconds instead of two hundred milliseconds. Every poll cycle stacked another set of goroutines on top of the ones still waiting, each holding a parsed document in memory. The container hit its limit and restarted mid-write.<sup style="font:500 10px 'JetBrains Mono',monospace;color:#00E5FF;margin-left:2px">1</sup></p>
+<div style="display:flex;gap:16px;background-color:#0E141C;border:1px solid rgba(255,45,85,.28);padding:18px 20px;margin:0 0 32px;max-width:68ch">
+<span style="width:7px;height:7px;border-radius:50%;background:#FF2D55;flex:none;margin-top:7px;box-shadow:0 0 8px rgba(255,45,85,.45)"></span>
+<div>
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FF2D55;margin-bottom:8px">POSTMORTEM · INC-001</div>
+<div style="font:400 14.5px/1.7 'Geist',sans-serif;color:#C6D1DB">The leak was not the bug. The bug was that nothing limited concurrency, so one slow dependency could consume the whole process. A restart loop is what a missing bound looks like from the outside.</div>
+</div>
+</div>
+
+<h2 style="margin:0 0 18px;display:flex;align-items:baseline;gap:14px;font:500 21px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 11px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">02</span>A pool, not a goroutine per item</h2>
+<p style="margin:0 0 22px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">The replacement is unremarkable, which is the point. A buffered channel acts as a semaphore, <code style="font:400 15px 'JetBrains Mono',monospace;color:#9DF4FF;background:rgba(0,229,255,.07);padding:1px 5px">errgroup</code> collects the first error, and the number of workers is a config value rather than a property of the input.</p>
+<div style="border:1px solid rgba(139,152,166,.14);margin-bottom:14px">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<span style="font:500 10px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.06em">internal/worker/pool.go</span>
+<span style="flex:1"></span>
+<span onClick="{{ onCopy }}" style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996;cursor:pointer;padding:3px 8px;border:1px solid rgba(139,152,166,.25)" style-hover="color:#00E5FF;border-color:rgba(0,229,255,.5)">COPY</span>
+</div>
+<div style="display:grid;grid-template-columns:44px 1fr;background-color:#0E141C">
+<div style="padding:18px 0 18px;border-right:1px solid rgba(139,152,166,.1);font:400 12.5px/1.85 'JetBrains Mono',monospace;color:#7C8996;text-align:right"><div style="padding-right:12px">01<br>02<br>03<br>04<br>05<br>06<br>07<br>08<br>09<br>10<br>11<br>12<br>13<br>14<br>15</div></div>
+<pre style="margin:0;padding:18px 20px;overflow-x:auto;font:400 12.5px/1.85 'JetBrains Mono',monospace;color:#C6D1DB"><span style="color:#8B98A6">// one bounded pool per cycle — limit comes from config, not the input
+</span>
+<span style="color:#00E5FF">func</span> (w *Worker) Run(ctx context.Context, feeds &lt;-<span style="color:#00E5FF">chan</span> Feed) <span style="color:#00E5FF">error</span> {
+    sem := <span style="color:#00E5FF">make</span>(<span style="color:#00E5FF">chan struct</span>{}, w.limit)
+    <span style="color:#00E5FF">var</span> g errgroup.Group
+
+    <span style="color:#00E5FF">for</span> f := <span style="color:#00E5FF">range</span> feeds {
+        f := f
+        sem &lt;- <span style="color:#00E5FF">struct</span>{}{}          <span style="color:#8B98A6">// blocks once limit is reached</span>
+        g.Go(<span style="color:#00E5FF">func</span>() <span style="color:#00E5FF">error</span> {
+            <span style="color:#00E5FF">defer func</span>() { &lt;-sem }()
+            <span style="color:#00E5FF">return</span> w.fetch(ctx, f)
+        })
+    }
+    <span style="color:#00E5FF">return</span> g.Wait()
+}</pre>
+</div>
+</div>
+<p style="margin:0 0 32px;max-width:68ch;font:400 13.5px/1.7 'Geist',sans-serif;color:#7C8996">Two tones only: keywords in Signal, comments in Steel. Strings and numbers take Amber where they appear.</p>
+
+<h2 style="margin:0 0 18px;display:flex;align-items:baseline;gap:14px;font:500 21px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 11px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">03</span>Backpressure is the real fix</h2>
+<p style="margin:0 0 20px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">A pool caps how much work runs at once, but it says nothing about how much work is waiting. That is the number that predicts trouble, so the queue got a fixed capacity and a metric.</p>
+<blockquote style="margin:0 0 28px;padding:0 0 0 24px;border-left:1px solid rgba(0,229,255,.4);max-width:60ch">
+<p style="margin:0;font:400 21px/1.55 'Chakra Petch',sans-serif;color:#E8EEF4">A queue without a limit is not a queue. It is a slower way to run out of memory.</p>
+</blockquote>
+<p style="margin:0 0 26px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">When the queue is full, new work is dropped and counted rather than accepted and forgotten. Dropping visibly is better than degrading invisibly, and the counter is what tells me the poll interval is wrong.</p>
+<div style="border:1px solid rgba(139,152,166,.14);margin-bottom:16px">
+<div style="display:flex;align-items:baseline;padding:12px 16px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">
+<span style="flex:1">MEASURE</span><span style="width:120px;text-align:right">BEFORE</span><span style="width:120px;text-align:right">AFTER</span>
+</div>
+<div style="display:flex;align-items:baseline;padding:13px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12.5px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Peak resident memory</span><span style="width:120px;text-align:right;color:#8B98A6;font-variant-numeric:tabular-nums">[— MB]</span><span style="width:120px;text-align:right;color:#E8EEF4;font-variant-numeric:tabular-nums">[— MB]</span></div>
+<div style="display:flex;align-items:baseline;padding:13px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12.5px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Goroutines at steady state</span><span style="width:120px;text-align:right;color:#8B98A6;font-variant-numeric:tabular-nums">[—]</span><span style="width:120px;text-align:right;color:#E8EEF4;font-variant-numeric:tabular-nums">[—]</span></div>
+<div style="display:flex;align-items:baseline;padding:13px 16px;border-bottom:1px solid rgba(139,152,166,.1);font:400 12.5px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">p95 cycle duration</span><span style="width:120px;text-align:right;color:#8B98A6;font-variant-numeric:tabular-nums">[— s]</span><span style="width:120px;text-align:right;color:#E8EEF4;font-variant-numeric:tabular-nums">[— s]</span></div>
+<div style="display:flex;align-items:baseline;padding:13px 16px;font:400 12.5px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Container restarts · 30 d</span><span style="width:120px;text-align:right;color:#8B98A6;font-variant-numeric:tabular-nums">[—]</span><span style="width:120px;text-align:right;color:#E8EEF4;font-variant-numeric:tabular-nums">[—]</span></div>
+</div>
+<p style="margin:0 0 32px;max-width:68ch;font:400 13.5px/1.7 'Geist',sans-serif;color:#7C8996">Measured on [VPS SPEC] over [PERIOD]. Values are placeholders until the run is repeated.</p>
+
+<h2 style="margin:0 0 18px;display:flex;align-items:baseline;gap:14px;font:500 21px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 11px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">04</span>What I watch now</h2>
+<p style="margin:0 0 24px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">Four numbers, all cheap to collect, all visible from one command on the host:</p>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);margin-bottom:26px">
+<div style="display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.55)"></span><span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span><span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="flex:1;text-align:center;font:500 10px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.08em">tim@vps: ~ — curl -s localhost:8080/metrics | head</span>
+</div>
+<div style="height:176px;display:flex;align-items:center;justify-content:center;background-image:repeating-linear-gradient(135deg,rgba(139,152,166,.05) 0 1px,transparent 1px 8px)"><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996;text-align:center">[TERMINAL CAPTURE]<br><span style="color:#8B98A6">QUEUE DEPTH · WORKERS · DROPPED · CYCLE MS</span></span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;max-width:68ch;margin-bottom:32px">
+<div style="display:grid;grid-template-columns:26px 1fr;gap:14px;font:400 15.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 11px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">01</span><span><strong style="font:500 15.5px 'JetBrains Mono',monospace;color:#E8EEF4">Queue depth.</strong> If it never reaches zero within a cycle, the interval is too short for the source list.</span></div>
+<div style="display:grid;grid-template-columns:26px 1fr;gap:14px;font:400 15.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 11px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">02</span><span><strong style="font:500 15.5px 'JetBrains Mono',monospace;color:#E8EEF4">Workers busy.</strong> Pinned at the limit for long stretches means a slow host, not more load.</span></div>
+<div style="display:grid;grid-template-columns:26px 1fr;gap:14px;font:400 15.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 11px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">03</span><span><strong style="font:500 15.5px 'JetBrains Mono',monospace;color:#E8EEF4">Dropped items.</strong> Should be zero. Anything else is a decision I need to make consciously.</span></div>
+<div style="display:grid;grid-template-columns:26px 1fr;gap:14px;font:400 15.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 11px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:5px">04</span><span><strong style="font:500 15.5px 'JetBrains Mono',monospace;color:#E8EEF4">Cycle duration, p95.</strong> The one number that shows up in the case study for this service.</span></div>
+</div>
+
+<h2 style="margin:0 0 18px;display:flex;align-items:baseline;gap:14px;font:500 21px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 11px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">05</span>What I would do differently</h2>
+<p style="margin:0 0 20px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">Set the memory limit on day one. The limit did not fix the leak, but it turned a slow death into a fast, obvious restart with a log line I could act on. Everything I learned here came from that log line existing.</p>
+<p style="margin:0 0 44px;max-width:68ch;font:400 16.5px/1.8 'Geist',sans-serif;color:#C6D1DB">I would also have written the metric before the fix. I rebuilt the pool and then spent an evening guessing whether it helped, which is a poor trade against ten minutes of instrumentation.</p>
+
+<div style="border-top:1px solid rgba(139,152,166,.16);padding-top:22px;margin-bottom:44px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:12px">NOTES</div>
+<div style="display:flex;gap:10px;max-width:68ch;font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6"><span style="font:500 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:4px">1</span><span>Full incident entry, cause and fix, sits in the case study for <span style="color:#C6D1DB">03 Feedhound</span> under Operations.</span></div>
+</div>
+
+<div style="display:flex;align-items:center;gap:20px;padding:22px 24px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);margin-bottom:40px">
+<div style="width:56px;height:56px;flex:none;background:#121A24;border:1px dashed rgba(139,152,166,.35);display:flex;align-items:center;justify-content:center;font:500 7px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">[PORTRAIT]</div>
+<div style="flex:1">
+<div style="font:500 12.5px 'JetBrains Mono',monospace;color:#E8EEF4">Tim Seil — backend &amp; devops engineer, Luxembourg</div>
+<div style="font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:5px">Self-taught, self-hosted. Everything here runs on infrastructure I maintain.</div>
+</div>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;border:1px solid rgba(0,229,255,.4);padding:10px 16px;cursor:pointer" style-hover="background:rgba(0,229,255,.08)">REPLY BY EMAIL</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:56px">
+<div style="border:1px solid rgba(139,152,166,.14);padding:20px 22px;cursor:pointer" style-hover="border-color:rgba(0,229,255,.35);background:#0E141C">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996;margin-bottom:12px">← PREVIOUS · PART 03</div>
+<div style="font:500 14.5px/1.4 'JetBrains Mono',monospace;color:#E8EEF4">Kubernetes on a bare VPS</div>
+<div style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;margin-top:8px;font-variant-numeric:tabular-nums">2026-06-09 · 09 MIN</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);padding:20px 22px;text-align:right;cursor:pointer" style-hover="border-color:rgba(0,229,255,.35);background:#0E141C">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996;margin-bottom:12px">NEXT ENTRY →</div>
+<div style="font:500 14.5px/1.4 'JetBrains Mono',monospace;color:#E8EEF4">Reading a Postgres query plan without panicking</div>
+<div style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;margin-top:8px;font-variant-numeric:tabular-nums">2026-04-14 · 08 MIN</div>
+</div>
+</div>
+</div>
+</div>
+
+<div>
+
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;align-items:flex-end;gap:60px;flex-wrap:wrap;padding:36px 0 6px">
+<div>
+<div style="font:400 12.5px/1.65 'Geist',sans-serif;color:#C6D1DB;max-width:52ch;margin-bottom:18px">Anders gelöst oder eine Frage dazu? Schreib mir — Widerspruch ist mir lieber als Zustimmung.</div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="font:600 34px 'Chakra Petch',sans-serif;color:#E8EEF4">contact@timseil.dev</a>
+<div style="margin-top:9px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">USUALLY UNDER 24 H</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">GITHUB ↗ <span style="color:#7C8996">github.com/G1NG4R</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">[SOON]</span></span>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);padding:14px 0 24px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1 · #A41F9C2</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CV → TERMINAL AUF <span style="color:#8B98A6">/</span> : <span style="color:#8B98A6">cv</span></span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span><span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span><span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Mobile · 390 — Contents als Panel, Code scrollt</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Blog post — Mobile" style="width:390px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.025) 1px,transparent 1px);background-size:64px 64px"></div>
+<div style="position:relative;z-index:1">
+<div style="padding:0 22px">
+<div style="display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+</div>
+<div style="height:2px;background:rgba(139,152,166,.14)"><div style="height:2px;width:38%;background:#00E5FF;box-shadow:0 0 8px rgba(0,229,255,.5)"></div></div>
+<div style="padding:0 22px">
+
+<div style="display:flex;align-items:center;gap:8px;padding:18px 0 0;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996"><span>LOG</span><span>/</span><span style="color:#C6D1DB">2026-07-21</span></div>
+
+<div style="padding:22px 0 28px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:28px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px">
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.04 · LOG</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">ENTRY 010</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;cursor:pointer" style-hover="color:#9DF4FF">SYSTEM 02 →</span>
+</div>
+<h2 style="margin:0 0 16px;font:500 34px/1.14 'Chakra Petch',sans-serif;color:#E8EEF4;text-wrap:pretty">Go concurrency patterns in production</h2>
+<p style="margin:0 0 20px;font:400 14.5px/1.65 'Geist',sans-serif;color:#C6D1DB">Worker pools, bounded queues, and what actually breaks under load — starting with the goroutine leak that took my own API down.</p>
+<div style="display:flex;flex-wrap:wrap;gap:8px 18px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>2026-07-21</span><span>12 MIN</span><span>GO · OBSERVABILITY</span><span style="color:#7C8996">UPDATED 2026-08-02</span>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:16px 18px;margin-bottom:26px">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996">CONTENTS</span><span style="flex:1"></span><span style="font:400 11px 'JetBrains Mono',monospace;color:#00E5FF">−</span></div>
+<div style="display:flex;flex-direction:column;gap:9px;font:400 10.5px 'JetBrains Mono',monospace">
+<span style="display:grid;grid-template-columns:20px 1fr;gap:8px;color:#00E5FF"><span>01</span><span>The failure</span></span>
+<span style="display:grid;grid-template-columns:20px 1fr;gap:8px;color:#8B98A6"><span style="color:#7C8996">02</span><span>A pool, not a goroutine per item</span></span>
+<span style="display:grid;grid-template-columns:20px 1fr;gap:8px;color:#8B98A6"><span style="color:#7C8996">03</span><span>Backpressure is the real fix</span></span>
+<span style="display:grid;grid-template-columns:20px 1fr;gap:8px;color:#8B98A6"><span style="color:#7C8996">04</span><span>What I watch now</span></span>
+<span style="display:grid;grid-template-columns:20px 1fr;gap:8px;color:#8B98A6"><span style="color:#7C8996">05</span><span>What I would do differently</span></span>
+</div>
+</div>
+
+<div style="background-color:#0E141C;border-left:2px solid #00E5FF;padding:16px 18px;margin-bottom:30px">
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#00E5FF;margin-bottom:10px">SUMMARY</div>
+<p style="margin:0;font:400 13.5px/1.7 'Geist',sans-serif;color:#C6D1DB">One goroutine per feed item is fine until a slow host holds a thousand of them open. The fix was a bounded pool, a queue with a depth I watch, and a memory limit.</p>
+</div>
+
+<h3 style="margin:0 0 14px;display:flex;align-items:baseline;gap:12px;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">01</span>The failure</h3>
+<p style="margin:0 0 16px;font:400 14.5px/1.8 'Geist',sans-serif;color:#C6D1DB">Feedhound polls a list of RSS sources on a schedule. The first version did the obvious thing: for every source, start a goroutine, fetch, parse, write.</p>
+<p style="margin:0 0 22px;font:400 14.5px/1.8 'Geist',sans-serif;color:#C6D1DB">In production one host started answering in forty seconds. Every cycle stacked another set of goroutines on the ones still waiting. The container hit its limit and restarted mid-write.</p>
+<div style="display:flex;gap:12px;background-color:#0E141C;border:1px solid rgba(255,45,85,.28);padding:14px 16px;margin-bottom:26px">
+<span style="width:6px;height:6px;border-radius:50%;background:#FF2D55;flex:none;margin-top:6px;box-shadow:0 0 8px rgba(255,45,85,.45)"></span>
+<div>
+<div style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FF2D55;margin-bottom:7px">POSTMORTEM · INC-001</div>
+<div style="font:400 13px/1.7 'Geist',sans-serif;color:#C6D1DB">The leak was not the bug. Nothing limited concurrency, so one slow dependency could consume the whole process.</div>
+</div>
+</div>
+
+<h3 style="margin:0 0 14px;display:flex;align-items:baseline;gap:12px;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">02</span>A pool, not a goroutine per item</h3>
+<p style="margin:0 0 18px;font:400 14.5px/1.8 'Geist',sans-serif;color:#C6D1DB">A buffered channel acts as a semaphore, <code style="font:400 13.5px 'JetBrains Mono',monospace;color:#9DF4FF;background:rgba(0,229,255,.07);padding:1px 4px">errgroup</code> collects the first error, and the worker count is config.</p>
+<div style="border:1px solid rgba(139,152,166,.14);margin:0 -22px 24px">
+<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<span style="font:500 9px 'JetBrains Mono',monospace;color:#7C8996">internal/worker/pool.go</span><span style="flex:1"></span>
+<span onClick="{{ onCopy }}" style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;padding:3px 7px;border:1px solid rgba(139,152,166,.25)">COPY</span>
+</div>
+<pre style="margin:0;padding:16px 18px;overflow-x:auto;background-color:#0E141C;font:400 11px/1.85 'JetBrains Mono',monospace;color:#C6D1DB"><span style="color:#8B98A6">// bounded pool — limit from config
+</span>
+<span style="color:#00E5FF">func</span> (w *Worker) Run(ctx context.Context,
+    feeds &lt;-<span style="color:#00E5FF">chan</span> Feed) <span style="color:#00E5FF">error</span> {
+    sem := <span style="color:#00E5FF">make</span>(<span style="color:#00E5FF">chan struct</span>{}, w.limit)
+    <span style="color:#00E5FF">var</span> g errgroup.Group
+
+    <span style="color:#00E5FF">for</span> f := <span style="color:#00E5FF">range</span> feeds {
+        f := f
+        sem &lt;- <span style="color:#00E5FF">struct</span>{}{}
+        g.Go(<span style="color:#00E5FF">func</span>() <span style="color:#00E5FF">error</span> {
+            <span style="color:#00E5FF">defer func</span>() { &lt;-sem }()
+            <span style="color:#00E5FF">return</span> w.fetch(ctx, f)
+        })
+    }
+    <span style="color:#00E5FF">return</span> g.Wait()
+}</pre>
+</div>
+
+<h3 style="margin:0 0 14px;display:flex;align-items:baseline;gap:12px;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">03</span>Backpressure is the real fix</h3>
+<p style="margin:0 0 20px;font:400 14.5px/1.8 'Geist',sans-serif;color:#C6D1DB">A pool caps what runs at once, not what waits. The queue got a fixed capacity and a metric.</p>
+<blockquote style="margin:0 0 22px;padding:0 0 0 18px;border-left:1px solid rgba(0,229,255,.4)">
+<p style="margin:0;font:400 17px/1.5 'Chakra Petch',sans-serif;color:#E8EEF4">A queue without a limit is not a queue. It is a slower way to run out of memory.</p>
+</blockquote>
+<div style="border:1px solid rgba(139,152,166,.14);margin-bottom:14px">
+<div style="display:flex;padding:11px 14px;border-bottom:1px solid rgba(139,152,166,.14);background-color:#0E141C;font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996"><span style="flex:1">MEASURE</span><span style="width:64px;text-align:right">BEFORE</span><span style="width:64px;text-align:right">AFTER</span></div>
+<div style="display:flex;padding:11px 14px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Peak memory</span><span style="width:64px;text-align:right;color:#8B98A6">[—]</span><span style="width:64px;text-align:right;color:#E8EEF4">[—]</span></div>
+<div style="display:flex;padding:11px 14px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Goroutines</span><span style="width:64px;text-align:right;color:#8B98A6">[—]</span><span style="width:64px;text-align:right;color:#E8EEF4">[—]</span></div>
+<div style="display:flex;padding:11px 14px;border-bottom:1px solid rgba(139,152,166,.1);font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">p95 cycle</span><span style="width:64px;text-align:right;color:#8B98A6">[—]</span><span style="width:64px;text-align:right;color:#E8EEF4">[—]</span></div>
+<div style="display:flex;padding:11px 14px;font:400 11px 'JetBrains Mono',monospace;color:#C6D1DB"><span style="flex:1">Restarts · 30 d</span><span style="width:64px;text-align:right;color:#8B98A6">[—]</span><span style="width:64px;text-align:right;color:#E8EEF4">[—]</span></div>
+</div>
+<p style="margin:0 0 26px;font:400 12px/1.7 'Geist',sans-serif;color:#7C8996">Measured on [VPS SPEC] over [PERIOD]. Placeholder values.</p>
+
+<h3 style="margin:0 0 14px;display:flex;align-items:baseline;gap:12px;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">04</span>What I watch now</h3>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.14);margin-bottom:20px">
+<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.55)"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span><span style="width:7px;height:7px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="flex:1;text-align:center;font:500 8.5px 'JetBrains Mono',monospace;color:#7C8996">curl -s localhost:8080/metrics</span>
+</div>
+<div style="height:140px;display:flex;align-items:center;justify-content:center;background-image:repeating-linear-gradient(135deg,rgba(139,152,166,.05) 0 1px,transparent 1px 8px)"><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;text-align:center">[TERMINAL CAPTURE]<br><span style="color:#8B98A6">QUEUE · WORKERS · DROPPED · MS</span></span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:26px">
+<div style="display:grid;grid-template-columns:22px 1fr;gap:12px;font:400 13.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:4px">01</span><span><strong style="font:500 13.5px 'JetBrains Mono',monospace;color:#E8EEF4">Queue depth.</strong> Never reaching zero means the interval is too short.</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr;gap:12px;font:400 13.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:4px">02</span><span><strong style="font:500 13.5px 'JetBrains Mono',monospace;color:#E8EEF4">Workers busy.</strong> Pinned at the limit means a slow host, not more load.</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr;gap:12px;font:400 13.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:4px">03</span><span><strong style="font:500 13.5px 'JetBrains Mono',monospace;color:#E8EEF4">Dropped items.</strong> Should be zero.</span></div>
+<div style="display:grid;grid-template-columns:22px 1fr;gap:12px;font:400 13.5px/1.7 'Geist',sans-serif;color:#C6D1DB"><span style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:4px">04</span><span><strong style="font:500 13.5px 'JetBrains Mono',monospace;color:#E8EEF4">Cycle duration, p95.</strong> The number that reaches the case study.</span></div>
+</div>
+
+<h3 style="margin:0 0 14px;display:flex;align-items:baseline;gap:12px;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.75)">05</span>What I would do differently</h3>
+<p style="margin:0 0 16px;font:400 14.5px/1.8 'Geist',sans-serif;color:#C6D1DB">Set the memory limit on day one. It did not fix the leak, but it turned a slow death into a fast restart with a log line I could act on.</p>
+<p style="margin:0 0 30px;font:400 14.5px/1.8 'Geist',sans-serif;color:#C6D1DB">I would also write the metric before the fix, instead of guessing for an evening whether the rewrite helped.</p>
+
+<div style="border-top:1px solid rgba(139,152,166,.16);padding-top:18px;margin-bottom:30px">
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">NOTES</div>
+<div style="display:flex;gap:9px;font:400 12px/1.7 'Geist',sans-serif;color:#8B98A6"><span style="font:500 9.5px 'JetBrains Mono',monospace;color:#00E5FF;padding-top:3px">1</span><span>Full incident entry sits in the case study for <span style="color:#C6D1DB">03 Feedhound</span>.</span></div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:16px 18px;margin-bottom:26px">
+<div style="display:flex;gap:14px;align-items:center">
+<div style="width:48px;height:48px;flex:none;background:#121A24;border:1px dashed rgba(139,152,166,.35);display:flex;align-items:center;justify-content:center;font:500 6.5px 'JetBrains Mono',monospace;color:#7C8996">[PORTRAIT]</div>
+<div><div style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Tim Seil — Luxembourg</div><div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:4px">Self-taught, self-hosted.</div></div>
+</div>
+<div style="margin-top:14px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;border:1px solid rgba(0,229,255,.4);padding:10px 14px;text-align:center">REPLY BY EMAIL</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:36px">
+<div style="border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:9px">← PREVIOUS · PART 03</div>
+<div style="font:500 13px/1.4 'JetBrains Mono',monospace;color:#E8EEF4">Kubernetes on a bare VPS</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);padding:16px 18px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:9px">NEXT ENTRY →</div>
+<div style="font:500 13px/1.4 'JetBrains Mono',monospace;color:#E8EEF4">Reading a Postgres query plan without panicking</div>
+</div>
+</div>
+
+<div>
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="padding:28px 0 16px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="display:inline-flex;align-items:center;min-height:44px;font:600 24px 'Chakra Petch',sans-serif;color:#E8EEF4;word-break:break-all">contact@timseil.dev</a>
+<div style="display:flex;flex-direction:column;margin-top:10px">
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">GITHUB ↗ <span style="color:#7C8996">&nbsp;github.com/G1NG4R</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid rgba(139,152,166,.16);padding:12px 0 22px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span tabIndex="0" role="link" aria-label="CV als PDF laden" style="display:inline-flex;align-items:center;min-height:44px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer;flex-basis:100%;min-height:44px;padding:14px 0;margin:0;display:flex;align-items:center" style-hover="color:#00E5FF">CV → cv.pdf</span><span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span><span style="display:flex;align-items:center;flex-wrap:wrap;min-height:44px;display:flex;align-items:center;gap:8px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6">--:--:--</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Design notes</div>
+<div class="dv-card" style="width:430px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">POST TEMPLATE</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> Prosa in Geist 16,5px/1,8 auf 68 Zeichen. Mono nur für Metadaten, Überschriften-Nummern, Code, Tabellen</div>
+<div><span style="color:#00E5FF">▸</span> Chakra Petch ausschließlich für Titel und das Pull-Quote — sonst wird Display zur Tapete</div>
+<div><span style="color:#00E5FF">▸</span> Code: zwei Töne. Keywords Signal, Kommentare Steel, Strings Amber. Zeilennummern in eigener Spalte, COPY-Button funktioniert</div>
+<div><span style="color:#00E5FF">▸</span> Ein Alert-Moment: das Postmortem-Panel. Rot erscheint auf der ganzen Seite nur dort</div>
+<div><span style="color:#00E5FF">▸</span> Struktur nach Engineering-Best-Practice: Summary → Fehler → Fix → Messung → Beobachtung → was ich anders machen würde</div>
+<div><span style="color:#00E5FF">▸</span> Linke Schiene trägt TOC, Serien-Position und <span style="color:#C6D1DB">RUNS IN</span> — der Post verlinkt zurück auf die Systeme, in denen er gilt</div>
+<div><span style="color:#00E5FF">▸</span> Vergleichstabelle statt Behauptung; alle Werte bleiben <span style="color:#C6D1DB">[KLAMMERN]</span> bis gemessen</div>
+<div><span style="color:#00E5FF">▸</span> Fortschrittsbalken unter der Nav bindet im Build an die Scroll-Position (hier statisch bei 38 %)</div>
+<div><span style="color:#00E5FF">▸</span> Fußnote, Autorenzeile, Serien-Navigation, kein Kommentarsystem — Antwort per Mail</div>
+<div><span style="color:#00E5FF">▸</span> Beispieltext ist Platzhalter, aber inhaltlich plausibel gehalten, damit Typografie und Rhythmus echt geprüft werden können</div>
+</div>
+</div>
+</div>
+
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Leerzustand — kein Folgebeitrag</div>
+<div class="dv-card" style="width:560px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">POST.EMPTY</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">LEERZUSTAND</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">FUSS DES BEITRAGS</span>
+</div><div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14;margin-bottom:16px">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">EMPTY · KEIN NÄCHSTER BEITRAG</div>
+<div style="padding:16px"><div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-top:1px solid rgba(139,152,166,.12);border-bottom:1px solid rgba(139,152,166,.12);margin-bottom:14px">
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">NÄCHSTER</span>
+<span style="font:500 13px 'JetBrains Mono',monospace;color:#8B98A6">— noch keiner</span>
+<span style="flex:1"></span>
+<span style="display:inline-flex;align-items:center;min-height:44px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF;cursor:pointer">ALLE EINTRÄGE →</span>
+</div>
+<div style="font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#7C8996">Dies ist der neueste Eintrag. Die Zeile bleibt stehen und sagt das, statt zu verschwinden — sonst wirkt der Fuß kaputt.</div></div>
+</div><div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> ZEILE VERSCHWINDET NIE — ein fehlendes Element liest sich als Fehler, ein benanntes nicht</div>
+<div><span style="color:#00E5FF">▸</span> DER AUSWEG ist der Index, nicht die Startseite</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Bausteine — was ein Eintrag tragen kann, und was er tragen muss</div>
+<div class="dv-card" style="width:660px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:16px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">LOG.01</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">BAUSTEINE</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ blockTally }}</span>
+</div>
+<div style="display:grid;grid-template-columns:172px 92px 1fr;border-top:1px solid rgba(139,152,166,.16)">
+<div style="padding:9px 10px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">BAUSTEIN</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">STATUS</div>
+<div style="padding:9px 0 9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">REGEL</div>
+<sc-for list="{{ blocks }}" as="b" hint-placeholder-count="12">
+<div style="padding:10px 10px 10px 0;font:500 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">{{ b.name }}</div>
+<div style="padding:10px;font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:{{ b.color }};border-bottom:1px solid rgba(139,152,166,.08)">{{ b.state }}</div>
+<div style="padding:10px 0 10px 10px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">{{ b.rule }}</div>
+</sc-for>
+</div>
+<div style="margin-top:18px;font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> KEINE ZWEITE VORLAGE: dieses Blatt ist die Vorlage. Ein Eintrag entsteht, indem optionale Bausteine wegfallen — nicht, indem ein neues Layout gebaut wird</div>
+<div><span style="color:#00E5FF">▸</span> DIE FORM FOLGT DEM ERSTEN TEXT: die Liste beschreibt, was heute gezeichnet ist. Sperrt sich der erste echte Eintrag dagegen, ist der Entwurf falsch, nicht der Text</div>
+<div><span style="color:#00E5FF">▸</span> POST-MORTEM IST DER REGELFALL, nicht die Ausnahme: Vorfall, Ursache, Behebung, was bleibt. Ein Eintrag ohne Vorfall braucht einen anderen Grund zu existieren</div>
+</div>
+</div>
+</div>
+</div>
+<p class="dv-next">Try next: "404 als Letztes" · "About-Seite" · "Code-Block mit Diff-Ansicht"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  clocks = new Set();
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.iv = setInterval(tick, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.t); }
+  B = [
+    ["Kopfzeile", "PFLICHT", "Zwei Daten — PUBLISHED und UPDATED, beide ISO. Dazu Lesezeit, Wortzahl, ein bis zwei Themenwörter. Die Zahlen werden gerechnet, nicht geschätzt"],
+    ["SUMMARY", "PFLICHT", "Zwei bis drei Sätze unter dem Titel: was passiert ist und was der Leser mitnimmt. Wer sie nicht schreiben kann, hat den Eintrag nicht verstanden"],
+    ["Fuß-Navigation", "PFLICHT", "Voriger und nächster Eintrag. Fehlt einer, bleibt die Zeile stehen und sagt es — siehe Leerzustand"],
+    ["Titel", "PFLICHT", "max 58 Zeichen, sonst bricht er mobil dreizeilig. Nennt den Vorfall, nicht das Thema"],
+    ["Eintragsnummer", "PFLICHT", "ENTRY 010 — fortlaufend, nie neu vergeben, auch wenn ein Eintrag verschwindet"],
+    ["Fließtext", "PFLICHT", "erste Person, kurze Sätze. Zwischenüberschriften ab etwa 400 Wörtern"],
+    ["Autorenzeile", "PFLICHT", "Porträt, Name, Antwortweg. Steht am Fuß, nicht am Kopf"],
+    ["Inhaltsverzeichnis", "OPTIONAL", "ab drei Zwischenüberschriften sinnvoll, darunter Ballast"],
+    ["Serien-Marker", "OPTIONAL", "nur bei mehrteiligen Einträgen: RUNNING THINGS YOURSELF · PART 04 OF 04"],
+    ["RUNS IN", "OPTIONAL", "verweist auf das System, in dem der Vorfall passierte — der Beleg für den Text"],
+    ["Codeblock", "OPTIONAL", "echter Code aus dem Repo, keine Pseudo-Beispiele. Sprache im Kopf des Blocks"],
+    ["Terminal-Aufnahme", "OPTIONAL", "die Ausgabe, über die der Text spricht. Nachgestellt ist sie wertlos"],
+    ["POSTMORTEM-Kasten", "OPTIONAL", "INC-Nummer, Vorfall, Ursache, Behebung. Bei jedem Ausfall Pflicht, sonst weglassen"],
+    ["MEASURE · BEFORE/AFTER", "OPTIONAL", "nur mit gemessenen Zahlen. Ohne Messung fällt der Block weg, nicht der Wert wird geschätzt"],
+    ["NOTES", "OPTIONAL", "nummerierte Fußnoten am Fuß. Für Verweise, die den Fließtext sonst unterbrechen — etwa auf die Fallstudie, in der der Vorfall vollständig steht"],
+    ["EDIT ON GITHUB", "OPTIONAL", "Link in der Meta-Leiste auf die Quelldatei des Eintrags. Nur sinnvoll, solange der Inhalt im öffentlichen Repo liegt"]
+  ];
+
+  renderVals() {
+    return {
+      blocks: this.B.map(([name, state, rule]) => ({ name, state, rule, color: state === "PFLICHT" ? "#00E5FF" : "#7C8996" })),
+      blockTally: this.B.filter(b => b[1] === "PFLICHT").length + " PFLICHT · " + this.B.filter(b => b[1] === "OPTIONAL").length + " OPTIONAL",
+      clockRef: el => { if (el) this.clocks.add(el); },
+      onCopy: e => {
+        const btn = e.currentTarget, block = btn.closest("div").parentElement.querySelector("pre");
+        try { if (block && navigator.clipboard) navigator.clipboard.writeText(block.innerText); } catch (err) {}
+        btn.textContent = "COPIED"; btn.style.color = "#00E5FF"; btn.style.borderColor = "rgba(0,229,255,.5)";
+        clearTimeout(this.t);
+        this.t = setTimeout(() => { btn.textContent = "COPY"; btn.style.color = "#7C8996"; btn.style.borderColor = "rgba(139,152,166,.25)"; }, 1400);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@keyframes tn-drift{from{background-position:0 0}to{background-position:520px 260px}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Homepage — SYS.01 mit Projekt-Nachweis · desktop + mobile</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1440 — terminal is live: click it, type help</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Homepage — Desktop" style="width:1440px;background-color:#0A0E14;position:relative;overflow:hidden;cursor:crosshair;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.028) 1px,transparent 1px);background-size:88px 88px"></div>
+<div style="position:relative;z-index:1;width:1160px;margin:0 auto">
+
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:32px">
+<span onMouseEnter="{{ scramble }}" style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span onMouseEnter="{{ scramble }}" style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span onMouseEnter="{{ scramble }}" style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span onMouseEnter="{{ scramble }}" style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+
+<div style="position:relative;display:grid;grid-template-columns:1fr 480px;gap:72px;align-items:center;padding:84px 0 96px">
+<sc-if value="{{ ambientOn }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;top:-40px;left:-140px;right:-140px;height:640px;pointer-events:none;opacity:.13;background-image:radial-gradient(rgba(0,229,255,.5) 1px,transparent 1.4px);background-size:26px 26px;-webkit-mask-image:radial-gradient(ellipse 62% 58% at 60% 40%,#000,transparent 76%);mask-image:radial-gradient(ellipse 62% 58% at 60% 40%,#000,transparent 76%);animation:tn-drift 90s linear infinite"></div>
+</sc-if>
+<div style="position:relative">
+<div style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:26px"><span style="color:#00E5FF">SYS.INIT</span> — BACKEND &amp; DEVOPS ENGINEER · LUXEMBOURG</div>
+<h1 style="margin:0;font:500 62px/1.06 'Chakra Petch',sans-serif;letter-spacing:-.005em;color:#E8EEF4;max-width:620px;text-wrap:pretty"><span style="display:inline" data-decode="1">I build the systems behind the screen.</span></h1>
+<div style="margin-top:26px;font:400 14px 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB">Go · TypeScript · Docker · Postgres</span> — self-taught, self-hosted.</div>
+<div style="margin-top:30px;display:flex;align-items:center;gap:10px">
+<span style="width:7px;height:7px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.4s ease-in-out infinite"></span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#00E5FF">AVAILABLE</span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">— {{ availabilityText }}</span>
+</div>
+</div>
+<div style="position:relative">
+<div onClick="{{ focusTerm }}" style="position:relative;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);box-shadow:0 0 44px rgba(0,229,255,.05);cursor:text;background-image:linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55));background-repeat:no-repeat;background-size:14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px,14px 1px,1px 14px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;align-items:center;gap:7px;padding:11px 16px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.55)"></span>
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="width:8px;height:8px;border-radius:50%;border:1px solid rgba(139,152,166,.35)"></span>
+<span style="flex:1;text-align:center;font:500 10px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.08em">tim@vps: ~ — ssh</span>
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(0,229,255,.6)">TRY: HELP</span>
+</div>
+<div style="position:relative">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px)"></div>
+<div ref="{{ termBodyRef }}" style="height:348px;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;scrollbar-color:rgba(139,152,166,.3) transparent">
+<sc-for list="{{ lines }}" as="ln" hint-placeholder-count="4">
+<div style="white-space:pre-wrap;font:400 12.5px/1.75 'JetBrains Mono',monospace;color:{{ ln.color }}">{{ ln.t }}</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+<span style="font:600 12.5px 'JetBrains Mono',monospace;color:#00E5FF">tim@vps:~$</span>
+<sc-if value="{{ showBlock }}" hint-placeholder-val="{{ true }}">
+<span style="width:8px;height:15px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span>
+</sc-if>
+<input ref="{{ inputRef }}" aria-label="terminal input — type help" onKeyDown="{{ onTermKey }}" onFocus="{{ onTF }}" onBlur="{{ onTB }}" style="flex:1;min-width:40px;background:transparent;border:none;outline:none;padding:0;color:#E8EEF4;font:500 12.5px 'JetBrains Mono',monospace;caret-color:#00E5FF">
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="margin-bottom:104px">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:34px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.01</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">TRAINING LOG</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM · SOURCE: /api/training · UPDATED [DATE]</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:20px">
+<div style="grid-column:span 2;background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:20px 22px;background-image:linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5));background-repeat:no-repeat;background-size:12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4"><span style="color:#00E5FF">01</span> · LANGUAGES</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">5 TRACKS</span></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Go</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (API, HEALTH ENDPOINT)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">TypeScript</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (FRONTEND)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Python</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">SQL</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (POSTGRES + METRICS)</span></div></div>
+<div style="margin:0 -8px 0px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">C</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+</div>
+
+<div style="grid-column:span 2;background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:20px 22px;background-image:linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5));background-repeat:no-repeat;background-size:12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4"><span style="color:#00E5FF">02</span> · BACKEND</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">5 TRACKS</span></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">HTTP servers &amp; JSON APIs (Go/TS)</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (/api/health, /api/contact)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Auth (JWT)</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Webhooks</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (DEPLOY ON PUSH)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Pub/sub (RabbitMQ)</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+<div style="margin:0 -8px 0px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Cryptography fundamentals</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+</div>
+
+<div style="grid-column:span 2;background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:20px 22px;background-image:linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5));background-repeat:no-repeat;background-size:12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4"><span style="color:#00E5FF">04</span> · DEVOPS</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">6 TRACKS</span></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Linux</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (VPS, ALL SERVICES)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Docker</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (COMPOSE VIA DOKPLOY)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Kubernetes</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">CI/CD (GitHub Actions)</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (BUILD + DEPLOY)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">AWS (S3 + CloudFront)</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (S3 BACKUPS ONLY, NO CDN)</span></div></div>
+<div style="margin:0 -8px 0px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Logging &amp; observability</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (TRAEFIK LOGS, P95, UPTIME)</span></div></div>
+</div>
+
+<div style="grid-column:span 3;background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:20px 22px;background-image:linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5));background-repeat:no-repeat;background-size:12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4"><span style="color:#00E5FF">03</span> · DATA</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">3 TRACKS</span></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">PostgreSQL</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (CONTENT STORE)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">SQLite</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (OPS METRICS AGGREGATE)</span></div></div>
+<div style="margin:0 -8px 0px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Caching</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+</div>
+
+<div style="grid-column:span 3;background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:20px 22px;background-image:linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5)),linear-gradient(rgba(139,152,166,.5),rgba(139,152,166,.5));background-repeat:no-repeat;background-size:12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4"><span style="color:#00E5FF">05</span> · FOUNDATIONS</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">3 TRACKS</span></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Git</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">SHIPPED IN → <span style="transition:color .18s;color:var(--tn-n,#B9C6D4)">02 TIMSEIL.DEV (ONE REPO)</span></div></div>
+<div style="margin:0 -8px 4px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">Data structures &amp; algorithms</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+<div style="margin:0 -8px 0px;padding:6px 8px" style-hover="--tn-p:#00E5FF;--tn-n:#E8EEF4;--tn-n2:#C6D1DB;background:rgba(0,229,255,.05)"><div style="display:flex;align-items:baseline;gap:10px;margin-bottom:7px"><span style="font:400 12px 'JetBrains Mono',monospace;color:#C6D1DB">OOP &amp; functional programming</span><span style="flex:1"></span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:6px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="transition:color .18s;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:var(--tn-p,#7C8996)">NO SYSTEM YET → <span style="transition:color .18s;color:var(--tn-n2,#8B98A6)">SELF-STUDY</span></div></div>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:26px;margin-top:26px;padding-top:16px;border-top:1px solid rgba(139,152,166,.12);flex-wrap:wrap">
+<span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">SCALE</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="display:flex;gap:2px"><span style="width:9px;height:3px;background:#00E5FF"></span><span style="width:9px;height:3px;background:#00E5FF"></span><span style="width:9px;height:3px;background:#00E5FF"></span><span style="width:9px;height:3px;background:#00E5FF"></span></span><span style="font:400 10px 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#00E5FF;font-weight:600">CORE</span> — running in several systems</span></span>
+<span style="display:flex;align-items:center;gap:8px"><span style="display:flex;gap:2px"><span style="width:9px;height:3px;background:#B9C6D4"></span><span style="width:9px;height:3px;background:#B9C6D4"></span><span style="width:9px;height:3px;background:#B9C6D4"></span><span style="width:9px;height:3px;background:rgba(139,152,166,.15)"></span></span><span style="font:400 10px 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB;font-weight:600">APPLIED</span> — shipped at least once</span></span>
+<span style="display:flex;align-items:center;gap:8px"><span style="display:flex;gap:2px"><span style="width:9px;height:3px;background:#8B98A6"></span><span style="width:9px;height:3px;background:#8B98A6"></span><span style="width:9px;height:3px;background:rgba(139,152,166,.15)"></span><span style="width:9px;height:3px;background:rgba(139,152,166,.15)"></span></span><span style="font:400 10px 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#8B98A6;font-weight:600">LEARNING</span> — in progress</span></span>
+<span style="display:flex;align-items:center;gap:8px"><span style="display:flex;gap:2px"><span style="width:9px;height:3px;background:rgba(139,152,166,.15)"></span><span style="width:9px;height:3px;background:rgba(139,152,166,.15)"></span><span style="width:9px;height:3px;background:rgba(139,152,166,.15)"></span><span style="width:9px;height:3px;background:rgba(139,152,166,.15)"></span></span><span style="font:400 10px 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#7C8996;font-weight:600">QUEUED</span> — planned</span></span>
+</div>
+</div>
+
+<div style="margin-bottom:104px">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:8px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.02</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">SELECTED WORK</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">02 SYSTEMS</span>
+</div>
+<div style="display:grid;grid-template-columns:52px 240px 1fr auto 108px 26px;gap:20px;align-items:center;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12)" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:500 12px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">01</span>
+<span style="font:500 19px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:#E8EEF4">VAT CHECK API</span>
+<span style="font:400 13px 'Geist',sans-serif;color:#8B98A6">EU VAT number validation service</span>
+<span style="display:flex;flex-direction:column;gap:6px"><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">PYTHON · FASTAPI · DOCKER</span></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">○ QUEUED</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+<div style="display:grid;grid-template-columns:52px 240px 1fr auto 108px 26px;gap:20px;align-items:center;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12)" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:500 12px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">02</span>
+<span style="font:500 19px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:#E8EEF4">TIMSEIL.DEV</span>
+<span style="font:400 13px 'Geist',sans-serif;color:#8B98A6">This site as a system — React Router front, Go API, Compose, CI/CD, VPS, monitoring
+<sc-if value="{{ accentOn }}" hint-placeholder-val="{{ true }}"><span style="display:block;margin-top:5px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FF2D55">● YOU ARE INSIDE THIS PROJECT</span></sc-if>
+<sc-if value="{{ accentOff }}" hint-placeholder-val="{{ false }}"><span style="display:block;margin-top:5px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">● YOU ARE INSIDE THIS PROJECT</span></sc-if>
+</span>
+<span style="display:flex;flex-direction:column;gap:6px"><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">REACT ROUTER · GO · DOCKER · ACTIONS · VPS</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF"><span style="color:rgba(124,137,150,.7)">&lt;&gt;</span> PUBLIC · [REPO URL]</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(0,229,255,.75);cursor:pointer" style-hover="color:#00E5FF">CASE STUDY →</span></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">● LIVE</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+</div>
+
+<div style="margin-bottom:104px">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:32px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.03</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">UPLINK</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">ZWEI BLÖCKE · JEDER NENNT SEINE QUELLE</span>
+</div>
+<div style="display:flex;gap:3px">
+<sc-for list="{{ weeks }}" as="wk" hint-placeholder-count="53">
+<div style="display:flex;flex-direction:column;gap:3px">
+<sc-for list="{{ wk }}" as="d" hint-placeholder-count="7">
+<div style="width:15px;height:15px;border-radius:2px;background:{{ d }}"></div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;align-items:center;margin-top:16px">
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6"><span style="color:#E8EEF4;font-weight:600">{{ total }}</span> CONTRIBUTIONS — LAST 365 DAYS <span style="color:#7C8996">· SOURCE GITHUB API · [PLACEHOLDER DATA]</span></span>
+<span style="flex:1"></span>
+<span style="display:flex;align-items:center;gap:4px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">LESS
+<span style="width:10px;height:10px;border-radius:2px;background:rgba(232,238,244,.05);margin-left:4px"></span>
+<span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.16)"></span>
+<span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.34)"></span>
+<span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.58)"></span>
+<span style="width:10px;height:10px;border-radius:2px;background:rgba(0,229,255,.9);margin-right:4px"></span>
+MORE</span>
+</div>
+<div style="margin-top:26px;padding-top:20px;border-top:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:12px">
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">OPERATION · LAST 30 DAYS · ONE CELL IS ONE DAY</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">— NO DATA · SOURCE /api/health</span>
+</div>
+<div style="display:flex;gap:4px;margin-bottom:11px"><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span></div>
+<div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6;max-width:82ch">Der Streifen füllt sich pro Betriebstag: eine Zelle für jeden Tag ohne Vorfall, eine Kerbe für jeden Ausfall. Der Graph darüber misst Aktivität, dieser Streifen misst Betrieb. Hier ist er <span style="color:#C6D1DB">reine Anzeige</span> — anklickbar mit Vorfall, Ursache und Post-Mortem ist er in der Fallstudie. <span style="color:#C6D1DB">Ab 30 Tagen wächst er auf 90.</span></div>
+</div>
+</div>
+
+<div style="margin-bottom:96px">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:8px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.04</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">LOG</span>
+<span style="flex:1"></span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(0,229,255,.75);cursor:pointer" style-hover="color:#00E5FF">SYSTEM 02 · CASE STUDY →</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">LATEST 03 · PLACEHOLDER TOPICS</span>
+</div>
+<div style="display:grid;grid-template-columns:110px 1fr 24px;gap:24px;align-items:baseline;padding:20px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-07-21</span>
+<span><span style="display:block;font:500 14.5px 'JetBrains Mono',monospace;color:#E8EEF4">Go concurrency patterns in production</span><span style="display:block;font:400 13px 'Geist',sans-serif;color:#8B98A6;margin-top:5px">Worker pools, bounded queues, and what actually breaks under load.</span></span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+<div style="display:grid;grid-template-columns:110px 1fr 24px;gap:24px;align-items:baseline;padding:20px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-06-09</span>
+<span><span style="display:block;font:500 14.5px 'JetBrains Mono',monospace;color:#E8EEF4">Kubernetes on a bare VPS</span><span style="display:block;font:400 13px 'Geist',sans-serif;color:#8B98A6;margin-top:5px">k3s on 8 GB of metal — what you keep, what you drop.</span></span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+<div style="display:grid;grid-template-columns:110px 1fr 24px;gap:24px;align-items:baseline;padding:20px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-05-02</span>
+<span><span style="display:block;font:500 14.5px 'JetBrains Mono',monospace;color:#E8EEF4">CI/CD pipelines with GitHub Actions and Docker</span><span style="display:block;font:400 13px 'Geist',sans-serif;color:#8B98A6;margin-top:5px">From git push to production in 90 seconds, with rollbacks.</span></span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+</div>
+
+<div style="border-top:1px solid rgba(139,152,166,.16);padding-top:56px">
+<div style="display:flex;align-items:center;gap:28px">
+<div style="width:92px;height:92px;flex:none;background:#0E141C;border:1px dashed rgba(139,152,166,.35);display:flex;align-items:center;justify-content:center;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">[PORTRAIT]</div>
+<div style="max-width:560px">
+<div style="font:400 13.5px/1.6 'Geist',sans-serif;color:#8B98A6">[BIO — 2–3 lines: self-taught systems engineer in Luxembourg; what he runs, how it is hosted, why it is built this way.]</div>
+<div style="margin-top:10px"><span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;cursor:pointer">ABOUT →</span></div>
+</div>
+</div>
+<div style="margin-top:72px">
+<div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#7C8996;margin-bottom:14px">OPEN A CHANNEL <span style="opacity:.6">· [EMAIL ASSUMED — CONFIRM]</span></div>
+<a href="mailto:contact@timseil.dev" style="font:600 52px 'Chakra Petch',sans-serif;letter-spacing:.01em;color:#E8EEF4;text-decoration:none" style-hover="color:#00E5FF;text-shadow:0 0 28px rgba(0,229,255,.35)">contact@timseil.dev</a>
+</div>
+<div style="display:flex;align-items:baseline;gap:28px;margin-top:44px;flex-wrap:wrap">
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">GITHUB ↗ <span style="color:#7C8996">github.com/G1NG4R</span></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">LINKEDIN ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">X ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">BASED IN LUXEMBOURG</span>
+<span style="flex:1"></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;cursor:pointer" style-hover="color:#8B98A6">PRIVACY</span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;cursor:pointer" style-hover="color:#8B98A6">IMPRINT</span>
+</div>
+<div style="height:5px;opacity:.5;margin-top:36px;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);padding:14px 0 22px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1 · #A41F9C2</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span>
+
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CV → TERMINAL <span style="color:#8B98A6">cv</span></span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span><span style="display:flex;align-items:center;gap:9px">THEME
+<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span>
+<span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer" style-hover="opacity:1"></span>
+<span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer" style-hover="opacity:1"></span>
+<span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer" style-hover="opacity:1"></span>
+<span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer" style-hover="opacity:1"></span>
+<span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer" style-hover="opacity:1"></span>
+<span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer" style-hover="opacity:1"></span>
+</span>
+
+<span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span>
+
+<span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:32px"><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Mobile · 390 — terminal collapses to a drawer</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Homepage — Mobile" style="width:390px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.025) 1px,transparent 1px);background-size:64px 64px"></div>
+<div style="position:relative;z-index:1;padding:0 22px">
+
+<div style="display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+
+<div style="padding:48px 0 12px">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:18px"><span style="color:#00E5FF">SYS.INIT</span> — BACKEND &amp; DEVOPS · LUX</div>
+<h2 style="margin:0;font:500 34px/1.1 'Chakra Petch',sans-serif;color:#E8EEF4;text-wrap:pretty"><span data-decode="1">I build the systems behind the screen.</span></h2>
+<div style="margin-top:18px;font:400 12px/1.7 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB">Go · TypeScript · Docker · Postgres</span><br>— self-taught, self-hosted.</div>
+<div style="margin-top:22px;display:flex;align-items:center;gap:8px">
+<span style="width:6px;height:6px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.4s ease-in-out infinite"></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#00E5FF">AVAILABLE</span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#8B98A6">— {{ availabilityText }}</span>
+</div>
+</div>
+
+<div style="margin:32px 0 64px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);padding:14px 16px;display:flex;align-items:center;background-image:linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55)),linear-gradient(rgba(0,229,255,.55),rgba(0,229,255,.55));background-repeat:no-repeat;background-size:12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px;background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">▸ TS://TERMINAL</span>
+<span style="flex:1"></span>
+<span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">TAP TO OPEN — DOCKS AS DRAWER</span>
+</div>
+
+<div style="margin-bottom:64px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:12px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.01</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">TRAINING LOG</span>
+</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-bottom:18px">SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM</div>
+<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:64px">
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:16px 18px">
+<div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.15em;color:#E8EEF4"><span style="color:#00E5FF">01</span> · LANGUAGES</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">5 TRACKS</span></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Go</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (API, HEALTH ENDPOINT)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">TypeScript</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (FRONTEND)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Python</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">SQL</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (POSTGRES + METRICS)</span></div></div>
+<div style="margin-bottom:0px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">C</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:16px 18px">
+<div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.15em;color:#E8EEF4"><span style="color:#00E5FF">02</span> · BACKEND</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">5 TRACKS</span></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">HTTP servers &amp; JSON APIs (Go/TS)</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (/api/health, /api/contact)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Auth (JWT)</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Webhooks</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (DEPLOY ON PUSH)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Pub/sub (RabbitMQ)</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+<div style="margin-bottom:0px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Cryptography fundamentals</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:16px 18px">
+<div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.15em;color:#E8EEF4"><span style="color:#00E5FF">04</span> · DEVOPS</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">6 TRACKS</span></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Linux</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (VPS, ALL SERVICES)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Docker</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (COMPOSE VIA DOKPLOY)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Kubernetes</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">CI/CD (GitHub Actions)</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (BUILD + DEPLOY)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">AWS (S3 + CloudFront)</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (S3 BACKUPS ONLY, NO CDN)</span></div></div>
+<div style="margin-bottom:0px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Logging &amp; observability</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (TRAEFIK LOGS, P95, UPTIME)</span></div></div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:16px 18px">
+<div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.15em;color:#E8EEF4"><span style="color:#00E5FF">03</span> · DATA</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">3 TRACKS</span></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">PostgreSQL</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (CONTENT STORE)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">SQLite</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (OPS METRICS AGGREGATE)</span></div></div>
+<div style="margin-bottom:0px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Caching</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.1);padding:16px 18px">
+<div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.15em;color:#E8EEF4"><span style="color:#00E5FF">05</span> · FOUNDATIONS</span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">3 TRACKS</span></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Git</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#B9C6D4">APPLIED</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:#B9C6D4"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">SHIPPED IN → <span style="color:#B9C6D4">02 TIMSEIL.DEV (ONE REPO)</span></div></div>
+<div style="margin-bottom:11px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Data structures &amp; algorithms</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+<div style="margin-bottom:0px"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px"><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">OOP &amp; functional programming</span><span style="flex:1"></span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LEARNING</span></div><div style="display:flex;gap:3px;margin-bottom:5px"><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:#8B98A6"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span><span style="flex:1;height:3px;background:rgba(139,152,166,.15)"></span></div><div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#7C8996">NO SYSTEM YET → <span style="color:#8B98A6">SELF-STUDY</span></div></div>
+</div>
+</div>
+
+<div style="margin-bottom:64px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.02</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">SELECTED WORK</span>
+</div>
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">01</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">○ QUEUED</span></div>
+<div style="font:500 16px 'Chakra Petch',sans-serif;color:#E8EEF4">VAT CHECK API</div>
+<div style="font:400 12px 'Geist',sans-serif;color:#8B98A6;margin-top:4px">EU VAT number validation service</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">PYTHON · FASTAPI · DOCKER</div>
+
+</div>
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">02</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">● LIVE</span></div>
+<div style="font:500 16px 'Chakra Petch',sans-serif;color:#E8EEF4">TIMSEIL.DEV</div>
+<div style="font:400 12px 'Geist',sans-serif;color:#8B98A6;margin-top:4px">This site as a system — React Router front, Go API, Compose, CI/CD, VPS, monitoring</div>
+<sc-if value="{{ accentOn }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px;font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FF2D55">● YOU ARE INSIDE THIS PROJECT</div></sc-if>
+<sc-if value="{{ accentOff }}" hint-placeholder-val="{{ false }}"><div style="margin-top:6px;font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">● YOU ARE INSIDE THIS PROJECT</div></sc-if>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">REACT ROUTER · GO · DOCKER · ACTIONS · VPS</div>
+<div style="display:flex;align-items:center;min-height:44px;margin-top:2px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF"><span style="color:rgba(124,137,150,.7)">&lt;&gt;</span> PUBLIC · [REPO URL]</div>
+<div style="display:inline-flex;align-items:center;min-height:44px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(0,229,255,.75);margin-top:7px;cursor:pointer" style-hover="color:#00E5FF">CASE STUDY →</div>
+</div>
+</div>
+
+<div style="margin-bottom:64px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.03</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">UPLINK</span>
+</div>
+<div style="display:flex;gap:2px">
+<sc-for list="{{ weeksM }}" as="wk" hint-placeholder-count="26">
+<div style="display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ wk }}" as="d" hint-placeholder-count="7">
+<div style="width:11px;height:11px;border-radius:1.5px;background:{{ d }}"></div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:12px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6"><span style="color:#E8EEF4;font-weight:600">{{ total }}</span> CONTRIBUTIONS · 365 D — <span style="color:#7C8996">LAST 26 WKS SHOWN</span></div>
+<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(139,152,166,.12)">
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:9px">OPERATION · 30 D <span style="color:#7C8996">— NO DATA · /api/health</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px"><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span></div>
+<div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Füllt sich pro Betriebstag. Eine Kerbe ist ein Ausfall; anklickbar ist sie in der Fallstudie.</div>
+</div>
+</div>
+
+<div style="margin-bottom:64px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.04</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">LOG</span>
+<span style="flex:1"></span>
+<span style="display:inline-flex;align-items:center;min-height:44px;font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(0,229,255,.75);cursor:pointer" style-hover="color:#00E5FF">SYSTEM 02 · CASE STUDY →</span>
+</div>
+<div style="padding:14px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:5px">2026-07-21</div>
+<div style="font:500 13.5px 'JetBrains Mono',monospace;color:#E8EEF4">Go concurrency patterns in production</div>
+<div style="font:400 12px 'Geist',sans-serif;color:#8B98A6;margin-top:4px">Worker pools, bounded queues, and what actually breaks under load.</div>
+</div>
+<div style="padding:14px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:5px">2026-06-09</div>
+<div style="font:500 13.5px 'JetBrains Mono',monospace;color:#E8EEF4">Kubernetes on a bare VPS</div>
+<div style="font:400 12px 'Geist',sans-serif;color:#8B98A6;margin-top:4px">k3s on 8 GB of metal — what you keep, what you drop.</div>
+</div>
+<div style="padding:14px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:5px">2026-05-02</div>
+<div style="font:500 13.5px 'JetBrains Mono',monospace;color:#E8EEF4">CI/CD pipelines with GitHub Actions and Docker</div>
+<div style="font:400 12px 'Geist',sans-serif;color:#8B98A6;margin-top:4px">From git push to production in 90 seconds, with rollbacks.</div>
+</div>
+</div>
+
+<div style="border-top:1px solid rgba(139,152,166,.16);padding:40px 0 0">
+<div style="display:flex;gap:16px;align-items:center">
+<div style="width:64px;height:64px;flex:none;background:#0E141C;border:1px dashed rgba(139,152,166,.35);display:flex;align-items:center;justify-content:center;font:500 7px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">[PORTRAIT]</div>
+<div style="font:400 12px/1.6 'Geist',sans-serif;color:#8B98A6">[BIO — 2–3 lines] <span style="display:block;margin-top:6px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">ABOUT →</span></div>
+</div>
+<div style="margin-top:44px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="display:inline-flex;align-items:center;min-height:44px;font:600 26px 'Chakra Petch',sans-serif;color:#E8EEF4;text-decoration:none;word-break:break-all">contact@timseil.dev</a>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;margin-top:28px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">GITHUB ↗ <span style="color:#7C8996">github.com/G1NG4R</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid rgba(139,152,166,.16);margin-top:28px;padding:12px 0 20px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span tabIndex="0" role="link" aria-label="CV als PDF laden" style="display:inline-flex;align-items:center;min-height:44px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer;flex-basis:100%;min-height:44px;padding:14px 0;margin:0;display:flex;align-items:center" style-hover="color:#00E5FF">CV → cv.pdf</span><span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span><span style="display:flex;align-items:center;flex-wrap:wrap;min-height:44px;display:flex;align-items:center;gap:8px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6">--:--:--</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Display statement — alternates</div>
+<div class="dv-card" style="width:460px;padding:28px">
+<div style="margin-bottom:26px">
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#00E5FF;margin-bottom:8px">VAR A — AS DESIGNED</div>
+<div style="font:500 25px/1.15 'Chakra Petch',sans-serif;color:#E8EEF4">I build the systems behind the screen.</div>
+</div>
+<div style="margin-bottom:26px">
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:8px">VAR B</div>
+<div style="font:500 25px/1.15 'Chakra Petch',sans-serif;color:#C6D1DB">Infrastructure is the interface.</div>
+</div>
+<div>
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:8px">VAR C</div>
+<div style="font:500 25px/1.15 'Chakra Petch',sans-serif;color:#C6D1DB">The screen is the easy part.</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Design notes</div>
+<div class="dv-card" style="width:400px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">DESIGN NOTES — HOMEPAGE</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px">
+<div><span style="color:#00E5FF">▸</span> BOOT-KASKADE: die Seite lädt wie ein Dienst — SYS.INIT-Zeilen, dann Hero, dann Module. Die Überschrift <span style="color:#C6D1DB">dekodiert</span> aus Zufallszeichen und wird nach jedem Render neu auf den Endzustand gesetzt</div>
+<div><span style="color:#00E5FF">▸</span> TERMINAL statt Spielerei: <span style="color:#C6D1DB">whoami · stack · projects · work · blog · about · cv · help</span> — echte Ausgaben, jede Zeile ein Fakt, den die Seite belegen kann</div>
+<div><span style="color:#00E5FF">▸</span> CV NUR ÜBER DAS TERMINAL: der Befehl <span style="color:#C6D1DB">cv</span> lädt die PDF direkt — es gibt keine CV-Seite, keinen Knopf, keinen Nav-Eintrag und keinen Eintrag in der 404-Routenliste. Fußzeile Desktop: <span style="color:#C6D1DB">CV → TERMINAL cv</span> auf der Startseite, sonst mit Ortsangabe <span style="color:#C6D1DB">CV → TERMINAL AUF / : cv</span>. <span style="color:#C6D1DB">Mobil ist das Terminal read-only</span>, deshalb verlinkt die Mobil-Fußzeile direkt <span style="color:#C6D1DB">CV → cv.pdf</span> — eine Anweisung, die auf dem Gerät nicht ausführbar ist, wäre eine Sackgasse</div>
+<div><span style="color:#00E5FF">▸</span> THEME-WAHL in der Fußzeile jeder Seite, sieben Paletten, Auswahl liegt in <span style="color:#C6D1DB">localStorage</span> (<span style="color:#C6D1DB">ts.theme</span>) — Terminal Noir bleibt verbindlich, die anderen sind Angebot</div>
+<div><span style="color:#00E5FF">▸</span> EHRLICHE SYSTEMLISTE: <span style="color:#C6D1DB">02 SYSTEMS</span> — nur timseil.dev ist LIVE, vat-check steht auf QUEUED und trägt darum keine Betriebszahlen, sondern <span style="color:#C6D1DB">— NO DATA</span></div>
+<div><span style="color:#00E5FF">▸</span> TRAININGS-LOG als Fundament der Seite: 22 Tracks in fünf Modulen, Zustand und Balken sagen dasselbe, und jede Zeile nennt ihren Beleg. Heute 13× <span style="color:#C6D1DB">APPLIED</span> aus timseil.dev, 9× LEARNING ohne System, nichts auf CORE — <span style="color:#C6D1DB">der Log füllt sich mit jedem Projekt</span></div>
+<div><span style="color:#00E5FF">▸</span> EIN ALERT-MOMENT: <span style="color:#C6D1DB">YOU ARE INSIDE THIS PROJECT</span> in Rot, sonst trägt Cyan unter 3 % Fläche die Akzente</div>
+</div>
+</div>
+</div>
+
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Abschnittsfolge — verbindlich, auch für Kopien</div>
+<div class="dv-card" style="width:600px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:18px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">HOME.01</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">ABSCHNITTSFOLGE</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DIE NUMMER IST DIE REIHENFOLGE</span>
+</div>
+<div style="display:grid;grid-template-columns:92px 1fr;gap:12px 18px;align-items:baseline;margin-bottom:20px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">HERO</span>
+<span style="font:400 11.5px/1.6 'Geist',sans-serif;color:#C6D1DB">Aussage, Stack, Verfügbarkeit, Terminal. Wer hier abbricht, hat den Satz gelesen.</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.01</span>
+<span style="font:400 11.5px/1.6 'Geist',sans-serif;color:#C6D1DB"><span style="font-family:'JetBrains Mono',monospace">TRAINING LOG</span> — 22 Tracks mit Beleg. Steht <span style="color:#E8EEF4">vor</span> der Systemliste, weil er die Belege liefert, auf die sie sich beruft.</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.02</span>
+<span style="font:400 11.5px/1.6 'Geist',sans-serif;color:#C6D1DB"><span style="font-family:'JetBrains Mono',monospace">SELECTED WORK</span> — die Systeme, auf die der Log zeigt. Von hier führt der Weg in die Fallstudie.</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.03</span>
+<span style="font:400 11.5px/1.6 'Geist',sans-serif;color:#C6D1DB"><span style="font-family:'JetBrains Mono',monospace">UPLINK</span> — Contribution-Graph und Betriebsstreifen. Aktivität und Betrieb, zwei Blöcke, jeder nennt seine Quelle.</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.04</span>
+<span style="font:400 11.5px/1.6 'Geist',sans-serif;color:#C6D1DB"><span style="font-family:'JetBrains Mono',monospace">LOG</span> — drei Einträge. Steht zuletzt, weil er der laufende Teil ist, nicht der beweisende.</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">FUSS</span>
+<span style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Bio mit Porträt, Kontaktblock, Meta-Leiste — Fassung „lang" aus dem Chrome-Blatt.</span>
+</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> DIE NUMMER IST DIE REIHENFOLGE: <span style="color:#C6D1DB">SYS.01 → 02 → 03 → 04</span>, ohne Ausnahme. Wer eine Sektion verschiebt, vergibt eine neue Nummer — sonst zeigt die Seite eine Ordnung, die sie nicht einhält</div>
+<div><span style="color:#00E5FF">▸</span> BELEG VOR BEHAUPTUNG: der Log steht vor der Systemliste. Genau diese Folge ist das Argument der Seite; dreht man sie um, wird aus Nachweis wieder Selbstbeschreibung</div>
+<div><span style="color:#00E5FF">▸</span> KOPIEN FOLGEN DER QUELLE: das Themes-Blatt und jede spätere Variante übernehmen diese Folge. Weicht eine Kopie ab, ist die Kopie falsch, nicht die Startseite</div>
+<div><span style="color:#FFB000">▸</span> GEPRÜFT WIRD MIT EINEM BLICK: die vier Marker müssen auf der Seite in aufsteigender Reihenfolge stehen. Das ist der ganze Test</div>
+</div>
+</div>
+</div>
+</div>
+<p class="dv-next">Try next: "AWS-Nachweis bestätigt" · "terminal below the hero instead" · "approved — case study page"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;availability&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Open to backend and infrastructure work&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;},&quot;ambient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;VFX&quot;},&quot;alertAccent&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;VFX&quot;}}">
+class Component extends DCLogic {
+  state = { lines: [], focused: false };
+  clocks = new Set();
+  C = { ink:"#E8EEF4", steel:"#8B98A6", dim:"#7C8996", cyan:"#00E5FF", cyanDim:"rgba(0,229,255,.5)", err:"#FF2D55", amber:"#FFB000", echo:"#C6D1DB" };
+  boot = [["timseil.dev — SYS.INIT v3.2.1","ink"],["> mounting go runtime … ok","steel"],["> postgres 16: accepting connections … ok","steel"],["> docker compose up … 4/4 healthy","steel"],["> ci: last deploy #a41f9c2 · 42s … ok","steel"],["> uplink established — luxembourg [LU]","cyan"],["\u00A0","steel"],["type help to list commands","dim"]];
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.iv = setInterval(tick, 1000);
+    this.boot.forEach((l,i) => setTimeout(() => this.push(l[0], l[1]), 300 + i*170));
+    if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      this.dt = setTimeout(() => document.querySelectorAll("[data-decode]").forEach(el => this.decode(el)), 1700);
+    }
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.dt); }
+  componentDidUpdate() {
+    if (!this.decoded) return;
+    document.querySelectorAll("[data-decode]").forEach(el => {
+      const o = this.decoded.get(el.dataset.decodeKey);
+      if (o && el.textContent !== o) el.textContent = o;
+    });
+  }
+  decode(el) {
+    if (!el || el.dataset.done) return;
+    el.dataset.done = "1";
+    const o = el.textContent, key = String((this.dkey = (this.dkey || 0) + 1));
+    el.dataset.decodeKey = key;
+    this.decoded = this.decoded || new Map();
+    this.decoded.set(key, o);
+    const CH = "▓▒░<>/|=+*#%ABCDEFGHKMNPRSTUVXZ049"; let f = 0; const T = 16;
+    const iv = setInterval(() => { f++;
+      el.textContent = [...o].map((c,i) => c === " " ? " " : (i/o.length < f/T ? c : CH[(Math.random()*CH.length)|0])).join("");
+      if (f >= T) { el.textContent = o; clearInterval(iv); } }, 42);
+  }
+  scr(el) {
+    if (el.dataset.on) return; el.dataset.on = "1";
+    const o = el.dataset.txt || (el.dataset.txt = el.textContent), CH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ<>/|=+*";
+    let f = 0; const iv = setInterval(() => { f++;
+      el.textContent = [...o].map((c,i) => i/o.length < f/7 ? c : CH[(Math.random()*CH.length)|0]).join("");
+      if (f >= 7) { el.textContent = o; delete el.dataset.on; clearInterval(iv); } }, 30);
+  }
+  push(t,k) {
+    this.setState(s => ({ lines: [...s.lines, { t, color: this.C[k] || this.C.steel }] }));
+    setTimeout(() => { if (this.termBody) this.termBody.scrollTop = this.termBody.scrollHeight; }, 30);
+  }
+  out(rows) { rows.forEach((r,i) => setTimeout(() => this.push(r[0], r[1]), i*45)); }
+  run(v) {
+    const cmd = v.trim().toLowerCase(); this.push("tim@vps:~$ " + v, "echo"); if (!cmd) return;
+    const av = (this.props.availability ?? "Open to backend and infrastructure work").toLowerCase();
+    const CMDS = {
+      help: [["  help       this list","steel"],["  whoami     operator profile","steel"],["  stack      tools in production","steel"],["  projects   selected systems","steel"],["  work       systems index","steel"],["  blog       writing log","steel"],["  about      operator file","steel"],["  cv         one page, printable — only here","steel"],["  contact    open a channel","steel"],["  clear      wipe buffer","steel"],["  warn: one command remains undocumented","amber"]],
+      whoami: [["tim seil — backend & devops engineer · luxembourg","ink"],["self-taught: syscalls → services → pipelines → production","steel"],["this site runs on my own stack. you are inside it.","steel"],["status: " + av,"cyan"]],
+      stack: [["lang     go · typescript · python · sql · c","steel"],["backend  http/json apis · jwt auth · webhooks · rabbitmq","steel"],["data     postgresql · sqlite · caching","steel"],["ops      linux · docker · dokploy · traefik · gh actions","steel"],["host     own vps · tls via let's encrypt · logs 14d","steel"]],
+      projects: [["01  vat-check    eu vat validation api    · queued","steel"],["02  timseil.dev  ← you are here           · live","cyan"]],
+      work: [["→ /work — 2 systems, filterable by stack and state","cyan"],["  only live systems carry ops metrics — today that is 02","steel"],["  hover a row to unhide its preview","dim"]],
+      blog: [["→ /blog — writing log, newest first","cyan"],["  entries are post-mortems, not tutorials","steel"],["  010  the queue that lost 400 jobs","steel"]],
+      about: [["→ /about — operator file","cyan"],["  trajectory rail: step the years with ← →","steel"],["  self-taught, luxembourg, go + typescript","steel"]],
+      cv: [["→ /cv.pdf — one page, A4, printable","cyan"],["  starts the download right here","ink"],["  proof column: work · code · log · privacy","steel"],["  no page, no button: this command is the way","dim"],["  the site is the newer source","dim"]],
+      contact: [["mail      contact@timseil.dev","ink"],["github    github.com/G1NG4R","steel"],["linkedin  [SOON]","steel"],["x         [SOON]","steel"],["response  usually < 24h","dim"]]
+    };
+    if (cmd === "clear") { this.setState({ lines: [{ t:"buffer cleared — type help", color:this.C.dim }] }); return; }
+    if (cmd === "matrix") {
+      const K = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇ0123456789";
+      for (let i = 0; i < 6; i++) setTimeout(() => { let s = ""; for (let j = 0; j < 46; j++) s += Math.random() < .72 ? K[(Math.random()*K.length)|0] : " "; this.push(s, i%2 ? "cyanDim" : "cyan"); }, i*90);
+      setTimeout(() => this.push("…ok. back to work.","dim"), 640); return;
+    }
+    if (CMDS[cmd]) this.out(CMDS[cmd]);
+    else { this.push("command not found: " + cmd, "err"); this.push("try help","dim"); }
+  }
+  genGraph() {
+    let s = 20260815 >>> 0; const rnd = () => ((s = (s*1664525 + 1013904223) >>> 0) / 4294967296);
+    const lv = ["rgba(232,238,244,.05)","rgba(0,229,255,.16)","rgba(0,229,255,.34)","rgba(0,229,255,.58)","rgba(0,229,255,.9)"];
+    const cnt = [0,1,3,6,10]; this.weeks = []; let total = 0, mom = 0;
+    for (let w = 0; w < 53; w++) { const col = [];
+      for (let d = 0; d < 7; d++) { let r = rnd() + mom*.16; if (d === 0) r -= .18; if (d === 6) r -= .06;
+        const l = r > 1.02 ? 4 : r > .84 ? 3 : r > .6 ? 2 : r > .36 ? 1 : 0;
+        mom = l >= 2 ? Math.min(mom+1, 3) : Math.max(mom-1, 0); total += cnt[l]; col.push(lv[l]); }
+      this.weeks.push(col); }
+    this.total = total.toLocaleString("en-US");
+  }
+  renderVals() {
+    if (!this.weeks) this.genGraph();
+    const acc = this.props.alertAccent ?? true;
+    return {
+      availabilityText: (this.props.availability ?? "Open to backend and infrastructure work").toUpperCase(),
+      ambientOn: this.props.ambient ?? true, accentOn: acc, accentOff: !acc,
+      weeks: this.weeks, weeksM: this.weeks.slice(27), total: this.total,
+      lines: this.state.lines, showBlock: !this.state.focused,
+      clockRef: el => { if (el) this.clocks.add(el); },
+      termBodyRef: el => { this.termBody = el; }, inputRef: el => { this.inp = el; },
+      focusTerm: () => { if (this.inp) this.inp.focus(); },
+      onTF: () => this.setState({ focused: true }), onTB: () => this.setState({ focused: false }),
+      onTermKey: e => { if (e.key === "Enter") { const v = e.target.value; e.target.value = ""; this.run(v); } },
+      scramble: e => this.scr(e.currentTarget)
+    };
+  }
+}
+</script>
+</body>
+</html>

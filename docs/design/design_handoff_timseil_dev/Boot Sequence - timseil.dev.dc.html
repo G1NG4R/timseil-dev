@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:3px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@keyframes bs-line{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@keyframes bs-corner{from{opacity:0;transform:scale(1.5)}to{opacity:1;transform:none}}
+@keyframes bs-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes bs-col{from{transform:scaleY(.06);opacity:.3}to{transform:scaleY(1);opacity:1}}
+@keyframes bs-fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Boot-Sequenz — Storyboard und lauffähige Referenz · 0–2400ms, once per session</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Storyboard · 6 Frames, Timing-Lineal und Spec-Tabelle</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Boot Storyboard" style="width:1360px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:8px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">BOOT</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">TOTAL 2400MS · SKIPPABLE · SESSION-ONCE</span>
+</div>
+<p style="margin:0 0 34px;max-width:78ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Die Startsequenz ist kein Intro, sondern ein Systemstart. Sie darf nichts verzögern, was der Besucher schon lesen will: Layout und Textmaß stehen ab Frame 0, animiert wird nur Sichtbarkeit.</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:40px">
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14;position:relative">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">T0</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4";white-space:nowrap">000 · FIRST PAINT</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">HOLD 80</span>
+</div>
+<div style="height:212px;padding:12px;background-color:#0A0E14;position:relative;overflow:hidden">
+<div style="height:20px;border-bottom:1px solid rgba(139,152,166,.07)"></div>
+<div style="margin-top:22px;display:flex;align-items:center;gap:5px">
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">tim@vps:~$</span>
+<span style="width:6px;height:11px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span>
+</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Schwarz, ein Caret. Kein Logo, kein Spinner. Die Seite ist bereits vollständig gelayoutet — nur unsichtbar.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">T1</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4";white-space:nowrap">080 · PANEL SNAP</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">120</span>
+</div>
+<div style="height:212px;padding:12px;background-color:#0A0E14;position:relative;overflow:hidden">
+<div style="height:20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">TIMSEIL.DEV</span>
+</div>
+<div style="margin-top:20px;position:relative;padding:14px;background-color:#0E141C;border:1px solid rgba(0,229,255,.16)">
+<span style="position:absolute;top:-1px;left:-1px;width:9px;height:9px;border-top:1px solid #00E5FF;border-left:1px solid #00E5FF"></span>
+<span style="position:absolute;top:-1px;right:-1px;width:9px;height:9px;border-top:1px solid #00E5FF;border-right:1px solid #00E5FF"></span>
+<span style="position:absolute;bottom:-1px;left:-1px;width:9px;height:9px;border-bottom:1px solid #00E5FF;border-left:1px solid #00E5FF"></span>
+<span style="position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-bottom:1px solid #00E5FF;border-right:1px solid #00E5FF"></span>
+<div style="display:flex;align-items:center;gap:5px">
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#E8EEF4">timseil.dev — SYS.INIT v3.2.1</span>
+</div>
+<div style="margin-top:6px;font:400 9px/1.7 'JetBrains Mono',monospace;color:#8B98A6">&gt; mounting go runtime … ok</div>
+<div style="margin-top:1px;display:flex;gap:5px"><span style="width:6px;height:11px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span></div>
+</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Die vier Ecken-Brackets fahren von 1.5× auf 1× zusammen, das Panel setzt sich. Kein Fade — ein Snap, wie ein einrastender Rahmen.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">T2</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4";white-space:nowrap">340 · INIT LOG</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">7×100</span>
+</div>
+<div style="height:212px;padding:12px;background-color:#0A0E14;overflow:hidden">
+<div style="height:20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">TIMSEIL.DEV</span>
+<span style="flex:1"></span>
+<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">WORK · BLOG · ABOUT · CONTACT</span>
+</div>
+<div style="margin-top:14px;padding:11px 12px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 8.5px/1.75 'JetBrains Mono',monospace">
+<div style="color:#E8EEF4">timseil.dev — SYS.INIT v3.2.1</div>
+<div style="color:#8B98A6">&gt; mounting go runtime … ok</div>
+<div style="color:#8B98A6">&gt; postgres 16: accepting connections … ok</div>
+<div style="color:#8B98A6">&gt; docker compose up … 4/4 healthy</div>
+<div style="color:#8B98A6">&gt; ci: last deploy #a41f9c2 · 42s … ok</div>
+<div style="color:#00E5FF">&gt; uplink established — luxembourg [LU]</div>
+<div style="color:#7C8996;margin-top:6px">type help to list commands</div>
+</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Zeilen erscheinen ganz, nicht buchstabenweise: sieben Zeilen à 100ms. Nur die Uplink-Zeile ist cyan — sie ist das Ergebnis, der Rest ist Protokoll.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">T3</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4";white-space:nowrap">640 · HEADLINE DECODE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">540</span>
+</div>
+<div style="height:212px;padding:12px;background-color:#0A0E14;overflow:hidden">
+<div style="height:20px;border-bottom:1px solid rgba(139,152,166,.10)"></div>
+<div style="margin-top:24px;font:500 22px/1.14 'Chakra Petch',sans-serif;color:#E8EEF4">I build the systems<br><span style="color:#E8EEF4">behind </span><span style="color:#00E5FF">t̷h̷</span><span style="color:#7C8996">3 scr&#8260;#n.</span></div>
+<div style="margin-top:16px;font:400 9px/1.7 'JetBrains Mono',monospace;color:#7C8996">DECODE PASS 2/3 · 40MS PER STEP · LEFT TO RIGHT</div>
+<div style="margin-top:6px;height:2px;width:62%;background:linear-gradient(90deg,#00E5FF,rgba(0,229,255,.1))"></div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Die Überschrift löst sich von links nach rechts aus Zufallszeichen. Der Text belegt seinen Platz von Anfang an, es springt nichts.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">T4</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4";white-space:nowrap">1040 · MODULE CASCADE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">60 STAG</span>
+</div>
+<div style="height:212px;padding:12px;background-color:#0A0E14;overflow:hidden">
+<div style="display:flex;align-items:baseline;gap:8px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:6px">
+<span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.01</span>
+<span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">TRAINING LOG</span>
+</div>
+<div style="margin-top:10px;display:flex;flex-direction:column;gap:7px">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:46px;font:400 8px 'JetBrains Mono',monospace;color:#8B98A6">GO</span><span style="flex:1;height:3px;background:rgba(0,229,255,.55)"></span><span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">CORE</span></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="width:46px;font:400 8px 'JetBrains Mono',monospace;color:#8B98A6">K8S</span><span style="flex:1;height:3px;background:rgba(0,229,255,.4);clip-path:inset(0 22% 0 0)"></span><span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">APPLIED</span></div>
+<div style="display:flex;align-items:center;gap:8px;opacity:.42"><span style="width:46px;font:400 8px 'JetBrains Mono',monospace;color:#8B98A6">RUST</span><span style="flex:1;height:3px;background:rgba(139,152,166,.3)"></span><span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">LEARNING</span></div>
+</div>
+<div style="margin-top:14px;display:flex;align-items:flex-end;gap:2px;height:44px">
+<span style="width:5px;height:70%;background:rgba(0,229,255,.6)"></span><span style="width:5px;height:44%;background:rgba(0,229,255,.5)"></span><span style="width:5px;height:88%;background:rgba(0,229,255,.7)"></span><span style="width:5px;height:56%;background:rgba(0,229,255,.45)"></span><span style="width:5px;height:34%;background:rgba(0,229,255,.35)"></span><span style="width:5px;height:62%;background:rgba(0,229,255,.3)"></span><span style="width:5px;height:20%;background:rgba(232,238,244,.12)"></span><span style="width:5px;height:14%;background:rgba(232,238,244,.08)"></span><span style="width:5px;height:8%;background:rgba(232,238,244,.05)"></span>
+<span style="flex:1"></span><span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">FILL L→R</span>
+</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Erst wenn das Terminal fertig ist, laufen die Module ein: Skill-Zeilen mit 60ms Versatz, Graph-Spalten von links nach rechts. Reihenfolge = Leserichtung.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">T5</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4";white-space:nowrap">2400 · STEADY STATE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">IDLE</span>
+</div>
+<div style="height:212px;padding:12px;background-color:#0A0E14;overflow:hidden">
+<div style="height:20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">TIMSEIL.DEV</span>
+<span style="flex:1"></span>
+<span style="width:5px;height:5px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.6s ease-in-out infinite"></span>
+<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">14:22:07 UTC</span>
+</div>
+<div style="margin-top:20px;font:500 22px/1.14 'Chakra Petch',sans-serif;color:#E8EEF4">I build the systems<br>behind the screen.</div>
+<div style="margin-top:14px;padding:9px 11px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);display:flex;align-items:center;gap:5px">
+<span style="font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">tim@vps:~$</span>
+<span style="width:6px;height:10px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span>
+</div>
+<div style="margin-top:12px;font:400 8.5px/1.6 'JetBrains Mono',monospace;color:#7C8996">AMBIENT LAYER 6% · SCROLL CHOREOGRAPHY ARMED</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Ruhezustand. Danach bewegt sich nur noch, was etwas meldet: Uhr, Verfügbarkeits-Puls, Caret. Alles andere wartet auf Eingabe.</p></div>
+</div>
+
+</div>
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.01</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">TIMING</span>
+</div>
+
+<div style="position:relative;padding:0 0 26px;margin-bottom:34px">
+<div style="position:relative;height:22px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:12px">
+<span style="position:absolute;left:0;bottom:5px;font:400 9px 'JetBrains Mono',monospace;color:#7C8996">0</span>
+<span style="position:absolute;left:25%;bottom:5px;font:400 9px 'JetBrains Mono',monospace;color:#7C8996">600</span>
+<span style="position:absolute;left:50%;bottom:5px;font:400 9px 'JetBrains Mono',monospace;color:#7C8996">1200</span>
+<span style="position:absolute;left:75%;bottom:5px;font:400 9px 'JetBrains Mono',monospace;color:#7C8996">1800</span>
+<span style="position:absolute;right:0;bottom:5px;font:400 9px 'JetBrains Mono',monospace;color:#7C8996">2400MS</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:14px"><span style="width:150px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">PANEL BRACKETS</span><span style="flex:1;position:relative;height:12px;background:rgba(232,238,244,.03)"><span style="position:absolute;left:3.3%;width:5%;top:0;bottom:0;background:#00E5FF"></span></span></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="width:150px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">INIT LOG · 7 LINES</span><span style="flex:1;position:relative;height:12px;background:rgba(232,238,244,.03)"><span style="position:absolute;left:14%;width:29%;top:0;bottom:0;background:rgba(0,229,255,.6)"></span></span></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="width:150px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">HEADLINE DECODE</span><span style="flex:1;position:relative;height:12px;background:rgba(232,238,244,.03)"><span style="position:absolute;left:26.6%;width:22.5%;top:0;bottom:0;background:rgba(0,229,255,.45)"></span></span></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="width:150px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">NAV + RULERS WIPE</span><span style="flex:1;position:relative;height:12px;background:rgba(232,238,244,.03)"><span style="position:absolute;left:20%;width:10%;top:0;bottom:0;background:rgba(139,152,166,.5)"></span></span></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="width:150px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">SYS.01 ROWS</span><span style="flex:1;position:relative;height:12px;background:rgba(232,238,244,.03)"><span style="position:absolute;left:43.3%;width:16%;top:0;bottom:0;background:rgba(139,152,166,.5)"></span></span></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="width:150px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">GRAPH COLUMNS</span><span style="flex:1;position:relative;height:12px;background:rgba(232,238,244,.03)"><span style="position:absolute;left:50%;width:29%;top:0;bottom:0;background:rgba(0,229,255,.45)"></span></span></div>
+<div style="display:flex;align-items:center;gap:14px"><span style="width:150px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">AMBIENT LAYER</span><span style="flex:1;position:relative;height:12px;background:rgba(232,238,244,.03)"><span style="position:absolute;left:79%;width:21%;top:0;bottom:0;background:rgba(139,152,166,.28)"></span></span></div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:150px 90px 80px 190px 1fr;gap:0;border-top:1px solid rgba(139,152,166,.16)">
+<div style="padding:10px 14px 10px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">ELEMENT</div>
+<div style="padding:10px 14px 10px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">IN</div>
+<div style="padding:10px 14px 10px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">DUR</div>
+<div style="padding:10px 14px 10px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">EASING</div>
+<div style="padding:10px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">TRANSFORM</div>
+
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">panel brackets</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">80ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">120ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">cubic-bezier(.2,.9,.1,1)</div>
+<div style="padding:11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">scale 1.5 → 1, opacity 0 → 1</div>
+
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">init log lines</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">340ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">7 × 100ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">steps — kein ease</div>
+<div style="padding:11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">opacity 0 → 1, y +3px → 0</div>
+
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">headline decode</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">640ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">540ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">linear, 40ms pro Zeichen</div>
+<div style="padding:11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Zeichentausch L→R, 3 Durchläufe</div>
+
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">sys.01 rows</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">1040ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">60ms/row</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">cubic-bezier(.4,0,.2,1)</div>
+<div style="padding:11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">clip-path inset(0 100% 0 0) → 0</div>
+
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">graph columns</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">1200ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">700ms ges.</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">ease-out, 12ms/Spalte</div>
+<div style="padding:11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">scaleY .06 → 1, origin bottom</div>
+
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#E8EEF4">ambient layer</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6">1900ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6">500ms</div>
+<div style="padding:11px 14px 11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6">linear</div>
+<div style="padding:11px 0;font:400 11px 'JetBrains Mono',monospace;color:#8B98A6">opacity 0 → .06, dann idle</div>
+</div>
+
+<div style="margin-top:36px;padding:20px 22px;border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:14px">REGELN</div>
+<div style="font:400 11px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> SESSION-ONCE: <span style="color:#C6D1DB">sessionStorage</span>-Flag. Wiederkehr im selben Tab startet direkt im Ruhezustand</div>
+<div><span style="color:#00E5FF">▸</span> SKIPPABLE: Klick, Tastendruck oder Scroll bricht ab und springt auf T5. Niemand wartet auf eine Animation</div>
+<div><span style="color:#00E5FF">▸</span> KEIN LAYOUT SHIFT: alle Elemente stehen ab Frame 0 im Layout, animiert werden nur opacity, transform und clip-path</div>
+<div><span style="color:#00E5FF">▸</span> UMSETZUNGSFALLE: die Headline muss ihren Text selbst besitzen (State oder eigene Komponente). Teilt sie den Render-Zyklus mit dem Init-Log, wird ihr Textknoten mitten im Scramble ersetzt und der Endzustand landet nie im DOM — im Prototyp deshalb Start erst nach der Kaskade plus Neusetzen nach jedem Render</div>
+<div><span style="color:#00E5FF">▸</span> REDUCED MOTION: <span style="color:#C6D1DB">prefers-reduced-motion</span> zeigt T5 sofort, Init-Log vollständig, ohne Puls und ohne Ambient</div>
+<div><span style="color:#00E5FF">▸</span> NEON-BUDGET: in der Sequenz ist nur die Uplink-Zeile, die Bracket-Ecken und die Graph-Füllung cyan — kein Alert-Rot beim Start</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Lauffähig · REPLAY klicken, Sequenz läuft in Echtzeit</div>
+<div class="dv-card" style="width:620px">
+<div data-screen-label="Boot Live" style="width:620px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">BOOT · LIVE</span>
+<span style="flex:1"></span>
+<span onClick="{{ replay }}" style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;cursor:pointer;padding:5px 10px;border:1px solid rgba(0,229,255,.4)" style-hover="color:#08131A;background:#00E5FF">↻ REPLAY</span>
+</div>
+
+<sc-if value="{{ playing }}" hint-placeholder-val="{{ true }}">
+<div style="padding:26px 20px 30px">
+<div style="height:22px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(139,152,166,.10);opacity:0;animation:bs-fade .2s linear .34s forwards">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">TIMSEIL.DEV</span>
+<span style="flex:1"></span>
+<span style="width:5px;height:5px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.6s ease-in-out infinite"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">UPLINK</span>
+</div>
+
+<div style="margin-top:26px;font:500 30px/1.14 'Chakra Petch',sans-serif;color:#E8EEF4;opacity:0;animation:bs-wipe .54s cubic-bezier(.4,0,.2,1) .64s forwards,bs-fade .1s linear .64s forwards">I build the systems<br>behind the screen.</div>
+
+<div style="margin-top:26px;position:relative;padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);opacity:0;animation:bs-fade .01s linear .08s forwards">
+<span style="position:absolute;top:-1px;left:-1px;width:11px;height:11px;border-top:1px solid #00E5FF;border-left:1px solid #00E5FF;animation:bs-corner .12s cubic-bezier(.2,.9,.1,1) .08s both"></span>
+<span style="position:absolute;top:-1px;right:-1px;width:11px;height:11px;border-top:1px solid #00E5FF;border-right:1px solid #00E5FF;animation:bs-corner .12s cubic-bezier(.2,.9,.1,1) .08s both"></span>
+<span style="position:absolute;bottom:-1px;left:-1px;width:11px;height:11px;border-bottom:1px solid #00E5FF;border-left:1px solid #00E5FF;animation:bs-corner .12s cubic-bezier(.2,.9,.1,1) .08s both"></span>
+<span style="position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-bottom:1px solid #00E5FF;border-right:1px solid #00E5FF;animation:bs-corner .12s cubic-bezier(.2,.9,.1,1) .08s both"></span>
+<div style="font:400 11px/1.85 'JetBrains Mono',monospace">
+<div style="color:#E8EEF4;opacity:0;animation:bs-line .01s linear .34s forwards">timseil.dev — SYS.INIT v3.2.1</div>
+<div style="color:#8B98A6;opacity:0;animation:bs-line .01s linear .44s forwards">&gt; mounting go runtime … ok</div>
+<div style="color:#8B98A6;opacity:0;animation:bs-line .01s linear .54s forwards">&gt; postgres 16: accepting connections … ok</div>
+<div style="color:#8B98A6;opacity:0;animation:bs-line .01s linear .64s forwards">&gt; docker compose up … 4/4 healthy</div>
+<div style="color:#8B98A6;opacity:0;animation:bs-line .01s linear .74s forwards">&gt; ci: last deploy #a41f9c2 · 42s … ok</div>
+<div style="color:#00E5FF;opacity:0;animation:bs-line .01s linear .84s forwards">&gt; uplink established — luxembourg [LU]</div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:6px;opacity:0;animation:bs-fade .01s linear .94s forwards"><span style="color:#7C8996">type help to list commands</span><span style="width:7px;height:12px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span></div>
+</div>
+</div>
+
+<div style="margin-top:28px;display:flex;align-items:baseline;gap:10px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:8px;opacity:0;animation:bs-fade .2s linear 1.04s forwards">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">SYS.01</span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">TRAINING LOG</span>
+</div>
+<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px;animation:bs-wipe .34s cubic-bezier(.4,0,.2,1) 1.04s both"><span style="width:64px;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6">GO</span><span style="flex:1;height:3px;background:rgba(0,229,255,.55)"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996;width:64px;text-align:right">CORE</span></div>
+<div style="display:flex;align-items:center;gap:12px;animation:bs-wipe .34s cubic-bezier(.4,0,.2,1) 1.1s both"><span style="width:64px;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6">KUBERNETES</span><span style="flex:1;height:3px;background:rgba(0,229,255,.4)"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996;width:64px;text-align:right">APPLIED</span></div>
+<div style="display:flex;align-items:center;gap:12px;animation:bs-wipe .34s cubic-bezier(.4,0,.2,1) 1.16s both"><span style="width:64px;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6">RUST</span><span style="flex:1;height:3px;background:rgba(139,152,166,.3)"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996;width:64px;text-align:right">LEARNING</span></div>
+</div>
+
+<div style="margin-top:26px;display:flex;align-items:flex-end;gap:3px;height:56px">
+<sc-for list="{{ cols }}" as="c" hint-placeholder-count="24">
+<span style="flex:1;background:rgba(0,229,255,.45);transform-origin:bottom;height:{{ c.h }};animation:bs-col .4s ease-out both;animation-delay:{{ c.d }}"></span>
+</sc-for>
+</div>
+<div style="margin-top:10px;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;opacity:0;animation:bs-fade .5s linear 1.9s forwards">AMBIENT LAYER ONLINE · 0.06 OPACITY · STEADY STATE AT 2400MS</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "Boot-Sequenz in die Homepage einbauen" · "Scroll-Choreografie als Storyboard" · "Hover-Sprache als Referenzblatt"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1100}}">
+class Component extends DCLogic {
+  state = { playing: true };
+  replay() {
+    this.setState({ playing: false });
+    setTimeout(() => this.setState({ playing: true }), 60);
+  }
+  renderVals() {
+    const H = [34,52,28,66,44,78,58,40,72,86,50,62,36,74,90,46,68,54,80,42,60,76,38,64];
+    return {
+      playing: this.state.playing,
+      replay: () => this.replay(),
+      cols: H.map((h, i) => ({ h: h + "%", d: (1.2 + i * 0.012).toFixed(3) + "s" }))
+    };
+  }
+}
+</script>
+</body>
+</html>

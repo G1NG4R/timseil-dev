@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:3px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Handoff-Paket — Übergabeblatt · alles geprüft, nichts behauptet</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Übergabeblatt · Paket, Tokens, Komponenten, Datenverträge, geprüfte Befunde, offene Punkte</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Handoff" style="width:1360px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:8px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">HANDOFF</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">STAND 16.08.2026 · HI-FI · NEXT.JS APP ROUTER</span>
+</div>
+<p style="margin:0 0 28px;max-width:82ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Dieses Blatt ist die Übersicht. Das vollständige Dokument liegt als <span style="color:#C6D1DB;font-family:'JetBrains Mono',monospace;font-size:12.5px">README.md</span> im Ordner <span style="color:#C6D1DB;font-family:'JetBrains Mono',monospace;font-size:12.5px">design_handoff_timseil_dev/</span> neben den Design-Dateien und ist ohne diesen Chat lesbar. Jede technische Aussage darin ist an der Quelle geprüft und mit Datum belegt; was nicht bestätigt ist, steht als offener Punkt und nicht als Wert.</p>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:40px">
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14)">
+<div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">DATEIEN</div>
+<div style="font:600 22px 'JetBrains Mono',monospace;color:#E8EEF4">29</div>
+<div style="margin-top:5px;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">11 seiten · 16 blätter · themes · sys.01 · + code/ + doc-page.js</div>
+</div>
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14)">
+<div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">SEITEN-SCREENS</div>
+<div style="font:600 22px 'JetBrains Mono',monospace;color:#E8EEF4">23</div>
+<div style="margin-top:5px;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">nur seiten · desktop 1440 + mobile 390</div>
+</div>
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14)">
+<div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">KONTAKT · BESTÄTIGT</div>
+<div style="font:600 13px 'JetBrains Mono',monospace;color:#E8EEF4">contact@timseil.dev</div>
+<div style="margin-top:5px;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">github.com/G1NG4R</div>
+</div>
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(255,45,85,.28)">
+<div style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FF2D55;margin-bottom:7px">OFFENE PUNKTE</div>
+<div style="font:600 22px 'JetBrains Mono',monospace;color:#E8EEF4">8</div>
+<div style="margin-top:5px;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">davon 1 vor livegang zu klären</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.01</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">PAKET</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DESIGN-REFERENZEN IN HTML — KEIN PRODUKTIONSCODE ZUM KOPIEREN</span>
+</div>
+
+<div style="display:grid;grid-template-columns:320px 1fr 190px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:38px">
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">DATEI</div>
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">INHALT</div>
+<div style="padding:11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">ROUTE</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">Homepage</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">hero + terminal, SYS.01 training log, SYS.02 systems, SYS.03 stack, SYS.04 log, kontakt · abschnittsfolge HOME.01: hero → SYS.01 training log → SYS.02 selected work → SYS.03 uplink → SYS.04 log → fuß, die nummer ist die reihenfolge und kopien folgen der quelle</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">Work Index</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">systemliste, filter nach stack und zustand, hover-preview, ops-metriken</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/work</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">Case Study — Vorlage</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">vorlage für alle projektseiten: problem → architecture → build → operations → result, sticky spec rail, ausfall-abschnitt, betriebsraster-slot in .04 operations (pflichtteil) · beispielinhalt ist system 02, timseil.dev</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/work/[slug]</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">Case Study 02</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">die gefüllte fallstudie zu timseil.dev: randbedingungen, architektur in drei pfaden, sechs entscheidungen mit preis, fünf ops-kacheln auf — NO DATA, vier offene fragen · desktop + mobil</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/work/timseil-dev</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">Blog Index · Blog Post</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">liste mit filter und suche, zwei leerzustände (kein eintrag, kein treffer) · post-vorlage, lesemaß 68 zeichen, bausteine-karte LOG.01: 5 pflicht- und 7 optionale blöcke mit regel je block — ein eintrag entsteht durch weglassen, nicht durch ein neues layout · post-mortem ist der regelfall: vorfall, ursache, behebung, was bleibt</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/blog · /blog/[slug]</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">About</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">operator-profil, trajectory-rail (jahres-stepper, ← →), how i work, off-system</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/about</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">CV</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">einseitiger lebenslauf A4 über doc-page, helles theme, nachweis-spalte · keine CV-seite, kein knopf: der terminal-befehl cv lädt die datei direkt · about, 404 und alle desktop-fußzeilen nennen diesen weg · mobil ist das terminal read-only, dort verlinkt die fußzeile cv.pdf direkt</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">cv.pdf · keine route</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">Contact</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">formular mit echtem versandpfad, TX-spur, sechs zustände, endpoint-vertrag</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/contact · api/contact</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">404 · Legal</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">fehlerseite mit router-trace, routen und dem mini-spiel SYS.404.01 ERROR BUDGET (mobil 952px, falte bei 844) · impressum und datenschutz (datenschutz zeigt live die eigene telemetrie)</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">not-found · /imprint · /privacy</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Boot · Scroll · State</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">drei referenzblätter: startsequenz, scroll-choreografie, zustands-sprache — je mit lauffähiger referenz</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Breakpoints</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">vier zahlen aus dem inhalt: <span style="color:#C6D1DB">1080</span> die fünf zweispalter lösen sich auf, rails nicht mehr sticky, vorschauspalte entfällt, <span style="color:#C6D1DB">900</span> kopf wird menü, <span style="color:#C6D1DB">720</span> einspaltig, H1 wechselt auf 34 (darüber 62 startseite und about, 52 sonst — TYPE.02), <span style="color:#C6D1DB">560</span> tabellenzeilen werden karten · spalte durchgehend <span style="color:#C6D1DB">min(1160, 100% − 80)</span> · kein schalter auf einer gerätebreite: 1080 statt 1024 · 44px und read-only-terminal hängen an pointer:coarse, nicht an der breite · geprüft an sieben breiten, jeder schalter beidseitig: 1440 · 1081 · 1079 · 1024 · 899 · 719 · 390 · vollständig in LAYOUT.02 und LAYOUT.03, als code in <span style="color:#C6D1DB">code/layout.css</span></div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Quellcode-Zugang</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">eigene achse neben dem stack, nicht im zustand: <span style="color:#C6D1DB">&lt;&gt; PUBLIC · repo-url</span> als link, <span style="color:#C6D1DB">&lt;&gt; PRIVATE · NDA</span> oder <span style="color:#C6D1DB">INTERN</span> als text mit grund · geplante systeme tragen kein merkmal · orte: systemliste, work index, spec-rail beider fallstudien, desktop und mobil (mobil 44px) · kein filter unter sechs projekten · datenvertrag im README 9.0</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Intermediate Widths</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">zwischenbreiten 900–1440: neuer schalter bei <span style="color:#C6D1DB">1080</span>, hergeleitet aus neun bauteilen mit fester geometrie · spaltenformel <span style="color:#C6D1DB">min(1160, 100% − 80)</span> · media-query-block vollständig · prüfprotokoll über sieben breiten, jeder schalter beidseitig · zwei annotierte rahmen bei 1024 (fallstudie, work index) · drei korrekturen an LAYOUT.02 und README 6</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Chrome</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">verbindliches bauteil: kopf 66px desktop / 52px mobil mit logo, vier einträgen, EN ▾ und uhr · aktiv = weiß, cyan bleibt hover und aktion, auf / nichts aktiv · mobil ein knopf 44 × 44 zum vollbild-menü (navigation, sprache, adresse, uhr) · fußzeile in zwei fassungen, lang mit kontaktblock, kurz ohne · einsatzplan je seite</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, alle 10 seiten gezogen</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Content Checklist</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">was an inhalt noch fehlt: 43 einträge über elf seiten mit format, zeichenlänge, beispielsatz und dringlichkeit (sperrt / vor dem start / danach) · vier echte startsperren: rechtstexte, mail-provider, bio mit porträt, der erste echte beitrag · schreibregeln und längentabelle je textsorte · contact und 404 tragen keinen platzhalter</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Consistency Check</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">prüfbericht 11 seiten × 9 achsen: erstbefund mit 18 abweichungen und korrekturplan (runde 1, historisch), nachprüfung mit stand je punkt und matrix nach der umsetzung (runde 2), dazu die liste dessen, was design nicht mehr lösen kann</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Language Switcher</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">EN · DE · FR live umschaltbar: desktop-dropdown EN ▾ im kopf (tastatur vollständig), mobil im vollbild-menü · zustandsblatt · übersetzungsmatrix (16 zeilen, entscheidung je zeile) · routen /de und /fr mit hreflang, keine automatische umleitung · befehle bleiben englisch, lang de schaltet dieselbe seite · wechsel: überschrift dekodiert neu, terminal bootet in der neuen sprache</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">/de · /fr</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Case Study Map</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">zwei karten: MAP.02 der server zur fallstudie (host, laufzeit, eingang, steuerung, daten, auslieferung, messung, außen) und MAP.00 das ganze projekt (design, seiten, inhalt, datenverträge, technik, recht, übergabe, offene punkte)</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Operation Grid</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">betriebsraster: eine zelle je tag, kerbe je vorfall (anklickbar, mit ursache, behebung, error-budget und log-eintrag), deploy-streifen, fünf gerechnete kennzahlen · tag-1-zustand · datenvertrag pro system</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Mindmap</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">überblick in einfachen worten: fünf äste, ablauf eines aufrufs, ablauf eines deploys, glossar mit 12 begriffen</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Operations</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">betrieb: VPS + dokploy + traefik, anfrage- und deploy-weg, 9 entscheidungen mit verworfenem, metrik-pipeline, aufbewahrung, DNS/TLS/mail, runbook — grundlage der case study von system 01</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Foundations · Code Handoff</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">typo-skala in echter größe (13 statt 23 stufen), abstände, linien, form, bauteile · dieselben werte als code unter code/: tokens.css, globals.css, tokens.ts, 5 komponenten</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">spec + code/</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Routes and Paths</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">wegeplan: karte mit ausgängen, link-matrix 10 × 10, drei besucherwege, zehn ergänzte querverweise mit ort und grund — vor dem bauen lesen</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">spec, keine route</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">Homepage Themes</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">sieben farb-themes live auf der echten homepage, plus palettenblatt mit gemessenen kontrasten. verbindlich bleibt terminal noir · ausgeliefert als data-theme-blöcke in code/tokens.css</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">exploration</div>
+
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6">SYS.01 evidence</div>
+<div style="padding:10px 14px 10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996">exploration: warum belegform statt prozentbalken. kontext, nicht umzusetzen</div>
+<div style="padding:10px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996">—</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.02</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">TOKENS</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">KONTRAST NACH WCAG 2.1 AUS DEN HEX-WERTEN BERECHNET, NICHT GESCHÄTZT</span>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0 40px;margin-bottom:22px">
+<div style="display:grid;grid-template-columns:32px 92px 1fr 62px;border-bottom:1px solid rgba(139,152,166,.16)">
+<div style="padding:9px 0;border-bottom:1px solid rgba(139,152,166,.16)"></div>
+<div style="padding:9px 10px 9px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">HEX</div>
+<div style="padding:9px 10px 9px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">ROLLE</div>
+<div style="padding:9px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16);text-align:right">AA</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#0A0E14;border:1px solid rgba(139,152,166,.3)"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#0A0E14</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">bg — seite</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">—</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#0E141C;border:1px solid rgba(139,152,166,.3)"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#0E141C</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">panel — terminal, karten</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">—</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#E8EEF4"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#E8EEF4</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">ink — überschriften</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">16.55</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#C6D1DB"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#C6D1DB</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">ink-2 — fließtext</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">12.47</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#B9C6D4"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#B9C6D4</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">ink-3 — dichte module</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">11.14</div>
+
+<div style="padding:8px 0"><span style="display:block;width:22px;height:14px;background:#8B98A6"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB">#8B98A6</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6">steel — labels</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;text-align:right">6.58</div>
+</div>
+
+<div style="display:grid;grid-template-columns:32px 92px 1fr 62px;border-bottom:1px solid rgba(139,152,166,.16)">
+<div style="padding:9px 0;border-bottom:1px solid rgba(139,152,166,.16)"></div>
+<div style="padding:9px 10px 9px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">HEX</div>
+<div style="padding:9px 10px 9px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">ROLLE</div>
+<div style="padding:9px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16);text-align:right">AA</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#7C8996"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#7C8996</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">dim — meta, einheiten</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">5.41</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#00E5FF"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#00E5FF</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">cyan — akzent, live, fokus</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">12.57</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#9DF4FF"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#9DF4FF</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">cyan-hi — hover</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">15.49</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#FF2D55"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#FF2D55</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">alert — ein moment/seite</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">5.30</div>
+
+<div style="padding:8px 0;border-bottom:1px solid rgba(139,152,166,.08)"><span style="display:block;width:22px;height:14px;background:#FFB000"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">#FFB000</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">amber — degraded</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08);text-align:right">10.56</div>
+
+<div style="padding:8px 0"><span style="display:block;width:22px;height:14px;background:#08131A;border:1px solid rgba(139,152,166,.3)"></span></div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#C6D1DB">#08131A</div>
+<div style="padding:8px 10px 8px 0;font:400 10px 'JetBrains Mono',monospace;color:#8B98A6">on-cyan — text auf cyan</div>
+<div style="padding:8px 0;font:400 10px 'JetBrains Mono',monospace;color:#00E5FF;text-align:right">12.21</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:38px">
+<div style="padding:12px 14px;background-color:#0E141C;border-left:1px solid rgba(0,229,255,.4);font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">auf <span style="color:#C6D1DB">#0E141C</span> liegen alle werte 0.2–0.7 niedriger, der niedrigste ist dim mit <span style="color:#C6D1DB">5.17</span> — weiterhin über AA</div>
+<div style="padding:12px 14px;background-color:#0E141C;border-left:1px solid rgba(255,176,0,.5);font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">zwei ausreißer normalisieren: <span style="color:#C6D1DB">#121A24</span> (blog post) und <span style="color:#C6D1DB">#111A24</span> (state language) → ein token <span style="color:#C6D1DB">panel-active</span></div>
+<div style="padding:12px 14px;background-color:#0E141C;border-left:1px solid rgba(0,229,255,.4);font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">neon-budget: cyan ≤ <span style="color:#C6D1DB">3 %</span> der viewport-fläche, pro seite <span style="color:#C6D1DB">ein</span> alert-moment, auf about keiner</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.03</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">TYPOGRAFIE UND RASTER</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:38px">
+<div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:baseline;gap:16px;padding-bottom:12px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="width:120px;flex:none;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">DISPLAY</span>
+<span style="font:500 21px 'Chakra Petch',sans-serif;color:#E8EEF4">Chakra Petch</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">GOOGLE FONTS · OFL</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:16px;padding-bottom:12px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="width:120px;flex:none;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">TEXT</span>
+<span style="font:400 17px 'Geist',sans-serif;color:#E8EEF4">Geist</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">GOOGLE FONTS · OFL · VARIABEL 100–900</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:16px;padding-bottom:12px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="width:120px;flex:none;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">SYSTEM</span>
+<span style="font:400 16px 'JetBrains Mono',monospace;color:#E8EEF4">JetBrains Mono</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">GOOGLE FONTS · OFL</span>
+</div>
+</div>
+<div style="margin-top:16px;padding:12px 14px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 10.5px/1.75 'JetBrains Mono',monospace;color:#8B98A6">in next.js über <span style="color:#C6D1DB">next/font/google</span> laden — self-hosted, kein request an fonts.gstatic.com. zahlen immer <span style="color:#C6D1DB">tabular-nums</span></div>
+</div>
+<div>
+<div style="padding:14px 16px;border:1px solid rgba(255,176,0,.28);background-color:#0E141C;margin-bottom:14px">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FFB000;margin-bottom:10px">BEFUND · KEINE SKALA</div>
+<div style="font:400 10.5px/1.75 'JetBrains Mono',monospace;color:#8B98A6">die entwürfe nutzen <span style="color:#C6D1DB">20 bis 23 verschiedene schriftgrößen pro seite</span>, darunter halb-pixel-werte (8.5, 9.5, 10.5, 11.5, 12.5, 13.5). das ist gewachsen. vor der umsetzung konsolidieren.</div>
+</div>
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div style="color:#7C8996;font-size:9px;letter-spacing:.13em;margin-bottom:8px">VORSCHLAG — NICHT TEIL DES ENTWURFS</div>
+<div><span style="color:#C6D1DB">mono</span>    9 · 10 · 11 · 12 · 13</div>
+<div><span style="color:#C6D1DB">body</span>    13 · 15 · 16.5</div>
+<div><span style="color:#C6D1DB">display</span> 26 · 34 · 52 · 62 · 108</div>
+<div style="margin-top:8px;color:#7C8996">erhalten: 108 (404-code), 64/62 (h1), 52 (cta)</div>
+</div>
+<div style="margin-top:14px;display:flex;gap:10px">
+<div style="flex:1;padding:10px 12px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 10px/1.7 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB">1440</span> frame<br><span style="color:#C6D1DB">1160</span> inhalt<br><span style="color:#C6D1DB">390</span> mobile</div>
+<div style="flex:1;padding:10px 12px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);font:400 10px/1.7 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#C6D1DB">140</span> rand<br><span style="color:#C6D1DB">96/64</span> sektion<br><span style="color:#C6D1DB">2.8 %</span> raster</div>
+<div style="flex:1;padding:10px 12px;background-color:#0E141C;border:1px solid rgba(255,176,0,.28);font:400 10px/1.7 'JetBrains Mono',monospace;color:#8B98A6"><span style="color:#FFB000">breakpoints</span><br>im entwurf nicht definiert<br>vorschlag im README</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.04</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">KOMPONENTEN</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">ZUSTÄNDE VOLLSTÄNDIG IN REFERENZBLATT 03</span>
+</div>
+
+<div style="display:grid;grid-template-columns:150px 150px 1fr 300px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:38px">
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">KOMPONENTE</div>
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">ORT</div>
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">ZUSTÄNDE</div>
+<div style="padding:11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">HINWEIS</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">Terminal</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">homepage</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">rest · hover · focus (caret blinkt) · degraded (read-only)</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">help whoami stack projects work blog about contact clear + matrix</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">ContributionGraph</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">hero</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">loading (skeleton) · ok · error (cache) · no-data</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">53 wochen × 7 tage, 5 stufen, eigene farben</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">SkillRow</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">SYS.01</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">rest 28 % · hover 100 % + beleg</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">CORE / APPLIED / LEARNING / QUEUED — nie prozente</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">SystemRow</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">SYS.02, work</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">rest · hover (brackets + preview) · aktiv · disabled (queued)</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">im pin schaltet der aktive index</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">OperationGrid</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">homepage SYS.03 (30 d, anzeige) · jede case study (91 d, klickbar, im template verankert)</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">ok · degraded · outage · nodata · selected</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">zelle 15px + 4px, touch 44px hülle; kerbe nur mit post-mortem</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">MetricTile</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">work, case study</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">loading · ok · no-data</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">fehlt ein wert: „— NO DATA", nie 0</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">FilterChip</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">work, blog</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">rest · hover · focus · gesetzt (invertiert) · leer (0 treffer)</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">gesetzt zeigt ×</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">TrajectoryRail</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">about</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">jahr aktiv · inaktiv · tastatur ← →</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">der große moment der seite</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">SpecRail · PostCard</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">case study, blog</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">sticky / gelöst · rest / hover</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">sticky top 96px, keine bewegung</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">CTA E-Mail</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">homepage, about</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">rest · hover (glow) · focus · active</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">nur dieses element glüht</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">ContactForm</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">contact</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">rest · fokus · feldfehler · sending · accepted (202 + id) · failed (502/429)</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">leert sich nach erfolg nicht — die id ist der beleg</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">ThemeSwitch</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">fußzeile, alle seiten</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">7 paletten · aktiv · hover · focus</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">data-theme am html · localStorage ts.theme · standard nach prefers-color-scheme</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">ErrorBudgetGame</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">404</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">idle · running · paged</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">canvas, 4 spuren, HUD ist echte telemetrie · bestwert in localStorage ts404.best</div>
+
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">TopNav · StatusDot</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6">global</div>
+<div style="padding:9px 14px 9px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6">rest · hover (scramble) · focus · aktiv · live/degraded/offline</div>
+<div style="padding:9px 0;font:400 10px 'JetBrains Mono',monospace;color:#7C8996">mobile: hamburger · puls 2.6s</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.04b</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">DER KERN</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">WER DAS WEGLÄSST, BAUT EIN ANDERES PRODUKT</span>
+</div>
+<p style="margin:0 0 20px;max-width:104ch;font:400 13.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Jede Behauptung der Seite ist an einen Beleg gebunden, und der Beleg ist ein System, das läuft. Der Trainings-Log ist damit keine Selbsteinschätzung, sondern eine Ableitung — und er ist die zeitliche Achse der Seite.</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px 32px;margin-bottom:38px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding:0 0 0 16px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">01</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">22 TRACKS IN FÜNF MODULEN</span></div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">01 LANGUAGES · 02 BACKEND · 04 DEVOPS · 03 DATA · 05 FOUNDATIONS. Jeder Track trägt einen Zustand — <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EEF4">CORE · APPLIED · LEARNING · QUEUED</span> — und Zustand, Balkensegmente und Belegzeile sagen immer dasselbe.</div>
+</div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding:0 0 0 16px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">02</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">BELEGZEILE: TRACK → SYSTEM</span></div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Unter jedem Track steht, wo er läuft: <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#B9C6D4">SHIPPED IN → 02 TIMSEIL.DEV (BUILD + DEPLOY)</span>. Ohne System: <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#8B98A6">NO SYSTEM YET → SELF-STUDY</span>. Das ist eine Beziehung in den Daten, kein Text im Markup.</div>
+</div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding:0 0 0 16px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">03</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">DER LOG FÜLLT SICH MIT JEDEM PROJEKT</span></div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Kommt ein System hinzu, wandern die Tracks, die es benutzt, von LEARNING auf APPLIED, und die Belegzeile nennt das neue System. <span style="color:#E8EEF4">CORE ist erst ab zwei Systemen im Betrieb erreicht</span> — deshalb steht heute kein Track auf CORE. Stand: 13 APPLIED aus timseil.dev, 9 LEARNING, 0 CORE.</div>
+</div>
+<div style="border-left:1px solid rgba(0,229,255,.35);padding:0 0 0 16px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">04</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">BETRIEBSZAHLEN NUR FÜR LIVE</span></div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Uptime, p95 und Fehlerrate trägt nur ein System mit öffentlicher Adresse und Health-Check. QUEUED und IN BUILD zeigen <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#7C8996">— NO DATA</span>. Erfundene Zahlen sind ausgeschlossen; Platzhalter stehen in <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#7C8996">[…]</span>.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding:0 0 0 16px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">05</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">BETRIEBSRASTER STATT AKTIVITÄTSGRAPH</span></div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Eine Zelle je Betriebstag, eine Kerbe je Ausfall — anklickbar mit Ursache, Behebung, Error-Budget und Log-Eintrag. <span style="color:#E8EEF4">Ohne Post-Mortem keine Kerbe.</span> Fenster 91 Tage = 13 Wochen; Startseite 30 Tage als reine Anzeige. Der Contribution-Graph bleibt daneben: er misst Aktivität, das Raster misst Betrieb.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding:0 0 0 16px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">06</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">JEDE ZAHL IST NACHZÄHLBAR</span></div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Uptime, MTTR, Rollback-Rate und Trainings-Zustände werden aus den Daten gerechnet, nie getippt. Deshalb steht überall dasselbe Fenster (91, nicht 90) und dieselbe Anzahl Belege — wer nachzählt, findet die Zahl, die dasteht.</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.05</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">DATENVERTRÄGE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">BEIDE QUELLEN VOM AUFTRAGGEBER BESTÄTIGT</span>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:38px">
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">01</span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">OPS-METRIKEN</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">EIGENER ENDPOINT</span>
+</div>
+<div style="padding:14px;font:400 10px/1.65 'JetBrains Mono',monospace;color:#8B98A6;white-space:pre;overflow:hidden">GET /api/health
+s-maxage=60, stale-while-revalidate=600
+
+{ "generatedAt": "2026-08-16T09:14:02Z",
+  "systems": [
+    { "slug": "timseil.dev", "state": "live",
+      "uptime90d": 99.64, "p95Ms": 142,
+      "errorRate": 0.0007,
+      "lastDeploy": { "sha": "a41f9c2",
+        "durationSec": 42 } },
+    { "slug": "vat-check", "state": "queued" } ] }</div>
+<div style="padding:12px 14px;border-top:1px solid rgba(139,152,166,.12);font:400 10.5px/1.7 'Geist',sans-serif;color:#8B98A6">Metriken werden <span style="color:#C6D1DB">nur für state: live</span> gerendert. Fehlt ein Feld: „— NO DATA", nicht 0. Bei 5xx: letzter gültiger Wert plus Zeitstempel und Retry-Zähler. Form ist Vorschlag — der Endpoint existiert noch nicht.</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">02</span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">CONTRIBUTION-GRAPH</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">GITHUB, SERVERSEITIG GECACHT</span>
+</div>
+<div style="padding:14px;font:400 10px/1.65 'JetBrains Mono',monospace;color:#8B98A6;white-space:pre;overflow:hidden">POST https://api.github.com/graphql
+Authorization: Bearer &lt;PAT scope read:user&gt;
+
+query($login: String!) {
+  user(login: $login) { contributionsCollection {
+    contributionCalendar {
+      totalContributions
+      weeks { contributionDays {
+        date contributionCount
+        contributionLevel } } } } } }</div>
+<div style="padding:12px 14px;border-top:1px solid rgba(139,152,166,.12);font:400 10.5px/1.7 'Geist',sans-serif;color:#8B98A6">Die REST-API liefert diese Daten nicht — geprüft, Quellen im README. Token nie clientseitig, kein <span style="color:#C6D1DB">NEXT_PUBLIC_</span>. <span style="color:#C6D1DB">contributionLevel</span> passt auf die 5 Stufen; die von GitHub gelieferten Farben nicht verwenden.</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">03</span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">KONTAKTFORMULAR</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">EIGENER ENDPOINT</span>
+</div>
+<div style="padding:14px;font:400 10px/1.65 'JetBrains Mono',monospace;color:#8B98A6;white-space:pre;overflow:hidden">POST /api/contact
+
+{ "name": "2–80", "email": "≤254",
+  "message": "20–4000",
+  "company": "MUSS leer (honeypot)",
+  "dwellMs": "≥3000", "ts": "ISO" }
+
+<span style="color:#00E5FF">202</span> { ok, id: "msg_01K3F9QX7A" }
+<span style="color:#FF2D55">400</span> { errors: { email } }
+<span style="color:#FFB000">429</span> { retryAfter } + Retry-After
+<span style="color:#FF2D55">502</span> { code }</div>
+<div style="padding:12px 14px;border-top:1px solid rgba(139,152,166,.12);font:400 10.5px/1.7 'Geist',sans-serif;color:#8B98A6">Ersetzt <span style="font-family:'JetBrains Mono',monospace;font-size:10px">mailto:</span>, das ohne eingerichtetes Mailprogramm stumm scheitert. Rate-Limit 3/10min, Timeout 8s, Idempotenz über ts + email + Hash. <span style="color:#C6D1DB">Zustellbarkeit ist die Arbeit:</span> Provider plus SPF und DKIM, sonst Spam-Ordner.</div>
+</div>
+
+<div style="border:1px solid rgba(0,229,255,.3);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">04</span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">TRAININGS-LOG</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#00E5FF">DER KERN</span>
+</div>
+<div style="padding:14px;font:400 10px/1.65 'JetBrains Mono',monospace;color:#8B98A6;white-space:pre;overflow:hidden">GET /api/training
+
+{ "modules": [ … 5 ],
+  "tracks": 22,
+  "track": {
+    "name": "CI/CD (GitHub Actions)",
+    "state": "applied",
+    "evidence": [
+      { "systemNo": "02",
+        "systemId": "timseil.dev",
+        "detail": "BUILD + DEPLOY" } ] } }</div>
+<div style="padding:12px 14px;border-top:1px solid rgba(139,152,166,.12);font:400 11px/1.6 'Geist',sans-serif;color:#C6D1DB">state wird aus <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#E8EEF4">evidence.length</span> abgeleitet: 0 lernend, 1 applied, ab 2 core. Nie separat setzen — sonst driftet die Anzeige von der Wahrheit ab. Heute: 13 applied, 9 learning, 0 core.</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(0,229,255,.3);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.06</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">GEPRÜFT, NICHT BEHAUPTET</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">ABGERUFEN 15.08.2026 · QUELLEN IM README</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:38px">
+<div style="padding:16px 18px;background-color:#0E141C;border:1px solid rgba(255,176,0,.28)">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FFB000;margin-bottom:12px">BEFUND · animation-timeline: view() IST NICHT BASELINE</div>
+<div style="font:400 11px/1.85 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> Chrome und Edge <span style="color:#C6D1DB">115+</span> seit 18.07.2023 · Chrome Android 115+ · Opera 101+</div>
+<div><span style="color:#00E5FF">▸</span> Safari und Safari iOS <span style="color:#C6D1DB">26</span> seit 15.09.2025</div>
+<div><span style="color:#FFB000">▸</span> Firefox <span style="color:#C6D1DB">nicht unterstützt</span> — nur hinter dem Flag layout.css.scroll-driven-animations.enabled</div>
+<div><span style="color:#00E5FF">▸</span> Baseline seit September 2025 durch Firefox blockiert · Teil von Interop 2026</div>
+</div>
+<div style="margin-top:14px;padding:12px 14px;background-color:#0A0E14;border-left:1px solid rgba(255,176,0,.5);font:400 10.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Konsequenz: nicht ohne Fallback. Endzustand als Default setzen, Animation in <span style="font-family:'JetBrains Mono',monospace;font-size:10px">@supports (animation-timeline: view())</span> kapseln. Für den Pin in SYS.02 in Firefox <span style="font-family:'JetBrains Mono',monospace;font-size:10px">IntersectionObserver</span> oder die statische Liste — die ist ohnehin das Verhalten unter 900px.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14)">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:10px">NEXT.JS · VERSIONSSTAND</div>
+<div style="font:400 10.5px/1.8 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#C6D1DB">16.3.0 LTS</span> veröffentlicht 06.08.2026</div>
+<div>Next.js 15 End of Support <span style="color:#C6D1DB">21.10.2026</span></div>
+<div>React Compiler seit 16 stabil, nicht default</div>
+<div style="color:#7C8996">→ für ein neues Projekt direkt 16.3 LTS</div>
+</div>
+</div>
+<div style="padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14)">
+<div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:10px">FONTS · LIZENZ UND QUELLE</div>
+<div style="font:400 10.5px/1.8 'JetBrains Mono',monospace;color:#8B98A6">
+<div>alle drei auf Google Fonts, <span style="color:#C6D1DB">OFL</span></div>
+<div>Geist von Vercel, variabel 100–900</div>
+<div style="color:#7C8996">→ kommerziell nutzbar, self-hosting erlaubt</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.04.07</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">STAND DER INHALTE</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF">BESTÄTIGT · EINGESETZT</div>
+<div style="padding:12px 14px;font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">✓</span> E-Mail <span style="color:#C6D1DB">contact@timseil.dev</span> — am 16.08. auf die eigene Domain gezogen, projektweit ersetzt: 74 vorkommen in 12 dateien, 0 treffer der alten adresse · folge: MX, SPF, DKIM, DMARC auf timseil.dev (README 9.3)</div>
+<div><span style="color:#00E5FF">✓</span> GitHub <span style="color:#C6D1DB">github.com/G1NG4R</span></div>
+<div><span style="color:#00E5FF">✓</span> Ops-Metriken: eigener /health-Endpoint</div>
+<div><span style="color:#00E5FF">✓</span> Graph: GitHub-API live, serverseitig gecacht</div>
+<div><span style="color:#00E5FF">✓</span> Zielumgebung: Next.js / React</div>
+<div><span style="color:#00E5FF">✓</span> Trajectory: 2023 Python · 2024 erster Server</div>
+<div><span style="color:#00E5FF">✓</span> Kontaktkanal: Formular auf /contact, mailto bleibt sichtbar</div>
+</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6">OFFEN · NICHT GERATEN</div>
+<div style="padding:12px 14px;font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#7C8996">○</span> LinkedIn existiert nicht — Slot steht auf <span style="color:#C6D1DB">[FOLGT]</span>, Zeile erst rendern wenn URL da ist</div>
+<div><span style="color:#7C8996">○</span> X / Twitter — Slot neben LinkedIn auf homepage und about plus terminal-befehl <span style="color:#C6D1DB">contact</span>, wert <span style="color:#C6D1DB">[FOLGT]</span>, gleiche regel</div>
+<div><span style="color:#FFB000">○</span> Verfügbarkeits-Zeile <span style="color:#C6D1DB">vorläufig von mir gesetzt</span></div>
+<div><span style="color:#7C8996">○</span> Off-System-Absatz (About)</div>
+<div><span style="color:#7C8996">○</span> Trajectory 2025 / 2026</div>
+<div><span style="color:#7C8996">○</span> Blog-Einträge — noch keine</div>
+<div><span style="color:#7C8996">○</span> kein Repository verbunden</div>
+<div><span style="color:#FFB000">○</span> Mail-Provider nicht gewählt — ohne SPF/DKIM ist das Formular gebaut, aber nicht zustellbar</div>
+<div><span style="color:#00E5FF">✓</span> Datenschutz-Absatz zum Formular steht (07.05 Form and mail)</div>
+<div><span style="color:#00E5FF">✓</span> Betrieb entschieden: VPS + Dokploy + Traefik, Aufbewahrung 14 / 7 Tage, IP 10 min — in der Datenschutzseite eingesetzt</div>
+<div><span style="color:#00E5FF">✓</span> Case Study 02 (timseil.dev) gebaut und aus dem Betriebsblatt gefüllt · ausgänge in work, homepage-systemliste und im log (homepage SYS.04, blog index)</div>
+<div><span style="color:#00E5FF">✓</span> Zehn Querverweise ergänzt — Case Study ↔ Post-Mortem, /contact in der 404-Routenliste, Kontakt-Ausgänge auf allen Listen</div>
+</div>
+</div>
+</div>
+
+<div style="padding:20px 22px;border:1px solid rgba(255,45,85,.35);background-color:#0E141C">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:12px">
+<span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FF2D55">VOR LIVEGANG ENTSCHIEDEN · UMGESETZT</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">INHALTSENTSCHEIDUNG, KEINE DESIGN-ÄNDERUNG</span>
+</div>
+<p style="margin:0 0 14px;max-width:100ch;font:400 13px/1.75 'Geist',sans-serif;color:#C6D1DB">Frühere Entwürfe zeigten fünf Systeme, davon <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E8EEF4">vat-check</span> als LIVE mit Uptime, p95 und Fehlerrate — diese Systeme existieren nicht. <span style="color:#E8EEF4">Umgesetzt am 16.08.2026:</span> die drei nicht existierenden Systeme sind gelöscht, es bleiben zwei. <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E8EEF4">01 vat-check</span> steht auf <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7C8996">○ QUEUED</span> und zeigt <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7C8996">— NO DATA</span>, <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#E8EEF4">02 timseil.dev</span> ist das einzige LIVE-System. Zähler, Filter-Chips und der Terminal-Befehl sagen dasselbe: <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8B98A6">only live systems carry ops metrics — today that is 02</span>.</p>
+<p style="margin:0;max-width:100ch;font:400 13px/1.75 'Geist',sans-serif;color:#8B98A6">Der Weg, der die Idee intakt hält: <span style="color:#E8EEF4">timseil.dev ist das erste echte System.</span> Die Seite läuft auf dem eigenen Stack, hat einen echten Deploy, echte Uptime und einen echten p95 — deshalb belegt der Trainings-Log heute 13 Tracks aus ihr und keinen aus einem Projekt, das es nicht gibt.</p>
+</div>
+
+<div style="margin-top:34px;padding:16px 18px;border:1px solid rgba(0,229,255,.25);background-color:#0E141C;display:flex;align-items:center;gap:16px">
+<span style="width:6px;height:6px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.6s ease-in-out infinite"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">design_handoff_timseil_dev/ — README.md plus 13 Design-Dateien und support.js</span>
+<span style="flex:1"></span>
+<span style="font:400 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">ALS ZIP IM CHAT ZUM DOWNLOAD</span>
+</div>
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "SYS.02 auf den ehrlichen Startzustand umstellen" · "Screenshots ins Paket legen" · "Inhalte-Durchgang: Verfügbarkeit, Off-System, Trajectory"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1200}}"></script>
+</body>
+</html>

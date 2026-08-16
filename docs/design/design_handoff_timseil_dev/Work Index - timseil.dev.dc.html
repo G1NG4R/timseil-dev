@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">/work — SYS.02 SYSTEMS · Filter laufen, Hover enthüllt die Vorschau</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1440 — Betriebsdaten pro System, Hover auf eine Zeile</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Work index — Desktop" style="width:1440px;background-color:#0A0E14;position:relative;overflow:hidden;cursor:crosshair;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.028) 1px,transparent 1px);background-size:88px 88px"></div>
+<div style="position:relative;z-index:1;width:1160px;margin:0 auto">
+
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:32px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;cursor:default">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+
+<div style="display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:end;padding:56px 0 44px">
+<div>
+<div style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:22px"><span style="color:#00E5FF">SYS.02</span> — SYSTEMS</div>
+<h1 style="margin:0 0 20px;font:500 52px/1.05 'Chakra Petch',sans-serif;color:#E8EEF4">Selected work</h1>
+<p style="margin:0;max-width:58ch;font:400 15px/1.7 'Geist',sans-serif;color:#8B98A6">Every system below runs, ran, or is specified to run. Status and operating figures come from the same API that serves this page — nothing here is a screenshot of an idea.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding-bottom:6px">
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:14px"><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">SYSTEMS</div><div style="font:500 22px 'Chakra Petch',sans-serif;color:#E8EEF4;font-variant-numeric:tabular-nums">02</div></div>
+<div style="border-left:1px solid rgba(0,229,255,.4);padding-left:14px"><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">LIVE</div><div style="font:500 22px 'Chakra Petch',sans-serif;color:#00E5FF;font-variant-numeric:tabular-nums">01</div></div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:14px"><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">IN BUILD</div><div style="font:500 22px 'Chakra Petch',sans-serif;color:#E8EEF4;font-variant-numeric:tabular-nums">00</div></div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:14px"><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">QUEUED</div><div style="font:500 22px 'Chakra Petch',sans-serif;color:#E8EEF4;font-variant-numeric:tabular-nums">01</div></div>
+</div>
+</div>
+
+<div style="border-top:1px solid rgba(139,152,166,.16);border-bottom:1px solid rgba(139,152,166,.16);padding:16px 0;margin-bottom:6px">
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;width:52px">STATUS</span>
+<div ref="{{ statusRef }}" style="display:flex;gap:8px">
+<span data-st="all" onClick="{{ onStatus }}" style="padding:6px 11px;border:1px solid #00E5FF;background:#00E5FF;color:#08131A;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;white-space:nowrap;cursor:pointer">ALL <span style="color:#08131A;font-variant-numeric:tabular-nums">02</span></span>
+<span data-st="live" onClick="{{ onStatus }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;white-space:nowrap;cursor:pointer">LIVE <span style="color:#7C8996;font-variant-numeric:tabular-nums">01</span></span>
+<span data-st="build" onClick="{{ onStatus }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;white-space:nowrap;cursor:pointer">BUILD <span style="color:#7C8996;font-variant-numeric:tabular-nums">00</span></span>
+<span data-st="queued" onClick="{{ onStatus }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;white-space:nowrap;cursor:pointer">QUEUED <span style="color:#7C8996;font-variant-numeric:tabular-nums">01</span></span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px">
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;width:52px">STACK</span>
+<div ref="{{ stackRef }}" style="display:flex;flex-wrap:wrap;gap:8px">
+<span data-sk="all" onClick="{{ onStack }}" style="padding:6px 11px;border:1px solid #00E5FF;background:#00E5FF;color:#08131A;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">ANY</span>
+<span data-sk="go" onClick="{{ onStack }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">GO</span>
+<span data-sk="typescript" onClick="{{ onStack }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">TYPESCRIPT</span>
+<span data-sk="python" onClick="{{ onStack }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">PYTHON</span>
+<span data-sk="postgres" onClick="{{ onStack }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">POSTGRES</span>
+<span data-sk="docker" onClick="{{ onStack }}" style="padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">DOCKER</span>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:8px;padding:12px 0 6px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">SHOWING <span ref="{{ countRef }}" style="color:#00E5FF;font-variant-numeric:tabular-nums">02</span> OF 02 · FIGURES FROM /api/systems · [PLACEHOLDER VALUES]</div>
+
+<div ref="{{ listRef }}">
+
+<div data-st="queued" data-sk="python docker" style="position:relative;display:grid;grid-template-columns:40px 1fr 132px 104px 130px 20px;gap:24px;align-items:center;padding:24px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" onMouseEnter="{{ onRowIn }}" onMouseLeave="{{ onRowOut }}" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:500 12px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">01</span>
+<span>
+<span style="display:block;font:500 20px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:#E8EEF4">VAT CHECK API</span>
+<span style="display:block;font:400 13.5px 'Geist',sans-serif;color:#8B98A6;margin-top:5px">EU VAT number validation service</span>
+<span style="display:block;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:9px">PYTHON · FASTAPI · DOCKER · SQLITE</span>
+
+</span>
+<span><span style="display:block;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:6px">UPTIME · 91 D</span><span style="display:block;font:500 15px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">— NO DATA</span></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">○ QUEUED</span>
+<span data-prev="1" style="position:relative;height:76px;border:1px solid rgba(139,152,166,.16);opacity:.28;transition:opacity .2s;overflow:hidden">
+<span style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(0,229,255,.14) 0 1px,transparent 1px 7px)"></span>
+<span style="position:absolute;left:0;right:0;top:0;height:13px;border-bottom:1px solid rgba(139,152,166,.16);display:flex;align-items:center;gap:3px;padding-left:5px"><span style="width:3px;height:3px;border-radius:50%;background:rgba(139,152,166,.5)"></span><span style="width:3px;height:3px;border-radius:50%;background:rgba(139,152,166,.35)"></span><span style="width:3px;height:3px;border-radius:50%;background:rgba(139,152,166,.35)"></span></span>
+<span style="position:absolute;left:0;right:0;bottom:14px;text-align:center;font:500 7px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">[PREVIEW]</span>
+</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+
+
+<div data-st="live" data-sk="go typescript postgres docker" onMouseEnter="{{ onRowIn }}" onMouseLeave="{{ onRowOut }}" style="position:relative;display:grid;grid-template-columns:40px 1fr 132px 104px 130px 20px;gap:24px;align-items:center;padding:24px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:500 12px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">02</span>
+<span>
+<span style="display:flex;align-items:baseline;gap:12px"><span style="font:500 20px 'Chakra Petch',sans-serif;letter-spacing:.02em;color:#E8EEF4">TIMSEIL.DEV</span><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FF2D55;border:1px solid rgba(255,45,85,.35);padding:2px 6px">YOU ARE HERE</span></span>
+<span style="display:block;font:400 13.5px 'Geist',sans-serif;color:#8B98A6;margin-top:5px">This site as a system — React Router front, Go API, Compose, CI/CD, VPS, monitoring</span>
+<span style="display:block;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:9px">REACT ROUTER · TYPESCRIPT · GO · POSTGRESQL · ACTIONS · VPS</span>
+<span style="display:block;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;margin-top:6px;cursor:pointer" style-hover="color:#00E5FF"><span style="color:#7C8996">&lt;&gt;</span> PUBLIC · [REPO URL]</span>
+<span style="display:flex;gap:16px;margin-top:7px"><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(0,229,255,.75);cursor:pointer" style-hover="color:#00E5FF">CASE STUDY →</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(0,229,255,.75)">01 ENTRY IN THE LOG →</span></span>
+</span>
+<span><span style="display:block;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:6px">UPTIME · 91 D</span><span style="display:block;font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4;font-variant-numeric:tabular-nums">[99.98%]</span></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">● LIVE</span>
+<span data-prev="1" style="position:relative;height:76px;border:1px solid rgba(139,152,166,.16);opacity:.28;transition:opacity .2s;overflow:hidden">
+<span style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(0,229,255,.14) 0 1px,transparent 1px 7px)"></span>
+<span style="position:absolute;left:0;right:0;top:0;height:13px;border-bottom:1px solid rgba(139,152,166,.16);display:flex;align-items:center;gap:3px;padding-left:5px"><span style="width:3px;height:3px;border-radius:50%;background:rgba(139,152,166,.5)"></span><span style="width:3px;height:3px;border-radius:50%;background:rgba(139,152,166,.35)"></span><span style="width:3px;height:3px;border-radius:50%;background:rgba(139,152,166,.35)"></span></span>
+<span style="position:absolute;left:0;right:0;bottom:14px;text-align:center;font:500 7px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">[PREVIEW]</span>
+</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+
+<div ref="{{ emptyRef }}" style="display:none;padding:44px 8px;border-bottom:1px solid rgba(139,152,166,.12);font:400 12px 'JetBrains Mono',monospace;color:#8B98A6">no systems match this combination — <span style="color:#00E5FF;cursor:pointer" onClick="{{ onReset }}">reset filters</span></div>
+
+<div style="margin-top:72px;display:flex;align-items:center;gap:26px;padding:24px 26px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12)">
+<div>
+<div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">HOW TO READ THIS</div>
+<div style="font:400 13.5px/1.6 'Geist',sans-serif;color:#C6D1DB;max-width:64ch"><span style="color:#00E5FF">LIVE</span> means a public address and a health check. <span style="color:#B9C6D4">BUILD</span> means it runs, but not yet for anyone else. <span style="color:#7C8996">QUEUED</span> means specified, not written. Nothing is promoted without the figure to back it.</div>
+</div>
+<span style="flex:1"></span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;border:1px solid rgba(0,229,255,.4);padding:11px 18px;cursor:pointer" style-hover="background:rgba(0,229,255,.08)">TRAINING LOG →</span>
+</div>
+
+<div style="margin-top:72px">
+
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;align-items:flex-end;gap:60px;flex-wrap:wrap;padding:36px 0 6px">
+<div>
+<div style="font:400 12.5px/1.65 'Geist',sans-serif;color:#C6D1DB;max-width:52ch;margin-bottom:18px">Nichts Passendes gefunden? Ich erzähle gern, wie eines dieser Systeme gebaut ist.</div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="font:600 34px 'Chakra Petch',sans-serif;color:#E8EEF4">contact@timseil.dev</a>
+<div style="margin-top:9px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">USUALLY UNDER 24 H</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">GITHUB ↗ <span style="color:#7C8996">github.com/G1NG4R</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">[SOON]</span></span>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);padding:14px 0 24px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1 · #A41F9C2</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CV → TERMINAL AUF <span style="color:#8B98A6">/</span> : <span style="color:#8B98A6">cv</span></span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span><span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span><span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Mobile · 390 — Vorschau steht dauerhaft, Filter scrollen</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Work index — Mobile" style="width:390px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.025) 1px,transparent 1px);background-size:64px 64px"></div>
+<div style="position:relative;z-index:1;padding:0 22px">
+
+<div style="display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+
+<div style="padding:34px 0 24px">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:16px"><span style="color:#00E5FF">SYS.02</span> — SYSTEMS</div>
+<h2 style="margin:0 0 14px;font:500 34px/1.05 'Chakra Petch',sans-serif;color:#E8EEF4">Selected work</h2>
+<p style="margin:0;font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6">Every system below runs, ran, or is specified to run. Status and figures come from the same API that serves this page.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding-bottom:20px;border-bottom:1px solid rgba(139,152,166,.16)">
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:10px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;margin-bottom:6px">SYS</div><div style="font:500 17px 'Chakra Petch',sans-serif;color:#E8EEF4">02</div></div>
+<div style="border-left:1px solid rgba(0,229,255,.4);padding-left:10px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;margin-bottom:6px">LIVE</div><div style="font:500 17px 'Chakra Petch',sans-serif;color:#00E5FF">01</div></div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:10px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;margin-bottom:6px">BUILD</div><div style="font:500 17px 'Chakra Petch',sans-serif;color:#E8EEF4">00</div></div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:10px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;margin-bottom:6px">QUEUE</div><div style="font:500 17px 'Chakra Petch',sans-serif;color:#E8EEF4">01</div></div>
+</div>
+
+<div style="margin:0 -22px;padding:14px 22px;border-bottom:1px solid rgba(139,152,166,.16);overflow-x:auto;scrollbar-width:none">
+<div style="display:flex;gap:8px;width:max-content;margin-bottom:9px">
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid #00E5FF;background:#00E5FF;color:#08131A;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">ALL 02</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">LIVE 01</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">BUILD 00</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">QUEUED 01</span>
+</div>
+<div style="display:flex;gap:8px;width:max-content">
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid #00E5FF;background:#00E5FF;color:#08131A;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">ANY</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">GO</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">TYPESCRIPT</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">PYTHON</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">POSTGRES</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">DOCKER</span>
+</div>
+</div>
+
+<div style="padding:18px 0 16px;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">01</span><span style="flex:1"></span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">○ QUEUED</span></div>
+<div style="display:flex;gap:14px">
+<div style="flex:1">
+<div style="font:500 17px 'Chakra Petch',sans-serif;color:#E8EEF4">VAT CHECK API</div>
+<div style="font:400 12.5px 'Geist',sans-serif;color:#8B98A6;margin-top:4px">EU VAT number validation service</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">PYTHON · FASTAPI · DOCKER</div>
+
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:10px"><span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">UPTIME 91 D</span><span style="font:500 13px 'JetBrains Mono',monospace;color:#7C8996">— NO DATA</span></div>
+</div>
+<div style="position:relative;width:88px;height:66px;flex:none;border:1px solid rgba(139,152,166,.16);overflow:hidden">
+<span style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(0,229,255,.14) 0 1px,transparent 1px 7px)"></span>
+<span style="position:absolute;left:0;right:0;bottom:12px;text-align:center;font:500 6.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">[PREVIEW]</span>
+</div>
+</div>
+</div>
+
+
+
+<div style="padding:18px 0 16px;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.55)">02</span><span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#FF2D55;border:1px solid rgba(255,45,85,.35);padding:2px 5px">YOU ARE HERE</span><span style="flex:1"></span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF">● LIVE</span></div>
+<div style="display:flex;gap:14px">
+<div style="flex:1">
+<div style="font:500 17px 'Chakra Petch',sans-serif;color:#E8EEF4">TIMSEIL.DEV</div>
+<div style="font:400 12.5px 'Geist',sans-serif;color:#8B98A6;margin-top:4px">This site as a system — front, API, CI/CD, VPS</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">REACT ROUTER · GO · DOCKER · ACTIONS</div>
+<div style="display:flex;align-items:center;min-height:44px;margin-top:2px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF"><span style="color:rgba(124,137,150,.7)">&lt;&gt;</span> PUBLIC · [REPO URL]</div>
+<div style="display:inline-flex;align-items:center;min-height:44px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(0,229,255,.75);margin-top:7px;cursor:pointer" style-hover="color:#00E5FF">CASE STUDY →</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(0,229,255,.75);margin-top:7px">01 ENTRY IN THE LOG →</div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-top:10px"><span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">UPTIME 91 D</span><span style="font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4">[99.98%]</span></div>
+</div>
+<div style="position:relative;width:88px;height:66px;flex:none;border:1px solid rgba(139,152,166,.16);overflow:hidden">
+<span style="position:absolute;inset:0;background-image:repeating-linear-gradient(135deg,rgba(0,229,255,.14) 0 1px,transparent 1px 7px)"></span>
+<span style="position:absolute;left:0;right:0;bottom:12px;text-align:center;font:500 6.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">[PREVIEW]</span>
+</div>
+</div>
+</div>
+
+
+
+<div style="margin-top:32px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">HOW TO READ THIS</div>
+<div style="font:400 12.5px/1.65 'Geist',sans-serif;color:#C6D1DB"><span style="color:#00E5FF">LIVE</span> means a public address and a health check. <span style="color:#B9C6D4">BUILD</span> means it runs, but not yet for anyone else. <span style="color:#7C8996">QUEUED</span> means specified, not written.</div>
+</div>
+
+<div style="margin-top:44px">
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="padding:28px 0 16px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="display:inline-flex;align-items:center;min-height:44px;font:600 24px 'Chakra Petch',sans-serif;color:#E8EEF4;word-break:break-all">contact@timseil.dev</a>
+<div style="display:flex;flex-direction:column;margin-top:10px">
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">GITHUB ↗ <span style="color:#7C8996">&nbsp;github.com/G1NG4R</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid rgba(139,152,166,.16);padding:12px 0 22px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span tabIndex="0" role="link" aria-label="CV als PDF laden" style="display:inline-flex;align-items:center;min-height:44px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer;flex-basis:100%;min-height:44px;padding:14px 0;margin:0;display:flex;align-items:center" style-hover="color:#00E5FF">CV → cv.pdf</span><span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span><span style="display:flex;align-items:center;flex-wrap:wrap;min-height:44px;display:flex;align-items:center;gap:8px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6">--:--:--</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Design notes</div>
+<div class="dv-card" style="width:430px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">/WORK</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> Kein längeres SYS.02: jede Zeile trägt eine <span style="color:#C6D1DB">Betriebszahl</span>, und welche, hängt vom Status ab — Uptime bei LIVE, letzter Commit bei BUILD, Spec-Zustand bei QUEUED</div>
+<div><span style="color:#00E5FF">▸</span> Zwei Filterreihen, beide live: Status und Stack kombinieren sich, Zähler läuft mit, leere Kombination bietet Reset</div>
+<div><span style="color:#00E5FF">▸</span> Brief-Punkt eingelöst: die <span style="color:#C6D1DB">monochrom-cyan Vorschau</span> sitzt in einer reservierten Spalte bei 28 % und geht beim Hover auf 100 % — Enthüllung ohne Layout-Sprung</div>
+<div><span style="color:#00E5FF">▸</span> Brief-Punkt eingelöst: <span style="color:#C6D1DB">ENTRIES IN THE LOG</span> verbindet jedes System mit den Posts, die darüber geschrieben wurden</div>
+<div><span style="color:#00E5FF">▸</span> Ein Alert-Moment: die Marke <span style="color:#C6D1DB">YOU ARE HERE</span> auf Zeile 02</div>
+<div><span style="color:#00E5FF">▸</span> Die Legende unten definiert LIVE, BUILD, QUEUED — Statuswörter sind nur so viel wert wie ihre Definition</div>
+<div><span style="color:#00E5FF">▸</span> Mobile: Vorschau steht dauerhaft bei 88×66 statt auf Hover, Filter scrollen horizontal</div>
+<div><span style="color:#00E5FF">▸</span> Alle Zahlen in <span style="color:#C6D1DB">[Klammern]</span> kommen später aus <span style="color:#C6D1DB">/api/systems</span></div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "Imprint und Privacy" · "Boot-Sequenz-Storyboard" · "Terminal-Befehle work/blog/about"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  clocks = new Set(); st = "all"; sk = "all";
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.iv = setInterval(tick, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  chip(box, attr, val) {
+    if (!box) return;
+    box.querySelectorAll("[" + attr + "]").forEach(c => {
+      const on = c.getAttribute(attr) === val, any = c.getAttribute(attr) === "all";
+      c.style.background = on ? "#00E5FF" : "transparent";
+      c.style.color = on ? "#08131A" : any ? "#00E5FF" : "#8B98A6";
+      c.style.borderColor = on ? "#00E5FF" : any ? "rgba(0,229,255,.5)" : "rgba(139,152,166,.25)";
+      const n = c.querySelector("span"); if (n) n.style.color = on ? "#08131A" : "#7C8996";
+    });
+  }
+  apply() {
+    if (!this.list) return;
+    let n = 0;
+    this.list.querySelectorAll("[data-st]").forEach(r => {
+      const ok = (this.st === "all" || r.dataset.st === this.st) &&
+                 (this.sk === "all" || (r.dataset.sk || "").split(" ").includes(this.sk));
+      r.style.display = ok ? "grid" : "none"; if (ok) n++;
+    });
+    this.chip(this.statusBox, "data-st", this.st);
+    this.chip(this.stackBox, "data-sk", this.sk);
+    if (this.count) this.count.textContent = String(n).padStart(2, "0");
+    if (this.empty) this.empty.style.display = n ? "none" : "block";
+  }
+  renderVals() {
+    return {
+      clockRef: el => { if (el) this.clocks.add(el); },
+      listRef: el => { this.list = el; },
+      statusRef: el => { this.statusBox = el; },
+      stackRef: el => { this.stackBox = el; },
+      countRef: el => { this.count = el; },
+      emptyRef: el => { this.empty = el; },
+      onRowIn: e => { const p = e.currentTarget.querySelector("[data-prev]"); if (p) p.style.setProperty("opacity", "1", "important"); },
+      onRowOut: e => { const p = e.currentTarget.querySelector("[data-prev]"); if (p) p.style.setProperty("opacity", ".28", "important"); },
+      onStatus: e => { this.st = e.currentTarget.dataset.st; this.apply(); },
+      onStack: e => { this.sk = e.currentTarget.dataset.sk; this.apply(); },
+      onReset: () => { this.st = "all"; this.sk = "all"; this.apply(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Blog index — SYS.04 LOG · Filter und Suche funktionieren</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1440 — Mono-Liste, keine Karten · Tag-Chips und Suche sind live</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Blog index — Desktop" style="width:1440px;background-color:#0A0E14;position:relative;overflow:hidden;cursor:crosshair;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.028) 1px,transparent 1px);background-size:88px 88px"></div>
+<div style="position:relative;z-index:1;width:1160px;margin:0 auto">
+
+<div style="display:flex;align-items:center;height:66px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:32px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;cursor:default">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+<div style="height:5px;opacity:.55;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:80px;align-items:end;padding:56px 0 44px">
+<div>
+<div style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:22px"><span style="color:#00E5FF">SYS.04</span> — LOG</div>
+<h1 style="margin:0 0 20px;font:500 52px/1.05 'Chakra Petch',sans-serif;color:#E8EEF4">Writing</h1>
+<p style="margin:0;max-width:56ch;font:400 15px/1.7 'Geist',sans-serif;color:#8B98A6">Notes from building and running my own systems: what the failure looked like, what the fix was, and what I would do differently. No tutorials I have not run in production.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;padding-bottom:6px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996"><span>ENTRIES</span><span style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4;font-variant-numeric:tabular-nums">10</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996"><span>LATEST</span><span style="color:#C6D1DB;font-variant-numeric:tabular-nums">2026-07-21</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996"><span>FEED</span><span style="color:#00E5FF;cursor:pointer">RSS · /feed.xml ↗</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996"><span>SYSTEM</span><span style="color:rgba(0,229,255,.75);cursor:pointer" style-hover="color:#00E5FF">02 CASE STUDY →</span></div>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:14px;padding:16px 0;border-top:1px solid rgba(139,152,166,.16);border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:8px">
+<div ref="{{ chipsRef }}" style="display:flex;flex-wrap:wrap;gap:8px">
+<span data-chip="all" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid #00E5FF;background:#00E5FF;color:#08131A;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">ALL <span style="font-variant-numeric:tabular-nums">10</span></span>
+<span data-chip="go" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">GO <span style="color:#7C8996;font-variant-numeric:tabular-nums">04</span></span>
+<span data-chip="docker" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">DOCKER <span style="color:#7C8996;font-variant-numeric:tabular-nums">02</span></span>
+<span data-chip="kubernetes" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">KUBERNETES <span style="color:#7C8996;font-variant-numeric:tabular-nums">01</span></span>
+<span data-chip="postgres" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">POSTGRES <span style="color:#7C8996;font-variant-numeric:tabular-nums">02</span></span>
+<span data-chip="cicd" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">CI/CD <span style="color:#7C8996;font-variant-numeric:tabular-nums">01</span></span>
+<span data-chip="linux" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">LINUX <span style="color:#7C8996;font-variant-numeric:tabular-nums">02</span></span>
+<span data-chip="aws" onClick="{{ onTag }}" style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;cursor:pointer">AWS <span style="color:#7C8996;font-variant-numeric:tabular-nums">01</span></span>
+</div>
+<span style="flex:1"></span>
+<div style="display:flex;align-items:center;gap:9px;border:1px solid rgba(139,152,166,.25);padding:7px 12px;min-width:210px">
+<span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.7)">/</span>
+<input ref="{{ searchRef }}" onInput="{{ onSearch }}" aria-label="search entries" placeholder="grep titles…" style="flex:1;background:transparent;border:none;outline:none;padding:0;color:#E8EEF4;font:400 11.5px 'JetBrains Mono',monospace;caret-color:#00E5FF"></div>
+</div>
+<div style="display:flex;align-items:baseline;gap:8px;padding:12px 0 4px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">SHOWING <span ref="{{ countRef }}" style="color:#00E5FF;font-variant-numeric:tabular-nums">10</span> OF 10 ENTRIES</div>
+
+<div ref="{{ listRef }}" style="margin-bottom:20px">
+<div data-sep="1" style="display:flex;align-items:center;gap:16px;padding:26px 0 14px"><span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#C6D1DB;font-variant-numeric:tabular-nums">2026</span><span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">07 ENTRIES</span></div>
+
+<div data-tags="go" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:24px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-07-21</span>
+<span>
+<span style="display:flex;align-items:baseline;gap:10px"><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;border:1px solid rgba(0,229,255,.35);padding:2px 6px">LATEST</span></span>
+<span style="display:block;font:500 19px 'JetBrains Mono',monospace;color:#E8EEF4;margin-top:10px">Go concurrency patterns in production</span>
+<span style="display:block;font:400 13.5px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:7px;max-width:62ch">Worker pools, bounded queues, and what actually breaks under load — the pool that took down my API and the queue that replaced it.</span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">GO</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">12 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="kubernetes linux" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-06-09</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">Kubernetes on a bare VPS</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">k3s on 8 GB of metal: what you keep, what you drop, and when Compose was still the better answer.</span>
+<span style="display:block;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;margin-top:8px">SERIES · RUNNING THINGS YOURSELF <span style="color:#8B98A6">03/03</span></span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">KUBERNETES · LINUX</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">09 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="cicd docker" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-05-02</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">CI/CD pipelines with GitHub Actions and Docker</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">From git push to production in 90 seconds, with a health gate and a rollback that is one tag away.</span>
+<span style="display:block;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;margin-top:8px">SERIES · RUNNING THINGS YOURSELF <span style="color:#8B98A6">02/03</span></span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CI/CD · DOCKER</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">11 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="postgres" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-04-14</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">Reading a Postgres query plan without panicking</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">EXPLAIN ANALYZE on a feed query that got slow, and the index that made it boring again.</span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">POSTGRES</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">08 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="docker" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-03-08</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">Health checks that actually gate a deploy</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">Readiness against liveness, Compose conditions, and why my first deploy script lied to me.</span>
+<span style="display:block;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;margin-top:8px">SERIES · RUNNING THINGS YOURSELF <span style="color:#8B98A6">01/03</span></span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DOCKER</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">06 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="go" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-02-19</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">Webhook delivery: retries, signatures, idempotency</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">What dropped events taught me about at-least-once delivery and why receivers need to be boring.</span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">GO</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">10 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="go" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2026-01-27</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">JWT without the footguns</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">Key rotation, clock skew, and the revocation problem nobody mentions until you have users.</span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">GO</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">09 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-sep="1" style="display:flex;align-items:center;gap:16px;padding:30px 0 14px"><span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#C6D1DB;font-variant-numeric:tabular-nums">2025</span><span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">03 ENTRIES</span></div>
+
+<div data-tags="postgres aws" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2025-12-12</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">Backups you have actually restored</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">pg_dump to object storage, and the restore drill that found the gap in my own runbook.</span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">POSTGRES · AWS</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">07 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="linux" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2025-11-05</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">Structured logs before you need them</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">Correlation IDs, levels that mean something, and how much to keep on a small VPS.</span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">LINUX</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">06 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+
+<div data-tags="go" style="display:grid;grid-template-columns:112px 1fr 200px 74px 24px;gap:24px;align-items:baseline;padding:22px 8px;border-bottom:1px solid rgba(139,152,166,.12);cursor:pointer" style-hover="background:#0E141C;box-shadow:inset 2px 0 0 #00E5FF">
+<span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">2025-09-23</span>
+<span>
+<span style="display:block;font:500 17px 'JetBrains Mono',monospace;color:#E8EEF4">Why my first API needed a rewrite</span>
+<span style="display:block;font:400 13px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px;max-width:62ch">Handlers doing four jobs each, no transactions, and the refactor that made testing possible.</span>
+</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">GO</span>
+<span style="font:400 10.5px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">08 MIN</span>
+<span style="font:400 14px 'JetBrains Mono',monospace;color:#8B98A6">→</span>
+</div>
+</div>
+
+<div ref="{{ emptyRef }}" style="display:none;padding:44px 8px;border-bottom:1px solid rgba(139,152,166,.12);font:400 12px 'JetBrains Mono',monospace;color:#8B98A6">no entries match — <span style="color:#00E5FF;cursor:pointer" onClick="{{ onReset }}">reset filter</span></div>
+
+<div style="display:flex;align-items:center;gap:20px;padding:26px 8px 0">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">PAGE <span style="color:#C6D1DB;font-variant-numeric:tabular-nums">01</span> / 01</span>
+<span style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(139,152,166,.28) 0 4px,transparent 4px 9px)"></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996">OLDER ENTRIES →</span>
+</div>
+
+<div style="margin-top:80px;display:flex;align-items:center;gap:26px;padding:24px 26px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12)">
+<div>
+<div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">SUBSCRIBE</div>
+<div style="font:400 13.5px/1.6 'Geist',sans-serif;color:#C6D1DB;max-width:52ch">No newsletter, no tracking. The feed is a plain RSS file served by the same API as everything else.</div>
+</div>
+<span style="flex:1"></span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;border:1px solid rgba(0,229,255,.4);padding:11px 18px;cursor:pointer" style-hover="background:rgba(0,229,255,.08)">/FEED.XML ↗</span>
+</div>
+
+<div style="margin-top:72px">
+
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="display:flex;align-items:flex-end;gap:60px;flex-wrap:wrap;padding:36px 0 6px">
+<div>
+<div style="font:400 12.5px/1.65 'Geist',sans-serif;color:#C6D1DB;max-width:52ch;margin-bottom:18px">Fragen zu einem Eintrag oder Widerspruch? Beides ist willkommen.</div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="font:600 34px 'Chakra Petch',sans-serif;color:#E8EEF4">contact@timseil.dev</a>
+<div style="margin-top:9px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">USUALLY UNDER 24 H</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">GITHUB ↗ <span style="color:#7C8996">github.com/G1NG4R</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">[SOON]</span></span>
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">[SOON]</span></span>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);padding:14px 0 24px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1 · #A41F9C2</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">CV → TERMINAL AUF <span style="color:#8B98A6">/</span> : <span style="color:#8B98A6">cv</span></span>
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span><span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span><span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Mobile · 390 — Chips scrollen, Datum über dem Titel</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Blog index — Mobile" style="width:390px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(232,238,244,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(232,238,244,.025) 1px,transparent 1px);background-size:64px 64px"></div>
+<div style="position:relative;z-index:1;padding:0 22px">
+<div style="display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+
+<div style="padding:34px 0 26px">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:16px"><span style="color:#00E5FF">SYS.04</span> — LOG</div>
+<h2 style="margin:0 0 14px;font:500 34px/1.05 'Chakra Petch',sans-serif;color:#E8EEF4">Writing</h2>
+<p style="margin:0;font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6">Notes from building and running my own systems: what the failure looked like, what the fix was, and what I would do differently.</p>
+<div style="display:flex;gap:22px;margin-top:20px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996";flex-wrap:wrap">
+<span>ENTRIES <span style="color:#E8EEF4">10</span></span><span>LATEST <span style="color:#C6D1DB">2026-07-21</span></span><span style="color:#00E5FF">RSS ↗</span><span style="display:inline-flex;align-items:center;min-height:44px;color:rgba(0,229,255,.75);cursor:pointer" style-hover="color:#00E5FF">02 CASE STUDY</span>
+</div>
+</div>
+
+<div style="margin:0 -22px 14px;padding:14px 22px;border-top:1px solid rgba(139,152,166,.16);border-bottom:1px solid rgba(139,152,166,.16);overflow-x:auto;scrollbar-width:none">
+<div style="display:flex;gap:8px;width:max-content">
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid #00E5FF;background:#00E5FF;color:#08131A;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">ALL 10</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">GO 04</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">DOCKER 02</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">KUBERNETES 01</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">POSTGRES 02</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">CI/CD 01</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;padding:0 11px;cursor:pointer;border:1px solid rgba(139,152,166,.25);color:#8B98A6;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em">LINUX 02</span>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:9px;border:1px solid rgba(139,152,166,.25);padding:9px 12px;margin-bottom:6px"><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.7)">/</span><span style="font:400 11.5px 'JetBrains Mono',monospace;color:#7C8996">grep titles…</span></div>
+
+<div style="display:flex;align-items:center;gap:14px;padding:20px 0 10px"><span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#C6D1DB">2026</span><span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span><span style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">07 ENTRIES</span></div>
+
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">2026-07-21</span><span style="font:600 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;border:1px solid rgba(0,229,255,.35);padding:2px 5px">LATEST</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">12 MIN</span></div>
+<div style="font:500 15px/1.35 'JetBrains Mono',monospace;color:#E8EEF4">Go concurrency patterns in production</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px">Worker pools, bounded queues, and what actually breaks under load.</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">GO</div>
+</div>
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">2026-06-09</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">09 MIN</span></div>
+<div style="font:500 15px/1.35 'JetBrains Mono',monospace;color:#E8EEF4">Kubernetes on a bare VPS</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px">k3s on 8 GB of metal: what you keep, what you drop.</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">KUBERNETES · LINUX <span style="color:#7C8996">· SERIES 03/03</span></div>
+</div>
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">2026-05-02</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">11 MIN</span></div>
+<div style="font:500 15px/1.35 'JetBrains Mono',monospace;color:#E8EEF4">CI/CD pipelines with GitHub Actions and Docker</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px">From git push to production in 90 seconds, with rollbacks.</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">CI/CD · DOCKER <span style="color:#7C8996">· SERIES 02/03</span></div>
+</div>
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">2026-04-14</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">08 MIN</span></div>
+<div style="font:500 15px/1.35 'JetBrains Mono',monospace;color:#E8EEF4">Reading a Postgres query plan without panicking</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px">EXPLAIN ANALYZE on a feed query that got slow.</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">POSTGRES</div>
+</div>
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12)">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">2026-03-08</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">06 MIN</span></div>
+<div style="font:500 15px/1.35 'JetBrains Mono',monospace;color:#E8EEF4">Health checks that actually gate a deploy</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px">Readiness against liveness, and Compose conditions.</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">DOCKER <span style="color:#7C8996">· SERIES 01/03</span></div>
+</div>
+<div style="padding:16px 0;border-bottom:1px solid rgba(139,152,166,.12);opacity:.9">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">2026-02-19</span><span style="flex:1"></span><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">10 MIN</span></div>
+<div style="font:500 15px/1.35 'JetBrains Mono',monospace;color:#E8EEF4">Webhook delivery: retries, signatures, idempotency</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#8B98A6;margin-top:6px">What dropped events taught me about at-least-once delivery.</div>
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996;margin-top:8px">GO</div>
+</div>
+<div style="display:flex;align-items:center;gap:20px;padding:22px 0 0">
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">PAGE <span style="color:#C6D1DB">01</span> / 01</span>
+<span style="flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(139,152,166,.28) 0 4px,transparent 4px 9px)"></span>
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">OLDER →</span>
+</div>
+<div style="margin-top:40px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:8px">SUBSCRIBE</div>
+<div style="font:400 12.5px/1.6 'Geist',sans-serif;color:#C6D1DB">No newsletter, no tracking. The feed is a plain RSS file served by the same API.</div>
+<div style="margin-top:14px;font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;border:1px solid rgba(0,229,255,.4);padding:10px 14px;display:inline-block">/FEED.XML ↗</div>
+</div>
+<div style="margin-top:44px">
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+<div style="padding:28px 0 16px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">OPEN A CHANNEL</div>
+<a href="mailto:contact@timseil.dev" style="display:inline-flex;align-items:center;min-height:44px;font:600 24px 'Chakra Petch',sans-serif;color:#E8EEF4;word-break:break-all">contact@timseil.dev</a>
+<div style="display:flex;flex-direction:column;margin-top:10px">
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">GITHUB ↗ <span style="color:#7C8996">&nbsp;github.com/G1NG4R</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">LINKEDIN ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+<span style="display:flex;align-items:center;min-height:44px;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB">X ↗ <span style="color:#7C8996">&nbsp;[SOON]</span></span>
+</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid rgba(139,152,166,.16);padding:12px 0 22px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span><span tabIndex="0" role="link" aria-label="CV als PDF laden" style="display:inline-flex;align-items:center;min-height:44px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer;flex-basis:100%;min-height:44px;padding:14px 0;margin:0;display:flex;align-items:center" style-hover="color:#00E5FF">CV → cv.pdf</span><span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span><span style="display:flex;align-items:center;flex-wrap:wrap;min-height:44px;display:flex;align-items:center;gap:8px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6">--:--:--</span></span><span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px;padding-top:2px">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Design notes</div>
+<div class="dv-card" style="width:420px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">BLOG INDEX</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> Mono-Liste, keine Karten — Zeilen scannen sich schneller als Kacheln</div>
+<div><span style="color:#00E5FF">▸</span> Vier Spalten pro Zeile: Datum · Titel + Zusammenfassung · Tags · Lesezeit. Tabellenziffern, damit Daten und Zeiten untereinander stehen</div>
+<div><span style="color:#00E5FF">▸</span> Tag-Chips und <span style="color:#C6D1DB">/</span>-Suche filtern die Liste wirklich; Jahres-Trenner verschwinden im gefilterten Zustand</div>
+<div><span style="color:#00E5FF">▸</span> Serien-Marker (<span style="color:#C6D1DB">RUNNING THINGS YOURSELF 02/03</span>) hält mehrteilige Posts zusammen, ohne eine zweite Navigation zu bauen</div>
+<div><span style="color:#00E5FF">▸</span> Neuester Eintrag ist größer, nicht anders — eine Zeile, kein Hero</div>
+<div><span style="color:#00E5FF">▸</span> Jahres-Trenner mit Zähler ersetzt Endlos-Scroll-Gefühl; Pagination bleibt mono</div>
+<div><span style="color:#00E5FF">▸</span> Kein Newsletter, nur RSS — passt zur Positionierung und braucht kein Tracking</div>
+<div><span style="color:#00E5FF">▸</span> Titel, Daten, Lesezeiten und Tag-Zähler sind Platzhalter</div>
+</div>
+</div>
+</div>
+
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Leerzustände — kein Eintrag, kein Treffer</div>
+<div class="dv-card" style="width:620px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">BLOG.EMPTY</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">LEERZUSTÄNDE</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">WORTLAUT AUS REFERENZBLATT 03</span>
+</div><div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14;margin-bottom:16px">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">EMPTY · KEIN EINTRAG</div>
+<div style="padding:16px"><div style="font:500 15px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:10px">0 einträge</div>
+<div style="padding:10px 12px;border:1px dashed rgba(139,152,166,.2);font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:14px">Der Log beginnt leer. Der erste Eintrag kommt, wenn das erste System etwas erlebt hat, das der Rede wert ist — kein Füllmaterial.</div>
+<span style="display:inline-flex;align-items:center;min-height:44px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF;cursor:pointer">SYSTEME ANSEHEN →</span></div>
+</div><div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14;margin-bottom:16px">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">EMPTY · FILTER OHNE TREFFER</div>
+<div style="padding:16px"><div style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#8B98A6;margin-bottom:12px"><div style="color:#E8EEF4">0 einträge entsprechen dem filter</div><div style="color:#7C8996">TAG: KUBERNETES × · JAHR: 2025 ×</div></div>
+<div style="padding:10px 12px;border:1px dashed rgba(139,152,166,.2);font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:14px">Zu diesem Tag gibt es noch nichts. Der Zähler neben jedem Tag zeigt vorab, was ihn erwartet.</div>
+<span style="display:inline-flex;align-items:center;min-height:44px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF;cursor:pointer">FILTER ZURÜCKSETZEN</span></div>
+</div><div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> BEIDE ZUSTÄNDE NENNEN EINEN AUSWEG — ohne Ausweg ist ein Leerzustand eine Sackgasse</div>
+<div><span style="color:#00E5FF">▸</span> KEINE ILLUSTRATION, kein „Ups“. Der Log sagt, warum er leer ist</div>
+<div><span style="color:#00E5FF">▸</span> HÖHE BLEIBT: der leere Bereich hält dieselbe Fläche wie drei Zeilen, damit die Seite beim ersten Eintrag nicht springt</div>
+</div>
+</div>
+</div>
+</div>
+<p class="dv-next">Try next: "Post-Template" · "Serien-Seite eigenständig" · "404 als Letztes"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  clocks = new Set(); tag = "all"; q = "";
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.iv = setInterval(tick, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  apply() {
+    if (!this.list) return;
+    let n = 0;
+    this.list.querySelectorAll("[data-tags]").forEach(r => {
+      const tags = (r.dataset.tags || "").split(" ");
+      const ok = (this.tag === "all" || tags.includes(this.tag)) &&
+                 (!this.q || r.textContent.toLowerCase().includes(this.q));
+      r.style.display = ok ? "grid" : "none"; if (ok) n++;
+    });
+    const plain = this.tag === "all" && !this.q;
+    this.list.querySelectorAll("[data-sep]").forEach(s => { s.style.display = plain ? "flex" : "none"; });
+    if (this.chips) this.chips.querySelectorAll("[data-chip]").forEach(c => {
+      const on = c.dataset.chip === this.tag;
+      c.style.background = on ? "#00E5FF" : "transparent";
+      c.style.color = on ? "#08131A" : "#8B98A6";
+      c.style.borderColor = on ? "#00E5FF" : "rgba(139,152,166,.25)";
+      const cnt = c.querySelector("span"); if (cnt) cnt.style.color = on ? "#08131A" : "#7C8996";
+    });
+    if (this.count) this.count.textContent = String(n).padStart(2, "0");
+    if (this.empty) this.empty.style.display = n ? "none" : "block";
+  }
+  renderVals() {
+    return {
+      clockRef: el => { if (el) this.clocks.add(el); },
+      listRef: el => { this.list = el; }, chipsRef: el => { this.chips = el; },
+      countRef: el => { this.count = el; }, emptyRef: el => { this.empty = el; },
+      searchRef: el => { this.search = el; },
+      onTag: e => { this.tag = e.currentTarget.dataset.chip; this.apply(); },
+      onSearch: e => { this.q = e.target.value.trim().toLowerCase(); this.apply(); },
+      onReset: () => { this.tag = "all"; this.q = ""; if (this.search) this.search.value = ""; this.apply(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

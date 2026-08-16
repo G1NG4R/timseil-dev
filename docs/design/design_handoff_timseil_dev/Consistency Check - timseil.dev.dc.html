@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Nachprüfung — Stand nach der Umsetzung · 16.08.2026 · alle zehn Bildschirmseiten neu geprüft</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Befunde · 1360 — was behoben ist, was bewusst offen bleibt</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Re-check" style="width:1360px;box-sizing:border-box;padding:36px 40px 40px;background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:16px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CHK.04</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">NACHPRÜFUNG</span>
+<span style="flex:1"></span>
+<span style="flex:none;white-space:nowrap;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ reTally }}</span>
+</div>
+<div style="display:grid;grid-template-columns:56px 116px 1fr 1fr 116px;border-top:1px solid rgba(139,152,166,.16)">
+<div style="padding:9px 10px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ID</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ACHSE</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">BEFUND</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">WAS GESCHAH</div>
+<div style="padding:9px 0 9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">STAND</div>
+<sc-for list="{{ recheck }}" as="r" hint-placeholder-count="22">
+<div style="padding:11px 10px 11px 0;font:600 10px 'JetBrains Mono',monospace;color:{{ r.color }};border-bottom:1px solid rgba(139,152,166,.08)">{{ r.id }}</div>
+<div style="padding:11px 10px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">{{ r.axis }}</div>
+<div style="padding:11px 10px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">{{ r.was }}</div>
+<div style="padding:11px 10px;font:400 11px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">{{ r.now }}</div>
+<div style="padding:11px 0 11px 10px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:{{ r.color }};border-bottom:1px solid rgba(139,152,166,.08)">{{ r.state }}</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Matrix nach der Umsetzung · 1360</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Matrix after" style="width:1360px;box-sizing:border-box;padding:36px 40px 40px;background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:6px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CHK.05</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">SEITE × ACHSE — NACHHER</span>
+<span style="flex:1"></span>
+<span style="flex:none;white-space:nowrap;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ tally2 }}</span>
+</div>
+<div style="display:flex;align-items:flex-end;gap:0;padding:14px 0 8px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="width:150px;flex:none;padding-right:12px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">SEITE</span>
+<sc-for list="{{ axes }}" as="a" hint-placeholder-count="9">
+<span style="flex:1;margin:0 2px;padding:0;font:500 8.5px/1.35 'JetBrains Mono',monospace;letter-spacing:.08em;color:#7C8996">{{ a }}</span>
+</sc-for>
+</div>
+<sc-for list="{{ rows2 }}" as="r" hint-placeholder-count="11">
+<div style="display:flex;align-items:center;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="width:150px;flex:none;padding:10px 12px 10px 0;font:500 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">{{ r.page }}</span>
+<sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="9">
+<span style="{{ c.style }}" title="{{ c.title }}">{{ c.glyph }}</span>
+</sc-for>
+</div>
+</sc-for>
+<div style="display:flex;flex-wrap:wrap;gap:10px 30px;margin-top:20px;padding-top:14px;border-top:1px solid rgba(139,152,166,.16);font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">
+<span><span style="color:#00E5FF;font-weight:600">●</span> KONFORM</span>
+<span><span style="color:#FFB000;font-weight:600">▲</span> BEWUSSTE ABWEICHUNG — entschieden, nicht vergessen</span>
+<span><span style="color:#7C8996;font-weight:600">–</span> NICHT ANWENDBAR</span>
+<span style="color:#7C8996">ZELLE ÜBERFAHREN ZEIGT DEN BEFUND DIESER SEITE</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Was bleibt — und was das Design nicht mehr lösen kann</div>
+<div class="dv-card" style="width:620px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CHK.06</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">OFFEN</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EHRLICHE LISTE</span>
+</div>
+<div style="border-left:1px solid rgba(255,176,0,.5);padding-left:16px;margin-bottom:22px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FFB000;margin-bottom:10px">BEWUSST OFFEN IM DESIGN</div>
+<div style="font:400 10.5px/1.8 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px">
+<div><span style="color:#FFB000">▸</span> SPRACHE DER OBERFLÄCHE: deutsche Erklärabsätze in englischer UI auf Startseite, Fallstudie 02, About und 404. Entschieden: bleiben, bis der Umschalter sie ablöst</div>
+<div><span style="color:#FFB000">▸</span> UMSCHALTER OHNE FUNKTION: er steht auf allen zehn Seiten, die Übersetzungen entstehen beim Bauen. Matrix und Regeln liegen im Sprachumschalter-Blatt</div>
+<div><span style="color:#FFB000">▸</span> MENÜ ALS EIN ORT: die Seiten zeigen den geschlossenen Kopf, der offene Zustand steht einmal im Chrome-Blatt statt zehnmal in den Dateien</div>
+</div>
+</div>
+<div style="border-left:1px solid rgba(255,45,85,.5);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FF2D55;margin-bottom:10px">NICHT DURCH DESIGN LÖSBAR</div>
+<div style="font:400 10.5px/1.8 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px">
+<div><span style="color:#FF2D55">▸</span> INHALTE: Porträt, Bio, CV-Text, echte Blog-Beiträge. Überall steht heute <span style="color:#C6D1DB">[SOON]</span> oder <span style="color:#C6D1DB">[PLACEHOLDER]</span></div>
+<div><span style="color:#FF2D55">▸</span> ZAHLEN: Contribution-Graph, Betriebsraster und Uptime sind Platzhalter, bis <span style="color:#C6D1DB">/api/health</span> echte Werte liefert</div>
+<div><span style="color:#FF2D55">▸</span> MAIL: ohne Provider samt MX, SPF und DKIM ist das Kontaktformular gebaut, aber nicht zustellbar</div>
+<div><span style="color:#FF2D55">▸</span> RECHTSTEXTE: Impressum und Datenschutz brauchen echte Adresse und Anbieter — und in DE und FR eine geprüfte Fassung, keine maschinelle</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: „Handoff-Paket auffrischen“ · „mit dem Bauen anfangen“ · „Inhalte statt Entwürfe“</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Konsistenz-Check — Erstbefund, historisch · Stand vor der Umsetzung · abgelöst durch <a href="#t2">Runde 2</a></span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Matrix · 1360 — wo es klemmt, auf einen Blick</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Consistency matrix" style="width:1360px;box-sizing:border-box;padding:36px 40px 40px;background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:6px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CHK.01</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">SEITE × ACHSE</span>
+<span style="flex:1"></span>
+<span style="flex:none;white-space:nowrap;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ tally }}</span>
+</div>
+
+<div style="display:flex;align-items:flex-end;gap:0;padding:14px 0 8px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="width:150px;flex:none;padding-right:12px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">SEITE</span>
+<sc-for list="{{ axes }}" as="a" hint-placeholder-count="9">
+<span style="flex:1;margin:0 2px;padding:0;font:500 8.5px/1.35 'JetBrains Mono',monospace;letter-spacing:.08em;color:#7C8996">{{ a }}</span>
+</sc-for>
+</div>
+
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="11">
+<div style="display:flex;align-items:center;border-bottom:1px solid rgba(139,152,166,.08)">
+<span style="width:150px;flex:none;padding:10px 12px 10px 0;font:500 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">{{ r.page }}</span>
+<sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="9">
+<span style="{{ c.style }}" title="{{ c.title }}">{{ c.glyph }}</span>
+</sc-for>
+</div>
+</sc-for>
+
+<div style="display:flex;flex-wrap:wrap;gap:10px 30px;margin-top:20px;padding-top:14px;border-top:1px solid rgba(139,152,166,.16);font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8B98A6">
+<span><span style="color:#00E5FF;font-weight:600">●</span> KONFORM — folgt der Startseite oder dem Fundament-Blatt</span>
+<span><span style="color:#FFB000;font-weight:600">▲</span> ABWEICHUNG — vorhanden, aber anders als die Referenz</span>
+<span><span style="color:#FF2D55;font-weight:600">✕</span> FEHLT — Bauteil ist auf dieser Seite nicht vorhanden</span>
+<span><span style="color:#7C8996;font-weight:600">–</span> NICHT ANWENDBAR — Druckseite, Rechtstext, kein Bildschirm-Chrome</span>
+<span style="color:#7C8996">ZELLE ÜBERFAHREN ZEIGT DEN BEFUND DIESER SEITE</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Befundliste · 1360 — Ort, Ist, Soll, Schweregrad</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Findings" style="width:1360px;box-sizing:border-box;padding:36px 40px 40px;background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:16px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CHK.02</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">BEFUNDE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ sevTally }}</span>
+</div>
+<div style="display:grid;grid-template-columns:56px 116px 210px 1fr 1fr 86px;border-top:1px solid rgba(139,152,166,.16)">
+<div style="padding:9px 10px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ID</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ACHSE</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ORT</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">IST</div>
+<div style="padding:9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">SOLL</div>
+<div style="padding:9px 0 9px 10px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">SCHWERE</div>
+<sc-for list="{{ findings }}" as="f" hint-placeholder-count="18">
+<div style="padding:12px 10px 12px 0;font:600 10px 'JetBrains Mono',monospace;color:{{ f.color }};border-bottom:1px solid rgba(139,152,166,.08)">{{ f.id }}</div>
+<div style="padding:12px 10px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">{{ f.axis }}</div>
+<div style="padding:12px 10px;font:400 10.5px/1.5 'JetBrains Mono',monospace;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">{{ f.where }}</div>
+<div style="padding:12px 10px;font:400 11px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">{{ f.is }}</div>
+<div style="padding:12px 10px;font:400 11px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">{{ f.should }}</div>
+<div style="padding:12px 0 12px 10px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:{{ f.color }};border-bottom:1px solid rgba(139,152,166,.08)">{{ f.sev }}</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Korrekturplan — Reihenfolge und offene Entscheidungen</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Correction plan" style="width:1360px;box-sizing:border-box;padding:36px 40px 40px;background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:22px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">CHK.03</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">KORREKTURPLAN</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">STAND VOR DER UMSETZUNG · ALLE DREI STUFEN INZWISCHEN ERLEDIGT, NACHWEIS IN RUNDE 2</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+
+<div style="border-left:1px solid rgba(255,45,85,.5);padding-left:18px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FF2D55;margin-bottom:6px">STUFE 1 — VOR DEM BAU</div>
+<div style="font:400 10px/1.6 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:16px">Muster, die in jeder Seite stecken. Später geändert heißt: elf Seiten noch einmal anfassen.</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-01 · Mobile Navigation festlegen</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Das Vollbild-Menü aus dem Sprachumschalter auf alle zehn Bildschirmseiten übernehmen. Betrifft Kopf, Trefferflächen und den Ort der Sprach- und Theme-Wahl in einem Zug.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-02 · Kopf und Fußzeile als ein Bauteil</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Case Study 02 und Contact auf dasselbe Muster ziehen, Fußzeile überall vollständig: Kontaktblock, Rechtslinks, Meta-Leiste.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-03 · Aktiv-Zustand vereinheitlichen</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Ein Muster für „du bist hier“, und auf der Startseite ist kein Nav-Eintrag aktiv.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-04 · Trefferflächen auf 44px</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Nav-Zeilen, Theme-Felder, Listenzeilen und Fußzeilen-Links auf Mobil. Heute trägt nur der CV-Link das Maß.</div></div>
+</div>
+</div>
+
+<div style="border-left:1px solid rgba(255,176,0,.5);padding-left:18px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FFB000;margin-bottom:6px">STUFE 2 — KANN WARTEN</div>
+<div style="font:400 10px/1.6 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:16px">Sichtbar, aber lokal begrenzt. Beim Bauen der jeweiligen Seite mit erledigen.</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-05 · Koordinaten auf ein Format</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Desktop zeigt zwei Nachkommastellen, Mobil vier — auf sechs Seiten parallel.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-06 · Platzhalter-Notation</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">[FOLGT], [DATE], [PLACEHOLDER DATA], [STRASSE UND HAUSNUMMER] — eine Schreibweise und eine Sprache für alle.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-07 · Leerzustände nachziehen</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Blog Index und Blog Post haben keinen Zustand für „noch kein Eintrag“. Das Vokabular steht im Zustands-Blatt.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:4px">K-08 · Statuspunkt global</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">ONLINE trägt heute nur Startseite und About, obwohl die Übergabe ihn als globales Bauteil führt.</div></div>
+</div>
+</div>
+
+<div style="border-left:1px solid rgba(0,229,255,.5);padding-left:18px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;margin-bottom:6px">STUFE 3 — DU ENTSCHEIDEST</div>
+<div style="font:400 10px/1.6 'JetBrains Mono',monospace;color:#7C8996;margin-bottom:16px">Kein Fehler, sondern eine Wahl. Ich setze nichts davon ohne Ansage um.</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;margin-bottom:4px">E-01 · Überschriften-Skala</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Das Fundament kennt 62 · 52 · 34 · 26. Im Einsatz sind zusätzlich 64, 56, 50, 36, 32, 30. Entweder die Seiten auf die Skala ziehen oder die Skala um 56 erweitern — sieben von zehn Seiten hängen daran.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;margin-bottom:4px">E-02 · Sprache der Oberfläche</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Englische UI mit deutschen Erklärabsätzen auf Startseite, Fallstudie 02, About und 404, dazu DATENSCHUTZ in der Contact-Fußzeile gegen PRIVACY überall sonst. Bis der Umschalter gebaut ist: eine Sprache pro Fläche.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;margin-bottom:4px">E-03 · Sprachumschalter überall</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Als Soll gesetzt, gebaut wird er beim Umsetzen. Bis dahin ist er auf elf Seiten ein offener Befund — die Rechtstexte brauchen DE und FR ohnehin.</div></div>
+<div><div style="font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;margin-bottom:4px">E-04 · Theme-Reihe im Umschalter-Canvas</div><div style="font:400 11px/1.6 'Geist',sans-serif;color:#8B98A6">Dort stehen fünf Paletten, überall sonst sieben. Mein Fehler — sage Bescheid, dann ziehe ich nach.</div></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Methode und Geltung</div>
+<div class="dv-card" style="width:470px;padding:24px 26px 28px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:14px">WIE GEPRÜFT WURDE</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px;margin-bottom:22px">
+<div><span style="color:#00E5FF">▸</span> QUELLE STATT BILD: geprüft wurde der Quelltext aller elf Seiten, nicht der Screenshot. Gezählt wurden Kopfhöhen, Nav-Beschriftungen und ihre Farben, Fußzeilen-Bausteine, Theme-Felder, Trefferflächen, Schriftgrößen der Überschriften, Platzhalter und Leerwerte</div>
+<div><span style="color:#00E5FF">▸</span> REFERENZ: die <span style="color:#C6D1DB">Startseite</span> gilt für Inhalt, Copy und Bauteile — so festgelegt. Für Maße zusätzlich das <span style="color:#C6D1DB">Fundament-Blatt</span>; wo beide sich widersprechen, steht der Konflikt in Stufe 3 statt in der Befundliste</div>
+<div><span style="color:#00E5FF">▸</span> NEUN ACHSEN: Kopf, Fußzeile, Sprache, Theme, Zustände, Typo, Mobil, Copy, Routen. Abstände wurden nur dort geprüft, wo sie ein Bauteil tragen — eine vollständige Raster-Prüfung ist das nicht</div>
+<div><span style="color:#00E5FF">▸</span> ZEHNTE ACHSE NACHGETRAGEN: die Matrix deckt neun Achsen ab und bleibt unverändert. <span style="color:#C6D1DB">K-28</span> und <span style="color:#C6D1DB">K-29</span> stehen unter <span style="color:#C6D1DB">LAYOUT</span> — ein Befund, der erst beim Nachrechnen der Zwischenbreiten entstand und keine Seite gegen eine andere prüft, sondern jede Seite gegen die Arithmetik ihres Rasters</div>
+<div><span style="color:#00E5FF">▸</span> NICHT MITGEZÄHLT: Notiz- und Spec-Karten der Canvases. Bewertet wurde nur, was in einem Seitenrahmen steht</div>
+<div><span style="color:#00E5FF">▸</span> ZUM ZEITPUNKT DIESES BEFUNDS war nichts geändert — das Blatt dokumentierte nur. Die Umsetzung folgte am selben Tag; was daraus wurde, steht in <a href="#t2">Runde 2</a></div>
+</div>
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">GRENZEN</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px">
+<div><span style="color:#FFB000">▸</span> QUERVERWEISE nur stichprobenhaft. Die vollständige Link-Matrix steht in <span style="color:#C6D1DB">Routes and Paths</span> und wurde hier nicht neu abgelaufen</div>
+<div><span style="color:#FFB000">▸</span> BEWEGUNG UND SCROLL sind nicht Teil dieses Blatts — dafür stehen Boot Sequence und Scroll Choreography</div>
+<div><span style="color:#FFB000">▸</span> KONTRAST wurde nicht neu gemessen; die Werte stehen im Themes-Blatt</div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: „Stufe 1 umsetzen“ · „E-01 entscheiden: Skala erweitern“ · „Fußzeile als ein Bauteil bauen“</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  AXES = ["KOPF & NAV","FUSSZEILE","SPRACHE","THEME","ZUSTÄNDE","TYPO","MOBIL & TOUCH","COPY","ROUTEN"];
+
+  // ok · dev · miss · na  — Reihenfolge wie AXES
+  DATA = [
+    ["Homepage",      ["dev","ok","miss","ok","ok","dev","dev","dev","ok"],
+      ["WORK aktiv, obwohl / keine Nav-Seite ist; mobil ohne Menü","Referenz für alle anderen","kein Umschalter","7 Paletten","NO DATA + LIVE/QUEUED gesetzt","H1 64px statt 62","nur CV-Link mit 44px","deutsche Absätze in SYS.03","Ausgänge vollständig"]],
+    ["Work Index",    ["dev","dev","miss","ok","ok","dev","dev","ok","ok"],
+      ["WORK aktiv in Cyan — anderes Muster als die Startseite","kein Rechtslink-Block","kein Umschalter","7 Paletten","NO DATA gesetzt","H1 56px, mobil 34","Nav 10px nebeneinander","englisch durchgehend","Ausgänge vollständig"]],
+    ["Case Study 02", ["miss","dev","miss","ok","ok","dev","dev","dev","dev"],
+      ["kein TS://-Logo, eigene Leiste, mobil ohne Uhr","kein Kontaktblock, keine Rechtslinks","kein Umschalter","7 Paletten","NO DATA 16×, sauber","H1 56px","Nav 10px, eigenes Kopfmuster","deutsche Absätze","kein Rückweg über die Fußzeile"]],
+    ["Case Study — Vorlage", ["ok","dev","miss","ok","ok","dev","dev","ok","ok"],
+      ["Standardkopf, WORK aktiv","kein Kontaktblock","kein Umschalter","7 Paletten","NO DATA gesetzt","H1 52 ok, mobil 32 statt 34","Nav 10px nebeneinander","englisch durchgehend","Ausgänge vollständig"]],
+    ["Blog Index",    ["dev","dev","miss","ok","dev","dev","dev","ok","ok"],
+      ["BLOG aktiv in Cyan","kein Rechtslink-Block","kein Umschalter","7 Paletten","kein Zustand für „noch kein Eintrag“","H1 56px, mobil 36","Nav 10px nebeneinander","englisch durchgehend","Ausgänge vollständig"]],
+    ["Blog Post",     ["dev","dev","miss","ok","dev","dev","dev","ok","ok"],
+      ["BLOG aktiv in Cyan","kein Rechtslink-Block","kein Umschalter","7 Paletten","kein Leerzustand","H1 50px, mobil 30 — beide außerhalb der Skala","Nav 10px nebeneinander","englisch durchgehend","Ausgänge vollständig"]],
+    ["About",         ["ok","ok","miss","ok","na","ok","dev","dev","ok"],
+      ["Standardkopf, ABOUT aktiv","vollständig wie Startseite","kein Umschalter","7 Paletten","keine Datenzustände auf der Seite","H1 62 · mobil 34 — auf der Skala","Nav 10px nebeneinander","[FOLGT] und deutsche Sätze gemischt","Ausgänge vollständig"]],
+    ["Contact",       ["miss","dev","miss","ok","ok","dev","dev","dev","ok"],
+      ["kein TS://-Logo, eigene Leiste ohne Uhr","DATENSCHUTZ statt PRIVACY, kein Standardblock","kein Umschalter","7 Paletten","sechs Zustände sauber dokumentiert","H1 56px","Formfelder ok, Nav 10px","deutsches Wort in englischer Fußzeile","Ausgänge vollständig"]],
+    ["404",           ["ok","dev","miss","ok","ok","na","dev","dev","ok"],
+      ["Standardkopf, nichts aktiv — korrekt","keine Rechtslinks, kein Kontaktblock","kein Umschalter","7 Paletten","Routenliste als Zustand","kein H1 in Chakra Petch","Nav 10px nebeneinander","deutsche Sätze in englischer UI","Routenliste vollständig"]],
+    ["Legal",         ["ok","dev","miss","ok","na","dev","dev","dev","ok"],
+      ["Standardkopf über drei Screens","IMPRINT/PRIVACY da, Kontaktblock fehlt","DE und FR sind Pflicht, nicht Kür","7 Paletten","keine Datenzustände","H1 52 ok, mobil 32 statt 34","Nav 10px nebeneinander","deutscher Rechtstext in englischer Hülle","Ausgänge vollständig"]],
+    ["CV",            ["na","na","na","na","na","na","na","ok","ok"],
+      ["Druckseite ohne Bildschirm-Chrome","Druckseite","PDF, eigene Sprachfassung nötig","helles Druck-Theme, so entschieden","Druckseite","eigene Druck-Skala","kein Touch-Ziel","englisch durchgehend","Nachweis-Spalte verweist zurück"]]
+  ];
+
+  F = [
+    ["K-01","MOBIL & TOUCH","10 Bildschirmseiten","Alle vier Nav-Einträge stehen mobil nebeneinander in 10px, Trefferhöhe rund 14px. Kein Menü, kein Burger.","Ein Kopfknopf mit 44px, der das Vollbild-Menü öffnet — wie im Sprachumschalter gebaut.","KRITISCH"],
+    ["K-02","MOBIL & TOUCH","alle Seiten","Genau ein Element pro Seite trägt min-height:44px — der CV-Link. Theme-Felder liegen bei 10px.","Jedes Touch-Ziel mindestens 44 × 44, Theme-Felder als 44er-Kacheln.","KRITISCH"],
+    ["K-03","SPRACHE","alle 11 Seiten","Kein Sprachumschalter, keine Alternativ-Routen /de · /fr in den Fußzeilen.","Umschalter auf jeder Seite, Rechtstexte in DE und FR.","KRITISCH"],
+    ["K-04","KOPF & NAV","Case Study 02, Contact","Eigene Kopfleisten ohne TS://-Logo, andere Höhe, Contact ohne Uhr, Case Study 02 mobil ohne Uhr.","Ein Kopf-Bauteil: Logo, vier Einträge, Uhr, 66px Desktop / 52px Mobil.","HOCH"],
+    ["K-05","KOPF & NAV","7 Seiten","Drei Muster für „du bist hier“: Startseite hebt WORK in Weiß hervor, Work Index und die Fallstudien in Cyan, Blog Index und Blog Post BLOG in Cyan, 404 und Legal markieren nichts.","Ein Muster. Auf / ist kein Eintrag aktiv.","HOCH"],
+    ["K-06","FUSSZEILE","7 Seiten","Kontaktblock OPEN A CHANNEL nur auf Startseite, About, Blog Index, Blog Post, Work Index — und dort teils nur auf einem der beiden Screens.","Fußzeile ist ein Bauteil: Kontaktblock, Sozial-Zeile, Meta-Leiste, Rechtslinks — überall gleich.","HOCH"],
+    ["K-07","FUSSZEILE","8 Seiten","BASED IN LUXEMBOURG · PRIVACY · IMPRINT stehen nur auf Startseite, About und Legal.","Rechtslinks auf jeder Seite — sonst ist das Impressum nur über Umwege erreichbar.","HOCH"],
+    ["K-08","TYPO","7 von 10 Seiten","H1 im Einsatz: 64 · 62 · 56 · 56 · 56 · 56 · 52 · 52 · 50, mobil 36 · 34 · 32 · 30. Das Fundament kennt 62 · 52 · 34 · 26.","Entweder die Seiten auf die Skala ziehen oder die Skala um 56 erweitern — eine Entscheidung, siehe E-01.","HOCH"],
+    ["K-09","COPY","Startseite, Case Study 02, About, 404","Deutsche Erklärabsätze in einer englischen Oberfläche, etwa der Betriebsstreifen-Text in SYS.03.","Bis der Umschalter steht: eine Sprache pro Fläche, Englisch als Grundfassung.","HOCH"],
+    ["K-10","COPY","Contact","Fußzeile trägt DATENSCHUTZ, alle anderen Seiten PRIVACY.","Ein Wort pro Ziel, in der Sprache der Seite.","MITTEL"],
+    ["K-11","FUSSZEILE","6 Seiten","Koordinaten in zwei Formaten: Desktop 49.61° N · 6.13° E, Mobil 49.6117° N · 6.1300° E.","Ein Format auf beiden Breiten.","MITTEL"],
+    ["K-12","ZUSTÄNDE","Blog Index, Blog Post","Kein Zustand für „noch kein Eintrag“, obwohl der Log bei null startet.","Leerzustand aus dem Zustands-Blatt einsetzen — EMPTY mit Wortlaut.","MITTEL"],
+    ["K-13","ZUSTÄNDE","Zustands-Blatt vs. Seiten","Das Blatt führt LIVE · DEGRADED · EMPTY, die Seiten nutzen zusätzlich QUEUED und ONLINE.","Vokabular abgleichen und im Blatt nachtragen, damit die Liste vollständig ist.","MITTEL"],
+    ["K-14","KOPF & NAV","8 Seiten","Statuspunkt ONLINE nur auf Startseite und About, obwohl die Übergabe TopNav · StatusDot als globales Bauteil führt.","Entweder überall oder aus der Übergabe streichen.","MITTEL"],
+    ["K-15","COPY","alle Seiten","Platzhalter in vier Schreibweisen: [FOLGT], [SOON] fehlt ganz, [PLACEHOLDER DATA], [DATE], dazu deutsche wie [STRASSE UND HAUSNUMMER] neben englischen wie [MAIL PROVIDER].","Eine Notation und eine Sprache, damit beim Bauen nichts übersehen wird.","MITTEL"],
+    ["K-16","ROUTEN","Case Study 02","Ohne Kontaktblock und Rechtslinks endet die Seite ohne Rückweg außer der Nav.","Fußzeile vervollständigen — dann trägt jede Seite drei Ausgänge.","MITTEL"],
+    ["K-17","THEME","Sprachumschalter-Canvas","Fünf Paletten statt sieben — im Vollbild-Menü und in der Fußzeile.","Sieben, wie auf allen elf Seiten. Eigener Fehler beim Bauen.","MITTEL"],
+    ["K-18","TYPO","Case Study 02, Contact","Kopfhöhe über Padding statt der 66px / 52px des Kopf-Bauteils.","Dieselbe Höhe wie überall, damit der Sprung beim Seitenwechsel ausbleibt.","NIEDRIG"]
+  ];
+
+  RE = [
+    ["K-01","MOBIL & TOUCH","Vier Nav-Einträge mobil in 10px nebeneinander, Trefferhöhe rund 14px","Menüknopf 44 × 44 auf allen zehn Seiten, Navigation liegt im Vollbild-Menü","BEHOBEN"],
+    ["K-02","MOBIL & TOUCH","Nur der CV-Link trug 44px, Theme-Felder lagen bei 10px","Theme-Kacheln 44 × 44, Menü- und Fußzeilen-Ziele ebenso","BEHOBEN"],
+    ["K-03","SPRACHE","Kein Umschalter, keine Alternativ-Routen","EN ▾ im Kopf jeder Seite, /de · /fr in jeder Meta-Leiste","GEBAUT"],
+    ["K-04","KOPF & NAV","Case Study 02 und Contact mit eigenen Kopfleisten ohne Logo","Beide auf das Kopf-Bauteil gezogen: 66px, Logo, vier Einträge, Uhr","BEHOBEN"],
+    ["K-05","KOPF & NAV","Drei Muster für „du bist hier“","Ein Muster: aktiver Eintrag weiß, Cyan bleibt Hover und Aktion, auf / nichts aktiv","BEHOBEN"],
+    ["K-06","FUSSZEILE","Kontaktblock fehlte auf sieben Seiten","Zwei Fassungen: lang mit Kontakt und Sozial-Zeile, kurz ohne — nach Einsatzplan","BEHOBEN"],
+    ["K-07","FUSSZEILE","Rechtslinks nur auf drei Seiten","BASED IN LUXEMBOURG · PRIVACY · IMPRINT in jeder Meta-Leiste","BEHOBEN"],
+    ["K-08","TYPO","H1 in neun Größen im Einsatz","Zwei Stufen: 62 für Startseite und About, 52 sonst, mobil 34 — Regel im Fundament-Blatt","BEHOBEN"],
+    ["K-09","COPY","Deutsche Erklärabsätze in englischer Oberfläche","Entschieden: bleiben stehen, bis der Umschalter sie ablöst","ENTSCHIEDEN"],
+    ["K-10","COPY","Contact-Fußzeile trug DATENSCHUTZ gegen PRIVACY überall sonst","PRIVACY, wie auf allen anderen Seiten","BEHOBEN"],
+    ["K-11","FUSSZEILE","Koordinaten in zwei Formaten","49.6117° N · 6.1300° E auf beiden Breiten","BEHOBEN"],
+    ["K-12","ZUSTÄNDE","Blog Index und Blog Post ohne Leerzustand","Zwei Leerzustände im Index (kein Eintrag, kein Treffer), einer im Beitrag","GEBAUT"],
+    ["K-13","ZUSTÄNDE","Vokabular unvollständig: QUEUED und ONLINE fehlten im Referenzblatt","Nachtrag STATE.05 mit Bedeutung, Abgrenzung und Einsatzort","BEHOBEN"],
+    ["K-14","KOPF & NAV","Statuspunkt nur auf zwei Seiten","Punkt in der Meta-Leiste jeder Seite, groß im Hero nur auf der Startseite","BEHOBEN"],
+    ["K-15","COPY","Platzhalter in vier Schreibweisen","Drei englische Klassen: [SOON], [PLACEHOLDER], [ASSET]","BEHOBEN"],
+    ["K-16","ROUTEN","Case Study 02 ohne Rückweg in der Fußzeile","Kurze Fußzeile mit Rechtslinks und Kontaktweg","BEHOBEN"],
+    ["K-17","THEME","Sprachumschalter-Blatt zeigte fünf Paletten statt sieben","Menü trägt keine Theme-Wahl mehr — sie steht in der Fußzeile, dort sieben","BEHOBEN"],
+    ["K-18","TYPO","Kopfhöhe über Padding statt 66px / 52px","Ein Kopf-Bauteil, gleiche Höhe auf allen Seiten","BEHOBEN"],
+    ["E-01","TYPO","Skala erweitern oder Seiten ziehen?","Seiten gezogen, keine Stufe 56 — Begründung im Fundament-Blatt","ENTSCHIEDEN"],
+    ["E-02","COPY","Sprache der Oberfläche","Englisch als Gerüst, deutsche Absätze bleiben bis zum Umschalter","ENTSCHIEDEN"],
+    ["E-03","SPRACHE","Umschalter auf jeder Seite?","Ja — gebaut, Übersetzungen folgen beim Umsetzen","ENTSCHIEDEN"],
+    ["K-19","ROUTEN","Fallstudien-Vorlage trug die Systemnummer 04, die Liste führt nur 01 und 02","Vorlage als solche benannt, Beispielinhalt auf System 02 gezogen — die 04 bleibt nur im Dateinamen","BEHOBEN"],
+    ["K-20","COPY","Navigation sagte BLOG, der Abschnitt auf der Startseite LOG — zwei Wörter für dieselbe Sache","Beschriftung überall LOG, auch in der Übersetzungsmatrix. Die Route bleibt /blog, weil sie geteilt und verlinkt wird","BEHOBEN"],
+    ["K-21","ROUTEN","Kein Merkmal für offenen oder geschlossenen Quellcode — der stärkste Beleg war unsichtbar","Eigene Achse neben dem Stack: <> PUBLIC mit Repo-Link, <> PRIVATE mit Grund (NDA, INTERN). Systemliste, Work Index, beide Fallstudien, Datenvertrag 9.0","GEBAUT"],
+    ["K-22","TYPO","Nur zwei Breiten gezeichnet, dazwischen stand nichts — der Bau hätte raten müssen","Drei Breakpoints entschieden und begründet: 900 · 720 · 560, Regeln und Testbreiten im Fundament-Blatt LAYOUT.02","ENTSCHIEDEN"],
+    ["K-23","ZUSTÄNDE","ONLINE trug zwei Bedeutungen: im Hero die Verfügbarkeit der Person, in der Meta-Leiste die der Seite","Hero heißt jetzt AVAILABLE, Meta-Leiste bleibt ONLINE. Beide Wörter in STATE.05 definiert und abgegrenzt","BEHOBEN"],
+    ["K-24","FUSSZEILE","Startseite und About trugen die Rechtslinks mobil als graue Textzeile, die übrigen acht als Links","Überall Links mit 44px Trefferfläche — bei Pflichtangaben kein Stilfrage","BEHOBEN"],
+    ["K-25","MOBIL & TOUCH","Mobil-Durchsicht gegen die Desktop-Basis: 10 Rahmen, alle Achsen","Menüknopf, 52px-Kopf, H1 34, sieben Theme-Kacheln à 44px, Meta-Leiste mit Status, ALT und Koordinaten auf jeder Seite. CV hat bewusst keinen Mobil-Rahmen — Druckseite","GEPRÜFT"],
+    ["K-27","MOBIL & TOUCH","Die erste Touch-Prüfung zählte nur Treffer auf min-height:44px — Chips, die ihre Höhe über Padding bekommen, blieben unsichtbar: Filter im Work Index, Tags im Log, dazu kleine Links in Fallstudie, Beitrag und Trajektorie","Jedes klickbare Element in den 390er-Rahmen nachgemessen statt gezählt: 17 Chips und 14 Kleinziele auf 44px angehoben. Prüfmethode steht jetzt in der Regel — messen, nicht greppen","BEHOBEN"],
+    ["K-26","ROUTEN","Die Abschnittsfolge der Startseite war nirgends festgehalten — eine Kopie geriet in die Reihenfolge 02 · 01 · 03 · 04","HOME.01 im Startseiten-Blatt: Hero → SYS.01 → 02 → 03 → 04 → Fuß, mit Begründung und der Regel, dass Kopien der Quelle folgen","BEHOBEN"],
+    ["K-28","LAYOUT","Zwischen den Entwurfsbreiten war nur „fließen, nicht umbauen" festgelegt. Nachgerechnet bricht die Spec-Rail bei 1077 und der Hero der Startseite bei 1012 — der Bereich 1077–900 war ungezeichnet und ungeprüft, und genau dort liegt ein iPad im Querformat","Neuer Schalter 1080 in LAYOUT.03, hergeleitet aus neun Bauteilen mit fester Geometrie. Fünf Zweispalter lösen sich dort gemeinsam auf, Vorschauspalte der Work-Zeile entfällt. Zwei annotierte Rahmen bei 1024. Prüfprotokoll auf sieben Breiten erweitert, jeder Schalter beidseitig","BEHOBEN"],
+    ["K-29","LAYOUT","Die Regel „< 560 Betriebsraster scrollt waagerecht" zeigte auf das falsche Bauteil — das Raster ist bei 91 Tagen 243px breit und hat nie gescrollt","Regel umgehängt: waagerecht scrollt der Deploy-Streifen, umbrechen die fünf Ops-Kacheln (5 → 3 → 2). Korrigiert in LAYOUT.02 und README 6","BEHOBEN"],
+    ["E-04","THEME","Fünf oder sieben Paletten im Umschalter-Blatt","Aufgelöst: Theme gehört in die Fußzeile, das Menü trägt Adresse und Uhr","ENTSCHIEDEN"]
+  ];
+
+  DATA2 = [
+    ["Homepage",      ["ok","ok","ok","ok","ok","ok","ok","dev","ok"], ["kein Eintrag aktiv, EN ▾ im Kopf","lang, Kontakt und Sozial-Zeile","Umschalter steht, Übersetzung folgt","7 Paletten in der Fußzeile","NO DATA, LIVE, QUEUED gesetzt","H1 62 / 34","Menüknopf 44px, alle Ziele ab 44px","deutsche Absätze in SYS.03 — bewusst","Ausgänge vollständig"]],
+    ["Work Index",    ["ok","ok","ok","ok","ok","ok","ok","ok","ok"], ["WORK weiß","lang, Kontaktblock ergänzt","Umschalter steht","7 Paletten","NO DATA gesetzt","H1 52 / 34","44px durchgehend","englisch","Ausgänge vollständig"]],
+    ["Case Study 02", ["ok","ok","ok","ok","ok","ok","ok","dev","ok"], ["Kopf-Bauteil ersetzt die eigene Leiste","kurz, BUILD [SHA] und NO DATA erhalten","Umschalter steht","7 Paletten","NO DATA 16×","H1 52 / 34","44px durchgehend","deutsche Absätze — bewusst","Rückweg über die Fußzeile"]],
+    ["Case Study — Vorlage", ["ok","ok","ok","ok","ok","ok","ok","ok","ok"], ["WORK weiß","kurz","Umschalter steht","7 Paletten","NO DATA gesetzt","H1 52 / 34","44px durchgehend","englisch","Ausgänge vollständig"]],
+    ["Blog Index",    ["ok","ok","ok","ok","ok","ok","ok","ok","ok"], ["BLOG weiß","lang, Kontaktblock ergänzt","Umschalter steht","7 Paletten","zwei Leerzustände gebaut","H1 52 / 34","44px durchgehend","englisch","Ausgänge vollständig"]],
+    ["Blog Post",     ["ok","ok","ok","ok","ok","ok","ok","ok","ok"], ["BLOG weiß","lang, Kontaktblock ergänzt","Umschalter steht","7 Paletten","Leerzustand für den Fuß gebaut","H1 52 / 34","44px durchgehend","englisch","Index als Ausweg"]],
+    ["About",         ["ok","ok","ok","ok","na","ok","ok","dev","ok"], ["ABOUT weiß","lang","Umschalter steht","7 Paletten","keine Datenzustände","H1 62 / 34","44px durchgehend","deutsche Sätze — bewusst","Ausgänge vollständig"]],
+    ["Contact",       ["ok","ok","ok","ok","ok","ok","ok","ok","ok"], ["Kopf-Bauteil ersetzt die eigene Leiste","kurz, im Satzspiegel","Umschalter steht","7 Paletten","sechs Formzustände","H1 52 / 34","44px durchgehend","DATENSCHUTZ → PRIVACY","Ausgänge vollständig"]],
+    ["Legal",         ["ok","ok","ok","ok","na","ok","ok","dev","ok"], ["Kopf auf allen drei Screens","kurz, eigene Seite weiß markiert","Umschalter in beiden Desktop-Rahmen","7 Paletten","keine Datenzustände","H1 52 / 34","44px durchgehend","deutscher Rechtstext — Pflicht","Ausgänge vollständig"]],
+    ["404",           ["ok","ok","ok","ok","ok","na","ok","dev","ok"], ["nichts aktiv — korrekt","kurz","Umschalter steht","7 Paletten","Routenliste als Zustand","kein H1 in Chakra Petch","44px durchgehend","deutsche Sätze — bewusst","Routenliste vollständig"]],
+    ["CV",            ["na","na","na","na","na","na","na","ok","ok"], ["Druckseite","Druckseite","eigene Sprachfassung beim Bauen","helles Druck-Theme","Druckseite","eigene Druck-Skala","kein Touch-Ziel","englisch","Nachweis-Spalte verweist zurück"]]
+  ];
+
+  renderVals() {
+    const SEV = { KRITISCH: "#FF2D55", HOCH: "#FFB000", MITTEL: "#C6D1DB", NIEDRIG: "#8B98A6" };
+    const GL = {
+      ok:   { g: "●", c: "#00E5FF", bg: "rgba(0,229,255,.07)" },
+      dev:  { g: "▲", c: "#FFB000", bg: "rgba(255,176,0,.09)" },
+      miss: { g: "✕", c: "#FF2D55", bg: "rgba(255,45,85,.09)" },
+      na:   { g: "–", c: "#7C8996", bg: "transparent" }
+    };
+    const count = { ok: 0, dev: 0, miss: 0, na: 0 };
+    const rows = this.DATA.map(([page, states, notes]) => ({
+      page,
+      cells: states.map((s, i) => {
+        count[s]++;
+        const v = GL[s];
+        return {
+          glyph: v.g, title: this.AXES[i] + " — " + notes[i],
+          style: "flex:1;display:flex;align-items:center;justify-content:center;height:34px;margin:0 2px;font:600 12px 'JetBrains Mono',monospace;color:" + v.c + ";background:" + v.bg + ";cursor:help"
+        };
+      })
+    }));
+    const sev = {};
+    this.F.forEach(f => { sev[f[5]] = (sev[f[5]] || 0) + 1; });
+    const ST = { BEHOBEN: "#00E5FF", GEBAUT: "#00E5FF", GEPRÜFT: "#00E5FF", ENTSCHIEDEN: "#C6D1DB", OFFEN: "#FFB000" };
+    const count2 = { ok: 0, dev: 0, miss: 0, na: 0 };
+    const rows2 = this.DATA2.map(([page, states, notes]) => ({
+      page,
+      cells: states.map((s, i) => { count2[s]++; const v = GL[s];
+        return { glyph: v.g, title: this.AXES[i] + " — " + notes[i],
+          style: "flex:1;display:flex;align-items:center;justify-content:center;height:34px;margin:0 2px;font:600 12px 'JetBrains Mono',monospace;color:" + v.c + ";background:" + v.bg + ";cursor:help" }; })
+    }));
+    const st = {};
+    this.RE.forEach(r => { st[r[4]] = (st[r[4]] || 0) + 1; });
+    return {
+      axes: this.AXES, rows, rows2,
+      recheck: this.RE.slice().sort((a, b) => (a[0][0] === b[0][0] ? 0 : a[0][0] === "K" ? -1 : 1)).map(([id, axis, was, now, state]) => ({ id, axis, was, now, state, color: ST[state] || "#8B98A6" })),
+      reTally: "33 PUNKTE · " + ((st.BEHOBEN||0) + (st.GEBAUT||0) + (st["GEPRÜFT"]||0)) + " ERLEDIGT · " + (st.ENTSCHIEDEN||0) + " ENTSCHIEDEN · 0 OFFEN",
+      tally2: "99 FELDER · " + count2.ok + " KONFORM · " + count2.dev + " BEWUSSTE ABWEICHUNG · " + count2.na + " N/A",
+      tally: "99 FELDER · " + count.ok + " KONFORM · " + count.dev + " ABWEICHUNG · " + count.miss + " FEHLT · " + count.na + " N/A",
+      sevTally: this.F.length + " BEFUNDE · " + (sev.KRITISCH||0) + " KRITISCH · " + (sev.HOCH||0) + " HOCH · " + (sev.MITTEL||0) + " MITTEL · " + (sev.NIEDRIG||0) + " NIEDRIG",
+      findings: this.F.map(([id, axis, where, is, should, s]) => ({ id, axis, where, is, should, sev: s, color: SEV[s] }))
+    };
+  }
+}
+</script>
+</body>
+</html>

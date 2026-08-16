@@ -1,0 +1,75 @@
+/* layout.css — Inhaltsspalte und Breakpoints.
+   Herleitung jeder Zahl: Blatt "Intermediate Widths" (LAYOUT.03) und
+   Foundations (LAYOUT.02). Hier stehen nur die Werte, keine Begründung.
+
+   Vier Schalter: 1080 · 900 · 720 · 560
+   1080  die fünf Zweispalter lösen sich auf (Spec-Rail 400 + 80 + Lesemaß 517 = 1077)
+    900  Kopf schaltet auf den Menüknopf (Nav + Umschalter + Uhr brauchen ~520)
+    720  H1 auf 34, Tabellen einspaltig (zweite Spalte bliebe unter 300)
+    560  Tabellenzeilen werden Karten (sechs Rasterspalten ergäben 60px)
+
+   Kein Schalter liegt auf einer verbreiteten Gerätebreite: 1080 statt 1024,
+   900 statt 768. Ein Gerät soll nie im Grenzfall liegen.                       */
+
+/* Inhaltsspalte — eine Regel für alle Seiten. Ersetzt jede lokale max-width. */
+.col {
+  width: min(1160px, 100% - 80px);
+  margin-inline: auto;
+}
+@media (max-width: 559px) {
+  .col { width: calc(100% - 44px); }   /* Mobil-Entwürfe: Rand 22 */
+}
+
+/* ---- >= 1080: zweispaltig, wie gezeichnet -------------------------------- */
+/* minmax(0,1fr) statt 1fr: eine 1fr-Spalte hat implizit min-width:auto und
+   wird von einem <pre>, das nicht umbricht, aufgesprengt.                    */
+@media (min-width: 1080px) {
+  .hero     { display: grid; grid-template-columns: minmax(0,1fr) 480px; gap: 72px; align-items: center }
+  .cs-hero  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 80px; align-items: end }
+  .cs-spec  { display: grid; grid-template-columns: minmax(0,1fr) 400px; gap: 80px; align-items: start }
+  .cs-prob  { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 80px; align-items: start }
+  .cs-arch  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 60px; align-items: start }
+  .rail     { position: sticky; top: 90px }
+  .work-row { grid-template-columns: 40px minmax(0,1fr) 132px 104px 130px 20px }
+}
+
+/* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
+@media (max-width: 1079px) {
+  .hero, .cs-hero, .cs-spec, .cs-prob, .cs-arch {
+    display: flex; flex-direction: column; gap: 44px;
+  }
+  .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
+  .work-row        { grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px }
+  .work-row .prev  { display: none }      /* weglassen, nicht verkleinern */
+}
+
+/* ---- < 900: Kopf schaltet um --------------------------------------------- */
+@media (max-width: 899px) {
+  .nav-desktop  { display: none }
+  .nav-button   { display: inline-flex }
+  .foot-meta    { grid-template-columns: 1fr }   /* zwei Zeilen -> drei */
+  .sys-pin      { display: none }
+}
+
+/* ---- < 720: Typo und Tabellen -------------------------------------------- */
+@media (max-width: 719px) {
+  h1              { font-size: var(--t-disp-34) }
+  .decision-table { grid-template-columns: 1fr }
+  .ops-tiles      { grid-template-columns: repeat(3, minmax(0,1fr)) }
+}
+
+/* ---- < 560: Zeilen werden Karten ----------------------------------------- */
+@media (max-width: 559px) {
+  .work-row, .sys-row, .log-row { display: flex; flex-direction: column; gap: 10px }
+  .ops-tiles    { grid-template-columns: repeat(2, minmax(0,1fr)) }
+  .deploy-strip { overflow-x: auto }
+  /* Das Betriebsraster braucht hier nichts: 91 Tage sind 13 Spalten
+     a 15px plus 12 Abstaende a 4px = 243px.                                  */
+}
+
+/* ---- Touch haengt am Zeiger, nicht an der Breite ------------------------- */
+@media (pointer: coarse) {
+  a, button, [role="button"], .chip, .tag { min-height: 44px; min-width: 44px }
+  .terminal-input { pointer-events: none }   /* read-only, kein Fake-Prompt */
+  .work-row .prev { display: none }          /* es gibt kein Hover */
+}

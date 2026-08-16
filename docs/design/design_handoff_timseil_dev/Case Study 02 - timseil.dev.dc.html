@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:2px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Case study — 02 TIMSEIL.DEV · aus dem Betriebsblatt gefüllt, Zahlen bleiben leer bis sie existieren</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1360 — Why → Constraints → Architecture → Decisions → Operations → Evidence</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Case study 02" style="width:1360px;box-sizing:border-box;padding:0 0 40px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:center;height:66px;margin:0 44px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:30px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;cursor:default">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span>
+</div>
+</div>
+
+<div style="padding:44px 44px 0">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:24px">
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996"><span style="cursor:pointer" style-hover="color:#00E5FF">WORK</span> / <span style="color:#C6D1DB">02 TIMSEIL.DEV</span></span>
+<span style="font:400 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">/work/timseil-dev</span>
+<span style="flex:1"></span>
+<span style="width:7px;height:7px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.4s ease-in-out infinite"></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">● LIVE</span>
+</div>
+<div style="display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:end;padding-bottom:36px;border-bottom:1px solid rgba(139,152,166,.16)">
+<div>
+<div style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:18px"><span style="color:#00E5FF">SYS.02</span> — CASE STUDY</div>
+<h1 style="margin:0 0 18px;font:500 52px/1.04 'Chakra Petch',sans-serif;letter-spacing:-.005em;color:#E8EEF4">timseil.dev</h1>
+<p style="margin:0;max-width:60ch;font:400 15px/1.7 'Geist',sans-serif;color:#8B98A6;text-wrap:pretty">A portfolio that claims backend and DevOps work while running on someone else's platform proves nothing. So this one runs on a server I rent, deploys itself, measures itself, and shows the numbers — including the ones that are missing.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px 20px;padding-bottom:6px">
+<div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">ROLE</div><div style="font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4">Solo — design, build, operate</div></div>
+<div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">TIMEFRAME</div><div style="font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4">[START] → live</div></div>
+<div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">STACK</div><div style="font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4">Next.js · Postgres · Docker</div></div>
+<div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">SOURCE</div><div style="font:500 13px 'JetBrains Mono',monospace;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF"><span style="color:#7C8996">&lt;&gt;</span> PUBLIC · [REPO URL]</div></div>
+<div><div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:7px">HOST</div><div style="font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4">Own VPS · Dokploy · Traefik</div></div>
+</div>
+</div>
+</div>
+
+<div style="padding:40px 44px 0">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">01</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">CONSTRAINTS</span>
+<span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DECIDED BEFORE THE FIRST LINE OF CODE</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:44px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">ONE PERSON</div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">No rotation, no second pair of eyes. Everything has to come back up after a reboot without me watching.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">ONE SERVER</div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">One VPS, four containers — proxy, web, health, database. No cluster to hide behind — and no cluster to explain in an interview I could not defend.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">NO THIRD PARTY IN THE REQUEST PATH</div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">The privacy page says visitors are not handed to anyone. That rules out a CDN proxy in front, so it rules out its DDoS protection too.</div>
+</div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:16px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:8px">NOTHING UNPROVABLE</div>
+<div style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Every claim on the site points at a system that runs. Where there is no system, the line says so.</div>
+</div>
+</div>
+</div>
+
+<div style="padding:0 44px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">02</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">ARCHITECTURE</span>
+<span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">REQUEST PATH · DEPLOY PATH · MEASUREMENT</span>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:26px 28px;margin-bottom:20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:16px">REQUEST</div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+<span style="padding:10px 14px;border:1px solid rgba(139,152,166,.25);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">DNS · A record</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→</span>
+<span style="padding:10px 14px;border:1px solid rgba(0,229,255,.4);font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Traefik · TLS, routing</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→</span>
+<span style="padding:10px 14px;border:1px solid rgba(139,152,166,.25);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Next.js container · pages + /api</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→</span>
+<span style="padding:10px 14px;border:1px solid rgba(139,152,166,.25);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Postgres 16 · content</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">+</span>
+<span style="padding:10px 14px;border:1px solid rgba(139,152,166,.25);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Go health service · SQLite aggregate</span>
+</div>
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:16px">DEPLOY</div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+<span style="padding:10px 14px;border:1px solid rgba(139,152,166,.25);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">git push</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→</span>
+<span style="padding:10px 14px;border:1px solid rgba(139,152,166,.25);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">GitHub Actions · build, test, push image</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→</span>
+<span style="padding:10px 14px;border:1px solid rgba(139,152,166,.25);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">webhook</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→</span>
+<span style="padding:10px 14px;border:1px solid rgba(0,229,255,.4);font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Dokploy · pull, restart, health gate</span>
+</div>
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:16px">MEASUREMENT</div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<span style="padding:10px 14px;border:1px dashed rgba(139,152,166,.3);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">External monitor · 60s</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→ uptime</span>
+<span style="width:20px"></span>
+<span style="padding:10px 14px;border:1px dashed rgba(139,152,166,.3);font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB">Go service reads the access log · 5 min rollup</span>
+<span style="font:400 13px 'JetBrains Mono',monospace;color:#7C8996">→ p95, error rate →</span>
+<span style="padding:10px 14px;border:1px solid rgba(0,229,255,.4);font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">/api/health</span>
+</div>
+</div>
+<p style="margin:0 0 44px;max-width:96ch;font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6">A host cannot report its own outage, so uptime is measured from outside. Everything else is read from the log the proxy already writes — a five-minute rollup into SQLite, served as one small JSON document. No metrics stack for one host and three services.</p>
+</div>
+
+<div style="padding:0 44px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">03</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">DECISIONS</span>
+<span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EACH ONE NAMES WHAT IT COSTS</span>
+</div>
+<div style="display:grid;grid-template-columns:200px 1fr 1fr;gap:0;border-top:1px solid rgba(139,152,166,.16);margin-bottom:44px">
+<div style="padding:12px 16px 12px 0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">DECISION</div>
+<div style="padding:12px 16px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">WHY</div>
+<div style="padding:12px 16px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">REJECTED — AND WHAT IT COSTS</div>
+
+<div style="padding:16px 16px 16px 0;font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.1)">Uptime from outside</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.1)">A server that is down cannot report that it is down. The measurement has to live somewhere else.</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.1)">Self-reported uptime — free, and worthless during the only minutes that matter.</div>
+
+<div style="padding:16px 16px 16px 0;font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.1)">p95 from the proxy log</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.1)">Traefik already writes every request. A five-minute rollup into SQLite is enough resolution to see a regression.</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.1)">Prometheus and Grafana — better graphs, two more containers to keep alive and patch for one host.</div>
+
+<div style="padding:16px 16px 16px 0;font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.1)">No proxy in front</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.1)">A CDN proxy would be a processor in the request path and would make the privacy page false.</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.1)">Cloudflare in front — free DDoS protection and caching, given up for one sentence I want to keep true.</div>
+
+<div style="padding:16px 16px 16px 0;font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.1)">Nightly dump, monthly restore</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.1)">A backup nobody has restored is not a backup. The restore is on the calendar, not in good intentions.</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.1)">Snapshots only — one click to take, unknown to recover. Costs an hour a month to do it properly.</div>
+
+<div style="padding:16px 16px 16px 0;font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.1)">Short retention</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.1)">Access logs 14 days, app logs 7, rate-limit IPs 10 minutes in memory. Enough to debug, little to lose.</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.1)">Keep everything — useful once a year, a liability every day.</div>
+
+<div style="padding:16px 16px 16px 0;font:500 13px 'JetBrains Mono',monospace;color:#E8EEF4">Mail split in two</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">A transactional provider with SPF, DKIM and DMARC for the form; the mailbox stays separate.</div>
+<div style="padding:16px;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6">Sending straight from the server — one less dependency, and mail that lands in spam.</div>
+</div>
+</div>
+
+<div style="padding:0 44px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">04</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">OPERATIONS</span>
+<span style="flex:1;height:1px;background:rgba(139,152,166,.16)"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">SOURCE: /api/health</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px">
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:10px">UPTIME · 91 D</div>
+<div style="font:500 26px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">— NO DATA</div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:10px">P95</div>
+<div style="font:500 26px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">— NO DATA</div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:10px">ERROR RATE</div>
+<div style="font:500 26px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">— NO DATA</div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:10px">DEPLOY · MEDIAN</div>
+<div style="font:500 26px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">— NO DATA</div>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 20px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:10px">INCIDENTS</div>
+<div style="font:500 26px 'JetBrains Mono',monospace;color:#7C8996;font-variant-numeric:tabular-nums">— NO DATA</div>
+</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:12px;padding:14px 18px;border-left:1px solid rgba(255,176,0,.5);background-color:#0E141C;margin-bottom:44px">
+<span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#FFB000">EMPTY ON PURPOSE</span>
+<span style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">These five tiles fill from the first day of operation and stay empty until then. A case study that shows uptime before the server has run is the thing this page exists to argue against.</span>
+</div>
+<div style="margin-bottom:44px">
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:12px">
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">OPERATION · 91 DAYS (13 WEEKS) · ONE CELL IS ONE DAY</span>
+<span style="flex:1"></span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;background:rgba(0,229,255,.55)"></span>NO INCIDENT</span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;background:#FFB000"></span>DEGRADED</span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;background:#FF2D55"></span>OUTAGE</span>
+<span style="display:flex;align-items:center;gap:7px;font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996"><span style="width:9px;height:9px;border:1px dashed rgba(139,152,166,.4)"></span>NO DATA</span>
+</div>
+<div style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,15px);grid-auto-columns:15px;gap:4px;margin-bottom:12px"><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span></div>
+<p style="margin:0;max-width:96ch;font:400 12.5px/1.7 'Geist',sans-serif;color:#8B98A6">Ein Tag ohne Vorfall ist eine Zelle, ein Ausfall eine Kerbe — und die Kerbe ist hier anklickbar: sie öffnet Dauer, verbrauchtes Error-Budget, Ursache, Behebung und den Log-Eintrag, der es erklärt. Ohne Post-Mortem gibt es keine Kerbe. Heute ist das Raster leer, weil der erste Betriebstag noch nicht gezählt ist. Quelle: <span style="color:#C6D1DB">/api/health</span>, Feld <span style="color:#C6D1DB">days</span> dieses Systems.</p>
+</div>
+</div>
+
+<div style="padding:0 44px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:44px">
+<div>
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">05</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">WHAT THIS SYSTEM PROVES</span>
+</div>
+<p style="margin:0 0 16px;font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6">Thirteen tracks in the training log carry this system as their evidence. It is the only system that carries any.</p>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">GO</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">TYPESCRIPT</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">SQL</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">HTTP / JSON APIS</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">WEBHOOKS</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">POSTGRESQL</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">SQLITE</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">LINUX</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">DOCKER</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">CI/CD</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">LOGGING &amp; OBSERVABILITY</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">GIT</span>
+<span style="padding:6px 10px;border:1px solid rgba(139,152,166,.25);font:500 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">AWS S3 · BACKUPS</span>
+</div>
+</div>
+<div>
+<div style="display:flex;align-items:baseline;gap:14px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">06</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">OPEN QUESTIONS</span>
+</div>
+<p style="margin:0 0 16px;font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6">Four things I expect operation to answer. They get answered here, with dates, not removed.</p>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:12px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:22px">01</span><span style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Does one VPS hold up when a post gets attention, without a proxy in front to absorb it?</span></div>
+<div style="display:flex;gap:12px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:22px">02</span><span style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Is a five-minute rollup fine-grained enough to catch a regression I care about, or does it hide short spikes?</span></div>
+<div style="display:flex;gap:12px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:22px">03</span><span style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">How long does a restore from the nightly dump actually take, measured, not estimated?</span></div>
+<div style="display:flex;gap:12px"><span style="font:500 10px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:22px">04</span><span style="font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Does form mail arrive in an inbox rather than a spam folder, across the providers people actually use?</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="padding:0 44px">
+<div style="display:flex;align-items:center;gap:26px;padding:20px 24px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12)">
+<div>
+<div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:9px">CHECK IT YOURSELF</div>
+<div style="font:400 13px/1.6 'Geist',sans-serif;color:#C6D1DB;max-width:70ch">The repository is public, the health endpoint answers, and the log entries about this system are written while it runs. You are inside the system this page describes.</div>
+</div>
+<span style="flex:1"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">GITHUB →</span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/api/health →</span>
+<span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">01 ENTRY IN THE LOG →</span>
+</div>
+</div>
+
+<div style="margin:44px 44px 0">
+<div style="height:5px;opacity:.5;background-image:repeating-linear-gradient(90deg,rgba(139,152,166,.35) 0 1px,transparent 1px 96px),repeating-linear-gradient(90deg,rgba(139,152,166,.14) 0 1px,transparent 1px 16px)"></div>
+
+</div>
+
+
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);margin:48px 44px 0;padding:14px 0 26px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD [SHA]</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME <span style="color:#8B98A6">— NO DATA</span></span>
+<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">CV → TERMINAL AUF / : cv</span>
+<span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span>
+<span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:32px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Mobile · 390 — gleiche Reihenfolge, Entscheidungen gestapelt</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Case study 02 — Mobile" style="width:390px;box-sizing:border-box;padding:0 0 28px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:center;height:52px;margin:0 22px;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<span style="flex:1"></span>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+
+<div style="padding:24px 22px 0">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#7C8996;margin-bottom:6px"><span style="color:#C6D1DB">WORK</span> / 02 TIMSEIL.DEV</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+<span style="width:6px;height:6px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.4s ease-in-out infinite"></span>
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">● LIVE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">/work/timseil-dev</span>
+</div>
+<h1 style="margin:0 0 14px;font:500 34px/1.06 'Chakra Petch',sans-serif;color:#E8EEF4">timseil.dev</h1>
+<p style="margin:0 0 22px;font:400 13px/1.7 'Geist',sans-serif;color:#8B98A6;text-wrap:pretty">A portfolio that claims backend and DevOps work while running on someone else's platform proves nothing. So this one runs on a server I rent, deploys itself, measures itself, and shows the numbers — including the ones that are missing.</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px 16px;padding-bottom:22px;border-bottom:1px solid rgba(139,152,166,.16);margin-bottom:26px">
+<div><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:5px">ROLE</div><div style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Solo — build, operate</div></div>
+<div><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:5px">TIMEFRAME</div><div style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">[START] → live</div></div>
+<div><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:5px">STACK</div><div style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">Next.js · Postgres</div></div>
+<div><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:5px">SOURCE</div><div style="display:flex;align-items:center;min-height:44px;font:500 11.5px 'JetBrains Mono',monospace;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF"><span style="color:#7C8996">&lt;&gt;</span>&nbsp;PUBLIC · [REPO URL]</div></div>
+<div><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:5px">HOST</div><div style="font:500 11.5px 'JetBrains Mono',monospace;color:#E8EEF4">VPS · Dokploy</div></div>
+</div>
+</div>
+
+<div style="padding:0 22px">
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">01</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">CONSTRAINTS</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;margin-bottom:32px">
+<div style="border-left:1px solid rgba(0,229,255,.35);padding-left:12px"><div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:6px">ONE PERSON</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">No rotation. Everything has to come back up after a reboot without me watching.</div></div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:12px"><div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:6px">ONE SERVER</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">One VPS, four containers — proxy, web, health, database. No cluster to hide behind, and none I could not defend.</div></div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:12px"><div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:6px">NO THIRD PARTY IN THE REQUEST PATH</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">The privacy page says visitors are not handed to anyone. That rules out a CDN proxy — and its DDoS protection.</div></div>
+<div style="border-left:1px solid rgba(139,152,166,.2);padding-left:12px"><div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4;margin-bottom:6px">NOTHING UNPROVABLE</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">Every claim points at a system that runs. Where there is none, the line says so.</div></div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">02</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">ARCHITECTURE</span>
+</div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:18px 16px;margin-bottom:14px">
+<div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">REQUEST</div>
+<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">
+<span style="padding:8px 10px;border:1px solid rgba(139,152,166,.25);font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB">DNS · A record</span>
+<span style="padding:8px 10px;border:1px solid rgba(0,229,255,.4);font:500 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">Traefik · TLS, routing</span>
+<span style="padding:8px 10px;border:1px solid rgba(139,152,166,.25);font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB">Next.js · pages + /api</span>
+<span style="padding:8px 10px;border:1px solid rgba(139,152,166,.25);font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB">Postgres 16 · Go health + SQLite</span>
+</div>
+<div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">DEPLOY</div>
+<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">
+<span style="padding:8px 10px;border:1px solid rgba(139,152,166,.25);font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB">git push → Actions · build, test</span>
+<span style="padding:8px 10px;border:1px solid rgba(0,229,255,.4);font:500 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">webhook → Dokploy · restart</span>
+</div>
+<div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:10px">MEASUREMENT</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="padding:8px 10px;border:1px dashed rgba(139,152,166,.3);font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB">External monitor · 60s → uptime</span>
+<span style="padding:8px 10px;border:1px dashed rgba(139,152,166,.3);font:500 10.5px 'JetBrains Mono',monospace;color:#C6D1DB">Go service · 5 min rollup → p95</span>
+<span style="padding:8px 10px;border:1px solid rgba(0,229,255,.4);font:500 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">/api/health</span>
+</div>
+</div>
+<p style="margin:0 0 32px;font:400 12px/1.7 'Geist',sans-serif;color:#8B98A6">A host cannot report its own outage, so uptime is measured from outside. Everything else comes from the log the proxy already writes.</p>
+
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">03</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">DECISIONS</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">EACH NAMES ITS PRICE</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:0;margin-bottom:32px">
+<div style="padding:14px 0;border-top:1px solid rgba(139,152,166,.12)"><div style="font:500 12px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:7px">Uptime from outside</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB;margin-bottom:6px">A server that is down cannot report that it is down.</div><div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Rejected: self-reported uptime — free, worthless in the minutes that matter.</div></div>
+<div style="padding:14px 0;border-top:1px solid rgba(139,152,166,.12)"><div style="font:500 12px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:7px">p95 from the proxy log</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB;margin-bottom:6px">Traefik already writes every request; a five-minute rollup shows a regression.</div><div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Rejected: Prometheus and Grafana — two more containers to patch for one host.</div></div>
+<div style="padding:14px 0;border-top:1px solid rgba(139,152,166,.12)"><div style="font:500 12px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:7px">No proxy in front</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB;margin-bottom:6px">It would be a processor in the request path and make the privacy page false.</div><div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Rejected: Cloudflare — free DDoS protection, given up for one true sentence.</div></div>
+<div style="padding:14px 0;border-top:1px solid rgba(139,152,166,.12)"><div style="font:500 12px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:7px">Nightly dump, monthly restore</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB;margin-bottom:6px">A backup nobody has restored is not a backup.</div><div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Rejected: snapshots only — one click to take, unknown to recover.</div></div>
+<div style="padding:14px 0;border-top:1px solid rgba(139,152,166,.12)"><div style="font:500 12px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:7px">Short retention</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB;margin-bottom:6px">Access logs 14 days, app logs 7, rate-limit IPs 10 minutes in memory.</div><div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Rejected: keep everything — useful once a year, a liability every day.</div></div>
+<div style="padding:14px 0;border-top:1px solid rgba(139,152,166,.12);border-bottom:1px solid rgba(139,152,166,.12)"><div style="font:500 12px 'JetBrains Mono',monospace;color:#E8EEF4;margin-bottom:7px">Mail split in two</div><div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB;margin-bottom:6px">Transactional provider with SPF, DKIM, DMARC for the form; mailbox separate.</div><div style="font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Rejected: sending from the server — one less dependency, mail in spam.</div></div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">04</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">OPERATIONS</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">/api/health</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px">
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:14px 14px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">UPTIME · 91 D</div><div style="font:500 17px 'JetBrains Mono',monospace;color:#7C8996">— NO DATA</div></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:14px 14px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">P95</div><div style="font:500 17px 'JetBrains Mono',monospace;color:#7C8996">— NO DATA</div></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:14px 14px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">ERROR RATE</div><div style="font:500 17px 'JetBrains Mono',monospace;color:#7C8996">— NO DATA</div></div>
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:14px 14px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:8px">DEPLOY · MEDIAN</div><div style="font:500 17px 'JetBrains Mono',monospace;color:#7C8996">— NO DATA</div></div>
+<div style="grid-column:span 2;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:14px 14px;display:flex;align-items:baseline;gap:12px"><div style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996">INCIDENTS</div><span style="flex:1"></span><div style="font:500 17px 'JetBrains Mono',monospace;color:#7C8996">— NO DATA</div></div>
+</div>
+<div style="padding:12px 14px;border-left:1px solid rgba(255,176,0,.5);background-color:#0E141C;margin-bottom:32px">
+<div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#FFB000;margin-bottom:6px">EMPTY ON PURPOSE</div>
+<div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">These tiles fill from the first day of operation. A case study that shows uptime before the server has run is the thing this page argues against.</div>
+</div>
+<div style="margin-bottom:32px">
+<div style="font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:9px">OPERATION · 30 D <span style="color:#7C8996">— NO DATA · /api/health</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px"><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span><span style="width:15px;height:15px;border:1px dashed rgba(139,152,166,.26);box-sizing:border-box"></span></div>
+<div style="font:400 12px/1.65 'Geist',sans-serif;color:#8B98A6">Füllt sich pro Betriebstag. Eine Kerbe ist ein Ausfall und öffnet Ursache, Behebung und den Log-Eintrag — ohne Post-Mortem keine Kerbe.</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">05</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">WHAT THIS PROVES</span>
+</div>
+<p style="margin:0 0 12px;font:400 12px/1.65 'Geist',sans-serif;color:#8B98A6">Thirteen tracks in the training log carry this system as their evidence. It is the only system that carries any.</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:32px">
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">GO</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">TYPESCRIPT</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">SQL</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">HTTP / JSON APIS</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">WEBHOOKS</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">POSTGRESQL</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">SQLITE</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">LINUX</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">DOCKER</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">CI/CD</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">LOGGING</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">GIT</span>
+<span style="padding:5px 9px;border:1px solid rgba(139,152,166,.25);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#C6D1DB">AWS S3 · BACKUPS</span>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">06</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">OPEN QUESTIONS</span>
+</div>
+<p style="margin:0 0 12px;font:400 12px/1.65 'Geist',sans-serif;color:#8B98A6">Four things I expect operation to answer. They get answered here, with dates, not removed.</p>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+<div style="display:flex;gap:10px"><span style="font:500 9px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:18px">01</span><span style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">Does one VPS hold up when a post gets attention, with no proxy to absorb it?</span></div>
+<div style="display:flex;gap:10px"><span style="font:500 9px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:18px">02</span><span style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">Is a five-minute rollup fine enough to catch a regression, or does it hide spikes?</span></div>
+<div style="display:flex;gap:10px"><span style="font:500 9px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:18px">03</span><span style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">How long does a restore from the nightly dump take, measured, not estimated?</span></div>
+<div style="display:flex;gap:10px"><span style="font:500 9px 'JetBrains Mono',monospace;color:rgba(0,229,255,.6);width:18px">04</span><span style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB">Does form mail arrive in an inbox rather than a spam folder?</span></div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.12);padding:16px 16px;margin-bottom:8px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#7C8996;margin-bottom:8px">CHECK IT YOURSELF</div>
+<div style="font:400 12px/1.65 'Geist',sans-serif;color:#C6D1DB;margin-bottom:12px">The repository is public, the health endpoint answers, and the log entries are written while it runs. You are inside the system this page describes.</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="display:inline-flex;align-items:center;min-height:44px;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">GITHUB →</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/api/health →</span>
+<span style="display:inline-flex;align-items:center;min-height:44px;font:500 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">01 ENTRY IN THE LOG →</span>
+</div>
+</div>
+</div>
+
+
+
+
+<div style="display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid rgba(139,152,166,.16);margin:34px 22px 0;padding:12px 0 22px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span style="display:flex;align-items:center;min-height:32px">BUILD [SHA]</span><span style="display:flex;align-items:center;gap:7px;min-height:32px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span style="display:flex;align-items:center;min-height:32px">UPTIME <span style="color:#8B98A6">— NO DATA</span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;min-height:44px;color:#C6D1DB">CV → cv.pdf</span>
+<span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:14px;min-height:44px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span>
+<span style="display:flex;align-items:center;min-height:32px">49.6117° N · 6.1300° E</span><span style="display:flex;align-items:center;min-height:32px"><span>UTC <span ref="{{ clockRef }}" style="color:#8B98A6;font-variant-numeric:tabular-nums">--:--:--</span></span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Design notes</div>
+<div class="dv-card" style="width:400px;padding:24px 26px">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:16px">DESIGN NOTES — CASE STUDY 02</div>
+<div style="font:400 10.5px/1.9 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:9px">
+<div><span style="color:#00E5FF">▸</span> AUS DEM BETRIEBSBLATT GEFÜLLT: Architektur, sechs Entscheidungen, Aufbewahrung und Backups stammen aus <span style="color:#C6D1DB">SYS.00.09 BETRIEB</span> — nichts hier ist erfunden</div>
+<div><span style="color:#00E5FF">▸</span> JEDE ENTSCHEIDUNG NENNT DEN PREIS: die dritte Spalte sagt, was verworfen wurde und was das kostet — ohne sie ist eine Entscheidung nur eine Behauptung</div>
+<div><span style="color:#00E5FF">▸</span> FÜNF KACHELN BLEIBEN LEER — AUF BEIDEN SCREENS: <span style="color:#C6D1DB">— NO DATA</span> bis zum ersten Betriebstag, mit Amber-Notiz warum. Das ist der Beweis der Seitenlogik, nicht ihre Lücke</div>
+<div><span style="color:#00E5FF">▸</span> OFFENE FRAGEN statt erfundener Lessons Learned: vier Fragen, die der Betrieb beantwortet — sie werden hier mit Datum beantwortet, nicht entfernt</div>
+<div><span style="color:#00E5FF">▸</span> RÜCKBINDUNG AN DEN LOG: die dreizehn Chips sind genau die Tracks, die auf <span style="color:#C6D1DB">APPLIED</span> stehen und dieses System als Beleg nennen</div>
+<div><span style="color:#00E5FF">▸</span> SHELL WIE ALLE SEITEN: Nav mit aktivem <span style="color:#C6D1DB">WORK</span>, Brotkrumen <span style="color:#C6D1DB">WORK / 02 TIMSEIL.DEV</span>, Fußzeile in der Reihenfolge der Shell — Build, CV-Hinweis, Theme-Reihe, Uptime, Koordinaten, laufende UTC-Uhr. <span style="color:#C6D1DB">Mobil-Screen 390</span> mit gestapelten Entscheidungen und derselben Reihenfolge — die Seite zählt mit zwei Screens</div>
+<div><span style="color:#00E5FF">▸</span> BETRIEBSRASTER: 91 Tage (13 Wochen) Desktop, 30 Tage mobil, heute vollständig <span style="color:#C6D1DB">— NO DATA</span>. Hier sind die Kerben <span style="color:#C6D1DB">anklickbar</span> (Ursache, Behebung, Error-Budget, Log-Eintrag) — auf der Startseite steht derselbe Streifen als reine Anzeige. Spezifikation im Blatt <span style="color:#C6D1DB">Operation Grid</span></div>
+<div><span style="color:#00E5FF">▸</span> PLATZHALTER: <span style="color:#C6D1DB">[START]</span> und <span style="color:#C6D1DB">[SHA]</span> — Zeitraum und Build-Kennung liegen beim Livegang fest</div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  clocks = new Set();
+  componentDidMount() {
+    const tick = () => { const s = new Date().toISOString().slice(11,19); this.clocks.forEach(el => { el.textContent = s; }); };
+    tick(); this.timer = setInterval(tick, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals() {
+    return { clockRef: el => { if (el) this.clocks.add(el); } };
+  }
+}
+</script>
+</body>
+</html>

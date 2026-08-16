@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:3px}
+::selection{background:rgba(0,229,255,.25)}
+@keyframes tn-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes tn-pulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(0,229,255,.7)}50%{opacity:.5;box-shadow:0 0 2px rgba(0,229,255,.2)}}
+@keyframes st-glitch{0%{transform:translate(0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-1px)}100%{transform:translate(0)}}
+@keyframes st-scan{0%{transform:translateY(-100%)}100%{transform:translateY(400%)}}
+@keyframes st-load{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Zustands-Sprache — Referenzblatt 03 · Matrix, Moves, Systemzustände · Zustand ist eine Meldung</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Referenzblatt · Zustandsmatrix 9 × 5, sechs Moves, vier Systemzustände, Spec</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="State Language" style="width:1360px;box-sizing:border-box;padding:40px 44px 44px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:8px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.03</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">STATE</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">NIE NUR FARBE · HOVER VERSCHIEBT NICHTS · EIN GLITCH ZUR ZEIT</span>
+</div>
+<p style="margin:0 0 34px;max-width:80ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Ein Zustand ist eine Meldung, keine Dekoration. Er beantwortet genau eine Frage: kann ich das anklicken, arbeitet es, ist es fehlgeschlagen, ist hier nichts. Die Seite behandelt ihre eigene Oberfläche wie ein System, das seinen Status ausgibt — deshalb ist jeder Zustand ablesbar, auch ohne Farbe, und jeder hat eine feste Dauer.</p>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.03.01</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">MATRIX</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">JEDE ZELLE ZEIGT DIE ECHTE BEHANDLUNG · „—" HEISST: DIESEN ZUSTAND GIBT ES NICHT</span>
+</div>
+
+<div style="display:grid;grid-template-columns:132px repeat(5,1fr);gap:0;margin-bottom:40px">
+
+<div style="padding:12px 12px 12px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.2)">ELEMENT</div>
+<div style="padding:12px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.2);border-left:1px solid rgba(139,152,166,.1)">REST</div>
+<div style="padding:12px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.2);border-left:1px solid rgba(139,152,166,.1)">HOVER</div>
+<div style="padding:12px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.2);border-left:1px solid rgba(139,152,166,.1)">FOCUS</div>
+<div style="padding:12px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.2);border-left:1px solid rgba(139,152,166,.1)">ACTIVE</div>
+<div style="padding:12px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.2);border-left:1px solid rgba(139,152,166,.1)">DISABLED</div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">NAV ITEM</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">WORK</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">W0#K</span><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">scramble 220ms</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;outline:1px solid #00E5FF;outline-offset:3px">WORK</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;border-bottom:1px solid #00E5FF;padding-bottom:2px">WORK</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">INLINE LINK</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 12px 'Geist',sans-serif;color:#00E5FF;border-bottom:1px solid rgba(0,229,255,.35)">die Case Study</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 12px 'Geist',sans-serif;color:#9DF4FF;border-bottom:1px solid #9DF4FF">die Case Study</span><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">120ms</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;font:400 12px 'Geist',sans-serif;color:#00E5FF;outline:1px solid #00E5FF;outline-offset:3px">die Case Study</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 12px 'Geist',sans-serif;color:rgba(0,229,255,.6)">die Case Study</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">PRIMARY CTA</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:600 15px 'Chakra Petch',sans-serif;color:#E8EEF4">contact@timseil.dev</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:600 15px 'Chakra Petch',sans-serif;color:#00E5FF;text-shadow:0 0 22px rgba(0,229,255,.45)">contact@timseil.dev</span><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">glow 160ms</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;font:600 15px 'Chakra Petch',sans-serif;color:#00E5FF;outline:1px solid #00E5FF;outline-offset:3px">contact@timseil.dev</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:600 15px 'Chakra Petch',sans-serif;color:#9DF4FF">contact@timseil.dev</span><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">kein scale</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">PROJECT ROW</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="padding:7px 8px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">02 relay</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="position:relative;padding:7px 8px;background-color:#0E141C;border:1px solid rgba(0,229,255,.28);font:500 9.5px 'JetBrains Mono',monospace;color:#E8EEF4"><span style="position:absolute;top:-1px;left:-1px;width:7px;height:7px;border-top:1px solid #00E5FF;border-left:1px solid #00E5FF"></span><span style="position:absolute;bottom:-1px;right:-1px;width:7px;height:7px;border-bottom:1px solid #00E5FF;border-right:1px solid #00E5FF"></span>02 relay</div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">brackets 140ms + preview</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="padding:7px 8px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);outline:1px solid #00E5FF;outline-offset:3px;font:500 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">02 relay</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="padding:7px 8px;background-color:#111A24;border:1px solid rgba(0,229,255,.5);border-left:2px solid #00E5FF;font:500 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">02 relay</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="padding:7px 8px;border:1px dashed rgba(139,152,166,.2);font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">05 foundry</div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">queued · kein link</div></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">EVIDENCE ROW</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="display:flex;align-items:center;gap:8px;opacity:.28"><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">K8S</span><span style="flex:1;height:3px;background:rgba(0,229,255,.4)"></span></div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">28% ruhe</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="display:flex;align-items:center;gap:8px"><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">K8S</span><span style="flex:1;height:3px;background:rgba(0,229,255,.55)"></span></div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">→ 100% in 90ms</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="display:flex;align-items:center;gap:8px;outline:1px solid #00E5FF;outline-offset:3px"><span style="font:400 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">K8S</span><span style="flex:1;height:3px;background:rgba(0,229,255,.55)"></span></div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">FILTER CHIP</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;padding:5px 9px;border:1px solid rgba(139,152,166,.22);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#8B98A6">GO</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;padding:5px 9px;border:1px solid rgba(0,229,255,.4);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">GO</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;padding:5px 9px;border:1px solid rgba(139,152,166,.22);outline:1px solid #00E5FF;outline-offset:3px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">GO</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;padding:5px 9px;background-color:#00E5FF;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#08131A">GO ×</span><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">gesetzt = invertiert</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="display:inline-block;padding:5px 9px;border:1px solid rgba(139,152,166,.12);font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(124,137,150,.5);text-decoration:line-through">RUST</span><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">0 treffer</div></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">TERMINAL INPUT</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="display:flex;align-items:center;gap:5px;font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">tim@vps:~$<span style="width:6px;height:11px;background:rgba(0,229,255,.45)"></span></div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">block, gedimmt</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="display:flex;align-items:center;gap:5px;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">tim@vps:~$<span style="width:6px;height:11px;background:rgba(0,229,255,.7)"></span></div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">cursor: text</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="display:flex;align-items:center;gap:5px;font:400 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">tim@vps:~$<span style="width:6px;height:11px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span></div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#00E5FF">blinkt nur hier</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="font:400 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">$ stack<span style="color:#7C8996"> ⏎</span></div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">touch: input read-only,<br>help-liste sichtbar</div></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">METRIC TILE</div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="padding:8px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12)"><div style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">P95</div><div style="font:600 14px 'JetBrains Mono',monospace;color:#E8EEF4;font-variant-numeric:tabular-nums">142<span style="font-size:9px;color:#7C8996">MS</span></div></div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="padding:8px;background-color:#0E141C;border:1px solid rgba(0,229,255,.28)"><div style="font:400 8px 'JetBrains Mono',monospace;color:#00E5FF">P95 · 24H FENSTER</div><div style="font:600 14px 'JetBrains Mono',monospace;color:#E8EEF4;font-variant-numeric:tabular-nums">142<span style="font-size:9px;color:#7C8996">MS</span></div></div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">label wird präziser</div></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+<div style="padding:14px 12px;border-bottom:1px solid rgba(139,152,166,.08);border-left:1px solid rgba(139,152,166,.1)"><div style="padding:8px;background-color:#0E141C;border:1px dashed rgba(139,152,166,.2)"><div style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">P95</div><div style="font:600 14px 'JetBrains Mono',monospace;color:#7C8996">—<span style="font-size:9px"> NO DATA</span></div></div></div>
+
+<div style="padding:14px 12px 14px 0;font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#E8EEF4">PREVIEW THUMB</div>
+<div style="padding:14px 12px;border-left:1px solid rgba(139,152,166,.1)"><div style="height:34px;border:1px solid rgba(139,152,166,.12);background:repeating-linear-gradient(45deg,rgba(139,152,166,.05) 0 4px,transparent 4px 8px);display:flex;align-items:center;justify-content:center;font:400 8px 'JetBrains Mono',monospace;color:#7C8996">HIDDEN</div></div>
+<div style="padding:14px 12px;border-left:1px solid rgba(139,152,166,.1)"><div style="height:34px;border:1px solid rgba(0,229,255,.28);background-color:#0E141C;display:flex;align-items:center;justify-content:center;font:400 8px 'JetBrains Mono',monospace;color:#00E5FF">VISIBLE</div><div style="margin-top:4px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">opacity, kein layout-shift</div></div>
+<div style="padding:14px 12px;border-left:1px solid rgba(139,152,166,.1)"><div style="height:34px;border:1px solid rgba(139,152,166,.12);outline:1px solid #00E5FF;outline-offset:3px;display:flex;align-items:center;justify-content:center;font:400 8px 'JetBrains Mono',monospace;color:#E8EEF4">VISIBLE</div></div>
+<div style="padding:14px 12px;border-left:1px solid rgba(139,152,166,.1)"><span style="font:400 10px 'JetBrains Mono',monospace;color:#7C8996">—</span></div>
+<div style="padding:14px 12px;border-left:1px solid rgba(139,152,166,.1)"><div style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">kein preview vorhanden:<br>zelle bleibt leer</div></div>
+
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.03.02</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">MOVES</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">JEDER MOVE HAT EINEN GRUND UND EINE OBERGRENZE</span>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:40px">
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">M1</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#E8EEF4;white-space:nowrap">CHAR SCRAMBLE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">220MS</span>
+</div>
+<div style="height:186px;padding:14px;background-color:#0A0E14;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:8px;font:500 13px 'JetBrains Mono',monospace;letter-spacing:.14em">
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:38px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">0MS</span><span style="color:#8B98A6">ABOUT</span></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:38px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">55MS</span><span style="color:#00E5FF">4B0#T</span></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:38px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">110MS</span><span style="color:#00E5FF">AB1UT</span></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:38px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">165MS</span><span style="color:#00E5FF">ABO#T</span></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:38px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">220MS</span><span style="color:#00E5FF">ABOUT</span></div>
+</div>
+<div style="margin-top:16px;font:400 10px/1.7 'JetBrains Mono',monospace;color:#7C8996">zeichenvorrat: 0-9 A-Z # / \ _<br>letztes zeichen rastet zuerst, dann nach links</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Nur Navigation und Befehlswörter scrambeln — Dinge, die man tippen könnte. Fließtext niemals: Text, der sich beim Zeigen verändert, ist unlesbar.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">M2</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#E8EEF4;white-space:nowrap">BRACKET EXPAND</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">140MS</span>
+</div>
+<div style="height:186px;padding:14px;background-color:#0A0E14;overflow:hidden">
+<div style="display:flex;gap:12px">
+<div style="flex:1;position:relative;padding:12px 10px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12)">
+<div style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996">REST</div>
+<div style="margin-top:6px;font:500 10px 'JetBrains Mono',monospace;color:#8B98A6">01 vat-check</div>
+</div>
+<div style="flex:1;position:relative;padding:12px 10px;background-color:#0E141C;border:1px solid rgba(0,229,255,.28)">
+<span style="position:absolute;top:-1px;left:-1px;width:11px;height:11px;border-top:1px solid #00E5FF;border-left:1px solid #00E5FF"></span>
+<span style="position:absolute;top:-1px;right:-1px;width:11px;height:11px;border-top:1px solid #00E5FF;border-right:1px solid #00E5FF"></span>
+<span style="position:absolute;bottom:-1px;left:-1px;width:11px;height:11px;border-bottom:1px solid #00E5FF;border-left:1px solid #00E5FF"></span>
+<span style="position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-bottom:1px solid #00E5FF;border-right:1px solid #00E5FF"></span>
+<div style="font:400 9px 'JetBrains Mono',monospace;color:#00E5FF">HOVER</div>
+<div style="margin-top:6px;font:500 10px 'JetBrains Mono',monospace;color:#E8EEF4">01 vat-check</div>
+</div>
+</div>
+<div style="margin-top:16px;font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">
+<div>ecken: 6px → 11px, opacity 0 → 1</div>
+<div>rahmen: steel .12 → cyan .28</div>
+<div>keine verschiebung, kein scale, kein schatten</div>
+</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Die Ecken sind das Hover-Signal für alles, was ein Modul ist: Projektzeilen, Karten, Spec-Blöcke. Sie wachsen nach außen, damit der Inhalt an seiner Stelle bleibt.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">M3</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#E8EEF4;white-space:nowrap">GLOW LIFT</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">160MS</span>
+</div>
+<div style="height:186px;padding:14px;background-color:#0A0E14;overflow:hidden">
+<div style="font:600 22px 'Chakra Petch',sans-serif;color:#E8EEF4">contact@timseil.dev</div>
+<div style="margin-top:12px;font:600 22px 'Chakra Petch',sans-serif;color:#00E5FF;text-shadow:0 0 28px rgba(0,229,255,.45)">contact@timseil.dev</div>
+<div style="margin-top:18px;font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">
+<div>text-shadow 0 0 28px rgba(0,229,255,.45)</div>
+<div>nur ein element pro seite darf glühen</div>
+<div>kein box-shadow auf flächen — nur licht auf schrift</div>
+</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Das Glühen ist für den einen Weg, den die Seite will: Kontakt. Wenn drei Dinge glühen, glüht nichts mehr.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">M4</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#E8EEF4;white-space:nowrap">ROW UNHIDE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">90MS</span>
+</div>
+<div style="height:186px;padding:14px;background-color:#0A0E14;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:10px;opacity:.28"><span style="width:70px;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">POSTGRES</span><span style="flex:1;height:3px;background:rgba(0,229,255,.5)"></span><span style="font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">CORE</span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:70px;font:400 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">KUBERNETES</span><span style="flex:1;height:3px;background:rgba(0,229,255,.55)"></span><span style="font:400 8.5px 'JetBrains Mono',monospace;color:#C6D1DB">APPLIED</span></div>
+<div style="display:flex;align-items:center;gap:10px;opacity:.28"><span style="width:70px;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">RUST</span><span style="flex:1;height:3px;background:rgba(139,152,166,.3)"></span><span style="font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">LEARNING</span></div>
+</div>
+<div style="margin-top:16px;padding:9px 11px;background-color:#0E141C;border-left:1px solid rgba(0,229,255,.4);font:400 9.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6">belegzeile erscheint: „relay — worker pool, 4 monate produktion"</div>
+<div style="margin-top:12px;font:400 10px 'JetBrains Mono',monospace;color:#7C8996">opacity .28 → 1 · nachbarn bleiben gedimmt</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Hover holt eine Zeile aus dem Grundrauschen und zeigt ihren Beleg. Die Liste bleibt ruhig, weil nur eine Zeile gleichzeitig hell ist.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(255,45,85,.22);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(255,45,85,.16)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#FF2D55">M5</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#E8EEF4;white-space:nowrap">GLITCH BURST · ZUSTANDSWECHSEL</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#FF2D55;white-space:nowrap">≤300MS</span>
+</div>
+<div style="height:186px;padding:14px;background-color:#0A0E14;overflow:hidden">
+<div style="display:flex;flex-direction:column;gap:7px;font:600 15px 'JetBrains Mono',monospace">
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:44px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">0MS</span><span style="color:#8B98A6">LIVE</span></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:44px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">70MS</span><span style="color:#FF2D55;letter-spacing:.06em;transform:translateX(-2px);display:inline-block">L1V#</span></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:44px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">140MS</span><span style="color:#FFB000;transform:translateX(2px);display:inline-block">D#GR4</span></div>
+<div style="display:flex;gap:14px;align-items:baseline"><span style="width:44px;font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">280MS</span><span style="color:#FFB000">DEGRADED</span></div>
+</div>
+<div style="margin-top:16px;font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">
+<div>translate ±2px, steps(2), kein blur</div>
+<div>feuert nur bei echtem zustandswechsel</div>
+<div>nie zwei bursts gleichzeitig auf einer seite</div>
+</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(255,45,85,.16)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Der Burst ist die einzige Stelle, an der die Oberfläche kurz aussetzt — weil sich darunter etwas geändert hat. Rot bleibt für den Wechsel selbst reserviert, der Endzustand trägt seine eigene Farbe.</p></div>
+</div>
+
+<div style="width:420px;border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="display:flex;align-items:baseline;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10)">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">M6</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#E8EEF4;white-space:nowrap">FOCUS RING · TASTATUR</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;white-space:nowrap">0MS</span>
+</div>
+<div style="height:186px;padding:14px;background-color:#0A0E14;overflow:hidden">
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+<span style="display:inline-block;padding:6px 10px;border:1px solid rgba(139,152,166,.22);outline:1px solid #00E5FF;outline-offset:3px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">GO</span>
+<span style="display:inline-block;font:500 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;outline:1px solid #00E5FF;outline-offset:3px">WORK</span>
+<span style="display:inline-block;padding:7px 9px;background-color:#0E141C;border:1px solid rgba(139,152,166,.12);outline:1px solid #00E5FF;outline-offset:3px;font:500 9.5px 'JetBrains Mono',monospace;color:#E8EEF4">02 relay</span>
+</div>
+<div style="margin-top:18px;font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">
+<div>outline: 1px solid #00E5FF, offset 3px</div>
+<div>:focus-visible — nie bei maus-klick</div>
+<div>gleiche form für alle elemente, keine ausnahmen</div>
+<div>tab-reihenfolge = leserichtung, terminal zuletzt</div>
+</div>
+<div style="margin-top:14px;padding:8px 10px;background-color:#0E141C;font:400 9.5px 'JetBrains Mono',monospace;color:#8B98A6">skip-link zuerst: „→ zum inhalt"</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10)"><p style="margin:0;font:400 11.5px/1.6 'Geist',sans-serif;color:#8B98A6">Ein Ring, überall gleich. Das Terminal kommt in der Tab-Reihenfolge zuletzt, damit niemand versehentlich in einer Eingabe landet, der nur die Seite lesen will.</p></div>
+</div>
+
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:20px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.03.03</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">SYSTEMZUSTÄNDE</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">WAS DIE SEITE SAGT, WENN SIE NICHTS ZU ZEIGEN HAT</span>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:40px">
+
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">LOADING</div>
+<div style="height:150px;padding:14px;overflow:hidden;position:relative">
+<div style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#8B98A6">
+<div>&gt; fetching ops metrics</div>
+<div style="color:#7C8996">&gt; source: ops-api /v1/health</div>
+</div>
+<div style="margin-top:12px;height:2px;background:rgba(232,238,244,.06);overflow:hidden"><div style="width:30%;height:100%;background:#00E5FF;animation:st-load 1.2s ease-in-out infinite"></div></div>
+<div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
+<div style="height:9px;background:rgba(232,238,244,.05)"></div>
+<div style="height:9px;width:72%;background:rgba(232,238,244,.05)"></div>
+</div>
+<div style="margin-top:12px;font:400 9px 'JetBrains Mono',monospace;color:#7C8996">skeleton hält die exakte höhe</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10);font:400 10.5px/1.6 'Geist',sans-serif;color:#8B98A6">Kein Spinner. Die Seite sagt, was sie holt und woher.</div>
+</div>
+
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.10);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#8B98A6">EMPTY</div>
+<div style="height:150px;padding:14px;overflow:hidden">
+<div style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#8B98A6">
+<div style="color:#E8EEF4">0 systeme entsprechen dem filter</div>
+<div style="color:#7C8996">RUST × · QUEUED ×</div>
+</div>
+<div style="margin-top:14px;padding:9px 10px;border:1px dashed rgba(139,152,166,.2);font:400 9.5px/1.6 'JetBrains Mono',monospace;color:#7C8996">rust ist LEARNING, nicht APPLIED — noch kein system damit im betrieb</div>
+<div style="margin-top:12px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00E5FF">FILTER ZURÜCKSETZEN</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(139,152,166,.10);font:400 10.5px/1.6 'Geist',sans-serif;color:#8B98A6">Leer heißt: erklären, warum leer, und einen Weg zurück anbieten.</div>
+</div>
+
+<div style="border:1px solid rgba(255,45,85,.22);background-color:#0A0E14">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(255,45,85,.16);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#FF2D55">ERROR</div>
+<div style="height:150px;padding:14px;overflow:hidden">
+<div style="font:400 10px/1.8 'JetBrains Mono',monospace">
+<div style="color:#FF2D55">&gt; ops-api: 503 service unavailable</div>
+<div style="color:#8B98A6">&gt; letzte gültige messung: 14:02 UTC</div>
+<div style="color:#7C8996">&gt; retry in 30s · 2/5</div>
+</div>
+<div style="margin-top:14px;padding:9px 10px;background-color:#0E141C;border-left:1px solid #FF2D55;font:400 9.5px/1.6 'JetBrains Mono',monospace;color:#C6D1DB">die zahlen unten sind 20 minuten alt. das ist der ehrlichere zustand als keine zahlen.</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(255,45,85,.16);font:400 10.5px/1.6 'Geist',sans-serif;color:#8B98A6">Der Fehler nennt Code, Zeitpunkt und Retry. Rot nur hier — pro Seite ein Alert-Moment.</div>
+</div>
+
+<div style="border:1px solid rgba(255,176,0,.22);background-color:#0A0E14">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(255,176,0,.16);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#FFB000">OFFLINE / DEGRADED</div>
+<div style="height:150px;padding:14px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+<span style="width:6px;height:6px;border-radius:50%;background:#FFB000"></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#FFB000">DEGRADED</span>
+</div>
+<div style="font:400 10px/1.8 'JetBrains Mono',monospace;color:#8B98A6">
+<div>terminal: read-only</div>
+<div>graph: aus cache, 6h alt</div>
+<div>metriken: ausgeblendet</div>
+</div>
+<div style="margin-top:12px;font:400 9.5px/1.6 'JetBrains Mono',monospace;color:#7C8996">seite bleibt vollständig lesbar</div>
+</div>
+<div style="padding:10px 12px 12px;border-top:1px solid rgba(255,176,0,.16);font:400 10.5px/1.6 'Geist',sans-serif;color:#8B98A6">Teilausfall ist kein Totalausfall: Inhalte bleiben, nur die Live-Teile melden sich ab.</div>
+</div>
+
+</div>
+
+<div style="display:flex;align-items:baseline;gap:14px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.03.04</span>
+<span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">SPEC</span>
+</div>
+
+<div style="display:grid;grid-template-columns:136px 150px 1fr 84px 176px;border-bottom:1px solid rgba(139,152,166,.16)">
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">MOVE</div>
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">GILT FÜR</div>
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">EIGENSCHAFT</div>
+<div style="padding:11px 14px 11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">DAUER</div>
+<div style="padding:11px 0;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.16)">EASING</div>
+
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">scramble</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">nav, befehlswörter</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">textContent, 4 pässe à 55ms</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">220ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">steps</div>
+
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">bracket expand</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">module, karten, zeilen</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">width/height 6→11px, opacity, border-color</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">140ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">cubic-bezier(.2,.9,.1,1)</div>
+
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">glow lift</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">nur primary cta</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">color, text-shadow 0 0 28px</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">160ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">ease-out</div>
+
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">row unhide</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">sys.01 zeilen, filter</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">opacity .28 → 1</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">90ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">linear</div>
+
+<div style="padding:11px 14px 11px 0;font:600 10.5px 'JetBrains Mono',monospace;color:#FF2D55;border-bottom:1px solid rgba(139,152,166,.08)">glitch burst</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">statuswerte, seitenwechsel</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">transform ±2px, textContent, color</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">≤300ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">steps(2)</div>
+
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">focus ring</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">alles fokussierbare</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">outline 1px #00E5FF, offset 3px</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">0ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">—</div>
+
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4;border-bottom:1px solid rgba(139,152,166,.08)">preview unhide</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">work index zeilen</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">opacity 0 → 1, platz ist reserviert</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">120ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">linear</div>
+
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#E8EEF4">chip toggle</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6">filter</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6">background, color invertiert · text bleibt</div>
+<div style="padding:11px 14px 11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6">120ms</div>
+<div style="padding:11px 0;font:400 10.5px 'JetBrains Mono',monospace;color:#8B98A6">linear</div>
+</div>
+
+<div style="margin-top:36px;padding:20px 22px;border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:14px">REGELN</div>
+<div style="font:400 11px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> NIE NUR FARBE: jeder Zustand hat ein zweites Merkmal — Ecken, Rahmen, Unterstrich, Deckkraft, Wortlaut</div>
+<div><span style="color:#00E5FF">▸</span> HOVER VERSCHIEBT NICHTS: kein translate, kein scale, kein margin. Platz für Previews ist vorher reserviert</div>
+<div><span style="color:#00E5FF">▸</span> EIN GLITCH ZUR ZEIT: der Burst feuert nur bei echtem Zustandswechsel und blockiert weitere Bursts für 600ms</div>
+<div><span style="color:#00E5FF">▸</span> FOCUS-VISIBLE ONLY: der Ring erscheint bei Tastatur, nie beim Mausklick. Gleiche Form überall</div>
+<div><span style="color:#00E5FF">▸</span> TOUCH HAT KEIN HOVER: auf Mobil ist der Hover-Zustand der Ruhezustand — Previews sichtbar, Zeilen bei 100%, Terminal read-only</div>
+<div><span style="color:#00E5FF">▸</span> DISABLED SAGT WARUM: „queued" oder „0 treffer" statt einfach ausgegraut. Ein toter Zustand ohne Begründung ist ein Bug</div>
+<div><span style="color:#00E5FF">▸</span> FEHLER SIND LOGS: Code, Zeitpunkt, Retry-Zähler. Keine Entschuldigungen, keine Illustrationen, kein „Oops"</div>
+<div><span style="color:#00E5FF">▸</span> REDUCED MOTION: Scramble und Burst entfallen, der Endwert steht sofort. Farb- und Rahmenwechsel bleiben</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Werkbank · echte Elemente anfassen, das Protokoll unten schreibt mit</div>
+<div class="dv-card" style="width:620px">
+<div data-screen-label="State Bench" style="width:620px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.00.03</span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#E8EEF4">STATE · WERKBANK</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">ZEIGEN · KLICKEN · TAB</span>
+</div>
+
+<div style="padding:22px 20px 8px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:12px">NAV · SCRAMBLE BEI HOVER</div>
+<div style="display:flex;gap:26px;margin-bottom:26px">
+<span tabIndex="0" ref="{{ navRef }}" data-label="WORK" onMouseEnter="{{ onScramble }}" onFocus="{{ onScramble }}" style="font:500 13px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer;transition:color .12s linear" style-hover="color:#00E5FF">WORK</span>
+<span tabIndex="0" ref="{{ navRef }}" data-label="BLOG" onMouseEnter="{{ onScramble }}" onFocus="{{ onScramble }}" style="font:500 13px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer;transition:color .12s linear" style-hover="color:#00E5FF">BLOG</span>
+<span tabIndex="0" ref="{{ navRef }}" data-label="ABOUT" onMouseEnter="{{ onScramble }}" onFocus="{{ onScramble }}" style="font:500 13px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer;transition:color .12s linear" style-hover="color:#00E5FF">ABOUT</span>
+</div>
+
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:12px">MODUL · BRACKET EXPAND BEI HOVER</div>
+<div tabIndex="0" onMouseEnter="{{ onRowIn }}" onMouseLeave="{{ onRowOut }}" onFocus="{{ onRowIn }}" onBlur="{{ onRowOut }}" style="position:relative;padding:14px 16px;background-color:#0E141C;border:1px solid {{ rowBorder }};cursor:pointer;transition:border-color .14s linear;margin-bottom:26px">
+<span style="position:absolute;top:-1px;left:-1px;border-top:1px solid #00E5FF;border-left:1px solid #00E5FF;width:{{ brk }};height:{{ brk }};opacity:{{ brkOp }};transition:all .14s cubic-bezier(.2,.9,.1,1)"></span>
+<span style="position:absolute;top:-1px;right:-1px;border-top:1px solid #00E5FF;border-right:1px solid #00E5FF;width:{{ brk }};height:{{ brk }};opacity:{{ brkOp }};transition:all .14s cubic-bezier(.2,.9,.1,1)"></span>
+<span style="position:absolute;bottom:-1px;left:-1px;border-bottom:1px solid #00E5FF;border-left:1px solid #00E5FF;width:{{ brk }};height:{{ brk }};opacity:{{ brkOp }};transition:all .14s cubic-bezier(.2,.9,.1,1)"></span>
+<span style="position:absolute;bottom:-1px;right:-1px;border-bottom:1px solid #00E5FF;border-right:1px solid #00E5FF;width:{{ brk }};height:{{ brk }};opacity:{{ brkOp }};transition:all .14s cubic-bezier(.2,.9,.1,1)"></span>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font:600 10px 'JetBrains Mono',monospace;color:{{ rowNum }}">02</span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:{{ rowInk }}">relay — social json api</span>
+<span style="flex:1"></span>
+<span style="font:400 9px 'JetBrains Mono',monospace;color:#7C8996;opacity:{{ rowMeta }};transition:opacity .12s linear">GO · RABBITMQ · 4 MO</span>
+</div>
+</div>
+
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:12px">FILTER · KLICKEN ZUM SETZEN</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px">
+<sc-for list="{{ chips }}" as="c" hint-placeholder-count="4">
+<span tabIndex="0" onClick="{{ c.toggle }}" style="padding:6px 11px;border:1px solid {{ c.bd }};background-color:{{ c.bg }};font:{{ c.font }};letter-spacing:.1em;color:{{ c.fg }};cursor:pointer;transition:all .12s linear">{{ c.label }}</span>
+</sc-for>
+</div>
+
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:12px">ZUSTANDSWECHSEL · GLITCH BURST ≤300MS</div>
+<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;background-color:#0E141C;border:1px solid rgba(139,152,166,.14);margin-bottom:26px">
+<span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">VAT-CHECK</span>
+<span ref="{{ statusRef }}" style="font:600 15px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#00E5FF">LIVE</span>
+<span style="flex:1"></span>
+<span tabIndex="0" onClick="{{ onGlitch }}" style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#00E5FF;padding:6px 11px;border:1px solid rgba(0,229,255,.4);cursor:pointer;transition:all .12s linear" style-hover="color:#08131A;background:#00E5FF">ZUSTAND WECHSELN</span>
+</div>
+
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;margin-bottom:12px">CTA · GLOW LIFT</div>
+<a href="mailto:contact@timseil.dev" onMouseEnter="{{ onCta }}" style="display:inline-block;font:600 26px 'Chakra Petch',sans-serif;color:#E8EEF4;text-decoration:none;transition:color .16s ease-out,text-shadow .16s ease-out;margin-bottom:8px" style-hover="color:#00E5FF;text-shadow:0 0 28px rgba(0,229,255,.45)">contact@timseil.dev</a>
+</div>
+
+<sc-if value="{{ logOn }}" hint-placeholder-val="{{ true }}">
+<div style="margin:14px 20px 20px;border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(139,152,166,.12)">
+<span style="width:5px;height:5px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.6s ease-in-out infinite"></span>
+<span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">STATE LOG</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">{{ logCount }} EVENTS</span>
+</div>
+<div style="height:132px;overflow:hidden;padding:10px 12px;font:400 10px/1.75 'JetBrains Mono',monospace">
+<sc-for list="{{ log }}" as="l" hint-placeholder-count="4">
+<div style="display:flex;gap:12px;opacity:{{ l.op }}">
+<span style="color:#7C8996;width:58px;flex:none">{{ l.t }}</span>
+<span style="color:#8B98A6;width:132px;flex:none">{{ l.target }}</span>
+<span style="color:{{ l.col }};width:76px;flex:none">{{ l.state }}</span>
+<span style="color:#7C8996">{{ l.note }}</span>
+</div>
+</sc-for>
+<sc-if value="{{ logEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="color:#7C8996">warte auf eingabe — zeigen, klicken oder mit tab durchsteppen</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<div style="padding:11px 20px;border-top:1px solid rgba(139,152,166,.14);font:400 9px/1.6 'JetBrains Mono',monospace;color:#7C8996">JEDER ZUSTAND WIRD PROTOKOLLIERT · DIE SEITE BEHANDELT IHRE OBERFLÄCHE WIE EIN SYSTEM</div>
+
+</div>
+</div>
+</div>
+
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Nachtrag — QUEUED und ONLINE</div>
+<div class="dv-card" style="width:780px;padding:26px 28px 28px">
+<div style="display:flex;align-items:baseline;gap:12px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:10px;margin-bottom:18px">
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">STATE.05</span>
+<span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4">NACHTRAG ZUM VOKABULAR</span>
+<span style="flex:1"></span>
+<span style="font:400 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">AUS DER UMSETZUNG · 16.08.2026</span>
+</div><div style="display:grid;grid-template-columns:106px 1fr 1fr 168px;border-top:1px solid rgba(139,152,166,.16);margin-bottom:18px"><div style="padding:9px 12px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ZUSTAND</div><div style="padding:9px 12px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">BEDEUTUNG</div><div style="padding:9px 12px 9px 0;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">ABGRENZUNG</div><div style="padding:9px 0 9px 12px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.12)">WO</div>
+<div style="padding:11px 12px 11px 0;font:600 10px 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">QUEUED</div>
+<div style="padding:11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Geplant, noch nicht gebaut. Trägt keine Betriebszahlen, sondern <span style='color:#8B98A6'>— NO DATA</span>.</div>
+<div style="padding:11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Nicht DEGRADED: dort läuft etwas schlecht, hier läuft noch nichts.</div>
+<div style="padding:11px 12px;font:400 10.5px/1.55 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">Systemliste, Work Index, Fallstudien</div>
+<div style="padding:11px 12px 11px 0;font:600 10px 'JetBrains Mono',monospace;color:#00E5FF;border-bottom:1px solid rgba(139,152,166,.08)">ONLINE</div>
+<div style="padding:11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#C6D1DB;border-bottom:1px solid rgba(139,152,166,.08)">Diese Seite wird ausgeliefert. Punkt in der Meta-Leiste jeder Seite.</div>
+<div style="padding:11px 12px;font:400 10.5px/1.55 'Geist',sans-serif;color:#8B98A6;border-bottom:1px solid rgba(139,152,166,.08)">Nicht LIVE: LIVE beschreibt ein einzelnes System, ONLINE die Seite selbst.</div>
+<div style="padding:11px 12px;font:400 10.5px/1.55 'JetBrains Mono',monospace;color:#7C8996;border-bottom:1px solid rgba(139,152,166,.08)">Meta-Leiste überall, groß im Hero nur auf der Startseite</div>
+</div>
+<div style="font:400 10.5px/1.85 'JetBrains Mono',monospace;color:#8B98A6;display:flex;flex-direction:column;gap:8px">
+<div><span style="color:#00E5FF">▸</span> DAMIT SIND ES SIEBEN: <span style="color:#C6D1DB">LIVE · DEGRADED · OFFLINE · EMPTY · QUEUED · ONLINE · AVAILABLE</span> — jedes Wort mit genau einer Bedeutung</div>
+<div><span style="color:#00E5FF">▸</span> AVAILABLE IST NICHT ONLINE: <span style="color:#C6D1DB">AVAILABLE</span> im Hero meint den Betreiber („offen für Backend- und Infrastrukturarbeit"), <span style="color:#C6D1DB">ONLINE</span> in der Meta-Leiste die Auslieferung der Seite. Bis heute trugen beide dasselbe Wort — zwei Aussagen, ein Begriff, das ging genau so lange gut, bis jemand nachfragt</div>
+<div><span style="color:#00E5FF">▸</span> LABEL WIRD ÜBERSETZT, DATENWERT NICHT: die Anzeige heißt auf Deutsch GEPLANT, der Wert in der API bleibt <span style="color:#C6D1DB">queued</span></div>
+<div><span style="color:#00E5FF">▸</span> QUELLE IST KEIN ZUSTAND: <span style="color:#C6D1DB">&lt;&gt; PUBLIC</span> und <span style="color:#C6D1DB">&lt;&gt; PRIVATE · NDA</span> beschreiben den Zugang zum Code, nicht den Betrieb. Sie stehen bei den technischen Fakten neben dem Stack, nie in der Zustandsspalte — zwei Achsen in einer Spalte sind der Anfang vom Durcheinander</div>
+<div><span style="color:#00E5FF">▸</span> GESCHLOSSEN OHNE GRUND GIBT ES NICHT: ein Projekt ohne Repo trägt <span style="color:#C6D1DB">NDA</span> oder <span style="color:#C6D1DB">INTERN</span>. Ohne Grund liest sich das Merkmal als Ausrede, mit Grund als Verantwortung</div>
+</div>
+</div>
+</div>
+</div>
+<p class="dv-next">Try next: "Zustands-Sprache in Homepage und Work Index anwenden" · "Referenzblätter 01–03 als Handoff-Paket" · "Tab-Reihenfolge pro Seite festlegen"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1200},&quot;scrambleMs&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:220,&quot;min&quot;:120,&quot;max&quot;:400,&quot;step&quot;:10,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Moves&quot;},&quot;glitchMs&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:280,&quot;min&quot;:120,&quot;max&quot;:300,&quot;step&quot;:10,&quot;unit&quot;:&quot;ms&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Moves&quot;},&quot;showLog&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Werkbank&quot;}}">
+class Component extends DCLogic {
+  state = { row: false, chips: { GO: false, POSTGRES: false, RUST: false, K8S: false }, log: [], status: 0 };
+  K = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#/\\_";
+  STATES = [["LIVE", "#00E5FF"], ["DEGRADED", "#FFB000"], ["OFFLINE", "#FF2D55"], ["LIVE", "#00E5FF"]];
+  navs = [];
+
+  componentWillUnmount() { clearInterval(this.si); clearTimeout(this.gt); }
+
+  now() { return new Date().toISOString().slice(11, 19); }
+  logIt(target, st, note, col) {
+    const row = { t: this.now(), target, state: st, note, col: col || "#C6D1DB" };
+    this.setState(s => ({ log: [row].concat(s.log).slice(0, 6) }));
+  }
+
+  scramble(el) {
+    if (!el || el.dataset.busy) return;
+    const label = el.dataset.label || el.textContent;
+    const ms = this.props.scrambleMs ?? 220;
+    el.dataset.busy = "1";
+    const passes = 4, step = ms / passes;
+    let n = 0;
+    const iv = setInterval(() => {
+      n++;
+      const locked = Math.floor(label.length * (n / passes));
+      let out = "";
+      for (let i = 0; i < label.length; i++) {
+        out += i >= label.length - locked ? label[i] : this.K[(Math.random() * this.K.length) | 0];
+      }
+      el.textContent = out;
+      if (n >= passes) { clearInterval(iv); el.textContent = label; delete el.dataset.busy; }
+    }, step);
+    this.logIt("nav." + label.toLowerCase(), "hover", "scramble " + ms + "ms", "#00E5FF");
+  }
+
+  glitch() {
+    const el = this.statusEl;
+    if (!el || this.gBusy) return;
+    const ms = Math.min(300, this.props.glitchMs ?? 280);
+    const next = (this.state.status + 1) % this.STATES.length;
+    const [word, col] = this.STATES[next];
+    this.gBusy = true;
+    el.style.animation = "st-glitch " + ms + "ms steps(2) 1";
+    let n = 0;
+    const iv = setInterval(() => {
+      n++;
+      let out = "";
+      for (let i = 0; i < word.length; i++) out += Math.random() < .55 ? this.K[(Math.random() * this.K.length) | 0] : word[i];
+      el.textContent = out;
+      el.style.color = n % 2 ? "#FF2D55" : "#FFB000";
+    }, ms / 4);
+    setTimeout(() => {
+      clearInterval(iv);
+      el.textContent = word; el.style.color = col; el.style.animation = "";
+      this.setState({ status: next });
+      this.logIt("vat-check.status", word.toLowerCase(), "burst " + ms + "ms · lock 600ms", col);
+      this.gt = setTimeout(() => { this.gBusy = false; }, 600);
+    }, ms);
+  }
+
+  renderVals() {
+    const on = this.state.row;
+    const chipNames = ["GO", "POSTGRES", "RUST", "K8S"];
+    return {
+      navRef: el => { if (el && this.navs.indexOf(el) < 0) this.navs.push(el); },
+      statusRef: el => { this.statusEl = el; },
+      onScramble: e => this.scramble(e.currentTarget),
+      onGlitch: () => this.glitch(),
+      onCta: () => this.logIt("cta.mail", "hover", "glow 160ms · text-shadow", "#00E5FF"),
+      onRowIn: () => { if (!this.state.row) { this.setState({ row: true }); this.logIt("row.relay", "hover", "brackets 6→11px, 140ms", "#00E5FF"); } },
+      onRowOut: () => this.setState({ row: false }),
+      brk: on ? "11px" : "6px", brkOp: on ? 1 : 0,
+      rowBorder: on ? "rgba(0,229,255,.28)" : "rgba(139,152,166,.12)",
+      rowNum: on ? "#00E5FF" : "#7C8996",
+      rowInk: on ? "#E8EEF4" : "#8B98A6",
+      rowMeta: on ? 1 : 0.3,
+      chips: chipNames.map(name => {
+        const set = this.state.chips[name];
+        return {
+          label: set ? name + " ×" : name,
+          bg: set ? "#00E5FF" : "transparent",
+          fg: set ? "#08131A" : "#8B98A6",
+          bd: set ? "#00E5FF" : "rgba(139,152,166,.22)",
+          font: (set ? "600 " : "500 ") + "9.5px 'JetBrains Mono',monospace",
+          toggle: () => {
+            const next = !this.state.chips[name];
+            this.setState(s => ({ chips: Object.assign({}, s.chips, { [name]: next }) }));
+            this.logIt("chip." + name.toLowerCase(), next ? "gesetzt" : "gelöst", next ? "invertiert, 120ms" : "zurück auf rest", next ? "#00E5FF" : "#8B98A6");
+          }
+        };
+      }),
+      logOn: this.props.showLog ?? true,
+      log: this.state.log.map((l, i) => Object.assign({}, l, { op: i === 0 ? 1 : Math.max(0.3, 1 - i * 0.17) })),
+      logCount: String(this.state.log.length).padStart(2, "0"),
+      logEmpty: this.state.log.length === 0
+    };
+  }
+}
+</script>
+</body>
+</html>

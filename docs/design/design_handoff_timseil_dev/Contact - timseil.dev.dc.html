@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&amp;family=Geist:wght@400;500&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101318;font-family:'Geist',system-ui,sans-serif}
+a{color:#00E5FF;text-decoration:none}a:hover{color:#9DF4FF}
+:focus-visible{outline:1px solid #00E5FF;outline-offset:3px}
+::selection{background:rgba(0,229,255,.25)}
+input::placeholder,textarea::placeholder{color:#7C8996}
+@keyframes tn-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes tn-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes cf-scan{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+.dv-turn{padding:40px 44px 36px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#00E5FF;color:#08131A;border-radius:2px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(232,238,244,.12);color:#E8EEF4;border-radius:2px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px 'JetBrains Mono',monospace;color:rgba(232,238,244,.5);letter-spacing:.06em}
+.dv-card{max-width:100%;background:#0A0E14;border:1px solid rgba(232,238,244,.14);overflow:hidden}
+.dv-opt:target .dv-oid{background:#00E5FF;color:#08131A}
+.dv-next{margin:26px 0 0;font:11px/1.6 'JetBrains Mono',monospace;color:rgba(232,238,244,.45)}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Kontaktformular — funktioniert, meldet seinen Zustand und zeigt, was es sendet</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Desktop · 1440 — tippen und senden: die TX-Spur rechts baut die Anfrage mit</div>
+<div class="dv-card" style="width:1440px">
+<div data-screen-label="Contact — Desktop" style="width:1440px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="position:absolute;inset:0;pointer-events:none;opacity:.028;background-image:linear-gradient(#8B98A6 1px,transparent 1px),linear-gradient(90deg,#8B98A6 1px,transparent 1px);background-size:28px 28px"></div>
+
+<div style="position:relative;padding:0 140px 64px">
+
+<div style="display:flex;align-items:center;height:66px;padding:0;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 15px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:30px">
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">WORK</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">LOG</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;cursor:pointer" style-hover="color:#00E5FF">ABOUT</span>
+<span style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4;cursor:default">CONTACT</span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span tabIndex="0" role="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Language — English" style="display:flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border:1px solid rgba(139,152,166,.28);font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C6D1DB;cursor:pointer" style-hover="border-color:rgba(0,229,255,.55);color:#E8EEF4">EN<span style="font:400 8px 'JetBrains Mono',monospace;color:#7C8996">▾</span></span>
+<span style="width:1px;height:16px;background:rgba(139,152,166,.25)"></span>
+<span style="font:500 11px 'JetBrains Mono',monospace;color:#7C8996;letter-spacing:.1em">UTC <span style="color:#8B98A6;font-variant-numeric:tabular-nums">{{ utc }}</span></span>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 520px;gap:80px;padding:72px 0 40px;align-items:start">
+
+<div>
+<div style="font:500 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:26px"><span style="color:#00E5FF">SYS.06</span> — CHANNEL</div>
+<h1 style="margin:0 0 22px;font:500 52px/1.06 'Chakra Petch',sans-serif;letter-spacing:-.005em;color:#E8EEF4;max-width:16ch">Open a channel.</h1>
+<p style="margin:0 0 40px;max-width:56ch;font:400 15.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Das Formular schickt direkt an mein Postfach — kein Mailprogramm, kein Umweg. Wenn du lieber aus deinem eigenen Client schreibst: <a href="mailto:contact@timseil.dev" style="color:#00E5FF;text-decoration:none;border-bottom:1px solid rgba(0,229,255,.35)">contact@timseil.dev</a>.</p>
+
+<div style="display:flex;flex-direction:column;gap:22px;max-width:640px">
+
+<div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">NAME</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;color:{{ nameCountColor }}">{{ nameCount }}/80</span>
+</div>
+<input value="{{ name }}" onInput="{{ onName }}" placeholder="Wie heißt du?" aria-label="Name" style="width:100%;box-sizing:border-box;padding:13px 15px;background-color:#0E141C;border:1px solid {{ nameBorder }};color:#E8EEF4;font:400 14px 'JetBrains Mono',monospace;outline:none;transition:border-color .12s linear" style-focus="border-color:#00E5FF" />
+<sc-if value="{{ nameErr }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:7px;font:400 10.5px 'JetBrains Mono',monospace;color:#FF2D55">▸ {{ nameErr }}</div>
+</sc-if>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">E-MAIL</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">{{ mailHint }}</span>
+</div>
+<input value="{{ email }}" onInput="{{ onEmail }}" placeholder="wohin soll die antwort?" aria-label="E-Mail" style="width:100%;box-sizing:border-box;padding:13px 15px;background-color:#0E141C;border:1px solid {{ emailBorder }};color:#E8EEF4;font:400 14px 'JetBrains Mono',monospace;outline:none;transition:border-color .12s linear" style-focus="border-color:#00E5FF" />
+<sc-if value="{{ emailErr }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:7px;font:400 10.5px 'JetBrains Mono',monospace;color:#FF2D55">▸ {{ emailErr }}</div>
+</sc-if>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px">
+<span style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">NACHRICHT</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;color:{{ msgCountColor }}">{{ msgCount }}/4000 · MIN 20</span>
+</div>
+<textarea value="{{ msg }}" onInput="{{ onMsg }}" rows="6" placeholder="Worum geht es? Konkret ist besser als höflich." aria-label="Nachricht" style="width:100%;box-sizing:border-box;padding:13px 15px;background-color:#0E141C;border:1px solid {{ msgBorder }};color:#E8EEF4;font:400 14px/1.7 'JetBrains Mono',monospace;outline:none;resize:vertical;transition:border-color .12s linear" style-focus="border-color:#00E5FF"></textarea>
+<sc-if value="{{ msgErr }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:7px;font:400 10.5px 'JetBrains Mono',monospace;color:#FF2D55">▸ {{ msgErr }}</div>
+</sc-if>
+</div>
+
+<div style="display:flex;align-items:center;gap:20px;margin-top:6px">
+<span onClick="{{ onSend }}" tabIndex="0" style="padding:14px 26px;background:{{ btnBg }};border:1px solid {{ btnBorder }};color:{{ btnFg }};font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;cursor:{{ btnCursor }};transition:all .14s linear">{{ btnLabel }}</span>
+<span style="font:400 10.5px/1.6 'JetBrains Mono',monospace;color:#7C8996">{{ btnNote }}</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:10px;padding-top:4px">
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">DEMO-SCHALTER —</span>
+<span onClick="{{ toggleFail }}" tabIndex="0" style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:{{ failFg }};border-bottom:1px dashed {{ failFg }};cursor:pointer">{{ failLabel }}</span>
+</div>
+
+</div>
+</div>
+
+<div style="background-color:#0E141C;border:1px solid rgba(139,152,166,.16);position:relative">
+<div style="display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid rgba(139,152,166,.14)">
+<span style="width:6px;height:6px;border-radius:50%;background:{{ txDot }};animation:tn-pulse 2.4s ease-in-out infinite"></span>
+<span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#E8EEF4">TX</span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">{{ txState }}</span>
+<span style="flex:1"></span>
+<span style="font:400 9.5px 'JetBrains Mono',monospace;color:#7C8996">{{ bytes }} B</span>
+</div>
+<sc-if value="{{ isSending }}" hint-placeholder-val="{{ false }}">
+<div style="height:2px;background:rgba(0,229,255,.1);overflow:hidden"><div style="width:34%;height:100%;background:#00E5FF;animation:cf-scan 1.1s ease-in-out infinite"></div></div>
+</sc-if>
+<div style="padding:16px 18px 18px;font:400 11.5px/1.85 'JetBrains Mono',monospace;min-height:392px">
+<div style="color:#C6D1DB">POST /api/contact HTTP/2</div>
+<div style="color:#7C8996">host: timseil.dev</div>
+<div style="color:#7C8996">content-type: application/json</div>
+<div style="margin-top:10px;color:#7C8996">{</div>
+<div style="color:#8B98A6">  "name": <span style="color:{{ nameJsonColor }}">"{{ nameJson }}"</span>,</div>
+<div style="color:#8B98A6">  "email": <span style="color:{{ emailJsonColor }}">"{{ emailJson }}"</span>,</div>
+<div style="color:#8B98A6">  "message": <span style="color:{{ msgJsonColor }}">"{{ msgJson }}"</span>,</div>
+<div style="color:#8B98A6">  "company": <span style="color:{{ hpColor }}">""</span>, <span style="color:#7C8996">← honeypot, muss leer bleiben</span></div>
+<div style="color:#8B98A6">  "dwellMs": <span style="color:#C6D1DB">{{ dwellMs }}</span>,</div>
+<div style="color:#8B98A6">  "ts": <span style="color:#C6D1DB">"{{ nowIso }}"</span></div>
+<div style="color:#7C8996">}</div>
+<div style="margin-top:12px;display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ log }}" as="l" hint-placeholder-count="0">
+<div style="color:{{ l.c }}">{{ l.t }}</div>
+</sc-for>
+</div>
+<sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:12px;display:flex;align-items:center;gap:6px">
+<span style="color:#7C8996">warte auf eingabe</span>
+<span style="width:7px;height:12px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span>
+</div>
+</sc-if>
+</div>
+</div>
+
+</div>
+
+<div style="display:flex;align-items:baseline;gap:26px;border-top:1px solid rgba(139,152,166,.16);padding-top:16px;font:400 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span>KEIN TRACKING · KEIN COOKIE · KEINE SPEICHERUNG AUF DEM SERVER · 3 EINTRÄGE LOKAL</span>
+
+<span style="width:1px;height:12px;background:rgba(139,152,166,.25)"></span>
+<span style="flex:1"></span>
+<span>ANTWORT MEIST &lt; 24H</span>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px;border-top:1px solid rgba(139,152,166,.16);margin-top:48px;padding:14px 0 26px;font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">
+<span>BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span>UPTIME [99.98%]</span>
+<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">CV → TERMINAL AUF / : cv</span>
+<span style="display:flex;align-items:center;gap:9px">THEME<span tabIndex="0" title="Terminal Noir" style="width:11px;height:11px;background:#00E5FF;border:1px solid #00E5FF;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Mocha" style="width:11px;height:11px;background:#CBA6F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Amber CRT" style="width:11px;height:11px;background:#FFB74A;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Phosphor" style="width:11px;height:11px;background:#2EE6A6;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Tokyo Night" style="width:11px;height:11px;background:#7AA2F7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Catppuccin Latte" style="width:11px;height:11px;background:#EFF1F5;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span><span tabIndex="0" title="Gruvbox Light" style="width:11px;height:11px;background:#FBF1C7;border:1px solid rgba(139,152,166,.3);opacity:.55;cursor:pointer"></span></span>
+<span style="display:flex;align-items:center;gap:8px">ALT<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:32px;padding-top:2px">BASED IN LUXEMBOURG<span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span><span style="flex:1"></span><span>49.6117° N · 6.1300° E</span><span>UTC <span style="color:#8B98A6;font-variant-numeric:tabular-nums">{{ utc }}</span></span></span>
+</div>
+</div>
+
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Zustände und Vertrag · was der Entwickler braucht, um es zu bauen</div>
+<div class="dv-card" style="width:1360px">
+<div data-screen-label="Contact — States" style="width:1360px;box-sizing:border-box;padding:36px 40px 40px;background-color:#0A0E14;font-family:'Geist',system-ui,sans-serif">
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:8px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.06.01</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">ZUSTÄNDE</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">ERBT DIE SPRACHE AUS REFERENZBLATT 03 · EIN ALERT-MOMENT: DER FEHLSCHLAG</span>
+</div>
+<p style="margin:0 0 30px;max-width:82ch;font:400 14px/1.7 'Geist',sans-serif;color:#8B98A6">Sechs Zustände, jeder mit eigenem Wortlaut. Kein Zustand nur über Farbe: der Rahmen wechselt, das Wort wechselt, und im Fehlerfall stehen Code und Zeitpunkt da — wie in einem Log, nicht wie in einer Entschuldigung.</p>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:38px">
+
+<div style="border:1px solid rgba(139,152,166,.14)">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.1);display:flex;gap:8px;align-items:baseline">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;color:#00E5FF">01</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">RUHE</span>
+</div>
+<div style="padding:14px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:7px">E-MAIL</div>
+<div style="padding:11px 13px;background-color:#0E141C;border:1px solid rgba(139,152,166,.2);font:400 12px 'JetBrains Mono',monospace;color:#7C8996">wohin soll die antwort?</div>
+<div style="margin-top:12px;font:400 10px/1.7 'JetBrains Mono',monospace;color:#7C8996">rahmen steel .20 · button gedimmt<br>keine validierung vor dem ersten senden</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(0,229,255,.28)">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(0,229,255,.16);display:flex;gap:8px;align-items:baseline">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;color:#00E5FF">02</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">FOKUS · TIPPEN</span>
+</div>
+<div style="padding:14px">
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:7px"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">E-MAIL</span><span style="flex:1"></span><span style="font:400 9px 'JetBrains Mono',monospace;color:#00E5FF">gültig</span></div>
+<div style="padding:11px 13px;background-color:#0E141C;border:1px solid #00E5FF;font:400 12px 'JetBrains Mono',monospace;color:#E8EEF4;display:flex;align-items:center;gap:2px">anna.keller@firma.lu<span style="width:7px;height:12px;background:#00E5FF;animation:tn-blink 1.1s step-end infinite"></span></div>
+<div style="margin-top:12px;font:400 10px/1.7 'JetBrains Mono',monospace;color:#7C8996">rahmen cyan · TX-spur baut mit<br>zeichenzähler wird sichtbar</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(255,45,85,.3)">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(255,45,85,.18);display:flex;gap:8px;align-items:baseline">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;color:#FF2D55">03</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">FELDFEHLER</span>
+</div>
+<div style="padding:14px">
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:7px">E-MAIL</div>
+<div style="padding:11px 13px;background-color:#0E141C;border:1px solid #FF2D55;font:400 12px 'JetBrains Mono',monospace;color:#E8EEF4">anna.keller@firma</div>
+<div style="margin-top:7px;font:400 10.5px 'JetBrains Mono',monospace;color:#FF2D55">▸ keine gültige adresse — die endung fehlt</div>
+<div style="margin-top:12px;font:400 10px/1.7 'JetBrains Mono',monospace;color:#7C8996">prüfung erst beim senden, dann pro feld<br>fokus springt auf das erste fehlerfeld</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(139,152,166,.14)">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(139,152,166,.1);display:flex;gap:8px;align-items:baseline">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;color:#00E5FF">04</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">SENDEN</span>
+</div>
+<div style="padding:14px">
+<div style="padding:12px 22px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.4);font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF;text-align:center">SENDE …</div>
+<div style="margin-top:10px;height:2px;background:rgba(0,229,255,.1);overflow:hidden"><div style="width:34%;height:100%;background:#00E5FF;animation:cf-scan 1.1s ease-in-out infinite"></div></div>
+<div style="margin-top:12px;font:400 10px/1.75 'JetBrains Mono',monospace;color:#7C8996">felder gesperrt, nicht ausgegraut<br>kein spinner — die TX-spur schreibt mit<br>timeout 8s, dann fehlschlag</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(0,229,255,.28)">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(0,229,255,.16);display:flex;gap:8px;align-items:baseline">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;color:#00E5FF">05</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">ANGENOMMEN</span>
+</div>
+<div style="padding:14px">
+<div style="padding:11px 13px;background-color:#0E141C;border-left:1px solid #00E5FF;font:400 10.5px/1.8 'JetBrains Mono',monospace">
+<div style="color:#00E5FF">&lt; 202 accepted · 412ms</div>
+<div style="color:#8B98A6">msg_01K3F9QX7A · 14:22:07 UTC</div>
+<div style="color:#7C8996">kopie an dich unterwegs</div>
+</div>
+<div style="margin-top:12px;font:400 10px/1.7 'JetBrains Mono',monospace;color:#7C8996">id ist zitierbar — das ist der beleg<br>formular bleibt stehen, leert sich nicht</div>
+</div>
+</div>
+
+<div style="border:1px solid rgba(255,45,85,.3)">
+<div style="padding:9px 12px;border-bottom:1px solid rgba(255,45,85,.18);display:flex;gap:8px;align-items:baseline">
+<span style="font:700 9.5px 'JetBrains Mono',monospace;color:#FF2D55">06</span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#E8EEF4">FEHLSCHLAG · 429</span>
+</div>
+<div style="padding:14px">
+<div style="padding:11px 13px;background-color:#0E141C;border-left:1px solid #FF2D55;font:400 10.5px/1.8 'JetBrains Mono',monospace">
+<div style="color:#FF2D55">&lt; 502 provider unavailable</div>
+<div style="color:#8B98A6">versuch 1/3 · retry in 6s</div>
+<div style="color:#C6D1DB">nichts verloren — text steht noch im feld</div>
+</div>
+<div style="margin-top:10px;padding:8px 10px;border:1px solid rgba(255,176,0,.3);font:400 10px/1.6 'JetBrains Mono',monospace;color:#FFB000">429: zu viele versuche — in 10 min wieder</div>
+<div style="margin-top:12px;font:400 10px/1.7 'JetBrains Mono',monospace;color:#7C8996">immer mit adresse als ausweg</div>
+</div>
+</div>
+
+</div>
+
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid rgba(139,152,166,.16);padding-bottom:12px;margin-bottom:20px">
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00E5FF">SYS.06.02</span>
+<span style="font:600 12px 'JetBrains Mono',monospace;letter-spacing:.2em;color:#E8EEF4">VERTRAG</span>
+<span style="flex:1"></span>
+<span style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#7C8996">NEXT.JS ROUTE HANDLER · PROVIDER ALS AUFTRAGSVERARBEITER</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:26px">
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">ANFRAGE</div>
+<div style="padding:14px;font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6;white-space:pre">POST /api/contact
+content-type: application/json
+
+{
+  "name":    "string  2–80",
+  "email":   "string  ≤254, RFC-Form",
+  "message": "string  20–4000",
+  "company": "string  MUSS leer sein (honeypot)",
+  "dwellMs": "number  ≥3000",
+  "ts":      "string  ISO 8601"
+}</div>
+</div>
+<div style="border:1px solid rgba(139,152,166,.14);background-color:#0A0E14">
+<div style="padding:10px 14px;border-bottom:1px solid rgba(139,152,166,.12);font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#E8EEF4">ANTWORTEN</div>
+<div style="padding:14px;font:400 10.5px/1.7 'JetBrains Mono',monospace;color:#8B98A6;white-space:pre"><span style="color:#00E5FF">202</span> { "ok": true, "id": "msg_01K3F9QX7A" }
+<span style="color:#FF2D55">400</span> { "errors": { "email": "invalid" } }
+<span style="color:#FFB000">429</span> { "retryAfter": 600 }
+<span style="color:#FF2D55">502</span> { "code": "provider_unavailable" }
+
+Header bei 429: Retry-After
+Timeout clientseitig: 8s
+Idempotenz: ts + email + hash(message)</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<div style="padding:18px 20px;border:1px solid rgba(139,152,166,.14);background-color:#0E141C">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#E8EEF4;margin-bottom:12px">SPAM UND ZUSTELLBARKEIT</div>
+<div style="font:400 11px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#00E5FF">▸</span> Honeypot-Feld <span style="color:#C6D1DB">company</span>, per CSS versteckt, nie <span style="color:#C6D1DB">display:none</span> auf dem Label — sonst erkennen es Bots</div>
+<div><span style="color:#00E5FF">▸</span> Verweildauer unter 3s = verwerfen, ohne Fehlermeldung an den Absender</div>
+<div><span style="color:#00E5FF">▸</span> Rate-Limit pro IP: 3 in 10 Minuten, dann 429 mit Retry-After</div>
+<div><span style="color:#00E5FF">▸</span> Kein CAPTCHA — es kostet genau den Besucher, auf den es ankommt</div>
+<div><span style="color:#FFB000">▸</span> SPF und DKIM auf der Domain, Versand über einen Provider. Direktversand vom eigenen Server landet im Spam — das ist die eigentliche Arbeit, nicht das Formular</div>
+<div><span style="color:#00E5FF">▸</span> Reply-To auf die Absenderadresse setzen, damit Antworten direkt gehen</div>
+</div>
+</div>
+<div style="padding:18px 20px;border:1px solid rgba(255,45,85,.3);background-color:#0E141C">
+<div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#FF2D55;margin-bottom:12px">FOLGE FÜR DIE PRIVACYSEITE</div>
+<p style="margin:0 0 10px;font:400 12.5px/1.7 'Geist',sans-serif;color:#C6D1DB">Die Datenschutzseite sagt derzeit, dass die Seite praktisch keine personenbezogenen Daten verarbeitet. Mit diesem Formular stimmt das nicht mehr.</p>
+<div style="font:400 11px/1.9 'JetBrains Mono',monospace;color:#8B98A6">
+<div><span style="color:#FF2D55">▸</span> Was: Name, E-Mail, Nachricht, Zeitpunkt, IP für das Rate-Limit</div>
+<div><span style="color:#FF2D55">▸</span> Wohin: Mail-Provider als Auftragsverarbeiter, Nennung mit Sitz</div>
+<div><span style="color:#FF2D55">▸</span> Wie lange: im Postfach, solange die Anfrage läuft; IP nur im Limit-Fenster</div>
+<div><span style="color:#FF2D55">▸</span> Rechtsgrundlage und der Hinweis, dass die Angabe freiwillig ist</div>
+</div>
+</div>
+</div>
+
+
+
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Mobile · 390 — TX-Spur wird eine Statuszeile</div>
+<div class="dv-card" style="width:390px">
+<div data-screen-label="Contact — Mobile" style="width:390px;background-color:#0A0E14;position:relative;overflow:hidden;font-family:'Geist',system-ui,sans-serif">
+<div style="padding:0 20px 40px">
+
+<div style="display:flex;align-items:center;height:52px;padding:0 0;border-bottom:1px solid rgba(139,152,166,.16)">
+<span style="font:700 13px 'JetBrains Mono',monospace;color:#E8EEF4;letter-spacing:.04em">TS<span style="color:#00E5FF">://</span></span>
+<span style="flex:1"></span>
+<span tabIndex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu and language" style="display:flex;align-items:center;justify-content:flex-end;min-height:44px;min-width:44px;padding:0 10px;margin-right:-10px;cursor:pointer"><span style="display:block;width:19px;height:1px;background:#C6D1DB;box-shadow:0 5px 0 #C6D1DB,0 -5px 0 #C6D1DB"></span></span>
+</div>
+
+<div style="padding:36px 0 12px">
+<div style="font:500 9.5px 'JetBrains Mono',monospace;letter-spacing:.13em;color:#8B98A6;margin-bottom:16px"><span style="color:#00E5FF">SYS.06</span> — CHANNEL</div>
+<h2 style="margin:0 0 14px;font:500 34px/1.1 'Chakra Petch',sans-serif;color:#E8EEF4">Open a channel.</h2>
+<p style="margin:0 0 28px;font:400 13.5px/1.75 'Geist',sans-serif;color:#C6D1DB">Geht direkt an mein Postfach. Lieber selbst schreiben? <a href="mailto:contact@timseil.dev" style="display:inline-flex;align-items:center;min-height:44px;color:#00E5FF;text-decoration:none;border-bottom:1px solid rgba(0,229,255,.35)">contact@timseil.dev</a></p>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:18px">
+<div>
+<div style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6;margin-bottom:7px">NAME</div>
+<div style="padding:13px 14px;background-color:#0E141C;border:1px solid rgba(139,152,166,.2);font:400 13px 'JetBrains Mono',monospace;color:#7C8996;min-height:22px">Wie heißt du?</div>
+</div>
+<div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:7px"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">E-MAIL</span><span style="flex:1"></span><span style="font:400 8.5px 'JetBrains Mono',monospace;color:#00E5FF">gültig</span></div>
+<div style="padding:13px 14px;background-color:#0E141C;border:1px solid #00E5FF;font:400 13px 'JetBrains Mono',monospace;color:#E8EEF4">anna.keller@firma.lu</div>
+</div>
+<div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:7px"><span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#8B98A6">NACHRICHT</span><span style="flex:1"></span><span style="font:400 8.5px 'JetBrains Mono',monospace;color:#7C8996">148/4000</span></div>
+<div style="padding:13px 14px;background-color:#0E141C;border:1px solid rgba(139,152,166,.2);font:400 13px/1.7 'JetBrains Mono',monospace;color:#C6D1DB;min-height:96px">Hi Tim, wir suchen jemanden für unsere Payment-Pipeline. Dein Case Study zum Queue-Ausfall hat mich überzeugt — hast du nächste Woche 30 Minuten?</div>
+</div>
+<div style="padding:15px 20px;background:#00E5FF;color:#08131A;font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.14em;text-align:center;min-height:20px">SENDEN →</div>
+</div>
+
+<div style="margin-top:22px;padding:12px 14px;background-color:#0E141C;border-left:1px solid #00E5FF;font:400 10.5px/1.8 'JetBrains Mono',monospace">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:5px;height:5px;border-radius:50%;background:#00E5FF;animation:tn-pulse 2.4s ease-in-out infinite"></span><span style="color:#00E5FF">202 accepted · 412ms</span></div>
+<div style="color:#8B98A6;margin-top:4px">msg_01K3F9QX7A · 14:22:07 UTC</div>
+</div>
+
+<div style="margin-top:24px;font:400 9px/1.7 'JetBrains Mono',monospace;letter-spacing:.08em;color:#7C8996">KEIN TRACKING · KEIN COOKIE · KEINE SPEICHERUNG AUF DEM SERVER · 3 EINTRÄGE LOKAL · ANTWORT MEIST &lt; 24H<div style="margin-top:12px;display:flex"></div></div>
+
+<div style="display:flex;flex-wrap:wrap;gap:8px 20px;border-top:1px solid rgba(139,152,166,.16);margin-top:34px;padding:12px 0 22px;font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#7C8996">
+<span style="display:flex;align-items:center;min-height:32px">BUILD v3.2.1</span><span style="display:flex;align-items:center;gap:7px;min-height:32px"><span style="width:6px;height:6px;border-radius:50%;background:#00E5FF"></span>ONLINE</span><span style="display:flex;align-items:center;min-height:32px">UPTIME [99.98%]</span>
+<span style="flex-basis:100%;display:flex;align-items:center;min-height:44px;color:#C6D1DB">CV → cv.pdf</span>
+<span style="flex-basis:100%;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:44px">THEME<span tabIndex="0" title="Terminal Noir" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,229,255,.55);cursor:pointer"><span style="width:16px;height:16px;background:#00E5FF"></span></span><span tabIndex="0" title="Catppuccin Mocha" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#CBA6F7;opacity:.8"></span></span><span tabIndex="0" title="Amber CRT" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FFB74A;opacity:.8"></span></span><span tabIndex="0" title="Phosphor" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#2EE6A6;opacity:.8"></span></span><span tabIndex="0" title="Tokyo Night" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#7AA2F7;opacity:.8"></span></span><span tabIndex="0" title="Catppuccin Latte" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#EFF1F5;opacity:.8"></span></span><span tabIndex="0" title="Gruvbox Light" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,152,166,.22);cursor:pointer"><span style="width:16px;height:16px;background:#FBF1C7;opacity:.8"></span></span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:14px;min-height:44px">ALT<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/de</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">/fr</span></span>
+<span style="display:flex;align-items:center;min-height:32px">49.6117° N · 6.1300° E</span><span style="display:flex;align-items:center;min-height:32px"><span>UTC <span style="color:#8B98A6;font-variant-numeric:tabular-nums">{{ utc }}</span></span></span>
+<span style="flex-basis:100%;display:flex;align-items:center;gap:18px;min-height:44px">BASED IN LUXEMBOURG<span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">PRIVACY</span><span style="display:inline-flex;align-items:center;min-height:44px;color:#C6D1DB;cursor:pointer" style-hover="color:#00E5FF">IMPRINT</span></span>
+</div>
+</div>
+
+
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "Formular in die Homepage-Sektion SYS.05 einbauen" · "Datenschutzseite um den Formular-Absatz ergänzen" · "Bestätigungsmail an den Absender entwerfen"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1100}}">
+class Component extends DCLogic {
+  state = { name: "", email: "", msg: "", phase: "idle", errors: {}, log: [], simFail: false, tick: 0 };
+  t0 = Date.now();
+
+  componentDidMount() { this.iv = setInterval(() => this.setState(s => ({ tick: s.tick + 1 })), 1000); }
+  componentWillUnmount() { clearInterval(this.iv); this.timers && this.timers.forEach(clearTimeout); }
+
+  push(t, c) { this.setState(s => ({ log: s.log.concat([{ t, c }]) })); }
+  after(ms, fn) { (this.timers = this.timers || []).push(setTimeout(fn, ms)); }
+
+  validate() {
+    const { name, email, msg } = this.state;
+    const e = {};
+    if (name.trim().length < 2) e.name = "mindestens 2 zeichen";
+    else if (name.length > 80) e.name = "höchstens 80 zeichen";
+    if (!email.trim()) e.email = "adresse fehlt";
+    else if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email.trim())) e.email = "keine gültige adresse — prüfe endung und @";
+    const m = msg.trim().length;
+    if (m === 0) e.msg = "nachricht fehlt";
+    else if (m < 20) e.msg = "noch " + (20 - m) + " zeichen bis zum minimum";
+    else if (m > 4000) e.msg = "höchstens 4000 zeichen";
+    return e;
+  }
+
+  send() {
+    if (this.state.phase === "sending") return;
+    const errors = this.validate();
+    if (Object.keys(errors).length) {
+      this.setState({ errors, phase: "invalid", log: [{ t: "> validating … " + Object.keys(errors).length + " fehler", c: "#FF2D55" }] });
+      return;
+    }
+    const dwell = ((Date.now() - this.t0) / 1000).toFixed(1);
+    this.setState({ errors: {}, phase: "sending", log: [] });
+    this.push("> validating … ok", "#8B98A6");
+    this.after(260, () => this.push("> spam checks … ok (honeypot leer, dwell " + dwell + "s)", "#8B98A6"));
+    this.after(520, () => this.push("> handing to provider …", "#8B98A6"));
+    this.after(1240, () => {
+      if (this.state.simFail) {
+        const n = 1;
+        this.push("< 502 provider unavailable · 1204ms", "#FF2D55");
+        this.push("  versuch " + n + "/3 · nichts verloren, text steht noch im feld", "#C6D1DB");
+        this.push("  ausweg: contact@timseil.dev", "#7C8996");
+        this.setState({ phase: "failed" });
+      } else {
+        const id = "msg_01K" + Math.random().toString(36).slice(2, 8).toUpperCase();
+        this.push("< 202 accepted · 412ms", "#00E5FF");
+        this.push("  " + id + " · " + new Date().toISOString().slice(11, 19) + " UTC", "#8B98A6");
+        this.push("  kopie an dich unterwegs", "#7C8996");
+        this.setState({ phase: "sent", msgId: id });
+      }
+    });
+  }
+
+  clip(v, n) { return v.length > n ? v.slice(0, n) + "…" : v; }
+
+  renderVals() {
+    const s = this.state, e = s.errors;
+    const sending = s.phase === "sending", sent = s.phase === "sent", failed = s.phase === "failed";
+    const bytes = JSON.stringify({ name: s.name, email: s.email, message: s.msg, ts: new Date().toISOString() }).length;
+    const bd = (err, val) => err ? "#FF2D55" : (val ? "rgba(0,229,255,.4)" : "rgba(139,152,166,.2)");
+    const mailOk = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(s.email.trim());
+    return {
+      utc: new Date().toISOString().slice(11, 19),
+      name: s.name, email: s.email, msg: s.msg,
+      onName: ev => this.setState({ name: ev.target.value }),
+      onEmail: ev => this.setState({ email: ev.target.value }),
+      onMsg: ev => this.setState({ msg: ev.target.value }),
+      onSend: () => this.send(),
+      nameErr: e.name || false, emailErr: e.email || false, msgErr: e.msg || false,
+      nameBorder: bd(e.name, s.name), emailBorder: bd(e.email, s.email), msgBorder: bd(e.msg, s.msg),
+      nameCount: s.name.length, nameCountColor: s.name.length > 80 ? "#FF2D55" : "#7C8996",
+      msgCount: s.msg.length, msgCountColor: s.msg.length > 4000 ? "#FF2D55" : (s.msg.trim().length >= 20 ? "#00E5FF" : "#7C8996"),
+      mailHint: s.email ? (mailOk ? "gültig" : "unvollständig") : "für die antwort",
+      btnLabel: sending ? "SENDE …" : sent ? "GESENDET ✓" : failed ? "NOCHMAL SENDEN" : "SENDEN →",
+      btnBg: sending ? "rgba(0,229,255,.1)" : sent ? "transparent" : "#00E5FF",
+      btnFg: sending ? "#00E5FF" : sent ? "#00E5FF" : "#08131A",
+      btnBorder: sent ? "rgba(0,229,255,.4)" : "#00E5FF",
+      btnCursor: sending ? "progress" : "pointer",
+      btnNote: sent ? "id oben in der TX-spur ist dein beleg · weiter zu /work oder /blog" : failed ? "der text bleibt stehen — oder direkt an contact@timseil.dev" : "keine anrede nötig. konkret reicht.",
+      isSending: sending, isIdle: s.phase === "idle" && !s.name && !s.email && !s.msg,
+      txState: sending ? "SENDING" : sent ? "ACCEPTED" : failed ? "FAILED" : s.phase === "invalid" ? "REJECTED" : "COMPOSING",
+      txDot: failed || s.phase === "invalid" ? "#FF2D55" : sent || sending ? "#00E5FF" : "#7C8996",
+      bytes,
+      dwell: ((Date.now() - this.t0) / 1000).toFixed(1),
+      dwellMs: Date.now() - this.t0,
+      hpState: "leer", hpColor: "#00E5FF",
+      nowIso: new Date().toISOString().replace(".000", "").slice(0, 19) + "Z",
+      nameJson: this.clip(s.name, 30) || "…", nameJsonColor: s.name ? "#C6D1DB" : "#7C8996",
+      emailJson: this.clip(s.email, 34) || "…", emailJsonColor: s.email ? (mailOk ? "#C6D1DB" : "#FFB000") : "#7C8996",
+      msgJson: this.clip(s.msg.replace(/\n/g, " "), 34) || "…", msgJsonColor: s.msg ? "#C6D1DB" : "#7C8996",
+      log: s.log,
+      failLabel: s.simFail ? "NÄCHSTER VERSUCH SCHEITERT (502)" : "FEHLSCHLAG SIMULIEREN",
+      failFg: s.simFail ? "#FF2D55" : "#7C8996",
+      toggleFail: () => this.setState(p => ({ simFail: !p.simFail }))
+    };
+  }
+}
+</script>
+</body>
+</html>
