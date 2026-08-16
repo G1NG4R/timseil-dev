@@ -19,9 +19,11 @@ else
 fi
 
 # docs/design/ is the imported handoff — read-only, not ours to reformat.
+# INDEX.md is the exception: we write it, so it is held to the same hygiene.
 # Binary formats have no line endings to check.
 skip() {
   case "$1" in
+    docs/design/INDEX.md) return 1 ;;
     docs/design/*) return 0 ;;
     *.pdf | *.png | *.jpg | *.jpeg | *.gif | *.webp | *.ico) return 0 ;;
     *.woff | *.woff2 | *.ttf | *.otf | *.zip | *.gz) return 0 ;;

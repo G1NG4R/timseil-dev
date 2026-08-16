@@ -79,4 +79,9 @@ e2e: ## Playwright end-to-end, a11y and visual regression — stage H
 
 .PHONY: design
 design: ## Serve the read-only design handoff on port 4000
-	@npx --yes serve docs/design -p 4000
+	# The sheets pull react@18.3.1 and @babel/standalone from unpkg at runtime.
+	# Over file:// the browser blocks that and the page stays black — that is
+	# the whole reason this target exists. It needs network for the same reason.
+	# The version is pinned so two sessions review against the same server.
+	# --no-port-switching: a taken 4000 must fail loudly, not move the URL.
+	@npx --yes serve@14.2.5 docs/design -l 4000 --no-clipboard --no-port-switching
