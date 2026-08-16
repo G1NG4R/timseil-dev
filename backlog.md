@@ -24,7 +24,9 @@ wird triagiert und geleert.
 | 2026-08-16 | A2 | 6.3 weist Stufe J (Terminal) kein Blatt zu. Das Befehlsregister steckt tatsächlich im `Homepage`-Blatt, das Inventar im `Handoff`-Blatt — so in `INDEX.md` eingetragen | offen |
 | 2026-08-16 | A2 | Blätter brauchen Netz (unpkg: React 18.3.1, Babel; Google Fonts). Ohne Netz kein Design-Review — relevant für die Playwright-Vergleiche ab H1 | offen |
 | 2026-08-16 | A2 | Blätter sind Canvases mit **festen Artboards**, kein Reflow. Die sieben Prüfbreiten lassen sich am Blatt nicht durch Fensterresize prüfen, nur die abgebildeten Breiten (1440, 390) — die Vergleichsbasis für H1 ist also schmaler als die Prüfliste | offen |
-| 2026-08-16 | A2 | Die `file://`-Gegenprobe („bleibt schwarz") ist **nicht verifiziert** — die Chrome-Extension verweigert `file://`-URLs. Im Quelltext belegt ist nur, dass mehrere Pfade in `support.js` an `fetch()` hängen, das auf `file:` scheitert. Ein Doppelklick von dir klärt es in 5 Sekunden | offen |
+| 2026-08-16 | A2 | **Kapitel 6.2 stimmt nicht: `file://` bleibt nicht schwarz.** Headless mit Chromium gegen `http://` gemessen — das Blatt rendert vollständig, DOM strukturell identisch. Die CDN-Skripte kommen über klassische `<script src>`-Tags, die vom `file:`-Ursprung laden; der einzige `fetch()`-Pfad in `support.js` ist ein Nachlade-Zweig mit `.catch()`, und `x-import` benutzt kein einziges Blatt. **Das Abnahmekriterium von A2 ruht damit auf einer falschen Prämisse.** `make design` behalten wir für die stabile, rechnerunabhängige URL (Playwright ab H1) — nicht, weil `file://` bräche. **Entscheidung nötig: 6.2 nachziehen?** | offen |
+| 2026-08-16 | A2 | Gegenprobe zur Netz-Abhängigkeit: mit blockiertem unpkg wird `<x-dc>` nicht ersetzt, kein `#dc-root`, die Seite bleibt dunkel. **Schwarz heißt kein Netz** — diese Hälfte von 6.2 stimmt | erledigt |
+| 2026-08-16 | A2 | `du -ck` überschätzte `code/` um fast das Doppelte (52K statt 27K, 4K-Blockrundung bei zehn kleinen Dateien) und die Zahl steckte in drei Summen im `INDEX.md`. Korrigiert; alle Summen werden jetzt aus `stat`-Bytes gerechnet | erledigt |
 
 ## Idee — noch nicht entschieden
 

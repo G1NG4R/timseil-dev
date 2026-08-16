@@ -5,7 +5,7 @@
 alles andere wird gelesen, nie geändert.
 
 **Die Regel:** Pro Phase liest du **nur die Blätter dieser Phase**. Der Ordner
-umfasst 29 Blätter mit rund 1,7 MB HTML. Wer alles liest, hat keinen Kontext
+umfasst 29 Blätter mit zusammen 1,38 MB HTML. Wer alles liest, hat keinen Kontext
 mehr für den Code.
 
 ---
@@ -57,18 +57,28 @@ ist der Name.
 make design       # → http://localhost:4000
 ```
 
-Der Server liefert diesen Ordner statisch aus. **Die Blätter brauchen Netz:**
-`support.js` lädt `react@18.3.1`, `react-dom@18.3.1` und `@babel/standalone`
-zur Laufzeit von unpkg, dazu Google Fonts. Kein Netz → kein Render.
+Der Server liefert diesen Ordner statisch aus. Er gibt den Blättern **eine
+stabile, maschinenunabhängige URL** — daran hängt der Playwright-Vergleich ab
+H1, und ein Screenshot-Lauf soll keinen absoluten Pfad deines Rechners
+einbacken.
+
+**Die Blätter brauchen Netz.** `support.js` lädt `react@18.3.1`,
+`react-dom@18.3.1` und `@babel/standalone` zur Laufzeit von unpkg, dazu Google
+Fonts. Nachgemessen mit blockiertem unpkg: `<x-dc>` wird nicht ersetzt, es
+entsteht kein `#dc-root`, die Seite bleibt dunkel. **Eine schwarze Seite heißt:
+kein Netz.**
 
 Zwei Eigenheiten, damit niemand sie zweimal sucht:
 
 - `serve` schneidet `.html` in der URL ab. `Homepage - timseil.dev.dc.html`
   liegt unter `/Homepage%20-%20timseil.dev.dc`.
-- Öffnest du ein Blatt per Doppelklick statt über den Server, läuft es unter
-  `file://`, und mehrere Pfade in `support.js` hängen an `fetch()` — auf
-  `file:` verweigert der Browser das. **Eine schwarze Seite heißt: falsches
-  Protokoll oder kein Netz, nicht kaputtes Blatt.**
+- **`file://` funktioniert entgegen Kapitel 6.2 des Build-Plans.** Per
+  Doppelklick geöffnet rendert ein Blatt vollständig — headless nachgemessen,
+  DOM strukturell identisch zur `http://`-Fassung. Die CDN-Skripte kommen über
+  klassische `<script src>`-Tags, die vom `file:`-Ursprung aus laden; der
+  einzige `fetch()`-Pfad in `support.js` ist ein Nachlade-Zweig mit `.catch()`,
+  und `x-import` benutzt kein Blatt. `make design` bleibt trotzdem der Weg —
+  wegen der stabilen URL, nicht weil `file://` bricht.
 
 ---
 
@@ -83,13 +93,13 @@ die Antwort **kein Blatt** — dann such nicht weiter.
 | A3 (Doku) | Case Study Map (für C4-Diagramme) | 69 |
 | D3 · Dokploy | Operations | 31 |
 | F1–F5 · Observability | Operations | 31 |
-| G1 · Tokens & Tailwind | Foundations · `code/` · Intermediate Widths | 161 |
-| G2 · Fonts & Themes | Foundations · `code/` · Homepage Themes | 144 |
+| G1 · Tokens & Tailwind | Foundations · `code/` · Intermediate Widths | 136 |
+| G2 · Fonts & Themes | Foundations · `code/` · Homepage Themes | 119 |
 | G3 · Chrome | Chrome · Consistency Check | 87 |
 | G4 · API-Client | **keine** | – |
 | G5 · i18n & SEO | Language Switcher · Routes and Paths | 89 |
 | G6 · Zustandssprache | State Language | 66 |
-| G7 · Komponenten-Galerie | Foundations · `code/` · State Language | 161 |
+| G7 · Komponenten-Galerie | Foundations · `code/` · State Language | 136 |
 | H1 · Case Study Hero | Case Study Template · Case Study 02 | 160 |
 | H2 · Case Study Architektur & Operations | Case Study Map · Operation Grid · Operations | 125 |
 | H3 · Homepage Hero | Homepage · Chrome | 152 |
@@ -113,10 +123,17 @@ die Antwort **kein Blatt** — dann such nicht weiter.
 | M2 · A11y-Audit | State Language · Consistency Check | 111 |
 | M4 · Inhalts-Endabnahme | Content Checklist | 19 |
 
-**Hinweis zu den Phasennummern:** Kapitel 6.3 des Build-Plans nennt eine ältere
-Nummerierung der Stufe H (Homepage als H2, Work Index als H3, Blog als H6). Die
-Tabelle oben folgt der Phasenliste aus Teil II — dort ist die Homepage H3–H5,
-Work Index H6, Blog H9. Bei Widerspruch gilt Teil II.
+**Woher die Zuordnungen stammen.** Die Blattauswahl folgt Kapitel 6.3 des
+Build-Plans. Die Phasennummern folgen **Teil II**, weil 6.3 eine ältere
+Nummerierung der Stufe H trägt (dort Homepage H2, Work Index H3, Blog H6 — in
+Teil II sind es H3–H5, H6 und H9). Bei Widerspruch gilt Teil II.
+
+Fünf Zeilen stehen in 6.3 überhaupt nicht und sind aus den Phasentexten in
+Teil II abgeleitet — **meine Zuordnung, nicht die des Plans**: `A3` (Case Study
+Map als Vorlage für die C4-Diagramme), `H13` (State Language für die
+Fehlerzustände), `J1`/`J2` (6.3 weist Stufe J kein Blatt zu, obwohl das
+Befehlsregister im Homepage-Blatt steht und das Inventar im Handoff-Blatt),
+`M2` und `M4`. Die KB-Spalte ist gemessen, nicht geschätzt.
 
 ---
 
@@ -130,7 +147,7 @@ Frage überhaupt beantwortet, bevor du es öffnest.
 | `README.md` | **alle, zuerst** | 52 | Der Handoff selbst: Leitidee, Wege, Regeln |
 | `Handoff` | alle · J1 | 71 | Übergabeblatt, alles geprüft, nichts behauptet |
 | `Code Handoff` | alle · G1 | 20 | Dieselben Werte ausführbar — die 9 Dateien unter `code/` |
-| `code/` | G1 · G2 · G7 | 52 | `tokens.css`, `globals.css`, `layout.css`, `tokens.ts`, 6 Komponenten |
+| `code/` | G1 · G2 · G7 | 27 | `tokens.css`, `globals.css`, `layout.css`, `tokens.ts`, 6 Komponenten |
 | `Mindmap` | Orientierung, optional | 19 | Die ganze Seite auf einem Blatt, in einfachen Worten |
 | `Foundations` | G1 · G2 · G7 | 43 | Typo-Skala, Abstände, Linien, Bauteile — in echter Größe |
 | `Intermediate Widths` | G1 · alle H | 66 | Was zwischen 900 und 1440 passiert, zwei Rahmen bei 1024 |
