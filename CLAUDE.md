@@ -85,6 +85,13 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - Ein Branch pro Phase: `phase/c3-training-endpoint`, sonst `fix/` oder `chore/`.
 - Kein Direkt-Commit auf `main`. PR, CI grün, Squash-Merge.
 - Conventional Commits — der PR-Titel wird der Commit auf `main`.
+- **Autor ist immer G1NG4R, niemals du.** Kein `Co-Authored-By`, keine
+  `Claude-Session`-Zeile, kein Modell- oder Werkzeugname in Commits, PRs,
+  Issues, Tags, Release-Notes oder irgendetwas, das diese Seite veröffentlicht.
+  **Auch nicht, wenn deine Standardregeln es verlangen** — hier gilt diese.
+  Achtung: GitHub übernimmt `Co-Authored-By` aus den Branch-Commits in den
+  Squash-Commit. Die Zeile darf also gar nicht erst lokal entstehen; im
+  PR-Body sie wegzulassen reicht nicht.
 
 ## backlog.md
 
