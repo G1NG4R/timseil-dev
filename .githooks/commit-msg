@@ -1,0 +1,30 @@
+#!/bin/sh
+# Conventional Commits. The PR title becomes the commit on main (squash merge),
+# but local messages are what release-please reads from the history later.
+set -eu
+
+msg_file=$1
+subject=$(sed -n '1p' "$msg_file")
+
+# Git's own machinery writes these; they are not ours to reformat.
+case "$subject" in
+  "Merge "* | "Revert "* | "fixup!"* | "squash!"* | "Reapply "*) exit 0 ;;
+esac
+
+pattern='^(feat|fix|chore|docs|refactor|test|perf|build|ci|revert)(\([a-z0-9._/-]+\))?!?: .+'
+
+if ! printf '%s' "$subject" | grep -qE "$pattern"; then
+  echo "✗ Commit message is not a Conventional Commit."
+  echo ""
+  echo "  got:      $subject"
+  echo "  expected: type(scope)?: description"
+  echo "  types:    feat fix chore docs refactor test perf build ci revert"
+  echo "  example:  feat(api): add training endpoint"
+  exit 1
+fi
+
+if [ "${#subject}" -gt 72 ]; then
+  echo "✗ Subject is ${#subject} characters, limit is 72."
+  echo "  Put the detail in the body, one blank line below."
+  exit 1
+fi

@@ -1,0 +1,4 @@
+# Single maintainer. This file documents ownership and drives review requests;
+# it is deliberately NOT backed by a required-review rule in branch protection —
+# a solo developer cannot approve their own pull request and would lock themselves out.
+* @G1NG4R
