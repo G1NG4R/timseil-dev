@@ -1,0 +1,10 @@
+#!/bin/sh
+while read local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main)
+      echo "✗ Direkter Push auf main blockiert."
+      echo "  Branch anlegen: git checkout -b phase/…  dann PR."
+      exit 1;;
+  esac
+done
+exit 0
