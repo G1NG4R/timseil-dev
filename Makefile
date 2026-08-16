@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-repo check-todo check-go check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-repo check-todo check-go check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -25,6 +25,11 @@ check-fast: ## Hygiene on staged files only (called by the pre-commit hook)
 check-tools: ## Prove the checks and hooks still reject their broken case
 	@printf 'tools\n'
 	@tools/selftest.sh
+
+.PHONY: check-node
+check-node: ## The running Node major must match .nvmrc
+	@printf 'node\n'
+	@tools/check-node.sh
 
 .PHONY: check-repo
 check-repo: ## Line endings, trailing whitespace, final newline, git hooks

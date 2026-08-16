@@ -18,7 +18,7 @@ rejects() { desc=$1; shift; if "$@" >/dev/null 2>&1; then no "$desc (accepted, s
 accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$desc (rejected, should accept)"; fi; }
 
 mkdir -p "$tmp/tools" "$tmp/.githooks"
-cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$tmp/tools/"
+cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
 
@@ -75,6 +75,26 @@ printf 'the rule says no %ss without an issue\n' "TO""DO" > prose.txt
 git add prose.txt
 accepts "prose naming the rule accepted" tools/check-todo.sh
 git rm -q --cached prose.txt && rm prose.txt
+
+printf 'node version\n'
+# A fake interpreter, so the assertions do not depend on what this machine runs.
+mkdir -p fakebin
+printf '#!/bin/sh\necho v24.19.0\n' > fakebin/node24 && chmod +x fakebin/node24
+printf '#!/bin/sh\necho v25.1.0\n' > fakebin/node25 && chmod +x fakebin/node25
+
+node_check() { CHECK_NODE_BIN="$1" tools/check-node.sh "$2"; }
+
+printf '24\n' > nv24
+printf '25\n' > nv25
+printf '\n'   > nv_empty
+
+accepts "matching major accepted"        node_check "$tmp/fakebin/node24" nv24
+rejects "mismatched major rejected"      node_check "$tmp/fakebin/node25" nv24
+rejects "odd major in .nvmrc rejected"   node_check "$tmp/fakebin/node25" nv25
+rejects "empty .nvmrc rejected"          node_check "$tmp/fakebin/node24" nv_empty
+rejects "missing .nvmrc rejected"        node_check "$tmp/fakebin/node24" nv_gone
+accepts "absent node skips"              node_check "$tmp/fakebin/node-not-here" nv24
+rm -rf fakebin nv24 nv25 nv_empty
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }
