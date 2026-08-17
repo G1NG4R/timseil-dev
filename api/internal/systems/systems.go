@@ -43,11 +43,11 @@ import (
 // cacheControl is what the contract declares for both paths
 // (components/headers/CacheControlMedium). Five minutes rather than the health
 // endpoint's one: this answer changes when a measurement lands or a system moves
-// state, not on every deploy. Restated here because the generated response
-// object takes it as a value, and held against the served document by the
-// contract test next door — a handler that invents a cache header is a contract
-// bug, not a handler decision (ADR 0009).
-const cacheControl = "public, s-maxage=300, stale-while-revalidate=1800"
+// state, not on every deploy. The value lives in httpx, held against the served
+// document there; this line only picks which of the four directives these two
+// paths carry, and the contract test next door checks that the pick is the right
+// one (ADR 0009).
+const cacheControl = httpx.CacheControlMedium
 
 // defaultWindow is the contract's default and the site's own number: 91 is 13×7,
 // so seven rows come out even. At 90 the last column would have a hole that
