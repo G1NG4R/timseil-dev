@@ -69,6 +69,8 @@ paths:
                 $ref: '#/components/schemas/Health'
         '304':
           $ref: '#/components/responses/NotModified'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
   /api/systems:
@@ -96,6 +98,8 @@ paths:
                 $ref: '#/components/schemas/SystemList'
         '304':
           $ref: '#/components/responses/NotModified'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
   /api/systems/{slug}:
@@ -131,6 +135,8 @@ paths:
           $ref: '#/components/responses/NotModified'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
   /api/training:
@@ -162,6 +168,8 @@ paths:
                 $ref: '#/components/schemas/Training'
         '304':
           $ref: '#/components/responses/NotModified'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
   /api/contributions:
@@ -193,6 +201,8 @@ paths:
                 $ref: '#/components/schemas/Contributions'
         '304':
           $ref: '#/components/responses/NotModified'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -252,6 +262,8 @@ paths:
             text/html:
               schema:
                 type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /api/docs/scalar.js:
     get:
       operationId: getDocsAsset
@@ -274,6 +286,8 @@ paths:
             text/javascript:
               schema:
                 type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /api/openapi.yaml:
     get:
       operationId: getOpenapiDocument
@@ -293,6 +307,8 @@ paths:
             application/yaml:
               schema:
                 type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /api/badge/uptime:
     get:
       operationId: getUptimeBadge
@@ -306,6 +322,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BadgeOK'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /api/badge/version:
     get:
       operationId: getVersionBadge
@@ -315,6 +333,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BadgeOK'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /api/badge/systems:
     get:
       operationId: getSystemsBadge
@@ -324,6 +344,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/BadgeOK'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 components:
   parameters:
     Slug:
@@ -384,7 +406,10 @@ components:
         type: string
         const: no-store
     RetryAfter:
-      description: Seconds to wait before retrying.
+      description: |
+        Seconds to wait before retrying. Always a count of seconds, never an
+        HTTP-date — RFC 9110 permits both, and a client that has to guess which
+        one arrived will guess wrong once.
       schema:
         type: integer
   responses:
