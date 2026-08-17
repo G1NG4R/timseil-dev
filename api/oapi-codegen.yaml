@@ -1,0 +1,12 @@
+# Generator config for `make gen`. Never run oapi-codegen by hand — the Makefile
+# target also refreshes the TypeScript side and the embedded public spec, and the
+# drift check compares all three at once.
+package: httpx
+output: internal/httpx/gen.go
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true
+  embedded-spec: false
+output-options:
+  skip-prune: true

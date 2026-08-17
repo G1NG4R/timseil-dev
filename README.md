@@ -48,6 +48,35 @@ curl https://timseil.dev/api/systems
 If a number on the site is not in that response, it is an invention — and anyone
 can tell. That is the whole thesis, and it is why the API is not behind a key.
 
+The contract itself is readable at **`/api/docs`**, rendered from
+`contract/openapi.yaml`. It is served from the API binary, so opening it pulls
+nothing from a CDN — the same rule the privacy page states applies to the
+documentation page.
+
+## One contract, generated types
+
+`contract/openapi.yaml` is the only place an API type is written down:
+
+```
+openapi.yaml ─┬→ oapi-codegen        → api/internal/httpx/gen.go
+              ├→ openapi-typescript  → web/lib/api/schema.d.ts
+              └→ redocly bundle      → contract/openapi.public.yaml → /api/docs
+```
+
+`make gen` writes all three and `make check` fails if the committed result differs,
+so the contract and the code cannot drift apart quietly. **Never hand-write a type
+that lives in the contract** — if it does not fit, the contract is wrong.
+
+Two details worth knowing before editing it:
+
+- Every metric is `number | null` in TypeScript and `*float64` in Go. That is one
+  statement in two languages: the value can be missing, and you have to handle it.
+  With `strictNullChecks` the compiler enforces it, and the empty case renders
+  `— NO DATA` rather than a zero.
+- Operations marked `x-internal: true` are stripped from the document `/api/docs`
+  serves. They stay in the contract so their types are generated and so the router
+  parity check can see them — but adding one **without** the marker publishes it.
+
 ## Stack
 
 | Layer | Choice |
@@ -96,6 +125,7 @@ make design                           # design handoff on http://localhost:4000
 | <http://localhost:3000> | the web app, `next dev` |
 | <http://localhost:8080/healthz> | the API is alive |
 | <http://localhost:8080/readyz> | the API can reach Postgres — `503` when it cannot |
+| <http://localhost:8080/api/docs> | the API contract, rendered |
 
 Both ports are bound to `127.0.0.1`. **Postgres publishes no port at all**: it is
 reachable inside the docker network and nowhere else, which is the same rule that
@@ -109,8 +139,8 @@ docker compose -f compose.dev.yaml exec db psql -U timseil_dev -d timseil
 so the next start is a cold one.
 
 `make help` lists all targets. **Targets that belong to a later phase say so and
-exit instead of pretending they checked something** — `make gen` arrives in B1,
-`make migrate` in B2, `make e2e` before stage H. That is deliberate: a quickstart
+exit instead of pretending they checked something** — `make migrate` arrives in B2,
+`make e2e` before stage H. That is deliberate: a quickstart
 that lies is the failure mode this project is built to avoid, and CI will run
 these commands from stage E5 onwards to keep this section honest.
 
@@ -131,7 +161,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `docs/architecture/` | anyone who wants the shape before the code |
 | `docs/runbooks/` | the author at three in the morning (from D3) |
 | `docs/design/` | **read-only** imported design handoff, 29 sheets |
-| `contract/openapi.yaml` | the single source of truth for API types (from B1) |
+| `contract/openapi.yaml` | the single source of truth for API types |
 | `backlog.md` | the notepad between sessions |
 
 Branch `ops-data` is machine-written and has no shared history with `main`: it
@@ -150,6 +180,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0006](docs/adr/0006-no-cdn.md) | No CDN, no third party in the request path |
 | [0007](docs/adr/0007-prometheus-instead-of-log-parsing.md) | Prometheus measures, Postgres serves |
 | [0008](docs/adr/0008-single-host-at-launch.md) | One host at launch, outage log kept outside |
+| [0009](docs/adr/0009-contract-problem-details-caching-public-bundle.md) | Problem Details everywhere, internal paths filtered from the published contract |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.

@@ -61,11 +61,29 @@ check-web: ## Typecheck, lint, unit tests
 	@printf 'web\n'
 	@cd web && npm run typecheck --silent && npm run lint --silent && npm test --silent
 
+GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml \
+             api/internal/httpx/gen.go web/lib/api/schema.d.ts
+
+# Drift is "running gen would change something", so that is what gets measured —
+# checksums either side of a run, not `git diff`.
+#
+# The git version was wrong in a way that only shows up locally: it compares the
+# working tree against the index, so a file you had just regenerated correctly but
+# not yet staged came out red. On a clean CI checkout the two agree; on a working
+# tree they do not, and a check that cries wolf while you work stops being read.
 .PHONY: check-contract
-check-contract: ## Validate the OpenAPI contract and check for codegen drift (from B1)
+check-contract: ## Validate the OpenAPI contract and check for codegen drift
 	@printf 'contract\n'
-	@[ -f contract/openapi.yaml ] || { printf '  – skip: contract/openapi.yaml does not exist yet (phase B1)\n'; exit 0; }; \
-		$(MAKE) --no-print-directory gen && git diff --exit-code
+	@tools/check-contract.sh
+	@[ -f contract/openapi.yaml ] || exit 0; \
+		before=$$(cat $(GENERATED) 2>/dev/null | sha256sum); \
+		$(MAKE) --no-print-directory gen >/dev/null || exit 1; \
+		after=$$(cat $(GENERATED) 2>/dev/null | sha256sum); \
+		[ "$$before" = "$$after" ] || { \
+			printf '  ✗ generated files are stale — run make gen and commit the result\n'; \
+			exit 1; \
+		}; \
+		printf '  ✓ no codegen drift\n'
 
 # ------------------------------------------------------------------- dev
 
@@ -88,11 +106,32 @@ dev-down: ## Stop the dev stack, keep the database
 dev-reset: ## Stop the dev stack and drop the database volume
 	$(COMPOSE_DEV) down --volumes
 
-# ---------------------------------------------------------------- placeholders
+# ------------------------------------------------------------------- gen
 
+# Both npm tools are devDependencies, so --no-install is the point: it uses the
+# locked versions in web/node_modules and fails loudly if they are missing, instead
+# of silently fetching whatever is current from the network on every check.
+#
+# The generators read the FULL contract — C7 needs the internal types. Only the
+# bundle that ships to readers is filtered, and it is copied into the Go package
+# because go:embed cannot reach outside its own directory.
 .PHONY: gen
-gen: ## Generate Go and TS types from the contract — phase B1
-	@printf 'make gen arrives in phase B1 (oapi-codegen + openapi-typescript).\n'
+gen: ## Generate Go and TS types from the contract
+	@printf 'gen\n'
+# Both tools narrate to stderr on success. Swallowing that keeps `make check`
+# readable; keeping it on failure is why the output is captured rather than
+# discarded outright.
+	@cd web && out=$$(npx --no-install redocly bundle public --config ../redocly.yaml \
+		--remove-unused-components -o ../contract/openapi.public.yaml 2>&1) \
+		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
+	@cp contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
+	@cd api && go tool oapi-codegen -config oapi-codegen.yaml ../contract/openapi.yaml
+	@cd web && out=$$(npx --no-install openapi-typescript ../contract/openapi.yaml \
+		-o lib/api/schema.d.ts 2>&1) \
+		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
+	@printf '  ✓ public bundle, go types, ts types\n'
+
+# ---------------------------------------------------------------- placeholders
 
 .PHONY: migrate
 migrate: ## Run goose migrations — phase B2

@@ -1,0 +1,37 @@
+# Two views on one file. `full` is what the generators read — C7 needs the internal
+# types. `public` is what the API embeds and /api/docs serves; the filter-out
+# decorator strips every operation marked `x-internal: true`.
+#
+# The alternative would be a second hand-maintained spec, and a second copy of
+# anything is the thing that drifts.
+
+apis:
+  full:
+    root: contract/openapi.yaml
+
+  public:
+    root: contract/openapi.yaml
+    decorators:
+      filter-out:
+        property: x-internal
+        value: true
+
+rules:
+  operation-operationId: error
+  operation-operationId-unique: error
+  operation-summary: error
+  operation-4xx-response: off
+  no-invalid-media-type-examples: error
+  no-unused-components: error
+  no-ambiguous-paths: error
+  no-identical-paths: error
+  path-declaration-must-exist: error
+  security-defined: off
+  tags-alphabetical: off
+  # Off on purpose: `http://localhost:8080` is a real place this API runs, and a
+  # reader who clones the repo should see it. The rule guards against forgotten
+  # placeholders, which this is not.
+  no-server-example.com: off
+  info-license: off
+  operation-tag-defined: error
+  struct: error

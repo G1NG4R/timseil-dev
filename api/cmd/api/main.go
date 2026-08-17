@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 )
 
 // The port is fixed inside the container. Which port it appears on for the
@@ -86,6 +88,10 @@ func newMux(db pinger, log *slog.Logger) *http.ServeMux {
 		}
 		writePlain(w, http.StatusOK, "ready")
 	})
+
+	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
+	// /api/openapi.yaml. The endpoints it describes arrive in stage C.
+	httpx.RegisterDocs(mux)
 
 	return mux
 }

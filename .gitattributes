@@ -1,1 +1,11 @@
 docs/design/** linguist-documentation
+
+# Written by `make gen`, never by hand. Marking them keeps the language stats
+# honest and collapses them in review, where the contract is what to read.
+contract/openapi.public.yaml    linguist-generated
+api/internal/httpx/gen.go       linguist-generated
+api/internal/httpx/assets/openapi.yaml linguist-generated
+web/lib/api/schema.d.ts         linguist-generated
+
+# Scalar's browser build, vendored so /api/docs pulls nothing from a CDN.
+api/internal/httpx/assets/scalar.standalone.js.gz -diff -text linguist-vendored
