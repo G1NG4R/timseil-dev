@@ -76,22 +76,43 @@ when the metrics stack is down, instead of inventing a zero.
 
 ## Quickstart
 
-Requires Node 24 (see `.nvmrc`), GNU Make and a POSIX shell.
+Requires Node 24 (see `.nvmrc`), Go 1.26, Docker with Compose, GNU Make and a
+POSIX shell.
 
 ```bash
 git clone https://github.com/G1NG4R/timseil-dev.git
 cd timseil-dev
 git config core.hooksPath .githooks   # arms the commit and push hooks
 make check                            # every check that applies today
+cp .env.example .env                  # local values, none of them secret
+make dev                              # postgres + api + web, hot reload on both
 make design                           # design handoff on http://localhost:4000
 ```
 
+`make dev` gives you three containers and two URLs:
+
+| URL | What |
+|---|---|
+| <http://localhost:3000> | the web app, `next dev` |
+| <http://localhost:8080/healthz> | the API is alive |
+| <http://localhost:8080/readyz> | the API can reach Postgres — `503` when it cannot |
+
+Both ports are bound to `127.0.0.1`. **Postgres publishes no port at all**: it is
+reachable inside the docker network and nowhere else, which is the same rule that
+applies in production. To get a shell on it:
+
+```bash
+docker compose -f compose.dev.yaml exec db psql -U timseil_dev -d timseil
+```
+
+`make dev-down` stops the stack, `make dev-reset` also drops the database volume
+so the next start is a cold one.
+
 `make help` lists all targets. **Targets that belong to a later phase say so and
-exit instead of pretending they checked something** — `make dev` arrives in A4,
-`make gen` in B1, `make migrate` in B2, `make e2e` before stage H. That is
-deliberate: a quickstart that lies is the failure mode this project is built to
-avoid, and CI will run these commands from stage E5 onwards to keep this section
-honest.
+exit instead of pretending they checked something** — `make gen` arrives in B1,
+`make migrate` in B2, `make e2e` before stage H. That is deliberate: a quickstart
+that lies is the failure mode this project is built to avoid, and CI will run
+these commands from stage E5 onwards to keep this section honest.
 
 `make design` needs network access — the design sheets load React and fonts from
 a CDN at runtime. **A black page means no network, not a broken sheet.**
@@ -102,6 +123,9 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 |---|---|
 | `README.md` | you, right now |
 | `CONTRIBUTING.md` · `SECURITY.md` | anyone who wants to file something |
+| `compose.dev.yaml` · `.env.example` | anyone running it locally |
+| `api/` | Go: handlers thin, logic in `internal/`, SQL in `internal/store/` |
+| `web/` | Next.js App Router, Server Components by default |
 | `docs/build-plan.md` | the author, every session (German) |
 | `docs/adr/` | the author in six months, asking "why did I do that?" |
 | `docs/architecture/` | anyone who wants the shape before the code |

@@ -1,0 +1,22 @@
+# Hot reload for `make dev`. Development only — the production image (D1)
+# builds once, statically, and never watches anything.
+
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # CGO off here for the same reason as in D1: nothing in this service needs
+  # it, and the dev container carries no C toolchain.
+  cmd = "CGO_ENABLED=0 go build -o ./tmp/api ./cmd/api"
+  bin = "./tmp/api"
+  include_ext = ["go"]
+  exclude_dir = ["tmp"]
+  exclude_regex = ["_test\\.go"]
+  # Editors write in bursts. Without a delay one save triggers two builds.
+  delay = 300
+  # A build error must leave the last good binary running and say so, not
+  # restart into a half-written state.
+  stop_on_error = true
+
+[log]
+  time = true

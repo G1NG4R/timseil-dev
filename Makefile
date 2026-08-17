@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-repo check-todo check-go check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-repo check-todo check-compose check-go check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -41,17 +41,25 @@ check-todo: ## Reject TODO/FIXME without an issue reference
 	@printf 'markers\n'
 	@tools/check-todo.sh
 
+.PHONY: check-compose
+check-compose: ## No published port for db, no build: in the production compose
+	@printf 'compose\n'
+	@tools/check-compose.sh
+
 .PHONY: check-go
-check-go: ## gofmt, go vet, go test (from A4)
+check-go: ## gofmt, go vet, go test
 	@printf 'go\n'
-	@[ -d api ] || { printf '  – skip: api/ does not exist yet (phase A4)\n'; exit 0; }; \
-		cd api && gofmt -l . && go vet ./... && go test ./...
+# gofmt -l prints the offenders and exits 0 — on its own it is a check that
+# reports and then lets everything through. The emptiness of its output is the
+# assertion, so that is what gets tested.
+	@cd api && bad=$$(gofmt -l .); \
+		[ -z "$$bad" ] || { printf '  ✗ not gofmt-clean:\n'; printf '%s\n' "$$bad" | sed 's/^/    /'; exit 1; }; \
+		go vet ./... && go test ./... && printf '  ✓ gofmt, vet, test\n'
 
 .PHONY: check-web
-check-web: ## Typecheck, lint, unit tests (from G1)
+check-web: ## Typecheck, lint, unit tests
 	@printf 'web\n'
-	@[ -d web ] || { printf '  – skip: web/ does not exist yet (phase G1)\n'; exit 0; }; \
-		cd web && npm run typecheck && npm run lint && npm test
+	@cd web && npm run typecheck --silent && npm run lint --silent && npm test --silent
 
 .PHONY: check-contract
 check-contract: ## Validate the OpenAPI contract and check for codegen drift (from B1)
@@ -59,11 +67,28 @@ check-contract: ## Validate the OpenAPI contract and check for codegen drift (fr
 	@[ -f contract/openapi.yaml ] || { printf '  – skip: contract/openapi.yaml does not exist yet (phase B1)\n'; exit 0; }; \
 		$(MAKE) --no-print-directory gen && git diff --exit-code
 
-# ---------------------------------------------------------------- placeholders
+# ------------------------------------------------------------------- dev
+
+COMPOSE_DEV := docker compose -f compose.dev.yaml
 
 .PHONY: dev
-dev: ## Start Postgres, API and web with hot reload — phase A4
-	@printf 'make dev arrives in phase A4 (compose.dev.yaml: postgres + air + next dev).\n'
+dev: ## Start Postgres, API and web with hot reload
+	@[ -f .env ] || { \
+		printf '  ✗ no .env — the compose file has nothing to read.\n'; \
+		printf '    run: cp .env.example .env\n'; \
+		exit 1; \
+	}
+	$(COMPOSE_DEV) up --build
+
+.PHONY: dev-down
+dev-down: ## Stop the dev stack, keep the database
+	$(COMPOSE_DEV) down
+
+.PHONY: dev-reset
+dev-reset: ## Stop the dev stack and drop the database volume
+	$(COMPOSE_DEV) down --volumes
+
+# ---------------------------------------------------------------- placeholders
 
 .PHONY: gen
 gen: ## Generate Go and TS types from the contract — phase B1

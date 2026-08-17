@@ -1,0 +1,3 @@
+# Nothing is copied into the dev image — the source arrives as a bind mount.
+# Keeping the context small keeps `make dev` from re-uploading build output.
+tmp
