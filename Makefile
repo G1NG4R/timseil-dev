@@ -190,6 +190,19 @@ migrate-create: ## Write a new empty migration — make migrate-create name=add_
 	@[ -n "$(name)" ] || { printf '  ✗ give it a name: make migrate-create name=add_foo\n'; exit 1; }
 	@$(COMPOSE_DEV) run --rm --user "$$(id -u):$$(id -g)" migrate create $(name)
 
+# ---------------------------------------------------------------------- seed
+
+# Same reason as the migrate targets: Postgres publishes no port, so this runs
+# inside the docker network. The seed service carries DATABASE_URL — the app
+# role, DML only — because that is all a seed needs, and needing no more is the
+# claim being made.
+#
+# `make dev` already runs it in the startup chain. This target is for afterwards:
+# a track renamed, an evidence detail corrected, a stack line added.
+.PHONY: seed
+seed: ## Write the curated content — systems, modules, tracks, evidence
+	@$(COMPOSE_DEV) run --rm seed
+
 # The acceptance criterion of this phase, and it needs a real Postgres: three
 # up/down/up cycles plus every invariant proven against its broken case.
 #
