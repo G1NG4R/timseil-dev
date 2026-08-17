@@ -76,6 +76,13 @@ The pull request template asks for exactly this list, plus which of the nine
 invariants the change touches. Those invariants are in `CLAUDE.md`; the short
 version is in the [README](README.md#the-one-rule).
 
+`backlog.md` is the notepad between sessions, not a tracker. **At the end of every
+stage it is triaged and emptied:** each entry becomes an issue, is rejected with a
+reason, or is done. Rejections are recorded as a closed issue labelled `wontfix`,
+so a decision against something stays findable instead of being re-argued six
+months later. The header of `backlog.md` names the last triage and where its
+result went.
+
 ## Language
 
 Code, comments, commit messages, branch names and user-facing text are English.

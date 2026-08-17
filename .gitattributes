@@ -7,6 +7,7 @@ api/internal/httpx/gen.go       linguist-generated
 api/internal/httpx/assets/openapi.yaml linguist-generated
 web/lib/api/schema.d.ts         linguist-generated
 api/internal/seed/stack.gen.json linguist-generated
+api/migrations/testdata/skill_states.json linguist-generated
 
 # Scalar's browser build, vendored so /api/docs pulls nothing from a CDN.
 api/internal/httpx/assets/scalar.standalone.js.gz -diff -text linguist-vendored
