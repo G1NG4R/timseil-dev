@@ -1,0 +1,102 @@
+{
+  "comment": "Generated from docs/design/code/tokens.ts by tools/gen-skill-states.mjs — do not edit by hand.",
+  "source": "docs/design/code/tokens.ts",
+  "states": [
+    {
+      "liveSystems": 0,
+      "buildingSystems": 0,
+      "ui": "QUEUED",
+      "api": "queued"
+    },
+    {
+      "liveSystems": 0,
+      "buildingSystems": 1,
+      "ui": "LEARNING",
+      "api": "learning"
+    },
+    {
+      "liveSystems": 0,
+      "buildingSystems": 2,
+      "ui": "LEARNING",
+      "api": "learning"
+    },
+    {
+      "liveSystems": 0,
+      "buildingSystems": 3,
+      "ui": "LEARNING",
+      "api": "learning"
+    },
+    {
+      "liveSystems": 1,
+      "buildingSystems": 0,
+      "ui": "APPLIED",
+      "api": "applied"
+    },
+    {
+      "liveSystems": 1,
+      "buildingSystems": 1,
+      "ui": "APPLIED",
+      "api": "applied"
+    },
+    {
+      "liveSystems": 1,
+      "buildingSystems": 2,
+      "ui": "APPLIED",
+      "api": "applied"
+    },
+    {
+      "liveSystems": 1,
+      "buildingSystems": 3,
+      "ui": "APPLIED",
+      "api": "applied"
+    },
+    {
+      "liveSystems": 2,
+      "buildingSystems": 0,
+      "ui": "CORE",
+      "api": "core"
+    },
+    {
+      "liveSystems": 2,
+      "buildingSystems": 1,
+      "ui": "CORE",
+      "api": "core"
+    },
+    {
+      "liveSystems": 2,
+      "buildingSystems": 2,
+      "ui": "CORE",
+      "api": "core"
+    },
+    {
+      "liveSystems": 2,
+      "buildingSystems": 3,
+      "ui": "CORE",
+      "api": "core"
+    },
+    {
+      "liveSystems": 3,
+      "buildingSystems": 0,
+      "ui": "CORE",
+      "api": "core"
+    },
+    {
+      "liveSystems": 3,
+      "buildingSystems": 1,
+      "ui": "CORE",
+      "api": "core"
+    },
+    {
+      "liveSystems": 3,
+      "buildingSystems": 2,
+      "ui": "CORE",
+      "api": "core"
+    },
+    {
+      "liveSystems": 3,
+      "buildingSystems": 3,
+      "ui": "CORE",
+      "api": "core"
+    }
+  ]
+}

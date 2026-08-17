@@ -36,6 +36,15 @@ property-based gegen die View geprüft (1000 generierte Belegkonstellationen).
 
 ## Konsequenzen
 
+- **Die Form, wie sie in B3 gebaut wurde** (`api/migrations/00007_track_states.sql`):
+  `v_track_states(track_id, live_systems, building_systems, state)`. Die zwei
+  Zähler sind Teil der View, nicht Nebenprodukt — damit prüft der Test die
+  Zählung getrennt von der `CASE`-Kette, und C3 kann „1 live system" anzeigen,
+  ohne dieselbe Rechnung ein zweites Mal zu schreiben. Zweimal `LEFT JOIN`: mit
+  einem inneren Join wäre ein Track ohne Beleg nicht `queued`, sondern
+  **abwesend**. Und `WITH (security_invoker = true)`, sonst läse `timseil_app`
+  die Basistabellen mit den Rechten des Eigentümers `timseil_migrate` — eine Tür
+  an ADR 0011 vorbei.
 - Ein System auf `live` zu setzen lässt Tracks von `learning` nach `applied`
   springen, ohne dass jemand eine Zeile pflegt. Der Test dazu ist das
   Abnahmekriterium von C3.

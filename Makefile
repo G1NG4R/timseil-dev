@@ -67,7 +67,8 @@ check-web: ## Typecheck, lint, unit tests
 	@cd web && npm run typecheck --silent && npm run lint --silent && npm test --silent
 
 GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml \
-             api/internal/httpx/gen.go web/lib/api/schema.d.ts
+             api/internal/httpx/gen.go web/lib/api/schema.d.ts \
+             api/migrations/testdata/skill_states.json
 
 # Drift is "running gen would change something", so that is what gets measured —
 # checksums either side of a run, not `git diff`.
@@ -120,8 +121,14 @@ dev-reset: ## Stop the dev stack and drop the database volume
 # The generators read the FULL contract — C7 needs the internal types. Only the
 # bundle that ships to readers is filtered, and it is copied into the Go package
 # because go:embed cannot reach outside its own directory.
+#
+# The fourth generator has a different source: it reads skillState() out of the
+# read-only design handoff and writes the truth table that phase B3's property
+# test holds against v_track_states. Same reason it lives here — a generated file
+# that nobody regenerates is a stale file, and GENERATED above turns that into a
+# red check instead of a green lie.
 .PHONY: gen
-gen: ## Generate Go and TS types from the contract
+gen: ## Generate Go and TS types from the contract, and the skill-state table
 	@printf 'gen\n'
 # Both tools narrate to stderr on success. Swallowing that keeps `make check`
 # readable; keeping it on failure is why the output is captured rather than
@@ -134,7 +141,9 @@ gen: ## Generate Go and TS types from the contract
 	@cd web && out=$$(npx --no-install openapi-typescript ../contract/openapi.yaml \
 		-o lib/api/schema.d.ts 2>&1) \
 		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
-	@printf '  ✓ public bundle, go types, ts types\n'
+# Its own success line goes; a failure still speaks, because it speaks on stderr.
+	@node tools/gen-skill-states.mjs >/dev/null
+	@printf '  ✓ public bundle, go types, ts types, skill states\n'
 
 # --------------------------------------------------------------- migrations
 

@@ -28,12 +28,17 @@
 #   5. tracks has no `state` column. Invariant 2 and ADR 0003: the state of a
 #      track is derived in a view, never stored. This rule outlives the phase —
 #      it still holds in stage G, when nobody is thinking about B2 any more.
-#      It deliberately says nothing about v_track_states, which arrives in B3.
+#      Where the state DOES live is rule 7's business.
 #
 #   6. The CHECK lists match the enums in the contract. That is the price of
 #      choosing text + CHECK over Postgres enum types (ADR 0010), and this is
 #      where it gets paid: drift breaks the build instead of rejecting a valid
 #      value at three in the morning.
+#
+#   7. The derivation itself: exactly one migration creates v_track_states, its
+#      Down drops it, the states it can produce are the contract's TrackState,
+#      and it is not materialised (ADR 0003 — a materialised view needs a named
+#      refresh time, and without one it is a claim with an expiry date).
 set -eu
 
 dir=api/migrations
@@ -204,18 +209,22 @@ normalise() {
   tr -d "' " | tr ',' '\n' | grep -v '^$' | sort | paste -sd, -
 }
 
+# enum: [live, in_build, queued] on a line below the schema name.
+contract_enum() {
+  awk -v s="    $1:" '
+    $0 == s      { inside = 1; next }
+    inside && /^    [A-Za-z]/ { inside = 0 }
+    inside && /enum:/ { sub(/.*enum:[[:space:]]*\[/, ""); sub(/\].*/, ""); print; exit }
+  ' "$spec" | normalise
+}
+
 if [ ! -f "$spec" ]; then
   printf '  – skip: %s does not exist, cannot compare enum values\n' "$spec"
 else
   # The loop runs in a subshell, so it reports by exiting non-zero rather than
   # by setting fail — a variable set in there would not survive the pipe.
   printf '%s\n' "$enum_pairs" | while IFS=: read -r schema constraint; do
-    # enum: [live, in_build, queued] on the line after the schema name.
-    want=$(awk -v s="    $schema:" '
-      $0 == s      { inside = 1; next }
-      inside && /^    [A-Za-z]/ { inside = 0 }
-      inside && /enum:/ { sub(/.*enum:[[:space:]]*\[/, ""); sub(/\].*/, ""); print; exit }
-    ' "$spec" | normalise)
+    want=$(contract_enum "$schema")
 
     # ... CONSTRAINT foo_ck CHECK (col IN ('a', 'b')) — take the last IN (...)
     # so that a leading "IS NULL OR" does not confuse it.
@@ -239,6 +248,57 @@ else
   done || fail=1
 
   [ "$fail" -eq 0 ] && printf '  ✓ four enum lists match the contract\n'
+fi
+
+# ----------------------------------------------- 7. the derivation, v_track_states
+
+# A materialised view is refused wherever it turns up, view name or not: it is a
+# stored answer, and a stored answer needs a named moment at which it was true.
+for f in $files; do
+  base=${f##*/}
+
+  printf '%s\n' "$(strip_comments "$f")" | grep -qiE 'CREATE[[:space:]]+MATERIALIZED[[:space:]]+VIEW' \
+    && bad "$base creates a materialised view — it would need a named refresh time (ADR 0003)"
+done
+
+view_files=
+for f in $files; do
+  printf '%s\n' "$(strip_comments "$f")" \
+    | grep -qiE 'CREATE[[:space:]]+(OR[[:space:]]+REPLACE[[:space:]]+)?VIEW[[:space:]]+v_track_states([[:space:]]|$)' \
+    && view_files="$view_files $f"
+done
+
+view_count=$(printf '%s\n' $view_files | grep -c . || true)
+
+if [ "$view_count" -gt 1 ]; then
+  bad "v_track_states is created in more than one migration:$view_files"
+elif [ "$view_count" -eq 1 ] && [ -f "$spec" ]; then
+  # Only the file itself is read here. Where the definition lives is checked
+  # above; what it says is checked now.
+  f=$(printf '%s' "$view_files" | tr -d ' ')
+  base=${f##*/}
+
+  awk '
+    /^-- \+goose Down/ { down = 1; next }
+    down && /DROP[[:space:]]+VIEW[[:space:]]+v_track_states/ { found = 1 }
+    END { exit !found }
+  ' "$f" || bad "$base creates v_track_states and does not drop it in its Down"
+
+  # THEN 'core' / ELSE 'queued' — one literal per line, which is how the CASE is
+  # written and how a reader can still follow it.
+  have=$(strip_comments "$f" \
+    | sed -n -e "s/.*THEN[[:space:]]*'\([a-z_]*\)'.*/\1/p" \
+             -e "s/.*ELSE[[:space:]]*'\([a-z_]*\)'.*/\1/p" \
+    | sort -u | paste -sd, -)
+  want=$(contract_enum TrackState)
+
+  if [ -z "$want" ]; then
+    bad "TrackState has no enum in $spec"
+  elif [ "$want" != "$have" ]; then
+    bad "v_track_states drifted: contract says [$want], $base derives [$have]"
+  fi
+
+  [ "$fail" -eq 0 ] && printf '  ✓ v_track_states derives exactly the contract track states\n'
 fi
 
 [ "$fail" -eq 0 ] || exit 1

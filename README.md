@@ -154,6 +154,15 @@ that the role does not exist.
 times against a throwaway database and feeds every constraint the value it is
 supposed to refuse. It needs Docker, so it is not part of `make check`.
 
+**Skill states are counted, not stored.** There is no `tracks.state` column; a
+track is `core` when two systems that prove it are live, `applied` at one,
+`learning` while one is still being built, and `queued` otherwise — derived in
+the view `v_track_states` ([ADR 0003](docs/adr/0003-track-states-as-sql-view.md)).
+`make check-db` generates a thousand evidence constellations and checks every one
+of them against the design handoff's own reference implementation, so the
+database and the page cannot come to different conclusions about the same
+person.
+
 `make help` lists all targets. **Targets that belong to a later phase say so and
 exit instead of pretending they checked something** — `make e2e` arrives before
 stage H. That is deliberate: a quickstart
