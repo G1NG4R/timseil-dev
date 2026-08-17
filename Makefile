@@ -87,12 +87,17 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
 check-contract: ## Validate the OpenAPI contract and check for codegen drift
 	@printf 'contract\n'
 	@tools/check-contract.sh
+# One checksum per file rather than one over all of them: GENERATED covers five
+# files from four sources now, and "something is stale" would send you looking in
+# the contract when what moved was a version in package.json.
 	@[ -f contract/openapi.yaml ] || exit 0; \
-		before=$$(cat $(GENERATED) 2>/dev/null | sha256sum); \
+		before=$$(sha256sum $(GENERATED) 2>/dev/null); \
 		$(MAKE) --no-print-directory gen >/dev/null || exit 1; \
-		after=$$(cat $(GENERATED) 2>/dev/null | sha256sum); \
-		[ "$$before" = "$$after" ] || { \
+		after=$$(sha256sum $(GENERATED) 2>/dev/null); \
+		stale=$$(printf '%s\n%s\n' "$$before" "$$after" | sort | uniq -u | awk '{print $$2}' | sort -u); \
+		[ -z "$$stale" ] || { \
 			printf '  ✗ generated files are stale — run make gen and commit the result\n'; \
+			printf '%s\n' "$$stale" | sed 's/^/    /'; \
 			exit 1; \
 		}; \
 		printf '  ✓ no codegen drift\n'
