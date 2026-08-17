@@ -111,6 +111,37 @@ func TestResponsesMatchTheContract(t *testing.T) {
 	}
 }
 
+// The four cache directives in cache.go are the contract's, character for
+// character.
+//
+// Every handler package picks one of them for its path, and the contract test
+// next to each handler checks that the pick is right. This one checks the thing
+// underneath: that the constant being picked still says what the document says.
+// Without it the four strings would be a copy nobody compares, which is the
+// state ADR 0009 exists to prevent — one level below the handlers it was written
+// about.
+func TestCacheDirectivesMatchTheContract(t *testing.T) {
+	doc := loadSpec(t)
+
+	for name, constant := range map[string]string{
+		"CacheControlShort":  CacheControlShort,
+		"CacheControlMedium": CacheControlMedium,
+		"CacheControlHour":   CacheControlHour,
+		"CacheControlNone":   CacheControlNone,
+	} {
+		t.Run(name, func(t *testing.T) {
+			declared := doc.Components.Headers[name].Schema.Const
+			if declared == "" {
+				t.Fatalf("components.headers.%s has no const value — the contract "+
+					"no longer declares the directive this constant copies", name)
+			}
+			if constant != declared {
+				t.Errorf("httpx.%s = %q, contract says %q", name, constant, declared)
+			}
+		})
+	}
+}
+
 // Every public operation declares 429, and this is the assertion that keeps it
 // true.
 //

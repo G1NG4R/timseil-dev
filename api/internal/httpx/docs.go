@@ -32,8 +32,6 @@ var assets embed.FS
 const (
 	scalarPath = "assets/scalar.standalone.js.gz"
 	specPath   = "assets/openapi.yaml"
-
-	cacheHour = "public, s-maxage=3600, stale-while-revalidate=7200"
 )
 
 // bootstrap is the only inline script on the page. It is a constant, so its hash can
@@ -133,7 +131,7 @@ func RegisterDocs(mux *http.ServeMux) {
 func serve(w http.ResponseWriter, r *http.Request, body []byte, contentType string, stored bool) {
 	etag := ETagOf(body)
 
-	w.Header().Set("Cache-Control", cacheHour)
+	w.Header().Set("Cache-Control", CacheControlHour)
 	w.Header().Set("ETag", etag)
 
 	if MatchesETag(r.Header.Get("If-None-Match"), etag) {

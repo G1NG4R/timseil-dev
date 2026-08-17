@@ -28,11 +28,12 @@ import (
 )
 
 // cacheControl is what the contract declares for this path
-// (components/headers/CacheControlShort). Restated here because the generated
-// response object takes it as a value, and held against the served document by
-// the contract test next door — a handler that invents a cache header is a
-// contract bug, not a handler decision (ADR 0009).
-const cacheControl = "public, s-maxage=60, stale-while-revalidate=600"
+// (components/headers/CacheControlShort). The value lives in httpx, held against
+// the served document there; this line only picks which of the four directives
+// this path carries — a handler that invents a cache header is a contract bug,
+// not a handler decision (ADR 0009), and the contract test next door checks that
+// the pick is the right one.
+const cacheControl = httpx.CacheControlShort
 
 // Queries is the slice of the store this endpoint needs. Narrow on purpose: it
 // is what lets every branch below — including the ones that only happen on an
