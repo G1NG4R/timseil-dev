@@ -5,8 +5,10 @@ wenn jemand schreibt, die API antworte mit 429 und er wisse nicht warum.
 
 Der Prozess ist `api/cmd/api`. Konfiguration in `api/internal/config`, Pool in
 `api/internal/db`, Kette in `api/internal/middleware`, Routen in
-`api/internal/server`. ADR 0014 (Lebenszyklus), ADR 0015 (Kette), ADR 0016
-(Zugriff und Router), ADR 0009 (Fehlermodell), ADR 0011 (Rollen).
+`api/internal/server`, Handler in `api/internal/health` und
+`api/internal/systems`. ADR 0014 (Lebenszyklus), ADR 0015 (Kette), ADR 0016
+(Zugriff und Router), ADR 0009 (Fehlermodell), ADR 0011 (Rollen),
+ADR 0017 (Fenster, Rasterlücken, Fehlerabbildung der Systems-Endpoints).
 
 ---
 
@@ -134,6 +136,75 @@ das Traefik die API erreicht.
 
 Adressen liegen nur als geschlüsselter Hash im Speicher und werden nach zehn
 Minuten vergessen — dieselbe Frist, die die Datenschutzseite nennt.
+
+---
+
+## „Ein System zeigt `— NO DATA`"
+
+Fast immer heißt das „noch nichts gemessen", nicht „kaputt". Die vier Schritte in
+der Reihenfolge, in der sie sich lohnen — die ersten beiden beantworten es fast
+immer:
+
+```bash
+curl -s localhost:8080/api/systems | jq '.systems[] | {slug, state, metrics}'
+```
+
+**1 · Steht das System auf `live`?** `queued` und `in_build` tragen niemals
+Metriken (Invariante 3), und das steht in der Abfrage, nicht im Go-Code. Vier
+`null` bei einem System, das nicht `live` ist, sind die richtige Antwort und
+nichts, was man reparieren kann, außer indem man das System live nimmt.
+
+**2 · Gibt es überhaupt eine Messung?**
+
+```bash
+docker compose -f compose.dev.yaml exec db psql -U timseil_boot -d timseil -c \
+  "SELECT s.slug, count(m.*), max(m.measured_at)
+     FROM systems s LEFT JOIN metric_snapshots m ON m.system_id = s.id GROUP BY 1"
+```
+
+`0` ist der Normalzustand vor der ersten Sonde: **der Seed schreibt Inhalt,
+niemals Messungen.** Erfundene Betriebsdaten in der Datenbank sind genau das,
+wogegen diese Seite gebaut ist — `docs/runbooks/seed.md`.
+
+**3 · Wie viele Rasterzellen sind gemessen?**
+
+```bash
+curl -s localhost:8080/api/systems/timseil-dev | \
+  jq '{window, cells: (.days|length), byState: (.days|group_by(.state)|map({(.[0].state): length})|add)}'
+```
+
+`cells` ist immer gleich `window` — auch auf einer leeren Datenbank, denn das
+Fenster wird in SQL erzeugt und die Messungen werden dagegen gejoint (ADR 0017).
+Wären es weniger, wäre die Abfrage kaputt, nicht die Datenlage. Alles `nodata`
+heißt: die Sonde aus C7/F4 läuft noch nicht.
+
+**4 · Fehlen `days`, `incidents` oder `deploys` ganz?** Dann ist das System nicht
+`live`. Die drei Felder fehlen dort, sie sind nicht leer — „dieses System hat
+kein Betriebsraster" und „sein Raster ist leer" sind zwei verschiedene Aussagen,
+und für ein System im Bau ist die erste die wahre.
+
+**Was hier nie die Antwort ist:** eine `0` einzutragen. `0` ist eine Messung, und
+eine gute; `null` ist keine. Wer die beiden gleich rendert, hat gelogen, ohne es
+zu merken (Invariante 1).
+
+---
+
+## „`?window=` liefert 400"
+
+Erlaubt sind genau `30`, `91` und `182` — der Contract sagt es, der Handler prüft
+es, und alles andere ist eine 400 mit `invalidParams`:
+
+```bash
+curl -s 'localhost:8080/api/systems/timseil-dev?window=45' | jq '{status, invalidParams}'
+```
+
+Kein stiller Rückfall auf 91: die Antwort trägt ihr Fenster als Feld, ein
+stillschweigend ersetzter Wert ergäbe ein Dokument, das vollständig korrekt
+aussieht und einen Zeitraum beschreibt, nach dem niemand gefragt hat. Die
+Begründung samt der Contract-Ergänzung steht in ADR 0017.
+
+91 ist 13×7 — sieben Zeilen gehen nur bei Vielfachen von sieben auf, und bei 90
+hätte die letzte Spalte ein Loch, das wie ein Fehler aussieht (Invariante 7).
 
 ---
 

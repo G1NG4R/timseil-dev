@@ -130,6 +130,8 @@ clone comes up with a working database in one command. To run either on its own,
 | <http://localhost:8080/healthz> | the API is alive |
 | <http://localhost:8080/readyz> | the API can reach Postgres — `503` when it cannot |
 | <http://localhost:8080/api/health> | build identity and operational numbers |
+| <http://localhost:8080/api/systems> | every tracked system, its source and its metrics |
+| <http://localhost:8080/api/systems/timseil-dev> | one system with its 91-day operation grid |
 | <http://localhost:8080/api/docs> | the API contract, rendered |
 
 Both ports are bound to `127.0.0.1`. **Postgres publishes no port at all**: it is
