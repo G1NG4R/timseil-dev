@@ -105,9 +105,56 @@ services:
       # The app role. DML only — it cannot create or drop a table, which is what
       # makes an SQL injection here unable to take the schema with it.
       DATABASE_URL: ${DATABASE_URL:?set it in .env — copy .env.example}
+
+      # The tunables. Passed through empty when .env does not set them, and an
+      # empty value means "use the default in api/internal/config" — so the
+      # defaults live in exactly one place and this file cannot drift from them.
+      LOG_LEVEL: ${LOG_LEVEL:-}
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-}
+      SHUTDOWN_GRACE: ${SHUTDOWN_GRACE:-}
+      DB_MAX_CONNS: ${DB_MAX_CONNS:-}
+      DB_MIN_CONNS: ${DB_MIN_CONNS:-}
+      DB_STATEMENT_TIMEOUT: ${DB_STATEMENT_TIMEOUT:-}
+      DB_LOCK_TIMEOUT: ${DB_LOCK_TIMEOUT:-}
+      DB_IDLE_TX_TIMEOUT: ${DB_IDLE_TX_TIMEOUT:-}
+      RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-}
+      RATE_LIMIT_BURST: ${RATE_LIMIT_BURST:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      SITE_SYSTEM_SLUG: ${SITE_SYSTEM_SLUG:-}
+
+      # Empty here, and that is not an oversight.
+      #
+      # In development nothing forwards anything: a request from your machine
+      # arrives through docker's port mapping, so the peer is the bridge gateway
+      # doing NAT — not a proxy that added an X-Forwarded-For. Listing the bridge
+      # range would mean believing a header nobody sets, and the API would then
+      # decline to rate limit anything and say so once a minute in the log.
+      #
+      # Production is the other case: Traefik does forward, and Dokploy sets this
+      # to the network Traefik reaches the api on. ADR 0015.
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
     ports:
       # 127.0.0.1 on purpose: convenient for curl, invisible to the network.
       - "127.0.0.1:${API_PORT:-8080}:8080"
+
+    # Longer than SHUTDOWN_GRACE, and that relationship is the whole point.
+    # Docker's default is 10 seconds: with it, the process would still be
+    # draining politely when SIGKILL arrived, the shutdown tests would stay
+    # green, and production would cut requests anyway. D2 has to repeat this.
+    stop_grace_period: 30s
+
+    healthcheck:
+      # wget is busybox's, from the alpine base. D1 builds on distroless, which
+      # has no shell and no wget, so the production image needs a healthcheck
+      # the binary answers itself — that is D1's problem and it is noted there.
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      # air compiles the binary on the first start, and a cold module cache
+      # makes that slow. Failing the healthcheck while it compiles would be a
+      # false alarm on every fresh clone.
+      start_period: 60s
     volumes:
       - ./api:/app
       # air's build output, on a volume rather than in the bind mount. The
@@ -154,7 +201,11 @@ services:
       # directory you cannot delete without docker's help.
       - web-next:/app/.next
     depends_on:
-      - api
+      # Healthy, not merely started. The header of this file says every stage
+      # waits for the one below it; until the api had a healthcheck, this one
+      # could only wait for a container to exist, which is not the same claim.
+      api:
+        condition: service_healthy
 
 volumes:
   db-data:

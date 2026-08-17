@@ -1,0 +1,34 @@
+# Generator config for `make gen`. Never run sqlc by hand — the Makefile target
+# refreshes the contract types and the stack manifest in the same pass, and the
+# drift check compares all of them at once.
+#
+# The schema input is the goose directory itself, not a copy. sqlc reads the Up
+# sections and ignores what follows `-- +goose Down`, so the schema the queries
+# are checked against is the schema that is actually applied. A separate
+# schema.sql would be a second truth, and the first migration to land in only
+# one of them would produce a generated function that compiles and fails.
+#
+# Enum handling follows ADR 0010: state values are text with a CHECK, so sqlc
+# emits `string` and the store converts to the contract's typed enum at its
+# boundary. tools/check-migrations.sh already holds every CHECK list against the
+# contract's enum lists on each `make check`, so the two sets cannot drift — the
+# conversion therefore cannot produce a value the contract does not name.
+version: "2"
+sql:
+  - engine: postgresql
+    schema: migrations
+    queries: internal/store/queries
+    gen:
+      go:
+        package: store
+        out: internal/store
+        sql_package: pgx/v5
+        # The load-bearing line. Without it a nullable `double precision`
+        # becomes pgtype.Float8 and every metric needs a hand-written .Valid to
+        # pointer translation — four per query, and invariant 1 dies the first
+        # time somebody forgets one. With it sqlc emits *float64, which is
+        # exactly what the contract generates. Assignment, not conversion.
+        emit_pointers_for_null_types: true
+        emit_empty_slices: true
+        emit_json_tags: false
+        emit_interface: false

@@ -110,3 +110,37 @@ func TestResponsesMatchTheContract(t *testing.T) {
 		})
 	}
 }
+
+// Every public operation declares 429, and this is the assertion that keeps it
+// true.
+//
+// The limiter runs on the whole /api/ prefix, so any operation added later is
+// rejectable the day it exists — and an endpoint whose contract does not
+// mention 429 is an endpoint whose generated client will treat one as a
+// protocol error and retry it immediately. That is worse than no limit at all,
+// and it is exactly the kind of omission nobody notices while writing a
+// handler. So the document is asked rather than the author reminded.
+func TestEveryOperationDeclaresARateLimit(t *testing.T) {
+	var doc struct {
+		Paths map[string]map[string]struct {
+			OperationID string                    `yaml:"operationId"`
+			Responses   map[string]map[string]any `yaml:"responses"`
+		} `yaml:"paths"`
+	}
+	if err := yaml.Unmarshal(mustRead(specPath), &doc); err != nil {
+		t.Fatalf("the embedded document does not parse: %v", err)
+	}
+	if len(doc.Paths) == 0 {
+		t.Fatal("the embedded document describes no paths at all")
+	}
+
+	for path, methods := range doc.Paths {
+		for method, op := range methods {
+			if _, ok := op.Responses["429"]; !ok {
+				t.Errorf("%s %s (%s) declares no 429 — the rate limiter can return "+
+					"one, so a client cannot be left to discover it",
+					strings.ToUpper(method), path, op.OperationID)
+			}
+		}
+	}
+}

@@ -91,6 +91,15 @@ const page = `<!doctype html>
 </html>
 `
 
+// Spec is the document this API serves under /api/openapi.yaml: the public
+// bundle, with every x-internal operation filtered out.
+//
+// Exported so a handler's contract test can read what the contract promises
+// instead of repeating it. A test that restates the cache directive is a second
+// copy of the value, and ADR 0009 puts cache directives in the contract
+// precisely so there is only one.
+func Spec() []byte { return mustRead(specPath) }
+
 // RegisterDocs adds the three documentation routes to mux. It needs no database and
 // no config, so it can be wired before anything else and answers even while the
 // readiness probe is red — someone checking what this API promises should not depend
@@ -122,12 +131,12 @@ func RegisterDocs(mux *http.ServeMux) {
 // is, which is the point — the bundle sits in the binary at a third of its size. A
 // client that does not gets it decompressed rather than a broken download.
 func serve(w http.ResponseWriter, r *http.Request, body []byte, contentType string, stored bool) {
-	etag := etagOf(body)
+	etag := ETagOf(body)
 
 	w.Header().Set("Cache-Control", cacheHour)
 	w.Header().Set("ETag", etag)
 
-	if match := r.Header.Get("If-None-Match"); match != "" && strings.Contains(match, etag) {
+	if MatchesETag(r.Header.Get("If-None-Match"), etag) {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
@@ -166,9 +175,38 @@ func acceptsGzip(r *http.Request) bool {
 	return false
 }
 
-func etagOf(body []byte) string {
+// ETagOf is the entity tag of a representation: half a SHA-256, quoted as RFC
+// 9110 requires. Exported because every handler that answers a GET owes one —
+// ADR 0009 makes the ETag, not s-maxage, the saving that actually reaches the
+// wire on a site with no CDN in front of it.
+func ETagOf(body []byte) string {
 	sum := sha256.Sum256(body)
 	return `"` + hex.EncodeToString(sum[:16]) + `"`
+}
+
+// MatchesETag reports whether an If-None-Match header covers this tag.
+//
+// The wildcard is not a nicety: RFC 9110 defines `If-None-Match: *` as "any
+// current representation", and a client sending it expects a 304 rather than a
+// full body. Comparing the header as a substring — which is what this did
+// before — silently answered 200 to it, and would also match a tag that merely
+// contained ours.
+func MatchesETag(ifNoneMatch, etag string) bool {
+	if ifNoneMatch == "" {
+		return false
+	}
+	if strings.TrimSpace(ifNoneMatch) == "*" {
+		return true
+	}
+	for _, candidate := range strings.Split(ifNoneMatch, ",") {
+		candidate = strings.TrimSpace(candidate)
+		// A weak validator compares equal to a strong one for If-None-Match.
+		candidate = strings.TrimPrefix(candidate, "W/")
+		if candidate == etag {
+			return true
+		}
+	}
+	return false
 }
 
 // sriHash is the CSP source form for an inline script: the base64 SHA-256 of exactly

@@ -814,7 +814,11 @@ export interface components {
         CacheControlHour: "public, s-maxage=3600, stale-while-revalidate=7200";
         /** @description Cache directive. */
         CacheControlNone: "no-store";
-        /** @description Seconds to wait before retrying. */
+        /**
+         * @description Seconds to wait before retrying. Always a count of seconds, never an
+         *     HTTP-date — RFC 9110 permits both, and a client that has to guess which
+         *     one arrived will guess wrong once.
+         */
         RetryAfter: number;
     };
     pathItems: never;
@@ -845,6 +849,7 @@ export interface operations {
                 };
             };
             304: components["responses"]["NotModified"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -872,6 +877,7 @@ export interface operations {
                 };
             };
             304: components["responses"]["NotModified"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -913,6 +919,7 @@ export interface operations {
             };
             304: components["responses"]["NotModified"];
             404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -940,6 +947,7 @@ export interface operations {
                 };
             };
             304: components["responses"]["NotModified"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -967,6 +975,7 @@ export interface operations {
                 };
             };
             304: components["responses"]["NotModified"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
             502: components["responses"]["BadGateway"];
         };
@@ -1022,6 +1031,7 @@ export interface operations {
                     "text/html": string;
                 };
             };
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getDocsAsset: {
@@ -1044,6 +1054,7 @@ export interface operations {
                     "text/javascript": string;
                 };
             };
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getOpenapiDocument: {
@@ -1066,6 +1077,7 @@ export interface operations {
                     "application/yaml": string;
                 };
             };
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getUptimeBadge: {
@@ -1078,6 +1090,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BadgeOK"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getVersionBadge: {
@@ -1090,6 +1103,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BadgeOK"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getSystemsBadge: {
@@ -1102,6 +1116,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["BadgeOK"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     reportProbe: {
@@ -1120,6 +1135,7 @@ export interface operations {
             204: components["responses"]["AcceptedNoContent"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
         };
     };
@@ -1139,6 +1155,7 @@ export interface operations {
             204: components["responses"]["AcceptedNoContent"];
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];
         };
     };

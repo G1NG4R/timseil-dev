@@ -74,7 +74,9 @@ check-web: ## Typecheck, lint, unit tests
 GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml \
              api/internal/httpx/gen.go web/lib/api/schema.d.ts \
              api/migrations/testdata/skill_states.json \
-             api/internal/seed/stack.gen.json
+             api/internal/seed/stack.gen.json \
+             api/internal/store/db.go api/internal/store/models.go \
+             api/internal/store/health.sql.go
 
 # Drift is "running gen would change something", so that is what gets measured —
 # checksums either side of a run, not `git diff`.
@@ -87,9 +89,9 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
 check-contract: ## Validate the OpenAPI contract and check for codegen drift
 	@printf 'contract\n'
 	@tools/check-contract.sh
-# One checksum per file rather than one over all of them: GENERATED covers five
-# files from four sources now, and "something is stale" would send you looking in
-# the contract when what moved was a version in package.json.
+# One checksum per file rather than one over all of them: GENERATED covers eight
+# files from five sources now, and "something is stale" would send you looking in
+# the contract when what moved was a column in a migration.
 	@[ -f contract/openapi.yaml ] || exit 0; \
 		before=$$(sha256sum $(GENERATED) 2>/dev/null); \
 		$(MAKE) --no-print-directory gen >/dev/null || exit 1; \
@@ -155,13 +157,18 @@ gen: ## Generate Go and TS types from the contract, the skill states and the sta
 		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
 	@cp contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
 	@cd api && go tool oapi-codegen -config oapi-codegen.yaml ../contract/openapi.yaml
+# sqlc reads api/migrations directly — the goose files are the schema, so the
+# queries are checked against what is actually applied rather than against a
+# copy that drifts. It needs no database and no C toolchain: the Postgres parser
+# it uses is compiled to WebAssembly.
+	@cd api && go tool sqlc generate
 	@cd web && out=$$(npx --no-install openapi-typescript ../contract/openapi.yaml \
 		-o lib/api/schema.d.ts 2>&1) \
 		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
 # Its own success line goes; a failure still speaks, because it speaks on stderr.
 	@node tools/gen-skill-states.mjs >/dev/null
 	@cd api && go run ./cmd/genstack
-	@printf '  ✓ public bundle, go types, ts types, skill states, stack manifest\n'
+	@printf '  ✓ public bundle, go types, sql types, ts types, skill states, stack manifest\n'
 
 # --------------------------------------------------------------- migrations
 
@@ -221,7 +228,11 @@ check-db: ## Migration cycle and schema invariants against a real Postgres
 	@printf 'db\n'
 	@[ -f .env ] || { printf '  ✗ no .env — run: cp .env.example .env\n'; exit 1; }
 	@$(COMPOSE_DEV) up -d --wait db
-	@$(COMPOSE_DEV) run --rm --entrypoint go migrate test -tags=db -count=1 ./...
+# -p 1 because there is one test database and more than one package now wants
+# it. go test runs packages in parallel by default, and two of them calling
+# FreshSchema at the same time produce "relation already exists" from whichever
+# lost the race — a failure that reads like a broken migration and is not one.
+	@$(COMPOSE_DEV) run --rm --entrypoint go migrate test -tags=db -count=1 -p 1 ./...
 
 # ---------------------------------------------------------------- placeholders
 

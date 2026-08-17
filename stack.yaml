@@ -20,6 +20,7 @@ systems:
     - { name: "React",      from: "web/package.json", key: "dependencies.react" }
     - { name: "Go",         from: "api/go.mod",       key: "go" }
     - { name: "pgx",        from: "api/go.mod",       key: "github.com/jackc/pgx/v5" }
+    - { name: "sqlc",       from: "api/go.mod",       key: "github.com/sqlc-dev/sqlc" }
     - { name: "goose",      from: "api/go.mod",       key: "github.com/pressly/goose/v3" }
     # compose.yaml arrives in D2 and must then carry the same tag as this one.
     - { name: "PostgreSQL", from: "compose.dev.yaml", key: "services.db.image" }
