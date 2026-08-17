@@ -100,10 +100,32 @@ Router-Änderung und keine Neufassung.
 
 ### Was das kostet
 
-**sqlc zieht vierzig indirekte Module in `go.mod`** — einen MySQL-Treiber, SQLite,
-gRPC, einen TiDB-Parser. Nichts davon landet im Binary, alles davon landet im
-Abhängigkeitsgraphen, den `govulncheck` in E2 scannt. Der Preis für generierten,
-gegen das echte Schema geprüften Zugriff.
+**sqlc vergrößert den Abhängigkeitsgraphen um 41 Module** — einen MySQL-Treiber,
+SQLite, gRPC, einen TiDB-Parser. Gemessen statt geschätzt, weil der Verdacht
+sonst größer bleibt als die Sache:
+
+| | |
+|---|---|
+| Module aus dem sqlc-Graphen, die `./cmd/api` bindet | **0** |
+| `// indirect` in `api/go.mod` | 24 → 65 |
+| Zeilen in `api/go.sum` | 219 → 304 |
+| Laufzeit pro `make check`, gebaut und gecacht | 0,20 s |
+| Im Produktions-Image (D1, distroless + ein statisches Binary) | nichts |
+
+Zwei Dinge relativieren die Zahl, ohne sie kleinzureden.
+
+**Das Muster ist geerbt, nicht neu.** 14 der 24 indirekten Zeilen, die vorher
+schon dastanden, gehören oapi-codegen. Dass ein Codegenerator im api-Modul lebt,
+ist in B1 entschieden worden; sqlc ist derselbe Fall, nur größer.
+
+**Und `govulncheck` blockiert daran nicht.** Es analysiert im Standardmodus
+erreichbaren Code; was von `./cmd/api` aus nicht erreichbar ist — und das ist der
+gesamte Tool-Graph — erscheint in der informativen Liste „Module, die du benötigst,
+aber nicht aufrufst", nicht im blockierenden Teil. Was der größere Graph
+tatsächlich kostet, ist Aufmerksamkeit: Dependabot-Rauschen (E2 muss das Verhalten
+für indirekte Tool-Abhängigkeiten festlegen) und ein `go mod download` im
+Docker-Build, das den ganzen Graphen in eine Image-Schicht zieht, wenn D1 das
+übliche `COPY go.mod go.sum` voranstellt.
 
 **Drei Abfragen statt einer** für `/api/health`. Auf einem Endpoint mit
 `s-maxage=60` sind zwei zusätzliche indizierte Roundtrips kein Argument, aber es
@@ -128,8 +150,24 @@ eine Umbenennung schaltet ihn still ab.
 **`string` überall und `Valid()` am Rand** — verschiebt eine Frage, die die
 Datenbank per `CHECK` schon beantwortet, in eine Code-Review.
 
-**Ein handgeschriebener Zugriff mit pgx** — spart vierzig Module und kostet die
+**Ein handgeschriebener Zugriff mit pgx** — spart 41 Module und kostet die
 Prüfung gegen das Schema; C2 bis C7 schreiben deutlich mehr SQL als C1.
+
+**sqlc per `go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0` im Makefile** — die
+naheliegende Fassung, um `go.mod` sauber zu halten, und die schlechtere. Sie
+entfernt die Abhängigkeit nicht, sie entfernt sie aus dem Diff: die
+`tool`-Direktive hasht jedes dieser Module in `go.sum`, ein `@version`-Aufruf tut
+das nicht. Die 85 zusätzlichen `go.sum`-Zeilen sind nicht der Preis, sie sind der
+Gegenwert. Dazu stünde die Version als Literal im Makefile — genau das, was
+`stack.yaml` und ADR 0012 verbieten.
+
+**Ein eigenes `tools/go.mod`** — hielte den Graphen des api-Moduls klein, und der
+Stack-Resolver käme damit zurecht (`fromGoMod` matcht auf den Dateinamen, also
+löst `from: "tools/go.mod"` auf). Konsequent wäre aber nur, oapi-codegen
+mitzuverschieben, also ein Umbau an einem funktionierenden `make gen` — und sqlc
+löst die Pfade in `sqlc.yaml` relativ zum Arbeitsverzeichnis auf, das über eine
+Modulgrenze hinweg nicht mehr `api/` ist. Aufwand und ein neuer Stolperstein für
+einen Graphen, der das Artefakt nicht erreicht.
 
 **Den generierten Router jetzt montieren, mit 501 für die ungebauten** — ein
 Status, den keine Operation deklariert, in einem Repository, dessen Client aus
