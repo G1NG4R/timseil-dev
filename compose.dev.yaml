@@ -122,11 +122,17 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
       SITE_SYSTEM_SLUG: ${SITE_SYSTEM_SLUG:-}
 
-      # The one exception to "empty means default". Which networks may set
-      # X-Forwarded-For is a fact about the deployment, not about the program,
-      # so the program defaults to trusting nobody and the deployment says who.
-      # These are the docker bridge ranges plus loopback. ADR 0015.
-      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.16.0.0/12,192.168.0.0/16,10.0.0.0/8,127.0.0.1/32,::1/128}
+      # Empty here, and that is not an oversight.
+      #
+      # In development nothing forwards anything: a request from your machine
+      # arrives through docker's port mapping, so the peer is the bridge gateway
+      # doing NAT — not a proxy that added an X-Forwarded-For. Listing the bridge
+      # range would mean believing a header nobody sets, and the API would then
+      # decline to rate limit anything and say so once a minute in the log.
+      #
+      # Production is the other case: Traefik does forward, and Dokploy sets this
+      # to the network Traefik reaches the api on. ADR 0015.
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
     ports:
       # 127.0.0.1 on purpose: convenient for curl, invisible to the network.
       - "127.0.0.1:${API_PORT:-8080}:8080"

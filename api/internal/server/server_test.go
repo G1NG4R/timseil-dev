@@ -13,15 +13,42 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/health"
 	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
-// stubPinger stands in for the pool. The broken case is the interesting one,
-// and it is the one that needs no database at all.
-type stubPinger struct{ err error }
+// stubDB stands in for the pool. The broken case is the interesting one, and it
+// is the one that needs no database at all.
+//
+// Its query side always fails: these tests are about routing and the chain, and
+// what /api/health answers on a working database belongs to the health package
+// and to make check-db. What matters here is that the failure comes back as a
+// problem document rather than as a panic.
+type stubDB struct{ err error }
 
-func (s stubPinger) Ping(context.Context) error { return s.err }
+func (s stubDB) Ping(context.Context) error { return s.err }
+
+func (s stubDB) Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error) {
+	return pgconn.CommandTag{}, errNoDatabase
+}
+
+func (s stubDB) Query(context.Context, string, ...interface{}) (pgx.Rows, error) {
+	return nil, errNoDatabase
+}
+
+func (s stubDB) QueryRow(context.Context, string, ...interface{}) pgx.Row {
+	return failingRow{}
+}
+
+var errNoDatabase = errors.New("dial tcp 10.0.0.1:5432: connect: connection refused")
+
+type failingRow struct{}
+
+func (failingRow) Scan(...any) error { return errNoDatabase }
 
 // testConfig is deliberately generous on the rate limit: these tests are about
 // routing, and a limiter that bites halfway through would make them flaky in a
@@ -43,7 +70,9 @@ func handler(t *testing.T, pingErr error, accepting bool) http.Handler {
 	var flag atomic.Bool
 	flag.Store(accepting)
 
-	h, stop := New(testConfig(), stubPinger{err: pingErr},
+	h, stop := New(testConfig(), stubDB{err: pingErr}, health.Build{
+		Version: "dev", SHA: "unknown", StartedAt: time.Unix(0, 0).UTC(),
+	},
 		slog.New(slog.NewTextHandler(io.Discard, nil)), &flag)
 	t.Cleanup(stop)
 	return h

@@ -7,6 +7,7 @@
       "React 19.2",
       "Go 1.26",
       "pgx 5.10",
+      "sqlc 1.30",
       "goose 3.27",
       "PostgreSQL 18.6",
       "Node 24"

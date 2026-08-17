@@ -129,6 +129,7 @@ clone comes up with a working database in one command. To run either on its own,
 | <http://localhost:3000> | the web app, `next dev` |
 | <http://localhost:8080/healthz> | the API is alive |
 | <http://localhost:8080/readyz> | the API can reach Postgres — `503` when it cannot |
+| <http://localhost:8080/api/health> | build identity and operational numbers |
 | <http://localhost:8080/api/docs> | the API contract, rendered |
 
 Both ports are bound to `127.0.0.1`. **Postgres publishes no port at all**: it is

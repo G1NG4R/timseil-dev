@@ -21,16 +21,20 @@ import (
 	"time"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/health"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
+	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
 
 // A readiness probe that can hang is not a probe.
 const readyTimeout = 2 * time.Second
 
-// Pinger is everything the readiness probe needs from the database. Keeping it
-// this narrow is what lets the probe be tested without a running Postgres.
-type Pinger interface {
+// DB is everything this package needs from the pool: a ping for the readiness
+// probe, and the query surface the generated store runs on. Narrow on purpose —
+// it is what lets the routes be tested without a running Postgres.
+type DB interface {
+	store.DBTX
 	Ping(ctx context.Context) error
 }
 
@@ -39,7 +43,7 @@ type Pinger interface {
 // The returned cleanup stops the rate limiter's janitor. It is separate from
 // closing the pool because the two have to happen in order, after the drain,
 // and the caller is the only place that knows when that is.
-func New(cfg config.Config, pool Pinger, log *slog.Logger, accepting *atomic.Bool) (http.Handler, func()) {
+func New(cfg config.Config, pool DB, build health.Build, log *slog.Logger, accepting *atomic.Bool) (http.Handler, func()) {
 	client := middleware.NewClientIP(cfg.TrustedProxies)
 	hasher := middleware.NewIPHasher()
 	limiter := middleware.NewRateLimiter(
@@ -55,7 +59,7 @@ func New(cfg config.Config, pool Pinger, log *slog.Logger, accepting *atomic.Boo
 	// limit, because a preflight answered with 429 reaches the browser as an
 	// opaque CORS failure instead of a readable one. The rate limit last, so a
 	// throttled request still has an id and a log line.
-	handler := middleware.Chain(routes(pool, log, accepting),
+	handler := middleware.Chain(routes(cfg, pool, build, log, accepting),
 		middleware.RequestID(client),
 		middleware.Logging(log, client, hasher),
 		middleware.Recover(log),
@@ -73,7 +77,8 @@ func New(cfg config.Config, pool Pinger, log *slog.Logger, accepting *atomic.Boo
 // routes wires what this phase actually serves. The method in the pattern is
 // load-bearing: "GET /healthz" makes ServeMux answer 405 to a POST instead of
 // pretending the process was asked whether it is alive.
-func routes(pool Pinger, log *slog.Logger, accepting *atomic.Bool) *http.ServeMux {
+func routes(cfg config.Config, pool DB, build health.Build, log *slog.Logger,
+	accepting *atomic.Bool) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Liveness. It stays 200 while draining: a draining process is still alive,
@@ -102,6 +107,11 @@ func routes(pool Pinger, log *slog.Logger, accepting *atomic.Bool) *http.ServeMu
 		}
 		writePlain(w, http.StatusOK, "ready")
 	})
+
+	// The first operation of the contract this service serves. The rest of
+	// stage C mounts itself here, one line at a time.
+	mux.Handle("GET /api/health",
+		health.New(store.New(pool), build, cfg.SiteSystemSlug, log))
 
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.

@@ -22,8 +22,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/buildinfo"
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/db"
+	"github.com/G1NG4R/timseil-dev/api/internal/health"
 	"github.com/G1NG4R/timseil-dev/api/internal/server"
 )
 
@@ -84,7 +86,16 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	var accepting atomic.Bool
 	accepting.Store(true)
 
-	handler, stopLimiter := server.New(cfg, pool, log, &accepting)
+	// Read once, here, so that the identity in the log line and the identity on
+	// /api/health cannot disagree.
+	build := buildinfo.Read()
+	log.Info("build", "version", build.Version, "sha", build.SHA)
+
+	handler, stopLimiter := server.New(cfg, pool, health.Build{
+		Version:   build.Version,
+		SHA:       build.SHA,
+		StartedAt: time.Now().UTC(),
+	}, log, &accepting)
 
 	srv := &http.Server{
 		Handler:           handler,
