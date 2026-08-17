@@ -19,7 +19,8 @@ accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$
 
 mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
-   "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" "$tmp/tools/"
+   "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
+   "$root/tools/check-migrations.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
 
@@ -220,6 +221,115 @@ components:
   accepts "absent contract skips" tools/check-contract.sh
   rm -rf web
 fi
+
+printf 'migrations\n'
+# The static half of the migration rules. The cycle itself needs a database and
+# lives in `make check-db`; what is greppable is guarded here, and here is where
+# it gets held to its broken case.
+mkdir -p api/migrations
+
+# A minimal migration that satisfies every rule, so each assertion below can
+# break exactly one thing.
+write_migration() { printf '%s' "$1" > api/migrations/00001_selftest.sql; }
+
+good_migration='-- +goose Up
+CREATE TABLE tracks (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+-- Serves C3: SELECT id FROM tracks WHERE name = $1
+CREATE INDEX tracks_name_idx ON tracks (name);
+-- +goose Down
+DROP TABLE tracks;
+'
+
+write_migration "$good_migration"
+accepts "well formed migration accepted" tools/check-migrations.sh
+
+# A migration nobody can roll back is how an irreversible change gets merged.
+write_migration "$(printf '%s' "$good_migration" | sed '/+goose Down/,$d')"
+rejects "migration without a Down rejected" tools/check-migrations.sh
+
+write_migration "$(printf '%s' "$good_migration" | sed 's/^DROP TABLE tracks;$/-- nothing to undo/')"
+rejects "empty Down rejected" tools/check-migrations.sh
+
+# The acceptance criterion of B2, made mechanical.
+write_migration "$(printf '%s' "$good_migration" | sed 's/^-- Serves C3.*$/-- an index/')"
+rejects "index without its query rejected" tools/check-migrations.sh
+
+# DROP TYPE fails on dependent columns, which is what turns the second cycle red.
+write_migration "$(printf '%s' "$good_migration" | sed "1a CREATE TYPE track_state AS ENUM ('core');")"
+rejects "enum type rejected" tools/check-migrations.sh
+
+# Roles are cluster-wide; DROP ROLE fails while a grant exists.
+write_migration "$(printf '%s' "$good_migration" | sed '1a CREATE ROLE someone LOGIN;')"
+rejects "role in a migration rejected" tools/check-migrations.sh
+
+# The one that has to outlive this phase: invariant 2 and ADR 0003.
+write_migration "$(printf '%s' "$good_migration" | sed 's/^    name text NOT NULL,$/    state text NOT NULL,\n    name text NOT NULL,/')"
+rejects "state column on tracks rejected" tools/check-migrations.sh
+
+write_migration "$(printf '%s' "$good_migration" | sed 's/^ALTER TABLE.*$//; $a ALTER TABLE tracks ADD COLUMN state text;')"
+rejects "state column added to tracks later rejected" tools/check-migrations.sh
+
+# Both hide a wrong drop order instead of failing on it.
+write_migration "$(printf '%s' "$good_migration" | sed 's/^DROP TABLE tracks;$/DROP TABLE tracks CASCADE;/')"
+rejects "DROP CASCADE rejected" tools/check-migrations.sh
+
+write_migration "$(printf '%s' "$good_migration" | sed 's/^DROP TABLE tracks;$/DROP TABLE IF EXISTS tracks;/')"
+rejects "IF EXISTS in a Down rejected" tools/check-migrations.sh
+
+write_migration "$(printf '%s' "$good_migration" | sed 's/timestamptz/timestamp/')"
+rejects "timestamp without a time zone rejected" tools/check-migrations.sh
+
+write_migration "$(printf '%s' "$good_migration" | sed 's/bigint GENERATED ALWAYS AS IDENTITY/bigserial/')"
+rejects "serial type rejected" tools/check-migrations.sh
+
+# Comments are prose, not SQL: neither of these words is a declaration.
+write_migration "$(printf '%s' "$good_migration" | sed '1a -- the timestamp is serial in spirit only')"
+accepts "those words inside a comment accepted" tools/check-migrations.sh
+
+write_migration "$good_migration"
+mv api/migrations/00001_selftest.sql api/migrations/00002_selftest.sql
+rejects "numbering that starts at two rejected" tools/check-migrations.sh
+rm -f api/migrations/00002_selftest.sql
+
+write_migration "$good_migration"
+printf 'x\n' > api/migrations/nope.sql
+rejects "misnamed migration rejected" tools/check-migrations.sh
+rm -f api/migrations/nope.sql
+
+# The price of text + CHECK over a Postgres enum (ADR 0010), and where it is paid.
+# All four schemas are here because the check insists the contract side exists:
+# a CHECK list it cannot compare against is not a guarded list.
+mkdir -p contract
+printf 'components:
+  schemas:
+    SystemState:
+      type: string
+      enum: [live, in_build, queued]
+    DayState:
+      type: string
+      enum: [ok, degraded, outage, nodata]
+    DeployResult:
+      type: string
+      enum: [ok, rollback]
+    SourceReason:
+      type: string
+      enum: [nda, internal]
+' > contract/openapi.yaml
+
+write_migration "$good_migration"
+printf "ALTER TABLE systems ADD CONSTRAINT systems_state_ck CHECK (state IN ('live', 'in_build', 'queued'));\n" >> api/migrations/00001_selftest.sql
+accepts "CHECK list matching the contract accepted" tools/check-migrations.sh
+
+write_migration "$good_migration"
+printf "ALTER TABLE systems ADD CONSTRAINT systems_state_ck CHECK (state IN ('live', 'planned'));\n" >> api/migrations/00001_selftest.sql
+rejects "CHECK list drifting from the contract rejected" tools/check-migrations.sh
+
+rm -rf api contract
+accepts "absent migrations skip" tools/check-migrations.sh
 
 printf 'node version\n'
 # A fake interpreter, so the assertions do not depend on what this machine runs.

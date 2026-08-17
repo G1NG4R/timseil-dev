@@ -21,9 +21,18 @@ services:
       # scram-sha-256 from the first initdb on. Retrofitting an auth method
       # onto an existing cluster is the kind of chore nobody gets around to.
       POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+      # Read by the initdb script below, which is a shell file precisely because
+      # only shell files in that directory see these.
+      MIGRATE_DB_PASSWORD: ${MIGRATE_DB_PASSWORD:?set it in .env — copy .env.example}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set it in .env — copy .env.example}
     expose:
       - "5432"
     volumes:
+      # Runs ONCE, on the very first start of an empty data directory. It
+      # creates timseil_migrate and timseil_app and the test database. On an
+      # existing volume it does not run at all — that is why a change here means
+      # `make dev-reset` and not just a restart. ADR 0011.
+      - ./ops/postgres/initdb:/docker-entrypoint-initdb.d:ro
       # Named volume, not a bind mount: Dokploy's volume backups only see named
       # volumes, and dev should not diverge from that on the storage question.
       #
@@ -39,11 +48,41 @@ services:
       retries: 15
       start_period: 5s
 
+  # Applies the schema. Same order as production (D2), where this becomes an
+  # init container instead of a compose-run target.
+  #
+  # It carries MIGRATE_DATABASE_URL and the api service does not: giving the
+  # long-lived API process DDL credentials would undo the very separation this
+  # phase builds. Postgres publishes no port, so this is also the only way to
+  # reach the database at all — goose from the host cannot.
+  migrate:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    environment:
+      MIGRATE_DATABASE_URL: ${MIGRATE_DATABASE_URL:?set it in .env — copy .env.example}
+      # For `make check-db`, which reuses this service with a different
+      # entrypoint. Both point at the throwaway database, never at timseil.
+      TEST_DATABASE_URL: ${TEST_DATABASE_URL:?set it in .env — copy .env.example}
+      TEST_APP_DATABASE_URL: ${TEST_APP_DATABASE_URL:?set it in .env — copy .env.example}
+    entrypoint: ["go", "run", "./cmd/migrate"]
+    command: ["up"]
+    restart: "no"
+    volumes:
+      - ./api:/app
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
     build:
       context: ./api
       dockerfile: Dockerfile.dev
     environment:
+      # The app role. DML only — it cannot create or drop a table, which is what
+      # makes an SQL injection here unable to take the schema with it.
       DATABASE_URL: ${DATABASE_URL:?set it in .env — copy .env.example}
     ports:
       # 127.0.0.1 on purpose: convenient for curl, invisible to the network.
@@ -62,6 +101,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      # The API must not come up against a database without a schema. This is
+      # also what makes `make dev` from an empty volume produce a working stack
+      # in one command.
+      migrate:
+        condition: service_completed_successfully
 
   web:
     build:

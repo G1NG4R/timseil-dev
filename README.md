@@ -15,7 +15,7 @@ claims are checkable. They get switched on in phase M6, tracked by the issue
 ![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
 -->
 
-> **Status:** in build — stage A of 13, phase A3. Nothing is deployed yet.
+> **Status:** in build — stage B of 13, phase B2. Nothing is deployed yet.
 > There is no running site behind this repository today, and this line will say
 > so until there is. See [the build plan](docs/build-plan.md) (German).
 
@@ -114,9 +114,13 @@ cd timseil-dev
 git config core.hooksPath .githooks   # arms the commit and push hooks
 make check                            # every check that applies today
 cp .env.example .env                  # local values, none of them secret
-make dev                              # postgres + api + web, hot reload on both
+make dev                              # postgres + migrations + api + web
 make design                           # design handoff on http://localhost:4000
 ```
+
+`make dev` applies the schema before the API starts, so a cold clone comes up
+with a working database in one command. To run the migrations on their own,
+`make migrate`; `make migrate-status` says what is applied.
 
 `make dev` gives you three containers and two URLs:
 
@@ -132,15 +136,27 @@ reachable inside the docker network and nowhere else, which is the same rule tha
 applies in production. To get a shell on it:
 
 ```bash
-docker compose -f compose.dev.yaml exec db psql -U timseil_dev -d timseil
+docker compose -f compose.dev.yaml exec db psql -U timseil_boot -d timseil
 ```
 
 `make dev-down` stops the stack, `make dev-reset` also drops the database volume
 so the next start is a cold one.
 
+**Postgres runs with two roles, not one.** `timseil_migrate` owns the schema and
+is the only role allowed to run DDL; `timseil_app` — the one the API connects
+with — may only read and write rows. An SQL injection in a handler therefore
+cannot drop a table ([ADR 0011](docs/adr/0011-postgres-roles-bootstrap-and-privileges.md)).
+Both roles are created when the database volume is first initialised, which means
+**an existing volume needs `make dev-reset` once** or `make migrate` will report
+that the role does not exist.
+
+`make check-db` proves that: it cycles the migrations up, down and up three
+times against a throwaway database and feeds every constraint the value it is
+supposed to refuse. It needs Docker, so it is not part of `make check`.
+
 `make help` lists all targets. **Targets that belong to a later phase say so and
-exit instead of pretending they checked something** — `make migrate` arrives in B2,
-`make e2e` before stage H. That is deliberate: a quickstart
+exit instead of pretending they checked something** — `make e2e` arrives before
+stage H. That is deliberate: a quickstart
 that lies is the failure mode this project is built to avoid, and CI will run
 these commands from stage E5 onwards to keep this section honest.
 
@@ -159,7 +175,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `docs/build-plan.md` | the author, every session (German) |
 | `docs/adr/` | the author in six months, asking "why did I do that?" |
 | `docs/architecture/` | anyone who wants the shape before the code |
-| `docs/runbooks/` | the author at three in the morning (from D3) |
+| `docs/runbooks/` | the author at three in the morning |
 | `docs/design/` | **read-only** imported design handoff, 29 sheets |
 | `contract/openapi.yaml` | the single source of truth for API types |
 | `backlog.md` | the notepad between sessions |
@@ -181,6 +197,8 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0007](docs/adr/0007-prometheus-instead-of-log-parsing.md) | Prometheus measures, Postgres serves |
 | [0008](docs/adr/0008-single-host-at-launch.md) | One host at launch, outage log kept outside |
 | [0009](docs/adr/0009-contract-problem-details-caching-public-bundle.md) | Problem Details everywhere, internal paths filtered from the published contract |
+| [0010](docs/adr/0010-enum-values-as-text-and-check.md) | State values as `text` + `CHECK`, not Postgres enums |
+| [0011](docs/adr/0011-postgres-roles-bootstrap-and-privileges.md) | Roles from initdb, privileges from the migration |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.
