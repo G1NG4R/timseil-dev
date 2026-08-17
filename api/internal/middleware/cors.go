@@ -1,0 +1,74 @@
+package middleware
+
+import (
+	"net/http"
+	"strings"
+)
+
+// preflightMaxAge in seconds. Ten minutes keeps a browser from asking again on
+// every call without pinning a wrong answer for a whole afternoon.
+const preflightMaxAge = "600"
+
+// CORS answers reads from anywhere and preflights only from the origins the
+// deployment names.
+//
+// The asymmetry is the argument of this site. ADR 0004 makes the read API
+// public so that a stranger can check the numbers "ohne den Betreiber" — and a
+// stranger with a browser is still a stranger. An origin allowlist on the read
+// paths would mean the API is checkable with curl and not from a page, which is
+// a footnote away from "checkable if you ask nicely".
+//
+// Credentials are never allowed. Without that line, `Access-Control-Allow-
+// Origin: *` is refused by browsers anyway; with it and a reflected origin it
+// would turn every visitor's cookies into an attack surface. There are no
+// cookies here, and there is no reason to leave the door open for the day
+// somebody adds one.
+//
+// allowed is not consulted by the read paths at all. It exists for the write
+// path in C6, where an origin check is one of the layers on the contact form.
+func CORS(allowed []string) Func {
+	set := make(map[string]bool, len(allowed))
+	for _, origin := range allowed {
+		set[strings.ToLower(origin)] = true
+	}
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !isAPI(r.URL.Path) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Preflight. The browser is asking whether a non-simple request
+			// would be allowed, so this is where the allowlist applies.
+			if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+				w.Header().Set("Vary", "Origin")
+				if origin := r.Header.Get("Origin"); set[strings.ToLower(origin)] {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+					w.Header().Set("Access-Control-Allow-Headers", "Content-Type, If-None-Match, "+
+						"X-Request-Id")
+					w.Header().Set("Access-Control-Max-Age", preflightMaxAge)
+				}
+				// An unknown origin gets a bare 204 rather than a 403. The
+				// browser is the one that reports the failure, and a status
+				// would only tell a non-browser client that origins are being
+				// evaluated at all.
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+
+			if r.Method == http.MethodGet || r.Method == http.MethodHead {
+				// No Vary: Origin. The value is constant, so varying on it
+				// would fragment every cache in front of this for nothing.
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func isAPI(path string) bool {
+	return path == "/api" || strings.HasPrefix(path, "/api/")
+}

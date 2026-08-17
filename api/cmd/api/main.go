@@ -24,15 +24,12 @@ import (
 
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/db"
-	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
+	"github.com/G1NG4R/timseil-dev/api/internal/server"
 )
 
 // The port is fixed inside the container. Which port it appears on for the
 // host is a compose concern (API_PORT in .env), not this program's.
 const listenAddr = ":8080"
-
-// A readiness probe that can hang is not a probe.
-const readyTimeout = 2 * time.Second
 
 // Connection-level limits. They are not configurable because they answer no
 // question that differs between one deployment and another: they exist to stop
@@ -43,12 +40,6 @@ const (
 	writeTimeout      = 30 * time.Second
 	idleTimeout       = 60 * time.Second
 )
-
-// pinger is everything /readyz needs from the database. Keeping it this narrow
-// is what lets the handler be tested without a running Postgres.
-type pinger interface {
-	Ping(ctx context.Context) error
-}
 
 func main() {
 	// A logger before the configuration, because the configuration is the
@@ -93,8 +84,10 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	var accepting atomic.Bool
 	accepting.Store(true)
 
+	handler, stopLimiter := server.New(cfg, pool, log, &accepting)
+
 	srv := &http.Server{
-		Handler:           newMux(pool, log, &accepting),
+		Handler:           handler,
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,
@@ -111,12 +104,20 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 
 	ln, err := net.Listen("tcp", listenAddr)
 	if err != nil {
+		stopLimiter()
 		pool.Close()
 		return err
 	}
 
 	log.Info("api listening", "addr", ln.Addr().String())
-	return serve(ctx, srv, ln, cfg.ShutdownGrace, &accepting, pool.Close, log)
+
+	// Both released after the drain, and in this order: the limiter's janitor
+	// first because nothing is waiting on it, the pool last because a handler
+	// still writing its response may still need it.
+	return serve(ctx, srv, ln, cfg.ShutdownGrace, &accepting, func() {
+		stopLimiter()
+		pool.Close()
+	}, log)
 }
 
 // serve runs the server until ctx is done, then drains it.
@@ -172,49 +173,4 @@ func serve(
 
 	log.Info("drained cleanly")
 	return nil
-}
-
-// newMux wires the two operational paths. The method in the pattern is
-// load-bearing: "GET /healthz" makes ServeMux answer 405 to a POST instead of
-// pretending the process was asked whether it is alive.
-func newMux(dbConn pinger, log *slog.Logger, accepting *atomic.Bool) *http.ServeMux {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
-		writePlain(w, http.StatusOK, "ok")
-	})
-
-	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
-		// Draining counts as not ready even though the database is fine: the
-		// answer to "should you send me work" is no, and that is the question
-		// this probe is asked.
-		if !accepting.Load() {
-			writePlain(w, http.StatusServiceUnavailable, "shutting down")
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), readyTimeout)
-		defer cancel()
-
-		if err := dbConn.Ping(ctx); err != nil {
-			// The reason goes to the log, never into the response: a DSN, a
-			// host name or a driver stacktrace is not an answer to give out.
-			log.Error("readiness check failed", "err", err)
-			writePlain(w, http.StatusServiceUnavailable, "database unreachable")
-			return
-		}
-		writePlain(w, http.StatusOK, "ready")
-	})
-
-	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
-	// /api/openapi.yaml. The endpoints it describes arrive in stage C.
-	httpx.RegisterDocs(mux)
-
-	return mux
-}
-
-func writePlain(w http.ResponseWriter, status int, body string) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(status)
-	_, _ = w.Write([]byte(body + "\n"))
 }
