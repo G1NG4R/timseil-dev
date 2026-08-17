@@ -130,6 +130,25 @@ services:
     ports:
       # 127.0.0.1 on purpose: convenient for curl, invisible to the network.
       - "127.0.0.1:${API_PORT:-8080}:8080"
+
+    # Longer than SHUTDOWN_GRACE, and that relationship is the whole point.
+    # Docker's default is 10 seconds: with it, the process would still be
+    # draining politely when SIGKILL arrived, the shutdown tests would stay
+    # green, and production would cut requests anyway. D2 has to repeat this.
+    stop_grace_period: 30s
+
+    healthcheck:
+      # wget is busybox's, from the alpine base. D1 builds on distroless, which
+      # has no shell and no wget, so the production image needs a healthcheck
+      # the binary answers itself — that is D1's problem and it is noted there.
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      # air compiles the binary on the first start, and a cold module cache
+      # makes that slow. Failing the healthcheck while it compiles would be a
+      # false alarm on every fresh clone.
+      start_period: 60s
     volumes:
       - ./api:/app
       # air's build output, on a volume rather than in the bind mount. The
@@ -176,7 +195,11 @@ services:
       # directory you cannot delete without docker's help.
       - web-next:/app/.next
     depends_on:
-      - api
+      # Healthy, not merely started. The header of this file says every stage
+      # waits for the one below it; until the api had a healthcheck, this one
+      # could only wait for a container to exist, which is not the same claim.
+      api:
+        condition: service_healthy
 
 volumes:
   db-data:

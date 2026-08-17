@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -18,7 +19,15 @@ type stubPinger struct{ err error }
 func (s stubPinger) Ping(context.Context) error { return s.err }
 
 func quietMux(err error) *http.ServeMux {
-	return newMux(stubPinger{err: err}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	var accepting atomic.Bool
+	accepting.Store(true)
+	return newMux(stubPinger{err: err}, slog.New(slog.NewTextHandler(io.Discard, nil)), &accepting)
+}
+
+// draining is the same mux after the shutdown has begun.
+func drainingMux() *http.ServeMux {
+	var accepting atomic.Bool // zero value: no longer accepting
+	return newMux(stubPinger{}, slog.New(slog.NewTextHandler(io.Discard, nil)), &accepting)
 }
 
 func do(t *testing.T, mux *http.ServeMux, method, path string) *httptest.ResponseRecorder {
@@ -70,5 +79,24 @@ func TestReadyzIsOKWhenPingSucceeds(t *testing.T) {
 	rec := do(t, quietMux(nil), http.MethodGet, "/readyz")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET /readyz = %d, want %d", rec.Code, http.StatusOK)
+	}
+}
+
+// A draining server is not ready even though the database is fine. The question
+// the probe asks is "should you send me work", and during a drain the answer is
+// no — otherwise the proxy keeps routing to an instance that is going away.
+func TestReadyzIsUnavailableWhileDraining(t *testing.T) {
+	rec := do(t, drainingMux(), http.MethodGet, "/readyz")
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("GET /readyz while draining = %d, want %d", rec.Code, http.StatusServiceUnavailable)
+	}
+}
+
+// Liveness is not readiness. A draining process is still alive, and answering
+// 503 here would make the orchestrator kill it in the middle of its own drain.
+func TestHealthzStaysOKWhileDraining(t *testing.T) {
+	rec := do(t, drainingMux(), http.MethodGet, "/healthz")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /healthz while draining = %d, want %d", rec.Code, http.StatusOK)
 	}
 }

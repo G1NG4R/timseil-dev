@@ -18,5 +18,15 @@ tmp_dir = "tmp"
   # restart into a half-written state.
   stop_on_error = true
 
+  # Without these two, air kills the server outright — on every rebuild and on
+  # `docker compose stop`, because air is PID 1 in this container and the
+  # signal never reaches the binary. The graceful shutdown of C1 would then be
+  # code that only ever runs in production, which is another way of saying
+  # untested. With send_interrupt the process gets a signal it handles, drains,
+  # and says so in the log; kill_delay is the ceiling on that patience and sits
+  # above SHUTDOWN_GRACE so air is not the one cutting the drain short.
+  send_interrupt = true
+  kill_delay = "25s"
+
 [log]
   time = true
