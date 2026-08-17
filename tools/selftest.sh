@@ -318,6 +318,9 @@ printf 'components:
     SourceReason:
       type: string
       enum: [nda, internal]
+    TrackState:
+      type: string
+      enum: [core, applied, learning, queued]
 ' > contract/openapi.yaml
 
 write_migration "$good_migration"
@@ -327,6 +330,48 @@ accepts "CHECK list matching the contract accepted" tools/check-migrations.sh
 write_migration "$good_migration"
 printf "ALTER TABLE systems ADD CONSTRAINT systems_state_ck CHECK (state IN ('live', 'planned'));\n" >> api/migrations/00001_selftest.sql
 rejects "CHECK list drifting from the contract rejected" tools/check-migrations.sh
+
+# The derivation itself (rule 7). The first argument is the literal behind the
+# first THEN, which is where the drift shows up.
+write_view() {
+  cat > api/migrations/00002_view.sql <<SQL
+-- +goose Up
+CREATE VIEW v_track_states WITH (security_invoker = true) AS
+SELECT t.id AS track_id,
+    CASE
+        WHEN count(s.id) >= 2 THEN '$1'
+        WHEN count(s.id) = 1 THEN 'applied'
+        WHEN count(s.id) > 0 THEN 'learning'
+        ELSE 'queued'
+    END AS state
+FROM tracks t
+GROUP BY t.id;
+-- +goose Down
+DROP VIEW v_track_states;
+SQL
+}
+
+write_migration "$good_migration"
+write_view core
+accepts "derivation matching the contract accepted" tools/check-migrations.sh
+
+write_view planned
+rejects "derivation drifting from the contract rejected" tools/check-migrations.sh
+
+write_view core
+sed -i.bak 's/^CREATE VIEW/CREATE MATERIALIZED VIEW/' api/migrations/00002_view.sql && rm -f api/migrations/00002_view.sql.bak
+rejects "materialised view rejected" tools/check-migrations.sh
+
+# A Down that drops something — anything — but not the view it created. Rule 2
+# is satisfied and the rollback is still a lie.
+write_view core
+sed -i.bak 's/^DROP VIEW v_track_states;$/DROP TABLE something_else;/' api/migrations/00002_view.sql && rm -f api/migrations/00002_view.sql.bak
+rejects "derivation not dropped in its Down rejected" tools/check-migrations.sh
+
+write_view core
+cp api/migrations/00002_view.sql api/migrations/00003_view_again.sql
+rejects "derivation defined twice rejected" tools/check-migrations.sh
+rm -f api/migrations/00002_view.sql api/migrations/00003_view_again.sql
 
 rm -rf api contract
 accepts "absent migrations skip" tools/check-migrations.sh
