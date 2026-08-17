@@ -26,7 +26,9 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/db"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
+	"github.com/G1NG4R/timseil-dev/api/internal/ops"
 	"github.com/G1NG4R/timseil-dev/api/internal/server"
+	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
 
 // The port is fixed inside the container. Which port it appears on for the
@@ -81,6 +83,16 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		return err
 	}
 
+	// Started here, after the pool and before anything can listen. The roll-up is
+	// the only thing besides a handler that touches the database, so it has to be
+	// stoppable on every path out of this function — and it has to stop before the
+	// pool closes, which is the one ordering rule below that is load-bearing.
+	//
+	// C4 has no endpoint. This loop is the phase: it derives ops_days from
+	// ops_checks every few minutes, and a day nobody measured never reaches the
+	// table at all.
+	aggregator := ops.New(store.New(pool), log)
+
 	// Flipped before the listener closes, so /readyz says 503 while the last
 	// requests drain and whatever is watching stops sending new ones.
 	var accepting atomic.Bool
@@ -115,6 +127,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 
 	ln, err := net.Listen("tcp", listenAddr)
 	if err != nil {
+		aggregator.Stop()
 		stopLimiter()
 		pool.Close()
 		return err
@@ -122,10 +135,13 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 
 	log.Info("api listening", "addr", ln.Addr().String())
 
-	// Both released after the drain, and in this order: the limiter's janitor
-	// first because nothing is waiting on it, the pool last because a handler
-	// still writing its response may still need it.
+	// All three released after the drain, and in this order: the aggregator first
+	// because it is the only background user of the pool and a roll-up in flight
+	// would otherwise meet a closed one, the limiter's janitor next because
+	// nothing is waiting on it, the pool last because a handler still writing its
+	// response may still need it.
 	return serve(ctx, srv, ln, cfg.ShutdownGrace, &accepting, func() {
+		aggregator.Stop()
 		stopLimiter()
 		pool.Close()
 	}, log)
