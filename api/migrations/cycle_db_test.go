@@ -134,8 +134,8 @@ func TestUpDownUpThreeTimes(t *testing.T) {
 	}
 }
 
-// schemaShape renders every column, constraint and index into one sorted string
-// so two passes can be compared as text.
+// schemaShape renders every column, constraint, index and view definition into
+// one sorted string so two passes can be compared as text.
 func schemaShape(t *testing.T, db *sql.DB) string {
 	t.Helper()
 
@@ -154,9 +154,19 @@ WITH cols AS (
     SELECT format('index %s', indexdef) AS line
       FROM pg_indexes
      WHERE schemaname = 'public' AND tablename <> 'goose_db_version'
+), views AS (
+    -- The definition, not just the columns. information_schema.columns lists a
+    -- view's columns like any other, so without this line a rewritten CASE with
+    -- unchanged column names would pass three cycles unnoticed — and the whole
+    -- point of v_track_states is what that CASE says (ADR 0003).
+    SELECT format('view %s %s', viewname,
+                  pg_get_viewdef(format('%I.%I', schemaname, viewname)::regclass)) AS line
+      FROM pg_views
+     WHERE schemaname = 'public'
 )
 SELECT string_agg(line, E'\n' ORDER BY line)
-  FROM (SELECT line FROM cols UNION ALL SELECT line FROM cons UNION ALL SELECT line FROM idx) all_lines`
+  FROM (SELECT line FROM cols UNION ALL SELECT line FROM cons
+        UNION ALL SELECT line FROM idx UNION ALL SELECT line FROM views) all_lines`
 
 	var shape sql.NullString
 	if err := db.QueryRow(q).Scan(&shape); err != nil {
