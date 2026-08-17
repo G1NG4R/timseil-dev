@@ -26,6 +26,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 	"github.com/G1NG4R/timseil-dev/api/internal/systems"
+	"github.com/G1NG4R/timseil-dev/api/internal/training"
 )
 
 // A readiness probe that can hang is not a probe.
@@ -123,6 +124,10 @@ func routes(cfg config.Config, pool DB, build health.Build, log *slog.Logger,
 	sys := systems.New(queries, log)
 	mux.HandleFunc("GET /api/systems", sys.ServeList)
 	mux.HandleFunc("GET /api/systems/{slug}", sys.ServeDetail)
+
+	// The training log. It reads the derivation in v_track_states and decides
+	// nothing itself — the one endpoint where invariant 2 leaves the database.
+	mux.Handle("GET /api/training", training.New(queries, log))
 
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.

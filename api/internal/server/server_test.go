@@ -164,6 +164,10 @@ func TestTheRoutersOwnErrorsAreProblemDocuments(t *testing.T) {
 	}{
 		{"an unknown path", http.MethodGet, "/does-not-exist", http.StatusNotFound},
 		{"a wrong method", http.MethodPost, "/healthz", http.StatusMethodNotAllowed},
+		// The method in the route pattern is what makes this a 405 instead of a
+		// route that quietly ignores what was sent. It also proves the training
+		// log is mounted at all, which nothing else in this package does.
+		{"a write to a read-only endpoint", http.MethodPost, "/api/training", http.StatusMethodNotAllowed},
 	} {
 		rec := do(t, h, tc.method, tc.path)
 
