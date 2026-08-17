@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-repo check-todo check-compose check-go check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-repo check-todo check-compose check-migrations check-go check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -45,6 +45,11 @@ check-todo: ## Reject TODO/FIXME without an issue reference
 check-compose: ## No published port for db, no build: in the production compose
 	@printf 'compose\n'
 	@tools/check-compose.sh
+
+.PHONY: check-migrations
+check-migrations: ## Migration hygiene and the invariants that are greppable
+	@printf 'migrations\n'
+	@tools/check-migrations.sh
 
 .PHONY: check-go
 check-go: ## gofmt, go vet, go test
@@ -131,11 +136,54 @@ gen: ## Generate Go and TS types from the contract
 		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
 	@printf '  ✓ public bundle, go types, ts types\n'
 
-# ---------------------------------------------------------------- placeholders
+# --------------------------------------------------------------- migrations
+
+# Every one of these runs inside the docker network, because Postgres publishes
+# no port and goose on the host cannot reach it at all. The migrate service
+# carries MIGRATE_DATABASE_URL; the api service deliberately does not.
+MIGRATE := $(COMPOSE_DEV) run --rm migrate
 
 .PHONY: migrate
-migrate: ## Run goose migrations — phase B2
-	@printf 'make migrate arrives in phase B2 (goose, user timseil_migrate).\n'
+migrate: ## Apply every pending migration (as timseil_migrate)
+	@$(MIGRATE) up
+
+.PHONY: migrate-down
+migrate-down: ## Roll back exactly one migration
+	@$(MIGRATE) down
+
+.PHONY: migrate-reset
+migrate-reset: ## Roll back to zero — the only reliable way down once B3 lands
+	@$(MIGRATE) reset
+
+.PHONY: migrate-status
+migrate-status: ## List every migration and whether it is applied
+	@$(MIGRATE) status
+
+# --user because this is the one command that writes into the bind mount. The
+# container runs as root, so without it the new file lands in your working tree
+# owned by root and you cannot delete it from your own account — the same trap
+# that produced root-owned web/.next and api/tmp in A4.
+.PHONY: migrate-create
+migrate-create: ## Write a new empty migration — make migrate-create name=add_foo
+	@[ -n "$(name)" ] || { printf '  ✗ give it a name: make migrate-create name=add_foo\n'; exit 1; }
+	@$(COMPOSE_DEV) run --rm --user "$$(id -u):$$(id -g)" migrate create $(name)
+
+# The acceptance criterion of this phase, and it needs a real Postgres: three
+# up/down/up cycles plus every invariant proven against its broken case.
+#
+# Behind the `db` build tag rather than an env guard with t.Skip. With the tag
+# the tests do not appear in `go test ./...` at all, so there is no skip line to
+# mistake for a run; inside the tagged package a missing DSN is a t.Fatal. A
+# plain env guard would go green in CI the day someone forgets the variable —
+# the `gofmt -l` bug from A4 in new clothes.
+.PHONY: check-db
+check-db: ## Migration cycle and schema invariants against a real Postgres
+	@printf 'db\n'
+	@[ -f .env ] || { printf '  ✗ no .env — run: cp .env.example .env\n'; exit 1; }
+	@$(COMPOSE_DEV) up -d --wait db
+	@$(COMPOSE_DEV) run --rm --entrypoint go migrate test -tags=db -count=1 ./...
+
+# ---------------------------------------------------------------- placeholders
 
 .PHONY: e2e
 e2e: ## Playwright end-to-end, a11y and visual regression — stage H
