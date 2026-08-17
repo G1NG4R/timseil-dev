@@ -123,7 +123,8 @@ func TestShutdownDoesNotCancelTheRequestContext(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}), 5*time.Second)
 
-	go func() { //nolint:errcheck // the response is irrelevant, the context is not
+	// The response does not matter here; the handler's context does.
+	go func() {
 		resp, err := http.Get(base + "/slow")
 		if err == nil {
 			_, _ = io.Copy(io.Discard, resp.Body)
