@@ -1,0 +1,34 @@
+# stack.yaml — curated: what is worth showing, not every transitive dependency.
+#
+# I decide what belongs on a page. This file decides nothing about versions:
+# every entry either points at a file in THIS repo, from which `make gen` reads
+# the version, or it carries no version at all. A literal `version:` here is
+# refused by `make check-stack` — that refusal is the entire point of the file.
+#
+# The rule it buys: nobody ever types a version number into a page again, and a
+# wrong stack claim breaks the build instead of sitting there being wrong.
+# Build plan ch. 12.3, ADR 0012.
+#
+# Adding an entry is only allowed once its source exists. Traefik, Prometheus,
+# Loki, Grafana, Alloy and Tailwind are therefore absent today — the phase that
+# lands each of them appends its line. Growth, not a placeholder.
+
+systems:
+  # 02 · timseil.dev — the whole stack lives in this repo, so every version is read.
+  timseil-dev:
+    - { name: "Next.js",    from: "web/package.json", key: "dependencies.next" }
+    - { name: "React",      from: "web/package.json", key: "dependencies.react" }
+    - { name: "Go",         from: "api/go.mod",       key: "go" }
+    - { name: "pgx",        from: "api/go.mod",       key: "github.com/jackc/pgx/v5" }
+    - { name: "goose",      from: "api/go.mod",       key: "github.com/pressly/goose/v3" }
+    # compose.yaml arrives in D2 and must then carry the same tag as this one.
+    - { name: "PostgreSQL", from: "compose.dev.yaml", key: "services.db.image" }
+    - { name: "Node",       from: ".nvmrc" }
+
+  # 01 · VAT Check API — queued, and none of its sources live here. Bare names,
+  # no versions: the sheet shows it that way too, and a name cannot drift.
+  vat-check:
+    - { name: "Python" }
+    - { name: "FastAPI" }
+    - { name: "Docker" }
+    - { name: "SQLite" }
