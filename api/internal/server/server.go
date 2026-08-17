@@ -25,6 +25,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
+	"github.com/G1NG4R/timseil-dev/api/internal/systems"
 )
 
 // A readiness probe that can hang is not a probe.
@@ -110,8 +111,18 @@ func routes(cfg config.Config, pool DB, build health.Build, log *slog.Logger,
 
 	// The first operation of the contract this service serves. The rest of
 	// stage C mounts itself here, one line at a time.
+	queries := store.New(pool)
+
 	mux.Handle("GET /api/health",
-		health.New(store.New(pool), build, cfg.SiteSystemSlug, log))
+		health.New(queries, build, cfg.SiteSystemSlug, log))
+
+	// The proving ground: the list is the site's claim about which systems
+	// exist, the detail carries the operation grid behind one of them. The
+	// method in the pattern is load-bearing here too — a POST to a read-only
+	// endpoint is a 405, not a route that quietly ignores what was sent.
+	sys := systems.New(queries, log)
+	mux.HandleFunc("GET /api/systems", sys.ServeList)
+	mux.HandleFunc("GET /api/systems/{slug}", sys.ServeDetail)
 
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.

@@ -61,6 +61,10 @@ export interface paths {
          *     grid is `nodata`. Uptime, MTTR and rollback rate are computed from `days` and
          *     `deploys` by the caller; they are never delivered as separate numbers, so
          *     they cannot disagree with the grid a reader can count.
+         *
+         *     A `window` outside the three listed values is a `400`, not a silent fallback
+         *     to the default: an answer that quietly covers a different span than the one
+         *     asked for is the kind of number this site exists not to serve.
          */
         get: operations["getSystem"];
         put?: never;
@@ -918,6 +922,7 @@ export interface operations {
                 };
             };
             304: components["responses"]["NotModified"];
+            400: components["responses"]["BadRequest"];
             404: components["responses"]["NotFound"];
             429: components["responses"]["TooManyRequests"];
             500: components["responses"]["InternalError"];

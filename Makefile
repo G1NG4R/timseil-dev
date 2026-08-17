@@ -76,7 +76,7 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
              api/migrations/testdata/skill_states.json \
              api/internal/seed/stack.gen.json \
              api/internal/store/db.go api/internal/store/models.go \
-             api/internal/store/health.sql.go
+             api/internal/store/health.sql.go api/internal/store/systems.sql.go
 
 # Drift is "running gen would change something", so that is what gets measured —
 # checksums either side of a run, not `git diff`.
@@ -89,7 +89,7 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
 check-contract: ## Validate the OpenAPI contract and check for codegen drift
 	@printf 'contract\n'
 	@tools/check-contract.sh
-# One checksum per file rather than one over all of them: GENERATED covers eight
+# One checksum per file rather than one over all of them: GENERATED covers nine
 # files from five sources now, and "something is stale" would send you looking in
 # the contract when what moved was a column in a migration.
 	@[ -f contract/openapi.yaml ] || exit 0; \
