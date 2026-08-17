@@ -28,7 +28,13 @@ schreibst du den falschen Code.
 ## Sprache
 
 Code, Kommentare, Commits, Branches: Englisch. UI-Texte: Englisch.
-`docs/` und diese Datei: Deutsch.
+Auch Hook-Meldungen, Skript-Ausgaben und Makefile-Texte — alles, was ein
+Werkzeug ausgibt, ist Code.
+
+`README.md`, `CONTRIBUTING.md`, `SECURITY.md` und PR-Beschreibungen: **Englisch.**
+Der Leser kommt von außen und liest zuerst diese vier.
+
+`docs/`, `backlog.md` und diese Datei: **Deutsch.** Die schreibe ich für mich.
 
 ## Stack
 
@@ -85,6 +91,9 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - Ein Branch pro Phase: `phase/c3-training-endpoint`, sonst `fix/` oder `chore/`.
 - Kein Direkt-Commit auf `main`. PR, CI grün, Squash-Merge.
 - Conventional Commits — der PR-Titel wird der Commit auf `main`.
+- **Squash-Merge ohne `--subject` und ohne `--body`.** GitHub setzt den PR-Titel
+  plus `(#N)` als Subject; überschreibst du es, fehlt das Suffix im Verlauf und
+  `main` ist gesperrt für die Korrektur. Passiert bei #16.
 - **Autor ist immer G1NG4R, niemals du.** Kein `Co-Authored-By`, keine
   `Claude-Session`-Zeile, kein Modell- oder Werkzeugname in Commits, PRs,
   Issues, Tags, Release-Notes oder irgendetwas, das diese Seite veröffentlicht.

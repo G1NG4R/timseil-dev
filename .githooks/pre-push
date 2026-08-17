@@ -1,10 +1,16 @@
 #!/bin/sh
-while read local_ref local_sha remote_ref remote_sha; do
+# main is protected on GitHub too, but a rejected push after a slow upload is a
+# worse way to find out. This says no locally, before anything leaves the
+# machine. The data branch ops-data is machine-written and pushed as usual.
+set -eu
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
   case "$remote_ref" in
     refs/heads/main)
-      echo "✗ Direkter Push auf main blockiert."
-      echo "  Branch anlegen: git checkout -b phase/…  dann PR."
-      exit 1;;
+      echo "✗ Direct push to main blocked."
+      echo "  Branch first: git checkout -b phase/…  then open a PR."
+      exit 1 ;;
   esac
 done
+
 exit 0
