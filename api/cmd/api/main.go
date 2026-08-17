@@ -17,9 +17,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/db"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 )
 
@@ -51,10 +50,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// pgxpool.New parses the DSN but does not dial, so the server still starts
-	// while Postgres is down — and /readyz then says 503, which is the entire
-	// reason for having two probes instead of one.
-	pool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
+	// The pool does not dial here: pgxpool connects lazily, so the server still
+	// starts while Postgres is down — and /readyz then says 503, which is the
+	// entire reason for having two probes instead of one.
+	pool, err := db.Open(context.Background(), cfg)
 	if err != nil {
 		log.Error("cannot build the connection pool", "err", err)
 		os.Exit(1)

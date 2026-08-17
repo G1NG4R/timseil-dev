@@ -27,6 +27,7 @@ import (
 
 	"pgregory.net/rapid"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/dbtest"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 )
 
@@ -190,7 +191,7 @@ func readState(t failer, q querier, trackID int64) (int, int, string) {
 // off it, and rolls the whole thing back — so the thousand cases share one
 // schema and one pool, and the constellation is the only thing that varies.
 func TestTrackStateMatchesTheDesignReference(t *testing.T) {
-	db := freshSchema(t)
+	db := dbtest.FreshSchema(t)
 	reference := loadSkillStates(t)
 	pool := systemPool(t, db)
 	moduleID := insertModule(t, db, "01", "Property")
@@ -283,7 +284,7 @@ func TestTrackStateMatchesTheDesignReference(t *testing.T) {
 // are self-study at launch, and the training log would silently drop them —
 // looking fuller by hiding the honest rows.
 func TestTrackWithoutEvidenceIsQueuedAndPresent(t *testing.T) {
-	db := freshSchema(t)
+	db := dbtest.FreshSchema(t)
 	moduleID := insertModule(t, db, "02", "Self-study")
 	trackID := insertTrack(t, db, moduleID, "Kubernetes", 1)
 
@@ -308,7 +309,7 @@ func TestTrackWithoutEvidenceIsQueuedAndPresent(t *testing.T) {
 // does not run proves nothing about a skill — that is the whole argument of the
 // site, and here it is a query.
 func TestQueuedSystemsProveNothing(t *testing.T) {
-	db := freshSchema(t)
+	db := dbtest.FreshSchema(t)
 	moduleID := insertModule(t, db, "03", "Planned")
 	trackID := insertTrack(t, db, moduleID, "Terraform", 1)
 
@@ -342,7 +343,7 @@ func TestQueuedSystemsProveNothing(t *testing.T) {
 // xmin comparison is the second half of that sentence — it proves the track row
 // itself was never written.
 func TestFlippingASystemToLiveMovesItsTracks(t *testing.T) {
-	db := freshSchema(t)
+	db := dbtest.FreshSchema(t)
 	moduleID := insertModule(t, db, "04", "DevOps")
 	trackID := insertTrack(t, db, moduleID, "CI/CD (GitHub Actions)", 1)
 
@@ -394,11 +395,11 @@ func TestFlippingASystemToLiveMovesItsTracks(t *testing.T) {
 // the app role needs SELECT on all three base tables. A permission error belongs
 // here, next to its cause, and not in a C3 handler.
 func TestAppRoleCanReadTheDerivation(t *testing.T) {
-	migrate := freshSchema(t)
+	migrate := dbtest.FreshSchema(t)
 	moduleID := insertModule(t, migrate, "05", "Foundations")
 	trackID := insertTrack(t, migrate, moduleID, "PostgreSQL", 1)
 
-	app := appDB(t)
+	app := dbtest.App(t)
 
 	live, building, state := readState(t, app, trackID)
 	if live != 0 || building != 0 || state != string(httpx.TrackStateQueued) {
@@ -408,7 +409,7 @@ func TestAppRoleCanReadTheDerivation(t *testing.T) {
 	// The derivation is an aggregate, so it is not auto-updatable. The app role
 	// carries INSERT on it from ALTER DEFAULT PRIVILEGES, and Postgres still
 	// refuses — which is the point: there is no way to write a state.
-	mustReject(t, app, "writing a state into the derivation", `
+	dbtest.MustReject(t, app, "writing a state into the derivation", `
 		INSERT INTO v_track_states (track_id, live_systems, building_systems, state)
 		VALUES (1, 2, 0, 'core')`)
 }

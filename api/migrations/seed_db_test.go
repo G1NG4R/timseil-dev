@@ -16,6 +16,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/dbtest"
 	"github.com/G1NG4R/timseil-dev/api/internal/seed"
 )
 
@@ -23,9 +24,9 @@ import (
 // Every test here starts from exactly this state.
 func seeded(t *testing.T) (*sql.DB, seed.Counts) {
 	t.Helper()
-	freshSchema(t)
+	dbtest.FreshSchema(t)
 
-	db := appDB(t)
+	db := dbtest.App(t)
 	counts, err := seed.Apply(context.Background(), db)
 	if err != nil {
 		t.Fatalf("seeding: %v", err)
@@ -236,8 +237,8 @@ func TestSeedRefusesASystemNothingDeclares(t *testing.T) {
 // Forcing the count to disagree proves two things at once — that the mismatch is
 // caught, and that the transaction rolls back rather than leaving half a log.
 func TestSeedRefusesToCommitAWrongCount(t *testing.T) {
-	freshSchema(t)
-	db := appDB(t)
+	dbtest.FreshSchema(t)
+	db := dbtest.App(t)
 
 	original := seed.Expected
 	t.Cleanup(func() { seed.Expected = original })
@@ -285,11 +286,11 @@ func TestSeedStackComesFromTheManifest(t *testing.T) {
 // timseil_app, and that role cannot create, alter or drop anything. If the seed
 // ever needs DDL, this is the test that will say so.
 func TestSeedNeedsNoSchemaPrivileges(t *testing.T) {
-	freshSchema(t)
-	db := appDB(t)
+	dbtest.FreshSchema(t)
+	db := dbtest.App(t)
 
 	if _, err := seed.Apply(context.Background(), db); err != nil {
 		t.Fatalf("the seed needed more than DML: %v", err)
 	}
-	mustReject(t, db, "DDL from the seed's own role", `CREATE TABLE seed_probe (id int)`)
+	dbtest.MustReject(t, db, "DDL from the seed's own role", `CREATE TABLE seed_probe (id int)`)
 }

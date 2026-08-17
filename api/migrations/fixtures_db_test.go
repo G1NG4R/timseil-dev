@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/dbtest"
 	"github.com/G1NG4R/timseil-dev/api/internal/fixtures"
 	"github.com/G1NG4R/timseil-dev/api/internal/seed"
 )
@@ -22,9 +23,9 @@ import (
 // loaded migrates and builds the named set as the app role.
 func loaded(t *testing.T, set string) *sql.DB {
 	t.Helper()
-	freshSchema(t)
+	dbtest.FreshSchema(t)
 
-	db := appDB(t)
+	db := dbtest.App(t)
 	if err := fixtures.Load(context.Background(), db, set); err != nil {
 		t.Fatalf("loading fixture %s: %v", set, err)
 	}
@@ -166,7 +167,7 @@ func TestFixtureIncidentCarriesItsPostMortem(t *testing.T) {
 	// Invariant 5, and the reason track_evidence and the ops tables use RESTRICT
 	// towards systems rather than CASCADE: a deleted system that leaves a notch
 	// on the grid is exactly the dangling claim this construction prevents.
-	mustReject(t, db, "deleting a system that a notch points at",
+	dbtest.MustReject(t, db, "deleting a system that a notch points at",
 		`DELETE FROM systems WHERE slug = 'timseil-dev'`)
 
 	if n := scalar(t, db, `SELECT count(*) FROM deploys WHERE result = 'rollback'`); n != 1 {
@@ -178,8 +179,8 @@ func TestFixtureIncidentCarriesItsPostMortem(t *testing.T) {
 // the one before. Otherwise the incident set would leak its outage into whatever
 // test ran next and the failure would surface far from its cause.
 func TestFixtureSetsDoNotLeakIntoEachOther(t *testing.T) {
-	freshSchema(t)
-	db := appDB(t)
+	dbtest.FreshSchema(t)
+	db := dbtest.App(t)
 	ctx := context.Background()
 
 	if err := fixtures.Load(ctx, db, fixtures.Incident); err != nil {
@@ -205,8 +206,8 @@ func TestFixtureSetsDoNotLeakIntoEachOther(t *testing.T) {
 }
 
 func TestFixtureRefusesAnUnknownSet(t *testing.T) {
-	freshSchema(t)
-	db := appDB(t)
+	dbtest.FreshSchema(t)
+	db := dbtest.App(t)
 
 	if err := fixtures.Load(context.Background(), db, "day-two"); err == nil {
 		t.Fatal("an unknown fixture set was accepted")

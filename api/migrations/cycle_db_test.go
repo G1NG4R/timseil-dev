@@ -13,83 +13,11 @@
 package migrations_test
 
 import (
-	"context"
 	"database/sql"
-	"os"
 	"testing"
-	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/pressly/goose/v3"
-
-	"github.com/G1NG4R/timseil-dev/api/migrations"
+	"github.com/G1NG4R/timseil-dev/api/internal/dbtest"
 )
-
-const dir = "."
-
-func TestMain(m *testing.M) {
-	goose.SetBaseFS(migrations.FS)
-	goose.SetSequential(true)
-	goose.SetLogger(goose.NopLogger())
-	if err := goose.SetDialect("postgres"); err != nil {
-		panic(err)
-	}
-	os.Exit(m.Run())
-}
-
-// openAs connects with one of the two test DSNs. A missing variable is fatal:
-// whoever set the build tag wants a database, and the only way to be green here
-// is to have one.
-func openAs(t *testing.T, envVar string) *sql.DB {
-	t.Helper()
-
-	dsn := os.Getenv(envVar)
-	if dsn == "" {
-		t.Fatalf("%s is empty — these tests need a real Postgres, run make check-db", envVar)
-	}
-
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		t.Fatalf("open %s: %v", envVar, err)
-	}
-	t.Cleanup(func() { _ = db.Close() })
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		t.Fatalf("cannot reach the test database via %s: %v", envVar, err)
-	}
-	return db
-}
-
-// migrateDB is the schema owner: it is the only role allowed to run DDL.
-func migrateDB(t *testing.T) *sql.DB { return openAs(t, "TEST_DATABASE_URL") }
-
-// appDB is what the API process gets. It may read and write rows and nothing
-// more.
-func appDB(t *testing.T) *sql.DB { return openAs(t, "TEST_APP_DATABASE_URL") }
-
-// freshSchema leaves the database at the top of the migration list and tears it
-// back down afterwards, so every test starts from the same place regardless of
-// what the one before it did.
-func freshSchema(t *testing.T) *sql.DB {
-	t.Helper()
-	db := migrateDB(t)
-
-	ctx := context.Background()
-	if err := goose.DownToContext(ctx, db, dir, 0); err != nil {
-		t.Fatalf("clearing the schema: %v", err)
-	}
-	if err := goose.UpContext(ctx, db, dir); err != nil {
-		t.Fatalf("applying the schema: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := goose.DownToContext(context.Background(), db, dir, 0); err != nil {
-			t.Errorf("tearing the schema down: %v", err)
-		}
-	})
-	return db
-}
 
 // TestUpDownUpThreeTimes is the phase's stated acceptance criterion, word for
 // word: "up -> down -> up runs cleanly three times".
@@ -100,23 +28,14 @@ func freshSchema(t *testing.T) *sql.DB {
 // then drift silently with every deploy. So the shape of the schema is captured
 // after each pass and the third has to equal the first.
 func TestUpDownUpThreeTimes(t *testing.T) {
-	db := migrateDB(t)
-	ctx := context.Background()
-
-	if err := goose.DownToContext(ctx, db, dir, 0); err != nil {
-		t.Fatalf("starting from zero: %v", err)
-	}
+	db := dbtest.Migrate(t)
+	dbtest.DownToZero(t, db)
 
 	var shapes []string
 	for pass := 1; pass <= 3; pass++ {
-		if err := goose.UpContext(ctx, db, dir); err != nil {
-			t.Fatalf("pass %d, up: %v", pass, err)
-		}
+		dbtest.Up(t, db)
 		shapes = append(shapes, schemaShape(t, db))
-
-		if err := goose.DownToContext(ctx, db, dir, 0); err != nil {
-			t.Fatalf("pass %d, down: %v", pass, err)
-		}
+		dbtest.DownToZero(t, db)
 
 		// goose keeps its own bookkeeping table, so "empty" means "nothing but
 		// goose_db_version".
