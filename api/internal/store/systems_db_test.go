@@ -37,6 +37,17 @@ const (
 func loaded(t *testing.T, set string) *store.Queries {
 	t.Helper()
 
+	q, _ := loadedPool(t, set)
+	return q
+}
+
+// loadedPool is loaded, plus the pool it was built on. The roll-up property test
+// wraps every generated case in a transaction and rolls it back, which needs the
+// pool itself: store.Queries can be re-bound to a pgx.Tx with WithTx, but only
+// somebody holding the pool can start one.
+func loadedPool(t *testing.T, set string) (*store.Queries, *pgxpool.Pool) {
+	t.Helper()
+
 	dbtest.FreshSchema(t)
 
 	sqlDB := dbtest.App(t)
@@ -50,7 +61,7 @@ func loaded(t *testing.T, set string) *store.Queries {
 	}
 	t.Cleanup(pool.Close)
 
-	return store.New(pool)
+	return store.New(pool), pool
 }
 
 // systemID looks up the surrogate key the three ops queries take. The endpoint
