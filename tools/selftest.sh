@@ -19,7 +19,7 @@ accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$
 
 mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
-   "$root/tools/check-compose.sh" "$tmp/tools/"
+   "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
 
@@ -140,6 +140,86 @@ accepts "build: in the dev compose accepted" tools/check-compose.sh
 rm -f compose.dev.yaml
 
 accepts "absent compose files skip" tools/check-compose.sh
+
+printf 'contract\n'
+# The contract is public from launch. The case worth guarding is not a typo — it is
+# an internal path reaching the document /api/docs serves while everything else
+# stays green.
+if [ ! -x "$root/web/node_modules/.bin/redocly" ]; then
+  printf '  – skip: redocly is not installed (cd web && npm ci)\n'
+else
+  mkdir -p web contract api/internal/httpx/assets
+  ln -s "$root/web/node_modules" web/node_modules
+  cp "$root/redocly.yaml" .
+
+  public_only='openapi: 3.1.0
+info:
+  title: selftest
+  version: 1.0.0
+tags:
+  - name: x
+paths:
+  /api/ping:
+    get:
+      operationId: getPing
+      summary: Ping
+      tags: [x]
+      responses:
+        "200":
+          description: ok
+'
+  with_internal="$public_only"'  /api/internal/thing:
+    post:
+      operationId: reportThing
+      summary: Thing
+      tags: [x]
+      x-internal: true
+      security:
+        - internalToken: []
+      responses:
+        "204":
+          description: ok
+components:
+  securitySchemes:
+    internalToken:
+      type: http
+      scheme: bearer
+'
+
+  # spec, bundle, embedded copy — the three files the check compares.
+  write_contract() {
+    printf '%s' "$1" > contract/openapi.yaml
+    printf '%s' "$2" > contract/openapi.public.yaml
+    printf '%s' "$2" > api/internal/httpx/assets/openapi.yaml
+  }
+
+  write_contract "$with_internal" "$public_only"
+  accepts "filtered contract accepted" tools/check-contract.sh
+
+  # The one that matters: the bundle still carries the internal operation.
+  write_contract "$with_internal" "$with_internal"
+  rejects "internal path in the public bundle rejected" tools/check-contract.sh
+
+  # Hiding an endpoint from the docs is not protecting it.
+  write_contract "$(printf '%s' "$with_internal" | grep -v 'internalToken: \[\]$')" "$public_only"
+  rejects "x-internal without a security scheme rejected" tools/check-contract.sh
+
+  # go:embed cannot reach the bundle, so make gen copies it. A stale copy would
+  # serve last week's contract out of a fresh binary.
+  write_contract "$with_internal" "$public_only"
+  printf 'openapi: 3.1.0\n' > api/internal/httpx/assets/openapi.yaml
+  rejects "stale embedded document rejected" tools/check-contract.sh
+
+  write_contract "$(printf '%s' "$public_only" | sed 's/^paths:/paths: [/')" "$public_only"
+  rejects "broken YAML rejected" tools/check-contract.sh
+
+  write_contract "$(printf '%s' "$public_only" | grep -v 'operationId:')" "$public_only"
+  rejects "missing operationId rejected" tools/check-contract.sh
+
+  rm -rf contract api web/node_modules redocly.yaml
+  accepts "absent contract skips" tools/check-contract.sh
+  rm -rf web
+fi
 
 printf 'node version\n'
 # A fake interpreter, so the assertions do not depend on what this machine runs.

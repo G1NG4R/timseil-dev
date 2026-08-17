@@ -86,3 +86,14 @@ outside.
 - **`tokens.css`** — no colour, radius or duration lives outside it.
 - **`contract/openapi.yaml`** is the source of truth. If a type does not fit, the
   contract is wrong; do not hand-write the type.
+- **Anything `make gen` writes** — `api/internal/httpx/gen.go`,
+  `web/lib/api/schema.d.ts`, `contract/openapi.public.yaml` and the copy embedded in
+  the API. Change the contract, run `make gen`, commit the result. `make check`
+  compares the two and fails when they differ.
+- **`api/internal/httpx/assets/scalar.standalone.js.gz`** — a vendored build of
+  `@scalar/api-reference`. To update it, follow the recipe in the comment at the top
+  of `api/internal/httpx/docs.go`; do not edit it in place.
+
+Marking an endpoint `x-internal: true` keeps it out of `/api/docs`. It does not
+protect it — the token check and the reverse-proxy block do. `make check` fails if a
+marked operation declares no security scheme, so the two cannot come apart.

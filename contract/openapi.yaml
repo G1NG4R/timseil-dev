@@ -1,0 +1,1123 @@
+openapi: 3.1.0
+
+# The single source of truth about this interface. Types are generated from it for
+# both sides — never hand-write a type that lives here. Run `make gen` after every
+# change and commit the result; `make check` fails on drift.
+#
+# Two rules that are easy to break by accident:
+#   1. Every metric is nullable. A missing measurement is `null`, never `0`.
+#   2. Operations marked `x-internal: true` are stripped from the public bundle that
+#      /api/docs serves. Adding one without the marker publishes it.
+
+info:
+  title: timseil.dev API
+  version: 1.0.0
+  summary: The read API behind timseil.dev — every number the site shows comes from here.
+  description: |
+    This API is public on purpose. A portfolio that claims uptime, latency and error
+    rates should let a reader check them without asking the operator:
+
+        curl https://timseil.dev/api/systems
+
+    returns the same numbers the site renders.
+
+    **Missing data is `null`, never `0`.** A zero error rate is an excellent value; a
+    missing error rate is not a value at all. Showing them the same way would be the
+    most elegant way to lie, so the contract keeps them apart and the site renders
+    `— NO DATA`.
+
+    Metrics exist only for systems in state `live`. A system that does not run has no
+    operation, and without operation there is nothing to measure.
+
+    Enum values are lowercase here; the user interface uppercases them for display.
+  license:
+    name: All rights reserved
+  contact:
+    name: Tim Seil
+    url: https://timseil.dev
+
+servers:
+  - url: https://timseil.dev
+    description: Production
+  - url: http://localhost:8080
+    description: Local development (compose.dev.yaml)
+
+tags:
+  - name: status
+    description: Liveness, build identity and the numbers behind the README badges.
+  - name: systems
+    description: The systems this site tracks, their state, their source and their metrics.
+  - name: training
+    description: The training log — 22 tracks whose states are derived, not maintained.
+  - name: activity
+    description: The GitHub contribution calendar, fetched server-side and cached.
+  - name: contact
+    description: The only unauthenticated write path.
+  - name: docs
+    description: The contract, rendered and raw.
+  # Marked so the filter takes the tag with the operations. Without this the public
+  # document keeps an empty "internal" section — no paths, but a heading that
+  # announces there are some.
+  - name: internal
+    x-internal: true
+    description: Not public. Token-authenticated and blocked at the reverse proxy.
+
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      tags: [status]
+      summary: Liveness, build identity and operational metrics
+      description: |
+        The deploy gate polls this endpoint: no `200` within sixty seconds of a
+        release and the pipeline rolls back. The README badges read it too.
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The service is up.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlShort'
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/systems:
+    get:
+      operationId: listSystems
+      tags: [systems]
+      summary: Every tracked system with its state, its source and its metrics
+      description: |
+        The proving ground of this site. Every system with `state` other than `live`
+        carries `null` in **every** metric field — there is nothing to measure.
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The list of systems.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlMedium'
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemList'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/systems/{slug}:
+    get:
+      operationId: getSystem
+      tags: [systems]
+      summary: One system with its operation grid, incidents and deploys
+      description: |
+        `days`, `incidents` and `deploys` are present only for `state: live`.
+
+        A day without a measurement is `nodata`, never `ok` — on day one the whole
+        grid is `nodata`. Uptime, MTTR and rollback rate are computed from `days` and
+        `deploys` by the caller; they are never delivered as separate numbers, so
+        they cannot disagree with the grid a reader can count.
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+        - $ref: '#/components/parameters/Window'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The system.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlMedium'
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemDetail'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/training:
+    get:
+      operationId: getTraining
+      tags: [training]
+      summary: Modules, tracks and the systems that prove them
+      description: |
+        Track states are **derived** from evidence, not stored: two live systems make
+        a track `core`, one makes it `applied`, a system still in build makes it
+        `learning`, nothing makes it `queued`. There is no state column to drift.
+
+        An empty `evidence` array is the honest case and renders as
+        `NO SYSTEM YET → SELF-STUDY`.
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The training log.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlMedium'
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Training'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/contributions:
+    get:
+      operationId: getContributions
+      tags: [activity]
+      summary: The GitHub contribution calendar, fetched server-side
+      description: |
+        Cached for an hour behind a circuit breaker. If GitHub does not answer, the
+        last good calendar is returned with its age in `cacheAgeSec` rather than an
+        error — an old number with a date is honest, an empty one is not.
+
+        `level` uses this site's own five steps. GitHub's colours are not passed
+        through.
+      parameters:
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The contribution calendar.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlHour'
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contributions'
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/contact:
+    post:
+      operationId: submitContact
+      tags: [contact]
+      summary: Send a message
+      description: |
+        Rate limited to three requests per IP per ten minutes; the IP is stored as a
+        hash only. `company` is a honeypot and must be empty. `dwellMs` below 3000
+        is discarded. Repeating the same `ts` + `email` + message delivers once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactRequest'
+      responses:
+        '202':
+          description: |
+            Accepted for delivery. The message id is the receipt the sender can
+            quote — the form keeps their text in the field.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlNone'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactAccepted'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/docs:
+    get:
+      operationId: getDocs
+      tags: [docs]
+      summary: This contract, rendered
+      description: |
+        Served from the API binary with no third-party request in the reader's path.
+        Internal operations are stripped from the document this page reads.
+      responses:
+        '200':
+          description: The rendered reference.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlHour'
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/docs/scalar.js:
+    get:
+      operationId: getDocsAsset
+      tags: [docs]
+      summary: The renderer that /api/docs loads
+      description: |
+        Vendored into the binary rather than pulled from a CDN. It is listed here
+        because it is a route that exists, and a route that exists but is documented
+        nowhere is exactly what the router parity check looks for.
+      responses:
+        '200':
+          description: The renderer bundle.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlHour'
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            text/javascript:
+              schema:
+                type: string
+
+  /api/openapi.yaml:
+    get:
+      operationId: getOpenapiDocument
+      tags: [docs]
+      summary: This contract, raw
+      description: The public bundle — the same document `/api/docs` renders.
+      responses:
+        '200':
+          description: The OpenAPI document.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControlHour'
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  /api/badge/uptime:
+    get:
+      operationId: getUptimeBadge
+      tags: [status]
+      summary: Shields.io endpoint badge — uptime
+      description: |
+        Live because it asks the API on every call: no scheduled job, no commit, no
+        collision with branch protection. Without a measurement series the badge
+        reads `— NO DATA`, not a zero.
+      responses:
+        '200':
+          $ref: '#/components/responses/BadgeOK'
+
+  /api/badge/version:
+    get:
+      operationId: getVersionBadge
+      tags: [status]
+      summary: Shields.io endpoint badge — deployed version
+      responses:
+        '200':
+          $ref: '#/components/responses/BadgeOK'
+
+  /api/badge/systems:
+    get:
+      operationId: getSystemsBadge
+      tags: [status]
+      summary: Shields.io endpoint badge — live systems
+      responses:
+        '200':
+          $ref: '#/components/responses/BadgeOK'
+
+  /api/internal/probe:
+    post:
+      operationId: reportProbe
+      tags: [internal]
+      x-internal: true
+      security:
+        - internalToken: []
+      summary: An external prober reports that the host answered
+      description: |
+        A host cannot report its own outage. This is written by a watcher that runs
+        somewhere else; when it cannot reach the host at all it writes to the
+        `ops-data` branch instead.
+
+        The path may move out of `/api/internal/*` in L3 — the reverse proxy blocks
+        that prefix from outside, and the prober calls from outside. `operationId`
+        stays put so a path change is not a contract break.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProbeReport'
+      responses:
+        '204':
+          $ref: '#/components/responses/AcceptedNoContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/internal/deploy:
+    post:
+      operationId: reportDeploy
+      tags: [internal]
+      x-internal: true
+      security:
+        - internalToken: []
+      summary: The pipeline reports its own duration
+      description: |
+        This is why the deploy duration on the case study is measured rather than
+        claimed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeployReport'
+      responses:
+        '204':
+          $ref: '#/components/responses/AcceptedNoContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+
+  securitySchemes:
+    internalToken:
+      type: http
+      scheme: bearer
+      description: |
+        Compared in constant time. A wrong token answers `401` with no detail and no
+        measurable timing difference. From outside the reverse proxy the path answers
+        `404` — the token is one layer, the proxy is the other.
+
+  parameters:
+    Slug:
+      name: slug
+      in: path
+      required: true
+      description: The system's stable identifier, for example `timseil-dev`.
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+        maxLength: 64
+      example: timseil-dev
+
+    Window:
+      name: window
+      in: query
+      required: false
+      description: |
+        How many days of the operation grid to return. 91 is 13 × 7 — seven rows only
+        hold multiples of seven, and at 90 the last column would have a hole that
+        looks like a bug. 30 is the homepage strip, 182 is the wide view.
+      schema:
+        type: integer
+        enum: [30, 91, 182]
+        default: 91
+
+    IfNoneMatch:
+      name: If-None-Match
+      in: header
+      required: false
+      description: The `ETag` of a previously fetched representation.
+      schema:
+        type: string
+
+  headers:
+    ETag:
+      description: Entity tag of this representation.
+      schema:
+        type: string
+
+    CacheControlShort:
+      description: Cache directive.
+      schema:
+        type: string
+        const: 'public, s-maxage=60, stale-while-revalidate=600'
+
+    CacheControlMedium:
+      description: Cache directive.
+      schema:
+        type: string
+        const: 'public, s-maxage=300, stale-while-revalidate=1800'
+
+    CacheControlHour:
+      description: Cache directive.
+      schema:
+        type: string
+        const: 'public, s-maxage=3600, stale-while-revalidate=7200'
+
+    CacheControlNone:
+      description: Cache directive.
+      schema:
+        type: string
+        const: 'no-store'
+
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema:
+        type: integer
+
+  responses:
+    NotModified:
+      description: The representation has not changed since the given `ETag`.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+
+    AcceptedNoContent:
+      description: Recorded.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControlNone'
+
+    BadgeOK:
+      description: A Shields.io endpoint payload.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControlMedium'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Badge'
+
+    BadRequest:
+      description: The request did not validate.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    Unauthorized:
+      description: Missing or wrong token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    NotFound:
+      description: No such resource.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    BadGateway:
+      description: An upstream this endpoint depends on did not answer.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+    InternalError:
+      description: Something broke on our side.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+
+    # ------------------------------------------------------------------ errors
+
+    Problem:
+      type: object
+      title: Problem
+      description: |
+        RFC 9457 Problem Details, used for **every** error response including
+        `/api/contact`. Two error shapes in one API is the kind of special case
+        somebody misses later.
+
+        `detail` never carries a stack trace or a database message — those go to the
+        log, keyed by `requestId`.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: A URI under `https://timseil.dev/problems/`.
+          examples: ['https://timseil.dev/problems/validation-failed']
+        title:
+          type: string
+          description: Short, human-readable, stable for a given `type`.
+          examples: ['Validation failed']
+        status:
+          type: integer
+          examples: [400]
+        detail:
+          type: string
+          description: What went wrong with *this* request. Safe to show a visitor.
+        instance:
+          type: string
+          description: The path that produced it.
+          examples: ['/api/contact']
+        requestId:
+          type: string
+          description: |
+            Also sent as the `X-Request-Id` response header. Quoting it in a bug
+            report finds every log line from both services.
+        invalidParams:
+          type: array
+          description: Present on `400` only, one entry per rejected field.
+          items:
+            $ref: '#/components/schemas/InvalidParam'
+
+    InvalidParam:
+      type: object
+      required: [name, reason]
+      properties:
+        name:
+          type: string
+          examples: ['email']
+        reason:
+          type: string
+          examples: ['not a valid address']
+
+    # ------------------------------------------------------------------- enums
+
+    SystemState:
+      type: string
+      description: What the system *does*. Independent of who may read its code.
+      enum: [live, in_build, queued]
+
+    TrackState:
+      type: string
+      description: |
+        Derived from evidence, never stored. `core` needs two live systems: building
+        something once means getting it to run once; running it twice means having met
+        the cases that were luck the first time.
+      enum: [core, applied, learning, queued]
+
+    DayState:
+      type: string
+      description: |
+        `nodata` is the important one. A day without a measurement is `nodata`, never
+        `ok` — an empty grid is more honest than a full one that was invented.
+      enum: [ok, degraded, outage, nodata]
+
+    DeployResult:
+      type: string
+      enum: [ok, rollback]
+
+    SourceReason:
+      type: string
+      description: |
+        Why a closed system is closed. `<> PRIVATE · NDA` is an honest statement;
+        `<> PRIVATE` with no reason would be an excuse, so the contract requires one.
+      enum: [nda, internal]
+
+    ContributionLevel:
+      type: string
+      description: This site's own five steps, mapped from GitHub's quartiles.
+      enum: [l0, l1, l2, l3, l4]
+
+    # ------------------------------------------------------------------ metrics
+
+    Metrics:
+      type: object
+      title: Metrics
+      description: |
+        Every field is nullable and that is the point. `null` renders as `— NO DATA`;
+        `0` is a real measurement and must never stand in for a missing one.
+
+        Only systems in state `live` carry values here.
+      required: [uptime90d, p95Ms, errorRate, measuredAt]
+      properties:
+        uptime90d:
+          type: [number, 'null']
+          format: double
+          description: |
+            Share of time the system answered, as a percentage. The name says 90 for
+            historical reasons; the window is **91 days** (13 × 7) everywhere else in
+            this contract and on the site.
+          examples: [99.64]
+        p95Ms:
+          type: [number, 'null']
+          format: double
+          description: 95th percentile latency, measured at the reverse proxy.
+          examples: [142]
+        errorRate:
+          type: [number, 'null']
+          format: double
+          description: Share of 5xx responses, as a fraction between 0 and 1.
+          examples: [0.0007]
+        measuredAt:
+          type: [string, 'null']
+          format: date-time
+          description: |
+            When these values were taken. A value without its age cannot be told apart
+            from a fresh one, and the site shows stale numbers *with* their age rather
+            than pretending.
+
+    # ------------------------------------------------------------------- status
+
+    Health:
+      type: object
+      title: Health
+      required: [status, version, sha, startedAt, generatedAt, ops]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        version:
+          type: string
+          description: Release tag of the running binary.
+          examples: ['1.4.0']
+        sha:
+          type: string
+          description: Commit the binary was built from.
+          examples: ['a41f9c2']
+        startedAt:
+          type: string
+          format: date-time
+        generatedAt:
+          type: string
+          format: date-time
+        ops:
+          $ref: '#/components/schemas/OpsSummary'
+
+    OpsSummary:
+      allOf:
+        - $ref: '#/components/schemas/Metrics'
+        - type: object
+          required: [systemsLive, systemsTotal, lastDeploy]
+          properties:
+            systemsLive:
+              type: integer
+            systemsTotal:
+              type: integer
+            lastDeploy:
+              oneOf:
+                - $ref: '#/components/schemas/Deploy'
+                - type: 'null'
+
+    Badge:
+      type: object
+      title: Badge
+      description: |
+        The payload Shields.io expects from an endpoint badge. It is a foreign schema,
+        but it belongs in this contract — three routes that exist and are documented
+        nowhere would fail the router parity check.
+      required: [schemaVersion, label, message]
+      properties:
+        schemaVersion:
+          type: integer
+          const: 1
+        label:
+          type: string
+          examples: ['uptime']
+        message:
+          type: string
+          description: '`— NO DATA` when there is no measurement series.'
+          examples: ['99.64%']
+        color:
+          type: string
+          examples: ['brightgreen']
+        isError:
+          type: boolean
+        cacheSeconds:
+          type: integer
+          examples: [300]
+
+    # ------------------------------------------------------------------ systems
+
+    SourcePublic:
+      type: object
+      required: [access, url]
+      properties:
+        access:
+          type: string
+          const: public
+        url:
+          type: string
+          format: uri
+          examples: ['https://github.com/G1NG4R/timseil-dev']
+
+    SourcePrivate:
+      type: object
+      required: [access, reason]
+      properties:
+        access:
+          type: string
+          const: private
+        reason:
+          $ref: '#/components/schemas/SourceReason'
+
+    Source:
+      title: Source
+      description: |
+        How the code can be reached. This is a separate axis from `state`: a system can
+        be open and not running, or running and closed. Squeezing both into one field
+        is the classic modelling mistake — you notice it when the first NDA client
+        arrives.
+      oneOf:
+        - $ref: '#/components/schemas/SourcePublic'
+        - $ref: '#/components/schemas/SourcePrivate'
+      discriminator:
+        propertyName: access
+        mapping:
+          public: '#/components/schemas/SourcePublic'
+          private: '#/components/schemas/SourcePrivate'
+
+    System:
+      type: object
+      title: System
+      required: [slug, systemNo, name, state, source, stack, metrics]
+      properties:
+        slug:
+          type: string
+          examples: ['timseil-dev']
+        systemNo:
+          type: string
+          description: Two-digit display number, zero padded.
+          pattern: '^[0-9]{2}$'
+          examples: ['02']
+        name:
+          type: string
+          examples: ['timseil.dev']
+        state:
+          $ref: '#/components/schemas/SystemState'
+        source:
+          $ref: '#/components/schemas/Source'
+        stack:
+          type: array
+          description: |
+            Curated in `stack.yaml`, versions checked against `go.mod`,
+            `package.json` and `compose.yaml` in CI. Nobody types a version number
+            into a page again.
+          items:
+            type: string
+          examples: [['Next.js 16.3', 'Go 1.26', 'PostgreSQL 18.6']]
+        metrics:
+          $ref: '#/components/schemas/Metrics'
+
+    SystemList:
+      type: object
+      required: [systems, generatedAt]
+      properties:
+        systems:
+          type: array
+          items:
+            $ref: '#/components/schemas/System'
+        generatedAt:
+          type: string
+          format: date-time
+
+    OpsDay:
+      type: object
+      required: [d, state, downSec]
+      properties:
+        d:
+          type: string
+          format: date
+          examples: ['2026-06-12']
+        state:
+          $ref: '#/components/schemas/DayState'
+        downSec:
+          type: integer
+          examples: [2520]
+        incidentId:
+          type: string
+          description: Set when the day carries a notch.
+          examples: ['INC-001']
+
+    Incident:
+      type: object
+      description: |
+        `cause`, `fix` and `postSlug` are required, and that is a schema rule rather
+        than a resolution: a red cell without an explanation is worse than none. With
+        one, the same outage becomes evidence of operational maturity.
+      required: [id, startedAt, durationSec, cause, fix, postSlug]
+      properties:
+        id:
+          type: string
+          examples: ['INC-001']
+        startedAt:
+          type: string
+          format: date-time
+        durationSec:
+          type: integer
+        cause:
+          type: string
+        fix:
+          type: string
+        postSlug:
+          type: string
+          description: The post-mortem entry in the log.
+          examples: ['011-migration-lock']
+
+    Deploy:
+      type: object
+      required: [sha, durationSec, result, at]
+      properties:
+        sha:
+          type: string
+          examples: ['a41f9c2']
+        durationSec:
+          type: integer
+          description: Reported by the pipeline itself, not estimated.
+          examples: [42]
+        result:
+          $ref: '#/components/schemas/DeployResult'
+        at:
+          type: string
+          format: date-time
+
+    SystemDetail:
+      allOf:
+        - $ref: '#/components/schemas/System'
+        - type: object
+          required: [window, generatedAt]
+          properties:
+            window:
+              type: integer
+              description: How many days `days` covers.
+              examples: [91]
+            generatedAt:
+              type: string
+              format: date-time
+            days:
+              type: array
+              description: Absent unless `state` is `live`.
+              items:
+                $ref: '#/components/schemas/OpsDay'
+            incidents:
+              type: array
+              description: Absent unless `state` is `live`.
+              items:
+                $ref: '#/components/schemas/Incident'
+            deploys:
+              type: array
+              description: Absent unless `state` is `live`.
+              items:
+                $ref: '#/components/schemas/Deploy'
+
+    # ----------------------------------------------------------------- training
+
+    Evidence:
+      type: object
+      description: One system in which a track actually runs.
+      required: [systemId, systemNo]
+      properties:
+        systemId:
+          type: string
+          examples: ['timseil-dev']
+        systemNo:
+          type: string
+          pattern: '^[0-9]{2}$'
+          examples: ['02']
+        detail:
+          type: string
+          examples: ['build + deploy']
+
+    Track:
+      type: object
+      required: [name, state, evidence]
+      properties:
+        name:
+          type: string
+          examples: ['CI/CD (GitHub Actions)']
+        state:
+          $ref: '#/components/schemas/TrackState'
+        evidence:
+          type: array
+          description: Empty means no system yet — self-study, and said so plainly.
+          items:
+            $ref: '#/components/schemas/Evidence'
+        note:
+          type: string
+          description: Set only when `evidence` is empty.
+          examples: ['self-study']
+
+    Module:
+      type: object
+      required: [no, title, tracks]
+      properties:
+        no:
+          type: string
+          pattern: '^[0-9]{2}$'
+          examples: ['04']
+        title:
+          type: string
+          examples: ['DevOps']
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+
+    Training:
+      type: object
+      required: [modules, trackCount, evidenceSystems, generatedAt]
+      properties:
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/Module'
+        trackCount:
+          type: integer
+          examples: [22]
+        evidenceSystems:
+          type: integer
+          description: Distinct systems backing at least one track.
+          examples: [1]
+        generatedAt:
+          type: string
+          format: date-time
+
+    # ----------------------------------------------------------------- activity
+
+    ContributionDay:
+      type: object
+      required: [date, count, level]
+      properties:
+        date:
+          type: string
+          format: date
+        count:
+          type: integer
+        level:
+          $ref: '#/components/schemas/ContributionLevel'
+
+    ContributionWeek:
+      type: object
+      required: [days]
+      properties:
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContributionDay'
+
+    Contributions:
+      type: object
+      required: [totalContributions, fetchedAt, cacheAgeSec, weeks]
+      properties:
+        totalContributions:
+          type: integer
+        fetchedAt:
+          type: string
+          format: date-time
+        cacheAgeSec:
+          type: integer
+          description: |
+            How old this calendar is. When GitHub is unreachable the site shows the
+            last good one *with* this age rather than an error.
+        weeks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContributionWeek'
+
+    # ------------------------------------------------------------------ contact
+
+    ContactRequest:
+      type: object
+      title: ContactRequest
+      description: |
+        The contact page renders this exact payload live as the visitor types, so a
+        field name here is also a design decision.
+      required: [name, email, message, company, dwellMs, ts]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 80
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: |
+            Becomes the `Reply-To` header. A `\r` or `\n` in here would let an attacker
+            append their own headers and turn the form into a spam relay on this
+            domain — rejected outright.
+        message:
+          type: string
+          minLength: 20
+          maxLength: 4000
+        company:
+          type: string
+          maxLength: 0
+          description: Honeypot. Must be empty; anything else is discarded silently.
+        dwellMs:
+          type: integer
+          minimum: 3000
+          description: Time on the form. Under three seconds is not a human.
+        ts:
+          type: string
+          format: date-time
+          description: With `email` and a hash of `message`, this makes a resend idempotent.
+
+    ContactAccepted:
+      type: object
+      required: [ok, id]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        id:
+          type: string
+          description: The receipt. The sender's text stays in the field.
+          examples: ['msg_01K3F9QX7A']
+
+    # ----------------------------------------------------------------- internal
+
+    ProbeReport:
+      type: object
+      required: [at, up]
+      properties:
+        at:
+          type: string
+          format: date-time
+        up:
+          type: boolean
+        latencyMs:
+          type: integer
+        reason:
+          type: string
+          description: Set when `up` is false.
+          examples: ['connect timeout']
+
+    DeployReport:
+      type: object
+      required: [sha, durationSec, result, at]
+      properties:
+        sha:
+          type: string
+        durationSec:
+          type: integer
+        result:
+          $ref: '#/components/schemas/DeployResult'
+        at:
+          type: string
+          format: date-time
