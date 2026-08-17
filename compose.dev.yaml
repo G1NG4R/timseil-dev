@@ -105,6 +105,28 @@ services:
       # The app role. DML only — it cannot create or drop a table, which is what
       # makes an SQL injection here unable to take the schema with it.
       DATABASE_URL: ${DATABASE_URL:?set it in .env — copy .env.example}
+
+      # The tunables. Passed through empty when .env does not set them, and an
+      # empty value means "use the default in api/internal/config" — so the
+      # defaults live in exactly one place and this file cannot drift from them.
+      LOG_LEVEL: ${LOG_LEVEL:-}
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-}
+      SHUTDOWN_GRACE: ${SHUTDOWN_GRACE:-}
+      DB_MAX_CONNS: ${DB_MAX_CONNS:-}
+      DB_MIN_CONNS: ${DB_MIN_CONNS:-}
+      DB_STATEMENT_TIMEOUT: ${DB_STATEMENT_TIMEOUT:-}
+      DB_LOCK_TIMEOUT: ${DB_LOCK_TIMEOUT:-}
+      DB_IDLE_TX_TIMEOUT: ${DB_IDLE_TX_TIMEOUT:-}
+      RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-}
+      RATE_LIMIT_BURST: ${RATE_LIMIT_BURST:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      SITE_SYSTEM_SLUG: ${SITE_SYSTEM_SLUG:-}
+
+      # The one exception to "empty means default". Which networks may set
+      # X-Forwarded-For is a fact about the deployment, not about the program,
+      # so the program defaults to trusting nobody and the deployment says who.
+      # These are the docker bridge ranges plus loopback. ADR 0015.
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.16.0.0/12,192.168.0.0/16,10.0.0.0/8,127.0.0.1/32,::1/128}
     ports:
       # 127.0.0.1 on purpose: convenient for curl, invisible to the network.
       - "127.0.0.1:${API_PORT:-8080}:8080"

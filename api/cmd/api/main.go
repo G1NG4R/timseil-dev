@@ -1,10 +1,12 @@
 // Command api is the timseil.dev backend.
 //
-// Phase A4 gives it exactly two paths, both operational: /healthz says the
-// process is alive, /readyz says it can reach Postgres. Everything else —
-// config validation, the pool with a reasoned size and the three Postgres
-// timeouts, graceful shutdown, the middleware chain — is phase C1 and is
-// deliberately absent here rather than half-built.
+// Two operational paths: /healthz says the process is alive, /readyz says it
+// can reach Postgres. The contract's own endpoints arrive over the rest of
+// stage C.
+//
+// Phase C1 owns the lifecycle: the configuration is read and validated once at
+// startup, the pool is sized and carries the three Postgres timeouts, and a
+// SIGTERM drains rather than cuts.
 package main
 
 import (
@@ -17,6 +19,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 )
 
@@ -38,19 +41,20 @@ func main() {
 	// to read in a terminal, and a terminal is all this file is for.
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	// Full env validation is C1. The one variable this phase cannot run
-	// without is checked here, so the failure is loud instead of a 503 you
-	// then go looking for in the wrong place.
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		log.Error("DATABASE_URL is empty — copy .env.example to .env")
+	// Everything the process needs from its environment, read once and
+	// validated as a whole. A bad value stops the start here, with every
+	// problem named, rather than turning into a 503 somewhere later that sends
+	// you looking in the wrong place.
+	cfg, err := config.Load()
+	if err != nil {
+		log.Error("invalid configuration\n" + err.Error())
 		os.Exit(1)
 	}
 
-	// Defaults on purpose. pgxpool.New parses the DSN but does not dial, so
-	// the server still starts while Postgres is down — and /readyz then says
-	// 503, which is the entire reason for having two probes instead of one.
-	pool, err := pgxpool.New(context.Background(), dsn)
+	// pgxpool.New parses the DSN but does not dial, so the server still starts
+	// while Postgres is down — and /readyz then says 503, which is the entire
+	// reason for having two probes instead of one.
+	pool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
 	if err != nil {
 		log.Error("cannot build the connection pool", "err", err)
 		os.Exit(1)
