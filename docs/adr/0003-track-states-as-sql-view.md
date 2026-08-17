@@ -49,14 +49,52 @@ property-based gegen die View geprüft (1000 generierte Belegkonstellationen).
   springen, ohne dass jemand eine Zeile pflegt. Der Test dazu ist das
   Abnahmekriterium von C3.
 - Zum Launch existieren zwei Systeme, davon eins `live`. Damit gibt es
-  **13× `applied`, 9× `learning`, 0× `core`** — und `core` ist nicht erreichbar,
+  **13× `applied`, 9× `queued`, 0× `core`** — und `core` ist nicht erreichbar,
   bis ein zweites System wirklich läuft. Das ist der Punkt, nicht ein Mangel.
+  Zur zweiten Zahl siehe den Abschnitt unten; sie hieß hier bis B4 `learning`.
 - Belege dürfen nicht ins Leere zeigen: `track_evidence` → `systems` mit
   `ON DELETE RESTRICT`. Ein gelöschtes System, das einen Zustand stehen lässt,
   wäre exakt die Lüge, die diese Konstruktion verhindert.
 - Die Migration darf die Spalte nicht „vorübergehend" anlegen. Wer sie anlegt,
   hat den Entwurf missverstanden — so steht es in `CLAUDE.md`, und so ist es
   gemeint.
+
+## Nachtrag B4 — warum ein Track ohne Beleg `queued` ist und nicht `learning`
+
+Beim Befüllen in B4 ist ein Widerspruch aufgefallen, der bis dahin in vier
+Dokumenten stand: Handbuch Kapitel 11, Build-Plan B4, `docs/design/README.md`
+und das Homepage-Blatt sagen alle **9× `LEARNING`** für die Tracks ohne System.
+Die `CASE`-Kette oben liefert dort `queued`, und `skillState(0, 0)` im
+read-only Handoff liefert `QUEUED` genauso.
+
+Es ist kein Zahlendreher, sondern arithmetisch unmöglich: `learning` setzt ein
+System im Zustand `in_build` voraus. Zum Launch gibt es zwei Systeme,
+`vat-check` ist `queued` und `timseil-dev` ist `live` — **kein einziges
+`in_build`**. `learning` ist am Launch-Tag nicht erreichbar, egal wie die Belege
+liegen.
+
+**Die Ableitung gewinnt, die vier Dokumente werden korrigiert.** Der Grund ist
+nicht, dass B3 schon gemergt ist, sondern dass `queued` an dieser Stelle die
+belegbare Aussage ist: „ich lerne das gerade" mit nichts, worauf man zeigen
+kann, ist Selbsteinschätzung — und Invariante 2 existiert, um Selbsteinschätzung
+aus dem Log zu halten. `queued` heißt „geplant, nichts zu zeigen", und genau das
+ist wahr. Die Blätter sind hier die weichere, ältere Fassung.
+
+Damit ist `learning` zum Launch ein leerer Zustand. Das ist in Ordnung und sogar
+aussagekräftig: er füllt sich, sobald ein System wirklich im Bau ist, und ein
+Zustand, der erst durch ein System entsteht, ist die ganze These der Seite.
+
+Die Gegenrichtung wurde erwogen und verworfen: die View so zu ändern, dass „kein
+Beleg" auf `learning` fällt und `queued` nur noch für Belege auf `queued`-Systeme
+gilt. Das hätte das Blatt wörtlich getroffen, aber `skillState()` hat nur zwei
+Eingaben und kann diesen Fall nicht ausdrücken. Der Parität-Test aus B3 wäre
+gebrochen, und mit ihm der einzige Wächter, der View und Handoff zusammenhält —
+ein Dokument zu treffen, indem man den Drift-Wächter abschaltet, ist der falsche
+Handel.
+
+Belegt durch `TestSeedIsTheAcceptanceCriterion` in
+`api/migrations/seed_db_test.go`: 13 `applied`, 9 `queued`, kein `core`, kein
+`learning`, ein belegendes System.
 
 ### Was das kostet
 

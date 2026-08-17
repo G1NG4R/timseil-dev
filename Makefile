@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-repo check-todo check-compose check-migrations check-go check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-repo check-todo check-compose check-migrations check-stack check-go check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -51,6 +51,11 @@ check-migrations: ## Migration hygiene and the invariants that are greppable
 	@printf 'migrations\n'
 	@tools/check-migrations.sh
 
+.PHONY: check-stack
+check-stack: ## Every stack.yaml entry resolves, and none of them types a version
+	@printf 'stack\n'
+	@tools/check-stack.sh
+
 .PHONY: check-go
 check-go: ## gofmt, go vet, go test
 	@printf 'go\n'
@@ -68,7 +73,8 @@ check-web: ## Typecheck, lint, unit tests
 
 GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml \
              api/internal/httpx/gen.go web/lib/api/schema.d.ts \
-             api/migrations/testdata/skill_states.json
+             api/migrations/testdata/skill_states.json \
+             api/internal/seed/stack.gen.json
 
 # Drift is "running gen would change something", so that is what gets measured —
 # checksums either side of a run, not `git diff`.
@@ -81,12 +87,17 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
 check-contract: ## Validate the OpenAPI contract and check for codegen drift
 	@printf 'contract\n'
 	@tools/check-contract.sh
+# One checksum per file rather than one over all of them: GENERATED covers five
+# files from four sources now, and "something is stale" would send you looking in
+# the contract when what moved was a version in package.json.
 	@[ -f contract/openapi.yaml ] || exit 0; \
-		before=$$(cat $(GENERATED) 2>/dev/null | sha256sum); \
+		before=$$(sha256sum $(GENERATED) 2>/dev/null); \
 		$(MAKE) --no-print-directory gen >/dev/null || exit 1; \
-		after=$$(cat $(GENERATED) 2>/dev/null | sha256sum); \
-		[ "$$before" = "$$after" ] || { \
+		after=$$(sha256sum $(GENERATED) 2>/dev/null); \
+		stale=$$(printf '%s\n%s\n' "$$before" "$$after" | sort | uniq -u | awk '{print $$2}' | sort -u); \
+		[ -z "$$stale" ] || { \
 			printf '  ✗ generated files are stale — run make gen and commit the result\n'; \
+			printf '%s\n' "$$stale" | sed 's/^/    /'; \
 			exit 1; \
 		}; \
 		printf '  ✓ no codegen drift\n'
@@ -127,8 +138,14 @@ dev-reset: ## Stop the dev stack and drop the database volume
 # test holds against v_track_states. Same reason it lives here — a generated file
 # that nobody regenerates is a stale file, and GENERATED above turns that into a
 # red check instead of a green lie.
+#
+# The fifth resolves stack.yaml against go.mod, package.json and compose.dev.yaml
+# so the seed can embed the result — in D2 it runs from an image that carries
+# none of those files. Two guards, two different statements: the checksum above
+# says "committed equals regenerated", make check-stack says "every entry still
+# resolves and nobody typed a version". A checksum cannot name the entry.
 .PHONY: gen
-gen: ## Generate Go and TS types from the contract, and the skill-state table
+gen: ## Generate Go and TS types from the contract, the skill states and the stack
 	@printf 'gen\n'
 # Both tools narrate to stderr on success. Swallowing that keeps `make check`
 # readable; keeping it on failure is why the output is captured rather than
@@ -143,7 +160,8 @@ gen: ## Generate Go and TS types from the contract, and the skill-state table
 		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
 # Its own success line goes; a failure still speaks, because it speaks on stderr.
 	@node tools/gen-skill-states.mjs >/dev/null
-	@printf '  ✓ public bundle, go types, ts types, skill states\n'
+	@cd api && go run ./cmd/genstack
+	@printf '  ✓ public bundle, go types, ts types, skill states, stack manifest\n'
 
 # --------------------------------------------------------------- migrations
 
@@ -176,6 +194,19 @@ migrate-status: ## List every migration and whether it is applied
 migrate-create: ## Write a new empty migration — make migrate-create name=add_foo
 	@[ -n "$(name)" ] || { printf '  ✗ give it a name: make migrate-create name=add_foo\n'; exit 1; }
 	@$(COMPOSE_DEV) run --rm --user "$$(id -u):$$(id -g)" migrate create $(name)
+
+# ---------------------------------------------------------------------- seed
+
+# Same reason as the migrate targets: Postgres publishes no port, so this runs
+# inside the docker network. The seed service carries DATABASE_URL — the app
+# role, DML only — because that is all a seed needs, and needing no more is the
+# claim being made.
+#
+# `make dev` already runs it in the startup chain. This target is for afterwards:
+# a track renamed, an evidence detail corrected, a stack line added.
+.PHONY: seed
+seed: ## Write the curated content — systems, modules, tracks, evidence
+	@$(COMPOSE_DEV) run --rm seed
 
 # The acceptance criterion of this phase, and it needs a real Postgres: three
 # up/down/up cycles plus every invariant proven against its broken case.

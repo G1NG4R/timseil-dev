@@ -61,9 +61,10 @@ nothing.
 A change is done when all of these hold:
 
 - [ ] `make check` is green
-- [ ] `make check-db` is green, if the change touches `api/migrations/`. It
-      needs Docker and is therefore not part of `make check`; CI picks it up in
-      E1, and until then it is a manual step that has to be stated in the PR
+- [ ] `make check-db` is green, if the change touches `api/migrations/`,
+      `api/internal/seed/` or `api/internal/fixtures/`. It needs Docker and is
+      therefore not part of `make check`; CI picks it up in E1, and until then it
+      is a manual step that has to be stated in the PR
 - [ ] there is a test for the **broken** case, not only the happy path
 - [ ] a contract test exists, if the change adds an endpoint
 - [ ] `docker compose up` ran from zero (from phase A4 onwards)
@@ -90,9 +91,14 @@ outside.
 - **`contract/openapi.yaml`** is the source of truth. If a type does not fit, the
   contract is wrong; do not hand-write the type.
 - **Anything `make gen` writes** — `api/internal/httpx/gen.go`,
-  `web/lib/api/schema.d.ts`, `contract/openapi.public.yaml` and the copy embedded in
-  the API. Change the contract, run `make gen`, commit the result. `make check`
-  compares the two and fails when they differ.
+  `web/lib/api/schema.d.ts`, `contract/openapi.public.yaml`, the copy embedded in
+  the API, `api/migrations/testdata/skill_states.json` and
+  `api/internal/seed/stack.gen.json`. Change the source, run `make gen`, commit the
+  result. `make check` regenerates them and names any file that came out different.
+- **Version numbers, anywhere a reader can see them.** `stack.yaml` carries names
+  and a pointer to the file that declares each version; `make check-stack` refuses
+  a literal `version:`. Add a dependency, then add its line — and only once its
+  source file exists.
 - **`api/internal/httpx/assets/scalar.standalone.js.gz`** — a vendored build of
   `@scalar/api-reference`. To update it, follow the recipe in the comment at the top
   of `api/internal/httpx/docs.go`; do not edit it in place.

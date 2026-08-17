@@ -20,7 +20,7 @@ accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$
 mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
-   "$root/tools/check-migrations.sh" "$tmp/tools/"
+   "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
 
@@ -375,6 +375,89 @@ rm -f api/migrations/00002_view.sql api/migrations/00003_view_again.sql
 
 rm -rf api contract
 accepts "absent migrations skip" tools/check-migrations.sh
+
+printf 'stack\n'
+# The manifest exists so that no version is ever typed onto a page again. The
+# broken cases are therefore about typing one, and about an entry that quietly
+# stops resolving — a caret range renamed, a dependency dropped. Both must be
+# loud, because a stack line that goes silently missing looks like a choice.
+#
+# The resolver is Go, so the api module comes from the real tree while the
+# manifest and its sources come from the throwaway one. Same seam idea as
+# CHECK_NODE_BIN below.
+mkdir -p web api
+printf '{\n  "dependencies": { "next": "16.3.1" }\n}\n' > web/package.json
+printf 'module example.test/api\n\ngo 1.26.0\n' > api/go.mod
+printf 'services:\n  db:\n    image: postgres:18.6-alpine\n  api:\n    image: alpine\n' > compose.dev.yaml
+printf '24\n' > .nvmrc
+
+write_stack() { printf '%s' "$1" > stack.yaml; }
+stack_check() { CHECK_STACK_API_DIR="$root/api" tools/check-stack.sh "$tmp"; }
+
+write_stack 'systems:
+  demo:
+    - { name: "Next.js",    from: "web/package.json", key: "dependencies.next" }
+    - { name: "Go",         from: "api/go.mod",       key: "go" }
+    - { name: "PostgreSQL", from: "compose.dev.yaml", key: "services.db.image" }
+    - { name: "Node",       from: ".nvmrc" }
+    - { name: "FastAPI" }
+'
+accepts "resolvable manifest accepted" stack_check
+
+# The one rule of the file.
+write_stack 'systems:
+  demo:
+    - { name: "PostgreSQL", version: "18.6" }
+'
+rejects "literal version rejected" stack_check
+
+# `form:` for `from:` would otherwise degrade the entry to a bare name, and the
+# version would disappear from the page without anything going red.
+write_stack 'systems:
+  demo:
+    - { name: "Go", form: "api/go.mod", key: "go" }
+'
+rejects "misspelled from rejected" stack_check
+
+write_stack 'systems:
+  demo:
+    - { name: "Go", key: "go" }
+'
+rejects "key without from rejected" stack_check
+
+# Tailwind arrives in G1. Naming it before its dependency exists is the drift
+# this check is for.
+write_stack 'systems:
+  demo:
+    - { name: "Tailwind", from: "web/package.json", key: "dependencies.tailwindcss" }
+'
+rejects "key that is not in the source rejected" stack_check
+
+write_stack 'systems:
+  demo:
+    - { name: "Traefik", from: "compose.observability.yaml", key: "services.proxy.image" }
+'
+rejects "source file that does not exist rejected" stack_check
+
+write_stack 'systems:
+  demo:
+    - { name: "Alpine", from: "compose.dev.yaml", key: "services.api.image" }
+'
+rejects "image without a tag rejected" stack_check
+
+write_stack 'systems: {}
+'
+rejects "manifest without systems rejected" stack_check
+
+write_stack 'systems:
+  demo:
+    - { name: "Go", from: "api/go.mod", key: "go" }
+'
+accepts "absent api module skips" env CHECK_STACK_API_DIR="$tmp/no-such-module" tools/check-stack.sh "$tmp"
+
+rm -f stack.yaml
+accepts "absent stack.yaml skips" stack_check
+rm -rf web api compose.dev.yaml .nvmrc
 
 printf 'node version\n'
 # A fake interpreter, so the assertions do not depend on what this machine runs.

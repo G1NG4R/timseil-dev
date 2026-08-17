@@ -76,6 +76,27 @@ services:
       db:
         condition: service_healthy
 
+  # Writes the curated content: two systems, five modules, 22 tracks, 13 evidence
+  # rows. No measurements — those come from the probe (C7, F4).
+  #
+  # It carries DATABASE_URL, not MIGRATE_DATABASE_URL: the seed is DML only, and
+  # running it as the app role is how that is proven rather than asserted.
+  seed:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set it in .env — copy .env.example}
+    entrypoint: ["go", "run", "./cmd/seed"]
+    restart: "no"
+    volumes:
+      - ./api:/app
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   api:
     build:
       context: ./api
@@ -105,6 +126,11 @@ services:
       # also what makes `make dev` from an empty volume produce a working stack
       # in one command.
       migrate:
+        condition: service_completed_successfully
+      # And not against an empty one either: without this, `make dev` from a
+      # fresh volume serves a site with no systems and no tracks, and the empty
+      # state would look like a bug in whatever you were working on.
+      seed:
         condition: service_completed_successfully
 
   web:

@@ -114,13 +114,13 @@ cd timseil-dev
 git config core.hooksPath .githooks   # arms the commit and push hooks
 make check                            # every check that applies today
 cp .env.example .env                  # local values, none of them secret
-make dev                              # postgres + migrations + api + web
+make dev                              # postgres + migrations + seed + api + web
 make design                           # design handoff on http://localhost:4000
 ```
 
-`make dev` applies the schema before the API starts, so a cold clone comes up
-with a working database in one command. To run the migrations on their own,
-`make migrate`; `make migrate-status` says what is applied.
+`make dev` applies the schema and the content before the API starts, so a cold
+clone comes up with a working database in one command. To run either on its own,
+`make migrate` and `make seed`; `make migrate-status` says what is applied.
 
 `make dev` gives you three containers and two URLs:
 
@@ -163,6 +163,23 @@ of them against the design handoff's own reference implementation, so the
 database and the page cannot come to different conclusions about the same
 person.
 
+**The seed carries content, never measurements.** `make seed` writes two systems,
+five modules, 22 tracks and the 13 evidence rows that back them — and not one row
+of operational data. So `timseil.dev` is `live` from the first run and still reads
+`— NO DATA` in every metric tile, because on day one nothing has been measured.
+Counting it out: 13 tracks `applied`, 9 `queued`, none `core`. None `core` is the
+strict reading and the intended one — building something once means getting it to
+run once, and running it twice is a different claim
+([ADR 0013](docs/adr/0013-seed-is-content-not-measurement.md)).
+
+**No version number is typed onto a page.** `stack.yaml` names what is worth
+showing and points at the file that declares each version; `make gen` reads them
+out of `go.mod`, `package.json` and the compose file. Two guards, and they say
+different things: `make check-stack` names the entry that stopped resolving, and
+`make check` names the generated file that went stale — so bumping a dependency
+without regenerating is a red check rather than a page showing last week's version
+([ADR 0012](docs/adr/0012-stack-manifest-resolved-at-gen-time.md)).
+
 `make help` lists all targets. **Targets that belong to a later phase say so and
 exit instead of pretending they checked something** — `make e2e` arrives before
 stage H. That is deliberate: a quickstart
@@ -179,6 +196,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `README.md` | you, right now |
 | `CONTRIBUTING.md` · `SECURITY.md` | anyone who wants to file something |
 | `compose.dev.yaml` · `.env.example` | anyone running it locally |
+| `stack.yaml` | the curated stack — names and source pointers, no versions |
 | `api/` | Go: handlers thin, logic in `internal/`, SQL in `internal/store/` |
 | `web/` | Next.js App Router, Server Components by default |
 | `docs/build-plan.md` | the author, every session (German) |
