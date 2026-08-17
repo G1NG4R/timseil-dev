@@ -1,0 +1,6 @@
+# The build context is uploaded to the daemon on every build. node_modules and
+# .next are the two directories that make that slow and buy nothing: the image
+# installs its own, the bind mount supplies the rest.
+node_modules
+.next
+out

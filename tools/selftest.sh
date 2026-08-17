@@ -18,7 +18,8 @@ rejects() { desc=$1; shift; if "$@" >/dev/null 2>&1; then no "$desc (accepted, s
 accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$desc (rejected, should accept)"; fi; }
 
 mkdir -p "$tmp/tools" "$tmp/.githooks"
-cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" "$tmp/tools/"
+cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
+   "$root/tools/check-compose.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
 
@@ -89,6 +90,56 @@ printf 'the rule says no %ss without an issue\n' "TO""DO" > prose.txt
 git add prose.txt
 accepts "prose naming the rule accepted" tools/check-todo.sh
 git rm -q --cached prose.txt && rm prose.txt
+
+printf 'compose\n'
+# The security rule is one line in CLAUDE.md and one forgotten line in a YAML
+# file away from being broken. Both halves get their broken case here.
+write_dev() { printf '%s' "$1" > compose.dev.yaml; }
+
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine
+    expose:
+      - "5432"
+'
+accepts "db behind expose accepted" tools/check-compose.sh
+
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine
+    ports:
+      - "5432:5432"
+'
+rejects "published db port rejected" tools/check-compose.sh
+
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine
+    labels:
+      - "traefik.enable=true"
+'
+rejects "traefik label on db rejected" tools/check-compose.sh
+
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine
+    expose:
+      - "5432"
+'
+printf 'services:\n  api:\n    build:\n      context: ./api\n' > compose.yaml
+rejects "build: in the production compose rejected" tools/check-compose.sh
+rm -f compose.yaml
+
+# compose.dev.yaml is the one file allowed to build.
+write_dev 'services:
+  api:
+    build:
+      context: ./api
+'
+accepts "build: in the dev compose accepted" tools/check-compose.sh
+rm -f compose.dev.yaml
+
+accepts "absent compose files skip" tools/check-compose.sh
 
 printf 'node version\n'
 # A fake interpreter, so the assertions do not depend on what this machine runs.

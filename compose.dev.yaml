@@ -1,0 +1,94 @@
+# Local development. This is the ONE compose file allowed to carry `build:` —
+# the production file (D2) may not, because building on the VPS would mean the
+# artefact you tested is not the artefact that runs.
+#
+# Same order as production: db → api → web, each waiting for the one below it.
+# Postgres has no `ports:` here either. Reach it with
+#
+#     docker compose -f compose.dev.yaml exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+#
+# Values come from .env — copy .env.example first.
+
+name: timseil-dev
+
+services:
+  db:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set it in .env — copy .env.example}
+      POSTGRES_USER: ${POSTGRES_USER:?set it in .env — copy .env.example}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set it in .env — copy .env.example}
+      # scram-sha-256 from the first initdb on. Retrofitting an auth method
+      # onto an existing cluster is the kind of chore nobody gets around to.
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    expose:
+      - "5432"
+    volumes:
+      # Named volume, not a bind mount: Dokploy's volume backups only see named
+      # volumes, and dev should not diverge from that on the storage question.
+      #
+      # /var/lib/postgresql, NOT .../data. From image 18 on the data directory
+      # is a major-version-specific subdirectory, so that pg_upgrade --link can
+      # work without crossing a mount boundary. Mounting .../data makes the
+      # container refuse to start. The same path has to be used in D2.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set it in .env — copy .env.example}
+    ports:
+      # 127.0.0.1 on purpose: convenient for curl, invisible to the network.
+      - "127.0.0.1:${API_PORT:-8080}:8080"
+    volumes:
+      - ./api:/app
+      # air's build output, on a volume rather than in the bind mount. The
+      # container runs as root, so anything it writes into ./api lands on the
+      # host owned by root — and then `rm -rf` from your own account fails on
+      # your own working tree.
+      - api-tmp:/app/tmp
+      # Caches as named volumes, or every restart re-downloads the module graph
+      # and recompiles the world.
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    environment:
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8080}
+      # A site whose argument is "everything here is checkable" does not ship a
+      # build tool that reports home in the background.
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    volumes:
+      - ./web:/app
+      # Anonymous volume, and it has to come after the bind mount: without it
+      # the mount hides the node_modules the image installed and next dev dies
+      # on the first import.
+      - /app/node_modules
+      # Same reason as api-tmp: root-owned .next in your working tree is a
+      # directory you cannot delete without docker's help.
+      - web-next:/app/.next
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  api-tmp:
+  go-mod-cache:
+  go-build-cache:
+  web-next:

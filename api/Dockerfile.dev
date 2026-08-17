@@ -1,0 +1,19 @@
+# Development only, used by compose.dev.yaml. The production image is phase D1
+# and shares nothing with this one: multi-stage, CGO_ENABLED=0, -trimpath,
+# distroless/static:nonroot, read-only rootfs, base pinned by digest.
+FROM golang:1.26-alpine
+
+# Pinned on purpose. `@latest` in an image build means two machines get two
+# different air versions and only one of them reproduces your bug.
+ARG AIR_VERSION=v1.67.4
+RUN go install github.com/air-verse/air@${AIR_VERSION}
+
+WORKDIR /app
+
+# The source arrives as a bind mount from compose, not as a COPY — that is what
+# makes the reload loop work. Module and build caches are named volumes, so a
+# container restart does not re-download the module graph.
+ENV CGO_ENABLED=0
+
+EXPOSE 8080
+CMD ["air", "-c", ".air.toml"]

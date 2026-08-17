@@ -1,0 +1,17 @@
+# Development only, used by compose.dev.yaml. The production image is phase D1:
+# `output: 'standalone'`, node:24-alpine, non-root. Nothing here ships.
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Only the manifests are copied. The source arrives as a bind mount from
+# compose, which is what makes hot reload work; node_modules is an anonymous
+# volume so the mount does not hide what npm installed here.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+EXPOSE 3000
+
+# -H 0.0.0.0 is not optional in a container: bound to localhost the dev server
+# would answer only itself, and the mapped host port would look dead.
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
