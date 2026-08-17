@@ -61,6 +61,9 @@ nothing.
 A change is done when all of these hold:
 
 - [ ] `make check` is green
+- [ ] `make check-db` is green, if the change touches `api/migrations/`. It
+      needs Docker and is therefore not part of `make check`; CI picks it up in
+      E1, and until then it is a manual step that has to be stated in the PR
 - [ ] there is a test for the **broken** case, not only the happy path
 - [ ] a contract test exists, if the change adds an endpoint
 - [ ] `docker compose up` ran from zero (from phase A4 onwards)
