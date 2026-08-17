@@ -183,6 +183,30 @@ Gemessen am 17.08.2026 gegen Postgres 18.6:
 | `incidents` im Fenster | Seq Scan + Sort | 0,06 ms |
 | `systems` nach Slug | Seq Scan | 0,11 ms |
 
+Nachgetragen am 18.08.2026, gleiches Volumen, für den Roll-up aus C4:
+
+| Query | Plan | Zeit |
+|---|---|---|
+| `ops_checks`, Roll-up-Fenster über `recorded_at` | Seq Scan | 6,0 ms |
+| Roll-up gesamt, Alltag (ein Tag im Fenster) | Nested Loop, **Bitmap Index Scan je Tag** | 27 ms |
+| Roll-up gesamt, alle 182 Tage auf einmal | derselbe Plan, 182 Schleifen | 386 ms |
+| dieselbe Anweisung mit gewöhnlichem Join statt `LATERAL` | **Merge Join, 4,7 Mio. Zeilen per Filter verworfen** | **1,63 s** |
+
+**Der Fund, der etwas ändert — und es ist derselbe wie bei `metric_snapshots`:**
+Als gewöhnlicher Join formuliert verbindet der Planer die berührten Tage mit
+`ops_checks` über `system_id` allein und wirft den Datumsbereich anschließend per
+Join-Filter weg. Bei 182 Tagen sind das 4,7 Millionen verworfene Zeilen und
+1,63 s. Als `CROSS JOIN LATERAL` macht die Abfrage einen Indexzugriff pro
+berührtem Tag — 386 ms im selben Extremfall, 27 ms im Alltag.
+
+**C4 nimmt diese Form.** Der Index bleibt, wie er ist; es war wieder nicht der
+Index, es war die Frage.
+
+Der Seq Scan über `recorded_at` bleibt und wird nicht indiziert: 6 ms alle fünf
+Minuten auf einer Tabelle, die alle fünf Minuten eine Zeile bekommt, sind kein
+Index wert. Die Zeile steht im Backlog, weil derselbe Index später den
+Aufbewahrungs-Job bedienen würde — beim ersten von beiden wird nachgemessen.
+
 **Der Fund, der etwas ändert:** `DISTINCT ON (system_id) … ORDER BY system_id,
 measured_at DESC` benutzt den Unique-Index **nicht**. Postgres liest die ganze
 Tabelle und sortiert. Bei 10 002 Zeilen sind das 8,7 ms, und die Zahl wächst
