@@ -88,13 +88,31 @@ make check-db   # der Zyklus gegen echtes Postgres
 
 ---
 
-## Ab B3 gilt: nur `reset` ist verlässlich abwärts
+## Die Ableitung: `v_track_states` (seit `00007`)
 
-Sobald `v_track_states` existiert, hängt die View an `tracks`. Ein einzelnes
-`make migrate-down` auf eine mittlere Version kann dann an
-`DROP TABLE tracks` scheitern, weil die View noch da ist. `migrate-reset`
+`tracks` hat keine Spalte `state` — der Zustand wird aus den Belegen gezählt
+(Invariante 2, ADR 0003). Die View liefert pro Track `live_systems`,
+`building_systems` und `state`. Drei Dinge, die im Alltag zählen:
+
+**Nur `reset` ist verlässlich abwärts.** Die View hängt an `tracks`. Ein
+einzelnes `make migrate-down` auf eine mittlere Version kann an
+`DROP TABLE tracks` scheitern, solange die View noch steht. `migrate-reset`
 (`down-to 0`) rollt in der richtigen Reihenfolge ab und ist der Weg, den auch
 `make check-db` geht.
+
+**Wer die `CASE`-Kette anfasst, fasst drei Dinge an.** Die Zustände stehen im
+Contract (`TrackState`), in der View und in `skillState()` im read-only
+Design-Handoff. `tools/check-migrations.sh` (Regel 7) hält View und Contract
+zusammen, der Property-Test in `api/migrations/track_states_db_test.go` hält
+View und Handoff zusammen. Ändert sich der Handoff, muss `make gen` die
+Wahrheitstabelle `api/migrations/testdata/skill_states.json` neu schreiben —
+sonst ist `make check` rot, und zwar bevor jemand die Seite ansieht.
+
+**`permission denied` beim Lesen der View zeigt auf die Basistabellen.** Die
+View läuft mit `security_invoker = true`, prüft die Rechte also gegen die
+aufrufende Rolle statt gegen ihren Eigentümer. Fehlt `timseil_app` ein `SELECT`
+auf `tracks`, `track_evidence` oder `systems`, meldet Postgres genau das — die
+Ursache liegt dann in `00001_privileges.sql`, nicht in der View.
 
 ---
 
