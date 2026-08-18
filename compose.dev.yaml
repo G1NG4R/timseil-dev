@@ -1,8 +1,10 @@
 # Local development. This is the ONE compose file allowed to carry `build:` —
-# the production file (D2) may not, because building on the VPS would mean the
+# compose.yaml next door may not, because building on the VPS would mean the
 # artefact you tested is not the artefact that runs.
 #
-# Same order as production: db → api → web, each waiting for the one below it.
+# Same order as production: db → migrate → seed → api → web, each waiting for the
+# one below it. The difference is what runs: here `go run` against a bind mount,
+# there the two images out of GHCR.
 # Postgres has no `ports:` here either. Reach it with
 #
 #     docker compose -f compose.dev.yaml exec db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
@@ -25,6 +27,12 @@ services:
       # only shell files in that directory see these.
       MIGRATE_DB_PASSWORD: ${MIGRATE_DB_PASSWORD:?set it in .env — copy .env.example}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set it in .env — copy .env.example}
+      # The throwaway database `make check-db` cycles against. Opt-in, and this
+      # is the file that opts in: production must not carry a second database
+      # nobody uses, and a default that creates one would put it there the day
+      # somebody forgets the variable. The safe direction of a default is the
+      # whole decision — ADR 0026 §4 made the same call for CONTRIBUTIONS_TRANSPORT.
+      POSTGRES_CREATE_TEST_DB: "1"
     expose:
       - "5432"
     volumes:
@@ -48,8 +56,8 @@ services:
       retries: 15
       start_period: 5s
 
-  # Applies the schema. Same order as production (D2), where this becomes an
-  # init container instead of a compose-run target.
+  # Applies the schema. Same order as compose.yaml, where this is an init
+  # container instead of a compose-run target.
   #
   # It carries MIGRATE_DATABASE_URL and the api service does not: giving the
   # long-lived API process DDL credentials would undo the very separation this
@@ -65,7 +73,13 @@ services:
       # entrypoint. Both point at the throwaway database, never at timseil.
       TEST_DATABASE_URL: ${TEST_DATABASE_URL:?set it in .env — copy .env.example}
       TEST_APP_DATABASE_URL: ${TEST_APP_DATABASE_URL:?set it in .env — copy .env.example}
-    entrypoint: ["go", "run", "./cmd/migrate"]
+    # `./cmd/api migrate`, not `./cmd/migrate`: D2 folded the migration and the
+    # seed into the one binary the production image already ships, because three
+    # separately linked Go binaries cost 32 MiB against a 20 MiB ceiling (ADR
+    # 0027). The verb sits in the entrypoint rather than the command so that
+    # `make migrate-status` and `make migrate-create` can keep passing nothing
+    # but their own argument.
+    entrypoint: ["go", "run", "./cmd/api", "migrate"]
     command: ["up"]
     restart: "no"
     volumes:
@@ -87,7 +101,8 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       DATABASE_URL: ${DATABASE_URL:?set it in .env — copy .env.example}
-    entrypoint: ["go", "run", "./cmd/seed"]
+    # Same binary as migrate and as api, a different verb and a different role.
+    entrypoint: ["go", "run", "./cmd/api", "seed"]
     restart: "no"
     volumes:
       - ./api:/app
@@ -195,13 +210,14 @@ services:
     # Longer than SHUTDOWN_GRACE, and that relationship is the whole point.
     # Docker's default is 10 seconds: with it, the process would still be
     # draining politely when SIGKILL arrived, the shutdown tests would stay
-    # green, and production would cut requests anyway. D2 has to repeat this.
+    # green, and production would cut requests anyway. compose.yaml repeats it.
     stop_grace_period: 30s
 
     healthcheck:
-      # wget is busybox's, from the alpine base. D1 builds on distroless, which
-      # has no shell and no wget, so the production image needs a healthcheck
-      # the binary answers itself — that is D1's problem and it is noted there.
+      # wget is busybox's, from the alpine base. The production image is
+      # distroless — no shell, no wget — so it answers its own healthcheck with
+      # `/api -healthcheck` (ADR 0026). That one lives in the image, which is why
+      # compose.yaml declares no healthcheck for api or web at all.
       test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/healthz"]
       interval: 5s
       timeout: 3s

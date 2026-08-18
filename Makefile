@@ -264,6 +264,13 @@ check-db: ## Migration cycle and schema invariants against a real Postgres
 IMAGE_API := timseil-api
 IMAGE_WEB := timseil-web
 
+# compose.yaml names the images as GHCR does, because that is what runs on the
+# VPS and a production file that named something else would be describing a
+# deployment nobody has. So the local build carries both tags: the short one for
+# `docker images` and the registry one so `make check-topology` can run the real
+# file without a registry and without weakening its `image:` lines.
+REGISTRY := ghcr.io/g1ng4r
+
 # What the linker stamps into the binary, and therefore what /api/health says.
 # `git describe` names a tag when there is one and falls back to the short sha;
 # --dirty says out loud that this build is not the commit it names, which is the
@@ -284,12 +291,15 @@ image-api: ## Build the API image
 	@docker build \
 		--build-arg VERSION=$(VERSION) \
 		--build-arg GIT_SHA=$(GIT_SHA) \
-		-t $(IMAGE_API):$(IMAGE_TAG) ./api
+		-t $(IMAGE_API):$(IMAGE_TAG) \
+		-t $(REGISTRY)/$(IMAGE_API):$(IMAGE_TAG) ./api
 
 .PHONY: image-web
 image-web: ## Build the web image
 	@printf 'image %s:%s\n' '$(IMAGE_WEB)' '$(IMAGE_TAG)'
-	@docker build -t $(IMAGE_WEB):$(IMAGE_TAG) ./web
+	@docker build \
+		-t $(IMAGE_WEB):$(IMAGE_TAG) \
+		-t $(REGISTRY)/$(IMAGE_WEB):$(IMAGE_TAG) ./web
 
 # The acceptance criteria of phase D1, as a command rather than as a paragraph.
 #
@@ -335,6 +345,133 @@ check-images: ## The D1 acceptance: size, user, no shell, and the standalone ass
 		sh -c '[ -d .next/static ] && [ -d public ] && [ -f public/favicon.svg ]' \
 		|| { printf '  ✗ the web image is missing .next/static or public — the standalone trap\n'; exit 1; }
 	@printf '  ✓ .next/static and public are in the web image\n'
+
+# ------------------------------------------------------------------- topology
+
+# compose.yaml is the file Dokploy runs. It is also the file this target runs, on
+# this machine, against the images `make images` just built — which is the only
+# way the claim "it comes up from nothing without a handgriff" is a measurement
+# rather than an intention.
+COMPOSE := docker compose -f compose.yaml
+
+# IMAGE_TAG reaches compose through the environment, not through Make: compose
+# reads the process environment and knows nothing about a Make variable of the
+# same name. Exported once here rather than repeated on every line below.
+export IMAGE_TAG
+
+# CONTRIBUTIONS_TRANSPORT=off, because verifying the topology should not require
+# a GitHub credential. It switches the refresher off and neither the start nor
+# the endpoint (ADR 0026 §4) — the same answer C7 reached for local runs.
+TOPOLOGY_ENV := CONTRIBUTIONS_TRANSPORT=off
+
+# Both targets below need the images to exist under their registry names. They do
+# not exist for a commit nobody built: IMAGE_TAG follows HEAD, so committing and
+# then running `make prod` asks docker for a tag that was never pushed, and what
+# comes back is an authentication error against ghcr.io — a message about the
+# wrong thing entirely. This says the true thing instead.
+.PHONY: require-images
+require-images:
+	@for tag in $(REGISTRY)/$(IMAGE_API):$(IMAGE_TAG) $(REGISTRY)/$(IMAGE_WEB):$(IMAGE_TAG); do \
+		docker image inspect "$$tag" >/dev/null 2>&1 || { \
+			printf '  ✗ %s is not built\n' "$$tag"; \
+			printf '    run: make images    (IMAGE_TAG follows HEAD, so a new commit needs a new build)\n'; \
+			exit 1; }; \
+	done
+
+.PHONY: prod
+prod: require-images ## Run the production compose locally — needs `make images` first
+	@$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait api web
+
+.PHONY: prod-down
+prod-down: ## Stop the production stack, keep the database
+	@$(COMPOSE) down
+
+.PHONY: prod-reset
+prod-reset: ## Stop it and drop the database volume
+	@$(COMPOSE) down --volumes
+
+# The acceptance criterion of phase D2, as a command rather than as a paragraph:
+# "down -v && up reproduziert den Zustand ohne Handgriff".
+#
+# Not part of `make check`, for the same reason `check-db` and `check-images` are
+# not: it needs Docker and it needs a build. What a static check CAN say about
+# this file is said by `make check-compose`, which does run — that one checks the
+# recipe, this one checks the kitchen.
+.PHONY: check-topology
+check-topology: require-images ## The D2 acceptance: from zero, twice, and the api blocked when the migration fails
+	@printf 'topology\n'
+	@[ -f .env ] || { printf '  ✗ no .env — run: cp .env.example .env\n'; exit 1; }
+# 1. From nothing. This is the criterion, literally.
+	@$(COMPOSE) down --volumes --remove-orphans >/dev/null 2>&1 || true
+	@$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait --wait-timeout 180 api web >/dev/null \
+		|| { printf '  ✗ the stack did not come up from an empty volume\n'; \
+		     $(COMPOSE) ps; exit 1; }
+	@printf '  ✓ up from an empty volume, no handgriff\n'
+# 2. The chain ran in order and both init containers finished.
+	@for s in migrate seed; do \
+		code=$$($(COMPOSE) ps -a --format '{{.Service}} {{.ExitCode}}' | awk -v s=$$s '$$1==s {print $$2}'); \
+		[ "$$code" = "0" ] || { printf '  ✗ %s exited %s\n' "$$s" "$${code:-<never ran>}"; exit 1; }; \
+		printf '  ✓ %s ran and exited 0\n' "$$s"; \
+	done
+# 3. "Reproduziert den Zustand" is about rows, not about containers. ADR 0013
+#    fixes these three numbers; the seed checks them before it commits, and this
+#    checks that the seed is what ran.
+	@rows=$$($(COMPOSE) exec -T db psql -U "$$(grep -E '^POSTGRES_USER=' .env | cut -d= -f2-)" \
+		-d "$$(grep -E '^POSTGRES_DB=' .env | cut -d= -f2-)" -tAc \
+		'select (select count(*) from systems)||chr(47)||(select count(*) from tracks)||chr(47)||(select count(*) from track_evidence)' 2>/dev/null | tr -d ' \r'); \
+		[ "$$rows" = "2/22/13" ] || { printf '  ✗ seeded rows are %s, want 2/22/13\n' "$$rows"; exit 1; }; \
+		printf '  ✓ 2 systems, 22 tracks, 13 evidence rows\n'
+# 4. The limits and the hardening are APPLIED, not merely written down. Compose
+#    outside swarm honours deploy.resources.limits; this is where that stops
+#    being a claim.
+	@for s in db api web; do \
+		c=$$($(COMPOSE) ps -q $$s); \
+		mem=$$(docker inspect "$$c" --format '{{.HostConfig.Memory}}'); \
+		cpu=$$(docker inspect "$$c" --format '{{.HostConfig.NanoCpus}}'); \
+		[ "$$mem" != "0" ] && [ "$$cpu" != "0" ] \
+			|| { printf '  ✗ %s has no memory or cpu limit applied\n' "$$s"; exit 1; }; \
+	done
+	@printf '  ✓ memory and cpu limits applied to db, api and web\n'
+	@for s in api web migrate seed; do \
+		c=$$($(COMPOSE) ps -aq $$s); \
+		ro=$$(docker inspect "$$c" --format '{{.HostConfig.ReadonlyRootfs}}'); \
+		[ "$$ro" = "true" ] || { printf '  ✗ %s does not run read-only\n' "$$s"; exit 1; }; \
+	done
+	@printf '  ✓ api, web and both init containers run read-only\n'
+# 5. The healthcheck came from the IMAGE. If this ever reads anything else, a
+#    second copy has appeared in compose.yaml and the two will drift.
+	@probe=$$(docker inspect $$($(COMPOSE) ps -q api) --format '{{json .Config.Healthcheck.Test}}'); \
+		[ "$$probe" = '["CMD","/api","-healthcheck"]' ] \
+			|| { printf '  ✗ api healthcheck is %s, not the one in the image\n' "$$probe"; exit 1; }; \
+		printf '  ✓ the api healthcheck is the image'"'"'s, not a second copy\n'
+# 6. Postgres publishes nothing. The security rule, measured from the outside.
+	@ports=$$(docker inspect $$($(COMPOSE) ps -q db) --format '{{json .NetworkSettings.Ports}}'); \
+		case "$$ports" in *'"HostPort"'*) printf '  ✗ db publishes a port: %s\n' "$$ports"; exit 1 ;; esac; \
+		printf '  ✓ db publishes no port\n'
+# 7. The redeploy case, which is a different claim from the cold one: every
+#    future deploy runs migrate and seed against a populated volume.
+	@$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait --wait-timeout 180 api web >/dev/null \
+		|| { printf '  ✗ the second up against a populated volume failed\n'; exit 1; }
+	@printf '  ✓ up again on a populated volume — migrate and seed are idempotent\n'
+	@$(COMPOSE) down --volumes >/dev/null 2>&1 || true
+# 8. THE BROKEN CASE. The claim this phase makes is not "five containers start".
+#    It is "the api never comes up against a database the migration did not
+#    reach" — so break the migration on purpose and watch the api never exist.
+	@MIGRATE_DATABASE_URL='postgres://nobody:wrong@db:5432/timseil?sslmode=disable' \
+		$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait --wait-timeout 90 api web >/dev/null 2>&1 \
+		&& { printf '  ✗ a failed migration still brought the stack up\n'; exit 1; } || true
+#    Compose CREATES the downstream containers before it evaluates the condition
+#    and then never starts them, so "no container exists" would be the wrong
+#    assertion — and a weaker one. What matters is that no api PROCESS ever ran
+#    against the unmigrated database, which is what a zero StartedAt says.
+	@[ -z "$$($(COMPOSE) ps -q api)" ] \
+		|| { printf '  ✗ the api is running after a failed migration\n'; exit 1; }
+	@started=$$(docker inspect $$($(COMPOSE) ps -aq api) --format '{{.State.StartedAt}}' 2>/dev/null); \
+		[ "$$started" = "0001-01-01T00:00:00Z" ] \
+			|| { printf '  ✗ the api process started anyway (StartedAt %s)\n' "$$started"; exit 1; }
+	@printf '  ✓ a failed migration stops the deploy — the api process never ran\n'
+	@$(COMPOSE) down --volumes --remove-orphans >/dev/null 2>&1 || true
+	@printf '  ✓ make check-topology\n'
 
 # ---------------------------------------------------------------- placeholders
 

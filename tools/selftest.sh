@@ -141,6 +141,139 @@ write_dev 'services:
 accepts "build: in the dev compose accepted" tools/check-compose.sh
 rm -f compose.dev.yaml
 
+rm -f compose.dev.yaml compose.yaml
+
+# The six rules D2 added, which apply to the production file only. Each one is a
+# sentence ADR 0027 asserts, and an asserted rule nobody can break on purpose is
+# a rule nobody has tested.
+#
+# `limited` is the smallest production service that satisfies every other rule,
+# so each case below fails for exactly the reason it is named after.
+write_prod() { printf '%s' "$1" > compose.yaml; }
+
+limited='    deploy:
+      resources:
+        limits:
+          memory: 256M
+'
+
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+$limited"
+accepts "a pinned, limited production service accepted" tools/check-compose.sh
+
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+"
+rejects "production service without a memory limit rejected" tools/check-compose.sh
+
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:latest
+$limited"
+rejects "floating ghcr tag rejected" tools/check-compose.sh
+
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+    env_file: .env.prod
+$limited"
+rejects "env_file in the production compose rejected" tools/check-compose.sh
+
+# Rule 7 is about a SECOND copy of a probe the image already carries...
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+    healthcheck:
+      test: [\"CMD\", \"/api\", \"-healthcheck\"]
+$limited"
+rejects "api restating its image healthcheck rejected" tools/check-compose.sh
+
+# ...and switching one off is not a copy of it. The init containers do this
+# because a probe written for a server is meaningless for a program that exits.
+write_prod "services:
+  migrate:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+    healthcheck:
+      disable: true
+$limited"
+accepts "an init container disabling the probe accepted" tools/check-compose.sh
+
+# Rule 3. A named volume is fine, a host path is not, and the one exception is
+# the read-only roles script — which has to be read-only to be the exception.
+write_prod "services:
+  db:
+    image: postgres:18.6-alpine
+    volumes:
+      - db-data:/var/lib/postgresql
+$limited"
+accepts "named volume accepted" tools/check-compose.sh
+
+write_prod "services:
+  db:
+    image: postgres:18.6-alpine
+    volumes:
+      - ./data:/var/lib/postgresql
+$limited"
+rejects "bind-mounted database directory rejected" tools/check-compose.sh
+
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+$limited"
+rejects "bind-mounted docker socket rejected" tools/check-compose.sh
+
+write_prod "services:
+  db:
+    image: postgres:18.6-alpine
+    volumes:
+      - ./ops/postgres/initdb:/docker-entrypoint-initdb.d
+$limited"
+rejects "writable ops bind mount rejected" tools/check-compose.sh
+
+write_prod "services:
+  db:
+    image: postgres:18.6-alpine
+    volumes:
+      - ./ops/postgres/initdb:/docker-entrypoint-initdb.d:ro
+$limited"
+accepts "read-only ops bind mount accepted" tools/check-compose.sh
+
+# A tmpfs path is absolute and is not a bind mount. Without this distinction the
+# rule would forbid the read-only rootfs it exists alongside.
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m
+$limited"
+accepts "tmpfs path not mistaken for a bind mount accepted" tools/check-compose.sh
+
+# Rule 8. stack.yaml reads the production tag and puts it on a page, so the two
+# files disagreeing means the page shows a version nothing runs.
+write_prod "services:
+  db:
+    image: postgres:18.6-alpine
+$limited"
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine
+'
+accepts "both compose files on the same postgres accepted" tools/check-compose.sh
+
+write_dev 'services:
+  db:
+    image: postgres:18.5-alpine
+'
+rejects "postgres drift between the two compose files rejected" tools/check-compose.sh
+
+rm -f compose.dev.yaml compose.yaml
+
 accepts "absent compose files skip" tools/check-compose.sh
 
 printf 'dockerfiles\n'

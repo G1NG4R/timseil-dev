@@ -3,9 +3,11 @@
 **Leser:** ich, wenn ich in sechs Monaten eine Spalte hinzufügen will, und ich,
 wenn um 23 Uhr eine Migration in der Mitte stehen geblieben ist.
 
-Werkzeug ist goose als Bibliothek hinter `api/cmd/migrate`, die SQL-Dateien
-liegen in `api/migrations/` und sind ins Binary eingebettet. ADR 0010 (Enums),
-ADR 0011 (Rollen).
+Werkzeug ist goose als Bibliothek hinter `api/cmd/api/migrate.go`, die
+SQL-Dateien liegen in `api/migrations/` und sind ins Binary eingebettet. Seit D2
+ist es dasselbe Binary, das auch den Server fährt — `api migrate up` statt eines
+eigenen Kommandos, weil drei getrennte Binaries im selben Image 32 MiB wögen
+(ADR 0027). ADR 0010 (Enums), ADR 0011 (Rollen), ADR 0027 (ein Binary).
 
 ---
 
@@ -136,9 +138,24 @@ sie von Hand zu Ende bringt.
 
 ## In Produktion: erst erweitern, dann verengen
 
-Ab D2 läuft die Migration als Init-Container vor der API. Zwischen dem
-Migrationsschritt und dem Neustart der Anwendung läuft **kurz die alte Version
-gegen das neue Schema** — und bei einem Rollback die alte Version dauerhaft.
+Seit D2 läuft die Migration als Init-Container vor der API, aus demselben Image:
+
+```yaml
+  migrate:
+    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG}
+    command: ["migrate", "up"]
+    depends_on:
+      db:
+        condition: service_healthy
+```
+
+Scheitert sie, wird die API **angelegt und nie gestartet** — kein Prozess sieht
+je das unmigrierte Schema. `make check-topology` provoziert genau das und prüft
+es nach. Fehlersuche: `docs/runbooks/compose.md`.
+
+Zwischen dem Migrationsschritt und dem Neustart der Anwendung läuft **kurz die
+alte Version gegen das neue Schema** — und bei einem Rollback die alte Version
+dauerhaft.
 
 Deshalb in zwei Deploys statt einem:
 

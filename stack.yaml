@@ -22,8 +22,11 @@ systems:
     - { name: "pgx",        from: "api/go.mod",       key: "github.com/jackc/pgx/v5" }
     - { name: "sqlc",       from: "api/go.mod",       key: "github.com/sqlc-dev/sqlc" }
     - { name: "goose",      from: "api/go.mod",       key: "github.com/pressly/goose/v3" }
-    # compose.yaml arrives in D2 and must then carry the same tag as this one.
-    - { name: "PostgreSQL", from: "compose.dev.yaml", key: "services.db.image" }
+    # compose.yaml, not compose.dev.yaml: the page quotes what production runs.
+    # make check-compose refuses a drift between the two files, so this reads the
+    # production tag and the development one cannot silently walk away from it.
+    # Build plan ch. 12.3, issue #28, ADR 0012 and ADR 0027.
+    - { name: "PostgreSQL", from: "compose.yaml", key: "services.db.image" }
     - { name: "Node",       from: ".nvmrc" }
 
   # 01 · VAT Check API — queued, and none of its sources live here. Bare names,

@@ -4,7 +4,8 @@
 **was von außen erreichbar ist**. Für den Blick von außen siehe
 [Kontext-Diagramm](c4-context.md).
 
-**Ein Host zum Launch** — acht Container in einem Dokploy-Stack (ADR 0008).
+**Ein Host zum Launch** — acht dauerhafte Container in einem Dokploy-Stack
+(ADR 0008), dazu zwei Init-Container, die bei jedem Deploy durchlaufen und enden.
 Ein zweiter Host kommt erst, wenn ein zweites Projekt ihn mitträgt.
 
 ```mermaid
@@ -76,16 +77,31 @@ behauptet einen Betrieb, den es am Launch-Tag nicht gibt.
 | **proxy** | Traefik, von Dokploy | TLS, Routing, Rate-Limit, Metrik-Endpoint | **ja** — 80, 443 |
 | **web** | Next.js 16.3, `node:24-alpine`, non-root | Seiten, Rendering, MDX-Blog. Keine Datenlogik | nein |
 | **api** | Go 1.26, `distroless/static:nonroot`, read-only rootfs | Postgres, Ableitungen, Contract, Validierung, Mail, Snapshots | nein |
+| **migrate**, **seed** | dasselbe api-Image, andere Unterbefehle | Init-Container: Schema (`timseil_migrate`), dann Inhalt (`timseil_app`). Laufen durch und enden | **nie** |
 | **db** | PostgreSQL 18.6 | Systeme, Tracks, Belege, Vorfälle, Deploys, Snapshots | **nie** |
 | **alloy** | Grafana Alloy | scrapt Traefik, API und Node, tailt Container-Logs, empfängt OTLP und Faro | **nie** |
 | **prometheus** | 3.13 LTS | Metriken, 7 d **und** 2 GB | **nie** |
 | **loki** | 3.7 | Logs, 14 d **und** Größen-Limit ~5 GB | **nie** |
 | **grafana** | aktuell | Dashboards, Alerting | Entscheidung in L3 |
 
-Startreihenfolge (D2): `db` (`pg_isready`) → `migrate` als Init-Container
-(Rolle `timseil_migrate`, DDL) → `api` (Healthcheck) → `web`.
+Startreihenfolge (`compose.yaml`, seit D2): `db` (`pg_isready`) → `migrate` als
+Init-Container (Rolle `timseil_migrate`, DDL) → `seed` als Init-Container (Rolle
+`timseil_app`, DML) → `api` (Healthcheck aus dem Image) → `web`.
+
+**Fünf Dienste, nicht vier.** Der Seed steht in der Kette, weil er den
+kuratierten Inhalt trägt und ein Deploy ihn mitbringen muss (ADR 0013, Issue
+#28); ohne ihn liefert ein frischer Deploy eine Seite ohne Systeme. Bauplan und
+Handbuch zeichnen noch vier — sie sind älter als ADR 0013, und ADR 0027 §2 hält
+die Abweichung fest.
+
+`migrate` und `seed` laufen aus **demselben Image wie `api`**, als Unterbefehle
+desselben Binaries: drei getrennt gelinkte Go-Binaries wögen 32 MiB gegen die
+20-MiB-Grenze aus D1 (ADR 0027 §1).
+
 **Alle persistenten Daten als Docker Named Volumes** — Dokploys
-S3-Volume-Backups funktionieren nur damit.
+S3-Volume-Backups funktionieren nur damit. Einzige Ausnahme in `compose.yaml`
+ist der Rollen-Bootstrap `./ops/postgres/initdb`, read-only gemountet: das ist
+Konfiguration aus git, nicht Zustand, den man wiederherstellen müsste.
 
 ## Die Vertrauensgrenze
 

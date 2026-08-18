@@ -169,7 +169,24 @@ Zwei Dinge, die man sonst zweimal sucht:
 
 ---
 
-## In Produktion (ab D2)
+## In Produktion
+
+Steht seit D2 in `compose.yaml` und läuft dort als Init-Container:
+
+```yaml
+  seed:
+    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG}
+    command: ["seed"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+```
+
+Dasselbe Image wie `api` und `migrate`, ein anderer Verb — ADR 0027 hat die drei
+Binaries zu einem zusammengelegt, weil drei getrennte 32 MiB gegen eine
+20-MiB-Grenze wogen. `DATABASE_URL`, nicht `MIGRATE_DATABASE_URL`: der Seed ist
+DML, und dass er ohne Schema-Rechte auskommt, beweist
+`TestSeedNeedsNoSchemaPrivileges`.
 
 Der Seed gehört **nach** die Migration und **vor** den Start der Anwendung, mit
 derselben Bedingung wie lokal. Er ist idempotent, läuft also bei jedem Deploy

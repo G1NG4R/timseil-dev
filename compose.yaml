@@ -1,0 +1,406 @@
+# Production. Dokploy runs this file on the VPS; the only other thing that runs
+# it is `make check-topology`, which runs it here to prove this phase's single
+# claim — that `down -v && up` reproduces the whole state with no handwork.
+#
+# Four rules this file exists to keep, and each of them is a gate in
+# tools/check-compose.sh rather than a sentence somebody has to remember:
+#
+#   1. No `build:`. Building on the VPS means the artefact you tested is not the
+#      artefact that runs — and then the contract test, the SBOM and the
+#      signature all describe an image nobody ever deployed. compose.dev.yaml is
+#      the one file allowed to build.
+#   2. No bind mount except the read-only initdb script. Dokploy's volume backups
+#      to S3 see named volumes and nothing else, and a bind mount is data you
+#      find out you cannot restore on the day you need it.
+#   3. No `ports:` and no Traefik label for db. From outside this host 22, 80 and
+#      443 answer; nothing else does.
+#   4. No `env_file:`. Every value arrives from the Dokploy UI as runtime
+#      environment. A file on the host is a second home for secrets, a second
+#      thing to rotate, and a file that has to exist before `up` — which is the
+#      Handgriff this phase is defined by not needing.
+#
+# The chain is db → migrate → seed → api → web. FIVE services, not the four the
+# build plan draws: the seed is idempotent and writes the curated content, so a
+# corrected evidence line ships as a deploy instead of as handwork on the
+# production database (issue #28, ADR 0013). ADR 0027 records the divergence as
+# the plan being outrun rather than ignored.
+#
+# Traefik is NOT here. It belongs to Dokploy and to phase D3, and its network is
+# `external:` — declaring it now would make `docker compose up` fail on every
+# machine that is not the VPS, which is exactly the acceptance criterion of this
+# phase. The two seams below mark where D3 adds it.
+
+name: timseil
+
+services:
+  db:
+    # A literal tag, not a variable and not a digest. stack.yaml reads this line
+    # to put the PostgreSQL version on the page, and it reads the raw YAML rather
+    # than the interpolated document — a `${POSTGRES_IMAGE:-…}` here would put a
+    # variable name on the page. A digest would be worse: the manifest takes
+    # everything after the last `:` as the version, so the page would show a
+    # sha256. Pinning this one belongs to E2, together with the Dependabot rule
+    # that would then have to bump it. ADR 0027.
+    #
+    # make check-compose refuses a drift between this tag and compose.dev.yaml's:
+    # a page showing the development version is the exact class of error the
+    # manifest exists to prevent (issue #28).
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      # `:?` here and pass-through below, and the split is a rule rather than a
+      # mood: a variable gets `:?` only where an empty value fails SILENTLY or
+      # names the wrong problem. These two qualify. POSTGRES_DB left empty
+      # silently becomes the value of POSTGRES_USER, and POSTGRES_USER left empty
+      # silently becomes `postgres` — either way you get a running cluster that
+      # is quietly the wrong one, and the healthcheck below goes green against it.
+      POSTGRES_DB: ${POSTGRES_DB:?set it in Dokploy — an empty value silently becomes POSTGRES_USER}
+      POSTGRES_USER: ${POSTGRES_USER:?set it in Dokploy — an empty value silently becomes "postgres"}
+      # No `:?`: the image refuses to initialise without it and says so in one
+      # line. Restating that refusal here would be a second place for it to drift.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      # scram-sha-256 from the first initdb on. Retrofitting an auth method onto
+      # an existing cluster is the kind of chore nobody gets around to.
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+      # Read by the initdb script below, which is a shell file precisely because
+      # only shell files in that directory see these. Both carry their own
+      # `: "${VAR:?}"` in 10-roles.sh and abort initdb loudly, so no `:?` here.
+      MIGRATE_DB_PASSWORD: ${MIGRATE_DB_PASSWORD:-}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
+      # POSTGRES_CREATE_TEST_DB is deliberately absent. 10-roles.sh creates
+      # ${POSTGRES_DB}_test only when it is set, and only `make check-db` needs
+      # that database. compose.dev.yaml sets it; this file must not.
+    expose:
+      - "5432"
+    volumes:
+      # The one bind mount in this file, and it is configuration, not data. The
+      # named-volume rule protects what you would have to RESTORE; this script is
+      # in git, git is its backup, and a named volume for it would have to be
+      # populated by hand — a Handgriff, and one that drifts from the repo in
+      # silence. `:ro`, and tools/check-compose.sh refuses every other host path.
+      #
+      # It runs ONCE, on the first start of an empty data directory, and creates
+      # timseil_migrate and timseil_app. On an existing volume it does not run at
+      # all, which is why a change here means the volume goes rather than the
+      # container restarting. ADR 0011.
+      - ./ops/postgres/initdb:/docker-entrypoint-initdb.d:ro
+      # /var/lib/postgresql, NOT .../data. From image 18 on the data directory is
+      # a major-version-specific subdirectory so pg_upgrade --link can work
+      # without crossing a mount boundary; mounting .../data makes the container
+      # refuse to start. The build plan's own snippet still shows the old path.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      # Declared here and only here. The postgres image ships no HEALTHCHECK, so
+      # unlike api and web there is nothing to inherit — and migrate waits on
+      # this answer, so without it the schema would be applied against a cluster
+      # that is still starting.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      # Covers initdb plus the roles script on a cold volume. Failures inside it
+      # do not count, which is what stops a first deploy looking like an outage.
+      start_period: 10s
+    # Docker's default grace is 10s. The image's STOPSIGNAL is SIGINT — a fast
+    # shutdown rather than the polite one — but a checkpoint on a busy disk is
+    # not instant, and a database killed mid-checkpoint pays for it on the next
+    # start.
+    stop_grace_period: 30s
+    security_opt:
+      # Blocks GAINING privileges through setuid; it does not block dropping
+      # them, which is what this entrypoint does when it steps down from root to
+      # postgres. No `cap_drop` here on purpose: the entrypoint needs CHOWN,
+      # SETUID, SETGID and friends to do that, and a wrong list bricks the
+      # database. That list wants a test, and the test is an L2 item.
+      - no-new-privileges:true
+    # Docker's default /dev/shm is 64 MB. Postgres puts parallel-worker segments
+    # there, and the failure reads like a Postgres bug while being a Docker
+    # default: "could not resize shared memory segment".
+    shm_size: 128mb
+    deploy:
+      resources:
+        # shared_buffers is 128 MB by default and Postgres does NOT derive it
+        # from this limit — a limit below it would OOM on the first large scan.
+        # 128 MB + up to three autovacuum workers at 64 MB + ~25 backends at
+        # ~8 MB is the shape of the worst case. 512M is the ceiling that turns a
+        # runaway into an OOM kill instead of a swapping host, and a whole core
+        # because a vacuum or an index build wants one.
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        # reservations.cpus is a swarm scheduling hint and does nothing under
+        # `docker compose up`, so it is not written down as a number that does
+        # nothing. This one is real: it maps to Docker's soft memory limit. The
+        # three reservations in this file sum to 480 MB, which is what build plan
+        # ch. 10 budgets for this group once Traefik's ~100 MB is Dokploy's.
+        # The limits are the blast radius; the reservations are the budget.
+        reservations:
+          memory: 256M
+
+  # Applies the schema, then exits. An init container: everything downstream
+  # waits for its exit code, not for a port.
+  #
+  # Same image as the api, a different verb. Three separately linked Go binaries
+  # would be 32 MiB against the 20 MiB ceiling make check-images enforces, and
+  # one binary carrying all three is 15 (ADR 0027). One image also keeps the
+  # promise issue #28 rests on: the seed writes systems.stack from a manifest
+  # embedded at build time, so rolling the image back rolls its stack claims back
+  # with it. With one tag that is a mechanism; with three it is a convention.
+  migrate:
+    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG:?set IMAGE_TAG in Dokploy — the deploy pipeline sets it to sha-<short sha>}
+    command: ["migrate", "up"]
+    # Not a service. A failed migration must stop the deploy, not loop until the
+    # log fills the disk.
+    restart: "no"
+    healthcheck:
+      # Switched off, not restated. The image carries a HEALTHCHECK that dials
+      # the server's /readyz — correct for the api, meaningless for a program
+      # that applies eight files and exits, and `--wait` would sit waiting for a
+      # port that was never going to open.
+      disable: true
+    environment:
+      # timseil_migrate — DDL, and the api service below deliberately never sees
+      # this variable. Giving the long-lived process DDL credentials would make
+      # the role split decoration (ADR 0011); which binary the code sits in was
+      # never what enforced it. No `:?`: the subcommand exits 1 naming this
+      # variable, and service_completed_successfully turns that into a blocked
+      # deploy rather than a half-started stack.
+      MIGRATE_DATABASE_URL: ${MIGRATE_DATABASE_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+
+  # Writes the curated content: two systems, five modules, 22 tracks, 13 evidence
+  # rows. No measurements — those come from the probe (F4). ADR 0013.
+  #
+  # It runs on EVERY deploy, and that is the feature rather than the cost: it is
+  # idempotent, so a corrected evidence line ships as a deploy instead of as
+  # handwork on the production database.
+  seed:
+    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG:?set IMAGE_TAG in Dokploy — the deploy pipeline sets it to sha-<short sha>}
+    command: ["seed"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    environment:
+      # DATABASE_URL, not MIGRATE_DATABASE_URL. The seed is DML only, and running
+      # it as the app role is how that is proven rather than asserted —
+      # TestSeedNeedsNoSchemaPrivileges is the other half of the proof.
+      DATABASE_URL: ${DATABASE_URL:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG:?set IMAGE_TAG in Dokploy — the deploy pipeline sets it to sha-<short sha>}
+    restart: unless-stopped
+
+    # NO healthcheck block here, and its absence is the decision. The HEALTHCHECK
+    # is in the image: `/api -healthcheck`, which dials the /readyz of the server
+    # the same binary is running, because distroless has no shell to run wget in
+    # (ADR 0026). Compose inherits it, and `depends_on: service_healthy` is
+    # satisfied by an inherited one. Two versions of a healthcheck are one
+    # version that drifts — tools/check-compose.sh refuses a second one here.
+
+    # No `ports:`. Traefik reaches this over the docker network, and that is D3's
+    # block:
+    #
+    #     labels:
+    #       - traefik.enable=true
+    #       - traefik.docker.network=dokploy-network
+    #       - traefik.http.services.api.loadbalancer.server.port=8080
+    #     networks: [dokploy-network]
+    #
+    # Not here, because that network is `external:` and exists on no machine that
+    # is not the VPS — `docker compose up` would fail on it, and `down -v && up`
+    # without a Handgriff is this phase's whole acceptance criterion. D3 adds the
+    # block and adds `docker network create dokploy-network` to the runbook in
+    # the same commit.
+    expose:
+      # Documentation, and the number D3's Traefik label has to name. It matches
+      # listenAddr in cmd/api/main.go.
+      - "8080"
+    environment:
+      # The app role. DML only — it cannot create or drop a table, which is what
+      # keeps an SQL injection here from taking the schema with it. No `:?`:
+      # config.Load names every missing variable at once (ADR 0014), and a `:?`
+      # here would restate that refusal in a second place.
+      DATABASE_URL: ${DATABASE_URL:-}
+
+      # Every tunable passed through empty. An empty value means "use the default
+      # in api/internal/config", so the defaults live in exactly one place and
+      # this file cannot drift from them.
+      LOG_LEVEL: ${LOG_LEVEL:-}
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-}
+      SHUTDOWN_GRACE: ${SHUTDOWN_GRACE:-}
+      DB_MAX_CONNS: ${DB_MAX_CONNS:-}
+      DB_MIN_CONNS: ${DB_MIN_CONNS:-}
+      DB_STATEMENT_TIMEOUT: ${DB_STATEMENT_TIMEOUT:-}
+      DB_LOCK_TIMEOUT: ${DB_LOCK_TIMEOUT:-}
+      DB_IDLE_TX_TIMEOUT: ${DB_IDLE_TX_TIMEOUT:-}
+      RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-}
+      RATE_LIMIT_BURST: ${RATE_LIMIT_BURST:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      SITE_SYSTEM_SLUG: ${SITE_SYSTEM_SLUG:-}
+
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-}
+      # `github` is the default and lives in api/internal/config, so this passes
+      # through rather than restating it. `off` exists for a production image
+      # being checked by hand without a credential: it switches the refresher
+      # off, never the start and never the endpoint (ADR 0026 §4).
+      CONTRIBUTIONS_TRANSPORT: ${CONTRIBUTIONS_TRANSPORT:-}
+
+      # Passed through, NOT pinned — and this is the one line where this file
+      # deliberately differs from compose.dev.yaml, which pins `log` because L1
+      # comes after stage D. The code default is `smtp`. A production file that
+      # quietly set `log` would answer every submission 202 and deliver nothing,
+      # which is the worst failure this endpoint has, because it looks like
+      # success from both ends.
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_TO: ${MAIL_TO:-}
+
+      CONTACT_IP_PEPPER: ${CONTACT_IP_PEPPER:-}
+      INTERNAL_PROBE_TOKEN: ${INTERNAL_PROBE_TOKEN:-}
+      INTERNAL_DEPLOY_TOKEN: ${INTERNAL_DEPLOY_TOKEN:-}
+
+      # Empty in development because nothing forwards anything there. Here
+      # Traefik does forward, and Dokploy sets this to the network it reaches the
+      # api on. Believing X-Forwarded-For from anyone else would let a client
+      # choose its own identity for the rate limiter. ADR 0015.
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
+
+      # Go's garbage collector sizes itself from the heap and knows nothing about
+      # the cgroup, so without this the limit below is a kill rather than a
+      # budget. 80 % of (256M limit − 16M tmpfs). THESE TWO NUMBERS MOVE
+      # TOGETHER. GOMAXPROCS is not set: Go 1.26 reads the cgroup CPU quota.
+      GOMEMLIMIT: 192MiB
+
+    # Longer than SHUTDOWN_GRACE (20s), and that relationship is the whole point.
+    # Docker's default is 10 seconds: with it the process would still be draining
+    # politely when SIGKILL arrived, the shutdown tests would stay green, and
+    # production would cut requests anyway. ADR 0014 says this file has to carry
+    # the line because no Go test can see it. This is that line.
+    stop_grace_period: 30s
+
+    # Deferred from D1 to here, and proven there: the image runs read-only with
+    # --cap-drop ALL and no-new-privileges against a real Postgres, including the
+    # healthy → unhealthy → healthy transition when the database went away and
+    # came back (ADR 0026).
+    read_only: true
+    tmpfs:
+      # os.TempDir(). Sized, because an unsized tmpfs is a way to spend the
+      # container's whole memory limit; noexec and nosuid because nothing here
+      # should ever run out of /tmp.
+      - /tmp:rw,noexec,nosuid,nodev,size=16m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 256M
+        reservations:
+          memory: 64M
+
+    depends_on:
+      db:
+        condition: service_healthy
+      # The API must not come up against a database without a schema.
+      migrate:
+        condition: service_completed_successfully
+      # And not against an empty one either. Without this a fresh deploy serves a
+      # site with no systems and no tracks, and the empty state looks like a bug
+      # in whatever changed last. Issue #28, ADR 0013.
+      seed:
+        condition: service_completed_successfully
+
+  web:
+    image: ghcr.io/g1ng4r/timseil-web:${IMAGE_TAG:?set IMAGE_TAG in Dokploy — the deploy pipeline sets it to sha-<short sha>}
+    restart: unless-stopped
+
+    # No healthcheck here either — web/Dockerfile carries one (busybox wget
+    # against 127.0.0.1:3000), and one version of it is enough.
+
+    # D3's Traefik block goes here, the same shape as the api's above, with
+    # loadbalancer.server.port=3000.
+    expose:
+      - "3000"
+    environment:
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8080}
+      # A site whose argument is "everything here is checkable" does not ship a
+      # build tool that reports home in the background. It is also what keeps the
+      # read-only rootfs working: telemetry is the thing that would try to write
+      # into $HOME, which is not writable here.
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Node sizes its default old-space from TOTAL SYSTEM MEMORY, not from the
+      # cgroup — on a 6–9 GB host it would pick roughly 2 GB and then be killed
+      # at the 512M below. This line is not tuning; it is the difference between
+      # a container that runs and one that is OOM-killed under load.
+      NODE_OPTIONS: --max-old-space-size=320
+
+    # Read-only, and it needs two writable paths where the api needed one.
+    # .next/cache is where next/image writes optimised images and where the fetch
+    # cache lives; D1 found that the image cannot run read-only without it.
+    #
+    # tmpfs and not a named volume, for three reasons. A volume would be backed
+    # up to S3 nightly, which is paying to preserve a cache. Disk is the scarce
+    # resource on 40 GB and RAM is not. And a cache that SURVIVES an image change
+    # is exactly the "the page shows last week's number" failure this site exists
+    # to argue against — tmpfs dies with the container, which is the right
+    # lifetime for something keyed to a build. The 96M is counted inside the
+    # 512M limit below.
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m
+      - /app/.next/cache:rw,noexec,nosuid,nodev,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+
+    # Next's server handles SIGTERM. 15s is room for an in-flight render rather
+    # than a number anyone measured, and it is said out loud that it is not one.
+    stop_grace_period: 15s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        reservations:
+          memory: 160M
+
+    depends_on:
+      # Healthy, not merely started. Waiting for a container to exist is not the
+      # same claim as waiting for one that can answer.
+      api:
+        condition: service_healthy
+
+volumes:
+  # One volume, and it is the only persistent thing on this host that is ours.
+  # Named, because Dokploy's S3 volume backups see named volumes and nothing
+  # else. api and web write to tmpfs and to nothing that outlives them, which is
+  # the property that makes an image rollback a complete rollback.
+  db-data:
