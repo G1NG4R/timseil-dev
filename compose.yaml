@@ -2,7 +2,7 @@
 # it is `make check-topology`, which runs it here to prove this phase's single
 # claim — that `down -v && up` reproduces the whole state with no handwork.
 #
-# Four rules this file exists to keep, and each of them is a gate in
+# Six rules this file exists to keep, and each of them is a gate in
 # tools/check-compose.sh rather than a sentence somebody has to remember:
 #
 #   1. No `build:`. Building on the VPS means the artefact you tested is not the
@@ -18,6 +18,16 @@
 #      environment. A file on the host is a second home for secrets, a second
 #      thing to rotate, and a file that has to exist before `up` — which is the
 #      Handgriff this phase is defined by not needing.
+#   5. api and web sit in TWO networks and the other three in one. A service
+#      that names `networks:` joins ONLY those, so this is the rule with the
+#      most misleading failure in the file: drop `default` from the api and the
+#      database disappears, and it reads like a database outage. `db` stays out
+#      of the proxy network because that one is shared with every other app on
+#      the host.
+#   6. dokploy-network is `external:` — Dokploy owns it. Without that word
+#      compose does not fail; it creates its own, and Traefik is on neither.
+#      `make require-network` makes a local stand-in so this file still runs on
+#      a machine that is not the VPS.
 #
 # The chain is db → migrate → seed → api → web. FIVE services, not the four the
 # build plan draws: the seed is idempotent and writes the curated content, so a
@@ -25,10 +35,12 @@
 # production database (issue #28, ADR 0013). ADR 0027 records the divergence as
 # the plan being outrun rather than ignored.
 #
-# Traefik is NOT here. It belongs to Dokploy and to phase D3, and its network is
-# `external:` — declaring it now would make `docker compose up` fail on every
-# machine that is not the VPS, which is exactly the acceptance criterion of this
-# phase. The two seams below mark where D3 adds it.
+# Traefik is here as labels and nowhere else. The proxy itself belongs to
+# Dokploy — one instance, not two, or they fight over 80 and 443 — and so do the
+# entrypoint names, the certresolver, the TLS options and the metrics endpoint.
+# What is Dokploy's is written down in docs/runbooks/dokploy.md rather than
+# versioned here, because an upgrade that wipes it should leave a record of what
+# it wiped. ADR 0028.
 
 name: timseil
 

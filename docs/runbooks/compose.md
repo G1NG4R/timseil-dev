@@ -24,6 +24,10 @@ make prod-down       # anhalten, Datenbank behalten
 make prod-reset      # anhalten und das Volume wegwerfen
 ```
 
+`make prod` und `make check-topology` rufen `require-network` selbst auf.
+`prod-down` und `prod-reset` brauchen es nicht — **nachgemessen:** Compose löst
+ein `external:`-Netz erst beim Anlegen von Containern auf, nicht beim Abräumen.
+
 `make prod` braucht `IMAGE_TAG` nicht — das Makefile exportiert es. Wer `docker
 compose -f compose.yaml` von Hand tippt, braucht es:
 
