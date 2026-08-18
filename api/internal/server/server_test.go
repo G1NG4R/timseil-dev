@@ -168,6 +168,11 @@ func TestTheRoutersOwnErrorsAreProblemDocuments(t *testing.T) {
 		// route that quietly ignores what was sent. It also proves the training
 		// log is mounted at all, which nothing else in this package does.
 		{"a write to a read-only endpoint", http.MethodPost, "/api/training", http.StatusMethodNotAllowed},
+		// Same for the contribution calendar, and for the same second reason:
+		// nothing else in this package proves it is mounted, and an endpoint
+		// that is not mounted answers 404 — which for a documented path reads as
+		// "gone" rather than "not built yet".
+		{"a write to the calendar", http.MethodPost, "/api/contributions", http.StatusMethodNotAllowed},
 	} {
 		rec := do(t, h, tc.method, tc.path)
 

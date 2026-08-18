@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/contributions"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
@@ -128,6 +129,13 @@ func routes(cfg config.Config, pool DB, build health.Build, log *slog.Logger,
 	// The training log. It reads the derivation in v_track_states and decides
 	// nothing itself — the one endpoint where invariant 2 leaves the database.
 	mux.Handle("GET /api/training", training.New(queries, log))
+
+	// The contribution calendar. This handler reads the cached row and nothing
+	// else; GitHub is not in the request path at all. Whoever comes looking for
+	// the outbound call finds it in the Refresher that cmd/api starts, which is
+	// also where the token lives and where it stays.
+	mux.Handle("GET /api/contributions",
+		contributions.New(queries, cfg.GitHub.Login, log))
 
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.
