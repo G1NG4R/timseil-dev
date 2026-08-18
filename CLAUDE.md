@@ -121,6 +121,13 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - Keine Zahl in die UI, die nicht aus der API kommt.
 - **Kein `build:` in `compose.yaml`** — nur `image: ghcr.io/...:${IMAGE_TAG}`.
   Gebaut wird in GitHub Actions, nie auf dem VPS. `compose.dev.yaml` darf `build:`.
+- **Kein Deploy in Dokploy zwischen 23:45 und 00:00 UTC** (= 01:45–02:00 CEST).
+  Dokploys `docker-cleanup` läuft um 23:50 UTC mit
+  `docker system prune --all --force`; sein Wrapper `dockerSafeExec` wartet bis
+  zu 300 s auf einen ruhenden Docker und startet dann trotzdem. Volumes sind
+  dabei sicher, gestoppte Container und nicht referenzierte Images nicht.
+  **Uhrzeit messen, nicht schätzen** — `date -u`, jedes Mal. Eine geschätzte
+  Uhrzeit ist eine erfundene Zahl.
 
 ## Sicherheitsregeln — nicht verhandelbar
 
