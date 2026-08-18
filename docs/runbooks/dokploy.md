@@ -6,146 +6,182 @@ nicht mehr erreichbar ist und der Stack trotzdem grün aussieht.
 Der VPS liegt bei OVH, verwaltet mit Dokploy (ADR 0008). Dokploy bringt Traefik
 und Let's Encrypt mit — eine zweite Proxy-Instanz gibt es nicht und darf es
 nicht geben, sie stritte um Port 80 und 443. ADR 0028 ist die Entscheidung,
-`compose.yaml` die Datei, und dieses Blatt der Weg.
+`compose.yaml` die Datei, dieses Blatt der Weg.
+
+**Von oben nach unten durcharbeiten.** Teil 0 bis 3 sind der erste Deploy und
+bauen aufeinander auf; Teil 4 ist die Abnahme, Teil 5 die Fehlersuche.
 
 ---
 
-## Was wem gehört
+## Die drei Startsperren — das hier zuerst lesen
 
-Die Trennlinie ist die ganze Phase. Was links steht, versioniert dieses Repo
-nicht — und was es nicht versioniert, muss hier aufgeschrieben sein, sonst ist
-es nach dem nächsten Dokploy-Upgrade weg und niemand weiß, was fehlt.
+`config.Load` prüft alles beim Start und **nennt jede fehlende Variable auf
+einmal** (ADR 0014). Es gibt aber drei Fälle, in denen die API absichtlich gar
+nicht erst hochkommt, und alle drei treffen genau diesen ersten Deploy:
 
-| Dokploys (Host, nicht im Repo) | Unseres (`compose.yaml`) |
+| Sperre | Warum sie jetzt zuschlägt | Was du setzt |
+|---|---|---|
+| `MAIL_TRANSPORT` steht per Default auf `smtp` und verlangt dann `SMTP_USERNAME`, `SMTP_PASSWORD` und `MAIL_TO` | Das OVH-Postfach gibt es erst in **L1**, also nach dieser Phase | `MAIL_TRANSPORT=log` |
+| `CONTRIBUTIONS_TRANSPORT` steht per Default auf `github` und verlangt dann `GITHUB_TOKEN` | Du hast das Token vielleicht noch nicht | Entweder ein echtes PAT mit `read:user` — **oder** `CONTRIBUTIONS_TRANSPORT=off` |
+| `CONTACT_IP_PEPPER`, `INTERNAL_PROBE_TOKEN`, `INTERNAL_DEPLOY_TOKEN` sind **immer** Pflicht, mindestens 32 Zeichen | Sie stehen in keiner Datei, du erzeugst sie in Teil 0 | `openssl rand -hex 32` |
+
+**`MAIL_TRANSPORT=log` ist eine bewusste Zwischenlösung und muss in L1 wieder
+weg.** Unter `log` baut die API die Mail und schreibt sie ins Log, statt sie zu
+versenden — das Kontaktformular antwortete also mit 202, ohne zuzustellen. Das
+ist der schlimmste Fehler, den dieser Endpoint hat, weil er von beiden Seiten
+wie Erfolg aussieht.
+
+**Warum er heute trotzdem vertretbar ist:** es gibt noch keine Seite, die auf
+das Formular postet — das Frontend kommt in Stufe G/H, das Formular selbst in
+H8. Der Endpoint existiert, aber niemand kann ihn erreichen. **Geht die Seite
+mit einem sichtbaren Formular live, bevor L1 fertig ist, ist das ein Fehler.**
+
+---
+
+## Teil 0 — Was du vorher brauchst
+
+### 0.1 Zugänge
+
+- [ ] SSH auf den VPS, mit Schlüssel
+- [ ] Login in die Dokploy-Oberfläche
+- [ ] Zugriff auf die OVH-DNS-Zone für `timseil.dev`
+- [ ] Ein GitHub-PAT — **klassisch**, nicht fine-grained, mit zwei Scopes:
+      `write:packages` (für den einmaligen Push in Teil 1.3) und `read:user`
+      (das wird `GITHUB_TOKEN` für den Contribution-Graph).
+      github.com/settings/tokens
+
+### 0.2 Die Geheimnisse erzeugen
+
+Sechs Werte, alle auf deiner Maschine erzeugt und **nirgends im Repo**. Jeder
+`openssl`-Aufruf liefert 64 Zeichen; die Untergrenze im Code ist 32.
+
+```bash
+for k in POSTGRES_PASSWORD MIGRATE_DB_PASSWORD APP_DB_PASSWORD \
+         CONTACT_IP_PEPPER INTERNAL_PROBE_TOKEN INTERNAL_DEPLOY_TOKEN; do
+  printf '%s=%s\n' "$k" "$(openssl rand -hex 32)"
+done
+```
+
+**In den Passwortmanager, nicht in eine Datei neben dem Repo.** Die drei
+Datenbank-Passwörter brauchst du gleich zweimal: einmal als eigene Variable und
+einmal eingebaut in eine DSN.
+
+### 0.3 Die zwei DSN zusammensetzen
+
+Aus `APP_DB_PASSWORD` und `MIGRATE_DB_PASSWORD` wird je eine Verbindungszeichen-
+kette. `db` ist der Hostname im Docker-Netz, `timseil` die Datenbank.
+
+```
+DATABASE_URL=postgres://timseil_app:<APP_DB_PASSWORD>@db:5432/timseil?sslmode=disable
+MIGRATE_DATABASE_URL=postgres://timseil_migrate:<MIGRATE_DB_PASSWORD>@db:5432/timseil?sslmode=disable
+```
+
+Drei Dinge, die hier schiefgehen und je eine Stunde kosten:
+
+- **`DATABASE_URL` trägt `timseil_app`, niemals `timseil_migrate`.** Die API
+  läuft als DML-only-Rolle; `config.Load` weist die Migrations-Rolle
+  ausdrücklich ab (ADR 0011). Genau andersherum bei `MIGRATE_DATABASE_URL` —
+  und der `api`-Dienst bekommt die nie zu sehen.
+- **`sslmode=disable` ist richtig.** Die Verbindung verlässt das Docker-Netz
+  nicht; Postgres veröffentlicht keinen Port.
+- **Sonderzeichen im Passwort müssen URL-kodiert werden.** `openssl rand -hex`
+  liefert nur `0-9a-f`, deshalb ist das hier kein Thema — aber wenn du je ein
+  Passwort von Hand setzt, ist es eins.
+
+### 0.4 Der Zettel, den du ausfüllst
+
+Bevor du zur Dokploy-Oberfläche gehst, sollte das hier vollständig sein:
+
+| Variable | Woher |
 |---|---|
-| Entrypoint-Namen und ihre Ports | `traefik.enable=true` |
-| Der ACME-Certresolver, `acme.json` | `traefik.docker.network=dokploy-network` |
-| Der globale HTTP→HTTPS-Redirect | Die Router: Regel, Entrypoint, TLS, Priorität |
-| `tls.options` — Mindestversion, Ciphers | Die zwei `loadbalancer.server.port` |
-| Der Prometheus-Metrik-Entrypoint | Die `timseil-www`-Redirect-Middleware |
-| `exposedByDefault` | Die Netz-Zugehörigkeit jedes Dienstes |
-| Das Netz `dokploy-network` selbst | — |
+| `IMAGE_TAG` | `sha-` plus die ersten 7 Zeichen des Commits, Teil 1.3 |
+| `POSTGRES_DB` | `timseil` |
+| `POSTGRES_USER` | `timseil_boot` |
+| `POSTGRES_PASSWORD` | 0.2 |
+| `MIGRATE_DB_PASSWORD`, `APP_DB_PASSWORD` | 0.2 |
+| `DATABASE_URL`, `MIGRATE_DATABASE_URL` | 0.3 |
+| `GITHUB_TOKEN` | das PAT aus 0.1 — oder leer lassen und `CONTRIBUTIONS_TRANSPORT=off` |
+| `GITHUB_LOGIN` | `G1NG4R` |
+| `MAIL_TRANSPORT` | `log` — **bis L1** |
+| `CONTACT_IP_PEPPER` | 0.2 |
+| `INTERNAL_PROBE_TOKEN`, `INTERNAL_DEPLOY_TOKEN` | 0.2 |
+| `CORS_ALLOWED_ORIGINS` | `https://timseil.dev,https://www.timseil.dev` |
+| `SITE_SYSTEM_SLUG` | `timseil-dev` |
+| `TRUSTED_PROXY_CIDRS` | **noch nicht** — Teil 3.1, erst nach dem ersten Deploy |
+
+`SMTP_USERNAME`, `SMTP_PASSWORD` und `MAIL_TO` bleiben leer, solange
+`MAIL_TRANSPORT=log` steht. Alle übrigen Variablen aus `.env.example` sind
+Tunables mit Defaults im Code und werden **nicht** gesetzt — ein leerer Wert
+heißt „nimm den Default", und so leben die Defaults an genau einer Stelle.
 
 ---
 
-## Schritt 1 — Traefik lesen, bevor irgendetwas geglaubt wird
+## Teil 1 — Vorbereitung
 
-**Das ist kein optionaler Schritt.** In `compose.yaml` stehen drei Werte, die
-Dokploy gehören. Stimmen sie nicht, kommt kein Zertifikat, und der Fehler sieht
-aus wie ein DNS-Problem.
+### 1.1 Traefik lesen, bevor irgendetwas geglaubt wird
+
+**Kein optionaler Schritt.** In `compose.yaml` stehen drei Werte, die Dokploy
+gehören. Stimmen sie nicht, kommt kein Zertifikat — und der Fehler sieht aus wie
+ein DNS-Problem.
 
 ```bash
 ssh <vps>
+
+# Das Repo einmal auf den Host, für die Skripte unter ops/host/. Read-only
+# benutzt, nichts wird von hier deployt — das tut Dokploy aus seinem eigenen
+# Checkout.
+git clone https://github.com/G1NG4R/timseil-dev.git ~/timseil-dev
+
 docker ps --format '{{.Names}}\t{{.Image}}' | grep -i traefik
 cat /etc/dokploy/traefik/traefik.yml
 ls -l /etc/dokploy/traefik/dynamic/
 ```
 
-Drei Antworten notieren, und wenn eine abweicht, `compose.yaml` korrigieren
-statt den Host:
+Drei Antworten notieren. Weicht eine ab, korrigierst du **`compose.yaml`**, nicht
+den Host:
 
-| Frage | Steht in `compose.yaml` als |
-|---|---|
-| Wie heißt der TLS-Entrypoint? | `entrypoints=websecure` |
-| Wie heißt der Certresolver? | `tls.certresolver=letsencrypt` |
-| Leitet der HTTP-Entrypoint global auf HTTPS um? | *nichts* — wenn nein, braucht jeder Router einen zweiten auf dem HTTP-Entrypoint |
+| Frage | Steht in `compose.yaml` als | Zeile |
+|---|---|---|
+| Wie heißt der TLS-Entrypoint? | `entrypoints=websecure` | an `api` und `web` |
+| Wie heißt der Certresolver? | `tls.certresolver=letsencrypt` | an `api` und `web` |
+| Leitet der HTTP-Entrypoint global auf HTTPS um? | *nichts* — wenn **nein**, braucht jeder Router einen zweiten auf dem HTTP-Entrypoint | — |
 
-Vierte Frage, für die es keine Zeile gibt, aber eine Folge: steht
-`exposedByDefault: true`, baut Traefik auch für `db`, `migrate` und `seed`
-Router. Erreichbar sind sie trotzdem nicht — sie liegen nicht im Proxy-Netz —
-aber es ist Rauschen. Die Korrektur gehört auf den Host, nicht in unsere Datei:
-ein `traefik.enable=false` an `db` wäre ein Traefik-Label an einem geschlossenen
-Dienst, und `make check-compose` weist es zu Recht ab.
+Vierte Frage, ohne eigene Zeile, aber mit Folge: steht `exposedByDefault: true`,
+baut Traefik auch für `db`, `migrate` und `seed` Router. Erreichbar sind sie
+nicht — sie liegen nicht im Proxy-Netz — aber es ist Rauschen. Die Korrektur
+gehört auf den Host: ein `traefik.enable=false` an `db` wäre ein Traefik-Label
+an einem geschlossenen Dienst, und `make check-compose` weist es zu Recht ab.
 
-Und das Netz selbst:
+Und das Netz:
 
 ```bash
 docker network inspect dokploy-network \
   --format '{{.Driver}} {{range .IPAM.Config}}{{.Subnet}} {{end}}'
 ```
 
-Das Subnetz wird in Schritt 6 gebraucht. Ist der Treiber `overlay` statt
-`bridge`, läuft Dokploy im Swarm-Modus — dann stimmen ein paar Annahmen hier
-nicht mehr und das gehört als Fund in den Backlog, bevor es weitergeht.
+Das Subnetz brauchst du in Teil 3.1. Steht dort `overlay` statt `bridge`, läuft
+Dokploy im Swarm-Modus — dann stimmen ein paar Annahmen hier nicht mehr, und das
+gehört als Fund in den Backlog, **bevor** es weitergeht.
 
----
+### 1.2 DNS bei OVH
 
-## Schritt 2 — Die Images nach GHCR · **einmalig, bis E4**
+Vor dem Deploy, nicht danach: Traefik holt das Zertifikat beim ersten Start über
+eine ACME-Challenge, und **Let's Encrypt zählt Fehlversuche** (5 pro Hostname
+und Stunde). Ein Deploy gegen fehlendes DNS verbrennt Versuche.
 
-**Das hier ist eine Brücke, kein Verfahren.** `make images` taggt nur lokal, und
-der Makefile-Kommentar sagt warum: pushen ist E4s Aufgabe und passiert in
-GitHub Actions. Die Pipeline gibt es aber erst in E1/E4, und ohne ein Image in
-der Registry hat Dokploy nichts zu ziehen. Also einmal von Hand, für genau
-diesen einen Commit:
+In der OVH-Zone für `timseil.dev`:
 
-```bash
-make images
-echo "$GITHUB_PAT" | docker login ghcr.io -u G1NG4R --password-stdin
-export IMAGE_TAG=sha-$(git rev-parse --short=7 HEAD)
-docker push ghcr.io/g1ng4r/timseil-api:$IMAGE_TAG
-docker push ghcr.io/g1ng4r/timseil-web:$IMAGE_TAG
-```
+| Typ | Name | Wert |
+|---|---|---|
+| `A` | `timseil.dev` | IPv4 des VPS |
+| `AAAA` | `timseil.dev` | IPv6 des VPS |
+| `CNAME` | `www` | `timseil.dev.` |
 
-Danach beide Pakete auf **public** stellen (GitHub → Packages → Package
-settings → Change visibility). Das Repo ist public, also ist das konsistent —
-und Dokploy braucht dann kein Registry-Credential. Nachgemessen wird es so:
+**Kein Proxy davor** — das ist die Aussage, auf der die Datenschutzseite steht
+(ADR 0006). `MX`, `SPF`, `DKIM` und `DMARC` gehören zu **L1**, `CAA` zu **L5**;
+jetzt noch nicht.
 
-```bash
-docker logout ghcr.io
-docker pull ghcr.io/g1ng4r/timseil-api:$IMAGE_TAG   # geht das anonym, ist es public
-```
-
-**Was diese Brücke nicht bricht:** gebaut wird weiterhin nicht auf dem VPS, und
-das Artefakt, das läuft, ist dasselbe, das `make check-images` und
-`make check-topology` hier geprüft haben. Nur der Weg in die Registry ist
-vorläufig ein Handgriff. Der zweite Deploy kommt aus Actions.
-
----
-
-## Schritt 3 — Die Compose-App anlegen
-
-**Compose, nicht Swarm-Application.** Fünf Container mit einer Startreihenfolge
-über `depends_on` mit `service_healthy` und `service_completed_successfully`
-passen in eine Swarm-Application nicht hinein.
-
-- Provider: Git, Repository `G1NG4R/timseil-dev`, Branch `main`
-- Compose-Pfad: `compose.yaml`
-- **Dokploys eigenes Postgres und Redis bleiben unbenutzt.** Unsere Datenbank
-  steht in `compose.yaml` mit ihren Rollen, ihrem Volume und ihrem initdb-Skript.
-
----
-
-## Schritt 4 — Die Umgebungsvariablen
-
-Alle in der Dokploy-UI, keine in einer Datei auf dem Host. `compose.yaml` trägt
-kein `env_file:`, und `make check-compose` weist eins ab.
-
-`.env.example` ist die vollständige Liste mit den Begründungen. Was in
-Produktion gesetzt sein **muss**:
-
-| Variable | Anmerkung |
-|---|---|
-| `IMAGE_TAG` | `sha-<7 Zeichen>`. Ohne sie startet nichts, und das ist Absicht |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Bootstrap-Superuser |
-| `MIGRATE_DB_PASSWORD`, `APP_DB_PASSWORD` | Die zwei Rollen aus `10-roles.sh` |
-| `DATABASE_URL` | `timseil_app` — der `api`-Dienst |
-| `MIGRATE_DATABASE_URL` | `timseil_migrate` — nur `migrate` und `seed` |
-| `GITHUB_TOKEN` | Scope `read:user`, nur für den Contribution-Graph |
-| `MAIL_TRANSPORT`, `SMTP_*`, `MAIL_TO` | OVH-SMTP. **Bis L1 gibt es kein Postfach** — solange bleibt das Formular ungetestet |
-| `CONTACT_IP_PEPPER` | |
-| `INTERNAL_PROBE_TOKEN`, `INTERNAL_DEPLOY_TOKEN` | |
-| `CORS_ALLOWED_ORIGINS` | Muss dieselben Hostnamen nennen wie die Router-Regeln |
-| `TRUSTED_PROXY_CIDRS` | **Schritt 6** — erst nach dem ersten Deploy |
-
-**Die Dokploy-Oberfläche sieht jede dieser Variablen.** Sie ist damit das
-lohnendste Ziel der Maschine, und sie zuzumachen ist L3.
-
----
-
-## Schritt 5 — Der erste Deploy
-
-DNS vorher prüfen, sonst scheitert die ACME-Challenge und Let's Encrypt zählt
-den Fehlversuch gegen das Rate-Limit:
+Prüfen, und auf die TTL warten, statt zu deployen und zu hoffen:
 
 ```bash
 dig +short timseil.dev A
@@ -153,19 +189,103 @@ dig +short timseil.dev AAAA
 dig +short www.timseil.dev
 ```
 
-Dann im Panel deployen und zusehen:
+### 1.3 Die Images nach GHCR · **einmalig, bis E4**
+
+**Das hier ist eine Brücke, kein Verfahren.** `make images` taggt nur lokal, und
+der Makefile-Kommentar sagt warum: pushen ist E4s Aufgabe und passiert in
+GitHub Actions. Die Pipeline gibt es erst in E1/E4 — ohne Image in der Registry
+hat Dokploy nichts zu ziehen.
+
+Auf **deiner** Maschine, im Repo, auf `main`:
+
+```bash
+git checkout main && git pull
+make check                                  # muss grün sein
+make images
+make check-images                           # 16 MiB, beide non-root
+
+export IMAGE_TAG=sha-$(git rev-parse --short=7 HEAD)
+echo "$IMAGE_TAG"                           # DAS ist der Wert für Dokploy
+
+read -rs GITHUB_PAT && export GITHUB_PAT   # das PAT aus 0.1, nicht in der History
+echo "$GITHUB_PAT" | docker login ghcr.io -u G1NG4R --password-stdin
+docker push ghcr.io/g1ng4r/timseil-api:$IMAGE_TAG
+docker push ghcr.io/g1ng4r/timseil-web:$IMAGE_TAG
+```
+
+Danach **beide Pakete auf public stellen**: GitHub → dein Profil → Packages →
+`timseil-api` → Package settings → Change visibility → Public. Dasselbe für
+`timseil-web`. Das Repo ist public, also ist das konsistent — und Dokploy
+braucht dann kein Registry-Credential.
+
+Nachmessen statt annehmen:
+
+```bash
+docker logout ghcr.io
+docker pull ghcr.io/g1ng4r/timseil-api:$IMAGE_TAG   # geht das anonym, ist es public
+```
+
+Bleiben die Pakete privat, hinterlegst du in Dokploy stattdessen ein
+Registry-Credential (`ghcr.io`, Benutzer `G1NG4R`, das PAT als Passwort).
+
+**Was diese Brücke nicht bricht:** gebaut wird weiterhin nicht auf dem VPS, und
+das laufende Artefakt ist dasselbe, das `make check-images` und
+`make check-topology` hier geprüft haben. Vorläufig ist nur der Weg in die
+Registry.
+
+---
+
+## Teil 2 — Der Deploy
+
+### 2.1 Die Compose-App anlegen
+
+**Compose, nicht Swarm-Application.** Fünf Container mit einer Startreihenfolge
+über `depends_on` mit `service_healthy` und `service_completed_successfully`
+passen in eine Swarm-Application nicht hinein.
+
+In Dokploy: neues Projekt → **Compose**.
+
+| Feld | Wert |
+|---|---|
+| Provider | Git |
+| Repository | `G1NG4R/timseil-dev` |
+| Branch | `main` |
+| Compose-Pfad | `compose.yaml` |
+
+**Dokploys eigenes Postgres und Redis bleiben unbenutzt.** Unsere Datenbank
+steht in `compose.yaml`, mit ihren zwei Rollen, ihrem Volume und ihrem
+initdb-Skript.
+
+### 2.2 Die Umgebungsvariablen eintragen
+
+Alle in der Dokploy-Oberfläche, keine in einer Datei auf dem Host. `compose.yaml`
+trägt kein `env_file:`, und `make check-compose` weist eins ab.
+
+Den Zettel aus 0.4 abarbeiten. **`TRUSTED_PROXY_CIDRS` bleibt noch leer.**
+
+**Die Dokploy-Oberfläche sieht jede dieser Variablen** — sie ist damit das
+lohnendste Ziel der Maschine. Sie zuzumachen ist L3.
+
+### 2.3 Deployen und zusehen
+
+Deploy drücken, dann auf dem VPS:
 
 ```bash
 docker compose -f compose.yaml ps -a
 ```
 
-Erwartet: `migrate` und `seed` mit Exit 0, `db`, `api` und `web` healthy. Was
-welcher Zustand bedeutet, steht in `docs/runbooks/compose.md` — dieselbe Kette,
-dieselben Fehlerbilder, unabhängig davon, wer sie startet.
+Erwartet: `migrate` und `seed` mit **Exit 0**, danach `db`, `api` und `web`
+**healthy**. Die Kette ist `db → migrate → seed → api → web`.
+
+Kommt etwas nicht hoch: **Teil 5**, und für die Kette selbst
+`docs/runbooks/compose.md` — dieselben Fehlerbilder, unabhängig davon, wer sie
+startet.
 
 ---
 
-## Schritt 6 — `TRUSTED_PROXY_CIDRS` nachtragen
+## Teil 3 — Nacharbeit
+
+### 3.1 `TRUSTED_PROXY_CIDRS` nachtragen
 
 Erst jetzt, weil das Subnetz erst existiert, wenn das Netz existiert.
 
@@ -174,15 +294,20 @@ docker network inspect dokploy-network \
   --format '{{range .IPAM.Config}}{{.Subnet}} {{end}}'
 ```
 
-Wert in der Dokploy-UI setzen, `api` neu starten. **Dann einmal nachmessen statt
-zu schließen:** die Seite aufrufen und die Client-Adresse im Log der API lesen.
-Steht dort bei jedem Request dieselbe Adresse, ist die Variable leer oder falsch
-— dann teilen sich alle Besucher einen Rate-Limit-Eimer, und der erste Ansturm
-sperrt die ganze Seite aus. ADR 0015 und `.env.example` nennen beide Richtungen.
+Wert in Dokploy setzen, `api` neu starten. **Dann einmal nachmessen statt zu
+schließen:** die Seite aufrufen und die Client-Adresse im Log der API lesen.
 
----
+```bash
+docker compose -f compose.yaml logs api --tail 50
+```
 
-## Schritt 7 — Traefik-Metriken einschalten
+Steht dort bei jedem Request **dieselbe** Adresse, ist die Variable leer oder
+falsch — dann teilen sich alle Besucher einen Rate-Limit-Eimer, und der erste
+Ansturm sperrt die ganze Seite aus. Die andere Richtung ist genauso still: zu
+weit gefasst, und jeder Client wählt sein eigenes `X-Forwarded-For` und damit
+seine eigene Identität. ADR 0015, und beide Richtungen in `.env.example`.
+
+### 3.2 Traefik-Metriken einschalten
 
 In Dokploys statischer Traefik-Konfiguration:
 
@@ -199,10 +324,10 @@ metrics:
     addServicesLabels: true
 ```
 
-Drei Dinge dazu:
+Traefik neu starten. Drei Dinge dazu:
 
 - **Ein eigener Entrypoint, nicht `websecure`.** Auf 80/443 wäre der Metrikpfad
-  öffentlich, sobald ein Router ihn trifft. Prometheus, Loki und Alloy haben
+  öffentlich, sobald ein Router ihn trifft. Prometheus, Loki und Alloy tragen
   keine Authentifizierung — der Schutz ist die Netzgrenze, sonst nichts.
 - **Port 8082 wird nicht auf den Host veröffentlicht.** Von außen antworten 22,
   80 und 443. Alloy scrapt ihn ab F3 von innen.
@@ -213,42 +338,44 @@ Drei Dinge dazu:
 Prüfen:
 
 ```bash
-sh ops/host/check-traefik-metrics.sh
+cd ~/timseil-dev && sh ops/host/check-traefik-metrics.sh
 ```
 
 **Nach jedem Dokploy-Upgrade wiederholen.** Ob Dokploy `traefik.yml`
-regeneriert, ist offen — wenn ja, verschwindet diese Einstellung still, und
+regeneriert, ist ungeprüft — wenn ja, verschwindet diese Einstellung still, und
 dieses Skript ist das, was es merkt.
 
----
+### 3.3 Die Platte
 
-## Schritt 8 — Die Platte
+Bei 40 GB keine Kür. Der schnellste Verbraucher sind **nicht die Logs**, sondern
+alte Image-Layer: jeder Deploy legt eins an, Docker räumt nicht von selbst auf,
+und `loki`, `prometheus` und Postgres liegen auf derselben NVMe. Eine volle
+Platte ist keine langsame Seite, sondern eine Datenbank ohne Schreibrechte.
 
-Bei 40 GB ist das keine Kür. Der schnellste Verbraucher sind **nicht die Logs**,
-sondern alte Image-Layer: jeder Deploy legt eins an, Docker räumt nicht von
-selbst auf, und `loki`, `prometheus` und Postgres liegen auf derselben NVMe.
-Eine volle Platte ist keine langsame Seite, sondern eine Datenbank, die keine
-Schreibrechte mehr hat.
-
-**Zwei Hälften.** In der Dokploy-UI die Image-Retention auf die letzten 3–5
-Stände. Und der wöchentliche Timer aus diesem Repo:
+**Zwei Hälften.** In der Dokploy-Oberfläche die Image-Retention auf die letzten
+3–5 Stände. Und der wöchentliche Timer aus diesem Repo:
 
 ```bash
+cd ~/timseil-dev && git pull        # der Klon aus 1.1
 sudo sh ops/host/install.sh
 systemctl start timseil-prune.service        # einmal jetzt, um die Zahlen zu sehen
 journalctl -u timseil-prune -n 40 --no-pager
 ```
 
-**Läuft in Dokploy schon eine eigene Docker-Cleanup-Aufgabe, wird eine der
-beiden abgeschaltet.** Zwei Prune-Jobs, die einander in die Quere kommen, sind
-schwerer zu lesen als einer.
+**Läuft in Dokploy schon eine eigene Docker-Cleanup-Aufgabe, schaltest du eine
+der beiden ab.** Zwei Prune-Jobs, die einander in die Quere kommen, sind schwerer
+zu lesen als einer.
 
-### Was der Prune wegnimmt — und was nie
+#### Was der Prune wegnimmt — und was nie
 
-**Nie `--volumes`.** `docker system prune -a --volumes` löscht unbenutzte
-Named Volumes, und `timseil_db-data` ist genau in den Sekunden zwischen `down`
-und `up` eines Redeploys unbenutzt. Das Skript nimmt deshalb **gar keine
-Argumente** entgegen.
+**Nie `--volumes`.** `docker system prune -a --volumes` löscht unbenutzte Named
+Volumes, und `timseil_db-data` ist genau in den Sekunden zwischen `down` und `up`
+eines Redeploys unbenutzt. Das Skript nimmt deshalb **gar keine Argumente**
+entgegen — auch nicht über die Unit-Datei, auch nicht über einen Alias.
+
+Zweite Sperre: es läuft nur, wenn `/etc/dokploy` existiert. Auf einer
+Arbeitsmaschine löschte es sonst fremde Images. Ist das der VPS und der Pfad
+heißt anders, **korrigierst du die Sperre, statt sie zu entfernen.**
 
 **Der Preis, der benannt gehört:** `-a --filter until=168h` entfernt auch die
 SHA-getaggten Images, die älter als sieben Tage sind — also genau die
@@ -266,9 +393,13 @@ Traefik-Labels erzeugen Routing-Konflikte. Ein Job, zwei Gründe.
 
 ---
 
-## Die Abnahme
+## Teil 4 — Die Abnahme
 
-Das „fertig wenn" des Bauplans für D3, als Kommandos:
+Das „fertig wenn" des Bauplans für D3, als Kommandos. **Erst wenn das hier
+durchläuft, ist die Phase fertig.**
+
+Die ersten fünf gehen von überall, die letzten drei laufen auf dem VPS aus dem
+Klon von 1.1 (`cd ~/timseil-dev`).
 
 ```bash
 curl -sI  https://timseil.dev                       # 200, gültiges Zertifikat
@@ -282,8 +413,90 @@ docker system df                                    # 0 B Build-Cache
 ```
 
 Die `jq .sha`-Zeile ist die, an der alles hängt: sie sagt, dass das, was gemergt
-wurde, tatsächlich läuft. Der Build-Cache mit 0 B ist die Abnahme aus Anhang C
-— steht dort etwas, wurde auf dem VPS gebaut.
+wurde, tatsächlich läuft. Sie muss die sieben Zeichen aus Teil 1.3 zeigen.
+
+Der Build-Cache mit **0 B** ist die Abnahme aus Anhang C — steht dort etwas,
+wurde auf dem VPS gebaut, und dann stimmt die ganze Kette nicht mehr.
+
+---
+
+## Teil 5 — Wenn etwas nicht geht
+
+Nach Symptom, in der Reihenfolge, in der die Fälle vorkommen.
+
+### `api` startet nicht, Log nennt Variablen
+
+Das ist der Normalfall beim ersten Mal und **kein Fehler, sondern die Auskunft**:
+`config.Load` nennt alle fehlenden Werte auf einmal (ADR 0014), also einmal lesen,
+alle nachtragen, einmal neu starten.
+
+```bash
+docker compose -f compose.yaml logs api --tail 60
+```
+
+| Meldung | Ursache |
+|---|---|
+| `SMTP_USERNAME is empty …` | Die erste Startsperre. `MAIL_TRANSPORT=log` setzen |
+| `GITHUB_TOKEN is empty …` | Die zweite. Echtes PAT — oder `CONTRIBUTIONS_TRANSPORT=off` |
+| `CONTACT_IP_PEPPER is empty` / `… is N characters` | Mindestens 32 Zeichen, `openssl rand -hex 32` |
+| `DATABASE_URL connects as timseil_migrate` | Die zwei DSN vertauscht, siehe 0.3 |
+| `DATABASE_URL does not parse` | Meist ein Sonderzeichen im Passwort, unkodiert |
+
+### `migrate` geht mit 1 raus
+
+```bash
+docker compose -f compose.yaml logs migrate
+```
+
+- `MIGRATE_DATABASE_URL is empty` — die Variable fehlt in Dokploy. Sie trägt
+  `timseil_migrate`, und der `api`-Dienst bekommt sie absichtlich nie.
+- `cannot reach the database as timseil_migrate` — die Rolle gibt es nicht.
+  `ops/postgres/initdb/10-roles.sh` läuft **nur** beim Anlegen eines leeren
+  Datenverzeichnisses. In Produktion heißt das: Volume wegwerfen ist keine
+  Option, also die Rolle von Hand anlegen.
+- Eine echte SQL-Meldung → `docs/runbooks/migrations.md`.
+
+Alles über `migrate` wurde **angelegt und nie gestartet**. Das ist richtig so.
+
+### Kein Zertifikat, Browser zeigt eine Warnung
+
+In dieser Reihenfolge:
+
+1. `dig +short timseil.dev A` — zeigt das auf den VPS? Ohne DNS keine Challenge.
+2. `ls -l /etc/dokploy/traefik/acme.json` — **Modus muss 600 sein**, sonst legt
+   Traefik nichts ab. Der vierte Stolperstein des Blattes.
+3. Heißt der Certresolver wirklich so wie in `compose.yaml`? Teil 1.1.
+4. Traefik-Log lesen. Bei „too many failed authorizations" hat Let's Encrypt
+   dichtgemacht — eine Stunde warten, nicht weiterprobieren.
+
+### Die Seite antwortet nicht, der Stack ist grün
+
+Das ist die Fehlerform, für die die fünf Compose-Regeln aus D3 da sind — hier
+also von außen nach innen:
+
+```bash
+docker inspect $(docker compose -f compose.yaml ps -q api) \
+  --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}'
+```
+
+Steht dort `dokploy-network` nicht, findet Traefik den Dienst nicht. Dann:
+
+```bash
+docker ps -a --filter label=traefik.enable=true
+```
+
+Alte, gestoppte Container mit Traefik-Labels erzeugen Routing-Konflikte —
+Stolperstein 5. `cd ~/timseil-dev && sudo sh ops/host/prune.sh` räumt sie weg.
+
+### `/api/...` liefert die 404-Seite von Next.js
+
+Die Router-Priorität greift nicht. `timseil-api` muss 100 haben, `timseil-web`
+10 — ohne explizite Angabe sortiert Traefik nach Regellänge, und dann gewinnt
+die falsche Route, sobald jemand eine Regel umformuliert.
+
+### Alle Besucher teilen ein Rate-Limit
+
+`TRUSTED_PROXY_CIDRS`. Siehe 3.1.
 
 ---
 
@@ -291,26 +504,63 @@ wurde, tatsächlich läuft. Der Build-Cache mit 0 B ist die Abnahme aus Anhang C
 
 Im Panel den vorherigen SHA-Tag deployen. Kein Git-Revert, kein Build — deshalb
 nie `latest`. Liegt der Tag länger als eine Woche zurück, vorher die zwei
-`docker pull` von oben.
+`docker pull` aus 3.3.
 
 **Ein Rollback des Images rollt das Schema nicht mit zurück.** Deshalb
 expand/contract in zwei Deploys, `docs/runbooks/migrations.md`.
 
 ---
 
-## Die fünf Stolpersteine
+## Was wem gehört
+
+Die Trennlinie ist die ganze Phase. Was links steht, versioniert dieses Repo
+nicht — und was es nicht versioniert, muss hier stehen, sonst ist es nach dem
+nächsten Dokploy-Upgrade weg und niemand weiß, was fehlt.
+
+| Dokploys (Host, nicht im Repo) | Unseres (`compose.yaml`) |
+|---|---|
+| Entrypoint-Namen und ihre Ports | `traefik.enable=true` |
+| Der ACME-Certresolver, `acme.json` | `traefik.docker.network=dokploy-network` |
+| Der globale HTTP→HTTPS-Redirect | Die Router: Regel, Entrypoint, TLS, Priorität |
+| `tls.options` — Mindestversion, Ciphers | Die zwei `loadbalancer.server.port` |
+| Der Prometheus-Metrik-Entrypoint | Die `timseil-www`-Redirect-Middleware |
+| `exposedByDefault` | Die Netz-Zugehörigkeit jedes Dienstes |
+| Das Netz `dokploy-network` selbst | — |
+
+### Die fünf Stolpersteine
 
 Aus dem `Operations`-Blatt, mit der Zeile, die jeden verhindert:
 
-| # | Stolperstein | Wo er hier abgefangen ist |
+| # | Stolperstein | Wo er abgefangen ist |
 |---|---|---|
 | 1 | Container ohne `dokploy-network` **und** ohne `traefik.docker.network` — Proxy und Dienst finden sich nicht | `check-compose` Regeln 9 und 11, `check-topology` Zusicherung 7 |
 | 2 | Container-Port nicht gesetzt; bei mehreren Ports rät Traefik falsch, das Ergebnis sind Timeouts | `check-compose` Regel 10 hält `loadbalancer.server.port` gegen `expose:` |
-| 3 | „Volumes relativ als `../files/…` mounten" | **Wir folgen dem nicht.** Das ist ein Bind Mount, und Dokploys S3-Volume-Backups sehen nur Named Volumes — der Rat des Blattes bräche die Sicherung, auf die dasselbe Blatt sich stützt. `check-compose` Regel 3 weist ihn ab |
-| 4 | `acme.json` braucht Modus 600, sonst legt Traefik keine Zertifikate ab | Dokploys Sache; bei „kein Zertifikat" als Erstes `ls -l` darauf |
-| 5 | Alte gestoppte Container mit Traefik-Labels erzeugen Routing-Konflikte | Der wöchentliche Prune. Bei seltsamem Routing: `docker ps -a --filter label=traefik.enable=true` |
+| 3 | „Volumes relativ als `../files/…` mounten" | **Wir folgen dem nicht.** Das ist ein Bind Mount, und Dokploys S3-Volume-Backups sehen nur Named Volumes — der Rat bräche die Sicherung, auf die dasselbe Blatt sich stützt. `check-compose` Regel 3 weist ihn ab (#79) |
+| 4 | `acme.json` braucht Modus 600, sonst legt Traefik keine Zertifikate ab | Dokploys Sache; bei „kein Zertifikat" als Zweites prüfen |
+| 5 | Alte gestoppte Container mit Traefik-Labels erzeugen Routing-Konflikte | Der wöchentliche Prune |
 
 ---
+
+## Danach — L1, nicht E1
+
+**Wenn Teil 4 durchläuft, ist D3 fertig und der nächste Schritt ist L1.** Nicht
+E1, obwohl E1 im Bauplan als nächste Stufe steht.
+
+Der Grund ist eine Uhr, die außerhalb deiner Kontrolle läuft (Bauplan Anhang D,
+Zeile 1472): **DMARC braucht `p=none` plus zwei Wochen Berichte**, bevor du auf
+`quarantine` verschärfen darfst. Beginnt diese Uhr erst nach dem Launch,
+verschärfst du die Regel erst nach dem Launch.
+
+Zwei weitere Gewinne, die daran hängen: ohne Postfach ist das Kontaktformular aus
+C6 nicht end-to-end testbar, und **`MAIL_TRANSPORT=log` aus den Startsperren muss
+in L1 wieder auf `smtp`** — solange es steht, nimmt der Endpoint Nachrichten an
+und stellt keine zu.
+
+L1 ist eine Phase: MX Plan bei OVH, SMTP `ssl0.ovh.net`, `From:` muss dem
+SMTP-Konto entsprechen (also `contact@timseil.dev`, Besucheradresse in
+`Reply-To`), und in der DNS-Zone `MX`, **genau ein** `v=spf1` mit
+`include:mx.ovh.com`, DKIM per Klick und DMARC auf `p=none`. Fertig, wenn
+mail-tester ≥ 9/10.
 
 ## Was hier nicht steht
 
@@ -318,10 +568,10 @@ Damit eine Lücke als Verschiebung lesbar ist und nicht als Vergessen:
 
 | Fehlt | Phase |
 |---|---|
-| MX, SPF, DKIM, DMARC — und damit ein testbares Kontaktformular | **L1**, direkt nach dieser Phase (externe Uhr: DMARC braucht zwei Wochen `p=none`) |
+| MX, SPF, DKIM, DMARC — und ein testbares Kontaktformular | **L1**, direkt nach dieser Phase |
 | Dokploy-UI hinter den SSH-Tunnel, `/api/internal/*` am Traefik blocken, `nmap`-Abnahme | **L3** |
 | Security-Header, HSTS, CSP | **L4** — HSTS bewusst erst, wenn die Domain final ist |
 | Rate-Limit in Traefik, fail2ban, Firewall, CAA, DNSSEC | **L5** |
 | Nächtlicher `pg_dump` nach S3 mit Löschschutz | **L6** |
-| Prometheus, Loki, Alloy, Grafana — und das Scrapen der Metriken von Schritt 7 | **F2 / F3** |
-| Die Pipeline, die baut, pusht und den Deploy-Webhook ruft (siehe Schritt 2) | **E1 / E4** |
+| Prometheus, Loki, Alloy, Grafana — und das Scrapen der Metriken aus 3.2 | **F2 / F3** |
+| Die Pipeline, die baut, pusht und den Deploy-Webhook ruft (siehe 1.3) | **E1 / E4** |

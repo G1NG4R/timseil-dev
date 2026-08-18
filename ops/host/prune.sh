@@ -27,6 +27,24 @@
 # a number this script does not print.
 set -eu
 
+# NO ARGUMENTS, and that is the guard rather than a habit. The one flag that must
+# never reach the prune below is --volumes, and refusing every argument means it
+# cannot be slipped in through the unit file, through a shell alias, or by a
+# future edit that adds "just one option".
+[ "$#" -eq 0 ] || {
+  printf '  x this script takes no arguments — got: %s\n' "$*"
+  printf '    the refusal is deliberate: --volumes must never reach the prune\n'
+  exit 2
+}
+
+# This deletes every image not used by a running container. On a laptop that is
+# somebody else's afternoon. /etc/dokploy exists on the VPS and nowhere else.
+[ -d /etc/dokploy ] || {
+  printf '  x /etc/dokploy is not here — this reclaims disk on the VPS, not on a workstation\n'
+  printf '    if this IS the VPS and the path differs, correct the guard rather than removing it\n'
+  exit 2
+}
+
 printf 'timseil prune — %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 printf '\nbefore\n'
