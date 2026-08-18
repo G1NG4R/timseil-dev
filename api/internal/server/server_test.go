@@ -206,6 +206,64 @@ func TestTheRoutersOwnErrorsAreProblemDocuments(t *testing.T) {
 	}
 }
 
+// The three badges, through the assembled chain.
+//
+// They are the only routes a stranger reaches without meaning to — as an image
+// in a README — so "is it mounted" is worth asserting somewhere other than the
+// package that owns it. The stub database fails every query, which makes this
+// test say two things at once: the version badge does not touch the database
+// and must answer anyway, and the other two must fail as problem documents
+// rather than as an invented number.
+func TestTheThreeBadgesAreMountedAndTellAnOutageFromAnAbsence(t *testing.T) {
+	h := handler(t, nil, true)
+
+	for _, tc := range []struct {
+		path   string
+		status int
+	}{
+		{"/api/badge/version", http.StatusOK},
+		{"/api/badge/uptime", http.StatusInternalServerError},
+		{"/api/badge/systems", http.StatusInternalServerError},
+	} {
+		rec := do(t, h, http.MethodGet, tc.path)
+
+		if rec.Code != tc.status {
+			t.Errorf("GET %s = %d, want %d: %s", tc.path, rec.Code, tc.status, rec.Body.String())
+		}
+
+		// A 404 here would mean the route is not mounted at all, and the
+		// README would show three broken images pointing at a site whose
+		// argument is that its claims are checkable.
+		if rec.Code == http.StatusNotFound {
+			t.Errorf("GET %s is not mounted", tc.path)
+		}
+
+		if tc.status != http.StatusInternalServerError {
+			continue
+		}
+		if got := rec.Header().Get("Content-Type"); got != "application/problem+json" {
+			t.Errorf("GET %s: Content-Type = %q on a failure", tc.path, got)
+		}
+		// The distinction the contract's 500 was added for: a database that
+		// cannot be reached must not come back looking like a measurement
+		// nobody has taken yet.
+		if strings.Contains(rec.Body.String(), "NO DATA") {
+			t.Errorf("GET %s rendered an outage as a missing measurement:\n%s",
+				tc.path, rec.Body.String())
+		}
+	}
+}
+
+func TestTheBadgesRefuseAWrite(t *testing.T) {
+	h := handler(t, nil, true)
+
+	for _, path := range []string{"/api/badge/uptime", "/api/badge/version", "/api/badge/systems"} {
+		if rec := do(t, h, http.MethodPost, path); rec.Code != http.StatusMethodNotAllowed {
+			t.Errorf("POST %s = %d, want 405", path, rec.Code)
+		}
+	}
+}
+
 // RFC 9110 requires Allow on a 405, and ServeMux sets it. Rewriting the body
 // must not cost the header.
 func TestA405StillNamesTheAllowedMethod(t *testing.T) {

@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/badge"
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/contact"
 	"github.com/G1NG4R/timseil-dev/api/internal/contributions"
@@ -138,6 +139,14 @@ func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 
 	mux.Handle("GET /api/health",
 		health.New(queries, build, cfg.SiteSystemSlug, log))
+
+	// The three Shields.io badges. They read the same numbers /api/health does
+	// and exist so the README can point at a live endpoint instead of a claim —
+	// which is why they are mounted next to it rather than with the systems.
+	bdg := badge.New(queries, build.Version, cfg.SiteSystemSlug, log)
+	mux.HandleFunc("GET /api/badge/uptime", bdg.ServeUptime)
+	mux.HandleFunc("GET /api/badge/version", bdg.ServeVersion)
+	mux.HandleFunc("GET /api/badge/systems", bdg.ServeSystems)
 
 	// The proving ground: the list is the site's claim about which systems
 	// exist, the detail carries the operation grid behind one of them. The

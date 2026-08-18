@@ -222,6 +222,11 @@ export interface paths {
          * @description Live because it asks the API on every call: no scheduled job, no commit, no
          *     collision with branch protection. Without a measurement series the badge
          *     reads `— NO DATA`, not a zero.
+         *
+         *     A database this endpoint cannot reach is a `500`, never a `— NO DATA`. The
+         *     three badges declare it for that reason: an outage and a missing measurement
+         *     are two different statements, and a badge that renders them the same way
+         *     would hide the first behind the second.
          */
         get: operations["getUptimeBadge"];
         put?: never;
@@ -1096,6 +1101,7 @@ export interface operations {
         responses: {
             200: components["responses"]["BadgeOK"];
             429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["InternalError"];
         };
     };
     getVersionBadge: {
@@ -1109,6 +1115,7 @@ export interface operations {
         responses: {
             200: components["responses"]["BadgeOK"];
             429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["InternalError"];
         };
     };
     getSystemsBadge: {
@@ -1122,6 +1129,7 @@ export interface operations {
         responses: {
             200: components["responses"]["BadgeOK"];
             429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["InternalError"];
         };
     };
     reportProbe: {

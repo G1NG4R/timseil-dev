@@ -1,5 +1,10 @@
 package httpx
 
+import (
+	"strconv"
+	"strings"
+)
+
 // The four cache directives the contract declares, one constant per
 // components/headers entry, named after the entry.
 //
@@ -23,9 +28,9 @@ const (
 	// and a stale answer there is a rollback decision made on old news.
 	CacheControlShort = "public, s-maxage=60, stale-while-revalidate=600"
 
-	// CacheControlMedium — /api/systems, /api/systems/{slug}, /api/training.
-	// These change when a measurement lands or a system moves state, not on
-	// every deploy.
+	// CacheControlMedium — /api/systems, /api/systems/{slug}, /api/training and
+	// the three badges. These change when a measurement lands or a system moves
+	// state, not on every deploy.
 	CacheControlMedium = "public, s-maxage=300, stale-while-revalidate=1800"
 
 	// CacheControlHour — /api/contributions and the three documentation routes.
@@ -37,3 +42,32 @@ const (
 	// representation anybody may keep.
 	CacheControlNone = "no-store"
 )
+
+// SharedMaxAge reads the s-maxage out of one of the directives above.
+//
+// It exists for the badges and nothing else. A Shields.io payload carries its
+// own cacheSeconds next to the Cache-Control header, and writing 300 in both
+// places would be two statements of one fact — the kind that agree on the day
+// they are written and not afterwards. Here the number is read from the string
+// that is actually sent.
+//
+// A directive without an s-maxage (CacheControlNone) has no shared lifetime, so
+// the second return is false and the caller has to say what it means. It is not
+// zero: zero seconds is a real instruction to a cache, and "do not store" is a
+// different one.
+func SharedMaxAge(directive string) (int, bool) {
+	const key = "s-maxage="
+
+	for _, part := range strings.Split(directive, ",") {
+		part = strings.TrimSpace(part)
+		if !strings.HasPrefix(part, key) {
+			continue
+		}
+		n, err := strconv.Atoi(strings.TrimPrefix(part, key))
+		if err != nil || n < 0 {
+			return 0, false
+		}
+		return n, true
+	}
+	return 0, false
+}
