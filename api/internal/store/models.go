@@ -26,6 +26,14 @@ type ContactMessage struct {
 	MailMessageID    *string
 }
 
+// The last good GitHub calendar. The only table here that may be truncated without loss.
+type ContributionsCache struct {
+	Login              string
+	TotalContributions int32
+	Weeks              []byte
+	FetchedAt          pgtype.Timestamptz
+}
+
 type Deploy struct {
 	ID          int64
 	SystemID    int64
