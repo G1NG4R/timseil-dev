@@ -13,6 +13,13 @@
 #
 # This runs ONLY on the very first start of a fresh data directory. On an
 # existing db-data volume nothing here happens — `make dev-reset` first.
+#
+# The two roles are created everywhere. The throwaway test database is created
+# only when POSTGRES_CREATE_TEST_DB is set, which compose.dev.yaml does and
+# compose.yaml does not: production has no `make check-db` to run and no use for
+# a second database, and a reviewer with psql should not have to ask what
+# timseil_test is. The default is therefore off, so that a forgotten variable
+# leaves production clean rather than furnished.
 set -eu
 
 : "${POSTGRES_DB:?POSTGRES_DB is not set}"
@@ -23,6 +30,7 @@ set -eu
 # that `make check-db` can cycle up/down/up without wiping what you were looking
 # at in development.
 TEST_DB="${POSTGRES_DB}_test"
+CREATE_TEST_DB="${POSTGRES_CREATE_TEST_DB:-}"
 
 # --set makes psql substitute the values as quoted literals, so a password with
 # a quote in it cannot end the statement early. ON_ERROR_STOP because a role
@@ -30,8 +38,7 @@ TEST_DB="${POSTGRES_DB}_test"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
      --set=migrate_pw="$MIGRATE_DB_PASSWORD" \
      --set=app_pw="$APP_DB_PASSWORD" \
-     --set=maindb="$POSTGRES_DB" \
-     --set=testdb="$TEST_DB" <<'SQL'
+     --set=maindb="$POSTGRES_DB" <<'SQL'
 
 -- Idempotent so the script can also be applied to a CI cluster (E1), where the
 -- entrypoint conventions do not hold.
@@ -61,17 +68,24 @@ ALTER SCHEMA public OWNER TO timseil_migrate;
 REVOKE ALL ON DATABASE :"maindb" FROM PUBLIC;
 GRANT CONNECT ON DATABASE :"maindb" TO timseil_migrate, timseil_app;
 
--- The throwaway database for make check-db. Same ownership, same rules.
+SQL
+
+if [ -n "$CREATE_TEST_DB" ]; then
+    # The throwaway database for make check-db. Same ownership, same rules.
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+         --set=testdb="$TEST_DB" <<'SQL'
 CREATE DATABASE :"testdb" OWNER timseil_migrate;
 REVOKE ALL ON DATABASE :"testdb" FROM PUBLIC;
 GRANT CONNECT ON DATABASE :"testdb" TO timseil_migrate, timseil_app;
-
 SQL
 
-# The public schema of a freshly created database is owned by the bootstrap
-# superuser, so the ownership transfer has to happen while connected to it.
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$TEST_DB" <<'SQL'
+    # The public schema of a freshly created database is owned by the bootstrap
+    # superuser, so the ownership transfer has to happen while connected to it.
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$TEST_DB" <<'SQL'
 ALTER SCHEMA public OWNER TO timseil_migrate;
 SQL
 
-printf 'timseil: roles timseil_migrate and timseil_app created, test database ready\n'
+    printf 'timseil: roles timseil_migrate and timseil_app created, test database ready\n'
+else
+    printf 'timseil: roles timseil_migrate and timseil_app created\n'
+fi

@@ -43,17 +43,24 @@ func TestNoCommandCanReachTheFixtures(t *testing.T) {
 // And the seed is the other half of the same rule: it carries content, no
 // measurements, and it is meant to be in a production binary. If this ever fails,
 // the two packages have been confused for each other.
+//
+// The command is ./cmd/api and not ./cmd/seed, because D2 folded the seed and the
+// migration into the binary the production image already ships — three separately
+// linked Go binaries were 32 MiB against a 20 MiB ceiling (ADR 0027). Which means
+// this assertion now carries a second one: the binary that serves the internet is
+// the binary that reaches internal/seed, and the test above is what keeps that
+// from also making it reach internal/fixtures.
 func TestCommandsDoReachTheSeed(t *testing.T) {
 	const target = "github.com/G1NG4R/timseil-dev/api/internal/seed"
 
-	cmd := exec.Command("go", "list", "-deps", "./cmd/seed")
+	cmd := exec.Command("go", "list", "-deps", "./cmd/api")
 	cmd.Dir = "../.."
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("go list -deps ./cmd/seed: %v\n%s", err, out)
+		t.Fatalf("go list -deps ./cmd/api: %v\n%s", err, out)
 	}
 	if !strings.Contains(string(out), target) {
-		t.Fatalf("cmd/seed does not depend on %s — then what is it seeding?", target)
+		t.Fatalf("cmd/api does not depend on %s — then what is `api seed` seeding?", target)
 	}
 }

@@ -16,7 +16,7 @@ issue "docs: enable the live badges in the README".
 ![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
 -->
 
-> **Status:** in build — stage C of 13, phase C7. Nothing is deployed yet.
+> **Status:** in build — stage D of 13, phase D2. Nothing is deployed yet.
 > There is no running site behind this repository today, and this line will say
 > so until there is. See [the build plan](docs/build-plan.md) (German).
 
@@ -118,13 +118,15 @@ cp .env.example .env                  # local values, none of them secret
 make dev                              # postgres + migrations + seed + api + web
 make design                           # design handoff on http://localhost:4000
 make images && make check-images      # the two images that actually ship
+make check-topology                   # the production compose, from an empty volume
 ```
 
 `make dev` applies the schema and the content before the API starts, so a cold
 clone comes up with a working database in one command. To run either on its own,
 `make migrate` and `make seed`; `make migrate-status` says what is applied.
 
-`make dev` gives you three containers and two URLs:
+`make dev` gives you five containers — two of which run once and exit — and two
+URLs:
 
 | URL | What |
 |---|---|
@@ -200,7 +202,7 @@ builds the two that get deployed, and they share nothing with those:
 |---|---|---|
 | base | `distroless/static:nonroot` | `node:24-alpine` |
 | user | `nonroot` (65532) | `node` (1000) |
-| size | ~14 MiB | Next.js standalone output, no `node_modules` |
+| size | ~16 MiB | Next.js standalone output, no `node_modules` |
 | shell | **none** | busybox |
 
 Both base images are pinned by digest rather than by tag, because a tag can be
@@ -219,6 +221,32 @@ container missing them serves every page without a stylesheet
 binary is running and exits 0 or 1. It reads no configuration and opens no pool —
 a missing credential must never be able to make a serving container look dead.
 
+**One binary carries three programs.** `api` serves, `api migrate up` applies the
+schema, `api seed` writes the curated content — and the last two run as init
+containers from the same image, ahead of the server. They were three separate
+commands until the production image needed all three: Go shares nothing between
+binaries, so three of them measured 32 MiB against a 20 MiB ceiling, while one
+carrying all three measures 15. The role split that keeps the API from being able
+to run DDL is unaffected — it was never the file the code sat in, it is the
+connection string each service is handed
+([ADR 0027](docs/adr/0027-compose-topologie-ein-binary-fuenf-dienste-und-die-grenzen-in-zahlen.md)).
+
+**The production topology is a file you can run.** `compose.yaml` is what Dokploy
+will run on the VPS; `make check-topology` runs the same file here, against the
+same images, and that is the only reason its acceptance means anything:
+
+```
+db (pg_isready) → migrate → seed → api (healthcheck) → web
+```
+
+It comes up from an empty volume with no manual step, twice in a row, and a
+deliberately broken migration leaves the API never started rather than serving
+against a schema that was never applied. `make check-compose` refuses a `build:`,
+a published Postgres port, a bind mount that is not the read-only role bootstrap,
+a service without a memory limit, an `env_file:`, a floating `ghcr.io` tag, and a
+healthcheck restated where the image already carries one. Every one of those
+rules has its broken case in `tools/selftest.sh`.
+
 **The version on `/api/health` comes from the linker.** `make images` passes
 `git describe` and the short SHA as build args, and they are the only two build
 args either image takes: a build arg lands in the image layers and survives the
@@ -235,6 +263,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `README.md` | you, right now |
 | `CONTRIBUTING.md` · `SECURITY.md` | anyone who wants to file something |
 | `compose.dev.yaml` · `.env.example` | anyone running it locally |
+| `compose.yaml` | the production topology — what Dokploy runs, and what `make check-topology` runs here |
 | `stack.yaml` | the curated stack — names and source pointers, no versions |
 | `api/Dockerfile` · `web/Dockerfile` | the two images that ship — `.dev` next to each builds the local one |
 | `api/` | Go: handlers thin, logic in `internal/`, SQL in `internal/store/` |
@@ -281,6 +310,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0024](docs/adr/0024-router-parity-instead-of-the-generated-router.md) | The generated router is not mounted after all; a parity check proves the hand-written one is complete in both directions |
 | [0025](docs/adr/0025-the-shape-of-a-handler-package.md) | The shape every handler package took during stage C, and why two thirds of it outlived the reason it was given |
 | [0026](docs/adr/0026-produktions-images-digest-pins-kein-modul-cache-und-ein-healthcheck-im-binary.md) | The production images: base images pinned by digest, no module-cache layer, and a healthcheck the binary answers itself |
+| [0027](docs/adr/0027-compose-topologie-ein-binary-fuenf-dienste-und-die-grenzen-in-zahlen.md) | The compose topology: one binary carrying three programs, five services rather than four, and every resource limit with the arithmetic behind it |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.

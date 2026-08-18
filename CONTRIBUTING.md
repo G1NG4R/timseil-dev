@@ -68,6 +68,9 @@ A change is done when all of these hold:
 - [ ] there is a test for the **broken** case, not only the happy path
 - [ ] a contract test exists, if the change adds an endpoint
 - [ ] `docker compose up` ran from zero (from phase A4 onwards)
+- [ ] `make check-topology` is green, if the change touches `compose.yaml`,
+      `api/Dockerfile`, `web/Dockerfile` or `ops/postgres/initdb/`. Like
+      `make check-db` it needs Docker and a build, so it is not in `make check`
 - [ ] no `TODO` without an issue reference — `TODO(#42):` passes, `TODO:` does not
 - [ ] documentation updated: ADR, runbook or README
 - [ ] `backlog.md` updated

@@ -8,6 +8,12 @@
 // server this same binary is running and exits 0 or 1. The production image is
 // distroless and has no shell to run a probe with, so the probe is in here.
 //
+// Two subcommands, and they are not servers either: `api migrate up` applies the
+// schema and `api seed` writes the curated content. They are here rather than in
+// their own binaries because D2 runs both as init containers from the SAME image
+// this serves from, and three separately linked Go binaries cost 32 MiB where
+// one costs 15. See subcommands.go and ADR 0027.
+//
 // Phase C1 owns the lifecycle. The configuration is read and validated once at
 // startup, the pool is sized and carries the three Postgres timeouts, and a
 // SIGTERM drains rather than cuts — which is what E5 leans on when it runs two
@@ -59,6 +65,16 @@ func main() {
 	// do with whether that server is serving. See healthcheck.go.
 	if wantsHealthcheck(os.Args[1:]) {
 		runHealthcheck()
+	}
+
+	// Also before the configuration, and for a related reason. `api migrate up`
+	// has nothing to say about GITHUB_TOKEN or the mail transport, and a process
+	// that refuses to migrate because an unrelated variable is missing is a
+	// process that cannot repair the database it is complaining about. The
+	// subcommands read the one environment variable each of them needs and
+	// nothing else. See subcommands.go.
+	if name, rest, ok := wantsSubcommand(os.Args[1:]); ok {
+		os.Exit(runSubcommand(name, rest))
 	}
 
 	// A logger before the configuration, because the configuration is the
