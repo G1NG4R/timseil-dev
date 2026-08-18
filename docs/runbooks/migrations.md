@@ -232,6 +232,41 @@ Zeilen sind für einen Indexzugriff zu wenig. Die zugehörigen Indizes existiere
 trotzdem, weil sie aus Eindeutigkeit folgen, und die Kommentare in den
 Migrationen sagen das auch so.
 
+Nachgetragen am 18.08.2026 für die zwei Indizes aus C6
+(`00009_contact_delivery.sql`). Anderes Volumen, weil `contact_messages` anders
+wächst: 20 000 Nachrichten über 97 Absenderadressen, davon 12 noch `queued` —
+also ein Postfach, in das jemand über Monate hinweg geschrieben hat, und ein
+Relay, das bis auf einen kleinen Rückstand alles genommen hat.
+
+| Query | Plan | Zeit | Puffer |
+|---|---|---|---|
+| Rate-Limit-Boden über `ip_hash` | **Bitmap Index Scan** auf `contact_messages_ip_window_idx` | **1,17 ms** | 415 |
+| dieselbe Frage ohne den Index | Seq Scan, 19 793 Zeilen per Filter verworfen | **6,48 ms** | 2 000 |
+| Dispatcher-Warteschlange, nach `VACUUM` | **Index Scan** auf `contact_messages_queued_idx` | **0,08 ms** | 4 |
+| dieselbe Frage ohne den Index | Seq Scan + Sort | 5,04 ms | 2 000 |
+| Idempotenz-Nachschlag (Index aus B2) | **Index Scan** auf `contact_messages_idempotency_idx` | 0,07 ms | 2 |
+
+Größen: `ip_window` 312 kB, `queued` 144 kB — zusammen ein Zwanzigstel des
+Idempotenz-Index, den B2 schon hat.
+
+**Warum hier indiziert und bei `ops_checks.recorded_at` nicht.** Die C4-Regel
+oben — 6 ms alle fünf Minuten sind keinen Index wert — gilt für eine Abfrage,
+deren Tabelle mit *unseren* Messungen wächst und die niemand von außen auslösen
+kann. Der Rate-Limit-Boden ist das Gegenteil: er läuft im Anfrageweg des
+einzigen Schreibendpoints, und wie viele Zeilen er liest, entscheidet, wer
+gerade Formulare abschickt. Ein Seq Scan, den ein Angreifer verlängern kann,
+ist eine andere Sache als einer, der mit dem Kalender wächst.
+
+**Der Fund, der etwas ändert — und er betrifft den Betrieb, nicht das Schema:**
+Derselbe Warteschlangen-Plan misst **2,88 ms und 1 033 Puffer**, wenn kurz
+zuvor viele Zeilen von `queued` auf `sent` gewechselt sind, und **0,08 ms und
+4 Puffer** nach einem `VACUUM`. Der partielle Index hält die Einträge
+ausgelieferter Nachrichten als tote Verweise, bis Autovacuum sie einsammelt —
+er ist also genau in dem Moment am langsamsten, in dem der Dispatcher gerade
+gearbeitet hat. Bei zwölf Zeilen ist der Unterschied belanglos; er steht hier,
+weil er beim ersten echten Rückstau nicht wie ein Fehler im Dispatcher aussehen
+soll. Autovacuum erledigt das ohne Zutun, `VACUUM contact_messages` erzwingt es.
+
 Nachstellen:
 
 ```bash
