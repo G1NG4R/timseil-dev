@@ -1543,7 +1543,14 @@ type TooManyRequestsApplicationProblemPlusJSONResponse struct {
 	Headers TooManyRequestsResponseHeaders
 }
 
-type UnauthorizedApplicationProblemPlusJSONResponse Problem
+type UnauthorizedResponseHeaders struct {
+	WWWAuthenticate *string
+}
+type UnauthorizedApplicationProblemPlusJSONResponse struct {
+	Body Problem
+
+	Headers UnauthorizedResponseHeaders
+}
 
 type GetSystemsBadgeRequestObject struct {
 }
@@ -1584,6 +1591,22 @@ func (response GetSystemsBadge429ApplicationProblemPlusJSONResponse) VisitGetSys
 		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
 	}
 	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSystemsBadge500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetSystemsBadge500ApplicationProblemPlusJSONResponse) VisitGetSystemsBadgeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1631,6 +1654,22 @@ func (response GetUptimeBadge429ApplicationProblemPlusJSONResponse) VisitGetUpti
 	return err
 }
 
+type GetUptimeBadge500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetUptimeBadge500ApplicationProblemPlusJSONResponse) VisitGetUptimeBadgeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetVersionBadgeRequestObject struct {
 }
 
@@ -1670,6 +1709,22 @@ func (response GetVersionBadge429ApplicationProblemPlusJSONResponse) VisitGetVer
 		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
 	}
 	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetVersionBadge500ApplicationProblemPlusJSONResponse struct {
+	InternalErrorApplicationProblemPlusJSONResponse
+}
+
+func (response GetVersionBadge500ApplicationProblemPlusJSONResponse) VisitGetVersionBadgeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(500)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2104,10 +2159,13 @@ type ReportDeploy401ApplicationProblemPlusJSONResponse struct {
 func (response ReportDeploy401ApplicationProblemPlusJSONResponse) VisitReportDeployResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
 	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
@@ -2189,10 +2247,13 @@ type ReportProbe401ApplicationProblemPlusJSONResponse struct {
 func (response ReportProbe401ApplicationProblemPlusJSONResponse) VisitReportProbeResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
 	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err

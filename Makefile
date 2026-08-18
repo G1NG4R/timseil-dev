@@ -72,6 +72,7 @@ check-web: ## Typecheck, lint, unit tests
 	@cd web && npm run typecheck --silent && npm run lint --silent && npm test --silent
 
 GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml \
+             api/internal/intake/testdata/openapi.yaml \
              api/internal/httpx/gen.go web/lib/api/schema.d.ts \
              api/migrations/testdata/skill_states.json \
              api/internal/seed/stack.gen.json \
@@ -163,6 +164,16 @@ gen: ## Generate Go and TS types from the contract, the skill states and the sta
 		--remove-unused-components -o ../contract/openapi.public.yaml 2>&1) \
 		|| { printf '%s\n' "$$out" | sed 's/^/    /'; exit 1; }
 	@cp contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
+# The FULL contract, for the one test that cannot read the served one: the two
+# internal operations are stripped from the public bundle by design, so a
+# contract test for them written the usual way would find nothing and pass.
+#
+# testdata and not assets: the Go toolchain ignores a testdata directory, so
+# this copy is reachable from a test and cannot be embedded into the binary by
+# the `//go:embed assets` next door. It lives under api/ because `make check-db`
+# mounts only ./api into the container, and a test that reads ../../../contract
+# is green on the host and broken in CI.
+	@cp contract/openapi.yaml api/internal/intake/testdata/openapi.yaml
 	@cd api && go tool oapi-codegen -config oapi-codegen.yaml ../contract/openapi.yaml
 # sqlc reads api/migrations directly — the goose files are the schema, so the
 # queries are checked against what is actually applied rather than against a

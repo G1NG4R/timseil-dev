@@ -1,9 +1,16 @@
 # ADR 0016 — sqlc als Datenzugriff, und der Router montiert nur, was es gibt
 
-**Status:** Angenommen
+**Status:** Angenommen · **Teil 2 (der Router) ersetzt durch ADR 0024**
 **Datum:** 2026-08-17
 **Betrifft:** C1, C2–C7, E2
 **Invarianten:** 1 (`null` → `— NO DATA`), 3 (Metriken nur für `live`)
+
+> **Nachtrag, 18.08.2026 (C7).** Teil 1 (sqlc) gilt unverändert. Teil 2 gilt in
+> seiner Diagnose und nicht in seinem Ausweg: der Router montiert weiterhin nur,
+> was es gibt — inzwischen ist das alles —, aber der hier zugesagte Umbau auf
+> `httpx.HandlerWithOptions` findet nicht statt. Vier Gründe, die 2026-08-17
+> noch nicht auf dem Tisch lagen, stehen in **ADR 0024**; dort steht auch, was
+> stattdessen die Zusicherung trägt, um die es diesem ADR ging.
 
 ## Kontext
 

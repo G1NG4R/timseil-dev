@@ -4,18 +4,19 @@ A backend and DevOps portfolio that runs on the stack it describes and measures
 itself by the rules it explains. The site is its own reference system.
 
 <!--
-Live badges (build plan 12.4) read https://timseil.dev/api/badge/* — endpoints
-that do not exist yet and a domain that is not live yet. Enabling them now would
-put three broken images at the top of a repository whose entire argument is that
-claims are checkable. They get switched on in phase M6, tracked by the issue
-"docs: enable the live badges in the README".
+Live badges (build plan 12.4) read https://timseil.dev/api/badge/*. Since C7 the
+three endpoints exist and answer; the domain does not resolve yet. Enabling them
+now would still put three broken images at the top of a repository whose entire
+argument is that claims are checkable, so one of the two original reasons is
+gone and the other is not. They get switched on in phase M6, tracked by the
+issue "docs: enable the live badges in the README".
 
 ![uptime](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/uptime)
 ![version](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/version)
 ![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
 -->
 
-> **Status:** in build — stage B of 13, phase B2. Nothing is deployed yet.
+> **Status:** in build — stage C of 13, phase C7. Nothing is deployed yet.
 > There is no running site behind this repository today, and this line will say
 > so until there is. See [the build plan](docs/build-plan.md) (German).
 
@@ -240,6 +241,9 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0019](docs/adr/0019-ops-rollup-in-sql-schwelle-und-die-aggregationsschleife.md) | The ops roll-up in SQL, the outage threshold and the loop that drives it |
 | [0020](docs/adr/0020-contributions-cache-in-postgres-breaker-und-der-siebte-problem-typ.md) | The contribution calendar: cached in Postgres, a breaker in front of GitHub, a seventh problem type |
 | [0021](docs/adr/0021-contact-endpoint-inline-send-dispatcher-and-the-fifth-answer.md) | The contact form: one send attempt in the request, a dispatcher behind it, and a fifth answer that is a 202 |
+| [0022](docs/adr/0022-badges-and-the-response-the-contract-was-missing.md) | The three badges: a missing measurement is `— NO DATA`, an unreachable database is a 500, and the contract now says so |
+| [0023](docs/adr/0023-internal-endpoints-two-tokens-and-a-comparison-that-does-not-branch.md) | The internal endpoints: two tokens, a comparison that does not branch on length, and every database CHECK taken in advance |
+| [0024](docs/adr/0024-router-parity-instead-of-the-generated-router.md) | The generated router is not mounted after all; a parity check proves the hand-written one is complete in both directions |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.

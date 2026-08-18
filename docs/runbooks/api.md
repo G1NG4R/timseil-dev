@@ -10,10 +10,13 @@ Der Prozess ist `api/cmd/api`. Konfiguration in `api/internal/config`, Pool in
 `api/internal/server`, Handler in `api/internal/health` und
 `api/internal/systems`. Das Kontaktformular liegt in `api/internal/contact`, der
 Versand in `api/internal/mail`, Breaker und Backoff in
-`api/internal/resilience`. ADR 0014 (Lebenszyklus), ADR 0015 (Kette),
+`api/internal/resilience`. Die drei Badges in `api/internal/badge`, die zwei
+internen Endpoints in `api/internal/intake` und ihr Wächter in
+`api/internal/middleware/bearer.go`. ADR 0014 (Lebenszyklus), ADR 0015 (Kette),
 ADR 0016 (Zugriff und Router), ADR 0009 (Fehlermodell), ADR 0011 (Rollen),
 ADR 0017 (Fenster, Rasterlücken, Fehlerabbildung der Systems-Endpoints),
-ADR 0021 (Kontaktformular und Versand).
+ADR 0021 (Kontaktformular und Versand), ADR 0022 (Badges),
+ADR 0023 (interne Endpoints).
 
 ---
 
@@ -456,6 +459,67 @@ Datenschutzgründen gefragt wird, ist die Rotation die Antwort und nicht ein
 
 ---
 
+## „`/api/internal/*` antwortet 401"
+
+Die Antwort sagt absichtlich nicht, was falsch war — kein Header, falsches
+Schema und falsches Token sind byteweise dieselbe 401, und die Logzeile nennt
+den Grund auch nicht (ADR 0023 §3). Diese Reihenfolge ersetzt den Hinweis, den
+der Endpoint nicht gibt:
+
+**1 · Das richtige der beiden Tokens?** Sie sind nicht austauschbar.
+`INTERNAL_PROBE_TOKEN` gehört zu `/api/internal/probe`, `INTERNAL_DEPLOY_TOKEN`
+zu `/api/internal/deploy`. Der häufigste Fall.
+
+**2 · Ist beim Kopieren etwas mitgekommen?** Ein Zeilenumbruch am Ende wird beim
+Start abgelehnt, ein Leerzeichen am Anfang nicht — das trimmt `config.Load`
+weg. Aber ein Token, das durch eine Shell gegangen ist, kann Anführungszeichen
+tragen, und die sind Teil des Werts:
+
+```bash
+docker compose -f compose.dev.yaml exec api printenv INTERNAL_PROBE_TOKEN | xxd | tail -2
+```
+
+**3 · Ist der Header überhaupt angekommen?** Ein Proxy, der `Authorization`
+schluckt, sieht von hier aus wie ein falsches Token.
+
+```bash
+curl -i -XPOST localhost:8080/api/internal/probe \
+  -H "Authorization: Bearer $INTERNAL_PROBE_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"at":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","up":true,"latencyMs":1}'
+```
+
+204 heißt: das Token stimmt, der Weg dorthin ist es, der nicht stimmt.
+
+**Was hier nie die Antwort ist:** dem Endpoint einen Hinweis beibringen, welcher
+Teil falsch war. Das ist genau das Informationsleck, das der Build-Plan als
+Abnahmekriterium ausschließt.
+
+**Ab L3 ist 404 die richtige Antwort von außen**, nicht 401 — der Traefik blockt
+den Präfix, und ein 401 von außen verriete, dass es den Pfad gibt. Von innen
+bleibt es bei 401.
+
+---
+
+## Die internen Tokens wechseln
+
+```bash
+openssl rand -hex 32   # je einmal pro Variable
+```
+
+Zwei Stellen pro Token, und sie müssen zusammen wandern: die Variable in Dokploy
+**und** das Secret in dem GitHub-Workflow, der sie benutzt — F4 für die Sonde,
+E4 für die Pipeline. Dazwischen liegt ein Fenster, in dem der Aufrufer 401
+bekommt.
+
+Für die Sonde ist das folgenlos: eine ausgefallene Messung ist eine Lücke, und
+eine Lücke rendert als `nodata` und nicht als Ausfall (Invariante 6). Für die
+Pipeline gilt dasselbe mit anderem Vorzeichen — ein verlorener Deploy-Bericht
+ist ein Balken, der fehlt, und **nichts holt ihn nach**. Also: Token wechseln,
+wenn kein Deploy läuft.
+
+---
+
 ## Nach L1: den Versand wirklich prüfen
 
 Diese Phase konnte es nicht — das OVH-Postfach und die DNS-Einträge sind L1, und
@@ -501,8 +565,9 @@ Teil des Logs.
 
 ## Die Umgebungsvariablen
 
-**Drei** haben keinen Default: `DATABASE_URL`, seit C5 `GITHUB_TOKEN` und seit
-C6 `CONTACT_IP_PEPPER`. Dazu drei bedingte: `SMTP_USERNAME`, `SMTP_PASSWORD`
+**Fünf** haben keinen Default: `DATABASE_URL`, seit C5 `GITHUB_TOKEN`, seit C6
+`CONTACT_IP_PEPPER` und seit C7 `INTERNAL_PROBE_TOKEN` und
+`INTERNAL_DEPLOY_TOKEN`. Dazu drei bedingte: `SMTP_USERNAME`, `SMTP_PASSWORD`
 und `MAIL_TO` sind Pflicht, sobald `MAIL_TRANSPORT=smtp` gilt. Alle anderen
 stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet „nimm den
 Default", damit die Zahlen nur an einer Stelle existieren — in
@@ -529,6 +594,14 @@ Default", damit die Zahlen nur an einer Stelle existieren — in
 | `SMTP_PASSWORD` | — | Pflicht bei `smtp`. Geheimnis |
 | `MAIL_TO` | — | Pflicht bei `smtp`. Das Postfach, in dem die Nachrichten landen |
 | `CONTACT_IP_PEPPER` | — | Pflicht, ≥ 32 Zeichen. Schlüsselt den gespeicherten `ip_hash` |
+| `INTERNAL_PROBE_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/probe` |
+| `INTERNAL_DEPLOY_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/deploy` |
+
+**Zwei interne Tokens und nicht eines.** Sie sind nicht austauschbar: das
+Sonden-Token wird an `/api/internal/deploy` mit einer 401 abgewiesen und
+umgekehrt. Der Grund steht in ADR 0023 §1 — eine erfundene Uptime-Zeile ist eine
+Zelle von einundneunzig, eine erfundene Deploy-Zeile ist die eine Zahl, die die
+Fallstudie gemessen nennt.
 
 **Es gibt kein `MAIL_FROM`.** OVH MX Plan verlangt, dass `From:` dem
 authentifizierten Konto entspricht — `From` **ist** `SMTP_USERNAME`, und eine

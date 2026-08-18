@@ -161,6 +161,12 @@ services:
       # the refusal belongs to config.Load, not here. `openssl rand -hex 32`.
       CONTACT_IP_PEPPER: ${CONTACT_IP_PEPPER:-}
 
+      # The two internal bearer tokens. Same `:-` as above and for the same
+      # reason: the api will not start without them, and the refusal belongs to
+      # config.Load. `openssl rand -hex 32`, once per variable.
+      INTERNAL_PROBE_TOKEN: ${INTERNAL_PROBE_TOKEN:-}
+      INTERNAL_DEPLOY_TOKEN: ${INTERNAL_DEPLOY_TOKEN:-}
+
       # Empty here, and that is not an oversight.
       #
       # In development nothing forwards anything: a request from your machine

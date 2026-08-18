@@ -5,9 +5,11 @@ eine Kerbe am falschen Tag hängt.
 
 Der Roll-up ist die eine Anweisung in `api/internal/store/queries/ops.sql`,
 angetrieben von der Schleife in `api/internal/ops`, gestartet und gestoppt in
-`api/cmd/api/main.go`. ADR 0019 (diese Entscheidung), ADR 0017 (Fenster und
-Rasterlücken auf dem Lesepfad), ADR 0013 (der Seed misst nicht),
-`api/migrations/00004_operations.sql` (die Tabellen und ihre Constraints).
+`api/cmd/api/main.go`. Die Rohdaten kommen seit C7 aus `api/internal/intake`.
+ADR 0019 (diese Entscheidung), ADR 0017 (Fenster und Rasterlücken auf dem
+Lesepfad), ADR 0013 (der Seed misst nicht), ADR 0023 (woher eine Zeile in
+`ops_checks` kommt), `api/migrations/00004_operations.sql` (die Tabellen und
+ihre Constraints).
 
 **Das ist das erste Stück dieses Systems, das ohne Request von selbst läuft und
 eine öffentliche Zahl erzeugt.** Alles darunter folgt daraus.
@@ -33,9 +35,52 @@ Beleg, dass die Schleife lebt.
 docker compose -f compose.dev.yaml logs api | grep 'ops roll-up' | tail -5
 ```
 
-**Am Tag 1 steht dort `days: 0`, und das ist richtig.** Es gibt noch keine Sonde
-(C7) und kein Ausfallprotokoll (F4), also gibt es nichts zu aggregieren, also ist
-das ganze Raster `nodata`. Ein volles Raster wäre an dieser Stelle die Lüge.
+**Am Tag 1 steht dort `days: 0`, und das ist richtig.** Seit C7 gibt es den
+Endpoint, der Rohdaten annimmt, aber noch keine Sonde, die ihn ruft (F4) — also
+gibt es nichts zu aggregieren, also ist das ganze Raster `nodata`. Ein volles
+Raster wäre an dieser Stelle die Lüge.
+
+---
+
+## Woher eine Zeile in `ops_checks` kommt
+
+Zwei Quellen, und `origin` sagt welche:
+
+| `origin` | Wer schreibt | Wann |
+|---|---|---|
+| `probe` | `POST /api/internal/probe` (C7), gerufen von der F4-Sonde | solange der Host lebt |
+| `backfill` | die Wiedereinspielung von `uptime-log.txt` aus dem Branch `ops-data` (F4) | nachdem der Host zurück ist |
+
+**`source_ref` ist nur bei `backfill` gesetzt** und nennt den Commit, also ist
+jede nachgetragene Zeile auf etwas öffentlich Prüfbares zurückführbar. Der
+Constraint `ops_checks_backfill_cites_source_ck` erzwingt das, und
+`InsertOpsCheck` schreibt `origin` fest als `'probe'` — eine Live-Sonde kann
+nicht behaupten, Beleg von außerhalb der Infrastruktur zu sein (ADR 0023 §8).
+
+Das Paar `observed_at` / `recorded_at` ist die eigentliche Aussage: bei einer
+Live-Sonde liegen sie Sekunden auseinander, bei einer nachgetragenen Zeile
+Stunden, und **dieser Abstand ist der Beleg** — die Aufzeichnung des Ausfalls hat
+das System überlebt, das ihn hätte aufzeichnen sollen.
+
+### „Eine Zeile ist geschrieben und das Raster ändert sich nicht"
+
+```sql
+-- Wurde sie überhaupt aufgezeichnet, und wie alt hält die Datenbank sie?
+SELECT origin, observed_at, recorded_at, up
+  FROM ops_checks ORDER BY id DESC LIMIT 5;
+```
+
+Ist `recorded_at` **alt**, hat jemand die Spalte von Hand gesetzt. Der Roll-up
+begrenzt seinen Scan darauf (ADR 0019 §2), also fällt so eine Zeile aus dem
+Lookback-Fenster und wird nie gezählt — geschrieben, unsichtbar, und nichts
+meldet es. `InsertOpsCheck` lässt die Spalte deshalb weg und nimmt ihren Default;
+`TestALateObservationIsStillFreshlyRecordedAndStillAggregated` hält das fest.
+
+Steht in den Logs `probe already recorded`, hat die Sonde dieselbe
+`observed_at` ein zweites Mal geschickt. Ein Wiederholungsversuch nach einem
+Timeout ist normal und die Zeile eine Beruhigung. Kommt sie bei **jedem** Lauf,
+hängt die Sonde in einer Zeitstempel-Schleife, und dann ist das Raster zu Recht
+leer.
 
 ---
 

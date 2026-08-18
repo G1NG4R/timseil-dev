@@ -17,6 +17,15 @@ const goodToken = "github_pat_not_a_real_token_0000000000"
 // is testing the boundary rather than an arbitrary short string.
 const goodPepper = "0123456789abcdef0123456789abcdef"
 
+// Thirty-two characters each, which is the floor, so a test that shortens one
+// by a single character is testing the boundary and not a round number. The two
+// differ from each other on purpose: half of what these tests are for is that
+// the probe token does not open the deploy endpoint.
+const (
+	goodProbeToken  = "0f1e2d3c4b5a69788796a5b4c3d2e1f0"
+	goodDeployToken = "a1b2c3d4e5f60718293a4b5c6d7e8f90"
+)
+
 // setEnv puts the process into a known state. Every variable this package reads
 // is named here, including the ones a test does not care about: without that, a
 // developer machine with DB_MAX_CONNS exported would change what the tests mean.
@@ -48,6 +57,8 @@ func setEnv(t *testing.T, overrides map[string]string) {
 		EnvSMTPPassword:    "",
 		EnvMailTo:          "",
 		EnvContactIPPepper: goodPepper,
+		EnvProbeToken:      goodProbeToken,
+		EnvDeployToken:     goodDeployToken,
 	}
 	for k, v := range overrides {
 		base[k] = v
@@ -471,5 +482,67 @@ func TestThePepperNeverAppearsInAnError(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), secret) {
 		t.Errorf("the pepper is in the error a dying process prints:\n%v", err)
+	}
+}
+
+// ----------------------------------------------------- internal tokens (C7)
+
+func TestBothInternalTokensAreRequired(t *testing.T) {
+	// Neither has a default, for the reason GITHUB_TOKEN and the pepper have
+	// none: a shipped value is a value every deployment shares, and a shared
+	// bearer token is a public write endpoint.
+	for _, key := range []string{EnvProbeToken, EnvDeployToken} {
+		t.Run(key, func(t *testing.T) {
+			setEnv(t, map[string]string{key: ""})
+			wantFailure(t, key, "openssl rand -hex 32")
+		})
+	}
+}
+
+func TestAShortInternalTokenIsRefused(t *testing.T) {
+	setEnv(t, map[string]string{EnvProbeToken: goodProbeToken[:minTokenLength-1]})
+	wantFailure(t, EnvProbeToken, "at least")
+}
+
+// An HTTP header cannot carry a line break, so a token with one could never
+// match anything — it would fail as "wrong token" at every request instead of
+// as a configuration problem at startup, which is a whole afternoon.
+func TestAnInternalTokenWithALineBreakIsRejected(t *testing.T) {
+	setEnv(t, map[string]string{EnvDeployToken: goodDeployToken + "\nX-Injected: 1"})
+	wantFailure(t, EnvDeployToken, "line break")
+}
+
+func TestAnInternalTokenNeverAppearsInAnError(t *testing.T) {
+	const secret = "too-short-to-pass"
+
+	for _, key := range []string{EnvProbeToken, EnvDeployToken} {
+		t.Run(key, func(t *testing.T) {
+			setEnv(t, map[string]string{key: secret})
+
+			_, err := Load()
+			if err == nil {
+				t.Fatalf("Load accepted %s below the floor", key)
+			}
+			if strings.Contains(err.Error(), secret) {
+				t.Errorf("the token is in the error a dying process prints:\n%v", err)
+			}
+		})
+	}
+}
+
+// The whole point of there being two. If Load ever collapsed them onto one
+// variable this would be the only test that noticed.
+func TestTheTwoInternalTokensAreKeptApart(t *testing.T) {
+	setEnv(t, nil)
+	cfg := mustLoad(t)
+
+	if cfg.Internal.ProbeToken != goodProbeToken {
+		t.Errorf("ProbeToken = %q", cfg.Internal.ProbeToken)
+	}
+	if cfg.Internal.DeployToken != goodDeployToken {
+		t.Errorf("DeployToken = %q", cfg.Internal.DeployToken)
+	}
+	if cfg.Internal.ProbeToken == cfg.Internal.DeployToken {
+		t.Error("both endpoints ended up behind the same secret")
 	}
 }

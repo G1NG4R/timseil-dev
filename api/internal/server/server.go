@@ -20,11 +20,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/badge"
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/contact"
 	"github.com/G1NG4R/timseil-dev/api/internal/contributions"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
+	"github.com/G1NG4R/timseil-dev/api/internal/intake"
 	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
@@ -75,7 +77,7 @@ func New(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 	// opaque CORS failure instead of a readable one. The rate limit last, so a
 	// throttled request still has an id and a log line.
 	handler := middleware.Chain(
-		routes(cfg, pool, build, sender, budget, contactLimiter, client, log, accepting),
+		routes(cfg, pool, build, sender, budget, contactLimiter, client, log, accepting).mux,
 		middleware.RequestID(client),
 		middleware.Logging(log, client, hasher),
 		middleware.Recover(log),
@@ -102,8 +104,8 @@ func New(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 	budget *contact.Budget, contactLimiter *middleware.RateLimiter,
 	client middleware.ClientIP, log *slog.Logger, accepting *atomic.Bool,
-) *http.ServeMux {
-	mux := http.NewServeMux()
+) *registry {
+	mux := &registry{mux: http.NewServeMux()}
 
 	// Liveness. It stays 200 while draining: a draining process is still alive,
 	// and a 503 here would have the orchestrator kill it mid-shutdown.
@@ -139,6 +141,14 @@ func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 	mux.Handle("GET /api/health",
 		health.New(queries, build, cfg.SiteSystemSlug, log))
 
+	// The three Shields.io badges. They read the same numbers /api/health does
+	// and exist so the README can point at a live endpoint instead of a claim —
+	// which is why they are mounted next to it rather than with the systems.
+	bdg := badge.New(queries, build.Version, cfg.SiteSystemSlug, log)
+	mux.HandleFunc("GET /api/badge/uptime", bdg.ServeUptime)
+	mux.HandleFunc("GET /api/badge/version", bdg.ServeVersion)
+	mux.HandleFunc("GET /api/badge/systems", bdg.ServeSystems)
+
 	// The proving ground: the list is the site's claim about which systems
 	// exist, the detail carries the operation grid behind one of them. The
 	// method in the pattern is load-bearing here too — a POST to a read-only
@@ -167,11 +177,67 @@ func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 		contact.New(queries, sender, cfg.Mail.To, []byte(cfg.Contact.IPPepper),
 			cfg.AllowedOrigins, client, budget, log)))
 
+	// The two internal endpoints. A host cannot report its own outage and a
+	// pipeline is the only thing that knows what its own release cost, so both
+	// of these are written from outside — which is exactly why they are the two
+	// routes with a token in front of them.
+	//
+	// The guard is wrapped here at the mux line rather than added to the chain,
+	// for the reason the contact limiter is (ADR 0015 §3): the route is the
+	// whole statement of the scope. A chain link would need a path test, and a
+	// path test that drifts from the router is an unauthenticated write path.
+	//
+	// Two tokens and not one. The prober (F4) and the deploy pipeline (E4) are
+	// different callers, and a leaked probe token must not be able to invent
+	// the deploy duration the case study calls measured.
+	in := intake.New(queries, cfg.SiteSystemSlug, log)
+	mux.Handle("POST /api/internal/probe",
+		middleware.Bearer(cfg.Internal.ProbeToken, log)(http.HandlerFunc(in.ServeProbe)))
+	mux.Handle("POST /api/internal/deploy",
+		middleware.Bearer(cfg.Internal.DeployToken, log)(http.HandlerFunc(in.ServeDeploy)))
+
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.
-	httpx.RegisterDocs(mux)
+	httpx.RegisterDocs(mux.mux)
+	mux.record("GET /api/docs", "GET /api/docs/scalar.js", "GET /api/openapi.yaml")
 
 	return mux
+}
+
+// registry is the ServeMux plus the list of patterns that went into it.
+//
+// The list exists for the parity check in router_parity_test.go, which holds it
+// against the routing table oapi-codegen builds from the contract — in both
+// directions, so a documented operation nobody mounted fails and a mounted
+// route the contract does not describe fails too.
+//
+// Taken from the registration itself rather than restated in the test, and that
+// is the whole design. A hand-kept list of routes is a second statement of the
+// router, it agrees on the day it is written, and the failure it eventually
+// hides is "this endpoint was never mounted" — which reads, from outside, as a
+// documented resource answering 404.
+//
+// RegisterDocs is the one caller that cannot go through handle: it takes a
+// concrete *http.ServeMux and registers three patterns itself. Those three are
+// recorded by hand, and the smoke half of the parity test is what keeps that
+// honest — a recorded pattern nobody registered answers 404 and fails there.
+type registry struct {
+	mux      *http.ServeMux
+	patterns []string
+}
+
+func (g *registry) Handle(pattern string, h http.Handler) {
+	g.record(pattern)
+	g.mux.Handle(pattern, h)
+}
+
+func (g *registry) HandleFunc(pattern string, h func(http.ResponseWriter, *http.Request)) {
+	g.record(pattern)
+	g.mux.HandleFunc(pattern, h)
+}
+
+func (g *registry) record(patterns ...string) {
+	g.patterns = append(g.patterns, patterns...)
 }
 
 // writePlain answers the probes. They are read by Docker, by Traefik and by a

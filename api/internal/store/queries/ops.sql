@@ -111,3 +111,77 @@ SELECT system_id,
        checks_total = EXCLUDED.checks_total,
        checks_up    = EXCLUDED.checks_up,
        computed_at  = EXCLUDED.computed_at;
+
+-- The write side of the grid: the two rows C7's internal endpoints append.
+--
+-- Neither aggregates anything. The probe adds one raw observation and the loop
+-- in internal/ops finds it on the next tick — ADR 0019 already decided that,
+-- and it is why C7 is small.
+
+-- SystemIDBySlug resolves the one system both internal endpoints write against.
+--
+-- Separate from the two inserts below, and that is the decision worth the extra
+-- round trip. Folded in as `INSERT ... SELECT id FROM systems WHERE slug = $1
+-- ... ON CONFLICT DO NOTHING`, zero affected rows would mean two different
+-- things — "no such system", which is a misconfiguration and a 500, and "that
+-- observation is already recorded", which is a 204. One return value carrying
+-- two states is the kind of economy that comes back later as a ghost.
+--
+-- pgx.ErrNoRows is therefore load-bearing: it is the only way the caller learns
+-- that SITE_SYSTEM_SLUG names nothing.
+--
+-- name: SystemIDBySlug :one
+SELECT id FROM systems WHERE slug = $1;
+
+-- InsertOpsCheck records one external observation of this host.
+--
+-- origin is fixed to 'probe' here rather than taken from the caller. The other
+-- value the CHECK allows is 'backfill', which belongs to F4's replay of
+-- uptime-log.txt and carries a source_ref naming the commit; letting an HTTP
+-- body choose between them would let a live probe claim to be evidence from
+-- outside the infrastructure, which is the one claim this table exists to make
+-- honestly.
+--
+-- recorded_at is NOT set, deliberately. Its default is now(), and now() is what
+-- RollUpOpsDays scans on — a recorded_at supplied by the caller could put a new
+-- row outside the loop's lookback window and make it invisible for ever, while
+-- observed_at stays free to be as old as the observation really is.
+--
+-- ON CONFLICT DO NOTHING against ops_checks_unique_observation makes a retry
+-- free: a prober that times out waiting for our 204 may send the same
+-- observation again without producing a second one. It also means a second
+-- report for the same instant is DISCARDED rather than applied, including one
+-- that disagrees about `up`. That is the migration's own rule — "a backfill
+-- never overwrites a live probe" — and the caller counts the affected rows so
+-- the discard is at least visible in the log.
+--
+-- name: InsertOpsCheck :execrows
+INSERT INTO ops_checks (system_id, observed_at, up, latency_ms, reason, origin)
+VALUES (
+    sqlc.arg(system_id),
+    sqlc.arg(observed_at),
+    sqlc.arg(up),
+    sqlc.narg(latency_ms),
+    sqlc.narg(reason),
+    'probe'
+)
+ON CONFLICT (system_id, observed_at) DO NOTHING;
+
+-- InsertDeploy records what the pipeline says its own release cost.
+--
+-- The unique constraint is (system_id, sha, deployed_at) and the migration says
+-- why in one line: "a retried POST /api/internal/deploy must not produce a
+-- second bar". Two genuinely separate deploys of the same commit — a rollback
+-- and the redeploy after it — differ in deployed_at and are two rows, which is
+-- correct: they are two events.
+--
+-- name: InsertDeploy :execrows
+INSERT INTO deploys (system_id, sha, duration_sec, result, deployed_at)
+VALUES (
+    sqlc.arg(system_id),
+    sqlc.arg(sha),
+    sqlc.arg(duration_sec),
+    sqlc.arg(result),
+    sqlc.arg(deployed_at)
+)
+ON CONFLICT (system_id, sha, deployed_at) DO NOTHING;
