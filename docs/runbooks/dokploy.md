@@ -145,13 +145,24 @@ den Host:
 |---|---|---|
 | Wie heißt der TLS-Entrypoint? | `entrypoints=websecure` | an `api` und `web` |
 | Wie heißt der Certresolver? | `tls.certresolver=letsencrypt` | an `api` und `web` |
-| Leitet der HTTP-Entrypoint global auf HTTPS um? | *nichts* — wenn **nein**, braucht jeder Router einen zweiten auf dem HTTP-Entrypoint | — |
+| Leitet der HTTP-Entrypoint global auf HTTPS um? | der Router `timseil-http` an `web` | am `web`-Dienst |
 
-Vierte Frage, ohne eigene Zeile, aber mit Folge: steht `exposedByDefault: true`,
-baut Traefik auch für `db`, `migrate` und `seed` Router. Erreichbar sind sie
-nicht — sie liegen nicht im Proxy-Netz — aber es ist Rauschen. Die Korrektur
-gehört auf den Host: ein `traefik.enable=false` an `db` wäre ein Traefik-Label
-an einem geschlossenen Dienst, und `make check-compose` weist es zu Recht ab.
+Zur dritten Zeile: **Dokploys Traefik hat keinen globalen Redirect** — am
+18.08.2026 nachgemessen, eine Anfrage an Port 80 antwortet mit 404, und ein
+Redirect auf Entrypoint-Ebene antwortete mit 301, ob ein Router passt oder
+nicht. Es gibt zwar ein `redirect-to-https` in Dokploys `dynamic/middlewares.yml`,
+das wird aber pro Router von Hand angehängt. Deshalb bringt `compose.yaml` mit
+`timseil-http` einen eigenen Router auf dem HTTP-Entrypoint mit, samt eigener
+Middleware — was der Host hält und dieses Repo nicht versioniert, ist nach dem
+nächsten Dokploy-Upgrade weg.
+
+Vierte Frage, ohne eigene Zeile: steht `exposedByDefault: true`, baut Traefik
+auch für `db`, `migrate` und `seed` Router. Erreichbar sind sie nicht — sie
+liegen nicht im Proxy-Netz — aber es ist Rauschen. **Auf diesem Host steht es
+bei beiden Providern auf `false`**, die Frage ist also beantwortet; sie bleibt
+stehen, weil ein Dokploy-Upgrade sie neu stellt. Die Korrektur gehörte auf den
+Host: ein `traefik.enable=false` an `db` wäre ein Traefik-Label an einem
+geschlossenen Dienst, und `make check-compose` weist es zu Recht ab.
 
 Und das Netz:
 
@@ -251,7 +262,12 @@ In Dokploy: neues Projekt → **Compose**.
 | Provider | Git |
 | Repository | `G1NG4R/timseil-dev` |
 | Branch | `main` |
-| Compose-Pfad | `compose.yaml` |
+| Compose-Pfad | `./compose.yaml` |
+
+**Der Compose-Pfad muss aktiv gesetzt werden.** Dokploys Standard ist
+`./docker-compose.yml`; bleibt er stehen, bricht der Deploy mit
+`Error: Compose file not found` ab, und die Meldung nennt den erwarteten Pfad,
+nicht das Feld.
 
 **Dokploys eigenes Postgres und Redis bleiben unbenutzt.** Unsere Datenbank
 steht in `compose.yaml`, mit ihren zwei Rollen, ihrem Volume und ihrem
@@ -264,10 +280,40 @@ trägt kein `env_file:`, und `make check-compose` weist eins ab.
 
 Den Zettel aus 0.4 abarbeiten. **`TRUSTED_PROXY_CIDRS` bleibt noch leer.**
 
+**Und der Schalter, ohne den nichts davon ankommt: „Create Environment File"
+muss AN sein.** Er ist der einzige Weg. Dokploy schreibt daraus eine `.env`
+neben die Compose-Datei, und Compose liest sie beim Auflösen von `${…}` selbst
+ein. Steht er aus, wird das Environment **lautlos verworfen** — kein Schreiben,
+keine Warnung, kein Log-Eintrag:
+
+```js
+// @dokploy/server .../utils/builders/compose.js:13
+const envCommand = compose.createEnvFile ? getCreateEnvFileCommand(compose) : "";
+```
+
+Zwei Ersatzwege gibt es nicht. Das Kommando trägt kein `--env-file`, und
+`compose.js:47` startet Docker mit `env -i`, also mit geleerter Umgebung; der
+einzige Kanal, der dort noch etwas einschleusen könnte, greift nur bei
+`composeType === "stack"`.
+
+Das Fehlerbild führt in die Irre: es scheitert die **Interpolation**
+(`required variable IMAGE_TAG is missing a value`), obwohl die Ursache eine nie
+geschriebene Datei ist. Der Schema-Default ist `true` — steht er aus, hat ihn
+jemand umgelegt.
+
 **Die Dokploy-Oberfläche sieht jede dieser Variablen** — sie ist damit das
-lohnendste Ziel der Maschine. Sie zuzumachen ist L3.
+lohnendste Ziel der Maschine. Sie zuzumachen ist L3. Und sie landen zusätzlich
+als Klartext in jener `.env`, mit Modus 0644 root:root; ein `chmod` überlebt den
+nächsten Deploy nicht, weil die Datei jedes Mal neu geschrieben wird.
 
 ### 2.3 Deployen und zusehen
+
+**Nicht zwischen 23:45 und 00:00 UTC deployen.** Dokploys `docker-cleanup` läuft
+um 23:50 UTC und fährt `docker system prune --all --force`. Der Wrapper
+`dockerSafeExec` wartet zwar bis zu 300 s auf einen ruhenden Docker, startet
+danach aber trotzdem — ein Redeploy in diesem Fenster überschneidet sich mit dem
+Prune. Volumes sind dabei sicher (siehe 3.3), gestoppte Container und nicht
+referenzierte Images nicht.
 
 Deploy drücken, dann auf dem VPS:
 
@@ -314,8 +360,16 @@ docker logs <container-name> --tail 60
 ```
 
 Und die Dokploy-Oberfläche hat Logs und Status ohnehin eingebaut — für den
-ersten Deploy ist sie der bequemere Ort. Prüf beim ersten Mal, welchen
-Projektnamen die Container tragen, und trag ihn dir hier ein.
+ersten Deploy ist sie der bequemere Ort.
+
+Beim ersten Deploy am 18.08.2026 hieß das Projekt
+`timseildev-timseildev-eixe3r`, die Container also
+`timseildev-timseildev-eixe3r-api-1` und so weiter. Der Name wird von Dokploy
+erzeugt und steht doppelt: als `-p` im Kommando und als `COMPOSE_PROJECT_NAME`
+in der `.env`. Beides sticht `name: timseil` aus `compose.yaml`. **Deshalb trägt
+`db-data` dort ein explizites `name: timseil_db-data`** — sonst erbte das Volume
+das generierte Suffix und hieße nach einem Neuanlegen der App anders, also: neu
+und leer.
 
 ---
 
@@ -388,8 +442,26 @@ alte Image-Layer: jeder Deploy legt eins an, Docker räumt nicht von selbst auf,
 und `loki`, `prometheus` und Postgres liegen auf derselben NVMe. Eine volle
 Platte ist keine langsame Seite, sondern eine Datenbank ohne Schreibrechte.
 
-**Zwei Hälften.** In der Dokploy-Oberfläche die Image-Retention auf die letzten
-3–5 Stände. Und der wöchentliche Timer aus diesem Repo:
+**Auf diesem Host räumt Dokploy schon auf — der Timer aus diesem Repo bleibt
+deshalb uninstalliert.** Nachgesehen am 18.08.2026, Dokploy v0.30.0:
+`enableDockerCleanup` steht an, der Job `docker-cleanup` läuft nach
+`CLEANUP_CRON_JOB = "50 23 * * *"`, also täglich um 23:50 UTC, und ruft unter
+anderem `docker system prune --all --force`. Auf Host-Ebene existiert nichts:
+weder `root` noch `ubuntu` haben eine Crontab, und unter den systemd-Timern
+steht kein Docker-Job.
+
+Dokploys Lauf ist damit **strikt schärfer** als unser wöchentlicher: täglich
+statt sonntags, und ohne `--filter until=168h`. Unserer täte nichts, was jener
+nicht schon tut — zwei Jobs wären hier keine Redundanz, sondern zwei Stellen, an
+denen man dieselbe Wirkung sucht.
+
+**Die Einstellung bleibt an.** Sie ist die einzige Bremse gegen volllaufende
+Image-Layer auf einem Dateisystem, das sich `/`, `/var/lib/docker` und später
+Loki und Postgres teilen.
+
+Der Timer aus diesem Repo ist die **Rückfallebene**, nicht der Normalfall. Er
+gehört installiert, wenn Dokploys Cleanup abgeschaltet wird oder der Host
+gewechselt hat:
 
 ```bash
 cd ~/timseil-dev && git pull        # der Klon aus 1.1
@@ -398,9 +470,8 @@ systemctl start timseil-prune.service        # einmal jetzt, um die Zahlen zu se
 journalctl -u timseil-prune -n 40 --no-pager
 ```
 
-**Läuft in Dokploy schon eine eigene Docker-Cleanup-Aufgabe, schaltest du eine
-der beiden ab.** Zwei Prune-Jobs, die einander in die Quere kommen, sind schwerer
-zu lesen als einer.
+**Zweite Hälfte, unabhängig davon:** in der Dokploy-Oberfläche die
+Image-Retention auf die letzten 3–5 Stände.
 
 #### Was der Prune wegnimmt — und was nie
 
@@ -427,6 +498,39 @@ docker pull ghcr.io/g1ng4r/timseil-web:sha-XXXXXXX
 Stolperstein des `Operations`-Blattes: alte, gestoppte Container mit
 Traefik-Labels erzeugen Routing-Konflikte. Ein Job, zwei Gründe.
 
+#### Die eine Handlung, die `timseil_db-data` kostet
+
+**Volume-Prune über die Dokploy-Oberfläche ist während eines Redeploys
+verboten.** Das ist keine Einstellung, die man absichern kann — es ist ein
+Knopf, und keine Konfiguration auf diesem Host verhindert ihn.
+
+Der **automatische** Job ist ungefährlich, und zwar aus genau dem Grund, den
+dieser Abschnitt fürchtet. In `utils/docker/utils.js` steht `volumes` in
+`excludedCleanupAllCommands`, mit dieser Begründung im Quelltext:
+
+> during automatic cleanup, a volume may be deleted due to a stopped container,
+> which is a dangerous situation
+
+Dazu trägt das `docker system prune --all --force` darin **kein** `--volumes`.
+Beide Wege sind zu. Am 18.08.2026 auf der Platte bestätigt: drei unbenutzte
+Volumes, alle älter als eine Woche, hatten mindestens sieben Läufe überlebt.
+Auch **„Clean All" in der Oberfläche ist sicher** — dieselbe `cleanupAll`-Route,
+dieselbe Ausnahme.
+
+Gefährlich ist **ein** Knopf: der Volume-Prune in der Docker-Disk-Usage-Ansicht.
+Er ruft direkt
+
+```
+docker volume prune --all --force
+```
+
+und `--all` ist schärfer als das `--volumes`, vor dem oben gewarnt wird: seit
+Docker 23 nimmt es **alle** unbenutzten Volumes, nicht nur die namenlosen.
+`timseil_db-data` ist benannt und wäre von der alten Semantik geschützt gewesen,
+von dieser nicht. Das Fenster sind die Sekunden zwischen `down` und `up` eines
+Redeploys — und Dokploys `dockerSafeExec` schützt gerade dort nicht, weil in
+diesen Sekunden kein Docker-Prozess läuft, auf den er warten könnte.
+
 ---
 
 ## Teil 4 — Die Abnahme
@@ -441,15 +545,24 @@ Klon von 1.1 (`cd ~/timseil-dev`).
 curl -sI  https://timseil.dev                       # 200, gültiges Zertifikat
 curl -sI  https://www.timseil.dev                   # 301 → https://timseil.dev
 curl -sI  http://timseil.dev                        # 301 → https
+curl -sI  http://timseil.dev/.well-known/acme-challenge/x   # 404, NICHT 301
 curl -s   https://timseil.dev/api/health | jq .sha  # der deployte Commit
 curl -sI  https://timseil.dev/api/docs              # 200
 sh ops/host/check-traefik-metrics.sh                # traefik_* innen, nichts außen
-systemctl list-timers timseil-prune.timer           # scharf
+docker volume ls | grep timseil_db-data             # der feste Name
 docker system df                                    # 0 B Build-Cache
 ```
 
 Die `jq .sha`-Zeile ist die, an der alles hängt: sie sagt, dass das, was gemergt
 wurde, tatsächlich läuft. Sie muss die sieben Zeichen aus Teil 1.3 zeigen.
+
+**Die `acme-challenge`-Zeile ist die zweitwichtigste, und sie ist neu.** Der
+Router `timseil-http` sitzt auf demselben Entrypoint, über den der Certresolver
+seine `httpChallenge` abwickelt. Antwortet dieser Pfad mit **404**, hat Traefiks
+interner ACME-Router gewonnen und die Erneuerung funktioniert. Antwortet er mit
+**301**, verschluckt unser Redirect die Challenge — dann erneuert sich das
+Zertifikat in rund 60 Tagen nicht, und auffallen würde es erst, wenn die Seite
+offline ist. Deshalb trägt der Router `priority=1`.
 
 Der Build-Cache mit **0 B** ist die Abnahme aus Anhang C — steht dort etwas,
 wurde auf dem VPS gebaut, und dann stimmt die ganze Kette nicht mehr.
@@ -539,8 +652,14 @@ die falsche Route, sobald jemand eine Regel umformuliert.
 ## Rollback
 
 Im Panel den vorherigen SHA-Tag deployen. Kein Git-Revert, kein Build — deshalb
-nie `latest`. Liegt der Tag länger als eine Woche zurück, vorher die zwei
-`docker pull` aus 3.3.
+nie `latest`.
+
+**Rechne damit, dass das Image lokal nicht mehr liegt.** Dokploys
+`docker-cleanup` läuft täglich um 23:50 UTC mit `docker image prune --all`, und
+das entfernt jedes Image ohne laufenden Container — den vorherigen Stand also
+schon in der Nacht nach dem Deploy, nicht erst nach einer Woche. Ein Rollback am
+Tag darauf beginnt deshalb praktisch immer mit den zwei `docker pull` aus 3.3.
+Die lokale Platte ist nicht die Aufbewahrung, **GHCR ist es.**
 
 **Ein Rollback des Images rollt das Schema nicht mit zurück.** Deshalb
 expand/contract in zwei Deploys, `docs/runbooks/migrations.md`.
