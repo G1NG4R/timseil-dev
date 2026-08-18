@@ -77,7 +77,7 @@ func New(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 	// opaque CORS failure instead of a readable one. The rate limit last, so a
 	// throttled request still has an id and a log line.
 	handler := middleware.Chain(
-		routes(cfg, pool, build, sender, budget, contactLimiter, client, log, accepting),
+		routes(cfg, pool, build, sender, budget, contactLimiter, client, log, accepting).mux,
 		middleware.RequestID(client),
 		middleware.Logging(log, client, hasher),
 		middleware.Recover(log),
@@ -104,8 +104,8 @@ func New(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 	budget *contact.Budget, contactLimiter *middleware.RateLimiter,
 	client middleware.ClientIP, log *slog.Logger, accepting *atomic.Bool,
-) *http.ServeMux {
-	mux := http.NewServeMux()
+) *registry {
+	mux := &registry{mux: http.NewServeMux()}
 
 	// Liveness. It stays 200 while draining: a draining process is still alive,
 	// and a 503 here would have the orchestrator kill it mid-shutdown.
@@ -198,9 +198,46 @@ func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.
-	httpx.RegisterDocs(mux)
+	httpx.RegisterDocs(mux.mux)
+	mux.record("GET /api/docs", "GET /api/docs/scalar.js", "GET /api/openapi.yaml")
 
 	return mux
+}
+
+// registry is the ServeMux plus the list of patterns that went into it.
+//
+// The list exists for the parity check in router_parity_test.go, which holds it
+// against the routing table oapi-codegen builds from the contract — in both
+// directions, so a documented operation nobody mounted fails and a mounted
+// route the contract does not describe fails too.
+//
+// Taken from the registration itself rather than restated in the test, and that
+// is the whole design. A hand-kept list of routes is a second statement of the
+// router, it agrees on the day it is written, and the failure it eventually
+// hides is "this endpoint was never mounted" — which reads, from outside, as a
+// documented resource answering 404.
+//
+// RegisterDocs is the one caller that cannot go through handle: it takes a
+// concrete *http.ServeMux and registers three patterns itself. Those three are
+// recorded by hand, and the smoke half of the parity test is what keeps that
+// honest — a recorded pattern nobody registered answers 404 and fails there.
+type registry struct {
+	mux      *http.ServeMux
+	patterns []string
+}
+
+func (g *registry) Handle(pattern string, h http.Handler) {
+	g.record(pattern)
+	g.mux.Handle(pattern, h)
+}
+
+func (g *registry) HandleFunc(pattern string, h func(http.ResponseWriter, *http.Request)) {
+	g.record(pattern)
+	g.mux.HandleFunc(pattern, h)
+}
+
+func (g *registry) record(patterns ...string) {
+	g.patterns = append(g.patterns, patterns...)
 }
 
 // writePlain answers the probes. They are read by Docker, by Traefik and by a

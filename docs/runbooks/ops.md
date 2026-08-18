@@ -5,9 +5,11 @@ eine Kerbe am falschen Tag hängt.
 
 Der Roll-up ist die eine Anweisung in `api/internal/store/queries/ops.sql`,
 angetrieben von der Schleife in `api/internal/ops`, gestartet und gestoppt in
-`api/cmd/api/main.go`. ADR 0019 (diese Entscheidung), ADR 0017 (Fenster und
-Rasterlücken auf dem Lesepfad), ADR 0013 (der Seed misst nicht),
-`api/migrations/00004_operations.sql` (die Tabellen und ihre Constraints).
+`api/cmd/api/main.go`. Die Rohdaten kommen seit C7 aus `api/internal/intake`.
+ADR 0019 (diese Entscheidung), ADR 0017 (Fenster und Rasterlücken auf dem
+Lesepfad), ADR 0013 (der Seed misst nicht), ADR 0023 (woher eine Zeile in
+`ops_checks` kommt), `api/migrations/00004_operations.sql` (die Tabellen und
+ihre Constraints).
 
 **Das ist das erste Stück dieses Systems, das ohne Request von selbst läuft und
 eine öffentliche Zahl erzeugt.** Alles darunter folgt daraus.

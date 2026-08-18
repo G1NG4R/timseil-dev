@@ -454,6 +454,42 @@ func TestTheDocumentationRoutesStillAnswerThroughTheChain(t *testing.T) {
 	if got := do(t, h, http.MethodGet, "/api/docs").Header().Get("Content-Security-Policy"); got == "" {
 		t.Error("/api/docs lost its content security policy")
 	}
+
+	// The 304 and the gzip negotiation are asserted here and not only in
+	// httpx/docs_test.go, and the difference matters: those tests run against a
+	// mux docsMux() builds for them, which nothing in production serves. If
+	// these three routes were ever taken over by something that answers 200 to
+	// everything, that suite would stay green and the only symptom would be a
+	// megabyte of renderer on every page load.
+	first := do(t, h, http.MethodGet, "/api/docs/scalar.js")
+	etag := first.Header().Get("ETag")
+	if etag == "" {
+		t.Fatal("no ETag to revalidate with")
+	}
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/api/docs/scalar.js", nil)
+	r.RemoteAddr = "203.0.113.7:1234"
+	r.Header.Set("If-None-Match", etag)
+	h.ServeHTTP(rec, r)
+
+	if rec.Code != http.StatusNotModified {
+		t.Errorf("a revalidation through the chain = %d, want 304", rec.Code)
+	}
+	if rec.Body.Len() != 0 {
+		t.Errorf("a 304 with %d bytes of body", rec.Body.Len())
+	}
+
+	rec = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodGet, "/api/docs/scalar.js", nil)
+	r.RemoteAddr = "203.0.113.7:1234"
+	r.Header.Set("Accept-Encoding", "gzip")
+	h.ServeHTTP(rec, r)
+
+	if got := rec.Header().Get("Content-Encoding"); got != "gzip" {
+		t.Errorf("Content-Encoding = %q through the chain, want gzip — the bundle "+
+			"is stored compressed and is a third of its size that way", got)
+	}
 }
 
 // The read API is public on purpose (ADR 0004), and the probes are not part of
@@ -531,8 +567,17 @@ func TestTheContactLimiterBitesOnTheFourth(t *testing.T) {
 func TestASpentContactBudgetLeavesTheReadsAlone(t *testing.T) {
 	h := handler(t, nil, true)
 
-	for range contact.RateLimit + 1 {
+	for range contact.RateLimit {
 		submit(t, h)
+	}
+
+	// The budget has to be spent for this test to mean anything. Without this
+	// assertion "the read is not a 429" is also true when the contact limiter
+	// was never applied at all — the test would pass on exactly the bug it is
+	// meant to rule out.
+	if rec := submit(t, h); rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("the %dth submission = %d, want 429: the contact limiter never bit, "+
+			"so what follows proves nothing", contact.RateLimit+1, rec.Code)
 	}
 
 	if rec := do(t, h, http.MethodGet, "/api/systems"); rec.Code == http.StatusTooManyRequests {
@@ -543,6 +588,56 @@ func TestASpentContactBudgetLeavesTheReadsAlone(t *testing.T) {
 // The write path's CORS header, through the assembled chain rather than the
 // middleware alone: without it a browser sends the POST, gets the 202 and
 // refuses to hand the receipt to the page.
+// The Origin check, through the assembled handler.
+//
+// Every test of it lives in internal/contact and goes through ServeHTTP — which
+// is the only place that calls withFacts, so those tests fill the context they
+// then assert on. That is fine for what they cover and blind to one thing: if
+// the route ever stopped going through that adapter, the context would be empty,
+// f.origin would be "", and the check treats an absent Origin as curl and lets
+// it through. The whole contact suite would stay green while the check passed
+// everything.
+//
+// backlog.md flagged exactly this for C7 as a consequence of mounting the
+// generated router. C7 does not mount it — ADR 0024 — so the hole was never
+// opened, and this is the test that would have caught it and the one that keeps
+// it shut.
+func TestAForeignOriginIsRefusedThroughTheAssembledHandler(t *testing.T) {
+	h := handler(t, nil, true)
+
+	payload := `{"name":"Anna Keller","email":"anna@example.org",` +
+		`"message":"Hallo, ich hätte eine Frage zu einem der Systeme.",` +
+		`"company":"","dwellMs":4200,"ts":"2026-08-18T14:22:07Z"}`
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/api/contact", strings.NewReader(payload))
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Origin", "https://evil.example")
+	r.RemoteAddr = "203.0.113.13:1234"
+	h.ServeHTTP(rec, r)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("a submission from https://evil.example = %d, want 400: %s",
+			rec.Code, rec.Body.String())
+	}
+
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("the answer is not a problem document: %v", err)
+	}
+	// No invalidParams on this one: naming the field would tell a scraper which
+	// header to change. ADR 0021 decided that; it is asserted here because this
+	// is the path a browser actually takes.
+	if _, named := body["invalidParams"]; named {
+		t.Error("the refusal names the field a caller would have to fix")
+	}
+
+	// And the answer itself must not be readable cross-origin.
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("Access-Control-Allow-Origin = %q for an unlisted origin", got)
+	}
+}
+
 func TestAContactAnswerIsReadableByTheSite(t *testing.T) {
 	h := handler(t, nil, true)
 
