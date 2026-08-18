@@ -254,7 +254,13 @@ func (d *Dispatcher) send(ctx context.Context, row store.ListDeliverableContactM
 		return err
 	}
 
-	if err := d.queries.MarkContactMessageSent(ctx, store.MarkContactMessageSentParams{
+	// Detached from the run's deadline. A send that finishes just as the run
+	// times out is a message the relay took, and a cancelled UPDATE here would
+	// leave it queued to be sent again.
+	markCtx, cancelMark := context.WithTimeout(context.WithoutCancel(ctx), bookkeepingTimeout)
+	defer cancelMark()
+
+	if err := d.queries.MarkContactMessageSent(markCtx, store.MarkContactMessageSentParams{
 		ID:            row.ID,
 		MailMessageID: &outgoing.MessageID,
 	}); err != nil {
@@ -269,6 +275,12 @@ func (d *Dispatcher) send(ctx context.Context, row store.ListDeliverableContactM
 func (d *Dispatcher) markFailed(ctx context.Context,
 	row store.ListDeliverableContactMessagesRow, cause error,
 ) {
+	// Detached: the attempt counter is what ends the retries, and a run cut at
+	// its deadline must still record that it tried. Without this a message
+	// whose every attempt lands on the deadline stays eligible forever.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), bookkeepingTimeout)
+	defer cancel()
+
 	attempts := row.DeliveryAttempts + 1
 
 	status := "queued"

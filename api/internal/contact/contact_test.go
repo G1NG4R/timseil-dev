@@ -88,16 +88,24 @@ func (q *stubQueries) CountRecentContactMessages(_ context.Context,
 	return row, nil
 }
 
-func (q *stubQueries) MarkContactMessageSent(_ context.Context,
+// Both honour the context, so that "the bookkeeping is detached from the
+// request" is a property this file can actually assert.
+func (q *stubQueries) MarkContactMessageSent(ctx context.Context,
 	arg store.MarkContactMessageSentParams,
 ) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	q.sent = append(q.sent, arg)
 	return q.markErr
 }
 
-func (q *stubQueries) MarkContactMessageFailed(_ context.Context,
+func (q *stubQueries) MarkContactMessageFailed(ctx context.Context,
 	arg store.MarkContactMessageFailedParams,
 ) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	q.failed = append(q.failed, arg)
 	return q.markErr
 }
@@ -751,5 +759,63 @@ func TestAReceiptIsReadableAloud(t *testing.T) {
 	}
 	if strings.ContainsAny(id, "ILOU") {
 		t.Errorf("%q uses a character Crockford's alphabet leaves out", id)
+	}
+}
+
+// A visitor who closes the tab cancels the request context. The relay has
+// already been asked either way, so the row has to be written whatever happened
+// to the browser: otherwise a refused message keeps delivery_attempts at zero
+// and is retried without its counter ever advancing, and a delivered one stays
+// queued and goes out a second time.
+//
+// Driven through SubmitContact with a dead context rather than through the stub,
+// so what is asserted is the handler's behaviour. Mutation-checked: take
+// context.WithoutCancel out of either mark path and the matching case goes red.
+func TestClosingTheTabDoesNotLoseTheBookkeeping(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		sender *stubSender
+		check  func(t *testing.T, q *stubQueries)
+	}{
+		{
+			name:   "the relay refused",
+			sender: &stubSender{err: errors.New("451 busy")},
+			check: func(t *testing.T, q *stubQueries) {
+				if len(q.failed) != 1 {
+					t.Errorf("%d attempts recorded, want 1", len(q.failed))
+				}
+			},
+		},
+		{
+			name:   "the relay took it",
+			sender: &stubSender{},
+			check: func(t *testing.T, q *stubQueries) {
+				if len(q.sent) != 1 {
+					t.Errorf("%d deliveries recorded, want 1", len(q.sent))
+				}
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			q := &stubQueries{}
+			h := newHandler(t, q, tc.sender)
+
+			// known: false skips the rate-limit query, which is the one step
+			// that legitimately belongs to the request and may be cut with it.
+			ctx, cancel := context.WithCancel(withFacts(context.Background(), facts{}))
+			cancel()
+
+			request := httpx.ContactRequest{
+				Name:    "Anna Keller",
+				Email:   "anna@example.org",
+				Message: "Hallo, ich hätte eine Frage zu einem der Systeme.",
+				Company: "",
+				DwellMs: 4200,
+				Ts:      testNow,
+			}
+			_, _ = h.SubmitContact(ctx, httpx.SubmitContactRequestObject{Body: &request})
+
+			tc.check(t, q)
+		})
 	}
 }

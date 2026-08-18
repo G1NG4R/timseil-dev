@@ -71,18 +71,27 @@ func (q *stubDispatchQueries) settled(id string) bool {
 	return false
 }
 
-func (q *stubDispatchQueries) MarkContactMessageSent(_ context.Context,
+// The two mark calls honour the context they are given. A stub that ignored it
+// would let "the bookkeeping is detached from the attempt's deadline" pass for a
+// version where it is not.
+func (q *stubDispatchQueries) MarkContactMessageSent(ctx context.Context,
 	arg store.MarkContactMessageSentParams,
 ) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.sent = append(q.sent, arg)
 	return nil
 }
 
-func (q *stubDispatchQueries) MarkContactMessageFailed(_ context.Context,
+func (q *stubDispatchQueries) MarkContactMessageFailed(ctx context.Context,
 	arg store.MarkContactMessageFailedParams,
 ) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.failed = append(q.failed, arg)
@@ -397,4 +406,39 @@ func waitFor(t *testing.T, condition func() bool) {
 		time.Sleep(time.Millisecond)
 	}
 	t.Fatal("the condition never held")
+}
+
+// The attempt counter is what ends the retries. A run cut at its deadline still
+// has to record that it tried, or a message whose every attempt lands on the
+// deadline stays eligible forever with nothing to say why.
+func TestACutRunStillRecordsTheAttempt(t *testing.T) {
+	q := &stubDispatchQueries{queue: queued(1, 1)}
+	sender := &stubSender{err: errors.New("451 busy")}
+	d := driven(t, q, sender, nil, func() time.Time { return testNow })
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	d.markFailed(ctx, q.queue[0], errors.New("451 busy"))
+
+	if _, failed := q.counts(); failed != 1 {
+		t.Fatalf("%d attempts recorded under a cancelled context, want 1", failed)
+	}
+}
+
+// And the other half: a message the relay took must not stay queued because the
+// run ended a moment later. That one goes out twice.
+func TestACutRunStillRecordsADelivery(t *testing.T) {
+	q := &stubDispatchQueries{queue: queued(1, 1)}
+	d := driven(t, q, &stubSender{}, nil, func() time.Time { return testNow })
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if err := d.send(ctx, q.queue[0]); err != nil {
+		t.Fatalf("send: %v", err)
+	}
+	if sent, _ := q.counts(); sent != 1 {
+		t.Fatalf("%d deliveries recorded under a cancelled context, want 1", sent)
+	}
 }

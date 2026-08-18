@@ -113,4 +113,13 @@ const (
 	// 1440, which is the point — each of those attempts carries a credential.
 	breakerThreshold = 3
 	breakerCooldown  = 10 * time.Minute
+
+	// The ceiling on writing down what happened, detached from whatever
+	// deadline the attempt itself ran under.
+	//
+	// Short, because it is one indexed UPDATE by primary key, and separate
+	// because the two failures are different: a send that ran out of time still
+	// has to record that it tried, or the attempt counter never advances and
+	// the message is retried forever with nothing to say why.
+	bookkeepingTimeout = 5 * time.Second
 )

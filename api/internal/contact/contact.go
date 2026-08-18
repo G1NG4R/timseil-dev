@@ -331,7 +331,13 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 		return nil, errRelayUnavailable
 	}
 
-	if err := h.queries.MarkContactMessageSent(ctx, store.MarkContactMessageSentParams{
+	// Detached for the same reason as the failure path, and with more at stake:
+	// the mail is already gone, so a cancelled request here means a delivered
+	// message stays queued and goes out a second time.
+	markCtx, cancelMark := context.WithTimeout(context.WithoutCancel(ctx), bookkeepingTimeout)
+	defer cancelMark()
+
+	if err := h.queries.MarkContactMessageSent(markCtx, store.MarkContactMessageSentParams{
 		ID:            id,
 		MailMessageID: &outgoing.MessageID,
 	}); err != nil {
@@ -415,6 +421,13 @@ func (h *Handler) store(ctx context.Context, sub submission, ipHash []byte, now 
 }
 
 func (h *Handler) markFailed(ctx context.Context, id string, cause error) {
+	// Detached from the request. A visitor who closes the tab mid-send cancels
+	// this context, and then the row would keep delivery_attempts = 0 for a
+	// message the relay has already refused — it would be retried without its
+	// counter ever advancing, and nothing would say why.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), bookkeepingTimeout)
+	defer cancel()
+
 	status := "queued"
 	if errors.Is(cause, mail.ErrPermanent) {
 		// A refusal retrying cannot fix. Five more attempts over half an hour
