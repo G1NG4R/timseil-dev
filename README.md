@@ -230,6 +230,15 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0009](docs/adr/0009-contract-problem-details-caching-public-bundle.md) | Problem Details everywhere, internal paths filtered from the published contract |
 | [0010](docs/adr/0010-enum-values-as-text-and-check.md) | State values as `text` + `CHECK`, not Postgres enums |
 | [0011](docs/adr/0011-postgres-roles-bootstrap-and-privileges.md) | Roles from initdb, privileges from the migration |
+| [0012](docs/adr/0012-stack-manifest-resolved-at-gen-time.md) | The stack manifest is resolved at `make gen` and embedded |
+| [0013](docs/adr/0013-seed-is-content-not-measurement.md) | The seed carries content, never measurements |
+| [0014](docs/adr/0014-server-lifecycle-pool-and-shutdown.md) | Lifecycle: configuration, pool size, the timeout cascade, graceful shutdown |
+| [0015](docs/adr/0015-middleware-chain-proxy-trust-cors-rate-limit.md) | The middleware chain, the trust boundary at the proxy, a hand-written rate limit |
+| [0016](docs/adr/0016-sqlc-and-mounting-only-built-operations.md) | sqlc for data access, and the router mounts only what exists |
+| [0017](docs/adr/0017-systems-endpoints-window-grid-gaps-and-error-mapping.md) | The systems endpoints: window, grid gaps and error mapping |
+| [0018](docs/adr/0018-training-endpoint-query-split-and-header-count.md) | The training endpoint: query split and counting the header from what is served |
+| [0019](docs/adr/0019-ops-rollup-in-sql-schwelle-und-die-aggregationsschleife.md) | The ops roll-up in SQL, the outage threshold and the loop that drives it |
+| [0020](docs/adr/0020-contributions-cache-in-postgres-breaker-und-der-siebte-problem-typ.md) | The contribution calendar: cached in Postgres, a breaker in front of GitHub, a seventh problem type |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.

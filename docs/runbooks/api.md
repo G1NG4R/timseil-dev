@@ -225,6 +225,98 @@ hätte die letzte Spalte ein Loch, das wie ein Fehler aussieht (Invariante 7).
 
 ---
 
+## „Der Contribution-Graph ist alt"
+
+Zuerst nachsehen, wie alt. Die Zahl steht in der Antwort und muss nicht geraten
+werden:
+
+```bash
+curl -s localhost:8080/api/contributions | jq '{cacheAgeSec, fetchedAt, totalContributions}'
+```
+
+Bis **3900 Sekunden** ist alles in Ordnung: die Haltbarkeit ist eine Stunde, der
+Ticker kommt alle fünf Minuten, also darf ein Kalender 1 h 5 min alt sein, bevor
+irgendetwas schiefsteht. Größere Werte heißen, dass die Schleife nicht mehr
+schreibt.
+
+Die Schleife hinterlässt bei **jedem** Lauf eine Zeile, auch bei denen, die
+nichts tun. Ihr Fehlen ist die Diagnose:
+
+```bash
+docker compose -f compose.dev.yaml logs api | grep 'contributions refresh'
+```
+
+| `state` | heißt |
+|---|---|
+| `fetched` | geholt und gespeichert. `attempts` sagt, beim wievielten Versuch. |
+| `fresh` | die Zeile ist jünger als eine Stunde, es wurde nichts geholt. Der Normalfall. |
+| `failed` | GitHub hat nach `attempts` Versuchen nicht geliefert. **Der Cache steht unverändert.** `err` nennt den Grund. |
+| `breaker open` | nach drei gescheiterten Läufen greift der Tick nicht mehr zum Netz. Nach 30 Minuten geht genau ein Versuch durch. |
+| `cache unreadable` | Postgres, nicht GitHub. Zählt bewusst nicht auf den Breaker. |
+| `not stored` | GitHub hat geliefert, das Schreiben ist gescheitert. Auch das ist unsere Seite. |
+
+**Gar keine Zeile** heißt, dass der Refresher nicht läuft — dann ist der Prozess
+gerade erst gestartet (die erste Zeile kommt sofort, nicht nach fünf Minuten)
+oder er ist abgestürzt.
+
+Die häufigsten `err`-Werte:
+
+- **`github answered with an unexpected status: 401`** — das Token ist abgelaufen
+  oder wurde zurückgezogen. Neu ausstellen, Scope `read:user`, in Dokploy
+  eintragen, Container neu starten.
+- **`github answered with an unexpected status: 403`** — Rate-Limit oder
+  fehlender `User-Agent`. Bei einem stündlichen Abruf ist das Limit nicht die
+  Ursache; eher hat jemand den Header entfernt.
+- **`github has no such user`** — `GITHUB_LOGIN` ist falsch. GitHub antwortet auf
+  einen unbekannten Nutzer mit HTTP 200 und `data.user: null`, deshalb ist das
+  ein eigener Fehler und sieht nicht wie ein Ausfall aus.
+- **`github returned a calendar with no weeks`** — bewusst zurückgewiesen. Ein
+  leerer Kalender überschreibt nie einen guten (Invariante 1).
+- **`github used a contribution level this service does not know`** — GitHub hat
+  das Vokabular geändert. Die Abbildung steht in
+  `api/internal/contributions/github.go`, die fünf Stufen im Contract unter
+  `components/schemas/ContributionLevel`. Beides zusammen ändern; der
+  Contract-Test hält sie aneinander.
+
+**Was hier nie die Antwort ist:** die Zeile in `contributions_cache` von Hand zu
+setzen. Sie ist ein Cache, kein Datensatz — leeren ist folgenlos, füllen wäre
+eine erfundene Zahl auf der Startseite.
+
+---
+
+## „`/api/contributions` antwortet 502"
+
+Das heißt **nicht** „GitHub ist unten". Ein gespeicherter Kalender wird immer
+ausgeliefert, egal wie alt. 502 heißt: es gibt keine Zeile, GitHub hat also seit
+dem Anlegen dieser Datenbank noch nie geantwortet.
+
+```bash
+docker compose -f compose.dev.yaml exec db \
+  psql -U timseil_boot -d timseil -c 'SELECT login, total_contributions, fetched_at FROM contributions_cache'
+```
+
+Keine Zeile → im Log nach `contributions refresh` sehen, der Grund steht dort
+(Abschnitt oben). Der Kaltstart ist der einzige Weg zu diesem Status; er ist
+deshalb auch die einzige Lage, in der Warten *nicht* hilft.
+
+---
+
+## „`GITHUB_LOGIN` geändert, die Zahlen sehen falsch aus"
+
+Der Login ist der Primärschlüssel der Cache-Zeile. Nach einer Änderung legt der
+nächste Tick eine **zweite** Zeile an; die alte bleibt liegen und wird nie wieder
+gelesen. Kein Leck, nur Ballast:
+
+```bash
+docker compose -f compose.dev.yaml exec db \
+  psql -U timseil_app -d timseil -c "DELETE FROM contributions_cache WHERE login <> 'G1NG4R'"
+```
+
+Bis der erste Tick nach der Änderung durch ist, antwortet der Endpoint 502 — es
+gibt für den neuen Login noch nichts.
+
+---
+
 ## Eine Anfrage im Log wiederfinden
 
 Jede Antwort trägt `X-Request-Id`, jede Fehlerantwort denselben Wert als
