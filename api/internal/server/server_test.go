@@ -62,8 +62,20 @@ func testConfig() config.Config {
 		AllowedOrigins: []string{"https://timseil.dev"},
 		Mail:           config.Mail{Transport: "log", Username: "contact@timseil.dev", To: "inbox@timseil.dev"},
 		Contact:        config.Contact{IPPepper: "0123456789abcdef0123456789abcdef"},
+		Internal: config.Internal{
+			ProbeToken:  testProbeToken,
+			DeployToken: testDeployToken,
+		},
 	}
 }
+
+// The two internal tokens as the assembled router sees them. Different from
+// each other, because half of what the tests below prove is that one endpoint's
+// token does not open the other.
+const (
+	testProbeToken  = "0f1e2d3c4b5a69788796a5b4c3d2e1f0"
+	testDeployToken = "a1b2c3d4e5f60718293a4b5c6d7e8f90"
+)
 
 // handler builds the whole thing — routes plus chain — rather than the bare
 // mux. What ships is the assembled handler, so that is what the tests should
@@ -91,6 +103,41 @@ func do(t *testing.T, h http.Handler, method, path string) *httptest.ResponseRec
 	r.RemoteAddr = "203.0.113.7:1234"
 	h.ServeHTTP(rec, r)
 	return rec
+}
+
+// postJSON is the shape both write paths take: a body, a content type, and
+// optionally a bearer token.
+func postJSON(t *testing.T, h http.Handler, path, token, body string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+	r.RemoteAddr = "203.0.113.7:1234"
+	r.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		r.Header.Set("Authorization", "Bearer "+token)
+	}
+	h.ServeHTTP(rec, r)
+	return rec
+}
+
+// handlerWithLimit is the assembled handler with the broad limiter turned down
+// far enough to bite, for the one test that needs to see it do so.
+func handlerWithLimit(t *testing.T, perMinute int) http.Handler {
+	t.Helper()
+
+	cfg := testConfig()
+	cfg.RateLimit = config.RateLimit{PerMinute: perMinute, Burst: 1}
+
+	var flag atomic.Bool
+	flag.Store(true)
+
+	h, stop := New(cfg, stubDB{}, health.Build{Version: "dev", SHA: "unknown", StartedAt: time.Unix(0, 0).UTC()},
+		mail.NewLogSender("contact@timseil.dev", slog.New(slog.NewTextHandler(io.Discard, nil))),
+		contact.NewBudget(time.Now()),
+		slog.New(slog.NewTextHandler(io.Discard, nil)), &flag)
+	t.Cleanup(stop)
+	return h
 }
 
 // A liveness probe that answers anything to anyone is not evidence of much.
@@ -261,6 +308,109 @@ func TestTheBadgesRefuseAWrite(t *testing.T) {
 		if rec := do(t, h, http.MethodPost, path); rec.Code != http.StatusMethodNotAllowed {
 			t.Errorf("POST %s = %d, want 405", path, rec.Code)
 		}
+	}
+}
+
+// The two internal endpoints, through the assembled chain.
+//
+// Everything about the token lives in middleware.Bearer and is tested there.
+// What is tested here is the wiring, which is the part that cannot be tested
+// anywhere else and the part whose failure is worst: a guard that was written
+// and not mounted looks exactly like a guard that works, right up until
+// somebody posts without one.
+func TestTheInternalEndpointsAreGuardedWhereTheyAreMounted(t *testing.T) {
+	h := handler(t, nil, true)
+
+	for _, path := range []string{"/api/internal/probe", "/api/internal/deploy"} {
+		rec := postJSON(t, h, path, "", `{}`)
+
+		if rec.Code != http.StatusUnauthorized {
+			t.Fatalf("POST %s with no token = %d, want 401: %s",
+				path, rec.Code, rec.Body.String())
+		}
+		if got := rec.Header().Get("WWW-Authenticate"); got != "Bearer" {
+			t.Errorf("POST %s: WWW-Authenticate = %q", path, got)
+		}
+		if got := rec.Header().Get("Content-Type"); got != "application/problem+json" {
+			t.Errorf("POST %s: Content-Type = %q", path, got)
+		}
+		if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+			t.Errorf("POST %s: Cache-Control = %q", path, got)
+		}
+	}
+}
+
+// Two tokens, and this is the whole reason there are two: a probe token that
+// could write a deploy row would be able to invent the one number the case
+// study calls measured rather than claimed.
+func TestOneInternalTokenDoesNotOpenTheOtherEndpoint(t *testing.T) {
+	h := handler(t, nil, true)
+
+	for _, tc := range []struct{ path, token string }{
+		{"/api/internal/probe", testDeployToken},
+		{"/api/internal/deploy", testProbeToken},
+	} {
+		rec := postJSON(t, h, tc.path, tc.token, `{}`)
+		if rec.Code != http.StatusUnauthorized {
+			t.Errorf("POST %s with the other endpoint's token = %d, want 401",
+				tc.path, rec.Code)
+		}
+	}
+}
+
+// Past the token, the request reaches the handler — which is what makes the
+// 401s above mean something. The stub database fails every query, so the
+// furthest an empty body gets is the validator: a 400 here proves the token was
+// accepted and the body was read.
+func TestTheRightTokenReachesTheHandler(t *testing.T) {
+	h := handler(t, nil, true)
+
+	for _, tc := range []struct{ path, token string }{
+		{"/api/internal/probe", testProbeToken},
+		{"/api/internal/deploy", testDeployToken},
+	} {
+		rec := postJSON(t, h, tc.path, tc.token, `{}`)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("POST %s with its own token = %d, want 400 from the validator: %s",
+				tc.path, rec.Code, rec.Body.String())
+		}
+	}
+}
+
+// The internal paths are excluded from CORS and must not be excluded from the
+// rate limiter — isAPI is shared by both, so the exclusion had to go inside
+// CORS. This is the assertion that keeps the two apart.
+func TestTheInternalPathsAreOutsideCorsAndInsideTheRateLimit(t *testing.T) {
+	h := handler(t, nil, true)
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodOptions, "/api/internal/probe", nil)
+	r.RemoteAddr = "203.0.113.7:1234"
+	r.Header.Set("Origin", "https://timseil.dev")
+	r.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	h.ServeHTTP(rec, r)
+
+	// An allowlisted origin would otherwise be told that POST is available on a
+	// path that is in no public document.
+	if got := rec.Header().Get("Access-Control-Allow-Methods"); got != "" {
+		t.Errorf("a preflight advertised %q for an internal path", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("a preflight allowed %q for an internal path", got)
+	}
+
+	// The contract declares a 429 on both operations, which is only true while
+	// the broad limiter still covers them.
+	spent := handlerWithLimit(t, 1)
+	var throttled bool
+	for range 5 {
+		if postJSON(t, spent, "/api/internal/probe", "", `{}`).Code == http.StatusTooManyRequests {
+			throttled = true
+			break
+		}
+	}
+	if !throttled {
+		t.Error("the internal paths lost their rate limit along with their preflight")
 	}
 }
 

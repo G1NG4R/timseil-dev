@@ -242,6 +242,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0020](docs/adr/0020-contributions-cache-in-postgres-breaker-und-der-siebte-problem-typ.md) | The contribution calendar: cached in Postgres, a breaker in front of GitHub, a seventh problem type |
 | [0021](docs/adr/0021-contact-endpoint-inline-send-dispatcher-and-the-fifth-answer.md) | The contact form: one send attempt in the request, a dispatcher behind it, and a fifth answer that is a 202 |
 | [0022](docs/adr/0022-badges-and-the-response-the-contract-was-missing.md) | The three badges: a missing measurement is `— NO DATA`, an unreachable database is a 500, and the contract now says so |
+| [0023](docs/adr/0023-internal-endpoints-two-tokens-and-a-comparison-that-does-not-branch.md) | The internal endpoints: two tokens, a comparison that does not branch on length, and every database CHECK taken in advance |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.

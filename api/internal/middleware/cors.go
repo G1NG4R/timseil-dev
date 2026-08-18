@@ -34,7 +34,7 @@ func CORS(allowed []string) Func {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !isAPI(r.URL.Path) {
+			if !isAPI(r.URL.Path) || isInternal(r.URL.Path) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -90,4 +90,20 @@ func CORS(allowed []string) Func {
 
 func isAPI(path string) bool {
 	return path == "/api" || strings.HasPrefix(path, "/api/")
+}
+
+// isInternal excludes the two token-authenticated write paths from CORS, and
+// only from CORS — isAPI is shared with the rate limiter, and these two declare
+// a 429 like every other operation, so widening the exclusion would take their
+// rate limit away with their preflight.
+//
+// Nothing exploitable is being closed here. A cross-site POST carries no
+// Authorization header, so it is refused by the token whatever CORS says. What
+// is closed is an answer: with CORS applied, a preflight from an allowlisted
+// origin came back advertising `Access-Control-Allow-Methods: GET, POST,
+// OPTIONS` for a path that is not in the public document and that L3 will block
+// from outside. Neither caller is a browser — the prober and the pipeline both
+// speak HTTP directly — so the preflight had no user and one reader.
+func isInternal(path string) bool {
+	return strings.HasPrefix(path, "/api/internal/")
 }

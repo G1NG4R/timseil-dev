@@ -752,6 +752,7 @@ export interface components {
         /** @description Missing or wrong token. */
         Unauthorized: {
             headers: {
+                "WWW-Authenticate": components["headers"]["WWWAuthenticate"];
                 [name: string]: unknown;
             };
             content: {
@@ -829,6 +830,14 @@ export interface components {
          *     one arrived will guess wrong once.
          */
         RetryAfter: number;
+        /**
+         * @description RFC 9110 requires this on every `401`, and it is the whole of what a
+         *     rejected caller learns: the scheme, and not one word about which part of
+         *     the attempt was wrong. No `realm`, no `error` — those are the two places
+         *     the RFC leaves room for a hint, and a hint is the information leak this
+         *     endpoint is built to avoid.
+         */
+        WWWAuthenticate: "Bearer";
     };
     pathItems: never;
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/contributions"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
+	"github.com/G1NG4R/timseil-dev/api/internal/intake"
 	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
@@ -175,6 +176,25 @@ func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 	mux.Handle("POST /api/contact", contactLimiter.Gate(
 		contact.New(queries, sender, cfg.Mail.To, []byte(cfg.Contact.IPPepper),
 			cfg.AllowedOrigins, client, budget, log)))
+
+	// The two internal endpoints. A host cannot report its own outage and a
+	// pipeline is the only thing that knows what its own release cost, so both
+	// of these are written from outside — which is exactly why they are the two
+	// routes with a token in front of them.
+	//
+	// The guard is wrapped here at the mux line rather than added to the chain,
+	// for the reason the contact limiter is (ADR 0015 §3): the route is the
+	// whole statement of the scope. A chain link would need a path test, and a
+	// path test that drifts from the router is an unauthenticated write path.
+	//
+	// Two tokens and not one. The prober (F4) and the deploy pipeline (E4) are
+	// different callers, and a leaked probe token must not be able to invent
+	// the deploy duration the case study calls measured.
+	in := intake.New(queries, cfg.SiteSystemSlug, log)
+	mux.Handle("POST /api/internal/probe",
+		middleware.Bearer(cfg.Internal.ProbeToken, log)(http.HandlerFunc(in.ServeProbe)))
+	mux.Handle("POST /api/internal/deploy",
+		middleware.Bearer(cfg.Internal.DeployToken, log)(http.HandlerFunc(in.ServeDeploy)))
 
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.
