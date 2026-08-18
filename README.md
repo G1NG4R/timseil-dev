@@ -239,6 +239,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0018](docs/adr/0018-training-endpoint-query-split-and-header-count.md) | The training endpoint: query split and counting the header from what is served |
 | [0019](docs/adr/0019-ops-rollup-in-sql-schwelle-und-die-aggregationsschleife.md) | The ops roll-up in SQL, the outage threshold and the loop that drives it |
 | [0020](docs/adr/0020-contributions-cache-in-postgres-breaker-und-der-siebte-problem-typ.md) | The contribution calendar: cached in Postgres, a breaker in front of GitHub, a seventh problem type |
+| [0021](docs/adr/0021-contact-endpoint-inline-send-dispatcher-and-the-fifth-answer.md) | The contact form: one send attempt in the request, a dispatcher behind it, and a fifth answer that is a 202 |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.
