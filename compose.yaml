@@ -408,6 +408,32 @@ services:
       - traefik.http.middlewares.timseil-www.redirectregex.replacement=https://timseil.dev/$${1}
       - traefik.http.middlewares.timseil-www.redirectregex.permanent=true
 
+      # The HTTP entrypoint, because Dokploy's Traefik has no global redirect.
+      # Measured on the host rather than assumed: a request to port 80 answers
+      # 404, and an entrypoint-level `http.redirections` would answer 301
+      # whether or not a router matched. There is a `redirect-to-https`
+      # middleware in Dokploy's dynamic/middlewares.yml, but it is attached per
+      # router by hand — nothing attaches it to ours.
+      #
+      # ONE router covers both services: redirectscheme keeps the path, so
+      # /api/... arrives at https intact and the api needs no second router.
+      #
+      # Priority 1 so it can never shadow anything. Traefik registers its own
+      # ACME challenge handler above user routers by construction, so the
+      # certificate stays renewable over httpChallenge — which is the entrypoint
+      # this router now also sits on.
+      #
+      # The middleware is defined HERE rather than borrowed as
+      # redirect-to-https@file: what the host holds and this repo does not
+      # version is gone after the next Dokploy upgrade, and then port 80 goes
+      # quiet again without anything in this file changing.
+      - traefik.http.routers.timseil-http.rule=Host(`timseil.dev`) || Host(`www.timseil.dev`)
+      - traefik.http.routers.timseil-http.entrypoints=web
+      - traefik.http.routers.timseil-http.priority=1
+      - traefik.http.routers.timseil-http.middlewares=timseil-to-https@docker
+      - traefik.http.middlewares.timseil-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.timseil-to-https.redirectscheme.permanent=true
+
     networks: [default, dokploy-network]
 
     expose:
@@ -468,6 +494,18 @@ volumes:
   # else. api and web write to tmpfs and to nothing that outlives them, which is
   # the property that makes an image rollback a complete rollback.
   db-data:
+    # Pinned, because `name: timseil` at the top of this file does not survive
+    # the deploy. Dokploy starts compose with its own `-p <appName>` and writes
+    # COMPOSE_PROJECT_NAME into the .env it generates; both outrank the `name:`
+    # field, and an unpinned volume inherits the generated suffix instead. On
+    # 2026-08-18 that produced timseildev-timseildev-eixe3r_db-data.
+    #
+    # Why that matters more than tidiness: the suffix changes if the app is ever
+    # recreated in Dokploy. A changed name is a DIFFERENT, empty volume, with the
+    # old one left beside it as "unused" — in reach of the one manual button that
+    # runs `docker volume prune --all --force`. Pinning the name makes the
+    # database independent of what Dokploy calls the project.
+    name: timseil_db-data
 
 networks:
   # Traefik's network, and Dokploy owns it. `external: true` says two things at
