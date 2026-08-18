@@ -14,6 +14,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
@@ -456,4 +457,74 @@ func TestStopCancelsAFetchInFlight(t *testing.T) {
 	if strings.Contains(out.String(), `"level":"ERROR"`) || strings.Contains(out.String(), `"state":"failed"`) {
 		t.Errorf("the shutdown was logged as a failure:\n%s", out.String())
 	}
+}
+
+// ------------------------------------------------------------- the off switch
+
+// CONTRIBUTIONS_TRANSPORT=off is the deployment that has no credential and says
+// so. Nothing is fetched, nothing is written, and the shutdown path does not
+// have to know which of the two states it is releasing.
+func TestTheOffTransportStartsNoLoop(t *testing.T) {
+	var out safeBuffer
+	log := slog.New(slog.NewJSONHandler(&out, nil))
+
+	s := &stubStore{}
+	r := NewRefresher(s, config.GitHub{
+		Transport: config.TransportOff,
+		Login:     "G1NG4R",
+	}, log)
+
+	// Long enough that a loop started by mistake would have run once — the loop
+	// runs immediately rather than on the first tick, so one read would show.
+	time.Sleep(50 * time.Millisecond)
+
+	s.mu.Lock()
+	reads := s.reads
+	s.mu.Unlock()
+	if reads != 0 {
+		t.Errorf("the off transport read the cache %d time(s), want 0", reads)
+	}
+	if got := len(s.writes()); got != 0 {
+		t.Errorf("the off transport wrote %d row(s), want 0", got)
+	}
+
+	// The warning is the point of the switch being visible rather than quiet.
+	if !strings.Contains(out.String(), config.EnvContribTransport) {
+		t.Errorf("nothing in the log names %s:\n%s", config.EnvContribTransport, out.String())
+	}
+
+	done := make(chan struct{})
+	go func() {
+		r.Stop()
+		r.Stop()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Stop did not return on a refresher that was never started")
+	}
+}
+
+// And the other direction, because a switch that cannot be switched on is not a
+// switch. The default reaches here as TransportGitHub; a real fetcher is built
+// and the loop reads the cache before its first tick.
+func TestTheGitHubTransportStartsTheLoop(t *testing.T) {
+	var out safeBuffer
+	log := slog.New(slog.NewJSONHandler(&out, nil))
+
+	s := &stubStore{}
+	s.aged(time.Minute) // fresh, so the loop stops before it reaches the network
+	r := NewRefresher(s, config.GitHub{
+		Transport: config.TransportGitHub,
+		Token:     "ghp_not_a_real_token",
+		Login:     "G1NG4R",
+	}, log)
+	defer r.Stop()
+
+	waitFor(t, "the first read", func() bool {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		return s.reads > 0
+	})
 }

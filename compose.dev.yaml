@@ -139,6 +139,16 @@ services:
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITHUB_LOGIN: ${GITHUB_LOGIN:-}
 
+      # The off switch for the refresher, and the counterpart to MAIL_TRANSPORT
+      # below. `github` is the default and lives in api/internal/config, so this
+      # line passes through and does not restate it — a default written in two
+      # places is a default that drifts.
+      #
+      # Set CONTRIBUTIONS_TRANSPORT=off in .env to start the api without a real
+      # token. Nothing else changes: the endpoint still reads the cached row and
+      # never invents a calendar to fill the gap.
+      CONTRIBUTIONS_TRANSPORT: ${CONTRIBUTIONS_TRANSPORT:-}
+
       # The contact form. `log` rather than `smtp`, and that is the one value in
       # this block chosen by the file rather than passed through: the OVH
       # mailbox and the DNS records are phase L1, which the build plan puts

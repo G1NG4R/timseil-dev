@@ -4,6 +4,10 @@
 // can reach Postgres and is still accepting work. The contract's own endpoints
 // arrive over the rest of stage C.
 //
+// One flag, and it is not a server: `api -healthcheck` dials the /readyz of a
+// server this same binary is running and exits 0 or 1. The production image is
+// distroless and has no shell to run a probe with, so the probe is in here.
+//
 // Phase C1 owns the lifecycle. The configuration is read and validated once at
 // startup, the pool is sized and carries the three Postgres timeouts, and a
 // SIGTERM drains rather than cuts — which is what E5 leans on when it runs two
@@ -49,6 +53,14 @@ const (
 )
 
 func main() {
+	// Before the logger and long before the configuration. The probe answers a
+	// question about the server that is already running; reading this process's
+	// own environment could only make it fail for reasons that have nothing to
+	// do with whether that server is serving. See healthcheck.go.
+	if wantsHealthcheck(os.Args[1:]) {
+		runHealthcheck()
+	}
+
 	// A logger before the configuration, because the configuration is the
 	// first thing that can fail. JSON from the first line: F1 correlates the
 	// two services by request id, and a process that starts in one format and

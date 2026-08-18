@@ -20,7 +20,8 @@ accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$
 mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
-   "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" "$tmp/tools/"
+   "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
+   "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
 
@@ -141,6 +142,124 @@ accepts "build: in the dev compose accepted" tools/check-compose.sh
 rm -f compose.dev.yaml
 
 accepts "absent compose files skip" tools/check-compose.sh
+
+printf 'dockerfiles\n'
+# Four rules, and every one of them is invisible until it matters: a moved tag,
+# a rotated secret still readable in `docker history`, a container that turned
+# out to be root, a layer nobody needed. Each gets its broken case.
+digest='@sha256:0000000000000000000000000000000000000000000000000000000000000000'
+
+mkdir -p api web
+write_api() { printf '%s' "$1" > api/Dockerfile; }
+write_web() { printf '%s' "$1" > web/Dockerfile; }
+
+good_api="FROM golang:1.26-alpine$digest AS build
+COPY . .
+RUN CGO_ENABLED=0 go build -o /out/api ./cmd/api
+
+FROM gcr.io/distroless/static:nonroot$digest
+COPY --from=build /out/api /api
+USER nonroot:nonroot
+ENTRYPOINT [\"/api\"]
+"
+write_api "$good_api"
+write_web "FROM node:24-alpine$digest AS runner
+USER node
+CMD [\"node\", \"server.js\"]
+"
+accepts "pinned, non-root production images accepted" tools/check-dockerfiles.sh
+
+# 1 — a tag instead of a digest.
+write_api "FROM golang:1.26-alpine AS build
+COPY . .
+
+FROM gcr.io/distroless/static:nonroot$digest
+USER nonroot:nonroot
+"
+rejects "unpinned FROM rejected" tools/check-dockerfiles.sh
+
+# ...and the ARG indirection the web image uses, so the substitution is checked
+# in both directions rather than assumed.
+write_api "$good_api"
+write_web "ARG NODE_IMAGE=node:24-alpine$digest
+FROM \${NODE_IMAGE} AS runner
+USER node
+"
+accepts "FROM through a pinned ARG accepted" tools/check-dockerfiles.sh
+
+write_web 'ARG NODE_IMAGE=node:24-alpine
+FROM ${NODE_IMAGE} AS runner
+USER node
+'
+rejects "FROM through an unpinned ARG rejected" tools/check-dockerfiles.sh
+
+# 2 — a secret as a build arg. It survives in the layer after the rotation.
+write_web "FROM node:24-alpine$digest
+USER node
+"
+write_api "FROM golang:1.26-alpine$digest AS build
+ARG GITHUB_TOKEN
+COPY . .
+
+FROM gcr.io/distroless/static:nonroot$digest
+USER nonroot:nonroot
+"
+rejects "a secret build arg rejected" tools/check-dockerfiles.sh
+
+write_api "FROM golang:1.26-alpine$digest AS build
+
+FROM gcr.io/distroless/static:nonroot$digest
+ENV CONTACT_IP_PEPPER=abc
+USER nonroot:nonroot
+"
+rejects "a secret ENV rejected" tools/check-dockerfiles.sh
+
+# The two that are allowed, because they are public and end up on /api/health.
+write_api "FROM golang:1.26-alpine$digest AS build
+ARG VERSION=dev
+ARG GIT_SHA=unknown
+
+FROM gcr.io/distroless/static:nonroot$digest
+USER nonroot:nonroot
+"
+accepts "VERSION and GIT_SHA build args accepted" tools/check-dockerfiles.sh
+
+# The rule reaches the dev files too — the habit is the point.
+write_api "$good_api"
+printf 'FROM golang:1.26-alpine\nARG SMTP_PASSWORD\n' > api/Dockerfile.dev
+rejects "a secret build arg in the dev image rejected" tools/check-dockerfiles.sh
+printf 'FROM golang:1.26-alpine\nARG AIR_VERSION=v1.67.4\n' > api/Dockerfile.dev
+accepts "an unpinned dev image accepted" tools/check-dockerfiles.sh
+rm -f api/Dockerfile.dev
+
+# 3 — no USER in the last stage. The first stage having one does not count.
+write_api "FROM golang:1.26-alpine$digest AS build
+USER nobody
+
+FROM gcr.io/distroless/static:nonroot$digest
+COPY --from=build /out/api /api
+"
+rejects "a last stage without USER rejected" tools/check-dockerfiles.sh
+
+# 4 — the module cache layer.
+write_api "FROM golang:1.26-alpine$digest AS build
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
+FROM gcr.io/distroless/static:nonroot$digest
+USER nonroot:nonroot
+"
+rejects "go mod download rejected" tools/check-dockerfiles.sh
+
+# And the sentence that describes the rule is not the rule being broken.
+write_api "$good_api
+# no go mod download here, on purpose — see issue #58
+"
+accepts "a comment naming the rule accepted" tools/check-dockerfiles.sh
+
+rm -rf api web
+accepts "absent dockerfiles skip" tools/check-dockerfiles.sh
 
 printf 'contract\n'
 # The contract is public from launch. The case worth guarding is not a typo — it is
