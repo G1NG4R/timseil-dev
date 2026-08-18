@@ -819,3 +819,22 @@ func TestClosingTheTabDoesNotLoseTheBookkeeping(t *testing.T) {
 		})
 	}
 }
+
+// The Origin header is attacker-controlled and net/http accepts up to a
+// megabyte of it. Unbounded in a log line, that is a flooding vector; with a
+// line break in it, it is a second log entry somebody else wrote.
+func TestAHostileOriginIsBoundedBeforeItIsLogged(t *testing.T) {
+	for _, origin := range []string{
+		"https://" + strings.Repeat("a", 100000) + ".example",
+		"https://evil.example\nlevel=INFO msg=\"nothing to see\"",
+	} {
+		got := truncateOrigin(origin)
+
+		if len(got) > 132 {
+			t.Errorf("a %d-character origin was logged as %d characters", len(origin), len(got))
+		}
+		if strings.ContainsAny(got, "\r\n\t") {
+			t.Errorf("the logged origin can start a second line: %q", got)
+		}
+	}
+}

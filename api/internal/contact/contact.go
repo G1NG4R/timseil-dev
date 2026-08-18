@@ -253,8 +253,11 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 	// bots and would turn a frontend deployed on a new hostname into a data
 	// grave nobody notices; the WARN below is the thing that gets read.
 	if f.origin != "" && !h.origins[strings.ToLower(f.origin)] {
+		// The origin is bounded before it is logged. It is attacker-controlled
+		// and net/http accepts a header of up to a megabyte, so an unbounded
+		// one here is a log-flooding vector that costs one call to prevent.
 		h.log.Warn("contact submission from an unlisted origin",
-			"request_id", reqid.From(ctx), "origin", f.origin)
+			"request_id", reqid.From(ctx), "origin", truncateOrigin(f.origin))
 		return nil, &foreignOrigin{}
 	}
 
@@ -574,21 +577,40 @@ func isJSON(header string) bool {
 	return strings.EqualFold(strings.TrimSpace(media), "application/json")
 }
 
+// truncateOrigin bounds an Origin header on its way into a log line. The longest
+// legitimate one is a scheme, a host and a port; anything past that is not an
+// origin and does not need to be readable to be recognised.
+func truncateOrigin(origin string) string {
+	const limit = 128
+	origin = oneLine(origin)
+	if len(origin) > limit {
+		return origin[:limit] + "…"
+	}
+	return origin
+}
+
 // truncate bounds what goes into last_error. What is long there is a relay
 // transcript, not an explanation, and the column is read by a person looking for
 // a reason rather than a log.
 func truncate(s string) string {
 	const limit = 300
-	s = strings.TrimSpace(strings.Map(func(r rune) rune {
+	s = oneLine(s)
+	if len(s) > limit {
+		return s[:limit] + "…"
+	}
+	return s
+}
+
+// oneLine flattens whatever it is given to a single line. A log line that can be
+// split by its own content is a log line an attacker can forge a second entry
+// in, and slog quoting is not a reason to skip it.
+func oneLine(s string) string {
+	return strings.TrimSpace(strings.Map(func(r rune) rune {
 		if r == '\n' || r == '\r' || r == '\t' {
 			return ' '
 		}
 		return r
 	}, s))
-	if len(s) > limit {
-		return s[:limit] + "…"
-	}
-	return s
 }
 
 var _ http.Handler = (*Handler)(nil)
