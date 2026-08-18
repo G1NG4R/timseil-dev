@@ -23,18 +23,36 @@ der Bauplan annimmt. Das meiste unten stammt aus dieser einen Runde.
 
 ## Verschoben — bewusste Entscheidung
 
-- **Der HTTP→HTTPS-Redirect kommt erst nach dem ersten Deploy.** *(D3,
-  18.08.2026)* `compose.yaml` hat keinen Router auf Entrypoint `web`, Dokploys
-  Traefik hat keinen globalen Redirect — also antwortet `http://timseil.dev`
-  mit 404 statt 301, und die Abnahme in Teil 4 scheitert an dieser einen Zeile.
-  Der Fix ist bewusst **danach**: der Certresolver nutzt `httpChallenge` über
-  genau diesen Entrypoint, und ein leerer Port 80 ist der sauberste Zustand für
-  die erste Zertifikatsausstellung. Fünf Fehlversuche pro Hostname und Stunde
-  sind das Budget, das man dabei nicht ausreizt. Danach als eigener PR mit
-  eigener `redirectscheme`-Middleware — **nicht** Dokploys
-  `redirect-to-https@file`, denn was der Host hält und das Repo nicht
-  versioniert, ist nach dem nächsten Dokploy-Upgrade weg. `check-compose`
-  Regel 13 verlangt am neuen Router eine explizite `priority`.
+- **Traefik-Metriken einschalten — Runbook 3.2, noch offen.** *(D3,
+  18.08.2026)* In Dokploys statischer `traefik.yml` fehlen der `metrics`-
+  Entrypoint auf `:8082` und der Prometheus-Block mit `addRoutersLabels: true`.
+  Ohne sie gibt es keine `traefik_router_*`-Serien, und **F3 hätte für seine
+  Routen-Panels nichts zu zeichnen**.
+
+  Bewusst nicht am Abend des ersten Deploys gemacht: es ist ein Eingriff in
+  Dokploys eigene Datei auf einem Host, der vier Projekte trägt — ein Fehler
+  darin kostet allen dreien das Zertifikat. Gebraucht wird es erst in Stufe F.
+  **Bis dahin ist die Abnahme in Teil 4 unvollständig**: die Zeile
+  `sh ops/host/check-traefik-metrics.sh` kann noch nicht grün sein. Nach jedem
+  Dokploy-Upgrade wiederholen, weil ungeprüft ist, ob Dokploy `traefik.yml`
+  regeneriert.
+
+- **Das alte Datenbank-Volume löschen — aber noch nicht.** *(D3, 19.08.2026)*
+  Nach der Umbenennung in #100 liegen zwei nebeneinander:
+  `timseil_db-data` (in Benutzung) und
+  `timseildev-timseildev-eixe3r_db-data` (verwaist, mit dem Stand vor dem
+  Redeploy). Das alte **bleibt vorerst liegen — es ist das Rollback-Ziel**,
+  solange der neue Stand sich nicht bewährt hat.
+
+  Wenn es weg soll, dann gezielt und **niemals über den Volume-Prune-Knopf**
+  der Oberfläche:
+
+  ```bash
+  docker volume rm timseildev-timseildev-eixe3r_db-data
+  ```
+
+  Dokploys Automatik fasst Volumes nicht an, es liegt also gefahrlos da. Es
+  kostet nur Platz — und der ist auf 100 GB kein Argument.
 
 ## Gefunden — Bug oder Unklarheit
 
