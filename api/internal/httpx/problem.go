@@ -12,9 +12,10 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
-// The six problem types, from ADR 0009. They are part of the interface: a
-// client may branch on `type`, so the strings are as stable as a field name and
-// a seventh one is a contract decision, not a handler decision.
+// The seven problem types. Six are ADR 0009's; the seventh was added by ADR
+// 0020, which is the decision this comment used to demand — a client may branch
+// on `type`, so the strings are as stable as a field name and an eighth is a
+// contract decision, not a handler decision.
 const problemBase = "https://timseil.dev/problems/"
 
 const (
@@ -24,6 +25,17 @@ const (
 	TypeMailProviderUnavailable = problemBase + "mail-provider-unavailable"
 	TypeUnauthorized            = problemBase + "unauthorized"
 	TypeInternalError           = problemBase + "internal-error"
+
+	// TypeUpstreamUnavailable is the 502 the contract declares for
+	// /api/contributions: a service this endpoint depends on did not answer and
+	// there is nothing stored that could stand in for it.
+	//
+	// Named for the shape of the failure rather than for GitHub. The one type
+	// that already names its upstream is mail-provider-unavailable, and it is
+	// the reason this one does not: a type per upstream means C6, F5 and every
+	// later dependency each mint their own, and a client that wants to say "the
+	// far side is down" has to keep a list. ADR 0020.
+	TypeUpstreamUnavailable = problemBase + "upstream-unavailable"
 )
 
 // detailLimit bounds what a visitor is shown. Nothing legitimate here is long;
