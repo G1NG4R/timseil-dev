@@ -2,10 +2,13 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -198,6 +201,103 @@ func TestEveryRouteRefusesTheWrongMethod(t *testing.T) {
 			t.Errorf("%s %s: a 405 without Allow", other, path)
 		}
 	}
+}
+
+// ADR 0009 admits no exception, and ADR 0024 §5 turns that into a rule with a
+// sharp edge: no handler may return a generated *ApplicationProblemPlusJSONResponse,
+// because their Visit writes a status and a body and none of the requestId, the
+// instance and the Cache-Control: no-store that every error answer here carries.
+//
+// The generated types are in gen.go, they are named after the status they
+// carry, and they look exactly like the intended path. This is the assertion
+// that catches the first person to reach for one — including me, in F1, having
+// forgotten this paragraph.
+//
+// It sweeps every mounted route rather than listing the ones that can fail. The
+// stub database refuses every query, so most reads answer 500; the two internal
+// endpoints answer 401 without a token; contact answers 400 to an empty body.
+// Whatever comes back, if it is an error it has to be a problem document.
+func TestEveryErrorFromEveryRouteIsAProblemDocument(t *testing.T) {
+	h := handler(t, nil, true)
+
+	var errors int
+
+	for _, pattern := range mountedRoutes(t) {
+		method, path, ok := splitPattern(pattern)
+		if !ok {
+			continue
+		}
+		if path == "/api/systems/{slug}" {
+			path = "/api/systems/timseil-dev"
+		}
+
+		// Both verbs: the declared one, which fails on the stub database or on
+		// the missing token, and the wrong one, which is a 405 the router
+		// writes rather than a handler.
+		other := http.MethodPost
+		if method == http.MethodPost {
+			other = http.MethodGet
+		}
+
+		for _, verb := range []string{method, other} {
+			rec := postEmpty(t, h, verb, path)
+			if rec.Code < 400 {
+				continue
+			}
+			errors++
+
+			what := verb + " " + path
+
+			// /healthz and /readyz answer plain text on purpose — they belong
+			// to the orchestrator, not to the contract's audience.
+			if path == "/healthz" || path == "/readyz" {
+				continue
+			}
+
+			if got := rec.Header().Get("Content-Type"); got != "application/problem+json" {
+				t.Errorf("%s = %d with Content-Type %q", what, rec.Code, got)
+			}
+			if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+				t.Errorf("%s = %d with Cache-Control %q, want no-store", what, rec.Code, got)
+			}
+
+			var body map[string]any
+			if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+				t.Errorf("%s = %d and the body is not JSON: %s", what, rec.Code, rec.Body.String())
+				continue
+			}
+			for _, field := range []string{"type", "title", "status", "requestId", "instance"} {
+				if body[field] == nil {
+					t.Errorf("%s = %d and the document has no %s: %s",
+						what, rec.Code, field, rec.Body.String())
+				}
+			}
+			if body["status"] != float64(rec.Code) {
+				t.Errorf("%s: status line %d, document says %v", what, rec.Code, body["status"])
+			}
+		}
+	}
+
+	// Without this the loop above passes on a router that answers 200 to
+	// everything, which is the shape a mistake here would actually take.
+	if errors < 20 {
+		t.Errorf("only %d error answers were provoked across %d routes — "+
+			"this test is not reaching the paths it claims to",
+			errors, len(mountedRoutes(t)))
+	}
+}
+
+// postEmpty drives one route with one verb. The body and the content type are
+// there for the three write paths; the reads ignore both.
+func postEmpty(t *testing.T, h http.Handler, method, path string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(method, path, strings.NewReader(`{}`))
+	r.RemoteAddr = "203.0.113.7:1234"
+	r.Header.Set("Content-Type", "application/json")
+	h.ServeHTTP(rec, r)
+	return rec
 }
 
 func splitPattern(pattern string) (method, path string, ok bool) {
