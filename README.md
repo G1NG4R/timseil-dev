@@ -244,6 +244,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0022](docs/adr/0022-badges-and-the-response-the-contract-was-missing.md) | The three badges: a missing measurement is `— NO DATA`, an unreachable database is a 500, and the contract now says so |
 | [0023](docs/adr/0023-internal-endpoints-two-tokens-and-a-comparison-that-does-not-branch.md) | The internal endpoints: two tokens, a comparison that does not branch on length, and every database CHECK taken in advance |
 | [0024](docs/adr/0024-router-parity-instead-of-the-generated-router.md) | The generated router is not mounted after all; a parity check proves the hand-written one is complete in both directions |
+| [0025](docs/adr/0025-the-shape-of-a-handler-package.md) | The shape every handler package took during stage C, and why two thirds of it outlived the reason it was given |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.
