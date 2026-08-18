@@ -130,7 +130,7 @@ func TestABodyCannotBecomeAHeader(t *testing.T) {
 // done asks for.
 //
 // Mutation-checked, and the result is worth writing down because it is not the
-// one expected: deleting the containsLineBreak call from bareAddress does turn
+// one expected: deleting the containsLineBreak call from BareAddress does turn
 // this test red, but every payload below is *also* refused by ParseAddress,
 // with "expected single address" instead. So the explicit check is not what
 // stops these five — it is what makes stopping them a stated rule of this

@@ -13,6 +13,10 @@ const goodDSN = "postgres://timseil_app:dev_only_not_a_secret@db:5432/timseil?ss
 // one, so every test that expects Load to succeed needs a value.
 const goodToken = "github_pat_not_a_real_token_0000000000"
 
+// Thirty-two characters, which is the floor, so a test that shortens it by one
+// is testing the boundary rather than an arbitrary short string.
+const goodPepper = "0123456789abcdef0123456789abcdef"
+
 // setEnv puts the process into a known state. Every variable this package reads
 // is named here, including the ones a test does not care about: without that, a
 // developer machine with DB_MAX_CONNS exported would change what the tests mean.
@@ -36,6 +40,14 @@ func setEnv(t *testing.T, overrides map[string]string) {
 		EnvSiteSystemSlug:   "",
 		EnvGitHubToken:      goodToken,
 		EnvGitHubLogin:      "",
+		// The log transport is the base state so that the mail credentials are
+		// not part of every unrelated test's setup. The tests that care about
+		// sending switch it over.
+		EnvMailTransport:   "log",
+		EnvSMTPUsername:    "",
+		EnvSMTPPassword:    "",
+		EnvMailTo:          "",
+		EnvContactIPPepper: goodPepper,
 	}
 	for k, v := range overrides {
 		base[k] = v
@@ -337,4 +349,127 @@ func TestDurationsAndNumbersAreRead(t *testing.T) {
 func TestZeroAndNegativeDurationsAreRefused(t *testing.T) {
 	setEnv(t, map[string]string{EnvLockTimeout: "0s"})
 	wantFailure(t, EnvLockTimeout, "positive")
+}
+
+// ---------------------------------------------------------------- mail (C6)
+
+// The full set a deployment that actually sends has to provide.
+func sending(overrides map[string]string) map[string]string {
+	base := map[string]string{
+		EnvMailTransport: "smtp",
+		EnvSMTPUsername:  "contact@timseil.dev",
+		EnvSMTPPassword:  "not_a_real_password",
+		EnvMailTo:        "inbox@timseil.dev",
+	}
+	for k, v := range overrides {
+		base[k] = v
+	}
+	return base
+}
+
+func TestTheMailSettingsAreRead(t *testing.T) {
+	setEnv(t, sending(nil))
+	cfg := mustLoad(t)
+
+	if !cfg.Mail.Sends() {
+		t.Error("Sends() is false although the transport is smtp")
+	}
+	if cfg.Mail.Username != "contact@timseil.dev" || cfg.Mail.To != "inbox@timseil.dev" {
+		t.Errorf("Mail = %+v", cfg.Mail)
+	}
+}
+
+// The transport defaults to sending. A default that logs would turn one
+// forgotten variable in Dokploy into a site that answers every submission with
+// 202 and delivers nothing — a failure that looks exactly like success.
+func TestTheTransportDefaultsToSending(t *testing.T) {
+	setEnv(t, sending(map[string]string{EnvMailTransport: ""}))
+	cfg := mustLoad(t)
+
+	if !cfg.Mail.Sends() {
+		t.Errorf("Transport defaulted to %q, want smtp", cfg.Mail.Transport)
+	}
+}
+
+// A typo would otherwise read as "not smtp" and select the log transport.
+func TestAnUnknownTransportIsRefused(t *testing.T) {
+	setEnv(t, sending(map[string]string{EnvMailTransport: "sntp"}))
+	wantFailure(t, EnvMailTransport, "smtp", "log")
+}
+
+func TestTheMailCredentialsAreRequiredOnlyWhenSending(t *testing.T) {
+	setEnv(t, map[string]string{EnvMailTransport: "log"})
+	cfg := mustLoad(t)
+
+	if cfg.Mail.Sends() {
+		t.Error("the log transport reports that it sends")
+	}
+}
+
+func TestSendingWithoutCredentialsIsRefused(t *testing.T) {
+	setEnv(t, map[string]string{EnvMailTransport: "smtp"})
+	wantFailure(t, EnvSMTPUsername, EnvSMTPPassword, EnvMailTo)
+}
+
+// A display name is a second place for text to live in a header. The rule is
+// internal/mail's and is applied here so a typo is caught at startup rather
+// than at the first submission.
+func TestADisplayNameInAMailAddressIsRefused(t *testing.T) {
+	setEnv(t, sending(map[string]string{EnvSMTPUsername: `"Contact" <contact@timseil.dev>`}))
+	wantFailure(t, EnvSMTPUsername, "without a display name")
+}
+
+// Read even under the log transport, so that a deployment fixing its transport
+// is not then told about a typo it could have heard about at the same time.
+func TestABadAddressIsReportedUnderTheLogTransport(t *testing.T) {
+	setEnv(t, map[string]string{EnvMailTransport: "log", EnvMailTo: "inbox@timseil,dev"})
+	wantFailure(t, EnvMailTo)
+}
+
+// Same class as the GITHUB_TOKEN check: the value goes into an SMTP exchange,
+// and a line break in it is a line the relay reads as a command.
+func TestALineBreakInTheMailPasswordIsRefused(t *testing.T) {
+	setEnv(t, sending(map[string]string{EnvSMTPPassword: "hunter2\nQUIT"}))
+	wantFailure(t, EnvSMTPPassword, "line break")
+}
+
+func TestTheMailPasswordNeverAppearsInAnError(t *testing.T) {
+	const secret = "correct-horse-battery-staple\nQUIT"
+	setEnv(t, sending(map[string]string{EnvSMTPPassword: secret}))
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("Load accepted a password with a line break")
+	}
+	if strings.Contains(err.Error(), "correct-horse") {
+		t.Errorf("the password is in the error a dying process prints:\n%v", err)
+	}
+}
+
+// ------------------------------------------------------------- pepper (C6)
+
+func TestThePepperIsRequiredEvenWithoutMail(t *testing.T) {
+	// The hash is written on every submission, including under the log
+	// transport. A deployment that wrote unpeppered digests for a week would
+	// have to be told that its table is now a list of addresses.
+	setEnv(t, map[string]string{EnvContactIPPepper: ""})
+	wantFailure(t, EnvContactIPPepper, "openssl rand -hex 32")
+}
+
+func TestAShortPepperIsRefused(t *testing.T) {
+	setEnv(t, map[string]string{EnvContactIPPepper: goodPepper[:minPepperLength-1]})
+	wantFailure(t, EnvContactIPPepper, "at least")
+}
+
+func TestThePepperNeverAppearsInAnError(t *testing.T) {
+	const secret = "short-but-memorable"
+	setEnv(t, map[string]string{EnvContactIPPepper: secret})
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("Load accepted a pepper below the floor")
+	}
+	if strings.Contains(err.Error(), secret) {
+		t.Errorf("the pepper is in the error a dying process prints:\n%v", err)
+	}
 }

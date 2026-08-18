@@ -36,6 +36,14 @@ var (
 	errNoMessageID     = errors.New("the message id is empty")
 )
 
+// The two transports. Named here rather than in internal/config so that the
+// strings a deployment may set and the senders that implement them cannot drift
+// apart; config validates against these constants.
+const (
+	TransportSMTP = "smtp"
+	TransportLog  = "log"
+)
+
 // base64LineLength is the wrap width RFC 2045 asks for. Not a style choice:
 // some relays still fold longer lines themselves, and a relay that folds a
 // base64 body folds it wrong.
@@ -85,15 +93,15 @@ type Message struct {
 // defence that lives in exactly one place is one refactor away from living in
 // none.
 func (m Message) Build() ([]byte, error) {
-	from, err := bareAddress(m.From)
+	from, err := BareAddress(m.From)
 	if err != nil {
 		return nil, fmt.Errorf("from: %w", err)
 	}
-	to, err := bareAddress(m.To)
+	to, err := BareAddress(m.To)
 	if err != nil {
 		return nil, fmt.Errorf("to: %w", err)
 	}
-	replyTo, err := bareAddress(m.ReplyTo)
+	replyTo, err := BareAddress(m.ReplyTo)
 	if err != nil {
 		return nil, fmt.Errorf("reply-to: %w", err)
 	}
@@ -140,13 +148,19 @@ func (m Message) Build() ([]byte, error) {
 	return []byte(out.String()), nil
 }
 
-// bareAddress accepts an addr-spec and refuses everything else.
+// BareAddress accepts an addr-spec and refuses everything else.
 //
 // `Anna Keller <anna@example.org>` is a valid address and is rejected here on
 // purpose. A display name is a second place for a stranger's text to live in a
 // header, and this service has no use for one: the visitor's name goes in the
 // subject and the body, where it is data rather than syntax.
-func bareAddress(raw string) (string, error) {
+//
+// Exported because internal/config applies the same rule to SMTP_USERNAME and
+// MAIL_TO at startup, and internal/contact applies it to whatever a visitor
+// typed. One rule with one implementation: a second copy would be a second
+// answer to "what is an address", and the two would differ on the day it
+// mattered.
+func BareAddress(raw string) (string, error) {
 	address := strings.TrimSpace(raw)
 	if containsLineBreak(address) {
 		return "", errHeaderInjection

@@ -341,9 +341,11 @@ Teil des Logs.
 
 ## Die Umgebungsvariablen
 
-**Zwei** haben keinen Default: `DATABASE_URL` und, seit C5, `GITHUB_TOKEN`. Alle
-anderen stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet
-„nimm den Default", damit die Zahlen nur an einer Stelle existieren — in
+**Drei** haben keinen Default: `DATABASE_URL`, seit C5 `GITHUB_TOKEN` und seit
+C6 `CONTACT_IP_PEPPER`. Dazu drei bedingte: `SMTP_USERNAME`, `SMTP_PASSWORD`
+und `MAIL_TO` sind Pflicht, sobald `MAIL_TRANSPORT=smtp` gilt. Alle anderen
+stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet „nimm den
+Default", damit die Zahlen nur an einer Stelle existieren — in
 `api/internal/config`.
 
 | Variable | Default | |
@@ -358,10 +360,31 @@ anderen stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet
 | `DB_IDLE_TX_TIMEOUT` | `10s` | |
 | `RATE_LIMIT_RPM` / `RATE_LIMIT_BURST` | `120` / `60` | |
 | `TRUSTED_PROXY_CIDRS` | leer | leer heißt: keinem Header glauben |
-| `CORS_ALLOWED_ORIGINS` | drei Origins | erst ab C6 ausgewertet |
+| `CORS_ALLOWED_ORIGINS` | drei Origins | nur der Schreibpfad prüft sie — `POST /api/contact` |
 | `SITE_SYSTEM_SLUG` | `timseil-dev` | worüber `/api/health` berichtet |
-| `GITHUB_TOKEN` | — | Pflicht, PAT mit Scope `read:user`. Das einzige Geheimnis hier. |
+| `GITHUB_TOKEN` | — | Pflicht, PAT mit Scope `read:user` |
 | `GITHUB_LOGIN` | `G1NG4R` | wessen Kalender — und der Schlüssel der Cache-Zeile |
+| `MAIL_TRANSPORT` | `smtp` | `smtp` \| `log`. `log` baut die Mail und sendet nicht |
+| `SMTP_USERNAME` | — | Pflicht bei `smtp`. Volle Adresse, **und zugleich das `From:`** |
+| `SMTP_PASSWORD` | — | Pflicht bei `smtp`. Geheimnis |
+| `MAIL_TO` | — | Pflicht bei `smtp`. Das Postfach, in dem die Nachrichten landen |
+| `CONTACT_IP_PEPPER` | — | Pflicht, ≥ 32 Zeichen. Schlüsselt den gespeicherten `ip_hash` |
+
+**Es gibt kein `MAIL_FROM`.** OVH MX Plan verlangt, dass `From:` dem
+authentifizierten Konto entspricht — `From` **ist** `SMTP_USERNAME`, und eine
+eigene Variable dafür könnte nur falsch gesetzt werden. Das Relay lehnte die
+Abweichung erst ab, nachdem das Passwort schon über die Leitung ging.
+
+**Es gibt auch keinen SMTP-Host.** `ssl0.ovh.net:465` ist einkompiliert, aus
+demselben Grund wie GitHubs Endpoint (ADR 0020 §8): eine Adresse, die aus der
+Umgebung kommen kann, ist eine Bearbeitung davon entfernt, aus einer Anfrage zu
+kommen. Ein Anbieterwechsel ist ein Commit.
+
+**`CONTACT_IP_PEPPER` rotieren** verwaist jeden vorher geschriebenen Hash: der
+Rate-Limit-Boden erkennt eine Adresse nicht wieder, die er schon gesehen hat.
+Das ist gewollt und es ist zugleich die einzige Art, alle auf einmal zu
+vergessen. Nichts bricht dabei — die Zeilen bleiben stehen, sie zählen nur
+nicht mehr zusammen.
 
 ---
 

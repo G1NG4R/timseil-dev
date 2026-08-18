@@ -27,6 +27,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 )
 
 // Environment variable names, in one place so the runbook and .env.example have
@@ -48,6 +50,11 @@ const (
 	EnvSiteSystemSlug   = "SITE_SYSTEM_SLUG"
 	EnvGitHubToken      = "GITHUB_TOKEN"
 	EnvGitHubLogin      = "GITHUB_LOGIN"
+	EnvMailTransport    = "MAIL_TRANSPORT"
+	EnvSMTPUsername     = "SMTP_USERNAME"
+	EnvSMTPPassword     = "SMTP_PASSWORD"
+	EnvMailTo           = "MAIL_TO"
+	EnvContactIPPepper  = "CONTACT_IP_PEPPER"
 )
 
 // The role the api is allowed to connect as. ADR 0011 splits the schema owner
@@ -71,6 +78,19 @@ const (
 	defaultAllowedOrigins   = "https://timseil.dev,https://www.timseil.dev,http://localhost:3000"
 	defaultSiteSystemSlug   = "timseil-dev"
 	defaultGitHubLogin      = "G1NG4R"
+
+	// smtp and not log. A default that sends is a default you have to opt out
+	// of; the other way round, one forgotten variable in Dokploy turns the only
+	// conversion point on the site into a log line nobody reads, and it fails
+	// silently — every submission answered 202, no mail, no error.
+	defaultMailTransport = "smtp"
+
+	// The pepper has no default at all, for the same reason GITHUB_TOKEN has
+	// none: a shipped value is a value every deployment shares, and a shared
+	// pepper is no pepper. minPepperLength is the floor rather than a
+	// suggestion — the thing being resisted is a dictionary of 2^32 addresses,
+	// and a short key is one somebody guesses instead of building.
+	minPepperLength = 32
 
 	// Empty on purpose: trust nobody. A program that assumes a proxy stands in
 	// front of it will believe a forwarded header the day it is reachable
@@ -97,6 +117,8 @@ type Config struct {
 	DB        DB
 	RateLimit RateLimit
 	GitHub    GitHub
+	Mail      Mail
+	Contact   Contact
 
 	// TrustedProxies decides whether X-Forwarded-For is believed at all. Empty
 	// is the default and means "believe nobody" — then the peer address is the
@@ -150,6 +172,60 @@ type GitHub struct {
 	Login string
 }
 
+// Mail is how the contact form reaches the outside world.
+//
+// The relay host is not here. ssl0.ovh.net is compiled into internal/mail, for
+// the same reason GitHub's endpoint is compiled into internal/contributions and
+// ADR 0020 §8 spells out: a host that can come from the environment is one edit
+// away from a host that can come from a request. What differs between
+// deployments is the account, not the provider.
+//
+// There is no From either, and its absence is a rule rather than an omission.
+// OVH MX Plan requires the From header to equal the authenticated account, so
+// From *is* Username. A separate variable could only ever be set wrong, and it
+// would be rejected by the relay after the password had already crossed the
+// wire.
+type Mail struct {
+	// Transport is mail.TransportSMTP or mail.TransportLog. The log transport
+	// builds the message in full and writes it to a log line instead of sending
+	// it; it exists because L1 sets up the mailbox and L1 comes after stage D,
+	// so at C6 there is nothing to send to.
+	Transport string
+
+	// Username is the full mail address, and therefore also the From of every
+	// message this service sends.
+	Username string
+
+	// Password never reaches a log line, a response body or an image layer.
+	Password string
+
+	// To is the inbox the messages land in.
+	To string
+}
+
+// Sends reports whether this deployment actually delivers mail. The one caller
+// is the startup warning: a process that is only logging its mail should say so
+// once, loudly, rather than let somebody discover it from an empty inbox.
+func (m Mail) Sends() bool { return m.Transport == mail.TransportSMTP }
+
+// Contact is what the contact endpoint needs beyond the mail settings.
+type Contact struct {
+	// IPPepper keys the digest stored in contact_messages.ip_hash.
+	//
+	// A different problem from the rate limiter's key, which is random per
+	// process and never configured (ADR 0015 §3): that one labels a bucket that
+	// is forgotten after ten minutes, this one is written to a table that
+	// outlives every restart. 00006_contact.sql states the requirement in the
+	// column comment — a bare SHA-256 of an IPv4 is a spelling of the address,
+	// because the whole space is 2^32 and a dictionary of it is minutes of work.
+	//
+	// Rotating it orphans every hash written before the change: the rate-limit
+	// floor stops recognising an address it has already seen. That is a
+	// deliberate property and not a bug — it is also the only way to forget
+	// everybody at once — and it is written down in docs/runbooks/api.md.
+	IPPepper string
+}
+
 // Load reads and validates the environment.
 //
 // The error it returns names every problem it found, one per line, so a cold
@@ -187,6 +263,17 @@ func Load() (Config, error) {
 				"a personal access token with scope read:user — github.com/settings/tokens"),
 			Login: l.login(EnvGitHubLogin, defaultGitHubLogin),
 		},
+
+		Mail: Mail{
+			Transport: l.transport(EnvMailTransport, defaultMailTransport),
+			Username:  l.address(EnvSMTPUsername),
+			Password:  strings.TrimSpace(os.Getenv(EnvSMTPPassword)),
+			To:        l.address(EnvMailTo),
+		},
+
+		Contact: Contact{
+			IPPepper: l.pepper(EnvContactIPPepper),
+		},
 	}
 
 	// Cross-field rules. They run last because each one needs two values that
@@ -207,6 +294,31 @@ func Load() (Config, error) {
 	if cfg.DB.MinConns > cfg.DB.MaxConns {
 		l.fail("%s (%d) must not exceed %s (%d)",
 			EnvDBMinConns, cfg.DB.MinConns, EnvDBMaxConns, cfg.DB.MaxConns)
+	}
+	// The three mail values are required only when mail is actually sent. They
+	// are read and validated unconditionally above, so that a wrong address is
+	// reported under the log transport too — a deployment that fixes its
+	// transport should not then discover a typo it could have been told about
+	// at the same time.
+	if cfg.Mail.Sends() {
+		if cfg.Mail.Username == "" {
+			l.fail("%s is empty — the full mail address of the OVH mailbox, which is also "+
+				"the From of every message (set %s=%s to build mail without sending it)",
+				EnvSMTPUsername, EnvMailTransport, mail.TransportLog)
+		}
+		if cfg.Mail.Password == "" {
+			l.fail("%s is empty — the password of that mailbox", EnvSMTPPassword)
+		}
+		if cfg.Mail.To == "" {
+			l.fail("%s is empty — the inbox contact form messages are delivered to", EnvMailTo)
+		}
+	}
+	// Checked whatever the transport, and never echoed: this value goes into an
+	// SMTP AUTH exchange, so a line break in it is a line the relay reads as a
+	// command. Same class as the GITHUB_TOKEN check, one endpoint later.
+	if strings.ContainsAny(cfg.Mail.Password, "\r\n") {
+		l.fail("%s contains a line break — it is sent in an SMTP exchange and must not",
+			EnvSMTPPassword)
 	}
 
 	if err := l.err(); err != nil {
@@ -301,6 +413,67 @@ func (l *loader) login(key, def string) string {
 const maxGitHubLogin = 39
 
 var githubLogin = regexp.MustCompile(`^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$`)
+
+// transport accepts the two names internal/mail implements and nothing else.
+//
+// A typo here would otherwise be read as "not smtp" and silently select the log
+// transport — the site would answer every submission with 202 and deliver
+// nothing, which is the worst failure this endpoint has because it looks exactly
+// like success.
+func (l *loader) transport(key, def string) string {
+	v := strings.ToLower(l.text(key, def))
+	if v != mail.TransportSMTP && v != mail.TransportLog {
+		l.fail("%s is %q — want %s or %s", key, v, mail.TransportSMTP, mail.TransportLog)
+		return def
+	}
+	return v
+}
+
+// address reads a mail address and holds it to the same rule the message
+// builder does. Empty is allowed here and reported later, by the cross-field
+// rule that knows whether this deployment sends at all.
+//
+// The value is echoed in the failure because neither of these is a secret and
+// "SMTP_USERNAME is contact@timseil,dev" finds the typo in one read.
+func (l *loader) address(key string) string {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return ""
+	}
+	address, err := mail.BareAddress(raw)
+	if err != nil {
+		l.fail("%s is %q — want a plain mail address, without a display name: %v", key, raw, err)
+		return ""
+	}
+	return address
+}
+
+// pepper reads the key that makes a stored ip_hash worth storing.
+//
+// Required unconditionally, unlike the mail settings: the hash is written on
+// every submission, including under the log transport, and a deployment that
+// wrote unpeppered digests for a week would have to be told that its table is
+// now a list of addresses.
+//
+// The value never appears in the error. A configuration failure is printed by a
+// process about to exit, and a secret in that line is a secret in the container
+// log.
+func (l *loader) pepper(key string) string {
+	v := strings.TrimSpace(os.Getenv(key))
+	switch {
+	case v == "":
+		l.fail("%s is empty — a server-side secret that keys the stored ip_hash. "+
+			"Generate one with: openssl rand -hex 32", key)
+	case len(v) < minPepperLength:
+		l.fail("%s is %d characters — want at least %d, because what it resists is a "+
+			"dictionary of the whole IPv4 space", key, len(v), minPepperLength)
+		return ""
+	case strings.ContainsAny(v, "\r\n"):
+		l.fail("%s contains a line break", key)
+		return ""
+	}
+	return v
+}
 
 func (l *loader) text(key, def string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
