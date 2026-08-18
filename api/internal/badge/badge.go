@@ -174,12 +174,14 @@ func uptimeOK(b httpx.BadgeOKJSONResponse) httpx.GetUptimeBadge200JSONResponse {
 // s-maxage the field is omitted — Shields then uses its own default, which is a
 // better answer than a number this package made up.
 func badge(label, message, color string) httpx.BadgeOKJSONResponse {
+	notAnError := false
+
 	body := httpx.Badge{
 		SchemaVersion: httpx.N1,
 		Label:         label,
 		Message:       message,
 		Color:         &color,
-		IsError:       new(bool),
+		IsError:       &notAnError,
 	}
 
 	if seconds, ok := httpx.SharedMaxAge(cacheControl); ok {

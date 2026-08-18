@@ -271,9 +271,11 @@ func TestTheAdvertisedLifetimeMatchesTheHeader(t *testing.T) {
 		t.Fatalf("Cache-Control = %q, want %q", got, httpx.CacheControlMedium)
 	}
 
-	seconds, ok := body(t, rec)["cacheSeconds"].(float64)
+	body := decode(t, rec)
+
+	seconds, ok := body["cacheSeconds"].(float64)
 	if !ok {
-		t.Fatalf("cacheSeconds is missing or not a number: %v", body(t, rec)["cacheSeconds"])
+		t.Fatalf("cacheSeconds is missing or not a number: %v", body["cacheSeconds"])
 	}
 	if int(seconds) != 300 {
 		t.Errorf("cacheSeconds = %d, want 300 — the s-maxage of the header above", int(seconds))
@@ -286,7 +288,7 @@ func TestTheAdvertisedLifetimeMatchesTheHeader(t *testing.T) {
 func TestEveryBadgeCarriesWhatShieldsRequires(t *testing.T) {
 	for _, path := range []string{"/api/badge/uptime", "/api/badge/version", "/api/badge/systems"} {
 		t.Run(path, func(t *testing.T) {
-			b := body(t, get(t, newHandler(t, dayOne()), path))
+			b := decode(t, get(t, newHandler(t, dayOne()), path))
 
 			if v, ok := b["schemaVersion"].(float64); !ok || int(v) != 1 {
 				t.Errorf("schemaVersion = %v, want 1", b["schemaVersion"])
@@ -298,9 +300,4 @@ func TestEveryBadgeCarriesWhatShieldsRequires(t *testing.T) {
 			}
 		})
 	}
-}
-
-func body(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
-	t.Helper()
-	return decode(t, rec)
 }
