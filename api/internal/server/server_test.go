@@ -17,7 +17,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/contact"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
+	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
@@ -58,6 +60,8 @@ func testConfig() config.Config {
 		RequestTimeout: 5 * time.Second,
 		RateLimit:      config.RateLimit{PerMinute: 6000, Burst: 1000},
 		AllowedOrigins: []string{"https://timseil.dev"},
+		Mail:           config.Mail{Transport: "log", Username: "contact@timseil.dev", To: "inbox@timseil.dev"},
+		Contact:        config.Contact{IPPepper: "0123456789abcdef0123456789abcdef"},
 	}
 }
 
@@ -73,6 +77,8 @@ func handler(t *testing.T, pingErr error, accepting bool) http.Handler {
 	h, stop := New(testConfig(), stubDB{err: pingErr}, health.Build{
 		Version: "dev", SHA: "unknown", StartedAt: time.Unix(0, 0).UTC(),
 	},
+		mail.NewLogSender("contact@timseil.dev", slog.New(slog.NewTextHandler(io.Discard, nil))),
+		contact.NewBudget(time.Now()),
 		slog.New(slog.NewTextHandler(io.Discard, nil)), &flag)
 	t.Cleanup(stop)
 	return h
@@ -252,5 +258,94 @@ func TestOnlyTheApiIsAnswerableFromAnyOrigin(t *testing.T) {
 	}
 	if got := do(t, h, http.MethodGet, "/healthz").Header().Get("Access-Control-Allow-Origin"); got != "" {
 		t.Errorf("/healthz: Access-Control-Allow-Origin = %q, want none", got)
+	}
+}
+
+// ------------------------------------------------------------- contact (C6)
+
+func submit(t *testing.T, h http.Handler) *httptest.ResponseRecorder {
+	t.Helper()
+
+	payload := `{"name":"Anna Keller","email":"anna@example.org",` +
+		`"message":"Hallo, ich hätte eine Frage zu einem der Systeme.",` +
+		`"company":"","dwellMs":4200,"ts":"2026-08-18T14:22:07Z"}`
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/api/contact", strings.NewReader(payload))
+	r.Header.Set("Content-Type", "application/json")
+	r.RemoteAddr = "203.0.113.9:1234"
+	h.ServeHTTP(rec, r)
+	return rec
+}
+
+func TestContactAnswersPostAndNothingElse(t *testing.T) {
+	// The method in the pattern is load-bearing. A GET on the only write path
+	// is a 405, not a route that quietly does nothing.
+	h := handler(t, nil, true)
+
+	if rec := do(t, h, http.MethodGet, "/api/contact"); rec.Code != http.StatusMethodNotAllowed {
+		t.Errorf("GET /api/contact = %d, want 405", rec.Code)
+	}
+	// The database is unreachable in this harness, so a well-formed submission
+	// reaches the store and fails there. 500 is the proof that it was routed;
+	// what it answers on a working database is internal/contact's business.
+	if rec := submit(t, h); rec.Code != http.StatusInternalServerError {
+		t.Errorf("POST /api/contact = %d, want it routed to the handler", rec.Code)
+	}
+}
+
+// The half of the 3-per-10-minutes rule that lives in front of the route.
+// internal/contact drives the database floor; this drives the token bucket, and
+// it can only be driven through the assembled router because that is where the
+// two limiters are put in order.
+func TestTheContactLimiterBitesOnTheFourth(t *testing.T) {
+	h := handler(t, nil, true)
+
+	for i := range contact.RateLimit {
+		if rec := submit(t, h); rec.Code == http.StatusTooManyRequests {
+			t.Fatalf("submission %d was throttled, want the first %d through",
+				i+1, contact.RateLimit)
+		}
+	}
+
+	rec := submit(t, h)
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("submission %d = %d, want 429", contact.RateLimit+1, rec.Code)
+	}
+	if rec.Header().Get("Retry-After") == "" {
+		t.Error("the 429 carries no Retry-After")
+	}
+}
+
+// The broad limiter and the strict one are separate buckets. A spent contact
+// budget must not close the read endpoints, which is the whole reason the strict
+// one is wrapped around a route instead of added to the chain.
+func TestASpentContactBudgetLeavesTheReadsAlone(t *testing.T) {
+	h := handler(t, nil, true)
+
+	for range contact.RateLimit + 1 {
+		submit(t, h)
+	}
+
+	if rec := do(t, h, http.MethodGet, "/api/systems"); rec.Code == http.StatusTooManyRequests {
+		t.Error("a spent contact budget throttled a read")
+	}
+}
+
+// The write path's CORS header, through the assembled chain rather than the
+// middleware alone: without it a browser sends the POST, gets the 202 and
+// refuses to hand the receipt to the page.
+func TestAContactAnswerIsReadableByTheSite(t *testing.T) {
+	h := handler(t, nil, true)
+
+	rec := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/api/contact", strings.NewReader(`{}`))
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Origin", "https://timseil.dev")
+	r.RemoteAddr = "203.0.113.11:1234"
+	h.ServeHTTP(rec, r)
+
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "https://timseil.dev" {
+		t.Errorf("Access-Control-Allow-Origin = %q — the page cannot read its own answer", got)
 	}
 }

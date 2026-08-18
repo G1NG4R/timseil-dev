@@ -139,6 +139,28 @@ services:
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITHUB_LOGIN: ${GITHUB_LOGIN:-}
 
+      # The contact form. `log` rather than `smtp`, and that is the one value in
+      # this block chosen by the file rather than passed through: the OVH
+      # mailbox and the DNS records are phase L1, which the build plan puts
+      # after stage D, so at C6 there is nothing to send to. The log transport
+      # builds the message in full — same Build, same refusals, same bytes — and
+      # writes it to a log line instead of a socket, so `make dev` works and you
+      # can read the finished envelope.
+      #
+      # Overridable, so that a machine with real credentials can point at OVH
+      # without editing this file.
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-log}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      # Same `:-` as GITHUB_TOKEN above, and for the same reason: a `:?` here
+      # would stop `make migrate` and `make check-db`, neither of which starts
+      # this service.
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_TO: ${MAIL_TO:-}
+
+      # Required whatever the transport — the api will not start without it, and
+      # the refusal belongs to config.Load, not here. `openssl rand -hex 32`.
+      CONTACT_IP_PEPPER: ${CONTACT_IP_PEPPER:-}
+
       # Empty here, and that is not an oversight.
       #
       # In development nothing forwards anything: a request from your machine

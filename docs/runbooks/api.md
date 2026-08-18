@@ -1,14 +1,19 @@
 # Runbook — Der API-Prozess
 
-**Leser:** ich, wenn der Container startet und sofort wieder aussteigt, und ich,
-wenn jemand schreibt, die API antworte mit 429 und er wisse nicht warum.
+**Leser:** ich, wenn der Container startet und sofort wieder aussteigt, ich,
+wenn jemand schreibt, die API antworte mit 429 und er wisse nicht warum, und ich,
+wenn jemand sagt, er habe über das Formular geschrieben und nie eine Antwort
+bekommen.
 
 Der Prozess ist `api/cmd/api`. Konfiguration in `api/internal/config`, Pool in
 `api/internal/db`, Kette in `api/internal/middleware`, Routen in
 `api/internal/server`, Handler in `api/internal/health` und
-`api/internal/systems`. ADR 0014 (Lebenszyklus), ADR 0015 (Kette), ADR 0016
-(Zugriff und Router), ADR 0009 (Fehlermodell), ADR 0011 (Rollen),
-ADR 0017 (Fenster, Rasterlücken, Fehlerabbildung der Systems-Endpoints).
+`api/internal/systems`. Das Kontaktformular liegt in `api/internal/contact`, der
+Versand in `api/internal/mail`, Breaker und Backoff in
+`api/internal/resilience`. ADR 0014 (Lebenszyklus), ADR 0015 (Kette),
+ADR 0016 (Zugriff und Router), ADR 0009 (Fehlermodell), ADR 0011 (Rollen),
+ADR 0017 (Fenster, Rasterlücken, Fehlerabbildung der Systems-Endpoints),
+ADR 0021 (Kontaktformular und Versand).
 
 ---
 
@@ -321,6 +326,161 @@ gibt für den neuen Login noch nichts.
 
 ---
 
+## „Das Formular antwortet 502"
+
+Das heißt: die Nachricht **ist gespeichert** und das Relay hat sie nicht
+genommen. Nichts ist verloren, und der Dispatcher kommt in Minuten wieder.
+
+```bash
+docker compose -f compose.dev.yaml exec db psql -U timseil_boot -d timseil -c \
+  "SELECT id, delivery_status, delivery_attempts, left(last_error, 80) AS last_error
+     FROM contact_messages WHERE delivery_status <> 'sent' ORDER BY received_at"
+```
+
+| `delivery_status` | Bedeutung | Was zu tun ist |
+|---|---|---|
+| `queued`, `attempts` 1–4 | der Dispatcher versucht es weiter | warten, Zeitplan unten |
+| `queued`, `attempts` 0 | nie versucht — Stundenbudget war leer | nichts, der nächste Takt holt sie |
+| `failed` | aufgegeben, ein Mensch ist dran | Adresse aus der Zeile lesen, von Hand antworten |
+
+Der Zeitplan der Wiederholungen ist `received_at + 2 min × (2^Versuche − 1)`,
+also **0, 2, 6, 14, 30 Minuten** nach Eingang. Nach fünf Versuchen steht die
+Zeile auf `failed`, und im Log steht eine `ERROR`-Zeile mit `contact message
+given up on`.
+
+Häufige `last_error`-Werte:
+
+| Beginnt mit | Heißt | Handlung |
+|---|---|---|
+| `dial tcp … connection refused` | Relay nicht erreichbar | warten; wenn es bleibt, OVH-Status prüfen |
+| `535 …` | Zugangsdaten abgelehnt | `SMTP_PASSWORD` in Dokploy erneuern |
+| `550 …` | dauerhaft abgelehnt | `MAIL_TO` prüfen; die Zeile steht schon auf `failed` |
+| `context deadline exceeded` | Relay antwortet zu langsam | warten |
+
+**Was hier nie die Antwort ist:** die Zeile von Hand auf `sent` setzen. Dann ist
+die Nachricht aus der Warteschlange und nicht zugestellt, und niemand erfährt es.
+Wer sie loswerden will, setzt sie auf `failed` und beantwortet sie selbst.
+
+---
+
+## „Niemand bekommt Mail, aber alles ist grün"
+
+Der wahrscheinlichste Fall zuerst:
+
+```bash
+docker compose -f compose.dev.yaml logs api | grep "MAIL_TRANSPORT is log" | head -1
+```
+
+Steht die Zeile da, sendet der Prozess **nicht** — er baut die Mail vollständig
+und schreibt sie in eine Logzeile. Das ist die Entwicklungseinstellung, und sie
+wird beim Start einmal laut gemeldet, weil sie sonst erst durch ein leeres
+Postfach auffällt. In Produktion gehört `MAIL_TRANSPORT=smtp`; der Default ist
+`smtp`, man muss sich also aktiv abmelden.
+
+Die fertige Mail sieht man so:
+
+```bash
+docker compose -f compose.dev.yaml logs api | grep "mail not sent" | tail -1 \
+  | python3 -c "import sys,json; l=sys.stdin.read(); print(json.loads(l[l.index('{\"time'):])['envelope'])"
+```
+
+Steht die Zeile **nicht** da, sendet der Prozess und die Warteschlange ist der
+nächste Blick (Abschnitt oben). Ist auch die leer, sind die Nachrichten
+zugestellt und das Problem liegt hinter dem Relay — Spam-Ordner, Weiterleitung,
+oder `MAIL_TO` zeigt auf ein anderes Postfach als erwartet.
+
+---
+
+## „Ich bekomme 429 auf `/api/contact`"
+
+Drei pro Adresse in zehn Minuten, und die Regel wird **zweimal** geprüft. Welche
+Hälfte zugeschlagen hat, sagt die Logzeile:
+
+| Logzeile | Hälfte | Überlebt einen Neustart |
+|---|---|---|
+| `rate limit exceeded` | Token-Bucket im Prozess | nein |
+| `contact rate limit exceeded` | Zählung in `contact_messages` | ja |
+
+Die zwei ergänzen sich: der Bucket zählt **jede** Anfrage, auch die still
+verworfenen, die nie in der Tabelle landen; die Zählung überlebt Neustart und
+zweite Instanz. Deshalb gibt es beide.
+
+`Retry-After` ist bei der zweiten Hälfte gemessen, nicht geraten — es ist der
+Moment, in dem die älteste Nachricht dieser Adresse aus dem Fenster fällt:
+
+```bash
+docker compose -f compose.dev.yaml exec db psql -U timseil_boot -d timseil -c \
+  "SELECT count(*), min(received_at) FROM contact_messages
+    WHERE received_at > now() - interval '10 minutes' GROUP BY ip_hash"
+```
+
+**Der Wert lässt sich nicht auf eine Adresse zurückführen**, und das ist der
+Zweck: `ip_hash` ist ein HMAC mit `CONTACT_IP_PEPPER`. Die acht Hexzeichen im
+Feld `client` einer Logzeile sind das Präfix desselben Hashes — genug, um zwei
+Absender in einem Log zu unterscheiden, und wertlos für jeden, der es liest.
+
+---
+
+## „Ist eine bestimmte Nachricht angekommen?"
+
+Der Besucher zitiert seine Quittung (`msg_…`). Die findet Zeile **und** Mail:
+
+```bash
+docker compose -f compose.dev.yaml exec db psql -U timseil_boot -d timseil -c \
+  "SELECT delivery_status, received_at, delivered_at, delivery_attempts, mail_message_id
+     FROM contact_messages WHERE id = 'msg_01M09XX1PW2D6R9X'"
+```
+
+`mail_message_id` ist der `Message-ID`-Header und leitet sich aus der Quittung
+ab, die Suche im Postfach ist also dieselbe Zeichenkette.
+
+**Ohne Not nichts anderes aus dieser Tabelle lesen.** Sie ist die einzige mit
+personenbezogenen Daten und die einzige, die die öffentliche API nie anfasst.
+
+---
+
+## `CONTACT_IP_PEPPER` wechseln
+
+```bash
+openssl rand -hex 32
+```
+
+Danach erkennt der Rate-Limit-Boden **keine** vorher gesehene Adresse wieder: die
+alten Hashes sind mit dem alten Schlüssel gerechnet und passen zu nichts mehr.
+Nichts bricht, die Zeilen bleiben stehen, sie zählen nur nicht mehr zusammen.
+Zehn Minuten später ist das Fenster ohnehin durch.
+
+Das ist zugleich die einzige Art, alle auf einmal zu vergessen — falls das je aus
+Datenschutzgründen gefragt wird, ist die Rotation die Antwort und nicht ein
+`DELETE`.
+
+---
+
+## Nach L1: den Versand wirklich prüfen
+
+Diese Phase konnte es nicht — das OVH-Postfach und die DNS-Einträge sind L1, und
+L1 kommt nach Stufe D. Was in C6 geprüft ist: der SMTP-Dialog gegen einen echten
+Listener im Test, alle fünf Antwortpfade gegen den laufenden Stack, und die
+Nachzustellung nach einem simulierten Relay-Ausfall. Was offen bleibt, ist die
+Zustellbarkeit.
+
+Sobald das Postfach existiert:
+
+```bash
+# 1. Der Prozess sendet wirklich
+docker compose -f compose.dev.yaml logs api | grep -c "MAIL_TRANSPORT is log"   # muss 0 sein
+
+# 2. Eine echte Nachricht an die Adresse von mail-tester.com
+curl -s localhost:8080/api/contact -H 'content-type: application/json' \
+  -d '{"name":"Tim Seil","email":"…@…","message":"Testnachricht für die Zustellbarkeit.",
+       "company":"","dwellMs":4200,"ts":"…"}'
+```
+
+Abnahme ist L1s: **mail-tester ≥ 9/10**, und `SPF`, `DKIM` und `DMARC` mit
+`p=none` müssen alle drei grün sein.
+
+---
+
 ## Eine Anfrage im Log wiederfinden
 
 Jede Antwort trägt `X-Request-Id`, jede Fehlerantwort denselben Wert als
@@ -341,9 +501,11 @@ Teil des Logs.
 
 ## Die Umgebungsvariablen
 
-**Zwei** haben keinen Default: `DATABASE_URL` und, seit C5, `GITHUB_TOKEN`. Alle
-anderen stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet
-„nimm den Default", damit die Zahlen nur an einer Stelle existieren — in
+**Drei** haben keinen Default: `DATABASE_URL`, seit C5 `GITHUB_TOKEN` und seit
+C6 `CONTACT_IP_PEPPER`. Dazu drei bedingte: `SMTP_USERNAME`, `SMTP_PASSWORD`
+und `MAIL_TO` sind Pflicht, sobald `MAIL_TRANSPORT=smtp` gilt. Alle anderen
+stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet „nimm den
+Default", damit die Zahlen nur an einer Stelle existieren — in
 `api/internal/config`.
 
 | Variable | Default | |
@@ -358,10 +520,31 @@ anderen stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet
 | `DB_IDLE_TX_TIMEOUT` | `10s` | |
 | `RATE_LIMIT_RPM` / `RATE_LIMIT_BURST` | `120` / `60` | |
 | `TRUSTED_PROXY_CIDRS` | leer | leer heißt: keinem Header glauben |
-| `CORS_ALLOWED_ORIGINS` | drei Origins | erst ab C6 ausgewertet |
+| `CORS_ALLOWED_ORIGINS` | drei Origins | nur der Schreibpfad prüft sie — `POST /api/contact` |
 | `SITE_SYSTEM_SLUG` | `timseil-dev` | worüber `/api/health` berichtet |
-| `GITHUB_TOKEN` | — | Pflicht, PAT mit Scope `read:user`. Das einzige Geheimnis hier. |
+| `GITHUB_TOKEN` | — | Pflicht, PAT mit Scope `read:user` |
 | `GITHUB_LOGIN` | `G1NG4R` | wessen Kalender — und der Schlüssel der Cache-Zeile |
+| `MAIL_TRANSPORT` | `smtp` | `smtp` \| `log`. `log` baut die Mail und sendet nicht |
+| `SMTP_USERNAME` | — | Pflicht bei `smtp`. Volle Adresse, **und zugleich das `From:`** |
+| `SMTP_PASSWORD` | — | Pflicht bei `smtp`. Geheimnis |
+| `MAIL_TO` | — | Pflicht bei `smtp`. Das Postfach, in dem die Nachrichten landen |
+| `CONTACT_IP_PEPPER` | — | Pflicht, ≥ 32 Zeichen. Schlüsselt den gespeicherten `ip_hash` |
+
+**Es gibt kein `MAIL_FROM`.** OVH MX Plan verlangt, dass `From:` dem
+authentifizierten Konto entspricht — `From` **ist** `SMTP_USERNAME`, und eine
+eigene Variable dafür könnte nur falsch gesetzt werden. Das Relay lehnte die
+Abweichung erst ab, nachdem das Passwort schon über die Leitung ging.
+
+**Es gibt auch keinen SMTP-Host.** `ssl0.ovh.net:465` ist einkompiliert, aus
+demselben Grund wie GitHubs Endpoint (ADR 0020 §8): eine Adresse, die aus der
+Umgebung kommen kann, ist eine Bearbeitung davon entfernt, aus einer Anfrage zu
+kommen. Ein Anbieterwechsel ist ein Commit.
+
+**`CONTACT_IP_PEPPER` rotieren** verwaist jeden vorher geschriebenen Hash: der
+Rate-Limit-Boden erkennt eine Adresse nicht wieder, die er schon gesehen hat.
+Das ist gewollt und es ist zugleich die einzige Art, alle auf einmal zu
+vergessen. Nichts bricht dabei — die Zeilen bleiben stehen, sie zählen nur
+nicht mehr zusammen.
 
 ---
 

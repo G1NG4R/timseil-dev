@@ -33,9 +33,17 @@ const misconfigWarnEvery = time.Minute
 // behind Redis in P3, after launch; until then one process holds the state, and
 // what this needs beyond a bucket is eviction — which x/time/rate does not do,
 // so the dependency would buy the easy half and leave the half that matters.
+//
+// Two of these exist. The broad one wraps every /api/ path at 120 a minute; the
+// strict one wraps POST /api/contact alone at three per ten minutes, which is a
+// rate no whole number of tokens per minute can express. That is why the refill
+// is a float and why NewRateLimiterPer takes a window.
 type RateLimiter struct {
-	perMinute float64
-	burst     float64
+	// refillPerSecond rather than a per-minute count: three per ten minutes is
+	// 0.005 a second, and an int would round it to nothing or to six an hour.
+	refillPerSecond float64
+
+	burst float64
 
 	client ClientIP
 	hasher IPHasher
@@ -61,16 +69,28 @@ type bucket struct {
 
 // NewRateLimiter starts the janitor. Call Stop when the server has drained.
 func NewRateLimiter(perMinute, burst int, client ClientIP, hasher IPHasher, log *slog.Logger) *RateLimiter {
+	return NewRateLimiterPer(perMinute, time.Minute, burst, client, hasher, log)
+}
+
+// NewRateLimiterPer is the same limiter with the window spelled out: n requests
+// per window, with burst tokens to spend at once.
+//
+// It exists for the contact form's three per ten minutes. Expressed as a
+// per-minute integer that rate is 0, which would refuse everybody forever — a
+// rounding error that turns the only conversion point on the site off.
+func NewRateLimiterPer(n int, window time.Duration, burst int,
+	client ClientIP, hasher IPHasher, log *slog.Logger,
+) *RateLimiter {
 	rl := &RateLimiter{
-		perMinute: float64(perMinute),
-		burst:     float64(burst),
-		client:    client,
-		hasher:    hasher,
-		log:       log,
-		now:       time.Now,
-		buckets:   make(map[string]*bucket),
-		stop:      make(chan struct{}),
-		done:      make(chan struct{}),
+		refillPerSecond: float64(n) / window.Seconds(),
+		burst:           float64(burst),
+		client:          client,
+		hasher:          hasher,
+		log:             log,
+		now:             time.Now,
+		buckets:         make(map[string]*bucket),
+		stop:            make(chan struct{}),
+		done:            make(chan struct{}),
 	}
 
 	go rl.sweep()
@@ -123,12 +143,28 @@ func (rl *RateLimiter) evict(now time.Time) {
 // fails for no reason.
 func (rl *RateLimiter) Middleware() Func {
 	return func(next http.Handler) http.Handler {
+		gated := rl.Gate(next)
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !isAPI(r.URL.Path) {
 				next.ServeHTTP(w, r)
 				return
 			}
+			gated.ServeHTTP(w, r)
+		})
+	}
+}
 
+// Gate applies the limit to whatever it wraps and makes no decision about which
+// paths that is.
+//
+// Middleware sits in the chain and has to choose; this one is wrapped around a
+// single route at its mux.Handle line, which is how POST /api/contact gets a
+// second, stricter limiter without the chain growing a path test for it. The
+// route is the statement of scope, so there is nowhere for the scope and the
+// mounting to disagree.
+func (rl *RateLimiter) Gate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		{
 			addr, ok := rl.client.Resolve(r)
 			if !ok {
 				// A trusted proxy that sent no usable X-Forwarded-For. Every
@@ -154,10 +190,10 @@ func (rl *RateLimiter) Middleware() Func {
 				httpx.WriteRateLimitProblem(w, r, retryAfter)
 				return
 			}
+		}
 
-			next.ServeHTTP(w, r)
-		})
-	}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // take spends a token and reports how long to wait when there is none.
@@ -178,14 +214,14 @@ func (rl *RateLimiter) take(key string) (allowed bool, retryAfter time.Duration)
 	} else {
 		elapsed := now.Sub(b.seen).Seconds()
 		if elapsed > 0 {
-			b.tokens = min(rl.burst, b.tokens+elapsed*rl.perMinute/60)
+			b.tokens = min(rl.burst, b.tokens+elapsed*rl.refillPerSecond)
 		}
 		b.seen = now
 	}
 
 	if b.tokens < 1 {
 		missing := 1 - b.tokens
-		return false, time.Duration(missing / (rl.perMinute / 60) * float64(time.Second))
+		return false, time.Duration(missing / rl.refillPerSecond * float64(time.Second))
 	}
 
 	b.tokens--
