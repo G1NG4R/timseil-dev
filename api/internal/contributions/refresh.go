@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/resilience"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
 
@@ -33,7 +34,7 @@ type Refresher struct {
 	queries RefreshQueries
 	login   string
 	fetch   fetchFunc
-	breaker *breaker
+	breaker *resilience.Breaker
 	log     *slog.Logger
 
 	ticks       <-chan time.Time
@@ -69,7 +70,7 @@ func start(
 		queries:     q,
 		login:       login,
 		fetch:       fetch,
-		breaker:     newBreaker(now),
+		breaker:     resilience.NewBreaker(breakerPolicy, now),
 		log:         log,
 		ticks:       ticks,
 		stopTicking: stopTicking,
@@ -141,7 +142,7 @@ func (r *Refresher) runOnce(ctx context.Context) {
 		return
 	}
 
-	if !r.breaker.allow() {
+	if !r.breaker.Allow() {
 		// INFO and not WARN: a shut breaker is this package working, and the
 		// thing that is wrong was already reported when it shut.
 		r.log.Info("contributions refresh", "state", "breaker open", "login", r.login)
@@ -169,7 +170,7 @@ func (r *Refresher) runOnce(ctx context.Context) {
 	runCtx, cancel := context.WithTimeout(ctx, runTimeout)
 	defer cancel()
 
-	result, attempts, err := retry(runCtx, r.fetch)
+	result, attempts, err := resilience.Retry(runCtx, retryPolicy, r.fetch)
 	switch {
 	case errors.Is(err, context.Canceled):
 		// The shutdown cancelled it. That is this package being stopped, not
@@ -177,13 +178,13 @@ func (r *Refresher) runOnce(ctx context.Context) {
 		// deploy.
 		return
 	case err != nil:
-		r.breaker.failed()
+		r.breaker.Failed()
 		// WARN and not ERROR: the site is still answering, with an older
 		// calendar and an honest age. It becomes worth waking up for when the
 		// age on the page gets embarrassing, which is a judgement the runbook
 		// makes and a log level cannot.
 		r.log.Warn("contributions refresh",
-			"state", "failed", "attempts", attempts, "breaker", r.breaker.open(), "err", err)
+			"state", "failed", "attempts", attempts, "breaker", r.breaker.Open(), "err", err)
 		return
 	}
 
@@ -197,7 +198,7 @@ func (r *Refresher) runOnce(ctx context.Context) {
 		return
 	}
 
-	r.breaker.succeeded()
+	r.breaker.Succeeded()
 
 	// At INFO and on every successful run. Together with the "fresh" line above
 	// this is the only evidence that the loop is alive, and the runbook's first
