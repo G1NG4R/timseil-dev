@@ -9,9 +9,15 @@
 # wrong stack claim breaks the build instead of sitting there being wrong.
 # Build plan ch. 12.3, ADR 0012.
 #
-# Adding an entry is only allowed once its source exists. Traefik, Prometheus,
-# Loki, Grafana, Alloy and Tailwind are therefore absent today — the phase that
-# lands each of them appends its line. Growth, not a placeholder.
+# Adding an entry is only allowed once its source exists. Prometheus, Loki,
+# Grafana, Alloy and Tailwind are therefore absent today — the phase that lands
+# each of them appends its line. Growth, not a placeholder.
+#
+# Traefik is the exception that proves the rule: D3 landed it and appended
+# nothing, because its version is Dokploy's and no file here can be read for it.
+# Typing one would be a number no running system produced. The honest source is
+# `traefik_build_info` from the metrics endpoint, and it arrives with F3, when
+# something scrapes it. ADR 0028 §10.
 
 systems:
   # 02 · timseil.dev — the whole stack lives in this repo, so every version is read.

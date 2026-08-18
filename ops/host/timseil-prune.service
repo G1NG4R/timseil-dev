@@ -1,0 +1,14 @@
+# Runs the weekly disk reclaim once. The schedule is in the .timer next to this.
+#
+# Type=oneshot, so systemctl status reports the last run's exit code and
+# journalctl -u timseil-prune keeps its output — the evidence that it ran, and
+# how much it freed, without anyone having to remember to look.
+[Unit]
+Description=Reclaim Docker disk on timseil.dev
+Documentation=https://github.com/G1NG4R/timseil-dev/blob/main/docs/runbooks/dokploy.md
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/timseil/prune.sh

@@ -364,6 +364,10 @@ export IMAGE_TAG
 # the endpoint (ADR 0026 §4) — the same answer C7 reached for local runs.
 TOPOLOGY_ENV := CONTRIBUTIONS_TRANSPORT=off
 
+# The network Traefik reaches api and web on. It belongs to Dokploy on the VPS;
+# here `require-network` below creates an empty stand-in so the same file runs.
+DOKPLOY_NETWORK := dokploy-network
+
 # Both targets below need the images to exist under their registry names. They do
 # not exist for a commit nobody built: IMAGE_TAG follows HEAD, so committing and
 # then running `make prod` asks docker for a tag that was never pushed, and what
@@ -378,14 +382,31 @@ require-images:
 			exit 1; }; \
 	done
 
+# The one handgriff D3 costs, and it is here rather than in your head.
+#
+# compose.yaml declares dokploy-network as `external:` because on the VPS it is
+# Dokploy's — Traefik lives in it and nothing in this repository may create or
+# own it there. On any other machine it simply does not exist, and compose
+# refuses to start rather than inventing it. That would break `make prod` and
+# `make check-topology`, and "up from nothing without a handgriff" is D2's
+# acceptance criterion, so the handgriff goes in the Makefile instead. ADR 0028.
+.PHONY: require-network
+require-network:
+	@docker network inspect $(DOKPLOY_NETWORK) >/dev/null 2>&1 || { \
+		printf '  · creating %s — on the VPS this one is Dokploy'"'"'s, here it is a local stand-in\n' \
+			'$(DOKPLOY_NETWORK)'; \
+		docker network create $(DOKPLOY_NETWORK) >/dev/null; }
+
 .PHONY: prod
-prod: require-images ## Run the production compose locally — needs `make images` first
+prod: require-images require-network ## Run the production compose locally — needs `make images` first
 	@$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait api web
 
 .PHONY: prod-down
 prod-down: ## Stop the production stack, keep the database
 	@$(COMPOSE) down
 
+# Drops the volume, never the network: on the VPS that one is Dokploy's and
+# taking it away would unroute every other app on the host.
 .PHONY: prod-reset
 prod-reset: ## Stop it and drop the database volume
 	@$(COMPOSE) down --volumes
@@ -398,7 +419,7 @@ prod-reset: ## Stop it and drop the database volume
 # this file is said by `make check-compose`, which does run — that one checks the
 # recipe, this one checks the kitchen.
 .PHONY: check-topology
-check-topology: require-images ## The D2 acceptance: from zero, twice, and the api blocked when the migration fails
+check-topology: require-images require-network ## The D2 acceptance: from zero, twice, and the api blocked when the migration fails
 	@printf 'topology\n'
 	@[ -f .env ] || { printf '  ✗ no .env — run: cp .env.example .env\n'; exit 1; }
 # 1. From nothing. This is the criterion, literally.
@@ -448,13 +469,36 @@ check-topology: require-images ## The D2 acceptance: from zero, twice, and the a
 	@ports=$$(docker inspect $$($(COMPOSE) ps -q db) --format '{{json .NetworkSettings.Ports}}'); \
 		case "$$ports" in *'"HostPort"'*) printf '  ✗ db publishes a port: %s\n' "$$ports"; exit 1 ;; esac; \
 		printf '  ✓ db publishes no port\n'
-# 7. The redeploy case, which is a different claim from the cold one: every
+# 7. The trust boundary, measured rather than written down. Traefik can reach
+#    exactly what is in its network — so api and web belong to BOTH networks
+#    (the default one for db, the dokploy one for the proxy) and db, migrate and
+#    seed belong only to the default one. A service that declares `networks:`
+#    joins ONLY those, so getting this wrong is silent in the file and loud at
+#    runtime; and db in the proxy's network would be reachable by every other
+#    app on that host. ADR 0028.
+	@for s in api web; do \
+		nets=$$(docker inspect $$($(COMPOSE) ps -q $$s) \
+			--format '{{range $$k, $$v := .NetworkSettings.Networks}}{{$$k}} {{end}}'); \
+		case " $$nets" in *" $(DOKPLOY_NETWORK) "*) ;; \
+			*) printf '  ✗ %s is not in %s — traefik cannot reach it: %s\n' "$$s" '$(DOKPLOY_NETWORK)' "$$nets"; exit 1 ;; esac; \
+		case " $$nets" in *"_default "*) ;; \
+			*) printf '  ✗ %s left the default network — it cannot reach db: %s\n' "$$s" "$$nets"; exit 1 ;; esac; \
+	done
+	@printf '  ✓ api and web are in both networks\n'
+	@for s in db migrate seed; do \
+		nets=$$(docker inspect $$($(COMPOSE) ps -aq $$s) \
+			--format '{{range $$k, $$v := .NetworkSettings.Networks}}{{$$k}} {{end}}'); \
+		case " $$nets" in *" $(DOKPLOY_NETWORK) "*) \
+			printf '  ✗ %s is in %s — it must not be reachable from the proxy network\n' "$$s" '$(DOKPLOY_NETWORK)'; exit 1 ;; esac; \
+	done
+	@printf '  ✓ db, migrate and seed are not in $(DOKPLOY_NETWORK)\n'
+# 8. The redeploy case, which is a different claim from the cold one: every
 #    future deploy runs migrate and seed against a populated volume.
 	@$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait --wait-timeout 180 api web >/dev/null \
 		|| { printf '  ✗ the second up against a populated volume failed\n'; exit 1; }
 	@printf '  ✓ up again on a populated volume — migrate and seed are idempotent\n'
 	@$(COMPOSE) down --volumes >/dev/null 2>&1 || true
-# 8. THE BROKEN CASE. The claim this phase makes is not "five containers start".
+# 9. THE BROKEN CASE. The claim this phase makes is not "five containers start".
 #    It is "the api never comes up against a database the migration did not
 #    reach" — so break the migration on purpose and watch the api never exist.
 	@MIGRATE_DATABASE_URL='postgres://nobody:wrong@db:5432/timseil?sslmode=disable' \

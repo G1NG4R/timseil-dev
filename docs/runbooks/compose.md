@@ -193,13 +193,83 @@ Port, der nie aufgehen sollte.
 - ein `healthcheck:` an `api` oder `web`
 - ein Postgres-Tag, das von `compose.dev.yaml` abweicht
 
+Dazu die fünf aus D3 — alle fünf sind Wege, auf denen Proxy und Stack einander
+verlieren, **ohne dass etwas rot wird**:
+
+- `api` oder `web` ohne vollständigen Label-Satz: `traefik.enable`,
+  `traefik.docker.network`, eine Router-Regel und ein
+  `loadbalancer.server.port`
+- ein `loadbalancer.server.port`, den der Dienst nicht per `expose:` anbietet
+- `api` oder `web` ohne **beide** Netze — oder `db` **mit** dem Proxy-Netz
+- ein benutztes `dokploy-network` ohne `external: true`
+- eine Router-Regel ohne explizite `priority`
+
 Jede dieser Regeln hat ihren kaputten Fall in `tools/selftest.sh`. Wer eine
 ändert, ändert den Fall mit — sonst prüft sie nichts mehr.
 
 ---
 
-## Was hier noch fehlt
+## Die zwei Netze
 
-**Traefik.** Kommt in D3, zusammen mit `dokploy-network`. Zwei Kommentare in
-`compose.yaml` markieren die Stelle. Ab dann braucht ein lokaler Lauf
-`docker network create dokploy-network`, und dieser Runbook sagt es dann hier.
+Seit D3 liegen `api` und `web` in **zwei** Netzen, die anderen drei in einem.
+
+| Dienst | Netze | Warum |
+|---|---|---|
+| `db`, `migrate`, `seed` | `default` | Sie sprechen niemanden außerhalb des Stacks an. Die Sicherheitsregel wird hier durch **Abwesenheit** durchgesetzt, nicht durch ein Label |
+| `api`, `web` | `default` **und** `dokploy-network` | `default`, um `db` bzw. `api` zu erreichen · `dokploy-network`, damit Traefik sie erreicht |
+
+**Die Falle:** Ein Dienst, der `networks:` schreibt, liegt **nur** in den
+genannten Netzen. `networks: [dokploy-network]` allein nähme der API also die
+Datenbank weg — und der Ausfall sähe aus wie ein Datenbankproblem, nicht wie ein
+Tippfehler. `make check-compose` weist beide Hälften ab, und
+`make check-topology` misst sie am laufenden Container statt sie zu glauben.
+
+`dokploy-network` ist `external:` — auf dem VPS gehört es Dokploy, und nichts
+hier legt es an oder räumt es weg. Auf jeder anderen Maschine existiert es
+nicht, und Compose verweigert dann den Start. Deshalb:
+
+```bash
+make require-network   # legt lokal ein leeres Ersatzstück an, idempotent
+```
+
+`make prod` und `make check-topology` rufen es selbst auf. Der Beweis, dass D3
+D2s Abnahmekriterium nicht kaputtgemacht hat, ist ein Kommando:
+
+```bash
+docker network rm dokploy-network && make check-topology
+```
+
+Immer noch grün, immer noch von Null.
+
+---
+
+## Traefik
+
+Die Router stehen als Labels an `api` und `web`. Was **nicht** hier steht,
+gehört Dokploys Traefik auf dem Host: Entrypoint-Namen, Certresolver, TLS-Optionen,
+der globale HTTP→HTTPS-Redirect und der Metrik-Endpoint.
+`docs/runbooks/dokploy.md` ist das Blatt dafür.
+
+| Router | Regel | Priorität |
+|---|---|---|
+| `timseil-api` | Apex oder www **und** `PathPrefix(/api)` | 100 |
+| `timseil-web` | Apex oder www | 10 |
+
+Die Prioritäten stehen ausdrücklich da. Ohne Angabe sortiert Traefik nach
+**Regellänge** — die API-Regel gewänne heute zufällig und hörte damit auf, sobald
+jemand die Regel umformuliert. Der Fehler wäre still: Next.js beantwortete
+`/api/*` mit seiner eigenen 404-Seite, während die Seite selbst normal aussieht.
+
+`www` bekommt einen 301 auf die Apex-Domain, über die Middleware
+`timseil-www@docker`. Sie ist **einmal** an `web` definiert und wird von beiden
+Routern referenziert; der Docker-Provider registriert Middlewares global.
+
+**Das `$$` in der Ersetzung ist kein Tippfehler.** Compose interpoliert `$` und
+äße `${1}` auf, bevor Traefik es sieht. Nachgemessen am laufenden Container:
+`$${1}` in der Datei kommt als `${1}` am Label an.
+
+**Was bis L3 offen ist, und es steht hier, damit es niemand übersieht:**
+`PathPrefix(/api)` routet auch `/api/internal/probe` und `/api/internal/deploy`.
+Beide sind von außen erreichbar und tragen genau **eine** Verteidigung, ihr
+Token — Kapitel 29 des Handbuchs verlangt zwei. L3 zieht die zweite ein und muss
+dabei #40 auflösen.
