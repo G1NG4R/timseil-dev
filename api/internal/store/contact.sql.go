@@ -161,7 +161,7 @@ func (q *Queries) InsertContactMessage(ctx context.Context, arg InsertContactMes
 }
 
 const listDeliverableContactMessages = `-- name: ListDeliverableContactMessages :many
-SELECT id, client_ts, name, email, message, delivery_attempts
+SELECT id, client_ts, name, email, message, dwell_ms, delivery_attempts
   FROM contact_messages
  WHERE delivery_status = 'queued'
    AND delivery_attempts < $1::int
@@ -183,6 +183,7 @@ type ListDeliverableContactMessagesRow struct {
 	Name             string
 	Email            string
 	Message          string
+	DwellMs          int32
 	DeliveryAttempts int32
 }
 
@@ -206,6 +207,11 @@ type ListDeliverableContactMessagesRow struct {
 // the next tick rather than the tick after. At the other end the gaps between
 // attempts stay a doubling rather than becoming a constant.
 //
+// Every column the mail body is made of comes back, dwell_ms included. The
+// rendered message is stored nowhere — a second copy of the text would be a
+// second thing to go stale — so the dispatcher rebuilds it from the row, and it
+// has to be able to build the same one the handler did.
+//
 // LIMIT because a relay has a quota and a run has a budget. What does not fit
 // in this run is still queued and still oldest, so the next tick takes it.
 func (q *Queries) ListDeliverableContactMessages(ctx context.Context, arg ListDeliverableContactMessagesParams) ([]ListDeliverableContactMessagesRow, error) {
@@ -223,6 +229,7 @@ func (q *Queries) ListDeliverableContactMessages(ctx context.Context, arg ListDe
 			&i.Name,
 			&i.Email,
 			&i.Message,
+			&i.DwellMs,
 			&i.DeliveryAttempts,
 		); err != nil {
 			return nil, err
