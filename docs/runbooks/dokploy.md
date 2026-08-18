@@ -100,8 +100,9 @@ Bevor du zur Dokploy-Oberfläche gehst, sollte das hier vollständig sein:
 | `POSTGRES_PASSWORD` | 0.2 |
 | `MIGRATE_DB_PASSWORD`, `APP_DB_PASSWORD` | 0.2 |
 | `DATABASE_URL`, `MIGRATE_DATABASE_URL` | 0.3 |
-| `GITHUB_TOKEN` | das PAT aus 0.1 — oder leer lassen und `CONTRIBUTIONS_TRANSPORT=off` |
-| `GITHUB_LOGIN` | `G1NG4R` |
+| `GITHUB_TOKEN` | das PAT aus 0.1 — oder leer lassen **und** die Zeile darunter setzen |
+| `CONTRIBUTIONS_TRANSPORT` | nur wenn `GITHUB_TOKEN` leer bleibt: `off`. Sonst gar nicht setzen |
+| `GITHUB_LOGIN` | `G1NG4R` — hat denselben Wert als Default im Code, du kannst sie auch weglassen |
 | `MAIL_TRANSPORT` | `log` — **bis L1** |
 | `CONTACT_IP_PEPPER` | 0.2 |
 | `INTERNAL_PROBE_TOKEN`, `INTERNAL_DEPLOY_TOKEN` | 0.2 |
@@ -280,6 +281,41 @@ Erwartet: `migrate` und `seed` mit **Exit 0**, danach `db`, `api` und `web`
 Kommt etwas nicht hoch: **Teil 5**, und für die Kette selbst
 `docs/runbooks/compose.md` — dieselben Fehlerbilder, unabhängig davon, wer sie
 startet.
+
+### Was du danach im Browser siehst — und was nicht
+
+**Nicht die Seite.** `web/app/page.tsx` ist heute eine Entwicklungshülle:
+
+> **timseil.dev**
+> Development shell. The site itself is built in stage H.
+
+Das ist richtig so und kein Fehler. D3 verbindet den Stack mit der Welt; die
+Seite selbst entsteht in den Stufen G und H. Was hier zählt, ist, dass ein
+Zertifikat kommt, dass `/api/health` den Commit nennt, den du gepusht hast, und
+dass `/api/docs` die Contract-Oberfläche zeigt — **das** ist die Abnahme, nicht
+das Aussehen der Startseite.
+
+### Wo du die docker-Kommandos ausführst
+
+Dokploy checkt das Repo in sein eigenes Verzeichnis aus und startet den Stack von
+dort — **nicht** aus deinem Klon in `~/timseil-dev`.
+
+`docker compose -f compose.yaml ...` findet die laufenden Container über den
+Projektnamen aus der Datei (`name: timseil`), also normalerweise auch aus deinem
+Klon heraus. **Verlass dich nicht darauf:** setzt Dokploy beim Deploy einen
+eigenen Projektnamen über `-p`, greifen deine Kommandos ins Leere und melden
+„no such service", obwohl alles läuft.
+
+Der Weg, der immer funktioniert, geht über die Container statt über Compose:
+
+```bash
+docker ps --format '{{.Names}}\t{{.Status}}' | grep -i timseil
+docker logs <container-name> --tail 60
+```
+
+Und die Dokploy-Oberfläche hat Logs und Status ohnehin eingebaut — für den
+ersten Deploy ist sie der bequemere Ort. Prüf beim ersten Mal, welchen
+Projektnamen die Container tragen, und trag ihn dir hier ein.
 
 ---
 
