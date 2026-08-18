@@ -247,6 +247,17 @@ a service without a memory limit, an `env_file:`, a floating `ghcr.io` tag, and 
 healthcheck restated where the image already carries one. Every one of those
 rules has its broken case in `tools/selftest.sh`.
 
+**Traefik belongs to Dokploy, and the routing is five more of those rules.** The
+site and the API share one hostname — `/api` goes to Go, everything else to
+Next.js — so `api` and `web` carry Traefik labels and sit in two networks: the
+proxy's, and the internal one where the database is. A service that names
+`networks:` joins only those, so the check refuses a router that has left the
+default network, a load-balancer port the service does not expose, a router
+without an explicit priority, a `dokploy-network` that is not declared external,
+and the database anywhere near the proxy network. Every one of them is a way for
+the proxy and the stack to lose each other while the stack still comes up green
+([ADR 0028](docs/adr/0028-dokploy-anbindung-zwei-netze-zwei-router-und-die-platte.md)).
+
 **The version on `/api/health` comes from the linker.** `make images` passes
 `git describe` and the short SHA as build args, and they are the only two build
 args either image takes: a build arg lands in the image layers and survives the
@@ -265,6 +276,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `compose.dev.yaml` · `.env.example` | anyone running it locally |
 | `compose.yaml` | the production topology — what Dokploy runs, and what `make check-topology` runs here |
 | `stack.yaml` | the curated stack — names and source pointers, no versions |
+| `ops/` | what runs on the host: the Postgres role bootstrap, and the weekly disk reclaim with its systemd timer |
 | `api/Dockerfile` · `web/Dockerfile` | the two images that ship — `.dev` next to each builds the local one |
 | `api/` | Go: handlers thin, logic in `internal/`, SQL in `internal/store/` |
 | `web/` | Next.js App Router, Server Components by default |
@@ -311,6 +323,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0025](docs/adr/0025-the-shape-of-a-handler-package.md) | The shape every handler package took during stage C, and why two thirds of it outlived the reason it was given |
 | [0026](docs/adr/0026-produktions-images-digest-pins-kein-modul-cache-und-ein-healthcheck-im-binary.md) | The production images: base images pinned by digest, no module-cache layer, and a healthcheck the binary answers itself |
 | [0027](docs/adr/0027-compose-topologie-ein-binary-fuenf-dienste-und-die-grenzen-in-zahlen.md) | The compose topology: one binary carrying three programs, five services rather than four, and every resource limit with the arithmetic behind it |
+| [0028](docs/adr/0028-dokploy-anbindung-zwei-netze-zwei-router-und-die-platte.md) | Traefik is Dokploy's: two networks, two routers with explicit priorities, and a disk that needs a weekly prune more than it needs logs rotated |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.

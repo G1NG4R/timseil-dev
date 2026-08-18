@@ -1,0 +1,18 @@
+# Weekly, early Sunday.
+#
+# Persistent=true so a run missed while the machine was down happens at the next
+# boot instead of being skipped — the disk does not care that the host was off.
+# RandomizedDelaySec keeps it off the exact hour.
+#
+# Deliberately NOT the window the nightly database dump will use (L6): a prune
+# and a dump competing for the same disk is a slow backup and a scary graph.
+[Unit]
+Description=Weekly Docker disk reclaim on timseil.dev
+
+[Timer]
+OnCalendar=Sun *-*-* 04:00:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

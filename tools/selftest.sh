@@ -143,13 +143,22 @@ rm -f compose.dev.yaml
 
 rm -f compose.dev.yaml compose.yaml
 
-# The six rules D2 added, which apply to the production file only. Each one is a
-# sentence ADR 0027 asserts, and an asserted rule nobody can break on purpose is
-# a rule nobody has tested.
+# The six rules D2 added and the five D3 added, which apply to the production
+# file only. Each one is a sentence an ADR asserts, and an asserted rule nobody
+# can break on purpose is a rule nobody has tested.
 #
-# `limited` is the smallest production service that satisfies every other rule,
-# so each case below fails for exactly the reason it is named after.
-write_prod() { printf '%s' "$1" > compose.yaml; }
+# Three pieces build the fixtures, and a case names the one it leaves out:
+# `limited` is the memory limit, `routed` is everything Traefik needs, and the
+# network block below is what rule 12 asks about.
+#
+# Rule 12 asks about the top-level networks: block, so every production fixture
+# carries one. A second argument replaces it — that is how the rule 12 cases
+# break exactly that and nothing else.
+netblock='networks:
+  dokploy-network:
+    external: true
+'
+write_prod() { printf '%s' "$1" > compose.yaml; printf '%s' "${2-$netblock}" >> compose.yaml; }
 
 limited='    deploy:
       resources:
@@ -157,29 +166,45 @@ limited='    deploy:
           memory: 256M
 '
 
+# What D3 requires of a service Traefik carries. Appended to the api fixtures so
+# that a case named after rule 4 or rule 6 does not also trip rules 9 to 13 —
+# each case still fails for exactly the reason it is named after. db and migrate
+# fixtures deliberately do NOT get this: for them the same labels are the
+# violation.
+routed='    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-api.rule=Host(`timseil.dev`)
+      - traefik.http.routers.timseil-api.priority=100
+      - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+    networks: [default, dokploy-network]
+    expose:
+      - "8080"
+'
+
 write_prod "services:
   api:
     image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
-$limited"
+$routed$limited"
 accepts "a pinned, limited production service accepted" tools/check-compose.sh
 
 write_prod "services:
   api:
     image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
-"
+$routed"
 rejects "production service without a memory limit rejected" tools/check-compose.sh
 
 write_prod "services:
   api:
     image: ghcr.io/g1ng4r/timseil-api:latest
-$limited"
+$routed$limited"
 rejects "floating ghcr tag rejected" tools/check-compose.sh
 
 write_prod "services:
   api:
     image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
     env_file: .env.prod
-$limited"
+$routed$limited"
 rejects "env_file in the production compose rejected" tools/check-compose.sh
 
 # Rule 7 is about a SECOND copy of a probe the image already carries...
@@ -188,7 +213,7 @@ write_prod "services:
     image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
     healthcheck:
       test: [\"CMD\", \"/api\", \"-healthcheck\"]
-$limited"
+$routed$limited"
 rejects "api restating its image healthcheck rejected" tools/check-compose.sh
 
 # ...and switching one off is not a copy of it. The init containers do this
@@ -224,7 +249,7 @@ write_prod "services:
     image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-$limited"
+$routed$limited"
 rejects "bind-mounted docker socket rejected" tools/check-compose.sh
 
 write_prod "services:
@@ -251,7 +276,7 @@ write_prod "services:
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,size=16m
-$limited"
+$routed$limited"
 accepts "tmpfs path not mistaken for a bind mount accepted" tools/check-compose.sh
 
 # Rule 8. stack.yaml reads the production tag and puts it on a page, so the two
@@ -271,6 +296,142 @@ write_dev 'services:
     image: postgres:18.5-alpine
 '
 rejects "postgres drift between the two compose files rejected" tools/check-compose.sh
+
+# The five rules D3 added. Every one of them is a way for the proxy and the
+# stack to lose each other while the stack still comes up green, which is why
+# they are gates and not a paragraph in a runbook.
+#
+# The dev file goes first: rule 8 compares the two, and the drift case above
+# left a deliberately mismatched one behind. Without this the accepts case below
+# would fail for that instead of proving what it is named after.
+rm -f compose.dev.yaml
+
+api_head='services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG}
+'
+
+# Rule 9. The whole label set, or none of the routing works and nothing says so.
+write_prod "$api_head$limited"
+rejects "routed service with no traefik labels rejected" tools/check-compose.sh
+
+no_docker_net='    labels:
+      - traefik.enable=true
+      - traefik.http.routers.timseil-api.rule=Host(`timseil.dev`)
+      - traefik.http.routers.timseil-api.priority=100
+      - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+    networks: [default, dokploy-network]
+    expose:
+      - "8080"
+'
+write_prod "$api_head$no_docker_net$limited"
+rejects "traefik.enable without traefik.docker.network rejected" tools/check-compose.sh
+
+no_rule='    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+    networks: [default, dokploy-network]
+    expose:
+      - "8080"
+'
+write_prod "$api_head$no_rule$limited"
+rejects "traefik labels with no router rule rejected" tools/check-compose.sh
+
+no_port='    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-api.rule=Host(`timseil.dev`)
+      - traefik.http.routers.timseil-api.priority=100
+    networks: [default, dokploy-network]
+    expose:
+      - "8080"
+'
+write_prod "$api_head$no_port$limited"
+rejects "router without a loadbalancer port rejected" tools/check-compose.sh
+
+# Rule 10. The design sheet's second Dokploy pitfall: with more than one port
+# open Traefik guesses, and the symptom is a timeout rather than an error.
+wrong_port='    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-api.rule=Host(`timseil.dev`)
+      - traefik.http.routers.timseil-api.priority=100
+      - traefik.http.services.timseil-api.loadbalancer.server.port=3000
+    networks: [default, dokploy-network]
+    expose:
+      - "8080"
+'
+write_prod "$api_head$wrong_port$limited"
+rejects "loadbalancer port that expose: does not name rejected" tools/check-compose.sh
+
+# Rule 11, both halves. A service naming networks: joins ONLY those, so the
+# first of these takes the database away from the api — and reads like an
+# outage rather than like a typo.
+proxy_only='    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-api.rule=Host(`timseil.dev`)
+      - traefik.http.routers.timseil-api.priority=100
+      - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+    networks: [dokploy-network]
+    expose:
+      - "8080"
+'
+write_prod "$api_head$proxy_only$limited"
+rejects "routed service on the proxy network alone rejected" tools/check-compose.sh
+
+default_only='    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-api.rule=Host(`timseil.dev`)
+      - traefik.http.routers.timseil-api.priority=100
+      - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+    networks: [default]
+    expose:
+      - "8080"
+'
+write_prod "$api_head$default_only$limited"
+rejects "routed service on the default network alone rejected" tools/check-compose.sh
+
+write_prod "services:
+  db:
+    image: postgres:18.6-alpine
+    networks: [default, dokploy-network]
+$limited"
+rejects "db in the proxy network rejected" tools/check-compose.sh
+
+write_prod "services:
+  db:
+    image: postgres:18.6-alpine
+$limited"
+accepts "db with no networks key accepted" tools/check-compose.sh
+
+# Rule 12. Without external: true compose does not fail — it creates its own
+# network, the stack goes green, and traefik is on neither of them.
+write_prod "$api_head$routed$limited" ''
+rejects "proxy network used but never declared rejected" tools/check-compose.sh
+
+write_prod "$api_head$routed$limited" 'networks:
+  dokploy-network:
+    driver: bridge
+'
+rejects "proxy network declared without external: true rejected" tools/check-compose.sh
+
+# Rule 13. Traefik orders by rule length when nobody says otherwise, so this
+# file would route correctly today and silently stop the day somebody rewords a
+# rule — Next.js answering /api/* with its own 404 page.
+no_priority='    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-api.rule=Host(`timseil.dev`)
+      - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+    networks: [default, dokploy-network]
+    expose:
+      - "8080"
+'
+write_prod "$api_head$no_priority$limited"
+rejects "router rule without an explicit priority rejected" tools/check-compose.sh
 
 rm -f compose.dev.yaml compose.yaml
 

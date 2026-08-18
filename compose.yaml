@@ -2,7 +2,7 @@
 # it is `make check-topology`, which runs it here to prove this phase's single
 # claim — that `down -v && up` reproduces the whole state with no handwork.
 #
-# Four rules this file exists to keep, and each of them is a gate in
+# Six rules this file exists to keep, and each of them is a gate in
 # tools/check-compose.sh rather than a sentence somebody has to remember:
 #
 #   1. No `build:`. Building on the VPS means the artefact you tested is not the
@@ -18,6 +18,16 @@
 #      environment. A file on the host is a second home for secrets, a second
 #      thing to rotate, and a file that has to exist before `up` — which is the
 #      Handgriff this phase is defined by not needing.
+#   5. api and web sit in TWO networks and the other three in one. A service
+#      that names `networks:` joins ONLY those, so this is the rule with the
+#      most misleading failure in the file: drop `default` from the api and the
+#      database disappears, and it reads like a database outage. `db` stays out
+#      of the proxy network because that one is shared with every other app on
+#      the host.
+#   6. dokploy-network is `external:` — Dokploy owns it. Without that word
+#      compose does not fail; it creates its own, and Traefik is on neither.
+#      `make require-network` makes a local stand-in so this file still runs on
+#      a machine that is not the VPS.
 #
 # The chain is db → migrate → seed → api → web. FIVE services, not the four the
 # build plan draws: the seed is idempotent and writes the curated content, so a
@@ -25,10 +35,12 @@
 # production database (issue #28, ADR 0013). ADR 0027 records the divergence as
 # the plan being outrun rather than ignored.
 #
-# Traefik is NOT here. It belongs to Dokploy and to phase D3, and its network is
-# `external:` — declaring it now would make `docker compose up` fail on every
-# machine that is not the VPS, which is exactly the acceptance criterion of this
-# phase. The two seams below mark where D3 adds it.
+# Traefik is here as labels and nowhere else. The proxy itself belongs to
+# Dokploy — one instance, not two, or they fight over 80 and 443 — and so do the
+# entrypoint names, the certresolver, the TLS options and the metrics endpoint.
+# What is Dokploy's is written down in docs/runbooks/dokploy.md rather than
+# versioned here, because an upgrade that wipes it should leave a record of what
+# it wiped. ADR 0028.
 
 name: timseil
 
@@ -220,23 +232,51 @@ services:
     # satisfied by an inherited one. Two versions of a healthcheck are one
     # version that drifts — tools/check-compose.sh refuses a second one here.
 
-    # No `ports:`. Traefik reaches this over the docker network, and that is D3's
-    # block:
+    # Still no `ports:`. Traefik reaches this over dokploy-network and nothing
+    # else does — from outside the host, 22, 80 and 443 answer.
     #
-    #     labels:
-    #       - traefik.enable=true
-    #       - traefik.docker.network=dokploy-network
-    #       - traefik.http.services.api.loadbalancer.server.port=8080
-    #     networks: [dokploy-network]
+    # THE READ API IS PUBLIC AND SITS ON THE SITE'S OWN HOST under /api (ADR
+    # 0004). That means this rule also routes /api/internal/probe and
+    # /api/internal/deploy: until L3 puts the second layer in front of them they
+    # are reachable from outside and carry ONE defence, their token, where the
+    # handbook (ch. 29) asks for two. L3 has to resolve #40 while it does that —
+    # M3 wants that path to 404 from outside and F4's probe knocks on it from
+    # outside. D3 does not decide it; D3 refuses to leave it unsaid.
     #
-    # Not here, because that network is `external:` and exists on no machine that
-    # is not the VPS — `docker compose up` would fail on it, and `down -v && up`
-    # without a Handgriff is this phase's whole acceptance criterion. D3 adds the
-    # block and adds `docker network create dokploy-network` to the runbook in
-    # the same commit.
+    # Three values here belong to Dokploy's static Traefik configuration and are
+    # READ OFF THE VPS before this file is believed: the certresolver name, the
+    # TLS entrypoint name, and whether that Traefik already redirects http to
+    # https globally — if it does not, the redirect is ours to add. Step 1 of
+    # docs/runbooks/dokploy.md is how to read all three. A guessed certresolver
+    # is a certificate that never arrives.
+    #
+    # `priority` is explicit on both routers. Traefik orders by rule LENGTH when
+    # nobody says otherwise, so this one would win today by accident and stop
+    # winning the day somebody shortens the rule. An accident is not a decision.
+    #
+    # The router name carries a project prefix: Traefik belongs to Dokploy, and
+    # a second app on this host would otherwise collide on `api`. ADR 0028.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-api.rule=(Host(`timseil.dev`) || Host(`www.timseil.dev`)) && PathPrefix(`/api`)
+      - traefik.http.routers.timseil-api.entrypoints=websecure
+      - traefik.http.routers.timseil-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.timseil-api.priority=100
+      - traefik.http.routers.timseil-api.middlewares=timseil-www@docker
+      - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+
+    # Both, and the order does not matter but the presence of each does: a
+    # service that names `networks:` joins ONLY those, so dropping `default`
+    # here would take db away from the api and the failure would look like a
+    # database outage. tools/check-compose.sh rule 11 refuses either half alone.
+    networks: [default, dokploy-network]
+
     expose:
-      # Documentation, and the number D3's Traefik label has to name. It matches
-      # listenAddr in cmd/api/main.go.
+      # Documentation, and the number the Traefik label above has to name — the
+      # two are held equal by check-compose rule 10, because Traefik guesses
+      # wrong when a container offers more than one port and the symptom is a
+      # timeout rather than an error. It matches listenAddr in cmd/api/main.go.
       - "8080"
     environment:
       # The app role. DML only — it cannot create or drop a table, which is what
@@ -344,8 +384,32 @@ services:
     # No healthcheck here either — web/Dockerfile carries one (busybox wget
     # against 127.0.0.1:3000), and one version of it is enough.
 
-    # D3's Traefik block goes here, the same shape as the api's above, with
-    # loadbalancer.server.port=3000.
+    # The same shape as the api's above, one priority lower: this rule catches
+    # everything the api's PathPrefix did not.
+    #
+    # The www → apex redirect is defined HERE, once, and both routers reference
+    # it as timseil-www@docker — the docker provider registers a middleware
+    # globally, so it does not need repeating on the api. One canonical URL:
+    # two would leave G5 repairing them with rel=canonical, and M6 does the same
+    # thing later for timseil.com.
+    #
+    # The $$ is not a typo. Compose interpolates $ and would eat $1 before
+    # Traefik ever sees it; $$ reaches the label as a single $.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.timseil-web.rule=Host(`timseil.dev`) || Host(`www.timseil.dev`)
+      - traefik.http.routers.timseil-web.entrypoints=websecure
+      - traefik.http.routers.timseil-web.tls.certresolver=letsencrypt
+      - traefik.http.routers.timseil-web.priority=10
+      - traefik.http.routers.timseil-web.middlewares=timseil-www@docker
+      - traefik.http.services.timseil-web.loadbalancer.server.port=3000
+      - traefik.http.middlewares.timseil-www.redirectregex.regex=^https://www\.timseil\.dev/(.*)
+      - traefik.http.middlewares.timseil-www.redirectregex.replacement=https://timseil.dev/$${1}
+      - traefik.http.middlewares.timseil-www.redirectregex.permanent=true
+
+    networks: [default, dokploy-network]
+
     expose:
       - "3000"
     environment:
@@ -404,3 +468,26 @@ volumes:
   # else. api and web write to tmpfs and to nothing that outlives them, which is
   # the property that makes an image rollback a complete rollback.
   db-data:
+
+networks:
+  # Traefik's network, and Dokploy owns it. `external: true` says two things at
+  # once: nothing here creates it, and nothing here may assume its shape.
+  #
+  # Leave the `external:` off and compose does NOT fail — it quietly creates
+  # `timseil_dokploy-network`, a real and healthy network that Traefik is not
+  # on. The stack comes up green and is invisible to the proxy. That is the
+  # failure this declaration exists to make impossible, and check-compose
+  # rule 12 refuses the file without it.
+  #
+  # The internal network stays the implicit `default`. It is written out in the
+  # two service lists rather than left to inference, because a reader who sees
+  # two entries asks why and a reader who sees one does not.
+  #
+  # Not `internal: true` on that one either: the api talks to GitHub's GraphQL
+  # API and to OVH's SMTP, so it needs egress.
+  #
+  # On a machine that is not the VPS this network does not exist and compose
+  # refuses to start. `make require-network` creates an empty stand-in so the
+  # same file still runs here — ADR 0028.
+  dokploy-network:
+    external: true

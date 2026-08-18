@@ -35,6 +35,32 @@
 #      page shows the development version of PostgreSQL, which is the exact
 #      class of error stack.yaml exists to prevent (issue #28).
 #
+# Five arrived with D3, and every one of them is a way for the proxy and the
+# stack to lose each other WITHOUT anything going red. That is what makes them
+# worth a gate: a stack that comes up green and is invisible to Traefik looks
+# like a DNS problem for an hour before anybody suspects this file.
+#
+#   9. api and web carry the whole label set: traefik.enable, a router rule, a
+#      loadbalancer.server.port, and traefik.docker.network. The last one is not
+#      decoration — with a service in two networks Traefik must be told which IP
+#      is the backend, and picking the other one gives it an address it cannot
+#      reach. The symptom is a timeout, not an error.
+#  10. That loadbalancer.server.port is one the service actually exposes. When a
+#      container offers more than one port Traefik guesses, and guesses wrong.
+#  11. api and web list BOTH dokploy-network and default; db, prometheus, loki
+#      and alloy list neither. A service that names `networks:` joins ONLY those,
+#      so dropping default here takes the database away from the api — and the
+#      failure reads as a database outage. The other half of the rule keeps the
+#      closed services off a network shared with every other app on that host.
+#  12. A dokploy-network that is used is declared `external: true`. Without it
+#      compose does not fail; it CREATES timseil_dokploy-network, a real and
+#      healthy network that Traefik is not on.
+#  13. Every router with a rule also carries an explicit priority. Traefik orders
+#      by rule LENGTH when nobody says otherwise, so the api router wins today by
+#      accident and stops winning the day somebody rewords the rule. Next.js
+#      would then answer /api/* with its own 404 page while the site still looks
+#      fine.
+#
 # The parsing is deliberately dumb: services sit at two spaces, their keys at
 # four, list items at six. A YAML library would be a dependency for rules this
 # narrow, so instead every rule here is held to its own broken case in
@@ -49,21 +75,84 @@ closed='^(db|prometheus|loki|alloy)$'
 # Services whose healthcheck belongs to their image and nowhere else.
 image_probed='^(api|web)$'
 
+# Services Traefik routes. The same two members as image_probed today and a
+# different reason, so they stay two variables: the day a third service is
+# routed they diverge, and one variable would have hidden that.
+routed='^(api|web)$'
+
+# The network Traefik lives in. Named once here and once in compose.yaml.
+proxy_net='dokploy-network'
+
 scan() {
   file=$1
   prod=$2
 
   [ -f "$file" ] || { printf '  – %s does not exist yet\n' "$file"; return 0; }
 
-  hits=$(awk -v closed_re="$closed" -v probed_re="$image_probed" -v prod="$prod" '
+  hits=$(awk -v closed_re="$closed" -v probed_re="$image_probed" \
+             -v routed_re="$routed" -v pnet="$proxy_net" -v prod="$prod" '
+    # Rules 4 and 9-11 are answers about a WHOLE service, so they are collected
+    # while it is read and emitted when it ends. That happens in two places — at
+    # the next service header and at the end of the block — so it is a function
+    # rather than the same lines written twice.
+    function finish() {
+      if (prod != "1" || svc == "") return
+
+      if (!mem[svc])
+        printf "line %d: %s has no memory limit — deploy.resources.limits.memory\n", svcline, svc
+
+      if (svc ~ routed_re) {
+        if (!tenable[svc])
+          printf "line %d: %s carries no traefik.enable=true — traefik would not route it\n", svcline, svc
+        if (!tnet[svc])
+          printf "line %d: %s names no traefik.docker.network=%s — traefik would pick the unreachable ip\n", svcline, svc, pnet
+        if (!hasrule[svc])
+          printf "line %d: %s has traefik labels but no router rule\n", svcline, svc
+        if (lbport[svc] == "")
+          printf "line %d: %s names no loadbalancer.server.port — traefik guesses, and guesses wrong\n", svcline, svc
+        else if (!((svc SUBSEP lbport[svc]) in exposed))
+          printf "line %d: %s routes to port %s, which it does not expose\n", svcline, svc, lbport[svc]
+
+        if (!(svc in netlist))
+          printf "line %d: %s declares no networks: — it needs %s and default\n", svcline, svc, pnet
+        else {
+          if (netlist[svc] !~ pnet)
+            printf "line %d: %s is not in %s — traefik cannot reach it\n", svcline, svc, pnet
+          if (netlist[svc] !~ /(^|[^a-zA-Z0-9_-])default([^a-zA-Z0-9_-]|$)/)
+            printf "line %d: %s names %s without default — it would lose db\n", svcline, svc, pnet
+        }
+      }
+
+      if (svc ~ closed_re && (svc in netlist) && netlist[svc] ~ pnet)
+        printf "line %d: %s sits in %s — that network is shared with every other app on the host\n", svcline, svc, pnet
+    }
+
     /^[[:space:]]*#/ { next }
-    /^[A-Za-z_][A-Za-z0-9_-]*:/ { in_services = ($0 ~ /^services:[[:space:]]*$/); svc = ""; key = ""; next }
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ {
+      finish()
+      in_services = ($0 ~ /^services:[[:space:]]*$/)
+      in_networks = ($0 ~ /^networks:[[:space:]]*$/)
+      svc = ""; key = ""; topnet = ""
+      next
+    }
+
+    # Rule 12 lives outside services:, which is why the parser needed a second
+    # top-level context at all.
+    in_networks {
+      if ($0 ~ /^  [A-Za-z0-9_.-]+:[[:space:]]*$/) {
+        topnet = $0; sub(/^  /, "", topnet); sub(/:.*$/, "", topnet)
+        if (topnet == pnet) { pnet_declared = 1; pnet_line = NR }
+        next
+      }
+      if (topnet == pnet && $0 ~ /^    external:[[:space:]]*true[[:space:]]*$/) pnet_external = 1
+      next
+    }
+
     !in_services { next }
 
-    # A service header. Before leaving the previous one, rule 4.
+    # A service header. Before leaving the previous one, everything about it.
     /^  [A-Za-z0-9_.-]+:[[:space:]]*$/ {
-      if (prod == "1" && svc != "" && !mem[svc])
-        printf "line %d: %s has no memory limit — deploy.resources.limits.memory\n", svcline, svc
+      finish()
       svc = $0; sub(/^  /, "", svc); sub(/:.*$/, "", svc); svcline = NR; key = ""
       next
     }
@@ -96,6 +185,44 @@ scan() {
       if (svc ~ probed_re && $0 ~ /^    healthcheck:/)
         printf "line %d: %s restates a healthcheck its image already carries\n", NR, svc
 
+      # Rules 9, 10 and 13 read the label list; rule 10 also reads expose:, and
+      # rule 11 the networks list in either spelling.
+      if (key == "labels" && $0 ~ /^      -[[:space:]]/) {
+        lab = $0; sub(/^      -[[:space:]]*/, "", lab); gsub(/"/, "", lab)
+        if (lab ~ /^traefik\.enable[[:space:]]*=[[:space:]]*true/) tenable[svc] = 1
+        if (lab ~ /^traefik\.docker\.network[[:space:]]*=/) {
+          v = lab; sub(/^[^=]*=[[:space:]]*/, "", v)
+          if (v == pnet) tnet[svc] = 1
+        }
+        if (lab ~ /^traefik\.http\.routers\.[A-Za-z0-9_.-]+\.rule[[:space:]]*=/) {
+          hasrule[svc] = 1
+          r = lab; sub(/^traefik\.http\.routers\./, "", r); sub(/\.rule.*$/, "", r)
+          rrule[r] = NR
+        }
+        if (lab ~ /^traefik\.http\.routers\.[A-Za-z0-9_.-]+\.priority[[:space:]]*=/) {
+          r = lab; sub(/^traefik\.http\.routers\./, "", r); sub(/\.priority.*$/, "", r)
+          rprio[r] = 1
+        }
+        if (lab ~ /^traefik\.http\.services\.[A-Za-z0-9_.-]+\.loadbalancer\.server\.port[[:space:]]*=/) {
+          v = lab; sub(/^[^=]*=[[:space:]]*/, "", v); sub(/[[:space:]].*$/, "", v)
+          lbport[svc] = v
+        }
+      }
+
+      if (key == "expose" && $0 ~ /^      -[[:space:]]/) {
+        p = $0; sub(/^      -[[:space:]]*/, "", p); gsub(/"/, "", p); sub(/[[:space:]].*$/, "", p)
+        exposed[svc, p] = 1
+      }
+
+      if ($0 ~ /^    networks:/) {
+        n = $0; sub(/^    networks:[[:space:]]*/, "", n)
+        netlist[svc] = netlist[svc] " " n
+      }
+      if (key == "networks" && $0 ~ /^      -[[:space:]]/) {
+        n = $0; sub(/^      -[[:space:]]*/, "", n)
+        netlist[svc] = netlist[svc] " " n
+      }
+
       # Rule 3. List items under volumes: only, and only in the production file.
       if (key == "volumes" && $0 ~ /^      -[[:space:]]/) {
         src = $0
@@ -107,8 +234,22 @@ scan() {
     }
 
     END {
-      if (prod == "1" && svc != "" && !mem[svc])
-        printf "line %d: %s has no memory limit — deploy.resources.limits.memory\n", svcline, svc
+      finish()
+      if (prod != "1") exit
+
+      # Rule 12. Asked only if something uses it: a file with no proxy at all is
+      # not a file with a broken proxy.
+      used = 0
+      for (s in netlist) if (netlist[s] ~ pnet) used = 1
+      if (used && !pnet_declared)
+        printf "%s is used by a service but never declared — compose would create its own, and traefik is not on that one\n", pnet
+      else if (used && !pnet_external)
+        printf "line %d: %s is declared without external: true — compose would create its own, and traefik is not on that one\n", pnet_line, pnet
+
+      # Rule 13.
+      for (r in rrule)
+        if (!(r in rprio))
+          printf "line %d: router %s has a rule but no explicit priority — traefik would order it by rule length\n", rrule[r], r
     }
   ' "$file")
 
