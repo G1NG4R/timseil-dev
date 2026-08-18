@@ -59,11 +59,7 @@ func validate(body httpx.ContactRequest, now time.Time) (submission, verdict, []
 	// The two silent refusals come first and short-circuit everything. There is
 	// no point telling a bot that its message was also too short, and there is
 	// no point spending a database round trip on it.
-	//
-	// company is compared untrimmed. A field a human never sees should be
-	// exactly the empty string, and a browser that sends a space to a hidden
-	// input is a browser doing something worth refusing.
-	if body.Company != "" || body.DwellMs < minDwell {
+	if discardReason(body) != "" {
 		return submission{}, discarded, nil
 	}
 
@@ -137,6 +133,25 @@ func validate(body httpx.ContactRequest, now time.Time) (submission, verdict, []
 		dwellMs:  int32(body.DwellMs),
 		clientTs: body.Ts.UTC(),
 	}, accepted, nil
+}
+
+// discardReason names the silent rule that caught a submission, or "" if none
+// did. It is the rule itself and not a copy of it: the log line that says which
+// trap fired asks this function, so the two cannot come to disagree about what
+// a honeypot is.
+//
+// company is compared untrimmed. A field a human never sees should be exactly
+// the empty string, and a browser that sends a space to a hidden input is doing
+// something worth refusing.
+func discardReason(body httpx.ContactRequest) string {
+	switch {
+	case body.Company != "":
+		return "honeypot"
+	case body.DwellMs < minDwell:
+		return "dwell"
+	default:
+		return ""
+	}
 }
 
 const maxInt32 = 1<<31 - 1

@@ -270,12 +270,8 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 		// The fifth answer path. No row, no mail, and a receipt that is
 		// well-formed and leads nowhere, so that a bot cannot tell this apart
 		// from success and tune its way past the rule that caught it.
-		reason := "dwell"
-		if req.Body.Company != "" {
-			reason = "honeypot"
-		}
 		h.log.Warn("contact submission discarded",
-			"request_id", reqid.From(ctx), "reason", reason,
+			"request_id", reqid.From(ctx), "reason", discardReason(*req.Body),
 			"client", h.label(f), "dwell_ms", req.Body.DwellMs)
 		return accepted202(newID(now)), nil
 	}
