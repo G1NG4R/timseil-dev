@@ -68,8 +68,8 @@ unten.
 **`DB_STATEMENT_TIMEOUT (10s) must not exceed REQUEST_TIMEOUT (5s)`** — eine
 Abfrage darf die Anfrage nicht überleben, die sie angefordert hat.
 
-**`GITHUB_TOKEN is empty — a personal access token with scope read:user`** — seit
-C5 die zweite Variable ohne Default. Sie steht **absichtlich nicht** in
+**`GITHUB_TOKEN is empty — a personal access token with scope read:user`** — die
+zweite Variable ohne Default, seit C5. Sie steht **absichtlich nicht** in
 `.env.example`: die Datei ist eingecheckt, ein Token darin wäre ein Token im
 Repository. Eins bauen unter `github.com/settings/tokens`, Scope `read:user` und
 sonst nichts, und in `.env` eintragen.
@@ -88,6 +88,16 @@ Startaufstellung.
 **`GITHUB_TOKEN contains a line break`** — beim Einfügen ist ein Zeilenumbruch
 mitgekommen. Der Wert geht in einen `Authorization`-Header; ein `\n` darin hängt
 fremde Header an. Dieselbe Klasse wie die CRLF-Regel für Mail-Felder in C6.
+
+**`CONTACT_IP_PEPPER is …` · `INTERNAL_PROBE_TOKEN is …` · `INTERNAL_DEPLOY_TOKEN
+is …`** — die drei aus C6 und C7, und sie haben dieselbe Form: kein Default,
+mindestens 32 Zeichen, kein Zeilenumbruch, und **der Wert steht in keiner
+Meldung**. Ein Prozess, der gleich abbricht, druckt sonst ein Geheimnis ins
+Container-Log. Alle drei mit `openssl rand -hex 32`, je einmal.
+
+Damit sind es **fünf** ohne Default. Die Zahl wächst mit jeder Phase, und nichts
+hält `.env.example`, `config.go`, `compose.dev.yaml` und die Tabelle unten
+gegeneinander — das ist als Prüfung für E2 gefiltert.
 
 ### Die Kaskade
 
