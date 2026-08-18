@@ -192,7 +192,13 @@ nicht im Diff, nicht überprüfbar.
 **`--volumes` darf nie dazu.** Es löschte unbenutzte Named Volumes, und
 `timseil_db-data` ist in den Sekunden zwischen `down` und `up` eines Redeploys
 unbenutzt. Das Skript nimmt deshalb **gar keine Argumente** entgegen — die Option
-lässt sich nicht durch die Unit-Datei durchreichen.
+lässt sich weder durch die Unit-Datei noch durch einen Alias durchreichen, und
+ein späterer Zusatz „nur diese eine Option" scheitert an derselben Zeile.
+
+Dazu eine zweite Sperre, die nichts mit Volumes zu tun hat: das Skript läuft nur,
+wenn `/etc/dokploy` existiert. Es entfernt jedes Image, das kein laufender
+Container benutzt — auf einer Arbeitsmaschine wäre das ein verlorener
+Nachmittag, und der Runbook schickt einen Klon dieses Repos auf den Host.
 
 **Der Preis wird benannt, nicht verschwiegen:** `-a` entfernt auch SHA-getaggte
 Images älter als sieben Tage, also die Rollback-Ziele. **Die lokale Platte ist
