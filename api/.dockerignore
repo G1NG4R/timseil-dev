@@ -1,3 +1,11 @@
-# Nothing is copied into the dev image — the source arrives as a bind mount.
-# Keeping the context small keeps `make dev` from re-uploading build output.
+# The dev image copies nothing — the source arrives as a bind mount. The
+# production image copies the whole context, so this list is now load-bearing in
+# a second way: what it excludes is what `go build` cannot see.
+#
+# Deliberately short. `**/testdata` would be the obvious next line and it is a
+# trap: internal/httpx/assets carries the OpenAPI document that go:embed puts in
+# the binary, and a filter wide enough to catch one is wide enough to catch the
+# other — a build that succeeds locally and fails in the container.
 tmp
+Dockerfile.dev
+.air.toml

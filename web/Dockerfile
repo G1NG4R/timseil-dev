@@ -1,0 +1,90 @@
+# The production image. Dockerfile.dev next door runs `next dev` around a bind
+# mount and ships nothing; this one ships.
+#
+# Three stages, and the split is not cosmetic: the runtime stage never sees
+# node_modules. `output: 'standalone'` in next.config.ts makes `next build`
+# trace what each route actually imports and write a self-contained tree, so
+# what runs is that tree plus node — no devDependencies, no npm, no install step
+# on start.
+#
+# Base image pinned by digest for the reason api/Dockerfile gives at more length:
+# a tag can be moved by whoever owns the registry entry. tools/check-dockerfiles.sh
+# refuses a bare tag here.
+
+ARG NODE_IMAGE=node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43
+
+# ---------------------------------------------------------------------- deps
+FROM ${NODE_IMAGE} AS deps
+
+WORKDIR /app
+
+# npm ci and not npm install: it installs what package-lock.json says and fails
+# if the lock file disagrees with package.json, which is the difference between
+# a reproducible image and a nearly reproducible one.
+#
+# The full install, NOT --omit=dev. The build needs typescript and
+# babel-plugin-react-compiler, both devDependencies. Nothing from this stage
+# reaches the runtime image, so there is nothing to save by pruning here.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# --------------------------------------------------------------------- build
+FROM ${NODE_IMAGE} AS build
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# A site whose argument is "everything here is checkable" does not build with a
+# tool that reports home in the background. Set for the build as well as for the
+# runtime, because `next build` is the half that phones.
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN npm run build
+
+# -------------------------------------------------------------------- runner
+FROM ${NODE_IMAGE} AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+
+# Not optional, and the same trap as `-H 0.0.0.0` in Dockerfile.dev: server.js
+# binds to HOSTNAME, and left to itself it binds to localhost — where it answers
+# only itself, and the published port looks dead from every side.
+ENV HOSTNAME=0.0.0.0
+
+# THE STANDALONE TRAP. Three copies, and the last two are the ones everybody
+# forgets: `.next/standalone` contains NEITHER `public/` NOR `.next/static`.
+# Next.js leaves them out on the assumption that a CDN serves them — this site
+# has no CDN (ADR 0006), so this container serves them or nobody does.
+#
+# Drop either line and the build still succeeds, the container still starts, and
+# every page comes up with no stylesheet, no font and no image. Build plan D1
+# calls it the most common Next.js self-hosting error and it presents as "works
+# locally, broken in the container".
+#
+# --chown because the files land under a user that is not the one running them.
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
+
+# node (1000:1000), which the base image creates. There is no distroless
+# equivalent for this half — Next's server needs a real node runtime — so the
+# reduction available here is "not root", and it is taken.
+USER node
+
+EXPOSE 3000
+
+# busybox wget is available here, unlike in the API's distroless image, so the
+# probe is a command rather than a flag on the binary. Exec form so no shell is
+# involved even though one exists.
+HEALTHCHECK --interval=5s --timeout=3s --start-period=15s --retries=3 \
+  CMD ["wget", "--quiet", "--spider", "http://127.0.0.1:3000/"]
+
+# server.js, not `next start`. It is what standalone emits, and it is the whole
+# reason node_modules is absent from this stage.
+CMD ["node", "server.js"]

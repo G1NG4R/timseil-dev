@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -48,6 +49,7 @@ const (
 	EnvTrustedProxies   = "TRUSTED_PROXY_CIDRS"
 	EnvAllowedOrigins   = "CORS_ALLOWED_ORIGINS"
 	EnvSiteSystemSlug   = "SITE_SYSTEM_SLUG"
+	EnvContribTransport = "CONTRIBUTIONS_TRANSPORT"
 	EnvGitHubToken      = "GITHUB_TOKEN"
 	EnvGitHubLogin      = "GITHUB_LOGIN"
 	EnvMailTransport    = "MAIL_TRANSPORT"
@@ -57,6 +59,18 @@ const (
 	EnvContactIPPepper  = "CONTACT_IP_PEPPER"
 	EnvProbeToken       = "INTERNAL_PROBE_TOKEN"
 	EnvDeployToken      = "INTERNAL_DEPLOY_TOKEN"
+)
+
+// The two answers CONTRIBUTIONS_TRANSPORT accepts.
+//
+// Here and not in internal/contributions, which is where the matching pair for
+// mail lives one package over. internal/mail is a leaf and can hold its own
+// names; internal/contributions takes a config.GitHub, so it already imports
+// this package and naming them there would close a cycle. The names are the
+// same shape either way.
+const (
+	TransportGitHub = "github"
+	TransportOff    = "off"
 )
 
 // The role the api is allowed to connect as. ADR 0011 splits the schema owner
@@ -86,6 +100,18 @@ const (
 	// conversion point on the site into a log line nobody reads, and it fails
 	// silently — every submission answered 202, no mail, no error.
 	defaultMailTransport = "smtp"
+
+	// github and not off, and the direction is the whole decision — the same
+	// one MAIL_TRANSPORT makes one block down. A default that fetches is a
+	// default you opt out of; the other way round, one variable nobody set in
+	// Dokploy leaves the homepage promising a contribution graph and rendering
+	// `— NO DATA` for ever, which is invariant 1 broken by omission.
+	//
+	// off exists for the deployment that has no credential and knows it: a
+	// local container being checked by hand, a CI job that starts the binary.
+	// It switches the refresher off, never the start — the guarantee stays
+	// exactly where it was.
+	defaultContribTransport = "github"
 
 	// The pepper has no default at all, for the same reason GITHUB_TOKEN has
 	// none: a shipped value is a value every deployment shares, and a shared
@@ -173,6 +199,14 @@ type RateLimit struct {
 // are compiled in. Which account, and with which credential — those differ
 // between deployments, so they live here.
 type GitHub struct {
+	// Transport is TransportGitHub or TransportOff. Off means this deployment
+	// has no credential and says so: the refresher is never started, nothing is
+	// fetched and nothing is written. The endpoint is unaffected — it reads the
+	// cached row and nothing else, so with an empty cache it keeps answering
+	// what it answers on a cold start (ADR 0020), and it never invents a
+	// calendar to fill the gap.
+	Transport string
+
 	// Token is a personal access token with scope read:user and nothing else.
 	// It never reaches a log line, a response body, an image layer or anything
 	// behind NEXT_PUBLIC_. Handbook ch. 15.
@@ -183,6 +217,11 @@ type GitHub struct {
 	// docs/runbooks/api.md.
 	Login string
 }
+
+// Fetches reports whether this deployment reaches GitHub at all. Shaped like
+// Mail.Sends and read in the same two places: the thing that owns the loop, and
+// the startup line that says out loud which of the two states this process is in.
+func (g GitHub) Fetches() bool { return g.Transport == TransportGitHub }
 
 // Mail is how the contact form reaches the outside world.
 //
@@ -289,16 +328,18 @@ func Load() (Config, error) {
 		SiteSystemSlug: l.text(EnvSiteSystemSlug, defaultSiteSystemSlug),
 
 		GitHub: GitHub{
-			Token: l.credential(EnvGitHubToken,
-				"a personal access token with scope read:user — github.com/settings/tokens"),
+			Transport: l.oneOf(EnvContribTransport, defaultContribTransport,
+				TransportGitHub, TransportOff),
+			Token: l.secret(EnvGitHubToken),
 			Login: l.login(EnvGitHubLogin, defaultGitHubLogin),
 		},
 
 		Mail: Mail{
-			Transport: l.transport(EnvMailTransport, defaultMailTransport),
-			Username:  l.address(EnvSMTPUsername),
-			Password:  strings.TrimSpace(os.Getenv(EnvSMTPPassword)),
-			To:        l.address(EnvMailTo),
+			Transport: l.oneOf(EnvMailTransport, defaultMailTransport,
+				mail.TransportSMTP, mail.TransportLog),
+			Username: l.address(EnvSMTPUsername),
+			Password: strings.TrimSpace(os.Getenv(EnvSMTPPassword)),
+			To:       l.address(EnvMailTo),
 		},
 
 		Contact: Contact{
@@ -330,6 +371,23 @@ func Load() (Config, error) {
 		l.fail("%s (%d) must not exceed %s (%d)",
 			EnvDBMinConns, cfg.DB.MinConns, EnvDBMaxConns, cfg.DB.MaxConns)
 	}
+	// Required only when this deployment actually fetches, and read
+	// unconditionally above for the reason the mail block below gives: a token
+	// with a line break in it is reported even under the off transport, so
+	// switching the transport back on does not hand you a second failure you
+	// could have been told about the first time.
+	//
+	// The message names the scope and where to get one, because .env.example
+	// deliberately carries no value — and it names the way out, because the
+	// deployment that hits this line is usually a container being checked by
+	// hand rather than production.
+	if cfg.GitHub.Fetches() && cfg.GitHub.Token == "" {
+		l.fail("%s is empty — a personal access token with scope read:user, "+
+			"github.com/settings/tokens (set %s=%s to start without one; the "+
+			"calendar is then never refreshed)",
+			EnvGitHubToken, EnvContribTransport, TransportOff)
+	}
+
 	// The three mail values are required only when mail is actually sent. They
 	// are read and validated unconditionally above, so that a wrong address is
 	// reported under the log transport too — a deployment that fixes its
@@ -391,30 +449,26 @@ func (l *loader) required(key string) string {
 	return v
 }
 
-// credential is required with two differences, and both of them earn their
-// lines.
+// secret reads a credential and checks the one thing that is true of it
+// whatever the deployment does with it.
 //
-// The first is the message. required says "copy .env.example to .env", which is
-// the right instruction for a DSN that is written down in that file and the
-// wrong one for a secret that is deliberately not — so the caller passes the
-// sentence that actually helps, naming the scope and where to get one.
+// Empty is allowed here and reported later, by the cross-field rule that knows
+// whether this deployment fetches at all — the same split internal/mail's three
+// values get, and for the same reason.
 //
-// The second is a CR/LF check. This value goes into an Authorization header. A
-// newline in it lets whoever set it append headers of their own, which is the
-// same class of failure as the CRLF rule for mail fields in C6, one endpoint
-// earlier and against a smaller attacker — but the check is three lines and the
-// alternative is trusting that nobody ever pastes a token with a trailing
-// newline into a Dokploy field.
+// What is not deferred is the CR/LF check. This value goes into an Authorization
+// header. A newline in it lets whoever set it append headers of their own, which
+// is the same class of failure as the CRLF rule for mail fields in C6, one
+// endpoint earlier and against a smaller attacker — but the check is three lines
+// and the alternative is trusting that nobody ever pastes a token with a
+// trailing newline into a Dokploy field.
 //
 // The value itself never appears in the error. A configuration failure is
 // printed by a process that is about to exit, and a secret in that line is a
 // secret in the container log.
-func (l *loader) credential(key, hint string) string {
+func (l *loader) secret(key string) string {
 	v := strings.TrimSpace(os.Getenv(key))
-	switch {
-	case v == "":
-		l.fail("%s is empty — %s", key, hint)
-	case strings.ContainsAny(v, "\r\n"):
+	if strings.ContainsAny(v, "\r\n") {
 		l.fail("%s contains a line break — it is sent as an HTTP header and must not", key)
 		return ""
 	}
@@ -449,19 +503,25 @@ const maxGitHubLogin = 39
 
 var githubLogin = regexp.MustCompile(`^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$`)
 
-// transport accepts the two names internal/mail implements and nothing else.
+// oneOf accepts the names a switch actually implements and nothing else.
 //
-// A typo here would otherwise be read as "not smtp" and silently select the log
-// transport — the site would answer every submission with 202 and deliver
-// nothing, which is the worst failure this endpoint has because it looks exactly
-// like success.
-func (l *loader) transport(key, def string) string {
+// The refusal is the point, and it is the same one for both callers. Read
+// permissively, a typo means "not the default" and silently selects the other
+// branch: MAIL_TRANSPORT=sntp would answer every submission with 202 and deliver
+// nothing, which is the worst failure that endpoint has because it looks exactly
+// like success; CONTRIBUTIONS_TRANSPORT=gihub would stop refreshing the calendar
+// and leave the page ageing quietly. Neither shows up until somebody goes
+// looking, so neither is allowed to happen.
+//
+// The first name in allowed is the default, so the message lists the way back
+// as well as the way out.
+func (l *loader) oneOf(key, def string, allowed ...string) string {
 	v := strings.ToLower(l.text(key, def))
-	if v != mail.TransportSMTP && v != mail.TransportLog {
-		l.fail("%s is %q — want %s or %s", key, v, mail.TransportSMTP, mail.TransportLog)
-		return def
+	if slices.Contains(allowed, v) {
+		return v
 	}
-	return v
+	l.fail("%s is %q — want %s", key, v, strings.Join(allowed, " or "))
+	return def
 }
 
 // address reads a mail address and holds it to the same rule the message

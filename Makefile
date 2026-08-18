@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-repo check-todo check-compose check-migrations check-stack check-go check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -45,6 +45,11 @@ check-todo: ## Reject TODO/FIXME without an issue reference
 check-compose: ## No published port for db, no build: in the production compose
 	@printf 'compose\n'
 	@tools/check-compose.sh
+
+.PHONY: check-dockerfiles
+check-dockerfiles: ## Digest pins, no secret build args, non-root, no module cache layer
+	@printf 'dockerfiles\n'
+	@tools/check-dockerfiles.sh
 
 .PHONY: check-migrations
 check-migrations: ## Migration hygiene and the invariants that are greppable
@@ -251,6 +256,85 @@ check-db: ## Migration cycle and schema invariants against a real Postgres
 # FreshSchema at the same time produce "relation already exists" from whichever
 # lost the race — a failure that reads like a broken migration and is not one.
 	@$(COMPOSE_DEV) run --rm --entrypoint go migrate test -tags=db -count=1 -p 1 ./...
+
+# -------------------------------------------------------------------- images
+
+# The production images. Local tags only — pushing to GHCR is E4's job and it
+# happens in GitHub Actions, never here and never on the VPS.
+IMAGE_API := timseil-api
+IMAGE_WEB := timseil-web
+
+# What the linker stamps into the binary, and therefore what /api/health says.
+# `git describe` names a tag when there is one and falls back to the short sha;
+# --dirty says out loud that this build is not the commit it names, which is the
+# same claim internal/buildinfo makes about a build from a working tree.
+#
+# Seven characters because that is buildinfo's shaLength and the tag scheme E4
+# will push under. A second spelling of the same number is a second number.
+GIT_SHA := $(shell git rev-parse --short=7 HEAD 2>/dev/null || echo unknown)
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+IMAGE_TAG := sha-$(GIT_SHA)
+
+.PHONY: images
+images: image-api image-web ## Build both production images
+
+.PHONY: image-api
+image-api: ## Build the API image
+	@printf 'image %s:%s\n' '$(IMAGE_API)' '$(IMAGE_TAG)'
+	@docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_SHA=$(GIT_SHA) \
+		-t $(IMAGE_API):$(IMAGE_TAG) ./api
+
+.PHONY: image-web
+image-web: ## Build the web image
+	@printf 'image %s:%s\n' '$(IMAGE_WEB)' '$(IMAGE_TAG)'
+	@docker build -t $(IMAGE_WEB):$(IMAGE_TAG) ./web
+
+# The acceptance criteria of phase D1, as a command rather than as a paragraph.
+#
+# Not part of `make check`, and for the same reason `check-db` is not: it needs
+# Docker and it needs a build. What a static check CAN say about these files is
+# said by `make check-dockerfiles`, which does run — this target checks the
+# artefact, that one checks the recipe.
+MAX_API_BYTES := 20971520
+
+.PHONY: check-images
+check-images: ## The D1 acceptance: size, user, no shell, and the standalone assets
+	@printf 'images\n'
+	@for tag in $(IMAGE_API):$(IMAGE_TAG) $(IMAGE_WEB):$(IMAGE_TAG); do \
+		docker image inspect "$$tag" >/dev/null 2>&1 || { \
+			printf '  ✗ %s is not built — run: make images\n' "$$tag"; exit 1; }; \
+	done
+# Under 20 MiB. A Go binary on distroless has no runtime to carry, so a number
+# far above this means something got copied in that should not have been.
+	@size=$$(docker image inspect $(IMAGE_API):$(IMAGE_TAG) --format '{{.Size}}'); \
+		if [ "$$size" -gt $(MAX_API_BYTES) ]; then \
+			printf '  ✗ the api image is %s bytes, over the %s byte ceiling\n' "$$size" '$(MAX_API_BYTES)'; \
+			exit 1; \
+		fi; \
+		printf '  ✓ api image %s MiB\n' "$$(( size / 1048576 ))"
+# root is the default, so the assertion is that neither image took it.
+	@for tag in $(IMAGE_API):$(IMAGE_TAG) $(IMAGE_WEB):$(IMAGE_TAG); do \
+		user=$$(docker image inspect "$$tag" --format '{{.Config.User}}'); \
+		case "$$user" in \
+			''|root|root:*|0|0:*) printf '  ✗ %s runs as %s\n' "$$tag" "$${user:-root}"; exit 1 ;; \
+		esac; \
+		printf '  ✓ %s runs as %s\n' "$$tag" "$$user"; \
+	done
+# The distroless claim, tested rather than trusted: a base image swapped for a
+# convenient one would pass every check above and fail this.
+	@if docker run --rm --entrypoint sh $(IMAGE_API):$(IMAGE_TAG) -c true >/dev/null 2>&1; then \
+		printf '  ✗ the api image has a shell\n'; exit 1; \
+	fi
+	@printf '  ✓ no shell in the api image\n'
+# The standalone trap. Both directories are absent from .next/standalone and
+# both are copied by hand, so both are checked — a build that lost one of them
+# starts, serves, and looks broken in a way that has nothing to do with the code.
+	@docker run --rm $(IMAGE_WEB):$(IMAGE_TAG) \
+		sh -c '[ -d .next/static ] && [ -d public ] && [ -f public/favicon.svg ]' \
+		|| { printf '  ✗ the web image is missing .next/static or public — the standalone trap\n'; exit 1; }
+	@printf '  ✓ .next/static and public are in the web image\n'
 
 # ---------------------------------------------------------------- placeholders
 

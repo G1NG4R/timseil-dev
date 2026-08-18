@@ -117,6 +117,7 @@ make check                            # every check that applies today
 cp .env.example .env                  # local values, none of them secret
 make dev                              # postgres + migrations + seed + api + web
 make design                           # design handoff on http://localhost:4000
+make images && make check-images      # the two images that actually ship
 ```
 
 `make dev` applies the schema and the content before the API starts, so a cold
@@ -191,6 +192,39 @@ stage H. That is deliberate: a quickstart
 that lies is the failure mode this project is built to avoid, and CI will run
 these commands from stage E5 onwards to keep this section honest.
 
+**What ships is not what you develop against.** `make dev` builds two
+convenience containers — air around a bind mount, `next dev`. `make images`
+builds the two that get deployed, and they share nothing with those:
+
+| | API | web |
+|---|---|---|
+| base | `distroless/static:nonroot` | `node:24-alpine` |
+| user | `nonroot` (65532) | `node` (1000) |
+| size | ~14 MiB | Next.js standalone output, no `node_modules` |
+| shell | **none** | busybox |
+
+Both base images are pinned by digest rather than by tag, because a tag can be
+moved by whoever owns the registry entry. `make check-dockerfiles` refuses a bare
+tag, a build arg whose name reads like a secret, a last stage that would run as
+root, and the `go mod download` layer that would drag the code-generation tools
+into an image the binary never reads them from. `make check-images` checks the
+built artefact instead of the recipe: the size ceiling, both users, that the API
+image really has no shell, and that the web image carries `public/` **and**
+`.next/static` — Next.js leaves both out of its standalone output, and a
+container missing them serves every page without a stylesheet
+([ADR 0026](docs/adr/0026-produktions-images-digest-pins-kein-modul-cache-und-ein-healthcheck-im-binary.md)).
+
+**The API image answers its own healthcheck.** There is no shell in it to run
+`wget` in, so `/api -healthcheck` dials the `/readyz` of the server the same
+binary is running and exits 0 or 1. It reads no configuration and opens no pool —
+a missing credential must never be able to make a serving container look dead.
+
+**The version on `/api/health` comes from the linker.** `make images` passes
+`git describe` and the short SHA as build args, and they are the only two build
+args either image takes: a build arg lands in the image layers and survives the
+rotation of whatever it carried, so every secret is runtime environment and
+nothing else.
+
 `make design` needs network access — the design sheets load React and fonts from
 a CDN at runtime. **A black page means no network, not a broken sheet.**
 
@@ -202,6 +236,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `CONTRIBUTING.md` · `SECURITY.md` | anyone who wants to file something |
 | `compose.dev.yaml` · `.env.example` | anyone running it locally |
 | `stack.yaml` | the curated stack — names and source pointers, no versions |
+| `api/Dockerfile` · `web/Dockerfile` | the two images that ship — `.dev` next to each builds the local one |
 | `api/` | Go: handlers thin, logic in `internal/`, SQL in `internal/store/` |
 | `web/` | Next.js App Router, Server Components by default |
 | `docs/build-plan.md` | the author, every session (German) |
@@ -245,6 +280,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0023](docs/adr/0023-internal-endpoints-two-tokens-and-a-comparison-that-does-not-branch.md) | The internal endpoints: two tokens, a comparison that does not branch on length, and every database CHECK taken in advance |
 | [0024](docs/adr/0024-router-parity-instead-of-the-generated-router.md) | The generated router is not mounted after all; a parity check proves the hand-written one is complete in both directions |
 | [0025](docs/adr/0025-the-shape-of-a-handler-package.md) | The shape every handler package took during stage C, and why two thirds of it outlived the reason it was given |
+| [0026](docs/adr/0026-produktions-images-digest-pins-kein-modul-cache-und-ein-healthcheck-im-binary.md) | The production images: base images pinned by digest, no module-cache layer, and a healthcheck the binary answers itself |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.

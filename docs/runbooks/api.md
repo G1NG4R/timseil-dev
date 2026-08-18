@@ -321,6 +321,47 @@ Keine Zeile → im Log nach `contributions refresh` sehen, der Grund steht dort
 (Abschnitt oben). Der Kaltstart ist der einzige Weg zu diesem Status; er ist
 deshalb auch die einzige Lage, in der Warten *nicht* hilft.
 
+**Wenn `CONTRIBUTIONS_TRANSPORT=off` gilt, ist 502 der Normalzustand** und kein
+Vorfall: der Refresher läuft nicht, also wird nie eine Zeile geschrieben. Beim
+Start steht eine Warnung im Log, die das sagt:
+
+```
+{"level":"WARN","msg":"the contribution calendar is NOT being refreshed — CONTRIBUTIONS_TRANSPORT is off", ...}
+```
+
+Der Schalter ist da, damit ein Container ohne echten Token startbar ist — eine
+Handprüfung, ein CI-Job. **In Produktion steht er auf `github`, und der Default
+sorgt dafür, dass eine vergessene Variable das nicht ändert** (ADR 0026 §4).
+
+---
+
+## Ein Produktions-Image untersuchen, das keine Shell hat
+
+`docker exec … sh` schlägt fehl, und das ist der Sinn des Basis-Images. Drei
+Wege, die trotzdem funktionieren:
+
+```bash
+# 1. Was der Prozess sagt — er redet JSON auf stdout, das reicht meistens.
+docker logs <container>
+
+# 2. Die Bereitschaft von innen, mit dem einzigen Werkzeug, das drin liegt.
+docker exec <container> /api -healthcheck; echo $?     # 0 = bereit, 1 = nicht
+
+# 3. Was Docker selbst gesehen hat, inklusive der Exit-Codes der letzten Proben.
+docker inspect --format '{{json .State.Health}}' <container>
+```
+
+Der Exit-Code aus 2 ist die ganze Antwort — die Sonde druckt nichts. Sie liest
+weder die Konfiguration noch öffnet sie den Pool, also sagt eine 1 genau eine
+Sache: `/readyz` hat nicht mit 200 geantwortet. Warum, steht im Log aus 1.
+
+Braucht man wirklich ein Werkzeug im Container, ist der Weg **nicht**, eins ins
+Image zu legen, sondern eins danebenzustellen:
+
+```bash
+docker run --rm -it --network container:<container> alpine sh
+```
+
 ---
 
 ## „`GITHUB_LOGIN` geändert, die Zahlen sehen falsch aus"
@@ -575,10 +616,11 @@ Teil des Logs.
 
 ## Die Umgebungsvariablen
 
-**Fünf** haben keinen Default: `DATABASE_URL`, seit C5 `GITHUB_TOKEN`, seit C6
-`CONTACT_IP_PEPPER` und seit C7 `INTERNAL_PROBE_TOKEN` und
-`INTERNAL_DEPLOY_TOKEN`. Dazu drei bedingte: `SMTP_USERNAME`, `SMTP_PASSWORD`
-und `MAIL_TO` sind Pflicht, sobald `MAIL_TRANSPORT=smtp` gilt. Alle anderen
+**Vier** haben keinen Default: `DATABASE_URL`, seit C6 `CONTACT_IP_PEPPER` und
+seit C7 `INTERNAL_PROBE_TOKEN` und `INTERNAL_DEPLOY_TOKEN`. Dazu vier bedingte:
+`SMTP_USERNAME`, `SMTP_PASSWORD` und `MAIL_TO` sind Pflicht, sobald
+`MAIL_TRANSPORT=smtp` gilt, und `GITHUB_TOKEN` ist Pflicht, solange
+`CONTRIBUTIONS_TRANSPORT` auf `github` steht — also im Normalfall. Alle anderen
 stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet „nimm den
 Default", damit die Zahlen nur an einer Stelle existieren — in
 `api/internal/config`.
@@ -597,7 +639,8 @@ Default", damit die Zahlen nur an einer Stelle existieren — in
 | `TRUSTED_PROXY_CIDRS` | leer | leer heißt: keinem Header glauben |
 | `CORS_ALLOWED_ORIGINS` | drei Origins | nur der Schreibpfad prüft sie — `POST /api/contact` |
 | `SITE_SYSTEM_SLUG` | `timseil-dev` | worüber `/api/health` berichtet |
-| `GITHUB_TOKEN` | — | Pflicht, PAT mit Scope `read:user` |
+| `CONTRIBUTIONS_TRANSPORT` | `github` | `github` \| `off`. `off` startet den Refresher nie |
+| `GITHUB_TOKEN` | — | Pflicht bei `github`, PAT mit Scope `read:user` |
 | `GITHUB_LOGIN` | `G1NG4R` | wessen Kalender — und der Schlüssel der Cache-Zeile |
 | `MAIL_TRANSPORT` | `smtp` | `smtp` \| `log`. `log` baut die Mail und sendet nicht |
 | `SMTP_USERNAME` | — | Pflicht bei `smtp`. Volle Adresse, **und zugleich das `From:`** |

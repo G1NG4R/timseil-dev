@@ -47,6 +47,7 @@ func setEnv(t *testing.T, overrides map[string]string) {
 		EnvTrustedProxies:   "",
 		EnvAllowedOrigins:   "",
 		EnvSiteSystemSlug:   "",
+		EnvContribTransport: "",
 		EnvGitHubToken:      goodToken,
 		EnvGitHubLogin:      "",
 		// The log transport is the base state so that the mail credentials are
@@ -150,16 +151,19 @@ func TestUnparseableDSNIsRefused(t *testing.T) {
 
 // ------------------------------------------------------------------- github
 
-// The second variable with no default, and the first secret this program has.
+// The first secret this program has, and required whenever this deployment
+// fetches — which is the default.
 //
 // Refusing to start is the honest option. The site promises a contribution graph
 // on the homepage; a process that runs happily while it can never fetch one
 // would show `— NO DATA` for ever and call it a measurement, which is invariant
 // 1 wearing a startup hat. The message names the scope and where to get one,
-// because .env.example deliberately does not contain the value.
+// because .env.example deliberately does not contain the value — and it names
+// the off switch, because the deployment that hits this line is usually a
+// container being checked by hand.
 func TestAMissingGitHubTokenStopsTheStart(t *testing.T) {
 	setEnv(t, map[string]string{EnvGitHubToken: ""})
-	wantFailure(t, EnvGitHubToken, "read:user")
+	wantFailure(t, EnvGitHubToken, "read:user", EnvContribTransport)
 }
 
 func TestABlankGitHubTokenIsNotAToken(t *testing.T) {
@@ -178,6 +182,55 @@ func TestATokenWithALineBreakIsRejected(t *testing.T) {
 		setEnv(t, map[string]string{EnvGitHubToken: tok})
 		wantFailure(t, EnvGitHubToken, "line break")
 	}
+}
+
+// ----------------------------------------------- the contributions transport
+
+// The direction of the default is the decision, and it is the same one
+// MAIL_TRANSPORT makes: a default that fetches is one you opt out of. The other
+// way round, one variable nobody set in Dokploy leaves the homepage promising a
+// contribution graph and rendering `— NO DATA` for ever.
+func TestTheContributionsTransportDefaultsToFetching(t *testing.T) {
+	setEnv(t, map[string]string{EnvContribTransport: ""})
+	cfg := mustLoad(t)
+
+	if !cfg.GitHub.Fetches() {
+		t.Errorf("%s defaulted to %q, want %s",
+			EnvContribTransport, cfg.GitHub.Transport, TransportGitHub)
+	}
+}
+
+// The whole point of #59: a container can be started and checked by hand
+// without a real token, and production keeps the guarantee.
+func TestTheOffTransportStartsWithoutAToken(t *testing.T) {
+	setEnv(t, map[string]string{
+		EnvContribTransport: TransportOff,
+		EnvGitHubToken:      "",
+	})
+	cfg := mustLoad(t)
+
+	if cfg.GitHub.Fetches() {
+		t.Error("the off transport reports that it fetches")
+	}
+}
+
+// A typo must not read as "not github" and silently switch the calendar off —
+// the same refusal MAIL_TRANSPORT gets, and for the same reason: nobody would
+// notice until the page had quietly stopped ageing forward.
+func TestAnUnknownContributionsTransportIsRefused(t *testing.T) {
+	setEnv(t, map[string]string{EnvContribTransport: "gihub"})
+	wantFailure(t, EnvContribTransport, TransportGitHub, TransportOff)
+}
+
+// Read even under the off transport, for the reason the mail block gives: a
+// deployment switching the transport back on should not then be told about a
+// second problem it could have heard about the first time.
+func TestALineBreakInTheTokenIsReportedUnderTheOffTransport(t *testing.T) {
+	setEnv(t, map[string]string{
+		EnvContribTransport: TransportOff,
+		EnvGitHubToken:      "ghp_good\nX-Injected: yes",
+	})
+	wantFailure(t, EnvGitHubToken, "line break")
 }
 
 // And the token never appears in the failure. A configuration error is printed

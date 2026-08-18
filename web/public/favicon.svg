@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="timseil.dev">
+  <!--
+    The `://` half of the wordmark in the design handoff's Chrome sheet, drawn
+    rather than typeset: a favicon has no webfont to reach for, and a mark built
+    from paths renders the same everywhere.
+
+    No background. A tab strip is dark in one browser and light in the next, and
+    a mark with a plate under it can only match one of them.
+
+    G3 owns the final artwork. This file exists now because the production web
+    image copies `public/` explicitly (the standalone trap) and a rule proven
+    against an empty directory is not proven.
+  -->
+  <g fill="none" stroke="#00E5FF" stroke-width="3.2" stroke-linecap="round">
+    <path d="M14 24 L21 8" />
+    <path d="M22 24 L29 8" />
+  </g>
+  <g fill="#00E5FF">
+    <circle cx="6.5" cy="11" r="2.6" />
+    <circle cx="6.5" cy="21" r="2.6" />
+  </g>
+</svg>

@@ -48,9 +48,44 @@ type Refresher struct {
 }
 
 // NewRefresher starts the loop. Call Stop before closing the pool.
+//
+// Unless the deployment says it has no credential, in which case the loop is not
+// started at all. Not started, rather than started and made to do nothing: a
+// ticker that wakes every five minutes to decide it has no work would show up in
+// a profile as work, and "the refresher is running" would stop meaning "the
+// calendar is being refreshed".
+//
+// Nothing downstream changes. The handler reads the cached row and never GitHub,
+// so an off deployment answers exactly what an unreachable GitHub answers on a
+// cold start — the 502 from ADR 0020 — and never an invented calendar.
 func NewRefresher(q RefreshQueries, gh config.GitHub, log *slog.Logger) *Refresher {
+	if !gh.Fetches() {
+		log.Warn("the contribution calendar is NOT being refreshed — "+
+			config.EnvContribTransport+" is "+config.TransportOff,
+			"reason", "this deployment has no GitHub credential and says so",
+			"effect", "the cached calendar ages and is served with its true age; "+
+				"an empty cache stays empty")
+		return stopped()
+	}
+
 	ticker := time.NewTicker(refreshEvery)
 	return start(q, gh.Login, newFetcher(gh).fetch, log, ticker.C, ticker.Stop, time.Now)
+}
+
+// stopped is a Refresher that has already finished. It owns no goroutine and
+// holds no ticker, and Stop walks its ordinary path over it: the shutdown in
+// cmd/api releases the same five things in the same order whatever the
+// transport, which is one branch that does not have to exist there.
+func stopped() *Refresher {
+	stop, done := make(chan struct{}), make(chan struct{})
+	close(stop)
+	close(done)
+	return &Refresher{
+		cancel:      func() {},
+		stopTicking: func() {},
+		stop:        stop,
+		done:        done,
+	}
 }
 
 // start is NewRefresher with the clock, the ticks and GitHub itself handed in,

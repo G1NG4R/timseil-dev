@@ -1,6 +1,11 @@
 # The build context is uploaded to the daemon on every build. node_modules and
-# .next are the two directories that make that slow and buy nothing: the image
-# installs its own, the bind mount supplies the rest.
+# .next are the two directories that make that slow and buy nothing: both images
+# produce their own, and the dev container's bind mount supplies the rest.
+#
+# public/ is deliberately absent from this list. The production image copies it
+# explicitly — see the standalone trap in Dockerfile — and an ignore rule here
+# would empty it without failing the build.
 node_modules
 .next
 out
+Dockerfile.dev
