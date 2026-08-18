@@ -35,8 +35,13 @@ import "time"
 const (
 	// The stricter limit, from the build plan and the contract's own
 	// description of the endpoint.
-	rateLimit       = 3
-	rateLimitWindow = 10 * time.Minute
+	//
+	// Exported because it is enforced twice and the two halves have to agree:
+	// internal/server builds the token bucket in front of the route from these,
+	// and the database floor below uses them for its window. Two statements of
+	// "three in ten minutes" is one too many.
+	RateLimit       = 3
+	RateLimitWindow = 10 * time.Minute
 
 	// The hourly ceiling on messages actually handed to the relay.
 	//

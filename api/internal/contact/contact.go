@@ -354,12 +354,12 @@ func (h *Handler) overLimit(ctx context.Context, ipHash []byte, now time.Time) (
 	row, err := h.queries.CountRecentContactMessages(ctx,
 		store.CountRecentContactMessagesParams{
 			IpHash:     ipHash,
-			WindowSize: pgtype.Interval{Microseconds: rateLimitWindow.Microseconds(), Valid: true},
+			WindowSize: pgtype.Interval{Microseconds: RateLimitWindow.Microseconds(), Valid: true},
 		})
 	if err != nil {
 		return 0, fmt.Errorf("counting recent contact messages: %w", err)
 	}
-	if row.Recent < rateLimit || !row.Oldest.Valid {
+	if row.Recent < RateLimit || !row.Oldest.Valid {
 		return 0, nil
 	}
 
@@ -367,7 +367,7 @@ func (h *Handler) overLimit(ctx context.Context, ipHash []byte, now time.Time) (
 	// falls out. A flat "ten minutes" would be wrong for everyone who submitted
 	// nine minutes ago, and a wait a client cannot see coming is a wait it does
 	// not take.
-	wait := row.Oldest.Time.Add(rateLimitWindow).Sub(now)
+	wait := row.Oldest.Time.Add(RateLimitWindow).Sub(now)
 	if wait < time.Second {
 		wait = time.Second
 	}

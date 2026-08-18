@@ -184,3 +184,98 @@ func (rl *RateLimiter) count() int {
 	defer rl.mu.Unlock()
 	return len(rl.buckets)
 }
+
+// ------------------------------------------------------ the window form (C6)
+
+// Three per ten minutes cannot be said with a whole number of tokens per minute:
+// as an int it is 0, which refuses everybody forever and would turn the only
+// conversion point on the site off with a rounding error.
+func TestAWindowRateThatIsNotAWholeNumberPerMinute(t *testing.T) {
+	clock := &clock{t: time.Date(2026, 8, 18, 12, 0, 0, 0, time.UTC)}
+	rl := NewRateLimiterPer(3, 10*time.Minute, 3, NewClientIP(nil), NewIPHasher(), quiet())
+	rl.now = clock.now
+	t.Cleanup(rl.Stop)
+
+	handler := rl.Gate(okHandler())
+
+	for i := range 3 {
+		if w := gateThrough(handler); w.Code != http.StatusOK {
+			t.Fatalf("request %d gave %d, want 200", i+1, w.Code)
+		}
+	}
+	w := gateThrough(handler)
+	if w.Code != http.StatusTooManyRequests {
+		t.Fatalf("the fourth request gave %d, want 429", w.Code)
+	}
+	if w.Header().Get("Retry-After") == "" {
+		t.Error("the 429 carries no Retry-After")
+	}
+
+	// A third of the window buys back one token, and not two.
+	clock.add(200 * time.Second)
+	if w := gateThrough(handler); w.Code != http.StatusOK {
+		t.Errorf("a refilled token was refused: %d", w.Code)
+	}
+	if w := gateThrough(handler); w.Code != http.StatusTooManyRequests {
+		t.Errorf("a second token appeared out of one third of the window: %d", w.Code)
+	}
+}
+
+// Gate makes no decision about which paths it covers, so that the route it is
+// wrapped around is the whole statement of scope. Middleware is the one that
+// tests the path.
+func TestGateCoversWhateverItWraps(t *testing.T) {
+	rl := NewRateLimiterPer(1, time.Hour, 1, NewClientIP(nil), NewIPHasher(), quiet())
+	t.Cleanup(rl.Stop)
+
+	handler := rl.Gate(okHandler())
+
+	if w := gateThrough(handler); w.Code != http.StatusOK {
+		t.Fatalf("status %d", w.Code)
+	}
+	// Not an /api/ path, and still limited: the mux line decides the scope.
+	r := httptest.NewRequest(http.MethodPost, "/somewhere-else", nil)
+	r.RemoteAddr = "203.0.113.7:51000"
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if w.Code != http.StatusTooManyRequests {
+		t.Errorf("status %d, want 429 — Gate must not test the path itself", w.Code)
+	}
+}
+
+// The broad limiter and the strict one count separately. Spending the contact
+// budget must not close the read endpoints, and reading must not use up
+// somebody's three messages.
+func TestTwoLimitersDoNotShareABucket(t *testing.T) {
+	broad := NewRateLimiter(120, 60, NewClientIP(nil), NewIPHasher(), quiet())
+	strict := NewRateLimiterPer(3, 10*time.Minute, 3, NewClientIP(nil), NewIPHasher(), quiet())
+	t.Cleanup(broad.Stop)
+	t.Cleanup(strict.Stop)
+
+	strictly := strict.Gate(okHandler())
+	for range 3 {
+		gateThrough(strictly)
+	}
+	if w := gateThrough(strictly); w.Code != http.StatusTooManyRequests {
+		t.Fatalf("the strict limiter did not bite: %d", w.Code)
+	}
+
+	broadly := broad.Middleware()(okHandler())
+	r := httptest.NewRequest(http.MethodGet, "/api/systems", nil)
+	r.RemoteAddr = "203.0.113.7:51000"
+	w := httptest.NewRecorder()
+	broadly.ServeHTTP(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status %d — a spent contact budget closed the read endpoints", w.Code)
+	}
+}
+
+func gateThrough(h http.Handler) *httptest.ResponseRecorder {
+	r := httptest.NewRequest(http.MethodPost, "/api/contact", nil)
+	r.RemoteAddr = "203.0.113.7:51000"
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	return w
+}

@@ -24,9 +24,11 @@ import (
 
 	"github.com/G1NG4R/timseil-dev/api/internal/buildinfo"
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/contact"
 	"github.com/G1NG4R/timseil-dev/api/internal/contributions"
 	"github.com/G1NG4R/timseil-dev/api/internal/db"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
+	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/ops"
 	"github.com/G1NG4R/timseil-dev/api/internal/server"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
@@ -101,6 +103,21 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	// calendar with an honest age rather than an error.
 	refresher := contributions.NewRefresher(store.New(pool), cfg.GitHub, log)
 
+	// The mail transport, and the hourly ceiling both users of it share.
+	//
+	// One Budget for the handler and the dispatcher together, because it stands
+	// between this service and OVH's quota and a quota is not per goroutine.
+	// The sender is built here rather than inside internal/server so that the
+	// dispatcher and the handler talk to the same one, and so that the choice of
+	// transport is made once, next to the line that announces it.
+	sender := newSender(cfg.Mail, log)
+	budget := contact.NewBudget(time.Now())
+
+	// The third background user of the pool. It carries out what the handler
+	// could not: a visitor gets one attempt because they are waiting on the
+	// answer, and everything after that is this loop's.
+	dispatcher := contact.NewDispatcher(store.New(pool), sender, cfg.Mail.To, budget, log)
+
 	// Flipped before the listener closes, so /readyz says 503 while the last
 	// requests drain and whatever is watching stops sending new ones.
 	var accepting atomic.Bool
@@ -111,11 +128,11 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	build := buildinfo.Read()
 	log.Info("build", "version", build.Version, "sha", build.SHA)
 
-	handler, stopLimiter := server.New(cfg, pool, health.Build{
+	handler, stopLimiters := server.New(cfg, pool, health.Build{
 		Version:   build.Version,
 		SHA:       build.SHA,
 		StartedAt: time.Now().UTC(),
-	}, log, &accepting)
+	}, sender, budget, log, &accepting)
 
 	srv := &http.Server{
 		Handler:           handler,
@@ -137,23 +154,27 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	if err != nil {
 		aggregator.Stop()
 		refresher.Stop()
-		stopLimiter()
+		dispatcher.Stop()
+		stopLimiters()
 		pool.Close()
 		return err
 	}
 
 	log.Info("api listening", "addr", ln.Addr().String())
 
-	// All four released after the drain, and in this order: the two background
+	// All five released after the drain, and in this order: the three background
 	// users of the pool first, because work in flight would otherwise meet a
-	// closed one, the limiter's janitor next because nothing is waiting on it,
-	// the pool last because a handler still writing its response may still need
-	// it. Both Stop calls cancel rather than wait — a roll-up or a fetch cut
-	// halfway loses nothing that the next tick does not redo.
+	// closed one, the limiters' janitors next because nothing is waiting on
+	// them, the pool last because a handler still writing its response may still
+	// need it. Every Stop cancels rather than waits — a roll-up or a fetch cut
+	// halfway loses nothing that the next tick does not redo, and a delivery cut
+	// halfway costs at worst one duplicate mail to our own inbox, which is
+	// cheaper than holding the drain open for an SMTP conversation.
 	return serve(ctx, srv, ln, cfg.ShutdownGrace, &accepting, func() {
 		aggregator.Stop()
 		refresher.Stop()
-		stopLimiter()
+		dispatcher.Stop()
+		stopLimiters()
 		pool.Close()
 	}, log)
 }
@@ -211,4 +232,21 @@ func serve(
 
 	log.Info("drained cleanly")
 	return nil
+}
+
+// newSender picks the transport and says so when it is not the real one.
+//
+// A process that only logs its mail is a process whose contact form is silently
+// off, and the way that gets discovered otherwise is an empty inbox weeks later.
+// So the log transport announces itself at WARN, once, at startup — the same
+// place a missing credential would have.
+func newSender(cfg config.Mail, log *slog.Logger) mail.Sender {
+	if cfg.Sends() {
+		return mail.NewSMTPSender(cfg.Username, cfg.Password)
+	}
+
+	log.Warn("mail is NOT being sent — MAIL_TRANSPORT is log",
+		"reason", "messages are built in full and written to a log line instead",
+		"note", "a visitor's address ends up in that line; this is a development transport")
+	return mail.NewLogSender(cfg.Username, log)
 }

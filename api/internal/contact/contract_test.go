@@ -158,7 +158,7 @@ func TestEveryDeclaredResponseIsReachable(t *testing.T) {
 			status: http.StatusTooManyRequests,
 			drive: func(t *testing.T) *Handler {
 				return newHandler(t, &stubQueries{
-					recent: rateLimit, oldest: testNow.Add(-time.Minute),
+					recent: RateLimit, oldest: testNow.Add(-time.Minute),
 				}, &stubSender{})
 			},
 			body: body(nil),

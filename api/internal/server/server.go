@@ -21,9 +21,11 @@ import (
 	"time"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
+	"github.com/G1NG4R/timseil-dev/api/internal/contact"
 	"github.com/G1NG4R/timseil-dev/api/internal/contributions"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
+	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 	"github.com/G1NG4R/timseil-dev/api/internal/systems"
@@ -46,11 +48,21 @@ type DB interface {
 // The returned cleanup stops the rate limiter's janitor. It is separate from
 // closing the pool because the two have to happen in order, after the drain,
 // and the caller is the only place that knows when that is.
-func New(cfg config.Config, pool DB, build health.Build, log *slog.Logger, accepting *atomic.Bool) (http.Handler, func()) {
+func New(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
+	budget *contact.Budget, log *slog.Logger, accepting *atomic.Bool,
+) (http.Handler, func()) {
 	client := middleware.NewClientIP(cfg.TrustedProxies)
 	hasher := middleware.NewIPHasher()
 	limiter := middleware.NewRateLimiter(
 		cfg.RateLimit.PerMinute, cfg.RateLimit.Burst, client, hasher, log)
+
+	// The second limiter, and the reason it is not another link in the chain:
+	// three per ten minutes belongs to one route, and wrapping that route at its
+	// mux line makes the route the whole statement of scope. A chain link would
+	// need a path test of its own, and then the scope and the mounting could
+	// disagree. ADR 0015 §3 asked for it in as many words.
+	contactLimiter := middleware.NewRateLimiterPer(
+		contact.RateLimit, contact.RateLimitWindow, contact.RateLimit, client, hasher, log)
 
 	// The chain, in the order the build plan states it, read outermost first.
 	//
@@ -62,7 +74,8 @@ func New(cfg config.Config, pool DB, build health.Build, log *slog.Logger, accep
 	// limit, because a preflight answered with 429 reaches the browser as an
 	// opaque CORS failure instead of a readable one. The rate limit last, so a
 	// throttled request still has an id and a log line.
-	handler := middleware.Chain(routes(cfg, pool, build, log, accepting),
+	handler := middleware.Chain(
+		routes(cfg, pool, build, sender, budget, contactLimiter, client, log, accepting),
 		middleware.RequestID(client),
 		middleware.Logging(log, client, hasher),
 		middleware.Recover(log),
@@ -74,14 +87,22 @@ func New(cfg config.Config, pool DB, build health.Build, log *slog.Logger, accep
 		middleware.ProblemErrors(),
 	)
 
-	return handler, limiter.Stop
+	// Both janitors, in one function, because the caller is the only place that
+	// knows when the drain is over and should not have to remember that there
+	// are two.
+	return handler, func() {
+		limiter.Stop()
+		contactLimiter.Stop()
+	}
 }
 
 // routes wires what this phase actually serves. The method in the pattern is
 // load-bearing: "GET /healthz" makes ServeMux answer 405 to a POST instead of
 // pretending the process was asked whether it is alive.
-func routes(cfg config.Config, pool DB, build health.Build, log *slog.Logger,
-	accepting *atomic.Bool) *http.ServeMux {
+func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
+	budget *contact.Budget, contactLimiter *middleware.RateLimiter,
+	client middleware.ClientIP, log *slog.Logger, accepting *atomic.Bool,
+) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Liveness. It stays 200 while draining: a draining process is still alive,
@@ -136,6 +157,15 @@ func routes(cfg config.Config, pool DB, build health.Build, log *slog.Logger,
 	// also where the token lives and where it stays.
 	mux.Handle("GET /api/contributions",
 		contributions.New(queries, cfg.GitHub.Login, log))
+
+	// The one unauthenticated write path, and the only route with a limiter of
+	// its own. The broad one has already counted this request by the time the
+	// strict one sees it; the two are separate buckets on purpose, so that a
+	// spent contact budget does not close the read endpoints and reading does
+	// not use up somebody's three messages.
+	mux.Handle("POST /api/contact", contactLimiter.Gate(
+		contact.New(queries, sender, cfg.Mail.To, []byte(cfg.Contact.IPPepper),
+			cfg.AllowedOrigins, client, budget, log)))
 
 	// The contract, rendered and raw: /api/docs, /api/docs/scalar.js and
 	// /api/openapi.yaml.

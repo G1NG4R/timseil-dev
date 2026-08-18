@@ -58,10 +58,29 @@ func CORS(allowed []string) Func {
 				return
 			}
 
-			if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			switch {
+			case r.Method == http.MethodGet || r.Method == http.MethodHead:
 				// No Vary: Origin. The value is constant, so varying on it
 				// would fragment every cache in front of this for nothing.
 				w.Header().Set("Access-Control-Allow-Origin", "*")
+
+			case set[strings.ToLower(r.Header.Get("Origin"))]:
+				// The write path, and the half that was missing until C6.
+				//
+				// The preflight above was answered correctly, so the browser
+				// sent the POST — and then refused to hand the response to the
+				// page, because the response itself carried no
+				// Access-Control-Allow-Origin. The form would have shown a
+				// network error for a message that was accepted and delivered,
+				// and the receipt in the 202 body — the one thing a visitor
+				// takes away from it — would never have been readable.
+				//
+				// Nothing reported it: every server-side test passed, the
+				// endpoint answered 202, and only a browser could see the
+				// difference. Vary: Origin here, unlike above, because this
+				// value really does depend on the request.
+				w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+				w.Header().Add("Vary", "Origin")
 			}
 
 			next.ServeHTTP(w, r)

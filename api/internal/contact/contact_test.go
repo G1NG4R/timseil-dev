@@ -542,7 +542,7 @@ func TestARequestWithNoOriginIsAllowed(t *testing.T) {
 // ----------------------------------------------------------------- throttled
 
 func TestTheFloorRefusesTheFourthMessage(t *testing.T) {
-	q := &stubQueries{recent: rateLimit, oldest: testNow.Add(-9 * time.Minute)}
+	q := &stubQueries{recent: RateLimit, oldest: testNow.Add(-9 * time.Minute)}
 	h := newHandler(t, q, &stubSender{})
 
 	w := post(t, h, body(nil), nil)
@@ -560,7 +560,7 @@ func TestTheFloorRefusesTheFourthMessage(t *testing.T) {
 // ten minutes would be wrong for everyone who submitted nine minutes ago, and a
 // wait a client cannot see coming is a wait it does not take.
 func TestTheWaitIsMeasuredNotGuessed(t *testing.T) {
-	q := &stubQueries{recent: rateLimit, oldest: testNow.Add(-9 * time.Minute)}
+	q := &stubQueries{recent: RateLimit, oldest: testNow.Add(-9 * time.Minute)}
 	h := newHandler(t, q, &stubSender{})
 
 	w := post(t, h, body(nil), nil)
@@ -572,7 +572,7 @@ func TestTheWaitIsMeasuredNotGuessed(t *testing.T) {
 }
 
 func TestTheThirdMessageStillGoesThrough(t *testing.T) {
-	q := &stubQueries{recent: rateLimit - 1, oldest: testNow.Add(-time.Minute)}
+	q := &stubQueries{recent: RateLimit - 1, oldest: testNow.Add(-time.Minute)}
 	h := newHandler(t, q, &stubSender{})
 
 	if w := post(t, h, body(nil), nil); w.Code != http.StatusAccepted {
