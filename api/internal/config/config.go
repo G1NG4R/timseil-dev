@@ -21,6 +21,7 @@ import (
 	"net/netip"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +46,8 @@ const (
 	EnvTrustedProxies   = "TRUSTED_PROXY_CIDRS"
 	EnvAllowedOrigins   = "CORS_ALLOWED_ORIGINS"
 	EnvSiteSystemSlug   = "SITE_SYSTEM_SLUG"
+	EnvGitHubToken      = "GITHUB_TOKEN"
+	EnvGitHubLogin      = "GITHUB_LOGIN"
 )
 
 // The role the api is allowed to connect as. ADR 0011 splits the schema owner
@@ -67,6 +70,7 @@ const (
 	defaultRateLimitBurst   = 60
 	defaultAllowedOrigins   = "https://timseil.dev,https://www.timseil.dev,http://localhost:3000"
 	defaultSiteSystemSlug   = "timseil-dev"
+	defaultGitHubLogin      = "G1NG4R"
 
 	// Empty on purpose: trust nobody. A program that assumes a proxy stands in
 	// front of it will believe a forwarded header the day it is reachable
@@ -92,6 +96,7 @@ type Config struct {
 
 	DB        DB
 	RateLimit RateLimit
+	GitHub    GitHub
 
 	// TrustedProxies decides whether X-Forwarded-For is believed at all. Empty
 	// is the default and means "believe nobody" — then the peer address is the
@@ -126,6 +131,25 @@ type RateLimit struct {
 	Burst     int
 }
 
+// GitHub is what the contribution refresher needs to reach the GraphQL API.
+//
+// The endpoint itself is not here. A URL that can be set from the environment is
+// one edit away from being a URL that can be set from a request, and the whole
+// point of the SSRF rule is that the two outbound destinations this service has
+// are compiled in. Which account, and with which credential — those differ
+// between deployments, so they live here.
+type GitHub struct {
+	// Token is a personal access token with scope read:user and nothing else.
+	// It never reaches a log line, a response body, an image layer or anything
+	// behind NEXT_PUBLIC_. Handbook ch. 15.
+	Token string
+
+	// Login is whose calendar is fetched. Also the primary key of the cached
+	// row, which is why a change to it leaves the old row behind — see
+	// docs/runbooks/api.md.
+	Login string
+}
+
 // Load reads and validates the environment.
 //
 // The error it returns names every problem it found, one per line, so a cold
@@ -157,6 +181,12 @@ func Load() (Config, error) {
 		TrustedProxies: l.prefixes(EnvTrustedProxies, defaultTrustedProxies),
 		AllowedOrigins: l.origins(EnvAllowedOrigins, defaultAllowedOrigins),
 		SiteSystemSlug: l.text(EnvSiteSystemSlug, defaultSiteSystemSlug),
+
+		GitHub: GitHub{
+			Token: l.credential(EnvGitHubToken,
+				"a personal access token with scope read:user — github.com/settings/tokens"),
+			Login: l.login(EnvGitHubLogin, defaultGitHubLogin),
+		},
 	}
 
 	// Cross-field rules. They run last because each one needs two values that
@@ -213,6 +243,64 @@ func (l *loader) required(key string) string {
 	}
 	return v
 }
+
+// credential is required with two differences, and both of them earn their
+// lines.
+//
+// The first is the message. required says "copy .env.example to .env", which is
+// the right instruction for a DSN that is written down in that file and the
+// wrong one for a secret that is deliberately not — so the caller passes the
+// sentence that actually helps, naming the scope and where to get one.
+//
+// The second is a CR/LF check. This value goes into an Authorization header. A
+// newline in it lets whoever set it append headers of their own, which is the
+// same class of failure as the CRLF rule for mail fields in C6, one endpoint
+// earlier and against a smaller attacker — but the check is three lines and the
+// alternative is trusting that nobody ever pastes a token with a trailing
+// newline into a Dokploy field.
+//
+// The value itself never appears in the error. A configuration failure is
+// printed by a process that is about to exit, and a secret in that line is a
+// secret in the container log.
+func (l *loader) credential(key, hint string) string {
+	v := strings.TrimSpace(os.Getenv(key))
+	switch {
+	case v == "":
+		l.fail("%s is empty — %s", key, hint)
+	case strings.ContainsAny(v, "\r\n"):
+		l.fail("%s contains a line break — it is sent as an HTTP header and must not", key)
+		return ""
+	}
+	return v
+}
+
+// login validates the GitHub account name.
+//
+// Not paranoia about injection: the login travels as a JSON variable in a
+// GraphQL document, where it cannot escape into the query. It is validated
+// because the failure mode of a typo is silence. GitHub answers an unknown user
+// with `data.user: null` and HTTP 200, so a wrong letter here becomes an hourly
+// failure that looks exactly like GitHub being down — and the calendar just
+// quietly stops ageing forward.
+//
+// The rule is GitHub's own: alphanumerics and single hyphens, not at either end,
+// up to 39 characters.
+func (l *loader) login(key, def string) string {
+	v := l.text(key, def)
+	if len(v) > maxGitHubLogin || !githubLogin.MatchString(v) {
+		l.fail("%s is %q — want a GitHub login: letters, digits and single hyphens, "+
+			"not at either end, up to %d characters", key, v, maxGitHubLogin)
+		return def
+	}
+	return v
+}
+
+// Written as groups rather than with a lookahead: Go's regexp is RE2 and has
+// none, and "runs of alphanumerics joined by single hyphens" says the same thing
+// without one. The length is checked separately for the same reason.
+const maxGitHubLogin = 39
+
+var githubLogin = regexp.MustCompile(`^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$`)
 
 func (l *loader) text(key, def string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {

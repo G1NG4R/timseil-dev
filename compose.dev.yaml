@@ -122,6 +122,17 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
       SITE_SYSTEM_SLUG: ${SITE_SYSTEM_SLUG:-}
 
+      # The contribution graph. `:?` and not `:-`, because unlike everything
+      # above it there is no default that could stand in — the api refuses to
+      # start without it, and failing here with a sentence beats failing in the
+      # container with a stack of compose defaults in between.
+      #
+      # Runtime environment, never a build arg: this file's `build:` block above
+      # passes no secrets, and a token in an image layer stays in that layer
+      # after it is rotated.
+      GITHUB_TOKEN: ${GITHUB_TOKEN:?set it in .env — github.com/settings/tokens, scope read:user}
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-}
+
       # Empty here, and that is not an oversight.
       #
       # In development nothing forwards anything: a request from your machine

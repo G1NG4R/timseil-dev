@@ -60,6 +60,23 @@ unten.
 **`DB_STATEMENT_TIMEOUT (10s) must not exceed REQUEST_TIMEOUT (5s)`** — eine
 Abfrage darf die Anfrage nicht überleben, die sie angefordert hat.
 
+**`GITHUB_TOKEN is empty — a personal access token with scope read:user`** — seit
+C5 die zweite Variable ohne Default. Sie steht **absichtlich nicht** in
+`.env.example`: die Datei ist eingecheckt, ein Token darin wäre ein Token im
+Repository. Eins bauen unter `github.com/settings/tokens`, Scope `read:user` und
+sonst nichts, und in `.env` eintragen. Compose bricht schon vorher ab, wenn die
+Zeile fehlt — die Meldung kommt dann von `${GITHUB_TOKEN:?}` und nicht aus dem
+Container.
+
+Warum der Prozess deswegen gar nicht erst startet: die Startseite verspricht
+einen Contribution-Graph. Ein Prozess, der fröhlich läuft und ihn nie holen kann,
+zeigt dauerhaft `— NO DATA` und nennt das eine Messung. Das ist Invariante 1 in
+Startaufstellung.
+
+**`GITHUB_TOKEN contains a line break`** — beim Einfügen ist ein Zeilenumbruch
+mitgekommen. Der Wert geht in einen `Authorization`-Header; ein `\n` darin hängt
+fremde Header an. Dieselbe Klasse wie die CRLF-Regel für Mail-Felder in C6.
+
 ### Die Kaskade
 
 ```
@@ -228,9 +245,10 @@ Teil des Logs.
 
 ## Die Umgebungsvariablen
 
-Nur `DATABASE_URL` hat keinen Default. Alle anderen stehen mit ihrem Default in
-`.env.example`; ein leerer Wert bedeutet „nimm den Default", damit die Zahlen nur
-an einer Stelle existieren — in `api/internal/config`.
+**Zwei** haben keinen Default: `DATABASE_URL` und, seit C5, `GITHUB_TOKEN`. Alle
+anderen stehen mit ihrem Default in `.env.example`; ein leerer Wert bedeutet
+„nimm den Default", damit die Zahlen nur an einer Stelle existieren — in
+`api/internal/config`.
 
 | Variable | Default | |
 |---|---|---|
@@ -246,6 +264,8 @@ an einer Stelle existieren — in `api/internal/config`.
 | `TRUSTED_PROXY_CIDRS` | leer | leer heißt: keinem Header glauben |
 | `CORS_ALLOWED_ORIGINS` | drei Origins | erst ab C6 ausgewertet |
 | `SITE_SYSTEM_SLUG` | `timseil-dev` | worüber `/api/health` berichtet |
+| `GITHUB_TOKEN` | — | Pflicht, PAT mit Scope `read:user`. Das einzige Geheimnis hier. |
+| `GITHUB_LOGIN` | `G1NG4R` | wessen Kalender — und der Schlüssel der Cache-Zeile |
 
 ---
 
