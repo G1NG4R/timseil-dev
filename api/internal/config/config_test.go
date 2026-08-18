@@ -9,6 +9,10 @@ import (
 
 const goodDSN = "postgres://timseil_app:dev_only_not_a_secret@db:5432/timseil?sslmode=disable"
 
+// Shaped like a fine-grained PAT and worth nothing. There is no default for this
+// one, so every test that expects Load to succeed needs a value.
+const goodToken = "github_pat_not_a_real_token_0000000000"
+
 // setEnv puts the process into a known state. Every variable this package reads
 // is named here, including the ones a test does not care about: without that, a
 // developer machine with DB_MAX_CONNS exported would change what the tests mean.
@@ -30,6 +34,8 @@ func setEnv(t *testing.T, overrides map[string]string) {
 		EnvTrustedProxies:   "",
 		EnvAllowedOrigins:   "",
 		EnvSiteSystemSlug:   "",
+		EnvGitHubToken:      goodToken,
+		EnvGitHubLogin:      "",
 	}
 	for k, v := range overrides {
 		base[k] = v
@@ -88,6 +94,12 @@ func TestDefaultsAreApplied(t *testing.T) {
 	if len(cfg.AllowedOrigins) != 3 {
 		t.Errorf("AllowedOrigins = %v, want three", cfg.AllowedOrigins)
 	}
+	if cfg.GitHub.Login != defaultGitHubLogin {
+		t.Errorf("GitHub.Login = %q, want %q", cfg.GitHub.Login, defaultGitHubLogin)
+	}
+	if cfg.GitHub.Token != goodToken {
+		t.Errorf("GitHub.Token was not read")
+	}
 }
 
 // The one variable with no default. The message has to name the file that fixes
@@ -113,6 +125,84 @@ func TestUnparseableDSNIsRefused(t *testing.T) {
 	wantFailure(t, EnvDatabaseURL)
 }
 
+// ------------------------------------------------------------------- github
+
+// The second variable with no default, and the first secret this program has.
+//
+// Refusing to start is the honest option. The site promises a contribution graph
+// on the homepage; a process that runs happily while it can never fetch one
+// would show `— NO DATA` for ever and call it a measurement, which is invariant
+// 1 wearing a startup hat. The message names the scope and where to get one,
+// because .env.example deliberately does not contain the value.
+func TestAMissingGitHubTokenStopsTheStart(t *testing.T) {
+	setEnv(t, map[string]string{EnvGitHubToken: ""})
+	wantFailure(t, EnvGitHubToken, "read:user")
+}
+
+func TestABlankGitHubTokenIsNotAToken(t *testing.T) {
+	setEnv(t, map[string]string{EnvGitHubToken: "   "})
+	wantFailure(t, EnvGitHubToken)
+}
+
+// The token is sent as an Authorization header. A newline in it appends headers
+// of the setter's choosing — the CRLF rule from C6, one endpoint earlier.
+func TestATokenWithALineBreakIsRejected(t *testing.T) {
+	for _, tok := range []string{
+		"ghp_good\r\nX-Injected: yes",
+		"ghp_good\nX-Injected: yes",
+		"ghp_good\rX-Injected: yes",
+	} {
+		setEnv(t, map[string]string{EnvGitHubToken: tok})
+		wantFailure(t, EnvGitHubToken, "line break")
+	}
+}
+
+// And the token never appears in the failure. A configuration error is printed
+// by a process on its way out, and that line lands in the container log.
+func TestTheTokenIsNotQuotedBackInAnError(t *testing.T) {
+	const secret = "ghp_this_must_not_be_printed"
+	setEnv(t, map[string]string{
+		EnvGitHubToken: secret + "\n",
+		EnvLogLevel:    "chatty",
+	})
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("Load() succeeded, want a failure")
+	}
+	if strings.Contains(err.Error(), secret) {
+		t.Errorf("the error quotes the token back:\n%v", err)
+	}
+}
+
+// A typo here does not fail loudly on its own: GitHub answers an unknown user
+// with HTTP 200 and `data.user: null`, so the refresher would fail hourly and
+// look exactly like GitHub being down.
+func TestAnImpossibleGitHubLoginIsRefused(t *testing.T) {
+	for _, login := range []string{
+		"-leading-hyphen",
+		"trailing-hyphen-",
+		"double--hyphen",
+		"has space",
+		"has_underscore",
+		"way-too-long-to-be-a-github-login-by-some-margin",
+	} {
+		setEnv(t, map[string]string{EnvGitHubLogin: login})
+		wantFailure(t, EnvGitHubLogin)
+	}
+}
+
+// The other half. Written too tightly, the rule above would refuse real logins
+// and this file would still be green.
+func TestARealGitHubLoginIsAccepted(t *testing.T) {
+	for _, login := range []string{"G1NG4R", "a", "octo-cat", "torvalds", "a1-b2-c3"} {
+		setEnv(t, map[string]string{EnvGitHubLogin: login})
+		if cfg := mustLoad(t); cfg.GitHub.Login != login {
+			t.Errorf("GitHub.Login = %q, want %q", cfg.GitHub.Login, login)
+		}
+	}
+}
+
 // The property this package exists for: three mistakes cost one restart, not
 // three. A loader that returned on the first error would pass every other test
 // in this file and still be the wrong shape.
@@ -125,6 +215,8 @@ func TestEveryProblemIsReportedAtOnce(t *testing.T) {
 		EnvAllowedOrigins:  "https://timseil.dev/contact",
 		EnvTrustedProxies:  "10.0.0.0/8,not-a-cidr",
 		EnvRateLimitPerMin: "-1",
+		EnvGitHubToken:     "",
+		EnvGitHubLogin:     "not a login",
 	})
 	wantFailure(t,
 		EnvDatabaseURL,
@@ -134,6 +226,8 @@ func TestEveryProblemIsReportedAtOnce(t *testing.T) {
 		EnvAllowedOrigins,
 		EnvTrustedProxies,
 		EnvRateLimitPerMin,
+		EnvGitHubToken,
+		EnvGitHubLogin,
 	)
 }
 

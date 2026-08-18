@@ -187,3 +187,33 @@ func TestAProblemWithoutARequestIdIsStillValid(t *testing.T) {
 		t.Errorf("type = %v", body["type"])
 	}
 }
+
+// The seven type URIs are the stable half of the error interface: a client may
+// branch on `type`, so a typo in one of these strings is a breaking change that
+// nothing else would catch. Held against the literal prefix and against each
+// other, so a copy-paste that gives two types the same suffix fails here.
+func TestTheProblemTypesAreDistinctAndUnderTheOnePrefix(t *testing.T) {
+	types := []string{
+		TypeValidationFailed,
+		TypeNotFound,
+		TypeRateLimited,
+		TypeMailProviderUnavailable,
+		TypeUnauthorized,
+		TypeInternalError,
+		TypeUpstreamUnavailable,
+	}
+
+	seen := map[string]bool{}
+	for _, uri := range types {
+		if !strings.HasPrefix(uri, "https://timseil.dev/problems/") {
+			t.Errorf("%q is not under the problems prefix", uri)
+		}
+		if seen[uri] {
+			t.Errorf("%q appears twice", uri)
+		}
+		seen[uri] = true
+	}
+	if len(seen) != 7 {
+		t.Errorf("%d distinct types, want 7 — adding one is a contract decision (ADR 0020)", len(seen))
+	}
+}

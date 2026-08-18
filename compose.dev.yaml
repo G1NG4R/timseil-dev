@@ -122,6 +122,23 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
       SITE_SYSTEM_SLUG: ${SITE_SYSTEM_SLUG:-}
 
+      # The contribution graph. There is no default for the token and the api
+      # refuses to start without one — but the refusal belongs to the process,
+      # not to this file.
+      #
+      # `:?` was the obvious choice and it is wrong here. Compose interpolates
+      # the whole document before it does anything, so a `:?` on a variable only
+      # the api needs makes `make check-db` and `make migrate` fail too — two
+      # targets that never start this service and have nothing to do with
+      # GitHub. The error even looks like a broken migration. Passed through
+      # empty instead, and config.Load says the useful sentence.
+      #
+      # Runtime environment, never a build arg: this file's `build:` block above
+      # passes no secrets, and a token in an image layer stays in that layer
+      # after it is rotated.
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-}
+
       # Empty here, and that is not an oversight.
       #
       # In development nothing forwards anything: a request from your machine
