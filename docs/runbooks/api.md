@@ -64,9 +64,13 @@ Abfrage darf die Anfrage nicht überleben, die sie angefordert hat.
 C5 die zweite Variable ohne Default. Sie steht **absichtlich nicht** in
 `.env.example`: die Datei ist eingecheckt, ein Token darin wäre ein Token im
 Repository. Eins bauen unter `github.com/settings/tokens`, Scope `read:user` und
-sonst nichts, und in `.env` eintragen. Compose bricht schon vorher ab, wenn die
-Zeile fehlt — die Meldung kommt dann von `${GITHUB_TOKEN:?}` und nicht aus dem
-Container.
+sonst nichts, und in `.env` eintragen.
+
+Compose prüft das **nicht** vorab, und das ist Absicht: ein `${GITHUB_TOKEN:?}`
+im Compose würde beim Interpolieren des ganzen Dokuments greifen und damit auch
+`make check-db` und `make migrate` anhalten — zwei Ziele, die diesen Dienst nie
+starten und mit GitHub nichts zu tun haben. Die Meldung sähe dann wie eine
+kaputte Migration aus. Die Verweigerung gehört dem Prozess.
 
 Warum der Prozess deswegen gar nicht erst startet: die Startseite verspricht
 einen Contribution-Graph. Ein Prozess, der fröhlich läuft und ihn nie holen kann,
