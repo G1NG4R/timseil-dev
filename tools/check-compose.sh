@@ -60,6 +60,13 @@
 #      accident and stops winning the day somebody rewords the rule. Next.js
 #      would then answer /api/* with its own 404 page while the site still looks
 #      fine.
+#  14. MAIL_TRANSPORT is passed through and never pinned. `log` builds the mail
+#      and drops it, so a production file carrying it answers every submission
+#      202 and delivers nothing — the one failure of that endpoint that looks
+#      like success from both ends. Pinning `smtp` is refused too: the default
+#      belongs to internal/config, and a second place to state it is a second
+#      place to state it wrong. compose.dev.yaml pins `log` on purpose and is
+#      not a production file. Arrived with L1, ADR 0029 §8.
 #
 # The parsing is deliberately dumb: services sit at two spaces, their keys at
 # four, list items at six. A YAML library would be a dependency for rules this
@@ -176,6 +183,19 @@ scan() {
 
       if ($0 ~ /^    env_file:/)
         printf "line %d: %s has env_file: — production values come from Dokploy\n", NR, svc
+
+      # Rule 14. The value has to be the passthrough and nothing else, so this
+      # compares rather than searches: a rule that only refused the word "log"
+      # would pass a pinned "smtp" and would miss the day somebody writes it
+      # ${MAIL_TRANSPORT:-log} instead.
+      if (key == "environment" && $0 ~ /MAIL_TRANSPORT/) {
+        val = $0
+        sub(/^[[:space:]]*-?[[:space:]]*MAIL_TRANSPORT[:=][[:space:]]*/, "", val)
+        sub(/[[:space:]]+$/, "", val)
+        gsub(/"/, "", val)
+        if (val != "${MAIL_TRANSPORT:-}")
+          printf "line %d: %s pins MAIL_TRANSPORT to %s — pass it through as ${MAIL_TRANSPORT:-}; the default lives in internal/config\n", NR, svc, val
+      }
 
       if ($0 ~ /[[:space:]]memory:[[:space:]]/) mem[svc] = 1
 
