@@ -6,6 +6,11 @@
 **Invarianten:** keine unmittelbar; die Zuordnung Blog → System stützt Invariante 5
 (Belege zeigen nie ins Leere)
 
+> **Nachtrag 19.08.2026 ([#113](https://github.com/G1NG4R/timseil-dev/issues/113)):** Der Host trägt seit dem 18.08.2026 12 GB RAM
+> und 100 GB Platte; die 40 GB weiter unten bleiben als Aufzeichnung stehen. Das
+> Argument trägt weiter — es stand ohnehin auf dem Datenweg und der Aussage der
+> Datenschutzseite, nicht auf der Größe der Platte.
+
 ## Kontext
 
 Die Seite braucht einen Blog: die Fallstudien verweisen auf Post-Mortems, und

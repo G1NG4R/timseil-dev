@@ -437,7 +437,7 @@ dieses Skript ist das, was es merkt.
 
 ### 3.3 Die Platte
 
-Bei 40 GB keine Kür. Der schnellste Verbraucher sind **nicht die Logs**, sondern
+Auch bei 100 GB keine Kür. Der schnellste Verbraucher sind **nicht die Logs**, sondern
 alte Image-Layer: jeder Deploy legt eins an, Docker räumt nicht von selbst auf,
 und `loki`, `prometheus` und Postgres liegen auf derselben NVMe. Eine volle
 Platte ist keine langsame Seite, sondern eine Datenbank ohne Schreibrechte.

@@ -5,6 +5,16 @@
 **Betrifft:** D2, D3, E1, E4, E5, H1, K1, L2
 **Invarianten:** 1 (keine erfundenen Zahlen)
 
+> **Nachtrag 19.08.2026 ([#113](https://github.com/G1NG4R/timseil-dev/issues/113)):** Der Host trägt seit dem 18.08.2026 12 GB RAM
+> und 100 GB Platte; die alten Zahlen bleiben als Aufzeichnung stehen. **Zwei
+> Stellen ändern dabei die Form, nicht nur die Zahl.** Die
+> `NODE_OPTIONS`-Rechnung in §3 wird *strenger*: Nodes Old-Space bemisst sich am
+> Gesamtspeicher, auf 12 GB griffe er nach noch mehr als den genannten ~2 GB —
+> die 320M bleiben also richtig, und die Zeile wird wichtiger, nicht unwichtiger.
+> Die tmpfs-Begründung in §4 verliert ihren Plattenknappheits-Grund und behält
+> die anderen zwei: die nächtliche S3-Sicherung eines Caches, und ein Cache, der
+> einen Image-Wechsel überlebt. Aus drei Gründen werden zwei.
+
 ## Kontext
 
 D1 hat zwei Images gebaut. Sie liegen da und laufen nicht: es gibt keine Datei,

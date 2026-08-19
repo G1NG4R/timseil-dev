@@ -5,6 +5,12 @@
 **Betrifft:** D3, E1, E4, F2, F3, K1, L1, L3, L5, L6
 **Invarianten:** 1 (keine erfundenen Zahlen)
 
+> **Nachtrag 19.08.2026 ([#113](https://github.com/G1NG4R/timseil-dev/issues/113)):** Der Host trägt seit dem 18.08.2026 100 GB
+> Platte; die 40 GB in §7 bleiben als Aufzeichnung stehen. Der Timer bleibt
+> Pflicht, und sein Grund ändert sich nicht: es sind die Image-Layer, die jeder
+> Deploy anlegt und die Docker nicht von selbst wegräumt, nicht die Größe der
+> Platte.
+
 ## Kontext
 
 D1 hat zwei Images gebaut, D2 sie zu einem Stack verbunden. Der Stack läuft —

@@ -5,6 +5,12 @@
 **Betrifft:** C4, F1–F5, D3, H2, K1
 **Invarianten:** 1 (`null` → `— NO DATA`), 3, 6 (ein Tag ohne Messung ist `nodata`)
 
+> **Nachtrag 19.08.2026 ([#113](https://github.com/G1NG4R/timseil-dev/issues/113)):** Der Host trägt seit dem 18.08.2026 12 GB RAM
+> und 100 GB Platte; die 40 GB in „Was das kostet" bleiben als Aufzeichnung
+> stehen. Das Argument trägt weiter, weil der Absatz seinen tragenden Grund
+> selbst nennt: Loki liegt auf derselben Platte wie Postgres, und das gilt bei
+> 100 GB genauso.
+
 ## Kontext
 
 Der Handoff sah vor, die Betriebszahlen der Seite aus **Traefiks Access-Logs**
