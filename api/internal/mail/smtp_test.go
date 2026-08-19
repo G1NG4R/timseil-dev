@@ -3,11 +3,15 @@ package mail
 import (
 	"bufio"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"io"
+	"log"
 	"log/slog"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"net/smtp"
 	"strings"
 	"sync"
@@ -25,9 +29,11 @@ import (
 // connection at all, so the credential is not spent on it.
 //
 // The connection is plain rather than TLS. PlainAuth allows that only against a
-// loopback address, which is what the fake listens on, and the TLS decision
-// itself is four lines in dialTLS with no branching to get wrong. What has
-// branches is the dialogue, and the dialogue is what runs here.
+// loopback address, which is what the fake listens on, and what has branches is
+// the dialogue — so the dialogue is what runs here. The dial itself is held to
+// its own two tests at the bottom of this file: the relay is the value the ADR
+// names, and a certificate no root signed ends the connection before a word is
+// said over it.
 
 // fakeSMTP is a one-connection-at-a-time SMTP server that records what it was
 // told and can be scripted to refuse at any step.
@@ -459,5 +465,67 @@ func TestAnAttemptIsBounded(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("Send did not return — the attempt is not bounded")
+	}
+}
+
+// The two tests below are about the dial rather than the dialogue, and they
+// arrived with L1 (ADR 0029 §9). Until that phase the relay was a value nobody
+// had ever reached, so the two claims this file makes about it — that it is the
+// one the ADR names, and that a connection to it is either verified or not made
+// at all — were carried by a comment. L1 is the phase that made them load
+// bearing, so they are held to a test here.
+
+func TestTheRelayIsTheOneTheADRNames(t *testing.T) {
+	// ADR 0021 §6 and ADR 0020 §8: the destination is compiled in, and changing
+	// it is a commit rather than an environment variable. That is only true
+	// while the value is what it claims to be.
+	//
+	// The second thing this catches is nearer: every test above repoints
+	// endpoint at a listener and restores it in a cleanup. One that forgot would
+	// leave the next run of this package dialling OVH from a laptop. Placing the
+	// assertion last means a leak from any of them fails here.
+	const want = "ssl0.ovh.net:465"
+	if endpoint != want {
+		t.Errorf("endpoint is %q, want %q — either the relay changed without an ADR, "+
+			"or a test above leaked its listener address", endpoint, want)
+	}
+}
+
+func TestARelayWhoseCertificateDoesNotVerifyIsNotTalkedTo(t *testing.T) {
+	// The reason port 465 was chosen over 587 (smtp.go, the endpoint comment):
+	// STARTTLS begins in the clear and can be stripped, 465 cannot. That
+	// argument only holds while the handshake is actually verified, and the
+	// whole of that guarantee is the absence of InsecureSkipVerify in dialTLS —
+	// one word, four characters of diff, no test above it.
+	//
+	// httptest's certificate is self-signed and its issuer is in no root pool,
+	// so a verifying client refuses it. It never speaks HTTP: the connection is
+	// dropped during the handshake, long before either side says a word.
+	server := httptest.NewTLSServer(http.HandlerFunc(
+		func(http.ResponseWriter, *http.Request) {},
+	))
+	// The refused handshake is the assertion, and the server logs it as an
+	// error. Silenced so a passing run stays quiet.
+	server.Config.ErrorLog = log.New(io.Discard, "", 0)
+	t.Cleanup(server.Close)
+
+	previous := endpoint
+	endpoint = server.Listener.Addr().String()
+	t.Cleanup(func() { endpoint = previous })
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	client, err := dialTLS(ctx)
+	if err == nil {
+		_ = client.Close()
+		t.Fatal("dialTLS accepted a certificate no root signed")
+	}
+
+	// Not merely "an error": a timeout or a connection refused would satisfy
+	// that and would prove nothing about verification.
+	var verification *tls.CertificateVerificationError
+	if !errors.As(err, &verification) {
+		t.Errorf("dialTLS returned %v (%T), want a certificate verification error", err, err)
 	}
 }
