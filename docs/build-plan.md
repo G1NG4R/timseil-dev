@@ -6,7 +6,7 @@
 |---|---|
 | **Frontend** | Next.js 16.3 LTS · React 19.2 · TypeScript strict · Tailwind 4.3 |
 | **Backend** | Go 1.26 stdlib · pgx v5 · sqlc · PostgreSQL 18.6 |
-| **Infrastruktur** | Ein OVH-VPS (6–9 GB RAM, 40 GB NVMe) mit Dokploy · Traefik · GitHub Actions · GHCR |
+| **Infrastruktur** | Ein OVH-VPS (12 GB RAM, 100 GB NVMe) mit Dokploy · Traefik · GitHub Actions · GHCR |
 | **Observability** | Alloy (+ Faro) · Prometheus 3.13 LTS · Loki 3.7 · Tempo 3.0 · Grafana |
 | **Kein** | CDN · Kubernetes · Redis · Mimir · Sentry · WebGL — Begründungen in Kapitel 3 |
 
@@ -267,7 +267,7 @@ Dieses Kapitel ist so wichtig wie der Stack. **Ein Portfolio, das jede Technolog
 ### 4.2 Die zwei Risiken des Ein-Host-Betriebs
 
 **1. Volle Platte legt die Datenbank lahm.** Loki und Prometheus liegen auf derselben Platte wie Postgres. Ein durchgedrehter Log-Producer kann die Seite umbringen — ein selbstgebauter Ausfall.
-*Gegenmittel:* harte Retention **und** ein Größen-Limit in Loki (nicht nur zeitbasiert), eigenes Volume für Observability-Daten wenn möglich, Disk-Alert ab **70 %** (bei 40 GB bleiben dann 12 GB Vorlauf), kürzere Retention am Anfang: Prometheus 7 d + 2 GB, Loki 14 d + ~5 GB.
+*Gegenmittel:* harte Retention **und** ein Größen-Limit in Loki (nicht nur zeitbasiert), eigenes Volume für Observability-Daten wenn möglich, Disk-Alert ab **70 %** (bei 100 GB bleiben dann 30 GB Vorlauf), kürzere Retention am Anfang: Prometheus 7 d + 2 GB, Loki 14 d + ~5 GB.
 
 **2. Stirbt der Host, stirbt die Aufzeichnung mit.** Das ist das ernstere. Fällt der Host aus, notiert niemand den Ausfall — und deine Uptime-Zeile zeigt hinterher eine **Lücke** statt eines Ausfalls. Auf einer Seite, die Betriebsehrlichkeit zu ihrem Argument macht, ist das die falsche Art von Lücke.
 
@@ -752,7 +752,7 @@ timseil-dev/
 
 ## 10. Ressourcen & Kosten
 
-**Deine Maschine: 6–9 GB RAM, 40 GB NVMe.** RAM ist damit kein Engpass. **Die Platte ist es.**
+**Deine Maschine: 12 GB RAM, 100 GB NVMe** — seit dem Upgrade vom 18.08.2026. Die vorherige Annahme „6–9 GB" hat nie gestimmt: gemessen wurden 3,7 GB, und das war der Anlass des Upgrades. RAM ist damit kein Engpass. **Die Platte bleibt der knappere Posten** — nicht weil sie klein ist, sondern weil Postgres, Loki und Prometheus auf derselben liegen.
 
 ### RAM — entspannt
 
@@ -804,13 +804,13 @@ Loki:        retention_period: 336h        # 14 d
              + Compactor mit Größen-Grenze ~5GB
 ```
 
-**Disk-Alert bei 70 %**, nicht 75 oder 80. Bei 40 GB sind 70 % = 28 GB belegt, 12 GB frei — genug Vorlauf, um zu reagieren, bevor Postgres keine Schreibrechte mehr hat. Ein Alert, der erst bei 90 % feuert, kommt bei dieser Plattengröße zu spät.
+**Disk-Alert bei 70 %**, nicht 75 oder 80. Bei 100 GB sind 70 % = 70 GB belegt, 30 GB frei — genug Vorlauf, um zu reagieren, bevor Postgres keine Schreibrechte mehr hat. Ein Alert, der erst bei 90 % feuert, lässt zu wenig Zeit für die Füllraten dieses Hosts: ein Image-Layer pro Deploy, und eine Fehlerschleife, die Loki in Stunden Gigabytes schreiben lässt.
 
 **Backups gehen direkt nach S3**, nicht ins lokale Dauerlager.
 
 ### Was S3 löst — und was nicht
 
-Dokploys S3-Anbindung ist eine **Backup-Funktion, kein Speicher-Backend.** Sie kopiert Daten weg; die Daten liegen weiterhin auf deinen 40 GB.
+Dokploys S3-Anbindung ist eine **Backup-Funktion, kein Speicher-Backend.** Sie kopiert Daten weg; die Daten liegen weiterhin auf deinen 100 GB.
 
 | | Hilft S3? |
 |---|---|
@@ -827,11 +827,13 @@ Dokploys S3-Anbindung ist eine **Backup-Funktion, kein Speicher-Backend.** Sie k
 
 ```yaml
 volumes:
-  - pgdata:/var/lib/postgresql/data     # ✅ sicherbar
-  # - ./data:/var/lib/postgresql/data   # ❌ Bind Mount, nicht sicherbar
+  - pgdata:/var/lib/postgresql          # ✅ sicherbar
+  # - ./data:/var/lib/postgresql        # ❌ Bind Mount, nicht sicherbar
 volumes:
   pgdata:
 ```
+
+Der Pfad ist `/var/lib/postgresql`, nicht `…/data`: das Postgres-18-Image hat das Datenverzeichnis verschoben, und beide Compose-Dateien folgen ihm. Mit dem alten Pfad startet der Container nicht.
 
 **Loki auf S3 — ein echter Hebel, aber später.** Loki kann seine Chunks nativ in Object Storage legen; dann wächst das Log-Volumen nicht mehr auf deiner Platte. Das ist eine legitime Option, aber:
 - Bei 1–3 GB pro 14 Tagen löst es ein Problem, das du noch nicht hast
@@ -1099,7 +1101,7 @@ services:
 **Nie `build:` im Produktions-Compose.** Steht dort ein `build:`, baut Dokploy auf deiner Maschine — und dann hilft dir die ganze CI-Pipeline nichts. `IMAGE_TAG` ist der Commit-SHA und kommt als Env-Variable aus Dokploy; die Deploy-Pipeline setzt ihn und startet neu. `compose.dev.yaml` darf `build:` verwenden, das Produktions-Compose nicht.
 
 Falls die GHCR-Pakete privat sind: Registry-Credential in Dokploy hinterlegen. Bei öffentlichem Repo und öffentlichen Paketen entfällt das.
-**Bei 40 GB Platte Pflicht:** Image-Retention auf die letzten 3–5 Stände begrenzen und `docker system prune -af --filter "until=168h"` als wöchentlichen Cronjob. Alte Image-Layer sind auf Dokploy-Maschinen die häufigste Ursache für volle Platten — häufiger als Logs.
+**Auch bei 100 GB Pflicht:** Image-Retention auf die letzten 3–5 Stände begrenzen und `docker system prune -af --filter "until=168h"` als wöchentlichen Cronjob. Alte Image-Layer sind auf Dokploy-Maschinen die häufigste Ursache für volle Platten — häufiger als Logs.
 *Fertig wenn:* Deploy läuft; `traefik_*`-Metriken sind abrufbar.
 
 ---
@@ -1146,7 +1148,7 @@ Setzt Graceful Shutdown aus C1 voraus. Plus `release-please`.
 *Fertig wenn:* Eine Request-ID findet **alle** zugehörigen Zeilen aus beiden Diensten.
 
 **F2 · Observability-Stack lokal** — Prometheus (7 d **und** `retention.size=2GB`) und Loki (14 d **und** Compactor-Grenze ~5 GB, Stream-Limits) im selben Dokploy-Stack, bestehende Grafana-Instanz einbinden, Alloy als Collector. Eigene Volumes, damit die Größe messbar bleibt.
-**Zeit-Retention allein reicht nicht:** eine Fehlerschleife füllt in Stunden Gigabytes, die 14-Tage-Regel greift erst in 14 Tagen. Bei 40 GB Platte ist das der wahrscheinlichste selbstgebaute Ausfall.
+**Zeit-Retention allein reicht nicht:** eine Fehlerschleife füllt in Stunden Gigabytes, die 14-Tage-Regel greift erst in 14 Tagen. Auf einer Platte, die Postgres mitbenutzt, ist das der wahrscheinlichste selbstgebaute Ausfall.
 *Alloy ist von Anfang an der Collector — beim späteren Umzug auf einen zweiten Host ändert sich nur sein Ziel. Die Anwendung merkt nichts.*
 *Fertig wenn:* Metriken und Logs laufen ein; ein künstlich erzeugtes 5-GB-Log löst das Limit aus, statt die Platte zu füllen.
 

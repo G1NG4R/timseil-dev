@@ -446,7 +446,7 @@ services:
       # into $HOME, which is not writable here.
       NEXT_TELEMETRY_DISABLED: "1"
       # Node sizes its default old-space from TOTAL SYSTEM MEMORY, not from the
-      # cgroup — on a 6–9 GB host it would pick roughly 2 GB and then be killed
+      # cgroup — on this 12 GB host it would pick well over 2 GB and then be killed
       # at the 512M below. This line is not tuning; it is the difference between
       # a container that runs and one that is OOM-killed under load.
       NODE_OPTIONS: --max-old-space-size=320
@@ -456,10 +456,10 @@ services:
     # cache lives; D1 found that the image cannot run read-only without it.
     #
     # tmpfs and not a named volume, for three reasons. A volume would be backed
-    # up to S3 nightly, which is paying to preserve a cache. Disk is the scarce
-    # resource on 40 GB and RAM is not. And a cache that SURVIVES an image change
-    # is exactly the "the page shows last week's number" failure this site exists
-    # to argue against — tmpfs dies with the container, which is the right
+    # up to S3 nightly, which is paying to preserve a cache. Disk is the platter
+    # Postgres writes to and RAM is not. And a cache that SURVIVES an image
+    # change is exactly the "the page shows last week's number" failure this site
+    # exists to argue against — tmpfs dies with the container, which is the right
     # lifetime for something keyed to a build. The 96M is counted inside the
     # 512M limit below.
     read_only: true
