@@ -94,6 +94,33 @@ Drei Dinge, die hier schiefgehen und je eine Stunde kosten:
   liefert nur `0-9a-f`, deshalb ist das hier kein Thema — aber wenn du je ein
   Passwort von Hand setzt, ist es eins.
 
+**Und die Falle darunter, die kein Passwort URL-kodieren kann:** Dokploy schreibt
+die Umgebung in eine `.env` neben die Compose-Datei, und Compose **verändert beim
+Einlesen still, was darin steht**. `$xyz` wird als Variablenname gelesen und durch
+nichts ersetzt; `#` leitet einen Kommentar ein und schneidet den Rest ab.
+
+Am 20.08.2026 gemessen: von einem 25-stelligen SMTP-Passwort kamen **17 Zeichen**
+im Container an. Nachgewiesen über zwei SHA-256 — der Wert, der sich am Relay
+anmeldet, gegen den, den `docker inspect` im Container zeigt.
+
+**Deshalb: Geheimnisse ohne `$`, `#`, `"`, `'`, `\`, Backtick und Leerzeichen.**
+Länge statt Zeichenvielfalt. Alles aus `openssl rand -hex 32` ist zufällig immun,
+alles von Hand Gewählte nicht.
+
+Der Hash-Vergleich ist die Gegenprobe, und er zeigt kein Geheimnis:
+
+```bash
+sudo docker inspect <container> \
+  --format '{{range .Config.Env}}{{println .}}{{end}}' \
+  | sed -n 's/^SMTP_PASSWORD=//p' | tr -d '\n' | sha256sum
+read -rsp 'Wert: ' PW; echo; printf '%s' "$PW" | sha256sum; unset PW
+```
+
+**Warum das gefährlicher ist, als es klingt:** SMTP antwortet mit
+`535 5.7.1 Authentication failed` und nennt damit den Grund. Postgres tut das
+nicht — ein verstümmeltes `POSTGRES_PASSWORD` scheitert beim ersten Start mit
+einer Meldung über die Verbindung, nicht über den Wert.
+
 ### 0.4 Der Zettel, den du ausfüllst
 
 Bevor du zur Dokploy-Oberfläche gehst, sollte das hier vollständig sein:
