@@ -264,6 +264,15 @@ args either image takes: a build arg lands in the image layers and survives the
 rotation of whatever it carried, so every secret is runtime environment and
 nothing else.
 
+**The contact form's mail is measured, not assumed.** The domain publishes one
+`v=spf1`, a DKIM key that OVH delegates by CNAME rather than publishing as TXT,
+and DMARC at `p=none` while the reports accumulate. Every one of those was read
+back out of the zone over two independent resolvers before it was written down,
+which is how the phase learned that three of the four records it planned to
+create already existed — and how it caught the fourth landing under a doubled
+name that resolved cleanly and that nobody queries
+([ADR 0029](docs/adr/0029-mail-und-dns-ueber-ovh-die-zone-der-selektor-und-das-relay.md)).
+
 `make design` needs network access — the design sheets load React and fonts from
 a CDN at runtime. **A black page means no network, not a broken sheet.**
 
@@ -324,6 +333,7 @@ carries the uptime log committed by the probe workflow, so an outage is recorded
 | [0026](docs/adr/0026-produktions-images-digest-pins-kein-modul-cache-und-ein-healthcheck-im-binary.md) | The production images: base images pinned by digest, no module-cache layer, and a healthcheck the binary answers itself |
 | [0027](docs/adr/0027-compose-topologie-ein-binary-fuenf-dienste-und-die-grenzen-in-zahlen.md) | The compose topology: one binary carrying three programs, five services rather than four, and every resource limit with the arithmetic behind it |
 | [0028](docs/adr/0028-dokploy-anbindung-zwei-netze-zwei-router-und-die-platte.md) | Traefik is Dokploy's: two networks, two routers with explicit priorities, and a disk that needs a weekly prune more than it needs logs rotated |
+| [0029](docs/adr/0029-mail-und-dns-ueber-ovh-die-zone-der-selektor-und-das-relay.md) | Mail and DNS over OVH: a zone that mostly already stood, a DKIM key delegated by CNAME rather than published as TXT, and a relay whose name survives because it is a proxy |
 
 Every ADR names what the decision **costs**. One without a price tag is an
 advertisement.
