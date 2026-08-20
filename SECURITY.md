@@ -2,13 +2,16 @@
 
 ## Reporting a vulnerability
 
-Email **seil.tim@protonmail.com**. Please do not open a public issue for a
+Email **contact@timseil.dev**. Please do not open a public issue for a
 security problem.
 
-> This address is a placeholder in the honest sense: the domain mailbox does not
-> exist yet (phase L1). When it does, this file and `/.well-known/security.txt`
-> will name the same address — and if they ever disagree, the file served by the
-> site wins.
+> The domain mailbox exists as of phase L1, and this file names it. Mail to it
+> is authenticated — SPF, DKIM and DMARC are published for `timseil.dev`
+> (ADR 0029) — so a reply that claims to come from this domain and fails those
+> checks did not come from me.
+>
+> `/.well-known/security.txt` arrives in phase L4 and will name the same
+> address. If the two ever disagree, the file served by the site wins.
 
 Useful to include: what you did, what happened, what you expected, and whether
 you needed anything unusual to reproduce it. A single `curl` that shows the

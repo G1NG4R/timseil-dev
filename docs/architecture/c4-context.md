@@ -18,7 +18,7 @@ flowchart TB
     end
 
     dns["OVH DNS<br/><i>Zone, A-Record, CAA</i>"]
-    mail["OVH SMTP<br/><i>MX Plan</i>"]
+    mail["OVH SMTP<br/><i>Zimbra, Relay ssl0.ovh.net</i>"]
     acme["Let's Encrypt<br/><i>ACME, via Traefik</i>"]
     gh["GitHub<br/><i>Repo, Actions, GHCR</i>"]
     ghapi["GitHub GraphQL API<br/><i>Contribution-Kalender</i>"]

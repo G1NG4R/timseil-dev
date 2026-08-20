@@ -433,6 +433,38 @@ no_priority='    labels:
 write_prod "$api_head$no_priority$limited"
 rejects "router rule without an explicit priority rejected" tools/check-compose.sh
 
+# Rule 14. `log` in the production file is the failure that looks like success:
+# every submission answered 202, nothing delivered, nothing red anywhere. The
+# accepted case is the passthrough, and `smtp` is refused alongside `log`
+# because the default belongs to internal/config and nowhere else.
+passthrough='    environment:
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-}
+'
+write_prod "$api_head$passthrough$routed$limited"
+accepts "MAIL_TRANSPORT passed through accepted" tools/check-compose.sh
+
+pinned_log='    environment:
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-log}
+'
+write_prod "$api_head$pinned_log$routed$limited"
+rejects "MAIL_TRANSPORT pinned to log in the production compose rejected" tools/check-compose.sh
+
+pinned_smtp='    environment:
+      MAIL_TRANSPORT: smtp
+'
+write_prod "$api_head$pinned_smtp$routed$limited"
+rejects "MAIL_TRANSPORT pinned to smtp in the production compose rejected" tools/check-compose.sh
+
+# The dev file pins `log` on purpose — a dev stack must not send as the
+# production account — so the rule must not reach into it.
+write_dev 'services:
+  api:
+    environment:
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-log}
+'
+rm -f compose.yaml
+accepts "MAIL_TRANSPORT pinned in the dev compose accepted" tools/check-compose.sh
+
 rm -f compose.dev.yaml compose.yaml
 
 accepts "absent compose files skip" tools/check-compose.sh

@@ -600,7 +600,7 @@ Gegenmittel: CRLF hart ablehnen, Adresse strikt prüfen, **Mail als Plaintext ba
 
 ### Die Regel, die aus dem Provider folgt
 
-OVH MX Plan verlangt, dass das `From:`-Feld dem SMTP-Konto entspricht, mit dem authentifiziert wird. Also:
+OVH verlangt, dass das `From:`-Feld dem SMTP-Konto entspricht, mit dem authentifiziert wird — beim MX Plan wie beim Zimbra-Postfach, das L1 dann tatsächlich vorfand (ADR 0029 §1). Also:
 
 ```
 From:     contact@timseil.dev      ← immer

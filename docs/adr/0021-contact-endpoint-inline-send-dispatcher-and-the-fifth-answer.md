@@ -7,6 +7,13 @@
 Zusage), 9 (nur zwei localStorage-Keys — hier sinngemäß: keine dritte Stelle,
 an der dieselbe Regel steht)
 
+> **Nachtrag 20.08.2026 (ADR 0029):** §6 nennt „OVH MX Plan" als Quelle der
+> `From`-Regel. Das Postfach liegt tatsächlich auf OVHs Zimbra; die Regel gilt
+> dort unverändert, und `ssl0.ovh.net:465` bleibt richtig, weil der Host ein
+> Proxy vor dem Backend ist — am 19.08.2026 gemessen, nicht angenommen. Der
+> Produktname bleibt als Aufzeichnung stehen. Die zweite Zusage von §6, dass
+> das Relay verifiziert wird, trägt seit L1 ein Test statt eines Kommentars.
+
 ## Kontext
 
 `POST /api/contact` ist der einzige unauthentifizierte Schreibpfad der Seite und

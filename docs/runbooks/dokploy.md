@@ -21,20 +21,26 @@ nicht erst hochkommt, und alle drei treffen genau diesen ersten Deploy:
 
 | Sperre | Warum sie jetzt zuschlägt | Was du setzt |
 |---|---|---|
-| `MAIL_TRANSPORT` steht per Default auf `smtp` und verlangt dann `SMTP_USERNAME`, `SMTP_PASSWORD` und `MAIL_TO` | Das OVH-Postfach gibt es erst in **L1**, also nach dieser Phase | `MAIL_TRANSPORT=log` |
+| `MAIL_TRANSPORT` steht per Default auf `smtp` und verlangt dann `SMTP_USERNAME`, `SMTP_PASSWORD` und `MAIL_TO` | Beim ersten Deploy gab es das OVH-Postfach noch nicht — es kam mit **L1**, direkt nach dieser Phase | `MAIL_TRANSPORT=log`, aber **nur bis L1** |
 | `CONTRIBUTIONS_TRANSPORT` steht per Default auf `github` und verlangt dann `GITHUB_TOKEN` | Du hast das Token vielleicht noch nicht | Entweder ein echtes PAT mit `read:user` — **oder** `CONTRIBUTIONS_TRANSPORT=off` |
 | `CONTACT_IP_PEPPER`, `INTERNAL_PROBE_TOKEN`, `INTERNAL_DEPLOY_TOKEN` sind **immer** Pflicht, mindestens 32 Zeichen | Sie stehen in keiner Datei, du erzeugst sie in Teil 0 | `openssl rand -hex 32` |
 
-**`MAIL_TRANSPORT=log` ist eine bewusste Zwischenlösung und muss in L1 wieder
-weg.** Unter `log` baut die API die Mail und schreibt sie ins Log, statt sie zu
-versenden — das Kontaktformular antwortete also mit 202, ohne zuzustellen. Das
-ist der schlimmste Fehler, den dieser Endpoint hat, weil er von beiden Seiten
-wie Erfolg aussieht.
+**`MAIL_TRANSPORT=log` war eine bewusste Zwischenlösung, und L1 hat sie
+aufgelöst.** Unter `log` baut die API die Mail und schreibt sie ins Log, statt
+sie zu versenden — das Kontaktformular antwortete also mit 202, ohne
+zuzustellen. Das ist der schlimmste Fehler, den dieser Endpoint hat, weil er von
+beiden Seiten wie Erfolg aussieht.
 
-**Warum er heute trotzdem vertretbar ist:** es gibt noch keine Seite, die auf
+**Wer diesen Stack heute neu aufsetzt, setzt `smtp`** und füllt die drei
+Variablen aus dem Postfach; `log` steht hier nur noch, weil es der Zustand des
+ersten Deploys war. Der Weg zurück auf `smtp` steht in
+`docs/runbooks/mail.md`, Teil 2.
+
+**Warum er zwischen D3 und L1 vertretbar war:** es gab noch keine Seite, die auf
 das Formular postet — das Frontend kommt in Stufe G/H, das Formular selbst in
-H8. Der Endpoint existiert, aber niemand kann ihn erreichen. **Geht die Seite
-mit einem sichtbaren Formular live, bevor L1 fertig ist, ist das ein Fehler.**
+H8. Der Endpoint existierte, aber niemand konnte ihn erreichen. **Ginge die
+Seite mit einem sichtbaren Formular live, während `log` steht, wäre das ein
+Fehler.**
 
 ---
 
@@ -88,6 +94,33 @@ Drei Dinge, die hier schiefgehen und je eine Stunde kosten:
   liefert nur `0-9a-f`, deshalb ist das hier kein Thema — aber wenn du je ein
   Passwort von Hand setzt, ist es eins.
 
+**Und die Falle darunter, die kein Passwort URL-kodieren kann:** Dokploy schreibt
+die Umgebung in eine `.env` neben die Compose-Datei, und Compose **verändert beim
+Einlesen still, was darin steht**. `$xyz` wird als Variablenname gelesen und durch
+nichts ersetzt; `#` leitet einen Kommentar ein und schneidet den Rest ab.
+
+Am 20.08.2026 gemessen: von einem 25-stelligen SMTP-Passwort kamen **17 Zeichen**
+im Container an. Nachgewiesen über zwei SHA-256 — der Wert, der sich am Relay
+anmeldet, gegen den, den `docker inspect` im Container zeigt.
+
+**Deshalb: Geheimnisse ohne `$`, `#`, `"`, `'`, `\`, Backtick und Leerzeichen.**
+Länge statt Zeichenvielfalt. Alles aus `openssl rand -hex 32` ist zufällig immun,
+alles von Hand Gewählte nicht.
+
+Der Hash-Vergleich ist die Gegenprobe, und er zeigt kein Geheimnis:
+
+```bash
+sudo docker inspect <container> \
+  --format '{{range .Config.Env}}{{println .}}{{end}}' \
+  | sed -n 's/^SMTP_PASSWORD=//p' | tr -d '\n' | sha256sum
+read -rsp 'Wert: ' PW; echo; printf '%s' "$PW" | sha256sum; unset PW
+```
+
+**Warum das gefährlicher ist, als es klingt:** SMTP antwortet mit
+`535 5.7.1 Authentication failed` und nennt damit den Grund. Postgres tut das
+nicht — ein verstümmeltes `POSTGRES_PASSWORD` scheitert beim ersten Start mit
+einer Meldung über die Verbindung, nicht über den Wert.
+
 ### 0.4 Der Zettel, den du ausfüllst
 
 Bevor du zur Dokploy-Oberfläche gehst, sollte das hier vollständig sein:
@@ -103,15 +136,16 @@ Bevor du zur Dokploy-Oberfläche gehst, sollte das hier vollständig sein:
 | `GITHUB_TOKEN` | das PAT aus 0.1 — oder leer lassen **und** die Zeile darunter setzen |
 | `CONTRIBUTIONS_TRANSPORT` | nur wenn `GITHUB_TOKEN` leer bleibt: `off`. Sonst gar nicht setzen |
 | `GITHUB_LOGIN` | `G1NG4R` — hat denselben Wert als Default im Code, du kannst sie auch weglassen |
-| `MAIL_TRANSPORT` | `log` — **bis L1** |
+| `MAIL_TRANSPORT` | `smtp`, sobald das Postfach steht — beim ersten Deploy war es `log` |
 | `CONTACT_IP_PEPPER` | 0.2 |
 | `INTERNAL_PROBE_TOKEN`, `INTERNAL_DEPLOY_TOKEN` | 0.2 |
 | `CORS_ALLOWED_ORIGINS` | `https://timseil.dev,https://www.timseil.dev` |
 | `SITE_SYSTEM_SLUG` | `timseil-dev` |
 | `TRUSTED_PROXY_CIDRS` | **noch nicht** — Teil 3.1, erst nach dem ersten Deploy |
 
-`SMTP_USERNAME`, `SMTP_PASSWORD` und `MAIL_TO` bleiben leer, solange
-`MAIL_TRANSPORT=log` steht. Alle übrigen Variablen aus `.env.example` sind
+`SMTP_USERNAME`, `SMTP_PASSWORD` und `MAIL_TO` dürfen leer bleiben, solange
+`MAIL_TRANSPORT=log` steht — unter `smtp` sind alle drei Pflicht und die API
+kommt ohne sie nicht hoch. Alle übrigen Variablen aus `.env.example` sind
 Tunables mit Defaults im Code und werden **nicht** gesetzt — ein leerer Wert
 heißt „nimm den Default", und so leben die Defaults an genau einer Stelle.
 
@@ -699,7 +733,10 @@ Aus dem `Operations`-Blatt, mit der Zeile, die jeden verhindert:
 ## Danach — L1, nicht E1
 
 **Wenn Teil 4 durchläuft, ist D3 fertig und der nächste Schritt ist L1.** Nicht
-E1, obwohl E1 im Bauplan als nächste Stufe steht.
+E1, obwohl E1 im Bauplan als nächste Stufe steht. *(L1 ist inzwischen gebaut —
+das Blatt dazu ist `docs/runbooks/mail.md`, die Entscheidung ADR 0029. Der
+Absatz bleibt stehen, weil die Begründung für die Reihenfolge nicht mit ihr
+verfällt.)*
 
 Der Grund ist eine Uhr, die außerhalb deiner Kontrolle läuft (Bauplan Anhang D,
 Zeile 1472): **DMARC braucht `p=none` plus zwei Wochen Berichte**, bevor du auf
@@ -709,13 +746,18 @@ verschärfst du die Regel erst nach dem Launch.
 Zwei weitere Gewinne, die daran hängen: ohne Postfach ist das Kontaktformular aus
 C6 nicht end-to-end testbar, und **`MAIL_TRANSPORT=log` aus den Startsperren muss
 in L1 wieder auf `smtp`** — solange es steht, nimmt der Endpoint Nachrichten an
-und stellt keine zu.
+und stellt keine zu. Der Klickweg dafür ist `docs/runbooks/mail.md`, Teil 2.
 
-L1 ist eine Phase: MX Plan bei OVH, SMTP `ssl0.ovh.net`, `From:` muss dem
+L1 ist eine Phase: Postfach bei OVH, SMTP `ssl0.ovh.net`, `From:` muss dem
 SMTP-Konto entsprechen (also `contact@timseil.dev`, Besucheradresse in
 `Reply-To`), und in der DNS-Zone `MX`, **genau ein** `v=spf1` mit
 `include:mx.ovh.com`, DKIM per Klick und DMARC auf `p=none`. Fertig, wenn
 mail-tester ≥ 9/10.
+
+Was L1 dann tatsächlich vorfand, weicht davon ab und steht in ADR 0029: das
+Postfach liegt auf Zimbra statt auf dem klassischen MX Plan, MX und SPF standen
+bereits korrekt, und DKIM war als **CNAME** aktiv, bevor die Phase anfing —
+womit die DNS-Hälfte genau ein Eintrag war statt vier.
 
 ## Was hier nicht steht
 
@@ -723,7 +765,7 @@ Damit eine Lücke als Verschiebung lesbar ist und nicht als Vergessen:
 
 | Fehlt | Phase |
 |---|---|
-| MX, SPF, DKIM, DMARC — und ein testbares Kontaktformular | **L1**, direkt nach dieser Phase |
+| MX, SPF, DKIM, DMARC — und ein testbares Kontaktformular | **L1**, direkt nach dieser Phase → `docs/runbooks/mail.md` |
 | Dokploy-UI hinter den SSH-Tunnel, `/api/internal/*` am Traefik blocken, `nmap`-Abnahme | **L3** |
 | Security-Header, HSTS, CSP | **L4** — HSTS bewusst erst, wenn die Domain final ist |
 | Rate-Limit in Traefik, fail2ban, Firewall, CAA, DNSSEC | **L5** |
