@@ -227,8 +227,29 @@ und `DMARC` müssen einzeln grün sein.
    (`web-…@srv1.mail-tester.com`). Sie verfällt.
 2. In Dokploy **nur `MAIL_TO`** auf diese Adresse setzen → **Redeploy**.
    Nicht das `email`-Feld im Formular — siehe die zweite Falle oben.
-3. Das Formular auf `https://timseil.dev` absenden. Nicht `curl` gegen
-   `localhost`: die Abnahme gilt dem Weg, den ein Besucher nimmt.
+3. Eine Nachricht abschicken. **Es gibt bis H8 kein Formular** — `web/app` hat
+   zwei Dateien, und der Endpoint ist trotzdem von außen erreichbar. Also
+   `curl` gegen die **öffentliche** Adresse, nicht gegen `localhost`: die
+   Abnahme gilt dem Weg durch Traefik und den Container.
+
+   ```bash
+   curl -i -sS https://timseil.dev/api/contact \
+     -H 'content-type: application/json' \
+     -d "{\"name\":\"Tim Seil\",\"email\":\"<eine Adresse, die du liest>\",
+          \"message\":\"Zustellbarkeitstest — diese Nachricht prueft SPF, DKIM und DMARC.\",
+          \"company\":\"\",\"dwellMs\":4200,\"ts\":\"$(date -u +%FT%TZ)\"}"
+   ```
+
+   Vier Felder haben eine Bedingung, und jede davon antwortet mit `202`, wenn
+   man sie verletzt — die fünfte Antwort ist absichtlich nicht von Erfolg zu
+   unterscheiden: `company` muss **leer** sein (Honeypot), `dwellMs` ≥ 3000,
+   `message` ≥ 20 Zeichen, `ts` innerhalb von 48 Stunden. Deshalb wird `ts`
+   erzeugt und nicht getippt. Ein `Origin`-Header fehlt bewusst — der Handler
+   lässt Anfragen ohne Origin durch, genau für diesen Fall.
+
+   Erwartet: `202` mit einer `id` im Rumpf, und im Log die Zeile
+   `contact message delivered`. **Das Rate-Limit ist drei pro Adresse in zehn
+   Minuten**, jeder Versuch zählt mit.
 4. Auf mail-tester „Then check your score" drücken und den Wert ablesen.
 5. `MAIL_TO` zurück auf `contact@timseil.dev` → **Redeploy**. Gegenprobe: eine
    zweite Einsendung landet wieder im eigenen Postfach.
