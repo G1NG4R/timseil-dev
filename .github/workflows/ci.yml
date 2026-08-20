@@ -1,0 +1,231 @@
+# The gates that already existed, run by something other than a person
+# remembering to run them.
+#
+# Every check here is an existing `make` target. This file adds no new rule and
+# no second definition of an old one: what a developer runs before pushing and
+# what blocks a merge are the same commands, and that is the point. A pipeline
+# that reimplements its checks in YAML has two of everything, and the two drift.
+#
+# Three jobs, deliberately parallel rather than sequential. The build plan's
+# acceptance for E1 is "PR feedback under 5 minutes", and feedback time is the
+# SLOWEST job, not the sum of all of them. `check` needs no Docker at all; `db`
+# and `images` each pay for a container build, and paying for both inside one
+# job is what would break the criterion.
+#
+# What is NOT here, on purpose: no push to GHCR, no deploy, no scanners. Images
+# are built and inspected, never published — that is E4 (#90). Static analysis,
+# dependency and secret scanning are E2. See docs/adr/0030.
+
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Explicit in every workflow, default read — CLAUDE.md, security rules. Nothing
+# here writes to the repository, comments on a PR, or touches a package, so
+# `contents: read` is not a starting point to be widened later in this file: it
+# is the whole permission set the pipeline needs today.
+permissions:
+  contents: read
+
+# A second push to a pull request makes the first run irrelevant, so it is
+# cancelled. A run on main is not cancelled even if another lands behind it:
+# there, each run is the evidence for exactly one commit on the branch the
+# deploy follows, and evidence that was cancelled proves nothing.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Third-party actions are pinned to a commit SHA, never to a tag. A tag can be
+# moved to point at other code after review, which is exactly how the
+# tj-actions/changed-files compromise reached its consumers. The trailing
+# comment carries the human-readable version, because a bare hash is unreadable
+# six months later and an unreadable pin never gets bumped.
+#
+# There are three of them and they are all first-party GitHub actions. Docker
+# Compose and make need none, and every additional action is another repository
+# whose maintainers can push to this pipeline.
+
+jobs:
+  # ------------------------------------------------------------------ check
+  #
+  # `make check` in full, on a runner with Node and Go. No Docker: not one
+  # target in the check chain starts a container, which is why this job is the
+  # fast one and why it is the one worth optimising.
+  check:
+    name: check
+    runs-on: ubuntu-latest
+
+    env:
+      # CI runs the test suite with the Go test cache OFF. Issue #91, and it is
+      # a bug that already happened rather than a precaution:
+      # TestCommandsDoReachTheSeed shells out to `go list`, and Go's test cache
+      # records the files and environment a test package reads — it cannot see
+      # what a SUBPROCESS touches. The test kept returning a cached pass while
+      # `make check-db` went red on the same tree. `make check` was green and
+      # the repository was not.
+      #
+      # Locally the cache stays on: it is what makes `make check` fast enough to
+      # run constantly, and that is worth keeping. The pipeline is the place
+      # that can afford to be slow and correct.
+      #
+      # This does not defeat the module and build caching below — the build
+      # cache and the test cache are different things, and only the second one
+      # is being refused.
+      GOFLAGS: -count=1
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # tools/check-repo.sh asserts core.hooksPath is .githooks, because a fresh
+      # clone leaves it unset and then the local half of the gates never fires
+      # and nobody notices. A fresh CI checkout is a fresh clone, so without
+      # this line `make check` fails on its own hook assertion before it has
+      # checked a single file.
+      #
+      # The runner does here exactly what CONTRIBUTING.md tells a person to do
+      # after cloning. Teaching the script to skip itself under CI would have
+      # been the other option and is the wrong one: it puts an exception into a
+      # gate that tools/selftest.sh holds against its own broken case.
+      - name: Point git at the repository hooks
+        run: git config core.hooksPath .githooks
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # The version is read from go.mod rather than typed here. A second
+          # spelling of the same number is a second number, and stack.yaml makes
+          # the same argument about every version on the site.
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # Same argument, and there is a second one here: tools/check-node.sh
+          # compares the RUNNING node major against .nvmrc. Reading the same
+          # file makes that check meaningful instead of circular — and without
+          # any node at all the script skips itself with exit 0, so a job
+          # missing this step would go green having checked nothing.
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # make check-contract runs `make gen`, and gen needs redocly and
+      # openapi-typescript out of web/node_modules — it calls them with
+      # `npx --no-install`, which does not fetch anything. Without this step the
+      # contract check reports "redocly is not installed" and stops.
+      #
+      # The Go half of gen (oapi-codegen, sqlc) comes from the tool directives
+      # in api/go.mod and needs no separate install.
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: web
+
+      # check-tools check-node check-repo check-todo check-compose
+      # check-dockerfiles check-migrations check-stack check-go check-web
+      # check-contract — the same list, in the same order, as on a laptop.
+      - name: make check
+        run: make check
+
+  # --------------------------------------------------------------------- db
+  #
+  # The migration cycle and the schema invariants against a real Postgres.
+  # Issue #30.
+  db:
+    name: db
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # No secret values are needed here and none are added: `make check-db`
+      # starts only the db service, and the two throwaway DSNs it uses are in
+      # the example file already. Compose refuses to interpolate without them
+      # and says so, which is why the file is copied rather than skipped.
+      - name: Provide the development environment file
+        run: cp .env.example .env
+
+      # Deliberately NOT a `services: postgres:` block.
+      #
+      # make check-db starts db from compose.dev.yaml and runs the tagged tests
+      # INSIDE the migrate container (`-tags=db -count=1 -p 1`). That is the
+      # path that is exercised locally, and it is the only one that works
+      # unmodified: TEST_DATABASE_URL names the host `db`, which resolves in the
+      # compose network and nowhere else. An Actions service container would
+      # need its own DSNs — a second, untested way into the same database, kept
+      # in step with the first one by nothing.
+      #
+      # The price is a container build plus empty go-mod-cache and
+      # go-build-cache volumes on every run. That price is why this is its own
+      # job instead of a step in `check`. ADR 0030.
+      - name: make check-db
+        run: make check-db
+
+  # ----------------------------------------------------------------- images
+  #
+  # The acceptance criteria of D1, D2 and D3, which have been manual steps
+  # stated in a PR body until now. Issue #92.
+  #
+  # Checkout stays at the default depth on purpose. IMAGE_TAG comes from
+  # `git rev-parse --short=7 HEAD`, which needs no history, and VERSION comes
+  # from `git describe --tags --always`, which without tags fetched falls back
+  # to the short sha. Fetching tags would make it describe against
+  # backup/pre-rewrite-2026-08-17 — the very confusion issue #112 is about.
+  #
+  # On a pull_request the checked-out commit is the merge result, so what gets
+  # built and measured is what would land, not the branch tip in isolation.
+  images:
+    name: images
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # check-topology runs the PRODUCTION compose file, so it starts the real
+      # api binary, and that binary refuses to start on an incomplete
+      # environment — by design, from C1. Three values in .env.example are
+      # deliberately empty because the file is committed, and all three are
+      # required and must be at least 32 characters:
+      # CONTACT_IP_PEPPER, INTERNAL_PROBE_TOKEN, INTERNAL_DEPLOY_TOKEN.
+      #
+      # Generated per run and thrown away with the runner. They authenticate
+      # nothing outside this job: the containers they are handed are torn down
+      # by check-topology itself, and no port of that stack is reachable from
+      # anywhere.
+      #
+      # GITHUB_TOKEN stays empty and no token is needed — the Makefile's
+      # TOPOLOGY_ENV sets CONTRIBUTIONS_TRANSPORT=off, which switches the
+      # refresher off rather than the start. That is the answer to the problem
+      # recorded against #56.
+      - name: Provide the production environment file
+        run: |
+          cp .env.example .env
+          {
+            printf 'CONTACT_IP_PEPPER=%s\n'     "$(openssl rand -hex 32)"
+            printf 'INTERNAL_PROBE_TOKEN=%s\n'  "$(openssl rand -hex 32)"
+            printf 'INTERNAL_DEPLOY_TOKEN=%s\n' "$(openssl rand -hex 32)"
+          } >> .env
+
+      # Local tags only. Pushing to GHCR is E4's job and happens there, never
+      # here and never on the VPS — the Makefile says the same thing next to
+      # the IMAGE_API definition.
+      - name: make images
+        run: make images
+
+      # D1: the api image under 20 MiB, both images non-root, no shell in the
+      # api image, .next/static and public present in the web image.
+      - name: make check-images
+        run: make check-images
+
+      # D2 and D3, and the only check that actually runs the start-up order:
+      # from an empty volume, twice, 2/22/13 seeded rows, limits and
+      # ReadonlyRootfs read off the running containers, db publishing no port,
+      # both networks measured, and a deliberately broken migration that must
+      # leave the api never started.
+      #
+      # It creates its own stand-in for dokploy-network (`require-network`) and
+      # tears its stack down again, so it needs nothing from the runner but
+      # Docker.
+      - name: make check-topology
+        run: make check-topology
