@@ -63,14 +63,16 @@ A change is done when all of these hold:
 - [ ] `make check` is green
 - [ ] `make check-db` is green, if the change touches `api/migrations/`,
       `api/internal/seed/` or `api/internal/fixtures/`. It needs Docker and is
-      therefore not part of `make check`; CI picks it up in E1, and until then it
-      is a manual step that has to be stated in the PR
+      therefore not part of `make check` — the `db` job in CI runs it on every
+      pull request, so running it locally first saves a round trip rather than
+      being the only thing that runs it
 - [ ] there is a test for the **broken** case, not only the happy path
 - [ ] a contract test exists, if the change adds an endpoint
 - [ ] `docker compose up` ran from zero (from phase A4 onwards)
 - [ ] `make check-topology` is green, if the change touches `compose.yaml`,
       `api/Dockerfile`, `web/Dockerfile` or `ops/postgres/initdb/`. Like
-      `make check-db` it needs Docker and a build, so it is not in `make check`
+      `make check-db` it needs Docker and a build, so it is not in `make check`;
+      the `images` job runs it, together with `make check-images`
 - [ ] no `TODO` without an issue reference — `TODO(#42):` passes, `TODO:` does not
 - [ ] documentation updated: ADR, runbook or README
 - [ ] `backlog.md` updated

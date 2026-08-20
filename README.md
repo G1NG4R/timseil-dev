@@ -3,22 +3,30 @@
 A backend and DevOps portfolio that runs on the stack it describes and measures
 itself by the rules it explains. The site is its own reference system.
 
+[![ci](https://github.com/G1NG4R/timseil-dev/actions/workflows/ci.yml/badge.svg)](https://github.com/G1NG4R/timseil-dev/actions/workflows/ci.yml)
+
 <!--
 Live badges (build plan 12.4) read https://timseil.dev/api/badge/*. Since C7 the
-three endpoints exist and answer; the domain does not resolve yet. Enabling them
-now would still put three broken images at the top of a repository whose entire
-argument is that claims are checkable, so one of the two original reasons is
-gone and the other is not. They get switched on in phase M6, tracked by the
-issue "docs: enable the live badges in the README".
+three endpoints exist and answer, and since the first deploy the domain
+resolves — so both of the original reasons to keep them off are gone. What is
+left is a sequencing one: uptime is measured by the probe in F4, and a badge
+reading 91 days of nothing is worse than no badge. They get switched on in
+phase M6, tracked by the issue "docs: enable the live badges in the README".
+
+The ci badge above is a different kind: it reports this repository's own
+pipeline, it is true from the first run, and it needs nothing that is not built
+yet.
 
 ![uptime](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/uptime)
 ![version](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/version)
 ![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
 -->
 
-> **Status:** in build — stage D of 13, phase D2. Nothing is deployed yet.
-> There is no running site behind this repository today, and this line will say
-> so until there is. See [the build plan](docs/build-plan.md) (German).
+> **Status:** in build — stage E of 13, phase E1. The site is deployed and
+> answering at [timseil.dev](https://timseil.dev); `/api/health` is the shortest
+> way to check that for yourself. The pipeline that gets code there is being
+> built now: every gate in `make check` runs on every pull request, the push to
+> the registry does not yet. See [the build plan](docs/build-plan.md) (German).
 
 ## The one rule
 
