@@ -101,7 +101,7 @@ write_dev() { printf '%s' "$1" > compose.dev.yaml; }
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     expose:
       - "5432"
 '
@@ -109,7 +109,7 @@ accepts "db behind expose accepted" tools/check-compose.sh
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     ports:
       - "5432:5432"
 '
@@ -117,7 +117,7 @@ rejects "published db port rejected" tools/check-compose.sh
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     labels:
       - "traefik.enable=true"
 '
@@ -125,7 +125,7 @@ rejects "traefik label on db rejected" tools/check-compose.sh
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     expose:
       - "5432"
 '
@@ -231,7 +231,7 @@ accepts "an init container disabling the probe accepted" tools/check-compose.sh
 # the read-only roles script — which has to be read-only to be the exception.
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - db-data:/var/lib/postgresql
 $limited"
@@ -239,7 +239,7 @@ accepts "named volume accepted" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - ./data:/var/lib/postgresql
 $limited"
@@ -255,7 +255,7 @@ rejects "bind-mounted docker socket rejected" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - ./ops/postgres/initdb:/docker-entrypoint-initdb.d
 $limited"
@@ -263,7 +263,7 @@ rejects "writable ops bind mount rejected" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - ./ops/postgres/initdb:/docker-entrypoint-initdb.d:ro
 $limited"
@@ -284,11 +284,11 @@ accepts "tmpfs path not mistaken for a bind mount accepted" tools/check-compose.
 # files disagreeing means the page shows a version nothing runs.
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
 $limited"
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
 '
 accepts "both compose files on the same postgres accepted" tools/check-compose.sh
 
@@ -297,6 +297,26 @@ write_dev 'services:
     image: postgres:18.5-alpine
 '
 rejects "postgres drift between the two compose files rejected" tools/check-compose.sh
+
+# E2, rule 8b. postgres was the last image in the system on a movable tag, and
+# it was there because the resolver read the digest as the version. Now that it
+# does not, a bare tag here is the same defect a bare FROM is in a Dockerfile.
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine
+    expose:
+      - "5432"
+'
+rejects "foreign image on a bare tag rejected" tools/check-compose.sh
+
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    expose:
+      - "5432"
+'
+accepts "foreign image pinned by digest accepted" tools/check-compose.sh
+
 
 # The five rules D3 added. Every one of them is a way for the proxy and the
 # stack to lose each other while the stack still comes up green, which is why
@@ -397,14 +417,14 @@ rejects "routed service on the default network alone rejected" tools/check-compo
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     networks: [default, dokploy-network]
 $limited"
 rejects "db in the proxy network rejected" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
 $limited"
 accepts "db with no networks key accepted" tools/check-compose.sh
 

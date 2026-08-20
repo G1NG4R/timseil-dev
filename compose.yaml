@@ -57,7 +57,7 @@ services:
     # make check-compose refuses a drift between this tag and compose.dev.yaml's:
     # a page showing the development version is the exact class of error the
     # manifest exists to prevent (issue #28).
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
     restart: unless-stopped
     environment:
       # `:?` here and pass-through below, and the split is a rule rather than a

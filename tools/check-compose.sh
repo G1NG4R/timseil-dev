@@ -35,6 +35,17 @@
 #      page shows the development version of PostgreSQL, which is the exact
 #      class of error stack.yaml exists to prevent (issue #28).
 #
+# One arrived with E2 and completes what api/Dockerfile already had:
+#
+#   8b. Every image that is not one of ours carries an @sha256: digest. The
+#      Dockerfiles have been pinned since D1 — tools/check-dockerfiles.sh
+#      refuses a bare FROM — while postgres sat here on a movable tag, alone,
+#      because stack.yaml read this line for the page and the resolver took
+#      everything after the last colon. That resolver now cuts the digest off
+#      first (#93), so the exception has nothing left to stand on. Our own
+#      ghcr.io images are excluded and stay excluded: rule 6 pins them to
+#      ${IMAGE_TAG}, a digest nobody could write before the image is built.
+#
 # Five arrived with D3, and every one of them is a way for the proxy and the
 # stack to lose each other WITHOUT anything going red. That is what makes them
 # worth a gate: a stack that comes up green and is invisible to Traefik looks
@@ -310,10 +321,39 @@ check_db_image_agrees() {
   fi
 }
 
+# Rule 8b. A tag can be repointed by whoever owns the registry entry; a digest
+# cannot. Ours are exempt because ${IMAGE_TAG} is resolved at deploy time and is
+# already a commit sha — rule 6 holds that end.
+check_foreign_images_are_pinned() {
+  [ -f "$1" ] || return 0
+  bad=$(awk '
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ { in_services = ($0 ~ /^services:[[:space:]]*$/); next }
+    !in_services { next }
+    /^    image:/ {
+      ref = $0
+      sub(/^    image:[[:space:]]*/, "", ref)
+      sub(/[[:space:]]*#.*$/, "", ref)
+      if (ref ~ /^ghcr\.io\//) next
+      if (ref ~ /@sha256:[0-9a-f]{64}$/) next
+      printf "line %d: %s\n", NR, ref
+    }
+  ' "$1")
+  if [ -n "$bad" ]; then
+    printf '  ✗ %s has an image that is not pinned by digest\n' "$1"
+    printf '%s\n' "$bad" | sed 's/^/    /'
+    printf '    a tag can be moved to other bytes after review; a digest cannot\n'
+    fail=1
+  else
+    printf '  ✓ %s pins every foreign image by digest\n' "$1"
+  fi
+}
+
 # compose.dev.yaml may build; it may still not open db to the host.
 scan compose.dev.yaml 0
 # compose.yaml may do neither, and carries the six D2 rules on top.
 scan compose.yaml 1
 check_db_image_agrees
+check_foreign_images_are_pinned compose.yaml
+check_foreign_images_are_pinned compose.dev.yaml
 
 [ "$fail" -eq 0 ] || exit 1
