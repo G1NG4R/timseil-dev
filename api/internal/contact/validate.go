@@ -127,9 +127,10 @@ func validate(body httpx.ContactRequest, now time.Time) (submission, verdict, []
 	}
 
 	return submission{
-		name:     name,
-		email:    email,
-		message:  message,
+		name:    name,
+		email:   email,
+		message: message,
+		//nolint:gosec // G115: `body.DwellMs > maxInt32` is refused above
 		dwellMs:  int32(body.DwellMs),
 		clientTs: body.Ts.UTC(),
 	}, accepted, nil

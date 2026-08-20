@@ -147,7 +147,11 @@ func Retry[T any](ctx context.Context, policy RetryPolicy, do func(context.Conte
 			select {
 			case <-ctx.Done():
 				return zero, attempt, ctx.Err()
-			case <-time.After(rand.N(wait)):
+			// G404: this is retry jitter, whose whole job is to be cheap and to
+			// spread callers apart. Nothing here is a secret, a token or an ID, so
+			// crypto/rand would buy unpredictability nobody needs at a cost paid on
+			// every failed attempt.
+			case <-time.After(rand.N(wait)): //nolint:gosec // G404: jitter, see above
 			}
 		}
 	}

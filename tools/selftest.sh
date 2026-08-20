@@ -21,6 +21,7 @@ mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
    "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
+   "$root/tools/check-lint.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -923,6 +924,38 @@ rejects "empty .nvmrc rejected"          node_check "$tmp/fakebin/node24" nv_emp
 rejects "missing .nvmrc rejected"        node_check "$tmp/fakebin/node24" nv_gone
 accepts "absent node skips"              node_check "$tmp/fakebin/node-not-here" nv24
 rm -rf fakebin nv24 nv25 nv_empty
+
+printf 'lint\n'
+# Three things, and the middle one is the reason this section exists.
+#
+# A fake linter, so the assertions do not depend on whether this machine has the
+# real one. It answers success and prints nothing, which is what a clean run
+# looks like.
+mkdir -p api fakebin
+printf 'module example.test/api\n\ngo 1.26.0\n' > api/go.mod
+printf '#!/bin/sh\nexit 0\n' > fakebin/lint-ok  && chmod +x fakebin/lint-ok
+printf '#!/bin/sh\nexit 1\n' > fakebin/lint-bad && chmod +x fakebin/lint-bad
+printf 'version: "2"\n' > .golangci.yml
+
+lint_check() { CHECK_LINT_BIN="$1" tools/check-lint.sh "$tmp"; }
+
+accepts "clean lint run accepted"     lint_check "$tmp/fakebin/lint-ok"
+rejects "a finding is rejected"       lint_check "$tmp/fakebin/lint-bad"
+
+# Without the config the linter would run its own default ruleset, which is not
+# the one CI blocks on. A check that silently measures something else is worse
+# than one that is missing.
+mv .golangci.yml .golangci.yml.away
+rejects "missing .golangci.yml rejected" lint_check "$tmp/fakebin/lint-ok"
+mv .golangci.yml.away .golangci.yml
+
+# The floor under the skip, and the case E1 paid for: check-node.sh skipped
+# itself on a runner with no node, and the job went green having checked
+# nothing. Off a runner the skip is a convenience; on one it is a lie.
+accepts "absent linter skips locally"    env -u CI CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
+rejects "absent linter rejected under CI" env CI=1 CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
+
+rm -rf api fakebin .golangci.yml
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }

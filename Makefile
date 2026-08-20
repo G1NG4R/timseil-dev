@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -70,6 +70,11 @@ check-go: ## gofmt, go vet, go test
 	@cd api && bad=$$(gofmt -l .); \
 		[ -z "$$bad" ] || { printf '  ✗ not gofmt-clean:\n'; printf '%s\n' "$$bad" | sed 's/^/    /'; exit 1; }; \
 		go vet ./... && go test ./... && printf '  ✓ gofmt, vet, test\n'
+
+.PHONY: check-lint
+check-lint: ## golangci-lint over api/ — ruleset and exclusions in .golangci.yml
+	@printf 'lint\n'
+	@tools/check-lint.sh
 
 .PHONY: check-web
 check-web: ## Typecheck, lint, unit tests

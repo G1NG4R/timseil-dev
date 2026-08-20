@@ -259,7 +259,9 @@ func (h *Handler) GetSystem(ctx context.Context, req httpx.GetSystemRequestObjec
 func (h *Handler) operations(ctx context.Context, systemID int64, window int) (
 	[]httpx.OpsDay, []httpx.Incident, []httpx.Deploy, error,
 ) {
-	span := int32(window)
+	// G115: window is the `window` query parameter, and the contract declares it
+	// as enum [30, 91, 182]. Nothing else reaches this line.
+	span := int32(window) //nolint:gosec // G115: contract enum, see above
 
 	dayRows, err := h.queries.OpsDaysForSystem(ctx, store.OpsDaysForSystemParams{
 		SystemID: systemID, WindowSize: span,

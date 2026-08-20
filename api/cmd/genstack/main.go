@@ -95,8 +95,12 @@ func write(out string, bundle *stack.Bundle) error {
 	// tools/check-repo.sh checks that it is there.
 	data = append(data, '\n')
 
-	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
+	// G301/G306: this writes generated SOURCE into the working tree, which the
+	// next command has to read, git has to diff and a human has to review. 0750
+	// and 0600 are the right answer for a secret at runtime and the wrong one
+	// for a file that belongs to the repository.
+	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil { //nolint:gosec // G301: generated source, see above
 		return err
 	}
-	return os.WriteFile(out, data, 0o644)
+	return os.WriteFile(out, data, 0o644) //nolint:gosec // G306: generated source, see above
 }

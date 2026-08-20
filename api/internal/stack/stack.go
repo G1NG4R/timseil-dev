@@ -119,8 +119,12 @@ func Parse(data []byte) (*Manifest, error) {
 }
 
 // Load reads root/stack.yaml.
+//
+// G304 flags the constructed path. It is a build-time tool reading a fixed
+// file name under a root the operator typed on the command line; there is no
+// request, no user and no untrusted input anywhere in this program.
 func Load(root string) (*Manifest, error) {
-	data, err := os.ReadFile(filepath.Join(root, FileName))
+	data, err := os.ReadFile(filepath.Join(root, FileName)) //nolint:gosec // G304: build-time tool, see above
 	if err != nil {
 		return nil, err
 	}
@@ -201,8 +205,10 @@ func (m *Manifest) Bundle(root string) (*Bundle, error) {
 // Four kinds cover every entry the manifest has; a fifth arrives with a real
 // entry that needs it, not before.
 func readVersion(root string, e Entry) (string, error) {
+	// G304: e.From comes from stack.yaml, a file in this repository that a
+	// reviewer read before it was committed. Same argument as Load above.
 	path := filepath.Join(root, e.From)
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // G304: build-time tool, see above
 	if err != nil {
 		return "", fmt.Errorf("reading %s: %w", e.From, err)
 	}
@@ -281,13 +287,37 @@ func fromCompose(data []byte, e Entry) (string, error) {
 		return "", err
 	}
 	if strings.HasSuffix(e.Key, ".image") {
-		i := strings.LastIndex(raw, ":")
-		if i < 0 {
-			return "", fmt.Errorf("%s: image %q has no tag — pin it", e.From, raw)
+		raw, err = imageTag(raw, e.From)
+		if err != nil {
+			return "", err
 		}
-		raw = raw[i+1:]
 	}
 	return normalize(raw)
+}
+
+// imageTag pulls the tag out of an image reference, and it exists because the
+// obvious version of it — everything after the last colon — reads the wrong
+// half of two forms this repository writes.
+//
+// `postgres:18.6-alpine@sha256:…` is the one that cost something. ADR 0027 left
+// the db image on a bare tag for exactly this reason: the last colon is the one
+// inside the digest, so the page showed a `sha256:…` where a version belongs,
+// and db stayed the only unpinned image in the system. The digest is cut off
+// first, so `name:tag@digest` and `name:tag` answer the same thing.
+//
+// `registry:5000/postgres` is the other: a registry port is a colon that is not
+// a tag separator. A tag can only follow the last slash, so a colon before it is
+// not one — and an image with no tag at all is still refused, because a digest
+// alone is not a version anybody can read.
+func imageTag(ref, file string) (string, error) {
+	if at := strings.Index(ref, "@"); at >= 0 {
+		ref = ref[:at]
+	}
+	colon := strings.LastIndex(ref, ":")
+	if colon < 0 || colon < strings.LastIndex(ref, "/") {
+		return "", fmt.Errorf("%s: image %q has no tag — pin it", file, ref)
+	}
+	return ref[colon+1:], nil
 }
 
 // walk follows a dotted path through decoded JSON or YAML. yaml.v3 gives

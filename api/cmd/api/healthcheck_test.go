@@ -102,7 +102,7 @@ func TestAHangingServerProbesUnhealthyWithinTheTimeout(t *testing.T) {
 	block := make(chan struct{})
 	defer close(block)
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		select {
 		case <-block:
 		case <-r.Context().Done():
