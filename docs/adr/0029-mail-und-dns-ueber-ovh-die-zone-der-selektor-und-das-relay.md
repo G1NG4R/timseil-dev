@@ -207,6 +207,24 @@ ohne einen Blick in die Rohheader nie aufgefallen. OVH signiert, nicht wir; aus
 dem Code dieses Projekts ist daran nichts zu ändern. Ob OVH den Header-Satz
 konfigurierbar macht, ist ungeprüft.
 
+**Die vorgeschriebene `From`/`Reply-To`-Trennung kostet 2,5 Punkte, sobald der
+Absender ein Freemail-Postfach benutzt.** SpamAssassins Regel
+`FREEMAIL_FORGED_REPLYTO` — „Freemail in Reply-To, but not From" — beschreibt das
+klassische Phishing-Muster, und sie hat damit recht. Nur ist genau diese
+Konstruktion hier vorgeschrieben: OVH verlangt `From` = authentifiziertes Konto,
+also muss die Besucheradresse in `Reply-To` (§2). Am 20.08.2026 zweimal gemessen,
+dieselbe Zone, derselbe Code, nur eine andere Absenderadresse: **7,7/10 mit einer
+Protonmail-Adresse, 10/10 mit einer Adresse auf einer eigenen Domain.** Die
+gesamte Differenz war diese eine Regel; jeder andere Posten der Liste war positiv
+oder lag unter 0,01.
+
+Daran ist aus dem Code nichts zu ändern, und die meisten Besucher schreiben von
+einem Freemail-Postfach. Praktisch trägt der Preis wenig: die Nachricht geht
+ausschließlich in unser eigenes Postfach, dessen Filter wir kontrollieren, und
+sie geht nie an Fremde — das ist §6. Zu wissen ist es trotzdem, denn wer die
+Abnahmezahl später mit einem Freemail-Absender nachstellt, misst 7,7 und hält die
+Domain für kaputt.
+
 **`p=none` heißt zwei Wochen ohne Durchsetzung.** Bis zum 02.09.2026 wird eine
 gefälschte Absenderadresse auf dieser Domain gemeldet, aber nicht abgewiesen.
 Früher zu verschärfen hieße, die Regel zu verschärfen, bevor irgendjemand weiß,
@@ -257,6 +275,30 @@ aber der Beleg sagte dann nichts über den Container aus, der die Nachricht in
 Produktion baut.
 
 ## Belege
+
+**Die Abnahme, am 20.08.2026 gemessen.** Zwei Läufe gegen mail-tester, beide über
+`POST https://timseil.dev/api/contact` gegen den deployten Stack, nicht gegen
+`localhost`:
+
+| Zeit (UTC) | `Reply-To` | Score | Nachricht |
+|---|---|---|---|
+| 19:50:58 | `…@protonmail.com` | 7,7/10 | `msg_01M0GBM2BP8B7RSC` |
+| 19:58:43 | `tim@timseil.dev` | **10/10** | `msg_01M0GC27YR6D1M5V` |
+
+Der zweite Lauf ist die Abnahme — der Bauplan verlangt ≥ 9/10. Der erste steht
+daneben, weil eine Zahl allein hier die unehrlichere Angabe wäre: die Differenz
+ist restlos `FREEMAIL_FORGED_REPLYTO` (siehe „Was das kostet"). SpamAssassin
+bestätigt einzeln `DKIM_VALID`, `DKIM_VALID_AU`, `DKIM_VALID_EF` und `SPF_PASS`
+— DKIM also aus Autor- **und** Envelope-From-Domain, womit DMARC ausgerichtet
+ist. Zwei Hinweise bleiben ohne Handlung, beide absichtlich: kein HTML-Teil
+(ADR 0021 §7) und kein `List-Unsubscribe` (Massenmail-Header, keine
+Transaktionsmail).
+
+Der erste erfolgreiche Versand lief um 19:46:57 UTC im Anfrageweg durch,
+`duration_ms 712` — innerhalb des 7-Sekunden-Budgets aus ADR 0021 §1, mit
+Reserve. Dass OVH ihn angenommen hat, beweist zugleich §2: der Relay lehnt jede
+Abweichung von `From` = Konto ab, eine Zustellung ist also der Nachweis, dass die
+Besucheradresse den Umschlag nie berührt hat.
 
 Bauplan Zeile 1297–1302 (Phase L1 und ihre Abnahme), 1300 (die `ptr`-Warnung,
 hier widerlegt), 1416, 1472 (die DMARC-Uhr) · ADR 0020 §8 (Konstanten gegen

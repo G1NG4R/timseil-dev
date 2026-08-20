@@ -257,10 +257,42 @@ und `DMARC` müssen einzeln grün sein.
 **Die Zahl notieren, mit Datum.** Sie ist der einzige quantitative Beleg dieser
 Phase, und ein Punktwert ohne Zeitpunkt ist in drei Monaten wertlos.
 
-Zwei Abzüge sind erwartbar und keine Fehler auf unserer Seite: ein fehlender
-rDNS/PTR-Eintrag gehört OVHs Relay, nicht uns, und ein fehlender
-`List-Unsubscribe`-Header ist bei einer Transaktionsmail richtig so. Jeder andere
-Abzug ist ein Fund und gehört in den Backlog.
+### Der Referenzwert — und die Falle darin
+
+Am 20.08.2026 gemessen, zweimal, dieselbe Zone und derselbe Code:
+
+| `Reply-To` | Score |
+|---|---|
+| `tim@timseil.dev` | **10/10** |
+| `…@protonmail.com` | 7,7/10 |
+
+**Misst du 7,7 statt 10, ist wahrscheinlich nichts kaputt.** Die gesamte Differenz
+ist eine einzige SpamAssassin-Regel:
+
+```
+-2.503  FREEMAIL_FORGED_REPLYTO   Freemail in Reply-To, but not From
+```
+
+Sie beschreibt das Phishing-Muster „fremde Antwortadresse unter eigenem Namen" —
+und genau diese Konstruktion ist hier vorgeschrieben, weil OVH `From` = Konto
+verlangt und die Besucheradresse deshalb in `Reply-To` muss. Jede echte
+Einsendung von einem Freemail-Postfach kostet diese Punkte, und aus dem Code ist
+daran nichts zu ändern. ADR 0029 §„Was das kostet".
+
+**Für die Abnahme also eine Adresse auf einer eigenen Domain ins `email`-Feld** —
+sie misst die Zone, nicht den Postfachanbieter des Absenders. Die zweite Messung
+mit Freemail ist trotzdem nützlich: sie zeigt, was in der Praxis ankommt.
+
+Diese Abzüge sind erwartbar und keine Fehler auf unserer Seite:
+
+| Hinweis | Warum er bleibt |
+|---|---|
+| „There is no html version of your message" | Absicht. Klartext, nie HTML — ein zweiter Parser ist ein zweiter Satz Möglichkeiten, falsch zu liegen (ADR 0021 §7) |
+| Fehlender `List-Unsubscribe` | Ein Massenmail-Header. Diese Mail geht an genau einen Empfänger |
+| Fehlender rDNS/PTR | Gehört OVHs Relay, nicht uns |
+| `SPF_HELO_NONE` | OVHs HELO-Name, und es sind 0,001 Punkte |
+
+Jeder andere Abzug ist ein Fund und gehört in den Backlog.
 
 ---
 

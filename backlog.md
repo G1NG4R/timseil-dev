@@ -23,12 +23,11 @@ selbst auf — nach dem Upgrade behaupteten Bauplan, vier ADR, zwei
 Seit [#117](https://github.com/G1NG4R/timseil-dev/pull/117) sagen es nur noch die
 vier ADR, und die absichtlich, mit datierter Notiz.
 
-**Offen aus L1, ohne eigene Zeile, weil es außerhalb des Repos liegt:**
-`MAIL_TRANSPORT` muss in Dokploy von `log` auf `smtp`, und die drei Variablen
-`SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_TO` müssen gefüllt werden. Solange das
-nicht geschehen ist, antwortet das Formular in Produktion jeder Einsendung `202`
-und stellt nichts zu. Der Klickweg steht in `docs/runbooks/mail.md`, Teil 2; die
-Abnahme mit mail-tester in Teil 3.
+**L1 ist abgenommen.** `MAIL_TRANSPORT` steht seit dem 20.08.2026 in Dokploy auf
+`smtp`, und mail-tester gab um 19:58 UTC **10/10** — der Bauplan verlangt ≥ 9/10.
+Die zweite Messung acht Minuten davor ergab 7,7/10, und die Differenz war restlos
+`FREEMAIL_FORGED_REPLYTO`; beide Zahlen stehen in ADR 0029 §Belege, weil eine
+allein die unehrlichere Angabe wäre.
 
 ---
 
@@ -61,6 +60,8 @@ Abnahme mit mail-tester in Teil 3.
 | 20.08.2026 | L1 | **Die Abnahme wurde als „Formular auf der laufenden Seite absenden" beschrieben — es gibt bis H8 kein Formular.** `web/app` besteht aus `layout.tsx` und `page.tsx`. `dokploy.md` sagt das seit D3 in genau so vielen Worten, und die Anweisung wurde trotzdem zweimal so geschrieben, weil „der Weg, den ein Besucher nimmt" als Formulierung zu gut klang, um sie gegen das Repo zu halten. Der Endpoint ist von außen erreichbar (`GET /api/contact` → `405`), der Test geht also per `curl` gegen `https://timseil.dev/api/contact` | **erledigt in L1:** `mail.md` Teil 3 und `api.md` tragen das Kommando samt der vier Bedingungen, die sonst still eine `202` erzeugen (`company` leer, `dwellMs` ≥ 3000, `message` ≥ 20 Zeichen, `ts` < 48 h) |
 
 | 20.08.2026 | L1 | **Dokploy schreibt die Umgebung in eine `.env`, und Compose verändert beim Einlesen still, was darin steht.** Von einem 25-stelligen SMTP-Passwort kamen **17 Zeichen** im Container an — `$xyz` wird als Variable ersetzt und verschwindet, `#` schneidet den Rest ab. Nachgewiesen über zwei SHA-256: `c631a5bc…` (was sich am Relay anmeldet) gegen `d45faefc…` (was `docker inspect` im Container zeigt). Die Antwort war `535 5.7.1 Authentication failed`, also ein **dauerhafter** Fehler — die Nachricht wurde nicht erneut versucht, sondern auf `failed` gesetzt, und das war richtig so. **Der Endpoint hat sich vorbildlich verhalten; falsch war die Umgebung.** Dass es hier auffiel, liegt allein daran, dass SMTP eine klare Fehlermeldung liefert — `POSTGRES_PASSWORD` würde denselben Weg nehmen und beim ersten Start scheitern, ohne den Grund zu nennen | offen: **gehört als Warnung in `docs/runbooks/dokploy.md` §0.2 und §2**, wo die Geheimnisse erzeugt und eingetragen werden. Die mit `openssl rand -hex 32` erzeugten Werte sind zufällig immun (nur Hex), die von Hand gewählten nicht. **Issue [#121](https://github.com/G1NG4R/timseil-dev/issues/121)** |
+
+| 20.08.2026 | L1 | **Die vorgeschriebene `From`/`Reply-To`-Trennung kostet 2,5 SpamAssassin-Punkte, sobald der Absender Freemail benutzt.** `FREEMAIL_FORGED_REPLYTO` beschreibt das Phishing-Muster „fremde Antwortadresse unter eigenem Namen" — und genau das verlangt OVH von uns. Zweimal gemessen, dieselbe Zone, derselbe Code, nur eine andere Absenderadresse: **7,7/10** mit Protonmail, **10/10** mit einer Adresse auf eigener Domain. Jeder andere Posten der Liste war positiv oder lag unter 0,01. Fast jede echte Einsendung wird diesen Abzug tragen, und aus dem Code ist nichts daran zu ändern. Beim ersten Abnahmelauf gefunden, nicht in der Theorie | **erledigt in L1:** beide Zahlen in ADR 0029 §Belege, der Preis als eigener Absatz in §„Was das kostet", und der Referenzwert samt Falle in `mail.md` Teil 3. Kein Issue — es gibt nichts zu bauen |
 
 ## Idee — noch nicht entschieden
 
