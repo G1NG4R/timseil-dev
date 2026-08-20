@@ -507,12 +507,23 @@ func TestOnlyTheApiIsAnswerableFromAnyOrigin(t *testing.T) {
 
 // ------------------------------------------------------------- contact (C6)
 
+// contactPayload builds a submission that is well-formed *today*. The timestamp
+// has to be generated rather than written down: internal/contact refuses a `ts`
+// further than maxClockSkew (48 h) from now, so a literal date in this file is a
+// fuse. It burned down on 2026-08-20, two days after it was written, and the
+// failure named the router rather than the clock — the submission came back 400
+// and the test said "want it routed to the handler".
+func contactPayload() string {
+	return `{"name":"Anna Keller","email":"anna@example.org",` +
+		`"message":"Hallo, ich hätte eine Frage zu einem der Systeme.",` +
+		`"company":"","dwellMs":4200,"ts":"` +
+		time.Now().UTC().Format(time.RFC3339) + `"}`
+}
+
 func submit(t *testing.T, h http.Handler) *httptest.ResponseRecorder {
 	t.Helper()
 
-	payload := `{"name":"Anna Keller","email":"anna@example.org",` +
-		`"message":"Hallo, ich hätte eine Frage zu einem der Systeme.",` +
-		`"company":"","dwellMs":4200,"ts":"2026-08-18T14:22:07Z"}`
+	payload := contactPayload()
 
 	rec := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/api/contact", strings.NewReader(payload))
@@ -605,9 +616,10 @@ func TestASpentContactBudgetLeavesTheReadsAlone(t *testing.T) {
 func TestAForeignOriginIsRefusedThroughTheAssembledHandler(t *testing.T) {
 	h := handler(t, nil, true)
 
-	payload := `{"name":"Anna Keller","email":"anna@example.org",` +
-		`"message":"Hallo, ich hätte eine Frage zu einem der Systeme.",` +
-		`"company":"","dwellMs":4200,"ts":"2026-08-18T14:22:07Z"}`
+	// Generated, not written down — and here it matters twice over: a stale `ts`
+	// would produce a 400 of its own, and this test would go on passing while
+	// the origin check it exists for was gone.
+	payload := contactPayload()
 
 	rec := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/api/contact", strings.NewReader(payload))
