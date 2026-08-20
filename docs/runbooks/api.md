@@ -441,7 +441,9 @@ docker compose -f compose.dev.yaml logs api | grep "mail not sent" | tail -1 \
 Steht die Zeile **nicht** da, sendet der Prozess und die Warteschlange ist der
 nächste Blick (Abschnitt oben). Ist auch die leer, sind die Nachrichten
 zugestellt und das Problem liegt hinter dem Relay — Spam-Ordner, Weiterleitung,
-oder `MAIL_TO` zeigt auf ein anderes Postfach als erwartet.
+oder `MAIL_TO` zeigt auf ein anderes Postfach als erwartet. Ab da ist
+`docs/runbooks/mail.md` das richtige Blatt: Zone, Selektor und Zustellbarkeit
+stehen dort.
 
 ---
 
@@ -571,25 +573,29 @@ wenn kein Deploy läuft.
 
 ---
 
-## Nach L1: den Versand wirklich prüfen
+## Den Versand wirklich prüfen
 
-Diese Phase konnte es nicht — das OVH-Postfach und die DNS-Einträge sind L1, und
-L1 kommt nach Stufe D. Was in C6 geprüft ist: der SMTP-Dialog gegen einen echten
-Listener im Test, alle fünf Antwortpfade gegen den laufenden Stack, und die
-Nachzustellung nach einem simulierten Relay-Ausfall. Was offen bleibt, ist die
-Zustellbarkeit.
-
-Sobald das Postfach existiert:
+C6 konnte es nicht — das OVH-Postfach und die DNS-Einträge waren L1. Was in C6
+geprüft ist: der SMTP-Dialog gegen einen echten Listener im Test, alle fünf
+Antwortpfade gegen den laufenden Stack, und die Nachzustellung nach einem
+simulierten Relay-Ausfall. Was L1 dazugelegt hat, ist die Zustellbarkeit.
 
 ```bash
 # 1. Der Prozess sendet wirklich
 docker compose -f compose.dev.yaml logs api | grep -c "MAIL_TRANSPORT is log"   # muss 0 sein
-
-# 2. Eine echte Nachricht an die Adresse von mail-tester.com
-curl -s localhost:8080/api/contact -H 'content-type: application/json' \
-  -d '{"name":"Tim Seil","email":"…@…","message":"Testnachricht für die Zustellbarkeit.",
-       "company":"","dwellMs":4200,"ts":"…"}'
 ```
+
+**Der Empfänger ist `MAIL_TO`, nicht das `email`-Feld.** Die Adresse aus dem
+Rumpf wird ausschließlich `Reply-To` — der Umschlag trägt `SMTP_USERNAME` als
+`MAIL FROM` und `MAIL_TO` als `RCPT TO`, und das ist die SPF-Hälfte der
+OVH-Regel. Wer die Adresse von mail-tester ins `email`-Feld schreibt, schickt die
+Testnachricht **an sich selbst** und hält das Ergebnis für eine Messung.
+
+Für eine echte Zustellbarkeitsmessung wird also `MAIL_TO` vorübergehend auf die
+Adresse von mail-tester gesetzt (in Dokploy: ändern, redeployen, danach wieder
+zurück), und dann das Formular auf der laufenden Seite abgeschickt — nicht
+`curl` gegen `localhost`, weil die Abnahme dem Weg gilt, den ein Besucher nimmt.
+Der Ablauf steht Schritt für Schritt in `docs/runbooks/mail.md`, Teil 3.
 
 Abnahme ist L1s: **mail-tester ≥ 9/10**, und `SPF`, `DKIM` und `DMARC` mit
 `p=none` müssen alle drei grün sein.
@@ -645,7 +651,7 @@ Default", damit die Zahlen nur an einer Stelle existieren — in
 | `MAIL_TRANSPORT` | `smtp` | `smtp` \| `log`. `log` baut die Mail und sendet nicht |
 | `SMTP_USERNAME` | — | Pflicht bei `smtp`. Volle Adresse, **und zugleich das `From:`** |
 | `SMTP_PASSWORD` | — | Pflicht bei `smtp`. Geheimnis |
-| `MAIL_TO` | — | Pflicht bei `smtp`. Das Postfach, in dem die Nachrichten landen |
+| `MAIL_TO` | — | Pflicht bei `smtp`. Das Postfach, in dem die Nachrichten landen — **und zugleich das `RCPT TO`** |
 | `CONTACT_IP_PEPPER` | — | Pflicht, ≥ 32 Zeichen. Schlüsselt den gespeicherten `ip_hash` |
 | `INTERNAL_PROBE_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/probe` |
 | `INTERNAL_DEPLOY_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/deploy` |
@@ -656,10 +662,12 @@ umgekehrt. Der Grund steht in ADR 0023 §1 — eine erfundene Uptime-Zeile ist e
 Zelle von einundneunzig, eine erfundene Deploy-Zeile ist die eine Zahl, die die
 Fallstudie gemessen nennt.
 
-**Es gibt kein `MAIL_FROM`.** OVH MX Plan verlangt, dass `From:` dem
-authentifizierten Konto entspricht — `From` **ist** `SMTP_USERNAME`, und eine
-eigene Variable dafür könnte nur falsch gesetzt werden. Das Relay lehnte die
-Abweichung erst ab, nachdem das Passwort schon über die Leitung ging.
+**Es gibt kein `MAIL_FROM`.** OVH verlangt, dass `From:` dem authentifizierten
+Konto entspricht — `From` **ist** `SMTP_USERNAME`, und eine eigene Variable
+dafür könnte nur falsch gesetzt werden. Das Relay lehnte die Abweichung erst ab,
+nachdem das Passwort schon über die Leitung ging. Die Regel gilt beim
+Zimbra-Postfach genauso wie beim MX Plan, gegen den sie ursprünglich formuliert
+wurde (ADR 0029 §1 und §2).
 
 **Es gibt auch keinen SMTP-Host.** `ssl0.ovh.net:465` ist einkompiliert, aus
 demselben Grund wie GitHubs Endpoint (ADR 0020 §8): eine Adresse, die aus der
