@@ -58,6 +58,8 @@ Vorherige Triage: nach L1, 20.08.2026 — 21 Zeilen → 4 Issues (#118–#121),
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-21 | #112 | **`internal/buildinfo` hat keine Testdatei.** Die Rückfallwerte `dev`/`unknown`, die Reihenfolge der zwei Quellen (ldflags vor Gos VCS-Stempel) und die Kürzung auf sieben Zeichen sind ungeprüft — in einem Paket, dessen Ausgabe auf `/api/health` steht und das gerade eine falsche Angabe veröffentlicht hat. Beim Fix aufgefallen, bewusst nicht mitgenommen, um den PR eng zu halten. | offen |
+| 2026-08-21 | #112 | **Zwei Kommentare in `ci.yml` waren sachlich falsch**: sie begründeten die Checkout-Tiefe 1 damit, dass geholte Tags den Backup-Tag mitbrächten — der liegt nur lokal, GitHub hat null Tags. Eine Begründung, die plausibel liest und falsch ist; keine der vier Drift-Prüfungen aus E2 fängt Prosa über Git-Verhalten. | korrigiert im selben PR — als Klasse offen |
 
 ## Idee — noch nicht entschieden
 
