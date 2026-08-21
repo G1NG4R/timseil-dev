@@ -555,15 +555,28 @@ jobs:
       # can see that. It is the same argument the weekly govulncheck run makes,
       # pointed at the artefact instead of at the dependencies.
       #
-      # NOT on pull requests: `make image-tag` follows HEAD, and on a branch
-      # that names a commit nobody ever published. The check would then be red
-      # about a tag that was never supposed to exist. Same condition and same
-      # reasoning as the `quickstart` job.
+      # **Only on the schedule.** `make image-tag` follows HEAD, so this step can
+      # only ask its question about a commit that has already been published —
+      # and on a push to main that is not yet true: `scan` and `publish` start
+      # together, so `scan` would look for an image `publish` has not pushed
+      # yet. That is what happened on c738b2a, and it is a race, not a finding:
+      # MANIFEST_UNKNOWN for the very commit that was being published one job
+      # over.
+      #
+      # A pull request is wrong for the same reason and one worse — that commit
+      # is never published at all.
+      #
+      # `needs: publish` would have been the other repair and is the wrong one:
+      # it puts the weekly re-verification on the critical path of every merge
+      # to buy a check that `publish` already performs on itself, one step after
+      # signing. Nothing is left unchecked by narrowing this — a merge is
+      # covered by `publish`, and everything already in the registry is covered
+      # here, seven days at a time.
       #
       # No docker login anywhere in this job, which is the point — this runs the
       # way a stranger's laptop runs it.
       - name: make verify-supply-chain
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'schedule'
         run: make verify-supply-chain
         env:
           GH_TOKEN: ${{ github.token }}
