@@ -1,6 +1,6 @@
 # Development only, used by compose.dev.yaml. The production image is phase D1:
 # `output: 'standalone'`, node:24-alpine, non-root. Nothing here ships.
-FROM node:24-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 
