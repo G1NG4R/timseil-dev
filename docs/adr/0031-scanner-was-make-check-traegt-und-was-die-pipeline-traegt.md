@@ -176,6 +176,23 @@ Schema geprüft statt angenommen: `docker` liest nur Dockerfiles. Ohne diesen
 Block wäre der Postgres-Digest aus #93 der eine Pin im System, den nie etwas
 anhebt — genau die Lage, um die es in #93 ging.
 
+### 9. Der erste Fund kam vor dem ersten Lauf
+
+Trivy meldete sieben HIGH/CRITICAL im web-Image — npms eigene
+Bundle-Abhängigkeiten im Node-Basisimage, nicht unsere. Kein Digest-Bump half
+(der gepinnte *ist* der aktuelle), `--ignore-unfixed` auch nicht (jede hat eine
+Fix-Version). Das Tor wäre rot angekommen und rot geblieben, und das ist der
+Zustand, den ein Tor nicht überlebt.
+
+Behebbar war etwas anderes: **einen Paketmanager in einem Produktionscontainer
+auszuliefern.** Die Runner-Stage installiert nichts, kopiert den
+Standalone-Baum und startet `node server.js` — npm, npx und corepack sind dort
+Angriffsfläche ohne Zweck. Ohne sie: null Funde.
+
+Das ist die Regel hinter §1 in ihrer schärfsten Form. Ein Scanner, dessen
+einzige mögliche Antwort „ignorieren" gewesen wäre, hätte nichts bewiesen; hier
+war die Antwort, weniger auszuliefern.
+
 ## Konsequenzen
 
 - Die zwei Abnahmesätze aus Bauplan Zeile 1119 sind erfüllt, und der erste
@@ -240,4 +257,14 @@ und schriebe Treffer in Logs.
 - OCI-Labels an beiden Images mit `docker inspect` gelesen, nicht behauptet.
   Dabei fiel auf, dass `image.version` den Backup-Tag aus #112 veröffentlicht.
 - `actionlint` über `ci.yml`: keine Findings.
-- Job-Laufzeiten: **nachzutragen nach dem ersten Lauf**, mit Run-ID.
+- **Trivy fand sieben HIGH/CRITICAL im web-Image, bevor die Pipeline ein
+  einziges Mal gelaufen war** — alle in npms eigenen Bundle-Abhängigkeiten
+  (`tar`, `undici`, `ip-address`, `brace-expansion`) im Node-Basisimage. Weder
+  durch einen Digest-Bump behebbar (der gepinnte Digest *ist* der aktuelle)
+  noch durch `--ignore-unfixed` (jede hat eine Fix-Version). Behoben, indem die
+  Runner-Stage npm, npx und corepack nicht mehr ausliefert: sieben Funde
+  vorher, null nachher, beide Zahlen gemessen. Das api-Image war von Anfang an
+  sauber.
+- Job-Laufzeiten: **nachzutragen nach dem ersten Lauf**, mit Run-ID. Zum
+  Vergleich der letzte Lauf auf PR #125 mit den drei E1-Jobs: `check` 56 s,
+  `db` 1:56, `images` 1:47.
