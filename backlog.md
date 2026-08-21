@@ -53,11 +53,16 @@ Vorherige Triage: nach L1, 20.08.2026 — 21 Zeilen → 4 Issues (#118–#121),
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-21 | E3a | **Kein eigener ADR für diese Stufe** — die nächste freie Nummer bleibt frei. Die Regel, die E3 aufstellt — gültig ist nur eine Signatur, deren `certificate-identity` dieser Workflow auf `refs/heads/main` ist — lebt in den Kopfkommentaren von `tools/sign.sh` und `tools/verify-supply-chain.sh`, nicht in `docs/adr/`. Bewusst so entschieden; die drei ADRs vor diesem kamen jeweils mit ihrer Phase, dieser Bruch gehört benannt. Nebenbei: `check-adrs` verbietet, den Verzicht unter seiner Nummer aufzuschreiben — eine Prüfung, die eine bewusste Lücke nicht von einem toten Verweis unterscheiden kann. | offen |
+| 2026-08-21 | E3a | **Sechs Schritte stehen zweimal in `ci.yml`** (`images` und `publish`). Der bezahlte Preis dafür, dass derselbe Job baut, prüft, scannt und veröffentlicht — sonst wäre das signierte Artefakt nicht das geprüfte (ADR 0026). Wird die Datei unübersichtlich, ist ein gemeinsames `make`-Ziel der Weg, keine Reusable Workflow. | bewusst |
 
 ## Gefunden — Bug oder Unklarheit
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-21 | E3a | **Der syft-Digest bewegt kein Dependabot.** `.github/dependabot.yml` liest Dockerfiles und Compose-Dateien, nicht einen Hash in einer `.sh`. `tools/sbom.sh` und `tools/check-secrets.sh` tragen damit zwei Versionen, die ein Mensch heben muss — dieselbe Klasse wie `.golangci-lint-version` aus E2. Drei Stellen sind der Punkt, an dem eine Prüfung dafür billiger wäre als die Disziplin. | offen |
+| 2026-08-21 | E3a | **`licenses="NOASSERTION"` steht ab jetzt auch im SBOM.** Anschluss an [#45](https://github.com/G1NG4R/timseil-dev/issues/45): das Label war eine Behauptung an einem Image, ab E3b ist es ein Feld in einem signierten Dokument, das jemand herunterladen kann. Die Lizenzfrage wird damit teurer, je später sie beantwortet wird. | als Kommentar an #45 |
+| 2026-08-21 | E3a | **[#90](https://github.com/G1NG4R/timseil-dev/issues/90) ist zur Hälfte erledigt.** Der Push kommt aus der Pipeline, die Brücke im Dokploy-Runbook ist abgebaut. Offen bleibt die zweite Hälfte: die GHCR-Aufbewahrung ist ungemessen, und solange sie das ist, hat „roll back to any previous deploy" einen Horizont, den niemand kennt. Bleibt E4. | offen |
 | 2026-08-21 | #112 | **`internal/buildinfo` hat keine Testdatei.** Die Rückfallwerte `dev`/`unknown`, die Reihenfolge der zwei Quellen (ldflags vor Gos VCS-Stempel) und die Kürzung auf sieben Zeichen sind ungeprüft — in einem Paket, dessen Ausgabe auf `/api/health` steht und das gerade eine falsche Angabe veröffentlicht hat. Beim Fix aufgefallen, bewusst nicht mitgenommen, um den PR eng zu halten. | offen |
 | 2026-08-21 | #112 | **Zwei Kommentare in `ci.yml` waren sachlich falsch**: sie begründeten die Checkout-Tiefe 1 damit, dass geholte Tags den Backup-Tag mitbrächten — der liegt nur lokal, GitHub hat null Tags. Eine Begründung, die plausibel liest und falsch ist; keine der vier Drift-Prüfungen aus E2 fängt Prosa über Git-Verhalten. | korrigiert im selben PR — als Klasse offen |
 

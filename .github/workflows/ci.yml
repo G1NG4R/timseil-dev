@@ -12,9 +12,11 @@
 # and `images` each pay for a container build, and paying for both inside one
 # job is what would break the criterion.
 #
-# E2 added the scanners. There is still no push to GHCR and no deploy — images
-# are built and inspected, never published, and that is E4 (#90). See ADR 0030
-# for the three original jobs and ADR 0031 for what E2 hung off them.
+# E2 added the scanners. E3 added `publish`, and with it the first push to GHCR
+# that no person performs: the bridge off a laptop that D3 needed is gone, and
+# the first half of #90 with it. There is still no deploy — nothing here talks
+# to Dokploy, and that is E4. See ADR 0030 for the three original jobs and ADR
+# 0031 for what E2 hung off them.
 #
 # Where each check lives follows one rule (ADR 0031): a deterministic gate that
 # needs no container is part of `make check` and runs inside the `check` job; a
@@ -230,11 +232,13 @@ jobs:
   #
   # On a pull_request the checked-out commit is the merge result, so what gets
   # built and measured is what would land, not the branch tip in isolation.
+  # Pull requests only. On a push to main the same work happens inside
+  # `publish`, which then signs what it just checked — see the long comment
+  # there for why the two are one job per event rather than two jobs in a row.
   images:
     name: images
     runs-on: ubuntu-latest
-    # The weekly trigger is for the scanners; this job answers a diff.
-    if: github.event_name != 'schedule'
+    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -260,9 +264,9 @@ jobs:
           cp .env.example .env
           make env-dev
 
-      # Local tags only. Pushing to GHCR is E4's job and happens there, never
-      # here and never on the VPS — the Makefile says the same thing next to
-      # the IMAGE_API definition.
+      # Local tags only, and on a pull request that is where they stay: nothing
+      # a branch built gets published. `make push` exists and is called in
+      # `publish`, never here and never on the VPS.
       - name: make images
         run: make images
 
@@ -319,6 +323,107 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           format: table
+
+  # ---------------------------------------------------------------- publish
+  #
+  # The same six steps as `images`, and then the three that publish. Only one of
+  # the two jobs runs per event: `images` answers a pull request, `publish`
+  # answers a push to main.
+  #
+  # **Why not `needs: images`.** A publishing job that depended on the checking
+  # job would have to build the images a second time — nothing carries a 200 MB
+  # image between jobs for free — and then the artefact that gets pushed and
+  # signed is NOT the artefact that check-images, check-topology and Trivy
+  # looked at. ADR 0026's whole claim is that what was tested is what runs, and
+  # E3 is the phase that is supposed to make that claim checkable by a stranger.
+  # Breaking it here to save six lines of YAML would be an odd trade.
+  #
+  # The duplication is the price and it is a small one: after a squash merge the
+  # commit on main is not the merge result the pull request built, so the image
+  # has to be built again in any design. This one at least builds it once.
+  #
+  # Branch protection (#29) keeps `images` as the required context; `publish`
+  # runs where there is nothing left to block.
+  #
+  # Two permissions above the file default, and no more: `packages: write` to
+  # push, and that is all E3a needs. Signing adds `id-token: write` in E3b, on
+  # this job and on no other.
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Same three generated values as in `images`, same reason: check-topology
+      # runs the real api binary, and it refuses to start on an incomplete
+      # environment. They are thrown away with the runner and authenticate
+      # nothing outside this job.
+      - name: Provide the production environment file
+        run: |
+          cp .env.example .env
+          make env-dev
+
+      - name: make images
+        run: make images
+
+      - name: make check-images
+        run: make check-images
+
+      - name: make check-topology
+        run: make check-topology
+
+      - name: The tag make images just used
+        id: tag
+        run: printf 'value=%s\n' "$(make -s image-tag)" >> "$GITHUB_OUTPUT"
+
+      # Nothing is pushed before the scanners have seen it. The order in this
+      # job is the whole argument: build, check, scan, and only then publish.
+      - name: Trivy — api image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: timseil-api:${{ steps.tag.outputs.value }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Trivy — web image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: timseil-web:${{ steps.tag.outputs.value }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      # No docker/login-action. It would be one more repository whose
+      # maintainers can push code into this pipeline, for two lines that the
+      # CLI already has — the same accounting E2 applied when it took gitleaks
+      # from a pinned image instead of an action.
+      #
+      # GITHUB_TOKEN, not a personal access token. It expires with the job and
+      # it can only reach packages this repository has been given write access
+      # to, which is the difference between the pipeline pushing and a person
+      # pushing from a laptop.
+      - name: Log in to GHCR
+        run: printf '%s' "$GITHUB_TOKEN" | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: make push
+        run: make push
+
+      # After the push, because the SBOM belongs to an image that exists
+      # somewhere other than this runner. E3b turns these two documents into
+      # attestations on the digests that `make push` just printed.
+      - name: make sbom
+        run: make sbom
 
   # ------------------------------------------------------------------- scan
   #

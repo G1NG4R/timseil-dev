@@ -373,8 +373,11 @@ check-db: ## Migration cycle and schema invariants against a real Postgres
 
 # -------------------------------------------------------------------- images
 
-# The production images. Local tags only — pushing to GHCR is E4's job and it
-# happens in GitHub Actions, never here and never on the VPS.
+# The production images. `make images` still tags locally only — the push is a
+# separate target (`make push`) so that building and publishing stay two
+# decisions. E3 moved that push into the pipeline; it happens in GitHub Actions,
+# on main, and never on the VPS. Issue #90, and the runbook heading that used to
+# call the manual version one-off.
 IMAGE_API := timseil-api
 IMAGE_WEB := timseil-web
 
@@ -473,6 +476,48 @@ check-images: ## The D1 acceptance: size, user, no shell, and the standalone ass
 		sh -c '[ -d .next/static ] && [ -d public ] && [ -f public/favicon.svg ]' \
 		|| { printf '  ✗ the web image is missing .next/static or public — the standalone trap\n'; exit 1; }
 	@printf '  ✓ .next/static and public are in the web image\n'
+
+# -------------------------------------------------------------- supply chain
+
+# Where the SBOM documents land. Ignored by git (dist/), because a bill of
+# materials is produced from the image and never edited — a copy in the tree
+# would be a second answer to the same question, kept in step by nobody.
+SBOM_DIR := dist/sbom
+
+# The push, as a target rather than as a paragraph in a runbook.
+#
+# require-images first, so that pushing a tag nobody built says so instead of
+# letting docker answer with an authentication error against ghcr.io — which is
+# a message about the wrong thing entirely.
+.PHONY: push
+push: require-images ## Push both production images to GHCR — the pipeline does this on main
+	@printf 'push\n'
+	@tools/push.sh $(REGISTRY)/$(IMAGE_API):$(IMAGE_TAG) $(REGISTRY)/$(IMAGE_WEB):$(IMAGE_TAG)
+
+# One target per image rather than one that prints both, because the caller is
+# an attestation step that needs exactly one subject at a time and would
+# otherwise have to cut a line out of a list in YAML. Same argument as
+# `image-tag`: a name spelled twice is a name that drifts.
+.PHONY: image-digest-api
+image-digest-api: ## Print the digest the pushed API image answers to
+	@tools/image-digest.sh $(REGISTRY)/$(IMAGE_API):$(IMAGE_TAG)
+
+.PHONY: image-digest-web
+image-digest-web: ## Print the digest the pushed web image answers to
+	@tools/image-digest.sh $(REGISTRY)/$(IMAGE_WEB):$(IMAGE_TAG)
+
+# CycloneDX per image. The expected ecosystem is passed in and asserted, so a
+# document that came back empty fails here instead of being published as an
+# answer — see the header of tools/sbom.sh.
+#
+# The local tags, not the ghcr.io ones: the bytes are identical, and naming the
+# registry in a document produced before any push would date the SBOM to a
+# place it has not been yet.
+.PHONY: sbom
+sbom: ## CycloneDX bill of materials for both images, into dist/sbom
+	@printf 'sbom\n'
+	@tools/sbom.sh $(SBOM_DIR) $(IMAGE_API):$(IMAGE_TAG) pkg:golang/
+	@tools/sbom.sh $(SBOM_DIR) $(IMAGE_WEB):$(IMAGE_TAG) pkg:npm/
 
 # ------------------------------------------------------------------- topology
 
