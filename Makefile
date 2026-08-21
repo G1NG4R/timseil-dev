@@ -75,6 +75,9 @@ check-go: ## gofmt, go vet, go test
 	@cd api && bad=$$(gofmt -l .); \
 		[ -z "$$bad" ] || { printf '  ✗ not gofmt-clean:\n'; printf '%s\n' "$$bad" | sed 's/^/    /'; exit 1; }; \
 		go vet ./... && go test ./... && printf '  ✓ gofmt, vet, test\n'
+# Tidiness, in its own script so that tools/selftest.sh can hold it against a
+# module that is deliberately untidy. The reasons are in the file.
+	@tools/check-tidy.sh api
 
 .PHONY: check-lint
 check-lint: ## golangci-lint over api/ — ruleset and exclusions in .golangci.yml

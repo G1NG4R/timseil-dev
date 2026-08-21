@@ -22,6 +22,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
    "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
    "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
+   "$root/tools/check-tidy.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1042,6 +1043,28 @@ printf '\n' > .nvmrc
 rejects "an empty .nvmrc rejected" tools/check-versions.sh "$tmp"
 
 rm -rf api web .nvmrc
+
+printf 'tidy\n'
+# A module with no dependencies at all, so `go mod tidy -diff` needs neither
+# the network nor a warm module cache to have an opinion: with an empty go.sum
+# it has nothing to say, and with a line in it that nothing requires it wants
+# that line gone.
+#
+# go.mod was untidy here from B2 until B3 and nothing noticed; go.sum was short
+# 49 checksums until the commit that added this check. Both are the shape this
+# holds against.
+mkdir -p tidymod
+printf 'module example.test/tidy\n\ngo 1.26.6\n' > tidymod/go.mod
+printf 'package tidy\n\nfunc Nothing() {}\n'      > tidymod/tidy.go
+: > tidymod/go.sum
+
+accepts "a tidy module accepted" env CHECK_TIDY_DIR="$tmp/tidymod" tools/check-tidy.sh
+
+printf 'example.test/ghost v1.0.0/go.mod h1:0000000000000000000000000000000000000000000=\n' > tidymod/go.sum
+rejects "a go.sum line nothing requires rejected" env CHECK_TIDY_DIR="$tmp/tidymod" tools/check-tidy.sh
+
+accepts "absent module skips" env CHECK_TIDY_DIR="$tmp/no-such-module" tools/check-tidy.sh
+rm -rf tidymod
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }
