@@ -67,6 +67,31 @@ LABEL org.opencontainers.image.source="https://github.com/G1NG4R/timseil-dev" \
       org.opencontainers.image.revision="${GIT_SHA}" \
       org.opencontainers.image.version="${VERSION}"
 
+# The package manager does not ship.
+#
+# Trivy found seven HIGH/CRITICAL advisories in this image on the first run of
+# the E2 pipeline, and every one of them was in npm's OWN bundled dependencies
+# under /usr/local/lib/node_modules/npm — tar, undici, ip-address,
+# brace-expansion. None of them ours, and none of them fixable from here: the
+# pinned digest already IS the current node:24-alpine, so there was nothing for
+# Dependabot to raise, and each advisory has a fix version so --ignore-unfixed
+# does not hide them either.
+#
+# What is fixable is shipping a package manager in a production container at
+# all. This stage installs nothing: it copies the standalone tree and runs
+# `node server.js`. npm, npx and corepack are attack surface with no purpose
+# here, and removing them takes all seven findings with them — measured, not
+# assumed.
+#
+# If a future stage genuinely needs npm at runtime, what it actually needs is a
+# different base image and an ADR saying so. Same sentence api/Dockerfile makes
+# about installing packages on distroless.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx \
+           /usr/local/bin/corepack
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
