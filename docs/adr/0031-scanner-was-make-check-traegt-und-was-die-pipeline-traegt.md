@@ -193,6 +193,34 @@ Das ist die Regel hinter §1 in ihrer schärfsten Form. Ein Scanner, dessen
 einzige mögliche Antwort „ignorieren" gewesen wäre, hätte nichts bewiesen; hier
 war die Antwort, weniger auszuliefern.
 
+### 10. CodeQLs erster Fund, und warum er abgewiesen wurde
+
+`go/incorrect-integer-conversion`, high, auf `int32(window)` in
+`internal/systems`. Verfolgt statt weggeklickt:
+
+`ServeDetail` liest den Parameter mit `strconv.Atoi` in einen 64-Bit-`int`,
+konvertiert nach `GetSystemParamsWindow` — der Typ ist `int`, dort verkürzt
+also nichts (nachgemessen: `4294967387` bleibt `4294967387` und `Valid()`
+liefert `false`) — und `resolveWindow` gibt `ErrBadWindow` zurück, was ein 400
+ist. Nur 30, 91 und 182 erreichen die Konvertierung.
+
+**Der Befund war trotzdem nützlich.** Die Garantie stand in einem Kommentar,
+eine Aufrufgrenze von der Prüfung entfernt, die sie trug. Die Verengung ist
+deshalb dorthin gewandert, wo `Valid()` steht: `resolveWindow` gibt `int32`
+zurück, `operations` konvertiert nichts mehr. Eine Zusicherung im Typ ist mehr
+wert als eine in Prosa — unabhängig davon, was ein Werkzeug davon hält.
+
+Was CodeQL davon hält, wurde danach gemessen: **nichts.** Ein `switch` über
+drei Konstanten ist für die Regel keine Obergrenzen-Prüfung, der Alert wanderte
+mit der Zeile mit. Ein expliziter Bereichs-Check wäre unerreichbarer Code, der
+nur existiert, um ein Werkzeug zu beruhigen — und unerreichbarer Code lässt
+sich nicht gegen seinen kaputten Fall halten, was hier die Bedingung dafür ist,
+dass er existieren darf.
+
+Der Alert ist deshalb als **false positive** abgewiesen, mit der Begründung am
+Alert und hier. `TestAWindowOutsideTheEnumIsRejectedRatherThanReplaced` ist der
+Beleg, der im Repo bleibt, wo GitHubs Datenbank keiner ist.
+
 ## Konsequenzen
 
 - Die zwei Abnahmesätze aus Bauplan Zeile 1119 sind erfüllt, und der erste
