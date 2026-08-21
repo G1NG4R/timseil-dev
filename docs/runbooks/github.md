@@ -73,6 +73,26 @@ Schritt 2 ist der einzige Handgriff in diesem Repo, der eine Sicherheitsregel
 absichtlich aufhebt. Er gehört in denselben Tag zurückgenommen, an dem er
 gemacht wurde.
 
+## Was geprüft ist und was nicht
+
+**Geprüft, am 21.08.2026:** ein PR mit rotem `check` wird abgewiesen. PR #132
+trug absichtlich einen Marker ohne Issue-Referenz, `check` wurde rot, und
+`gh pr merge` antwortete:
+
+```
+X Pull request #132 is not mergeable: the base branch policy prohibits the merge.
+```
+
+Der PR ist danach geschlossen worden; er sollte nie gemergt werden.
+
+**Nicht geprüft:** ob `gh pr merge --admin` die Sperre umgeht. `enforce_admins`
+steht auf `true`, also sollte es das nicht — aber die Probe hätte bedeutet, die
+absichtlich kaputte Datei auf `main` zu riskieren, falls die Annahme falsch ist.
+Der Satz, auf den es ankam, war schon bewiesen.
+
+Wer das doch wissen will, prüft es an einem Wegwerf-Repository mit derselben
+Konfiguration, nicht an diesem.
+
 ## Einen Kontext hinzufügen oder entfernen
 
 `tools/github-setup.sh`, Block `required_status_checks`. Danach das Skript
