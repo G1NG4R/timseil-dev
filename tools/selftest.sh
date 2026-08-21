@@ -24,6 +24,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
    "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
    "$root/tools/check-adrs.sh" "$root/tools/check-readme.sh" \
+   "$root/tools/version.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1210,6 +1211,53 @@ else
   no "--print returns the block the job runs"
 fi
 rm -f README.md
+
+printf 'version\n'
+# The expression this replaces named a backup tag as the project's version, on
+# the public /api/health, for as long as the image built from it ran (#112).
+# The rule is that only a release tag counts; these are the shapes that rule has
+# to survive.
+#
+# A repository with one commit is enough, so none of this touches the network.
+mkdir -p vermod
+(
+  cd vermod
+  git init -q -b main .
+  git config user.email selftest@localhost
+  git config user.name selftest
+  git config commit.gpgsign false
+  : > a.txt && git add a.txt && git commit -qm "one"
+) >/dev/null 2>&1
+
+ver() { CHECK_VERSION_DIR="$tmp/vermod" tools/version.sh; }
+short() { git -C "$tmp/vermod" rev-parse --short=7 HEAD; }
+says() { # says <expected> <description>
+  if [ "$(ver)" = "$1" ]; then ok "$2"; else no "$2 (got $(ver), want $1)"; fi
+}
+
+says "$(short)" "no tags at all answers the short sha"
+
+# THE case. This is the tree that produced the wrong version.
+git -C "$tmp/vermod" tag backup/pre-rewrite-2026-08-17 >/dev/null 2>&1
+says "$(short)" "a backup tag does not name a version"
+
+git -C "$tmp/vermod" tag v1.2.3 >/dev/null 2>&1
+says "v1.2.3" "a release tag does, even beside a backup tag"
+
+(cd vermod && : > b.txt && git add b.txt && git commit -qm "two") >/dev/null 2>&1
+(cd vermod && : > c.txt && git add c.txt && git commit -qm "three") >/dev/null 2>&1
+says "v1.2.3-2-g$(git -C "$tmp/vermod" rev-parse --short HEAD)" "commits after a release tag are counted"
+
+# A build that is not the commit it names has to say so out loud.
+printf 'uncommitted\n' > vermod/dirty.txt
+(cd vermod && git add dirty.txt) >/dev/null 2>&1
+case "$(ver)" in *-dirty) ok "a dirty tree is named as dirty" ;;
+                 *) no "a dirty tree is named as dirty (got $(ver))" ;; esac
+
+accepts "somewhere that is not a repository answers dev" \
+  sh -c "[ \"\$(CHECK_VERSION_DIR=$tmp/not-a-repo tools/version.sh)\" = dev ]"
+
+rm -rf vermod
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }

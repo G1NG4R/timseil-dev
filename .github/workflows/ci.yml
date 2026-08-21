@@ -212,11 +212,21 @@ jobs:
   # The acceptance criteria of D1, D2 and D3, which have been manual steps
   # stated in a PR body until now. Issue #92.
   #
-  # Checkout stays at the default depth on purpose. IMAGE_TAG comes from
-  # `git rev-parse --short=7 HEAD`, which needs no history, and VERSION comes
-  # from `git describe --tags --always`, which without tags fetched falls back
-  # to the short sha. Fetching tags would make it describe against
-  # backup/pre-rewrite-2026-08-17 — the very confusion issue #112 is about.
+  # Checkout stays at the default depth, and that is now a cost decision rather
+  # than a necessity. IMAGE_TAG comes from `git rev-parse --short=7 HEAD`, which
+  # needs no history, and VERSION from tools/version.sh, which matches only v*
+  # tags — so a tag that is not a release cannot name a version here or anywhere.
+  #
+  # The reason written here before was wrong and worth recording as such: it
+  # claimed that fetching tags would describe against
+  # backup/pre-rewrite-2026-08-17. That tag exists only on a developer machine —
+  # this repository has no tags at all on GitHub — so CI could never have seen
+  # it. The wrong version in production came from an image built locally during
+  # D3's manual deploy, not from this job. Issue #112.
+  #
+  # **E5 has to revisit this.** Once release-please starts tagging, VERSION here
+  # will still answer the short sha unless the job fetches tags, which is
+  # correct but less than it could say.
   #
   # On a pull_request the checked-out commit is the merge result, so what gets
   # built and measured is what would land, not the branch tip in isolation.
@@ -327,11 +337,13 @@ jobs:
       # fetch-depth: 0, and ONLY here.
       #
       # gitleaks scans commits; with the default depth of 1 it would scan one
-      # and report a clean history it never read. The images job deliberately
-      # stays shallow for the opposite reason (#112): with tags fetched,
-      # `git describe` there would describe against
-      # backup/pre-rewrite-2026-08-17. Nothing in this job calls git describe,
-      # so the full history is free of that problem.
+      # and report a clean history it never read.
+      #
+      # This used to add that the images job stays shallow to avoid describing
+      # against backup/pre-rewrite-2026-08-17. That was wrong — the tag is
+      # local to a developer machine and GitHub has no tags — and it is fixed
+      # properly now: tools/version.sh matches only v* tags. Depth here is
+      # about gitleaks needing commits, and nothing else.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
