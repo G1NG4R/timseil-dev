@@ -235,49 +235,50 @@ dig +short timseil.dev AAAA
 dig +short www.timseil.dev
 ```
 
-### 1.3 Die Images nach GHCR · **einmalig, bis E4**
+### 1.3 Die Images nach GHCR · **die Pipeline macht das**
 
-**Das hier ist eine Brücke, kein Verfahren.** `make images` taggt nur lokal, und
-der Makefile-Kommentar sagt warum: pushen ist E4s Aufgabe und passiert in
-GitHub Actions. Die Pipeline gibt es erst in E1/E4 — ohne Image in der Registry
-hat Dokploy nichts zu ziehen.
+Seit E3 pusht der `publish`-Job in `.github/workflows/ci.yml` beide Images bei
+jedem Merge auf `main` — bauen, prüfen, scannen, pushen, in dieser Reihenfolge
+und in einem Job. **Hier steht nichts mehr, was du regelmäßig tust.** Der
+Handgriff, der bis D3 an dieser Stelle stand, war eine Brücke und ist abgebaut;
+Issue #90 hält fest, was davon noch offen ist (die GHCR-Aufbewahrung, E4).
 
-Auf **deiner** Maschine, im Repo, auf `main`:
+Was du brauchst, ist der Tag:
 
 ```bash
 git checkout main && git pull
-make check                                  # muss grün sein
-make images
-make check-images                           # 16 MiB, beide non-root
-
-export IMAGE_TAG=sha-$(git rev-parse --short=7 HEAD)
-echo "$IMAGE_TAG"                           # DAS ist der Wert für Dokploy
-
-read -rs GITHUB_PAT && export GITHUB_PAT   # das PAT aus 0.1, nicht in der History
-echo "$GITHUB_PAT" | docker login ghcr.io -u G1NG4R --password-stdin
-docker push ghcr.io/g1ng4r/timseil-api:$IMAGE_TAG
-docker push ghcr.io/g1ng4r/timseil-web:$IMAGE_TAG
+make image-tag                              # DAS ist der Wert für Dokploy
 ```
 
-Danach **beide Pakete auf public stellen**: GitHub → dein Profil → Packages →
-`timseil-api` → Package settings → Change visibility → Public. Dasselbe für
-`timseil-web`. Das Repo ist public, also ist das konsistent — und Dokploy
-braucht dann kein Registry-Credential.
+Er entsteht aus `HEAD`, also nennt er genau den Commit, den der letzte grüne
+`publish`-Lauf veröffentlicht hat.
+
+**Einmalig, falls der Push mit 403 scheitert.** Die Pakete entstanden in D3
+durch einen Push mit persönlichem Token und sind dann nicht mit dem Repo
+verknüpft — `GITHUB_TOKEN` darf ohne diese Verknüpfung nicht in sie schreiben.
+Für `timseil-api` und `timseil-web` je einmal:
+
+1. github.com → Profilbild → **Your profile** → Reiter **Packages**.
+2. Paket anklicken, rechts **Package settings**.
+3. **Manage Actions access** → **Add Repository** → `G1NG4R/timseil-dev`,
+   Rolle **Write**.
+4. Weiter unten **Change visibility**: **Public**. Das Repo ist public, also
+   ist das konsistent — und Dokploy braucht dann kein Registry-Credential.
 
 Nachmessen statt annehmen:
 
 ```bash
 docker logout ghcr.io
-docker pull ghcr.io/g1ng4r/timseil-api:$IMAGE_TAG   # geht das anonym, ist es public
+docker pull ghcr.io/g1ng4r/timseil-api:$(make -s image-tag)   # geht das anonym, ist es public
 ```
 
 Bleiben die Pakete privat, hinterlegst du in Dokploy stattdessen ein
-Registry-Credential (`ghcr.io`, Benutzer `G1NG4R`, das PAT als Passwort).
+Registry-Credential (`ghcr.io`, Benutzer `G1NG4R`, ein PAT als Passwort).
 
-**Was diese Brücke nicht bricht:** gebaut wird weiterhin nicht auf dem VPS, und
-das laufende Artefakt ist dasselbe, das `make check-images` und
-`make check-topology` hier geprüft haben. Vorläufig ist nur der Weg in die
-Registry.
+**Was die Pipeline hält, was die Brücke nur behauptet hat:** gebaut wird nicht
+auf dem VPS, und das laufende Artefakt ist dasselbe, das `make check-images`,
+`make check-topology` und Trivy geprüft haben — weil alle vier Schritte in
+demselben Job auf demselben Build laufen.
 
 ---
 
