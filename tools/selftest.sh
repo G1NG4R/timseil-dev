@@ -21,7 +21,7 @@ mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
    "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
-   "$root/tools/check-lint.sh" \
+   "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1004,6 +1004,44 @@ accepts "absent linter skips locally"    env -u CI CHECK_LINT_BIN="$tmp/fakebin/
 rejects "absent linter rejected under CI" env CI=1 CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
 
 rm -rf api fakebin .golangci.yml .golangci-lint-version
+
+printf 'versions\n'
+# Two files naming the same runtime, and nothing comparing them — the shape
+# that cost 21 reachable standard-library vulnerabilities on the day this was
+# written. Both directions get their broken case, because both happened: the go
+# one from a stale `go` directive, the node one from a Dependabot pull request
+# offering a major CLAUDE.md refuses.
+mkdir -p api web
+printf '24\n' > .nvmrc
+printf 'module example.test/api\n\ngo 1.26.6\n' > api/go.mod
+printf 'FROM golang:1.26-alpine\n' > api/Dockerfile
+printf 'FROM node:24-alpine\n'     > web/Dockerfile
+
+accepts "matching runtime versions accepted" tools/check-versions.sh "$tmp"
+
+printf 'FROM node:26-alpine\n' > web/Dockerfile
+rejects "a node major the .nvmrc does not declare rejected" tools/check-versions.sh "$tmp"
+printf 'FROM node:24-alpine\n' > web/Dockerfile
+
+printf 'FROM golang:1.27-alpine\n' > api/Dockerfile
+rejects "a go line the go.mod does not declare rejected" tools/check-versions.sh "$tmp"
+
+# The patch level is deliberately NOT compared: the tag pins a line and wants
+# its newest patch, so go.mod 1.26.6 against golang:1.26-alpine has to pass.
+# A check that failed here would go red on every upstream release.
+printf 'FROM golang:1.26-alpine\n' > api/Dockerfile
+printf 'module example.test/api\n\ngo 1.26.0\n' > api/go.mod
+accepts "a patch difference inside the same line accepted" tools/check-versions.sh "$tmp"
+
+# The digest is cut off before the tag is read; whether it IS one is rule 1 of
+# check-dockerfiles, not this check's business.
+printf 'ARG NODE_IMAGE=node:24-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111\nFROM ${NODE_IMAGE}\n' > web/Dockerfile
+accepts "a digest-pinned image still reads its tag" tools/check-versions.sh "$tmp"
+
+printf '\n' > .nvmrc
+rejects "an empty .nvmrc rejected" tools/check-versions.sh "$tmp"
+
+rm -rf api web .nvmrc
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }
