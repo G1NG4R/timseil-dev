@@ -417,3 +417,42 @@ jobs:
       - uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           category: /language:${{ matrix.language }}
+
+  # -------------------------------------------------------------- quickstart
+  #
+  # The half of documentation-drift check 3 that actually runs the thing. It
+  # clones the repository the way the README tells a stranger to, follows the
+  # block line by line, and fetches every URL the README promises underneath it.
+  #
+  # NOT on pull requests, and that is a decision rather than an oversight. It
+  # needs npm ci, two image builds and a compose stack; on every PR it would
+  # become the slowest job and therefore the feedback time, against E1's
+  # criterion of five minutes (measured: 2:15 without it). And the question it
+  # answers — "does the guide still work" — is one about months, not about the
+  # diff in front of you.
+  #
+  # It clones from GitHub rather than using the checkout, on purpose: what is
+  # under test is the experience of a person who has nothing but the README.
+  # On a push to main the clone and the commit are the same thing.
+  quickstart:
+    name: quickstart
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      # The same command a person can run. The driver reads the block out of
+      # README.md through check-readme.sh --print, so there is no second copy of
+      # the instructions anywhere.
+      - name: make quickstart
+        run: make quickstart

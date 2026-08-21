@@ -22,11 +22,12 @@ yet.
 ![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
 -->
 
-> **Status:** in build — stage E of 13, phase E1. The site is deployed and
+> **Status:** in build — stage E of 13, phase E2. The site is deployed and
 > answering at [timseil.dev](https://timseil.dev); `/api/health` is the shortest
 > way to check that for yourself. The pipeline that gets code there is being
-> built now: every gate in `make check` runs on every pull request, the push to
-> the registry does not yet. See [the build plan](docs/build-plan.md) (German).
+> built now: every gate in `make check` runs on every pull request, alongside
+> static analysis, dependency and secret scanning — the push to the registry
+> does not yet. See [the build plan](docs/build-plan.md) (German).
 
 ## The one rule
 
@@ -198,9 +199,12 @@ without regenerating is a red check rather than a page showing last week's versi
 
 `make help` lists all targets. **Targets that belong to a later phase say so and
 exit instead of pretending they checked something** — `make e2e` arrives before
-stage H. That is deliberate: a quickstart
-that lies is the failure mode this project is built to avoid, and CI will run
-these commands from stage E5 onwards to keep this section honest.
+stage H. That is deliberate: a quickstart that lies is the failure mode this
+project is built to avoid, so since stage E2 two checks keep this section
+honest. `make check-readme` asserts that every target named above exists, on
+every pull request; `make quickstart` clones the repository and runs the block
+above for real on every push to `main` and once a week, then fetches every URL
+listed below it.
 
 **What ships is not what you develop against.** `make dev` builds two
 convenience containers — air around a bind mount, `next dev`. `make images`
