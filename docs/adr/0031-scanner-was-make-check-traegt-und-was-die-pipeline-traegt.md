@@ -253,7 +253,17 @@ und schriebe Treffer in Logs.
   44 Produktion, 25 Tests. Vier Defekte behoben, jeder mit rotem Test ohne Fix.
 - Fünf gitleaks-Funde über 40 Commits, alle synthetische Test-Fixtures,
   keine Rotation.
-- `govulncheck` und `npm audit --omit=dev`: beide sauber.
+- `govulncheck`: lokal sauber, **im ersten CI-Lauf rot** — und zu Recht.
+  `api/go.mod` deklarierte `go 1.26.0`, `setup-go` liest diese Datei und pinnt
+  die Toolchain mit `GOTOOLCHAIN=local`, also lief CI auf einer stdlib mit
+  **21 erreichbaren** Schwachstellen (Symbol Results mit Aufruf-Traces, nicht
+  bloß „required"). Das ausgelieferte Binary war nie betroffen: `api/Dockerfile`
+  baut aus `golang:1.26-alpine`, dessen gepinnter Digest go1.26.6 ist.
+  **Der Defekt war die Drift** — die Pipeline prüfte sechs Patch-Releases
+  neben dem, was das Image baut. Auf einem Laptop unsichtbar, weil dort schon
+  1.26.6 lief. Behoben mit einer Zeile; die fehlende Prüfung zwischen `go.mod`
+  und dem Build-Image steht im Backlog für E2b.
+- `npm audit --omit=dev`: sauber.
 - OCI-Labels an beiden Images mit `docker inspect` gelesen, nicht behauptet.
   Dabei fiel auf, dass `image.version` den Backup-Tag aus #112 veröffentlicht.
 - `actionlint` über `ci.yml`: keine Findings.
@@ -265,6 +275,25 @@ und schriebe Treffer in Logs.
   Runner-Stage npm, npx und corepack nicht mehr ausliefert: sieben Funde
   vorher, null nachher, beide Zahlen gemessen. Das api-Image war von Anfang an
   sauber.
-- Job-Laufzeiten: **nachzutragen nach dem ersten Lauf**, mit Run-ID. Zum
-  Vergleich der letzte Lauf auf PR #125 mit den drei E1-Jobs: `check` 56 s,
-  `db` 1:56, `images` 1:47.
+- **Job-Laufzeiten, Run 32493542206** (PR #126, erster vollständig grüner Lauf
+  der fünf Jobs):
+
+  | Job | Dauer |
+  |---|---|
+  | `check` | 2:14 |
+  | `images` | 2:00 |
+  | `db` | 1:45 |
+  | `codeql (go)` | 1:29 |
+  | `codeql (javascript-typescript)` | 1:10 |
+  | `scan` | 0:42 |
+
+  **Wall-Clock 2:15.** E1s Kriterium ist PR-Feedback unter 5 Minuten und lag
+  bei gemessenen 2:27 mit drei Jobs. Fünf Scanner später ist die Zahl
+  unverändert — nicht weil sie nichts kosten, sondern weil die
+  Feedback-Zeit der langsamste Job ist und keiner der neuen ihn überholt.
+
+- **Die CodeQL-Frage ist entschieden: es bleibt auf `pull_request`.** Beide
+  Sprachen liegen unter dem `images`-Job und tragen deshalb null zur
+  Wall-Clock bei. Der im Workflow beschriebene Rückzug auf `push` +
+  `schedule` tritt nicht ein — die Begründung ist eine gemessene Zahl, so wie
+  es dort steht.
