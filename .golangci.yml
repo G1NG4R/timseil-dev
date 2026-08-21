@@ -40,6 +40,8 @@ linters:
   enable:
     - bodyclose    # a leaked response body is a leaked connection
     - errorlint    # %v where %w belongs breaks errors.Is for the caller
+    - funlen
+    - gocognit
     - gocritic
     - gosec
     - nilerr       # `if err != nil { return nil }` — the bug that reads correct
@@ -70,6 +72,54 @@ linters:
         - fmt.Fprint
         - fmt.Fprintf
         - fmt.Fprintln
+
+    # DECISION 6 — two complexity limits, and one deliberately not taken.
+    #
+    # Measured on this tree, production code only, thresholds set low enough
+    # that the whole list could be read (45 findings, all of them):
+    #
+    #   cognitive    max 19   contributions.translate
+    #   statements   max 43   health.GetHealth and cmd/api.runMigrate
+    #   lines        max 96   config.Load
+    #   cyclomatic   max 16   health.GetHealth
+    #
+    # The line figure cost a third wrong measurement to get right: funlen
+    # reports the FIRST of its two limits that a function breaks, so as long as
+    # the statement limit was the tighter one, config.Load was counted at 24
+    # statements and its 96 lines were never printed. Each axis had to be
+    # measured with the other one switched off. Same lesson as the 53-that-was-69
+    # at the top of this file, twice over: a report that stops early looks
+    # exactly like a report that found nothing more.
+    #
+    # **cyclop is not enabled, and GetHealth is the reason.** Cyclomatic 16,
+    # cognitive 13: it is a long FLAT run of guard clauses, each one returning
+    # early. That is the shape this codebase reaches for on purpose, and
+    # cyclomatic complexity cannot tell it apart from sixteen nested branches.
+    # A limit that counted them the same would push handlers toward nesting to
+    # get the number down, which is the opposite of the point. Cognitive
+    # complexity makes exactly that distinction — it discounts a flat sequence
+    # and charges for depth — so it is the one that gets to hold the line.
+    #
+    # gocognit at 20 leaves translate one point of headroom, and that is
+    # written down rather than rounded away: the next branch added to that
+    # function is meant to be a conversation.
+    #
+    # funlen counts two things, and only one of them means anything here.
+    # config.Load is 96 lines and 24 statements — the difference is prose. This
+    # repository comments at a density where a line count measures how much was
+    # explained, not how much a function does, so `statements` is the axis that
+    # carries the rule and `lines` is left as a backstop nothing is near.
+    #
+    # Both are deliberately loose: they exist to catch a function that has
+    # genuinely run away, not one that is merely long. GetHealth at 43
+    # statements is a sequence of guard clauses; tightening to just above it
+    # would produce a gate that fails on the next honest line.
+    gocognit:
+      min-complexity: 20
+
+    funlen:
+      lines: 150        # max today 96 (config.Load), mostly comments
+      statements: 60    # max today 43 (health.GetHealth, cmd/api.runMigrate)
 
     staticcheck:
       # DECISION 2 — two groups off, and the second one was a mistake worth
@@ -153,6 +203,19 @@ linters:
       - path: _test\.go
         linters:
           - gosec
+
+      # DECISION 5 — the complexity limits do not apply to tests.
+      #
+      # The highest cognitive complexity in this repository is 36, in
+      # TestEveryErrorFromEveryRouteIsAProblemDocument: it drives every mounted
+      # route with two verbs and asserts five fields on every error document.
+      # That branchiness IS the test. Splitting it to satisfy a number would
+      # produce several tests that each sweep less, which is the opposite of
+      # what it is for.
+      - path: _test\.go
+        linters:
+          - funlen
+          - gocognit
 
 issues:
   # Report everything. The defaults hide all but the first three findings of a

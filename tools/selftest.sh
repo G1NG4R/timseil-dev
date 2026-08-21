@@ -946,16 +946,19 @@ accepts "absent node skips"              node_check "$tmp/fakebin/node-not-here"
 rm -rf fakebin nv24 nv25 nv_empty
 
 printf 'lint\n'
-# Three things, and the middle one is the reason this section exists.
+# Five things, and two of them are about a check reporting success for work it
+# never did.
 #
 # A fake linter, so the assertions do not depend on whether this machine has the
-# real one. It answers success and prints nothing, which is what a clean run
-# looks like.
+# real one. It answers a version and an exit code, which is all check-lint.sh
+# reads out of it.
 mkdir -p api fakebin
 printf 'module example.test/api\n\ngo 1.26.0\n' > api/go.mod
-printf '#!/bin/sh\nexit 0\n' > fakebin/lint-ok  && chmod +x fakebin/lint-ok
-printf '#!/bin/sh\nexit 1\n' > fakebin/lint-bad && chmod +x fakebin/lint-bad
+printf '#!/bin/sh\necho "golangci-lint has version 2.13.1 built with go1.26"\nexit 0\n' > fakebin/lint-ok  && chmod +x fakebin/lint-ok
+printf '#!/bin/sh\necho "golangci-lint has version 2.13.1 built with go1.26"\nexit 1\n' > fakebin/lint-bad && chmod +x fakebin/lint-bad
+printf '#!/bin/sh\necho "golangci-lint has version 2.9.0 built with go1.26"\nexit 0\n'  > fakebin/lint-old && chmod +x fakebin/lint-old
 printf 'version: "2"\n' > .golangci.yml
+printf 'v2.13.1\n' > .golangci-lint-version
 
 lint_check() { CHECK_LINT_BIN="$1" tools/check-lint.sh "$tmp"; }
 
@@ -969,13 +972,23 @@ mv .golangci.yml .golangci.yml.away
 rejects "missing .golangci.yml rejected" lint_check "$tmp/fakebin/lint-ok"
 mv .golangci.yml.away .golangci.yml
 
+# One version, one place. CI hands the same file to the action that installs the
+# binary, so a laptop running something else is linting against another ruleset
+# than the one that blocks the merge — the drift .nvmrc exists to prevent, one
+# tool over.
+rejects "linter version that disagrees with the file rejected" lint_check "$tmp/fakebin/lint-old"
+
+mv .golangci-lint-version .golangci-lint-version.away
+rejects "missing .golangci-lint-version rejected" lint_check "$tmp/fakebin/lint-ok"
+mv .golangci-lint-version.away .golangci-lint-version
+
 # The floor under the skip, and the case E1 paid for: check-node.sh skipped
 # itself on a runner with no node, and the job went green having checked
 # nothing. Off a runner the skip is a convenience; on one it is a lie.
 accepts "absent linter skips locally"    env -u CI CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
 rejects "absent linter rejected under CI" env CI=1 CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
 
-rm -rf api fakebin .golangci.yml
+rm -rf api fakebin .golangci.yml .golangci-lint-version
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }
