@@ -45,9 +45,22 @@ root=$(cd "${1:-.}" && pwd)
 grace=${QUICKSTART_GRACE:-180}
 work=$(mktemp -d)
 servers=""
+setsid=$(command -v setsid || true)
 
+# Servers are killed by PROCESS GROUP, not by pid, and that is not a detail.
+# `make design` is `npx serve`, which is npm exec spawning a node child; killing
+# the pid this script recorded leaves that child holding port 4000, and the next
+# run fails on "port 4000 is in use" — which is how this was found, by leaving
+# one behind on the machine it was being tested on.
+#
+# setsid makes each line its own session and process-group leader, so the group
+# id equals the pid and one signal reaches everything it started. Where setsid
+# does not exist the fallback is the old behaviour, and the comment says so
+# rather than pretending the leak cannot happen.
 cleanup() {
-  for pid in $servers; do kill "$pid" 2>/dev/null || true; done
+  for pid in $servers; do
+    kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+  done
   if [ -d "$work/timseil-dev" ]; then
     (cd "$work/timseil-dev" && make dev-down >/dev/null 2>&1) || true
   fi
@@ -86,7 +99,11 @@ while IFS= read -r line; do
   esac
 
   printf '\n=== %s\n' "$line"
-  eval "$line" &
+  if [ -n "$setsid" ]; then
+    "$setsid" sh -c "$line" &
+  else
+    eval "$line" &
+  fi
   pid=$!
 
   waited=0
