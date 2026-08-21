@@ -248,7 +248,7 @@ jobs:
       - name: Provide the production environment file
         run: |
           cp .env.example .env
-          make env-secrets
+          make env-dev
 
       # Local tags only. Pushing to GHCR is E4's job and happens there, never
       # here and never on the VPS — the Makefile says the same thing next to
