@@ -17,14 +17,14 @@
   },
   "devDependencies": {
     "@redocly/cli": "^2.46.1",
-    "@types/node": "^20",
+    "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.3.1",
     "openapi-typescript": "^7.13.0",
-    "typescript": "^5",
+    "typescript": "^7",
     "typescript-eslint": "^8.67.0"
   }
 }
