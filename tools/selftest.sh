@@ -25,7 +25,8 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
    "$root/tools/check-adrs.sh" "$root/tools/check-readme.sh" \
    "$root/tools/version.sh" \
-   "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
+   "$root/tools/check-dockerfiles.sh" "$root/tools/verify-supply-chain.sh" "$tmp/tools/"
+cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
 
@@ -1273,6 +1274,21 @@ push_ref() { printf 'refs/heads/%s abc refs/heads/%s def\n' "$1" "$1" | .githook
 rejects "push to main blocked"     push_ref main
 accepts "push to phase branch ok"  push_ref phase/x1-example
 accepts "push to ops-data ok"      push_ref ops-data
+
+# The supply-chain check reads its cosign pin from .cosign-image, and a pin that
+# is empty or not a digest makes docker answer "invalid reference format" —
+# which the check would otherwise report as "no valid signature". A gate that
+# names the wrong cause sends the reader to the wrong place, so the guard is
+# held here. It runs before any docker or network call, which is why this stays
+# inside the docker-free chain.
+printf 'supply-chain pin\n'
+accepts "the shipped pin is a digest"          grep -q "@sha256:" .cosign-image
+cp .cosign-image cosign-image.good
+printf '# only a comment\n' > .cosign-image
+rejects "an empty cosign pin is rejected"     tools/verify-supply-chain.sh sha-nothing
+printf 'ghcr.io/sigstore/cosign/cosign:v3\n' > .cosign-image
+rejects "a tag-pinned cosign image is rejected" tools/verify-supply-chain.sh sha-nothing
+cp cosign-image.good .cosign-image && rm cosign-image.good
 
 printf 'pre-commit hook\n'
 printf 'bad \n' > hookws.txt

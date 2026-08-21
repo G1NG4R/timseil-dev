@@ -1,0 +1,13 @@
+# cosign v3.1.3 — the tool that signs and the tool that verifies must be one
+# number, so it lives here and nowhere else. tools/sign.sh and
+# tools/verify-supply-chain.sh both read this file; signing with one version and
+# verifying with another would be testing two programs against each other.
+#
+# Pinned by digest, never by tag: a tag can be repointed at other code after it
+# was reviewed, which is the rule both Dockerfiles, tools/check-compose.sh and
+# every action in ci.yml already enforce.
+#
+# Same shape as .golangci-lint-version, and the same known cost: no ecosystem
+# bumps this line. dependabot.yml reads Dockerfiles and compose files, not a
+# hash in a text file, so a person has to lift it. Named in backlog.md.
+ghcr.io/sigstore/cosign/cosign@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8

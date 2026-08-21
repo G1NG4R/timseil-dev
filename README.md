@@ -63,6 +63,60 @@ The contract itself is readable at **`/api/docs`**, rendered from
 nothing from a CDN — the same rule the privacy page states applies to the
 documentation page.
 
+## Supply chain — verify it yourself
+
+Both images are built only by [`ci.yml`](.github/workflows/ci.yml), on `main`,
+and signed there with [cosign](https://github.com/sigstore/cosign) keyless over
+Sigstore. No signing key exists — in this repository, on the runner or on the
+server. The certificate says who built the image, and that is what you check.
+
+Pick a tag from the packages
+([api](https://github.com/users/G1NG4R/packages/container/package/timseil-api) ·
+[web](https://github.com/users/G1NG4R/packages/container/package/timseil-web))
+and substitute it below. Nothing here needs an account, a login or a clone.
+
+```bash
+IMAGE=ghcr.io/g1ng4r/timseil-api:sha-XXXXXXX
+IDENTITY=https://github.com/G1NG4R/timseil-dev/.github/workflows/ci.yml@refs/heads/main
+ISSUER=https://token.actions.githubusercontent.com
+
+# 1. the signature — and whose it is
+cosign verify "$IMAGE" --certificate-oidc-issuer "$ISSUER" --certificate-identity "$IDENTITY"
+
+# 2. the CycloneDX bill of materials, attached to the same digest
+cosign verify-attestation --type cyclonedx "$IMAGE" \
+  --certificate-oidc-issuer "$ISSUER" --certificate-identity "$IDENTITY"
+
+# 3. SLSA provenance
+gh attestation verify "oci://$IMAGE" --repo G1NG4R/timseil-dev
+```
+
+**The identity is the point.** A bare signature only says *somebody* signed
+this. Pinning `--certificate-identity` turns it into a statement: built by that
+workflow file, in this repository, on `main`. An image signed from a laptop, a
+fork, a branch or another workflow fails — including one signed by the person
+who wrote this.
+
+Drop the `--certificate-identity` flag and the same command prints *Verified
+OK* for an image you have proven nothing about. That is why the repository's own
+check runs its own negative on every invocation:
+
+```bash
+make verify-supply-chain
+```
+
+Four checks per image: the three above, plus a deliberately wrong identity that
+must be rejected. It also runs at the end of every publish, and again every
+Monday against what is already published — a signature that verified at merge
+time and does not verify today means the registry changed underneath it.
+
+**Where the chain starts.** Signing begins with the first image this section
+describes. `sha-3890180` and `sha-a0872c1` are older: the first was pushed by
+hand from a workstation before the pipeline could publish at all, the second by
+the pipeline before it could sign. Both are unsigned, both are still in the
+registry, and `cosign verify` says so. Saying *we sign our images* would have
+been shorter; only *we sign them from here on* is checkable.
+
 ## One contract, generated types
 
 `contract/openapi.yaml` is the only place an API type is written down:
