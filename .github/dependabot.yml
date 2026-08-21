@@ -32,6 +32,28 @@
 #
 # github-actions is NOT filtered: there is no such thing as an indirect action,
 # and every one of them runs with a token.
+#
+# ---------------------------------------------------------------------------
+#
+# THE SECOND DECISION, and it cost two pull requests to learn: `allow` chooses
+# WHICH dependencies, not WHICH KIND of update. The first wave after this file
+# landed offered node 24 -> 26 and, separately, @types/node ^20 -> ^26,
+# eslint ^9 -> ^10 and typescript ^5 -> ^7.
+#
+# Every one of those is a decision this repository has already made elsewhere
+# and written down. CLAUDE.md refuses Node 26 until it is LTS (issue #46,
+# 2026-10-28); @types/node has to track the Node major rather than npm's
+# newest; and TypeScript 7 beside a freshly added typescript-eslint ^8 is a
+# question, not a bump.
+#
+# So: **no major updates for npm, Docker or Go.** A major there changes what
+# `.nvmrc`, `go.mod` and `stack.yaml` claim, and those claims are printed on a
+# page. Raising one is a commit somebody argues for.
+#
+# github-actions keeps its majors. There the bump is usually mechanical, and it
+# is the ecosystem whose whole point is that a pinned SHA gets no security
+# update on its own (ADR 0030 §5) — ignoring majors there would re-create the
+# problem this file exists to solve.
 
 version: 2
 
@@ -47,6 +69,9 @@ updates:
     open-pull-requests-limit: 5
     allow:
       - dependency-type: direct
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       go:
         patterns: ["*"]
@@ -68,6 +93,9 @@ updates:
     open-pull-requests-limit: 5
     allow:
       - dependency-type: direct
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       web-production:
         dependency-type: production
@@ -101,12 +129,18 @@ updates:
     directory: /api
     schedule: { interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC }
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message: { prefix: chore }
 
   - package-ecosystem: docker
     directory: /web
     schedule: { interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC }
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message: { prefix: chore }
 
   # ----------------------------------------------------- docker compose
@@ -123,4 +157,7 @@ updates:
     directory: /
     schedule: { interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC }
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message: { prefix: chore }

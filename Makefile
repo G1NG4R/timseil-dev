@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -30,6 +30,11 @@ check-tools: ## Prove the checks and hooks still reject their broken case
 check-node: ## The running Node major must match .nvmrc
 	@printf 'node\n'
 	@tools/check-node.sh
+
+.PHONY: check-versions
+check-versions: ## The declared Node and Go versions match the images that build them
+	@printf 'versions\n'
+	@tools/check-versions.sh .
 
 .PHONY: check-repo
 check-repo: ## Line endings, trailing whitespace, final newline, git hooks
