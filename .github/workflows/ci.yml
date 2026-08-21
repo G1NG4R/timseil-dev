@@ -12,11 +12,12 @@
 # and `images` each pay for a container build, and paying for both inside one
 # job is what would break the criterion.
 #
-# E2 added the scanners. E3 added `publish`, and with it the first push to GHCR
-# that no person performs: the bridge off a laptop that D3 needed is gone, and
-# the first half of #90 with it. There is still no deploy — nothing here talks
-# to Dokploy, and that is E4. See ADR 0030 for the three original jobs and ADR
-# 0031 for what E2 hung off them.
+# E2 added the scanners. E3 added `publish`: the first push to GHCR that no
+# person performs — the bridge off a laptop that D3 needed is gone, and the
+# first half of #90 with it — and then the signature, the SBOM attestation and
+# the SLSA provenance that make a published image traceable back to this file.
+# There is still no deploy; nothing here talks to Dokploy, and that is E4. See
+# ADR 0030 for the three original jobs and ADR 0031 for what E2 hung off them.
 #
 # Where each check lives follows one rule (ADR 0031): a deterministic gate that
 # needs no container is part of `make check` and runs inside the `check` job; a
@@ -41,11 +42,17 @@ on:
     - cron: "17 4 * * 1"
 
 # Explicit in every workflow, default read — CLAUDE.md, security rules. This is
-# the ceiling for every job that does not say otherwise, and exactly one job
-# does: `codeql` adds security-events: write because uploading its results is
-# the only thing it does, and actions: read so it can see the workflow it ran
-# in. Nothing else here writes to the repository, comments on a PR or touches a
-# package.
+# the ceiling for every job that does not say otherwise, and exactly two do:
+#
+#   codeql    security-events: write, because uploading its results is the only
+#             thing it does, plus actions: read to see the workflow it ran in
+#   publish   packages: write to push, id-token: write so cosign can ask who is
+#             running, attestations: write for the provenance
+#
+# Both run where their extra reach is the entire product, and neither grants it
+# to anything else. `publish` in particular never runs on a pull request, so no
+# branch under review is ever handled by a job that can sign in this project's
+# name.
 #
 # That is also why Trivy, gitleaks and govulncheck block on an exit code
 # instead of uploading SARIF. A nicer Security tab is not worth handing three
@@ -345,9 +352,10 @@ jobs:
   # Branch protection (#29) keeps `images` as the required context; `publish`
   # runs where there is nothing left to block.
   #
-  # Two permissions above the file default, and no more: `packages: write` to
-  # push, and that is all E3a needs. Signing adds `id-token: write` in E3b, on
-  # this job and on no other.
+  # Four permissions above the file default and not one more. `packages: write`
+  # to push; `id-token: write` so cosign can ask Actions who is running, which
+  # is the whole of keyless signing; `attestations: write` for the provenance.
+  # All three live on this job and on no other — E2's rule, kept literally.
   publish:
     name: publish
     runs-on: ubuntu-latest
@@ -356,6 +364,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -420,10 +430,67 @@ jobs:
         run: make push
 
       # After the push, because the SBOM belongs to an image that exists
-      # somewhere other than this runner. E3b turns these two documents into
-      # attestations on the digests that `make push` just printed.
+      # somewhere other than this runner. `make sign` turns these two documents
+      # into attestations on the digests that `make push` just printed.
       - name: make sbom
         run: make sbom
+
+      # Keyless. No key exists anywhere in this repository, on this runner or on
+      # the VPS — cosign asks Actions for an OIDC token, Fulcio issues a
+      # certificate good for ten minutes, and Rekor records it. What a verifier
+      # later checks is the IDENTITY in that certificate, which is this file on
+      # this branch. tools/sign.sh carries the reasoning.
+      - name: make sign
+        run: make sign
+
+      # The two digests, read from the images that were just pushed rather than
+      # spelled again here. `make image-digest-*` refuses to answer for an image
+      # that has no digest, so a subject that does not exist fails loudly
+      # instead of attesting a name.
+      - name: The digests make push just published
+        id: digests
+        run: |
+          printf 'api=%s\n' "$(make -s image-digest-api)" >> "$GITHUB_OUTPUT"
+          printf 'web=%s\n' "$(make -s image-digest-web)" >> "$GITHUB_OUTPUT"
+
+      # SLSA provenance, from GitHub's own attestation rather than from cosign.
+      # The build plan names it, and it is the half a reader can check with
+      # `gh attestation verify` without knowing anything about Sigstore.
+      #
+      # push-to-registry, so the statement lands next to the image instead of
+      # only in GitHub's API: the artefact should carry its own evidence, and an
+      # evidence store that lives somewhere else is a second thing that has to
+      # survive.
+      - name: Provenance — api image
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/g1ng4r/timseil-api
+          subject-digest: ${{ steps.digests.outputs.api }}
+          push-to-registry: true
+
+      - name: Provenance — web image
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/g1ng4r/timseil-web
+          subject-digest: ${{ steps.digests.outputs.web }}
+          push-to-registry: true
+
+      # Deliberately BEFORE the verification, not after the job.
+      #
+      # What E3 claims is that anybody can check this image. A verification that
+      # runs with the runner still logged in to the registry demonstrates
+      # something weaker and looks identical in the log. So the credentials go
+      # away first, and what follows is the same command a stranger would run.
+      - name: Log out of GHCR
+        run: docker logout ghcr.io
+
+      # The acceptance criterion of the phase, run on every merge rather than
+      # demonstrated once in a pull request body. Includes its own broken case:
+      # a deliberately wrong certificate identity that must fail.
+      - name: make verify-supply-chain
+        run: make verify-supply-chain
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   # ------------------------------------------------------------------- scan
   #
@@ -478,6 +545,28 @@ jobs:
 
       - name: make check-vuln
         run: make check-vuln
+
+      # E3's claim, re-asked once a week.
+      #
+      # Every other gate here answers a diff: it proves something about code on
+      # its way in. This one asks whether something already published is still
+      # what it was — a signature that verified at merge time and does not
+      # verify today means the registry changed underneath it, and no build gate
+      # can see that. It is the same argument the weekly govulncheck run makes,
+      # pointed at the artefact instead of at the dependencies.
+      #
+      # NOT on pull requests: `make image-tag` follows HEAD, and on a branch
+      # that names a commit nobody ever published. The check would then be red
+      # about a tag that was never supposed to exist. Same condition and same
+      # reasoning as the `quickstart` job.
+      #
+      # No docker login anywhere in this job, which is the point — this runs the
+      # way a stranger's laptop runs it.
+      - name: make verify-supply-chain
+        if: github.event_name != 'pull_request'
+        run: make verify-supply-chain
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   # ----------------------------------------------------------------- codeql
   #

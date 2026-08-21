@@ -519,6 +519,33 @@ sbom: ## CycloneDX bill of materials for both images, into dist/sbom
 	@tools/sbom.sh $(SBOM_DIR) $(IMAGE_API):$(IMAGE_TAG) pkg:golang/
 	@tools/sbom.sh $(SBOM_DIR) $(IMAGE_WEB):$(IMAGE_TAG) pkg:npm/
 
+# Signature and SBOM attestation, both attached to the DIGEST of what was
+# pushed. Depends on `sbom` because the attestation needs the predicate file,
+# and on nothing else: the images have to be in the registry already, which is
+# what `push` is for and what tools/image-digest.sh refuses to fake.
+#
+# This is the one target in the repository whose RESULT depends on where it
+# runs — in Actions the signing identity is the workflow, on a laptop it is
+# yours. tools/sign.sh says so in its header, and `verify-supply-chain` is what
+# makes the difference matter.
+.PHONY: sign
+sign: sbom ## Sign both images and attach their SBOM — needs an OIDC identity
+	@printf 'sign\n'
+	@tools/sign.sh \
+		$(REGISTRY)/$(IMAGE_API):$(IMAGE_TAG) $(SBOM_DIR)/$(IMAGE_API).cdx.json \
+		$(REGISTRY)/$(IMAGE_WEB):$(IMAGE_TAG) $(SBOM_DIR)/$(IMAGE_WEB).cdx.json
+
+# The acceptance criterion of E3, and the only target here that wants nothing
+# from this machine: no build, no login, no images. It reads the registry the
+# way a stranger would, which is the claim being tested.
+#
+# Takes a tag or digest; without one it asks for the tag `make images` uses, so
+# on main that is the commit that was just published.
+.PHONY: verify-supply-chain
+verify-supply-chain: ## Verify signature, SBOM attestation and provenance — and the broken case
+	@printf 'supply chain\n'
+	@tools/verify-supply-chain.sh $(REF)
+
 # ------------------------------------------------------------------- topology
 
 # compose.yaml is the file Dokploy runs. It is also the file this target runs, on
