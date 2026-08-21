@@ -51,10 +51,31 @@ Fehler.**
 - [ ] SSH auf den VPS, mit Schlüssel
 - [ ] Login in die Dokploy-Oberfläche
 - [ ] Zugriff auf die OVH-DNS-Zone für `timseil.dev`
-- [ ] Ein GitHub-PAT — **klassisch**, nicht fine-grained, mit zwei Scopes:
-      `write:packages` (für den einmaligen Push in Teil 1.3) und `read:user`
-      (das wird `GITHUB_TOKEN` für den Contribution-Graph).
+- [ ] Ein GitHub-PAT — **klassisch**, nicht fine-grained, mit **genau einem
+      Scope: `read:user`**. Das wird `GITHUB_TOKEN` für den Contribution-Graph.
       github.com/settings/tokens
+
+      **Nicht `write:packages` dazunehmen.** Dieses Token geht in 0.4 als
+      Laufzeit-Variable nach Dokploy und liegt damit im `api`-Container. Ein
+      Container mit Push-Rechten auf GHCR ist ein Weg von einer kompromittierten
+      API zu einem manipulierten Image in genau der Registry, aus der Dokploy
+      zieht — ein Lieferketten-Schritt, den dieses Projekt sonst nirgends
+      zulässt. Der Push braucht seit E3 ohnehin kein Token von dir: er passiert
+      im `publish`-Job mit dem `GITHUB_TOKEN` der Action, das mit dem Job
+      abläuft. Issue #109.
+
+**Läuft der Stack schon?** Dann trägt Dokploy noch das Token aus der ersten
+Fassung dieser Liste, und das hatte `write:packages`. Ersetzen, nicht
+umschreiben — ein Scope wegzunehmen ändert nichts daran, dass der alte Wert in
+Logs, Backups und Dokploys eigener Datei stand:
+
+1. github.com/settings/tokens → neues klassisches Token, **nur `read:user`**.
+2. In Dokploy `GITHUB_TOKEN` auf den neuen Wert setzen, Anwendung neu starten.
+3. `curl -s https://timseil.dev/api/systems | head` — kommt der
+   Contribution-Graph zurück, hat das neue Token gereicht.
+4. **Erst dann** das alte Token auf github.com/settings/tokens löschen.
+
+Schritt 4 zuletzt, damit ein Tippfehler in Schritt 2 keinen Ausfall erzeugt.
 
 ### 0.2 Die Geheimnisse erzeugen
 
@@ -127,13 +148,13 @@ Bevor du zur Dokploy-Oberfläche gehst, sollte das hier vollständig sein:
 
 | Variable | Woher |
 |---|---|
-| `IMAGE_TAG` | `sha-` plus die ersten 7 Zeichen des Commits, Teil 1.3 |
+| `IMAGE_TAG` | `make image-tag` auf `main`, Teil 1.3 |
 | `POSTGRES_DB` | `timseil` |
 | `POSTGRES_USER` | `timseil_boot` |
 | `POSTGRES_PASSWORD` | 0.2 |
 | `MIGRATE_DB_PASSWORD`, `APP_DB_PASSWORD` | 0.2 |
 | `DATABASE_URL`, `MIGRATE_DATABASE_URL` | 0.3 |
-| `GITHUB_TOKEN` | das PAT aus 0.1 — oder leer lassen **und** die Zeile darunter setzen |
+| `GITHUB_TOKEN` | das PAT aus 0.1, `read:user` und sonst nichts — oder leer lassen **und** die Zeile darunter setzen |
 | `CONTRIBUTIONS_TRANSPORT` | nur wenn `GITHUB_TOKEN` leer bleibt: `off`. Sonst gar nicht setzen |
 | `GITHUB_LOGIN` | `G1NG4R` — hat denselben Wert als Default im Code, du kannst sie auch weglassen |
 | `MAIL_TRANSPORT` | `smtp`, sobald das Postfach steht — beim ersten Deploy war es `log` |
