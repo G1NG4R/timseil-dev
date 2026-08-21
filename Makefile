@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-env check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -35,6 +35,11 @@ check-node: ## The running Node major must match .nvmrc
 check-versions: ## The declared Node and Go versions match the images that build them
 	@printf 'versions\n'
 	@tools/check-versions.sh .
+
+.PHONY: check-env
+check-env: ## Every Env* constant appears in .env.example, the runbook and compose.dev.yaml
+	@printf 'env\n'
+	@tools/check-env.sh .
 
 .PHONY: check-repo
 check-repo: ## Line endings, trailing whitespace, final newline, git hooks

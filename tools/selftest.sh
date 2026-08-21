@@ -22,7 +22,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
    "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
    "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
-   "$root/tools/check-tidy.sh" \
+   "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1065,6 +1065,48 @@ rejects "a go.sum line nothing requires rejected" env CHECK_TIDY_DIR="$tmp/tidym
 
 accepts "absent module skips" env CHECK_TIDY_DIR="$tmp/no-such-module" tools/check-tidy.sh
 rm -rf tidymod
+
+printf 'env\n'
+# Adding one variable means editing six files, and ADR 0023 records that the
+# bill was paid three times: C5 with GITHUB_TOKEN, C6 with five at once, C7
+# with two, and something was missed on the first pass every time.
+mkdir -p envtree/api/internal/config envtree/docs/runbooks
+write_env() {
+  printf 'const (\n\tEnvDatabaseURL = "DATABASE_URL"\n\tEnvLogLevel    = "LOG_LEVEL"\n)\n' \
+    > envtree/api/internal/config/config.go
+  printf '%s' "$1" > envtree/.env.example
+  printf '%s' "$2" > envtree/docs/runbooks/api.md
+  printf '%s' "$3" > envtree/compose.dev.yaml
+}
+good_example='DATABASE_URL=x\nLOG_LEVEL=info\n'
+good_runbook='| `DATABASE_URL` | — |\n| `LOG_LEVEL` | info |\n'
+good_compose='services:\n  api:\n    environment:\n      DATABASE_URL: x\n      LOG_LEVEL: info\n'
+env_check() { tools/check-env.sh "$tmp/envtree"; }
+
+write_env "$(printf "$good_example")" "$(printf "$good_runbook")" "$(printf "$good_compose")"
+accepts "every variable in all three places accepted" env_check
+
+write_env "$(printf 'DATABASE_URL=x\n')" "$(printf "$good_runbook")" "$(printf "$good_compose")"
+rejects "a variable missing from .env.example rejected" env_check
+
+write_env "$(printf "$good_example")" "$(printf '| `DATABASE_URL` | — |\n')" "$(printf "$good_compose")"
+rejects "a variable missing from the runbook rejected" env_check
+
+write_env "$(printf "$good_example")" "$(printf "$good_runbook")" "$(printf 'services:\n  api:\n    environment:\n      DATABASE_URL: x\n')"
+rejects "a variable missing from compose.dev.yaml rejected" env_check
+
+# The prefix ships the VALUE to a browser at build time and cannot be taken
+# back once a build has gone out.
+write_env "$(printf "$good_example")NEXT_PUBLIC_SMTP_PASSWORD=hunter2\n" "$(printf "$good_runbook")" "$(printf "$good_compose")"
+rejects "a secret behind NEXT_PUBLIC_ rejected" env_check
+
+# A const block the parser no longer recognises would make this check read
+# nothing and report success on everything — the failure mode that matters most.
+write_env "$(printf "$good_example")" "$(printf "$good_runbook")" "$(printf "$good_compose")"
+printf 'package config\n' > envtree/api/internal/config/config.go
+rejects "a config.go with no Env constants rejected" env_check
+
+rm -rf envtree
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }
