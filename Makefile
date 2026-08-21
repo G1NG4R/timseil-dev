@@ -386,14 +386,18 @@ IMAGE_WEB := timseil-web
 REGISTRY := ghcr.io/g1ng4r
 
 # What the linker stamps into the binary, and therefore what /api/health says.
-# `git describe` names a tag when there is one and falls back to the short sha;
-# --dirty says out loud that this build is not the commit it names, which is the
-# same claim internal/buildinfo makes about a build from a working tree.
+#
+# VERSION moved into tools/version.sh, and the reason is in that file: the
+# expression that used to stand here named a backup tag as this project's
+# version, publicly, for as long as the image built from it ran (#112). A rule
+# that produced a false claim belongs somewhere it can be held against its
+# broken case, not inline in a $(shell).
 #
 # Seven characters because that is buildinfo's shaLength and the tag scheme E4
-# will push under. A second spelling of the same number is a second number.
+# will push under. A second spelling of the same number is a second number —
+# which is also why nothing here recomputes what version.sh answers.
 GIT_SHA := $(shell git rev-parse --short=7 HEAD 2>/dev/null || echo unknown)
-VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+VERSION := $(shell tools/version.sh)
 IMAGE_TAG := sha-$(GIT_SHA)
 
 # The tag, printed. It exists so that CI can name the images it just built
