@@ -145,6 +145,43 @@ check-contract: ## Validate the OpenAPI contract and check for codegen drift
 		}; \
 		printf '  ✓ no codegen drift\n'
 
+# ---------------------------------------------------------------- bootstrap
+#
+# The two steps a fresh clone needs before `make check` and `make dev` work,
+# and both were missing from the README quickstart until the check that runs it
+# said so.
+
+.PHONY: deps
+deps: ## Install the web dependencies a fresh clone needs
+	@printf 'deps\n'
+	@cd web && npm ci
+
+# The three values .env.example leaves empty on purpose: the file is committed,
+# so it cannot carry them, and the api refuses to start without them (C1). That
+# refusal is correct and stays — what was missing is a way to satisfy it in one
+# command instead of three lines a reader has to be told about.
+#
+# Throwaway values. They authenticate nothing that outlives the machine they
+# were generated on; production values come from Dokploy.
+#
+# Idempotent: a variable that already has a value is left alone, so running this
+# twice does not rotate the tokens under a running stack.
+REQUIRED_SECRETS := CONTACT_IP_PEPPER INTERNAL_PROBE_TOKEN INTERNAL_DEPLOY_TOKEN
+
+.PHONY: env-secrets
+env-secrets: ## Fill the three secrets .env.example leaves empty, with throwaway values
+	@printf 'env-secrets\n'
+	@[ -f .env ] || { printf '  ✗ no .env — run: cp .env.example .env\n'; exit 1; }
+	@for k in $(REQUIRED_SECRETS); do \
+		if grep -qE "^$$k=.+" .env; then \
+			printf '  – %s already set, left alone\n' "$$k"; \
+		else \
+			sed -i.bak "/^$$k=/d" .env && rm -f .env.bak; \
+			printf '%s=%s\n' "$$k" "$$(openssl rand -hex 32)" >> .env; \
+			printf '  ✓ %s generated\n' "$$k"; \
+		fi; \
+	done
+
 # ------------------------------------------------------------------- dev
 
 COMPOSE_DEV := docker compose -f compose.dev.yaml
