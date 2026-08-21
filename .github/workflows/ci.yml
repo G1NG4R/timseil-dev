@@ -12,9 +12,15 @@
 # and `images` each pay for a container build, and paying for both inside one
 # job is what would break the criterion.
 #
-# What is NOT here, on purpose: no push to GHCR, no deploy, no scanners. Images
-# are built and inspected, never published — that is E4 (#90). Static analysis,
-# dependency and secret scanning are E2. See docs/adr/0030.
+# E2 added the scanners. There is still no push to GHCR and no deploy — images
+# are built and inspected, never published, and that is E4 (#90). See ADR 0030
+# for the three original jobs and ADR 0031 for what E2 hung off them.
+#
+# Where each check lives follows one rule (ADR 0031): a deterministic gate that
+# needs no container is part of `make check` and runs inside the `check` job; a
+# gate that needs a container, or that can turn red on a tree nobody touched,
+# is its own make target and its own job. Nothing here reimplements a check in
+# YAML — every step below is a `make` target a person can run.
 
 name: ci
 
@@ -22,11 +28,26 @@ on:
   pull_request:
   push:
     branches: [main]
+  # The scanners read somebody else's disclosure schedule, so they have to run
+  # without a pull request to run on: a CVE published on a quiet week would
+  # otherwise be found by the next person who happened to open one.
+  #
+  # 04:17 on Monday, and not on the hour: GitHub's cron queue is longest at
+  # :00, and a scheduled job that starts forty minutes late is a job whose
+  # timing nobody can reason about. Only `scan` and `codeql` take this trigger.
+  schedule:
+    - cron: "17 4 * * 1"
 
-# Explicit in every workflow, default read — CLAUDE.md, security rules. Nothing
-# here writes to the repository, comments on a PR, or touches a package, so
-# `contents: read` is not a starting point to be widened later in this file: it
-# is the whole permission set the pipeline needs today.
+# Explicit in every workflow, default read — CLAUDE.md, security rules. This is
+# the ceiling for every job that does not say otherwise, and exactly one job
+# does: `codeql` adds security-events: write because uploading its results is
+# the only thing it does, and actions: read so it can see the workflow it ran
+# in. Nothing else here writes to the repository, comments on a PR or touches a
+# package.
+#
+# That is also why Trivy, gitleaks and govulncheck block on an exit code
+# instead of uploading SARIF. A nicer Security tab is not worth handing three
+# more jobs a token that can write to this repository's security data.
 permissions:
   contents: read
 
@@ -44,9 +65,12 @@ concurrency:
 # comment carries the human-readable version, because a bare hash is unreadable
 # six months later and an unreadable pin never gets bumped.
 #
-# There are three of them and they are all first-party GitHub actions. Docker
-# Compose and make need none, and every additional action is another repository
-# whose maintainers can push to this pipeline.
+# Every additional action is another repository whose maintainers can push to
+# this pipeline, so E2 added as few as it could: golangci-lint-action to place
+# a binary, trivy-action to scan an image, and codeql-action because CodeQL has
+# no other entry point. gitleaks runs from a digest-pinned image and
+# govulncheck from `go run`, both without an action at all — the tool that
+# scans the supply chain should not widen it.
 
 jobs:
   # ------------------------------------------------------------------ check
@@ -57,6 +81,8 @@ jobs:
   check:
     name: check
     runs-on: ubuntu-latest
+    # The weekly trigger is for the scanners; this job answers a diff.
+    if: github.event_name != 'schedule'
 
     env:
       # CI runs the test suite with the Go test cache OFF. Issue #91, and it is
@@ -122,9 +148,26 @@ jobs:
         run: npm ci
         working-directory: web
 
+      # install-only, and that word is the whole design. The action places the
+      # binary and stops; `make check` runs it through tools/check-lint.sh with
+      # the repository's config. A separate lint job driven by the action would
+      # be a second definition of the same gate in YAML, and the two would
+      # drift — the objection ADR 0030 raises against reimplementing checks in
+      # a pipeline.
+      #
+      # version-file rather than a version: .golangci-lint-version is the one
+      # place the number is written, and check-lint.sh holds the installed
+      # binary against the same file. Same argument as go-version-file above.
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          install-only: true
+          version-file: .golangci-lint-version
+
       # check-tools check-node check-repo check-todo check-compose
-      # check-dockerfiles check-migrations check-stack check-go check-web
-      # check-contract — the same list, in the same order, as on a laptop.
+      # check-dockerfiles check-migrations check-stack check-go check-lint
+      # check-web check-contract — the same list, in the same order, as on a
+      # laptop. check-lint refuses to skip when CI is set, so a job that lost
+      # the step above goes red instead of green.
       - name: make check
         run: make check
 
@@ -135,6 +178,8 @@ jobs:
   db:
     name: db
     runs-on: ubuntu-latest
+    # The weekly trigger is for the scanners; this job answers a diff.
+    if: github.event_name != 'schedule'
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -178,6 +223,8 @@ jobs:
   images:
     name: images
     runs-on: ubuntu-latest
+    # The weekly trigger is for the scanners; this job answers a diff.
+    if: github.event_name != 'schedule'
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -229,3 +276,144 @@ jobs:
       # Docker.
       - name: make check-topology
         run: make check-topology
+
+      # The tag comes from the Makefile that produced it. Spelling
+      # `sha-$(git rev-parse --short=7 HEAD)` again here would be a second
+      # definition of the same name, and the way that fails is quiet: Trivy
+      # scans an image that does not exist and reports nothing wrong with it.
+      - name: The tag make images just used
+        id: tag
+        run: printf 'value=%s\n' "$(make -s image-tag)" >> "$GITHUB_OUTPUT"
+
+      # The images exist by now, so this is the cheapest place to scan them:
+      # anywhere else would build them a second time.
+      #
+      # ignore-unfixed is the build plan's wording, not a convenience — chapter
+      # 5.2 blocks on "bekannte Schwachstelle MIT Fix". A finding with no fix
+      # available is not an action, it is a permanent red, and a permanently
+      # red gate gets switched off. It comes back the moment upstream ships
+      # something, which is what the weekly `scan` run is for.
+      #
+      # exit-code 1 rather than a SARIF upload: blocking here keeps this job at
+      # contents: read.
+      - name: Trivy — api image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: timseil-api:${{ steps.tag.outputs.value }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Trivy — web image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: timseil-web:${{ steps.tag.outputs.value }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+  # ------------------------------------------------------------------- scan
+  #
+  # The two scanners that read the world outside this repository: secrets that
+  # were committed at some point, and vulnerabilities somebody disclosed since
+  # the last run. Both are `make` targets — the same commands on a laptop.
+  #
+  # This job also carries the weekly trigger. `make check-vuln` can turn red on
+  # a tree nobody touched, and a gate like that has to be able to fire without
+  # waiting for the next pull request.
+  scan:
+    name: scan
+    runs-on: ubuntu-latest
+
+    steps:
+      # fetch-depth: 0, and ONLY here.
+      #
+      # gitleaks scans commits; with the default depth of 1 it would scan one
+      # and report a clean history it never read. The images job deliberately
+      # stays shallow for the opposite reason (#112): with tags fetched,
+      # `git describe` there would describe against
+      # backup/pre-rewrite-2026-08-17. Nothing in this job calls git describe,
+      # so the full history is free of that problem.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+
+      # npm audit reads package-lock.json and needs no node_modules, so there
+      # is no `npm ci` here — the lockfile is the input.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      # The full history, plus the range this pull request adds. The second is a
+      # subset of the first and runs anyway, because "a secret arrives in
+      # <base>..HEAD" points a reviewer at their own commits instead of leaving
+      # "somewhere in forty" as the answer.
+      #
+      # On push and on the schedule RANGE is empty and only the history scan
+      # runs. base.sha is present because of fetch-depth: 0 above.
+      - name: make check-secrets
+        run: make check-secrets RANGE="${RANGE}"
+        env:
+          RANGE: ${{ github.event_name == 'pull_request' && format('{0}..HEAD', github.event.pull_request.base.sha) || '' }}
+
+      - name: make check-vuln
+        run: make check-vuln
+
+  # ----------------------------------------------------------------- codeql
+  #
+  # The one job that needs more than contents: read, and the only one — writing
+  # its results to the Security tab is the entire product. Everything else in
+  # this file blocks on an exit code precisely so that it does not need this.
+  #
+  # It runs on pull requests for now. E1's acceptance is PR feedback under five
+  # minutes and the three original jobs measured 2:27 wall clock; whether CodeQL
+  # fits beside them is a question with a number, and the number goes in ADR
+  # 0031 after the first run. If it does not fit, this job loses the
+  # pull_request trigger and keeps push and schedule — a slower gate that still
+  # blocks main, rather than a fast one that checks less.
+  codeql:
+    name: codeql
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    strategy:
+      # One language failing should not hide the other's findings.
+      fail-fast: false
+      matrix:
+        language: [go, javascript-typescript]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The Go analysis compiles the module, so it needs the toolchain the
+      # module asks for rather than whatever the runner ships.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        if: matrix.language == 'go'
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+
+      - uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        with:
+          languages: ${{ matrix.language }}
+          # security-and-quality over the default: this repository already runs
+          # a strict linter, so the marginal cost is small and the marginal
+          # finding is the interesting one.
+          queries: security-and-quality
+
+      - uses: github/codeql-action/autobuild@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+
+      - uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        with:
+          category: /language:${{ matrix.language }}

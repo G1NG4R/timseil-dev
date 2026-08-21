@@ -310,6 +310,14 @@ GIT_SHA := $(shell git rev-parse --short=7 HEAD 2>/dev/null || echo unknown)
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 IMAGE_TAG := sha-$(GIT_SHA)
 
+# The tag, printed. It exists so that CI can name the images it just built
+# without spelling `sha-$(git rev-parse --short=7 HEAD)` a second time in YAML
+# — a second definition of a name is a name that drifts, and the one place it
+# would show up is a scanner silently finding no image to scan.
+.PHONY: image-tag
+image-tag: ## Print the tag `make images` gives the images it builds
+	@printf '%s\n' '$(IMAGE_TAG)'
+
 .PHONY: images
 images: image-api image-web ## Build both production images
 
