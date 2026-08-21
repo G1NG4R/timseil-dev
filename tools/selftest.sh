@@ -23,7 +23,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
    "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
    "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
-   "$root/tools/check-adrs.sh" \
+   "$root/tools/check-adrs.sh" "$root/tools/check-readme.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1143,6 +1143,73 @@ rm -f adrtree/docs/adr/0002-second-take.md
 
 accepts "back to a consistent tree" adr_check
 rm -rf adrtree
+
+printf 'readme\n'
+# The quickstart is the first thing a stranger runs, and a renamed target turns
+# it into a lie that nobody who already has the repo would ever notice.
+# The Makefile in this throwaway tree is the real one, copied at the top.
+write_readme() { printf '%s' "$1" > README.md; }
+
+write_readme '# x
+
+## Quickstart
+
+```bash
+make check
+make images && make check-images
+```
+'
+accepts "quickstart naming real targets accepted" tools/check-readme.sh "$tmp"
+
+write_readme '# x
+
+## Quickstart
+
+```bash
+make check
+make check-everything-twice
+```
+'
+rejects "a quickstart target the Makefile lacks rejected" tools/check-readme.sh "$tmp"
+
+# A renamed heading would leave the extractor with an empty string, and a check
+# that reads nothing passes on everything.
+write_readme '# x
+
+## Getting started
+
+```bash
+make check
+```
+'
+rejects "a renamed Quickstart heading rejected" tools/check-readme.sh "$tmp"
+
+write_readme '# x
+
+## Quickstart
+
+```bash
+git clone https://example.test/x
+```
+'
+rejects "a quickstart with no make target at all rejected" tools/check-readme.sh "$tmp"
+
+# --print is what the CI job executes, so it has to hand back the block itself
+# rather than a description of it.
+write_readme '# x
+
+## Quickstart
+
+```bash
+make check
+```
+'
+if [ "$(tools/check-readme.sh --print "$tmp")" = "make check" ]; then
+  ok "--print returns the block the job runs"
+else
+  no "--print returns the block the job runs"
+fi
+rm -f README.md
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }

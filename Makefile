@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-env check-adrs check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-env check-adrs check-readme check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -45,6 +45,11 @@ check-env: ## Every Env* constant appears in .env.example, the runbook and compo
 check-adrs: ## Every referenced ADR exists, no number twice, no gap
 	@printf 'adrs\n'
 	@tools/check-adrs.sh .
+
+.PHONY: check-readme
+check-readme: ## Every `make` target the quickstart names actually exists
+	@printf 'readme\n'
+	@tools/check-readme.sh .
 
 .PHONY: check-repo
 check-repo: ## Line endings, trailing whitespace, final newline, git hooks
@@ -275,6 +280,16 @@ seed: ## Write the curated content — systems, modules, tracks, evidence
 #
 # Both are one command in CI and on a laptop, which is the part of ADR 0030
 # that does not bend.
+
+# The other half of documentation-drift check 3. check-readme (in `make check`)
+# asks whether the quickstart's targets exist; this one runs the thing. It
+# clones, installs, builds two images and starts a stack, so it is not in the
+# chain — same reason as check-db, and it runs on main and on the schedule
+# rather than on every pull request.
+.PHONY: quickstart
+quickstart: ## Actually run the README quickstart, from a fresh clone
+	@printf 'quickstart\n'
+	@tools/run-quickstart.sh .
 
 .PHONY: check-secrets
 check-secrets: ## Plant a key, prove gitleaks rejects it, then scan this history
