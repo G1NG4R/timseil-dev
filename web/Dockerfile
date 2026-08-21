@@ -48,6 +48,25 @@ FROM ${NODE_IMAGE} AS runner
 
 WORKDIR /app
 
+# OCI labels. Without image.source a GHCR package hangs on nothing: no link
+# back to the repository, no README on the package page, and — the part that
+# matters later — no way for a reader to get from a published artefact to the
+# commit that produced it. E3 signs these images and E4 pushes them; a
+# provenance chain that starts at an image nobody can trace to a source tree
+# starts one link short. Issue #111.
+#
+# revision and version are re-declared here because ARG does not cross a stage
+# boundary. Their defaults are the same honest ones the binary carries: an
+# unstamped build says "dev" and "unknown" rather than inventing a version.
+ARG VERSION=dev
+ARG GIT_SHA=unknown
+
+LABEL org.opencontainers.image.source="https://github.com/G1NG4R/timseil-dev" \
+      org.opencontainers.image.description="timseil.dev web — Next.js App Router, standalone" \
+      org.opencontainers.image.licenses="NOASSERTION" \
+      org.opencontainers.image.revision="${GIT_SHA}" \
+      org.opencontainers.image.version="${VERSION}"
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000

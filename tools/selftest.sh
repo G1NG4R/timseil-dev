@@ -491,14 +491,20 @@ rm -f compose.dev.yaml compose.yaml
 accepts "absent compose files skip" tools/check-compose.sh
 
 printf 'dockerfiles\n'
-# Four rules, and every one of them is invisible until it matters: a moved tag,
+# Five rules, and every one of them is invisible until it matters: a moved tag,
 # a rotated secret still readable in `docker history`, a container that turned
-# out to be root, a layer nobody needed. Each gets its broken case.
+# out to be root, a layer nobody needed, a published image nothing links back
+# to a commit. Each gets its broken case.
 digest='@sha256:0000000000000000000000000000000000000000000000000000000000000000'
 
 mkdir -p api web
-write_api() { printf '%s' "$1" > api/Dockerfile; }
-write_web() { printf '%s' "$1" > web/Dockerfile; }
+
+# The writers append the source label, so a fixture written to break rule 1 is
+# rejected BY rule 1 and not incidentally by rule 5. The one case that has to
+# arrive without the label writes its file directly.
+srclabel='LABEL org.opencontainers.image.source="https://example.test/repo"'
+write_api() { { printf '%s' "$1"; printf '%s\n' "$srclabel"; } > api/Dockerfile; }
+write_web() { { printf '%s' "$1"; printf '%s\n' "$srclabel"; } > web/Dockerfile; }
 
 good_api="FROM golang:1.26-alpine$digest AS build
 COPY . .
@@ -587,6 +593,15 @@ FROM gcr.io/distroless/static:nonroot$digest
 COPY --from=build /out/api /api
 "
 rejects "a last stage without USER rejected" tools/check-dockerfiles.sh
+
+# 5 — no source label. E3 signs these images and E4 pushes them; an image
+# nothing links back to a commit starts the provenance chain one link short.
+# Written directly, because the writer above would add the very line under test.
+write_web "FROM node:24-alpine$digest
+USER node
+"
+printf 'FROM gcr.io/distroless/static:nonroot%s\nUSER nonroot:nonroot\n' "$digest" > api/Dockerfile
+rejects "production image without image.source rejected" tools/check-dockerfiles.sh
 
 # 4 — the module cache layer.
 write_api "FROM golang:1.26-alpine$digest AS build

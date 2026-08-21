@@ -263,6 +263,11 @@ check-secrets: ## Plant a key, prove gitleaks rejects it, then scan this history
 	@printf 'secrets\n'
 	@tools/check-secrets.sh . $(RANGE)
 
+.PHONY: check-vuln
+check-vuln: ## Known vulnerabilities this program can actually reach
+	@printf 'vulnerabilities\n'
+	@tools/check-vuln.sh .
+
 #
 # Behind the `db` build tag rather than an env guard with t.Skip. With the tag
 # the tests do not appear in `go test ./...` at all, so there is no skip line to
@@ -321,6 +326,8 @@ image-api: ## Build the API image
 image-web: ## Build the web image
 	@printf 'image %s:%s\n' '$(IMAGE_WEB)' '$(IMAGE_TAG)'
 	@docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_SHA=$(GIT_SHA) \
 		-t $(IMAGE_WEB):$(IMAGE_TAG) \
 		-t $(REGISTRY)/$(IMAGE_WEB):$(IMAGE_TAG) ./web
 
