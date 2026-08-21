@@ -20,7 +20,7 @@
 # server_test.go's testConfig() are the other two of the six, and a mechanical
 # check on them would be satisfied by the name appearing in a comment — a green
 # tick for a fixture that still does not set the value. Naming the gap is worth
-# more than pretending to close it. ADR 0032.
+# more than pretending to close it.
 #
 # The second half of the build plan's NEXT_PUBLIC_ rule lives here too (chapter
 # 11.4). The first half — reading one in TypeScript — is a lint rule in

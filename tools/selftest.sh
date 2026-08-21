@@ -23,6 +23,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
    "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
    "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
+   "$root/tools/check-adrs.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1107,6 +1108,41 @@ printf 'package config\n' > envtree/api/internal/config/config.go
 rejects "a config.go with no Env constants rejected" env_check
 
 rm -rf envtree
+
+printf 'adrs\n'
+# A comment can carry a paragraph of reasoning and point it at a decision
+# nobody wrote. The busiest number in this repository is referenced 64 times,
+# so a dangling one is a lot of prose aimed at nothing.
+#
+# The number that must NOT resolve is assembled with printf at runtime. Written
+# out, it would be a finding about the example — tools/check-adrs.sh scans this
+# file too, exactly as check-secrets.sh scans its own planted key.
+mkdir -p adrtree/docs/adr adrtree/tools
+adr_check() { tools/check-adrs.sh "$tmp/adrtree"; }
+ghost=9999
+
+: > adrtree/docs/adr/0001-first.md
+: > adrtree/docs/adr/0002-second.md
+printf 'see ADR 0002 for the reasoning\n' > adrtree/tools/note.sh
+accepts "references that resolve accepted" adr_check
+
+printf 'see ADR %s for the reasoning\n' "$ghost" > adrtree/tools/note.sh
+rejects "a reference to a decision nobody wrote rejected" adr_check
+printf 'see ADR 0002 for the reasoning\n' > adrtree/tools/note.sh
+
+# A missing number looks the same from outside as one that was never written.
+mv adrtree/docs/adr/0002-second.md adrtree/docs/adr/0003-third.md
+printf 'see ADR 0003 for the reasoning\n' > adrtree/tools/note.sh
+rejects "a gap in the sequence rejected" adr_check
+mv adrtree/docs/adr/0003-third.md adrtree/docs/adr/0002-second.md
+printf 'see ADR 0002 for the reasoning\n' > adrtree/tools/note.sh
+
+: > adrtree/docs/adr/0002-second-take.md
+rejects "two files claiming one number rejected" adr_check
+rm -f adrtree/docs/adr/0002-second-take.md
+
+accepts "back to a consistent tree" adr_check
+rm -rf adrtree
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }
