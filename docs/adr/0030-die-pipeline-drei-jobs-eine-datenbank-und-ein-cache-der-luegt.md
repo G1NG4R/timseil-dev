@@ -125,11 +125,24 @@ CI leer, und der Runner-Cache aus `setup-go` liegt außerhalb des Containers.
 Das ist der bewusst bezahlte Preis dafür, dass es nur **einen** Weg in die
 Testdatenbank gibt. Er ist der Grund für den eigenen Job.
 
-**Der `images`-Job ist langsam** — zwei Image-Builds plus `check-topology`, das
-den Stack zweimal hochfährt und einmal absichtlich bricht. Er blockiert den
-Merge und wird niemanden erfreuen. Er läuft trotzdem auf jedem PR: Das Repo ist
-öffentlich, Standard-Runner sind damit kostenlos, und ein Check, der auf PRs
-schweigt, prüft den Zustand, den niemand mehr ändert.
+**Der `images`-Job blockiert den Merge** — zwei Image-Builds plus
+`check-topology`, das den Stack zweimal hochfährt und einmal absichtlich bricht.
+Er läuft auf jedem PR: Das Repo ist öffentlich, Standard-Runner sind damit
+kostenlos, und ein Check, der auf PRs schweigt, prüft den Zustand, den niemand
+mehr ändert.
+
+> **Gemessen am ersten Lauf ([#124](https://github.com/G1NG4R/timseil-dev/pull/124),
+> Run 32417483117):** Dieser Absatz sagte „ist langsam" und schätzte 8–12
+> Minuten. Falsch, um den Faktor sechs — `images` war mit **1:34** der
+> *schnellste* der drei Jobs (`make images` 0:56, `check-topology` 0:34, alle
+> neun Zusicherungen gelaufen). Die Schätzung stammte von dieser Maschine; ein
+> Runner hat schnellere Platten und keine Nebenlast.
+>
+> **Die Entscheidung hält trotzdem, und jetzt mit einer Zahl statt einer
+> Vermutung.** Gemessen: `check` 2:21 · `db` 1:50 · `images` 1:34.
+> Nebenläufig ist der Lauf **2:27** — hintereinander wären es **5:45** und das
+> Abnahmekriterium wäre gerissen. Der Grund für drei Jobs war die Arithmetik,
+> nicht die Schätzung, und die Arithmetik stimmt.
 
 **Drei Geheimnisse werden in CI erzeugt.** Kurzlebig und ohne Reichweite — sie
 authentifizieren Container, die `check-topology` selbst wieder abräumt, und kein
