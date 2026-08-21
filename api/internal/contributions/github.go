@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"strconv"
@@ -272,7 +273,11 @@ func translate(answer graphQLAnswer) (calendar, error) {
 		weeks = append(weeks, httpx.ContributionWeek{Days: days})
 	}
 
-	if source.TotalContributions < 0 {
+	// Both bounds, not just the lower one. total_contributions is a Postgres
+	// integer, so a value above MaxInt32 wrapped negative on the way in and was
+	// caught by the column CHECK rather than here — a rejection that arrives as
+	// a driver error instead of a named one. Found by gosec G115 in E2.
+	if source.TotalContributions < 0 || source.TotalContributions > math.MaxInt32 {
 		return calendar{}, fmt.Errorf("%w: total is %d", errMalformedDay, source.TotalContributions)
 	}
 

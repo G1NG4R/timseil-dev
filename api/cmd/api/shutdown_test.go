@@ -60,7 +60,7 @@ func TestShutdownDoesNotCutAnInFlightRequest(t *testing.T) {
 	started := make(chan struct{})
 
 	base, cancel, wait, _ := startServing(t, http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			close(started)
 			time.Sleep(300 * time.Millisecond)
 			w.WriteHeader(http.StatusOK)
@@ -158,7 +158,8 @@ func TestTheListenerStopsAcceptingImmediately(t *testing.T) {
 		t.Fatalf("serve returned %v", err)
 	}
 
-	if _, err := http.Get(base + "/"); err == nil {
+	if resp, err := http.Get(base + "/"); err == nil {
+		_ = resp.Body.Close()
 		t.Error("the server answered a request made after it had drained")
 	}
 }

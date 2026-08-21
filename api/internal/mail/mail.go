@@ -175,7 +175,7 @@ func BareAddress(raw string) (string, error) {
 
 	parsed, err := netmail.ParseAddress(address)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", errNotBareAddress, err)
+		return "", fmt.Errorf("%w: %w", errNotBareAddress, err)
 	}
 	if parsed.Name != "" || parsed.Address != address {
 		return "", errNotBareAddress

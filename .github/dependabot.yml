@@ -1,0 +1,126 @@
+# Who raises the pins nobody else would.
+#
+# Three of this repository's rules create work that has no owner until this
+# file exists, and each of them was written down as a cost at the time:
+#
+#   - Every FROM is a digest (ADR 0026, tools/check-dockerfiles.sh). A digest
+#     never updates on its own, so a base image with a fixed CVE stays unfixed
+#     until somebody lifts it by hand.
+#   - Every action is a commit SHA (ADR 0030 §5). Same problem, and the reason
+#     the pin is written with the readable version in a trailing comment.
+#   - postgres is now a digest too (#93). It was the last movable tag in the
+#     system and it moved for a reason; this is what moves it now.
+#
+# "Dependabot for Docker (E2) ist die Gegenmaßnahme, nicht Disziplin."
+# — ADR 0026. This file is that sentence.
+#
+# ---------------------------------------------------------------------------
+#
+# THE DECISION #63 ASKED FOR: `allow: direct` on the two language ecosystems.
+#
+# api/go.mod carries 65 indirect lines and 41 of them belong to sqlc and
+# oapi-codegen — build-time tools whose code never reaches the binary. Left on
+# defaults, Dependabot would open pull requests for all of them, and the answer
+# to drowning in individual PRs is never "switch Dependabot off later".
+#
+# Indirect dependencies still move: they move when a direct one moves and
+# `go mod tidy` runs, which is the same path that keeps go.sum honest today.
+# What is given up is the case where an indirect dependency has a CVE and no
+# direct dependency has moved — and that case is covered by govulncheck in
+# `make check-vuln`, which reads the whole graph and reports on reachability
+# rather than on version numbers. The gap is named, not ignored.
+#
+# github-actions is NOT filtered: there is no such thing as an indirect action,
+# and every one of them runs with a token.
+
+version: 2
+
+updates:
+  # --------------------------------------------------------------- go
+  - package-ecosystem: gomod
+    directory: /api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: direct
+    groups:
+      go:
+        patterns: ["*"]
+    commit-message:
+      prefix: chore
+
+  # -------------------------------------------------------------- npm
+  #
+  # Two groups rather than one, because the two carry different risk: a
+  # production bump changes what ships to a browser, a dev bump changes what
+  # builds it. They deserve to be reviewed apart.
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: direct
+    groups:
+      web-production:
+        dependency-type: production
+        patterns: ["*"]
+      web-development:
+        dependency-type: development
+        patterns: ["*"]
+    commit-message:
+      prefix: chore
+
+  # ---------------------------------------------------- github actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+
+  # ------------------------------------------------------------ docker
+  #
+  # The four base image digests. One entry per Dockerfile, because the
+  # ecosystem reads Dockerfiles and not the directory tree above them.
+  - package-ecosystem: docker
+    directory: /api
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: chore }
+
+  - package-ecosystem: docker
+    directory: /web
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: chore }
+
+  # ----------------------------------------------------- docker compose
+  #
+  # A SEPARATE ecosystem, and that is the point of this block existing rather
+  # than being assumed: `docker` reads Dockerfiles only, so without these two
+  # entries the postgres digest #93 just set would be the one pin in the system
+  # that nothing ever lifts — the exact situation #93 was about.
+  #
+  # compose.dev.yaml is here too: check-compose rule 8 requires the two files
+  # to name the same image byte for byte, so a bump that moved only one of them
+  # would go red. They move together or not at all.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: Etc/UTC }
+    open-pull-requests-limit: 5
+    commit-message: { prefix: chore }

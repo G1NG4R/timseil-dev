@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -70,6 +70,11 @@ check-go: ## gofmt, go vet, go test
 	@cd api && bad=$$(gofmt -l .); \
 		[ -z "$$bad" ] || { printf '  ✗ not gofmt-clean:\n'; printf '%s\n' "$$bad" | sed 's/^/    /'; exit 1; }; \
 		go vet ./... && go test ./... && printf '  ✓ gofmt, vet, test\n'
+
+.PHONY: check-lint
+check-lint: ## golangci-lint over api/ — ruleset and exclusions in .golangci.yml
+	@printf 'lint\n'
+	@tools/check-lint.sh
 
 .PHONY: check-web
 check-web: ## Typecheck, lint, unit tests
@@ -240,6 +245,29 @@ seed: ## Write the curated content — systems, modules, tracks, evidence
 
 # The acceptance criterion of this phase, and it needs a real Postgres: three
 # up/down/up cycles plus every invariant proven against its broken case.
+# ------------------------------------------------------------- scanners
+#
+# Neither of these is in `make check`, and they are outside it for two
+# different reasons — ADR 0031 has the rule.
+#
+# check-secrets is deterministic but needs a container, like check-db.
+# check-vuln is the other case: it can turn red on a tree nobody touched,
+# because somebody else published a CVE. A gate in the check chain that breaks
+# without a code change is a gate people learn to run `make check` around.
+#
+# Both are one command in CI and on a laptop, which is the part of ADR 0030
+# that does not bend.
+
+.PHONY: check-secrets
+check-secrets: ## Plant a key, prove gitleaks rejects it, then scan this history
+	@printf 'secrets\n'
+	@tools/check-secrets.sh . $(RANGE)
+
+.PHONY: check-vuln
+check-vuln: ## Known vulnerabilities this program can actually reach
+	@printf 'vulnerabilities\n'
+	@tools/check-vuln.sh .
+
 #
 # Behind the `db` build tag rather than an env guard with t.Skip. With the tag
 # the tests do not appear in `go test ./...` at all, so there is no skip line to
@@ -282,6 +310,14 @@ GIT_SHA := $(shell git rev-parse --short=7 HEAD 2>/dev/null || echo unknown)
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 IMAGE_TAG := sha-$(GIT_SHA)
 
+# The tag, printed. It exists so that CI can name the images it just built
+# without spelling `sha-$(git rev-parse --short=7 HEAD)` a second time in YAML
+# — a second definition of a name is a name that drifts, and the one place it
+# would show up is a scanner silently finding no image to scan.
+.PHONY: image-tag
+image-tag: ## Print the tag `make images` gives the images it builds
+	@printf '%s\n' '$(IMAGE_TAG)'
+
 .PHONY: images
 images: image-api image-web ## Build both production images
 
@@ -298,6 +334,8 @@ image-api: ## Build the API image
 image-web: ## Build the web image
 	@printf 'image %s:%s\n' '$(IMAGE_WEB)' '$(IMAGE_TAG)'
 	@docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_SHA=$(GIT_SHA) \
 		-t $(IMAGE_WEB):$(IMAGE_TAG) \
 		-t $(REGISTRY)/$(IMAGE_WEB):$(IMAGE_TAG) ./web
 

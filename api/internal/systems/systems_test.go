@@ -740,7 +740,7 @@ func TestTheSourceAxisSurvivesTheMapping(t *testing.T) {
 			State  string `json:"state"`
 			Source struct {
 				Access string `json:"access"`
-				Url    string `json:"url"`
+				URL    string `json:"url"`
 				Reason string `json:"reason"`
 			} `json:"source"`
 		} `json:"systems"`
@@ -755,15 +755,15 @@ func TestTheSourceAxisSurvivesTheMapping(t *testing.T) {
 			if system.Source.Access != "private" || system.Source.Reason != "internal" {
 				t.Errorf("vat-check source = %+v, want private / internal", system.Source)
 			}
-			if system.Source.Url != "" {
-				t.Errorf("a private system carries a url: %q", system.Source.Url)
+			if system.Source.URL != "" {
+				t.Errorf("a private system carries a url: %q", system.Source.URL)
 			}
 			// The point of the separate axis: closed, and also not running.
 			if system.State != "queued" {
 				t.Errorf("vat-check state = %q, want queued", system.State)
 			}
 		case "timseil-dev":
-			if system.Source.Access != "public" || system.Source.Url == "" {
+			if system.Source.Access != "public" || system.Source.URL == "" {
 				t.Errorf("timseil-dev source = %+v, want public with a url", system.Source)
 			}
 			if system.Source.Reason != "" {

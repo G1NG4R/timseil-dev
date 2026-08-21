@@ -21,6 +21,7 @@ mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
    "$root/tools/check-migrations.sh" "$root/tools/check-stack.sh" \
+   "$root/tools/check-lint.sh" \
    "$root/tools/check-dockerfiles.sh" "$tmp/tools/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -100,7 +101,7 @@ write_dev() { printf '%s' "$1" > compose.dev.yaml; }
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     expose:
       - "5432"
 '
@@ -108,7 +109,7 @@ accepts "db behind expose accepted" tools/check-compose.sh
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     ports:
       - "5432:5432"
 '
@@ -116,7 +117,7 @@ rejects "published db port rejected" tools/check-compose.sh
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     labels:
       - "traefik.enable=true"
 '
@@ -124,7 +125,7 @@ rejects "traefik label on db rejected" tools/check-compose.sh
 
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     expose:
       - "5432"
 '
@@ -230,7 +231,7 @@ accepts "an init container disabling the probe accepted" tools/check-compose.sh
 # the read-only roles script — which has to be read-only to be the exception.
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - db-data:/var/lib/postgresql
 $limited"
@@ -238,7 +239,7 @@ accepts "named volume accepted" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - ./data:/var/lib/postgresql
 $limited"
@@ -254,7 +255,7 @@ rejects "bind-mounted docker socket rejected" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - ./ops/postgres/initdb:/docker-entrypoint-initdb.d
 $limited"
@@ -262,7 +263,7 @@ rejects "writable ops bind mount rejected" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     volumes:
       - ./ops/postgres/initdb:/docker-entrypoint-initdb.d:ro
 $limited"
@@ -283,11 +284,11 @@ accepts "tmpfs path not mistaken for a bind mount accepted" tools/check-compose.
 # files disagreeing means the page shows a version nothing runs.
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
 $limited"
 write_dev 'services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
 '
 accepts "both compose files on the same postgres accepted" tools/check-compose.sh
 
@@ -296,6 +297,26 @@ write_dev 'services:
     image: postgres:18.5-alpine
 '
 rejects "postgres drift between the two compose files rejected" tools/check-compose.sh
+
+# E2, rule 8b. postgres was the last image in the system on a movable tag, and
+# it was there because the resolver read the digest as the version. Now that it
+# does not, a bare tag here is the same defect a bare FROM is in a Dockerfile.
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine
+    expose:
+      - "5432"
+'
+rejects "foreign image on a bare tag rejected" tools/check-compose.sh
+
+write_dev 'services:
+  db:
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    expose:
+      - "5432"
+'
+accepts "foreign image pinned by digest accepted" tools/check-compose.sh
+
 
 # The five rules D3 added. Every one of them is a way for the proxy and the
 # stack to lose each other while the stack still comes up green, which is why
@@ -396,14 +417,14 @@ rejects "routed service on the default network alone rejected" tools/check-compo
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
     networks: [default, dokploy-network]
 $limited"
 rejects "db in the proxy network rejected" tools/check-compose.sh
 
 write_prod "services:
   db:
-    image: postgres:18.6-alpine
+    image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111
 $limited"
 accepts "db with no networks key accepted" tools/check-compose.sh
 
@@ -470,14 +491,20 @@ rm -f compose.dev.yaml compose.yaml
 accepts "absent compose files skip" tools/check-compose.sh
 
 printf 'dockerfiles\n'
-# Four rules, and every one of them is invisible until it matters: a moved tag,
+# Five rules, and every one of them is invisible until it matters: a moved tag,
 # a rotated secret still readable in `docker history`, a container that turned
-# out to be root, a layer nobody needed. Each gets its broken case.
+# out to be root, a layer nobody needed, a published image nothing links back
+# to a commit. Each gets its broken case.
 digest='@sha256:0000000000000000000000000000000000000000000000000000000000000000'
 
 mkdir -p api web
-write_api() { printf '%s' "$1" > api/Dockerfile; }
-write_web() { printf '%s' "$1" > web/Dockerfile; }
+
+# The writers append the source label, so a fixture written to break rule 1 is
+# rejected BY rule 1 and not incidentally by rule 5. The one case that has to
+# arrive without the label writes its file directly.
+srclabel='LABEL org.opencontainers.image.source="https://example.test/repo"'
+write_api() { { printf '%s' "$1"; printf '%s\n' "$srclabel"; } > api/Dockerfile; }
+write_web() { { printf '%s' "$1"; printf '%s\n' "$srclabel"; } > web/Dockerfile; }
 
 good_api="FROM golang:1.26-alpine$digest AS build
 COPY . .
@@ -566,6 +593,15 @@ FROM gcr.io/distroless/static:nonroot$digest
 COPY --from=build /out/api /api
 "
 rejects "a last stage without USER rejected" tools/check-dockerfiles.sh
+
+# 5 — no source label. E3 signs these images and E4 pushes them; an image
+# nothing links back to a commit starts the provenance chain one link short.
+# Written directly, because the writer above would add the very line under test.
+write_web "FROM node:24-alpine$digest
+USER node
+"
+printf 'FROM gcr.io/distroless/static:nonroot%s\nUSER nonroot:nonroot\n' "$digest" > api/Dockerfile
+rejects "production image without image.source rejected" tools/check-dockerfiles.sh
 
 # 4 — the module cache layer.
 write_api "FROM golang:1.26-alpine$digest AS build
@@ -923,6 +959,51 @@ rejects "empty .nvmrc rejected"          node_check "$tmp/fakebin/node24" nv_emp
 rejects "missing .nvmrc rejected"        node_check "$tmp/fakebin/node24" nv_gone
 accepts "absent node skips"              node_check "$tmp/fakebin/node-not-here" nv24
 rm -rf fakebin nv24 nv25 nv_empty
+
+printf 'lint\n'
+# Five things, and two of them are about a check reporting success for work it
+# never did.
+#
+# A fake linter, so the assertions do not depend on whether this machine has the
+# real one. It answers a version and an exit code, which is all check-lint.sh
+# reads out of it.
+mkdir -p api fakebin
+printf 'module example.test/api\n\ngo 1.26.0\n' > api/go.mod
+printf '#!/bin/sh\necho "golangci-lint has version 2.13.1 built with go1.26"\nexit 0\n' > fakebin/lint-ok  && chmod +x fakebin/lint-ok
+printf '#!/bin/sh\necho "golangci-lint has version 2.13.1 built with go1.26"\nexit 1\n' > fakebin/lint-bad && chmod +x fakebin/lint-bad
+printf '#!/bin/sh\necho "golangci-lint has version 2.9.0 built with go1.26"\nexit 0\n'  > fakebin/lint-old && chmod +x fakebin/lint-old
+printf 'version: "2"\n' > .golangci.yml
+printf 'v2.13.1\n' > .golangci-lint-version
+
+lint_check() { CHECK_LINT_BIN="$1" tools/check-lint.sh "$tmp"; }
+
+accepts "clean lint run accepted"     lint_check "$tmp/fakebin/lint-ok"
+rejects "a finding is rejected"       lint_check "$tmp/fakebin/lint-bad"
+
+# Without the config the linter would run its own default ruleset, which is not
+# the one CI blocks on. A check that silently measures something else is worse
+# than one that is missing.
+mv .golangci.yml .golangci.yml.away
+rejects "missing .golangci.yml rejected" lint_check "$tmp/fakebin/lint-ok"
+mv .golangci.yml.away .golangci.yml
+
+# One version, one place. CI hands the same file to the action that installs the
+# binary, so a laptop running something else is linting against another ruleset
+# than the one that blocks the merge — the drift .nvmrc exists to prevent, one
+# tool over.
+rejects "linter version that disagrees with the file rejected" lint_check "$tmp/fakebin/lint-old"
+
+mv .golangci-lint-version .golangci-lint-version.away
+rejects "missing .golangci-lint-version rejected" lint_check "$tmp/fakebin/lint-ok"
+mv .golangci-lint-version.away .golangci-lint-version
+
+# The floor under the skip, and the case E1 paid for: check-node.sh skipped
+# itself on a runner with no node, and the job went green having checked
+# nothing. Off a runner the skip is a convenience; on one it is a lie.
+accepts "absent linter skips locally"    env -u CI CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
+rejects "absent linter rejected under CI" env CI=1 CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
+
+rm -rf api fakebin .golangci.yml .golangci-lint-version
 
 printf 'commit-msg\n'
 write_msg() { printf '%s\n' "$1" > msg; }

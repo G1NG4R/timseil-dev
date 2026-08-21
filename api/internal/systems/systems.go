@@ -210,7 +210,7 @@ func (h *Handler) GetSystem(ctx context.Context, req httpx.GetSystemRequestObjec
 		Source:   system.Source,
 		Stack:    system.Stack,
 		Metrics:  system.Metrics,
-		Window:   window,
+		Window:   int(window),
 		// Adding a field to System in the contract means adding it here too:
 		// oapi-codegen flattens the allOf, so nothing makes the copy for us.
 		// TestTheDetailCarriesEveryFieldTheListDoes is what catches the omission.
@@ -256,10 +256,9 @@ func (h *Handler) GetSystem(ctx context.Context, req httpx.GetSystemRequestObjec
 // operations reads the three window-bounded arrays. All three take the same
 // window, computed the same way inside the same three queries, so the grid a
 // reader counts and the notches laid over it cannot cover different periods.
-func (h *Handler) operations(ctx context.Context, systemID int64, window int) (
+func (h *Handler) operations(ctx context.Context, systemID int64, span int32) (
 	[]httpx.OpsDay, []httpx.Incident, []httpx.Deploy, error,
 ) {
-	span := int32(window)
 
 	dayRows, err := h.queries.OpsDaysForSystem(ctx, store.OpsDaysForSystemParams{
 		SystemID: systemID, WindowSize: span,
@@ -413,14 +412,21 @@ func sourceOf(access string, url, reason *string) (httpx.Source, error) {
 // the wrong one: the response states its own window, so a silent substitution
 // would hand back a document that answers a question nobody asked and looks
 // entirely correct while doing it.
-func resolveWindow(w *httpx.GetSystemParamsWindow) (int, error) {
+// It returns int32 rather than int, and that is the narrowing done in the one
+// place where it is provably safe. Valid() above admits three constants — 30,
+// 91 and 182 — so nothing can be lost here; two lines further down the call
+// stack the same conversion needs a reader to trace back for that guarantee,
+// and CodeQL's go/incorrect-integer-conversion cannot trace it at all. The
+// value arrives from strconv.Atoi as a 64-bit int, so the question it asks is
+// a fair one; the answer belongs next to the check that produces it.
+func resolveWindow(w *httpx.GetSystemParamsWindow) (int32, error) {
 	if w == nil {
 		return defaultWindow, nil
 	}
 	if !w.Valid() {
 		return 0, ErrBadWindow
 	}
-	return int(*w), nil
+	return int32(*w), nil //nolint:gosec // G115: Valid() two lines up admits 30, 91, 182
 }
 
 func validSlug(slug string) bool {

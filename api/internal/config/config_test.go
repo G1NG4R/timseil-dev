@@ -334,6 +334,37 @@ func TestMinConnsMayNotExceedMaxConns(t *testing.T) {
 	wantFailure(t, EnvDBMinConns, EnvDBMaxConns)
 }
 
+// 4294967306 is 2^32 + 10. It is positive, so the old `positive` check waved it
+// through, and the int32 conversion behind it turned it into 10 — the default,
+// arrived at by wrapping rather than by anybody choosing it.
+//
+// That is the failure this pair of tests exists for: not a value that is
+// refused loudly, but one that is accepted quietly as a different number.
+// Found by gosec's G115 in E2, which is the sort of thing a scanner is for.
+func TestAPoolSizeAboveInt32IsRefusedRatherThanWrapped(t *testing.T) {
+	setEnv(t, map[string]string{EnvDBMaxConns: "4294967306"})
+	wantFailure(t, EnvDBMaxConns)
+
+	setEnv(t, map[string]string{EnvDBMinConns: "4294967296"})
+	wantFailure(t, EnvDBMinConns)
+}
+
+// The boundary itself is valid. A check that refused MaxInt32 would be a check
+// that moved the limit rather than named it.
+func TestThePoolSizeBoundaryIsAccepted(t *testing.T) {
+	setEnv(t, map[string]string{
+		EnvDBMaxConns: "2147483647",
+		EnvDBMinConns: "2147483647",
+	})
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("MaxInt32 connections were refused: %v", err)
+	}
+	if cfg.DB.MaxConns != 2147483647 || cfg.DB.MinConns != 2147483647 {
+		t.Errorf("got %d/%d, want 2147483647 twice", cfg.DB.MaxConns, cfg.DB.MinConns)
+	}
+}
+
 // An origin is scheme://host. A path here matches no browser's Origin header
 // ever, and the resulting failure looks like a bug in the frontend rather than
 // a typo in the environment.

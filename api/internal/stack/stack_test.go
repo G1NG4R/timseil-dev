@@ -281,6 +281,73 @@ func TestResolveRefusesAnUntaggedImage(t *testing.T) {
 	}
 }
 
+// The whole point of #93: a digest-pinned image still shows its tag.
+//
+// Until this worked, compose.yaml could not pin the db image, because the
+// resolver read the last colon and put `sha256:…` on the page. That left one
+// image in the system on a movable tag and made "every image is pinned" false.
+func TestResolveReadsTheTagOfADigestPinnedImage(t *testing.T) {
+	digest := "sha256:c8a1f4c3f0e2b6d5a9748f1e0b3c2d5a6e7f8091a2b3c4d5e6f708192a3b4c5d"
+
+	cases := map[string]struct{ image, want string }{
+		"tag and digest":  {"postgres:18.6-alpine@" + digest, "18.6"},
+		"tag alone":       {"postgres:18.6-alpine", "18.6"},
+		"registry port":   {"registry.example:5000/postgres:18.6-alpine", "18.6"},
+		"port and digest": {"registry.example:5000/postgres:18.6-alpine@" + digest, "18.6"},
+	}
+
+	for what, tc := range cases {
+		root := writeTree(t)
+		body := "services:\n  db:\n    image: " + tc.image + "\n"
+		if err := os.WriteFile(filepath.Join(root, "compose.dev.yaml"), []byte(body), 0o644); err != nil {
+			t.Fatalf("%s: writing compose: %v", what, err)
+		}
+		writeManifest(t, root, `systems:
+  demo:
+    - { name: "PostgreSQL", from: "compose.dev.yaml", key: "services.db.image" }
+`)
+
+		manifest, err := Load(root)
+		if err != nil {
+			t.Errorf("%s: loading: %v", what, err)
+			continue
+		}
+		resolved, err := manifest.Resolve(root)
+		if err != nil {
+			t.Errorf("%s: resolving: %v", what, err)
+			continue
+		}
+		if got := resolved[0].Version; got != tc.want {
+			t.Errorf("%s: image %q resolved to %q, want %q", what, tc.image, got, tc.want)
+		}
+	}
+}
+
+// A digest with no tag in front of it is still refused. It pins the bytes, but
+// it is not a version a reader can do anything with, and invariant 1 says an
+// unreadable number does not go on the page.
+func TestResolveRefusesADigestWithoutATag(t *testing.T) {
+	root := writeTree(t)
+	body := "services:\n  db:\n    image: postgres@sha256:c8a1f4c3f0e2b6d5a9748f1e0b3c2d5a6e7f8091a2b3c4d5e6f708192a3b4c5d\n"
+	if err := os.WriteFile(filepath.Join(root, "compose.dev.yaml"), []byte(body), 0o644); err != nil {
+		t.Fatalf("writing compose: %v", err)
+	}
+	writeManifest(t, root, `systems:
+  demo:
+    - { name: "PostgreSQL", from: "compose.dev.yaml", key: "services.db.image" }
+`)
+
+	manifest, err := Load(root)
+	if err != nil {
+		t.Fatalf("loading: %v", err)
+	}
+	if _, err := manifest.Resolve(root); err == nil {
+		t.Fatal("a digest without a tag resolved — there is no version to show")
+	} else if !strings.Contains(err.Error(), "no tag") {
+		t.Errorf("error %q does not say the tag is missing", err)
+	}
+}
+
 func TestResolveRefusesAnUnsupportedSourceAndAMissingKey(t *testing.T) {
 	root := writeTree(t)
 	if err := os.WriteFile(filepath.Join(root, "VERSION"), []byte("1.2.3\n"), 0o644); err != nil {

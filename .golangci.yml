@@ -1,0 +1,225 @@
+# The Go linter, and the reasons for every deviation from its defaults.
+#
+# Introduced in E2. The measurement that produced it, taken on origin/main at
+# 744ff9d with the report limits switched off: the standard set plus six
+# linters found 69 issues across api/ — 44 in production code, 25 in tests.
+#
+# The limits matter, and finding that out cost a wrong number first. A run with
+# golangci-lint's defaults reported 53, because it hides all but the first
+# three findings of a kind. Sixteen issues were simply not printed, and the
+# second pass over "the remaining ones" turned up problems the first pass had
+# never shown. That is why `issues:` at the bottom sets both limits to zero.
+#
+# Every one of the 69 was read. Four were real defects and are fixed:
+#
+#   - a pool size above 2^32 wrapped to a plausible number instead of being
+#     refused (config, G115 — the loader now returns int32 and bounds it)
+#   - `totalContributions` was checked for its lower bound in Go and its upper
+#     bound in Postgres, so an out-of-range value came back as a driver error
+#     rather than a named one (contributions, G115)
+#   - an error was formatted with %v where it belonged in the chain, which
+#     breaks errors.Is for the caller (mail, errorlint)
+#   - a CSP assertion indexed with strings.Index and would have panicked on a
+#     slice bound instead of failing with a sentence if script-src ever went
+#     missing (httpx docs_test, gocritic offBy1)
+#
+# The rest were either style this repository has decided against or false
+# positives, and each of those carries its reason at the line it silences
+# rather than here. The rule for this file: an exclusion is a decision, and a
+# decision without a written reason is a decision nobody can review. There are
+# five of them below.
+#
+# Build plan E2, ADR 0031.
+
+version: "2"
+
+linters:
+  # `standard` is errcheck, govet, ineffassign, staticcheck and unused.
+  default: standard
+
+  enable:
+    - bodyclose    # a leaked response body is a leaked connection
+    - errorlint    # %v where %w belongs breaks errors.Is for the caller
+    - funlen
+    - gocognit
+    - gocritic
+    - gosec
+    - nilerr       # `if err != nil { return nil }` — the bug that reads correct
+    - revive
+
+  settings:
+    gosec:
+      # G104 is gosec re-implementing errcheck. errcheck below owns that
+      # ground and carries the written exclusion list; leaving both on means
+      # two lists, two mechanisms and one of them silently drifting.
+      excludes:
+        - G104
+
+    errcheck:
+      # DECISION 1 — six unchecked returns, all of the same shape: a deferred
+      # Close on the way out, and a Fprint into a usage writer. There is no
+      # branch to take on any of them; the process is already leaving.
+      #
+      # Listed here rather than written as `_ =` at each site because six silent
+      # `_ =` are six decisions nobody reviews, and this is one decision in a
+      # file that gets read. A Close whose error DOES matter — a commit, a
+      # flush — is not on this list and stays checked.
+      exclude-functions:
+        - (*database/sql.DB).Close
+        - (io.Closer).Close
+        - (io.ReadCloser).Close
+        - (*database/sql.Tx).Rollback
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+
+    # DECISION 6 — two complexity limits, and one deliberately not taken.
+    #
+    # Measured on this tree, production code only, thresholds set low enough
+    # that the whole list could be read (45 findings, all of them):
+    #
+    #   cognitive    max 19   contributions.translate
+    #   statements   max 43   health.GetHealth and cmd/api.runMigrate
+    #   lines        max 96   config.Load
+    #   cyclomatic   max 16   health.GetHealth
+    #
+    # The line figure cost a third wrong measurement to get right: funlen
+    # reports the FIRST of its two limits that a function breaks, so as long as
+    # the statement limit was the tighter one, config.Load was counted at 24
+    # statements and its 96 lines were never printed. Each axis had to be
+    # measured with the other one switched off. Same lesson as the 53-that-was-69
+    # at the top of this file, twice over: a report that stops early looks
+    # exactly like a report that found nothing more.
+    #
+    # **cyclop is not enabled, and GetHealth is the reason.** Cyclomatic 16,
+    # cognitive 13: it is a long FLAT run of guard clauses, each one returning
+    # early. That is the shape this codebase reaches for on purpose, and
+    # cyclomatic complexity cannot tell it apart from sixteen nested branches.
+    # A limit that counted them the same would push handlers toward nesting to
+    # get the number down, which is the opposite of the point. Cognitive
+    # complexity makes exactly that distinction — it discounts a flat sequence
+    # and charges for depth — so it is the one that gets to hold the line.
+    #
+    # gocognit at 20 leaves translate one point of headroom, and that is
+    # written down rather than rounded away: the next branch added to that
+    # function is meant to be a conversation.
+    #
+    # funlen counts two things, and only one of them means anything here.
+    # config.Load is 96 lines and 24 statements — the difference is prose. This
+    # repository comments at a density where a line count measures how much was
+    # explained, not how much a function does, so `statements` is the axis that
+    # carries the rule and `lines` is left as a backstop nothing is near.
+    #
+    # Both are deliberately loose: they exist to catch a function that has
+    # genuinely run away, not one that is merely long. GetHealth at 43
+    # statements is a sequence of guard clauses; tightening to just above it
+    # would produce a gate that fails on the next honest line.
+    gocognit:
+      min-complexity: 20
+
+    funlen:
+      lines: 150        # max today 96 (config.Load), mostly comments
+      statements: 60    # max today 43 (health.GetHealth, cmd/api.runMigrate)
+
+    staticcheck:
+      # DECISION 2 — two groups off, and the second one was a mistake worth
+      # recording: writing `all` here silently switched ON the ST rules that
+      # golangci-lint disables by default, and they immediately asked for
+      # `Ts` to become `TS` and for a comment above three adapters to be
+      # rewritten to start with the name of one of them. That is the same
+      # argument as revive's `exported` below, so it gets the same answer.
+      #
+      # The QF group is refactoring suggestions, not defects: QF1001 wanted De
+      # Morgan's law applied to `!isLower && !isUpper` in contact/validate.go,
+      # which would read worse and mean the same. A linter that argues about
+      # taste gets ignored, and a linter that gets ignored stops being read.
+      checks:
+        - all
+        - -QF1001
+        - -QF1003
+        - -QF1008
+        - -ST1000   # package comment phrasing
+        - -ST1003   # Ts -> TS, and every other initialism in a JSON field
+        - -ST1016   # receiver name consistency
+        - -ST1020   # "comment on exported method should be of the form ..."
+        - -ST1021
+        - -ST1022
+
+    revive:
+      # DECISION 3 — every default revive rule except `exported`.
+      #
+      # `exported` produced 15 of the 19 revive findings, all of them "New
+      # should have a comment". Two things make it the wrong rule here: every
+      # package in this module lives under internal/ and its godoc is published
+      # nowhere, and build plan chapter 12.1 already refused generated
+      # documentation on the grounds that nobody reads it. The comments that
+      # carry information — what a narrow Queries interface is for, why Build
+      # has honest defaults — exist and are long. "New returns a new Handler"
+      # is the kind of line that makes the real ones harder to find.
+      #
+      # Listing the rest explicitly is the price of turning one off: revive
+      # runs its own default set only while no rules are named.
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: var-declaration
+        - name: var-naming
+
+  exclusions:
+    # Nothing generated is worth linting: the fix would be a change to the
+    # generator, and `make check-contract` already refuses a stale one.
+    generated: strict
+
+    rules:
+      # DECISION 4 — gosec off in tests, and only gosec.
+      #
+      # It found 17 things there: fake DSNs with `dev_only_not_a_secret` in
+      # them (G101), 0o755 on a t.TempDir() (G301/G306), an httptest server
+      # without ReadHeaderTimeout (G112). gosec reasons about an attacker
+      # against a running program; a test binary is not that program, and the
+      # "credentials" it flags are the fixtures that make the tests readable.
+      #
+      # The other linters keep running here. A leaked body or a swallowed error
+      # in a test is a test that passes for the wrong reason, which is worse
+      # than one that fails.
+      - path: _test\.go
+        linters:
+          - gosec
+
+      # DECISION 5 — the complexity limits do not apply to tests.
+      #
+      # The highest cognitive complexity in this repository is 36, in
+      # TestEveryErrorFromEveryRouteIsAProblemDocument: it drives every mounted
+      # route with two verbs and asserts five fields on every error document.
+      # That branchiness IS the test. Splitting it to satisfy a number would
+      # produce several tests that each sweep less, which is the opposite of
+      # what it is for.
+      - path: _test\.go
+        linters:
+          - funlen
+          - gocognit
+
+issues:
+  # Report everything. The defaults hide all but the first three findings of a
+  # kind and all but the first ten per file, which turns "53 issues" into a
+  # number that means nothing and a backlog that never empties.
+  max-issues-per-linter: 0
+  max-same-issues: 0

@@ -160,7 +160,10 @@ func serve(w http.ResponseWriter, r *http.Request, body []byte, contentType stri
 		return
 	}
 	defer func() { _ = zr.Close() }()
-	_, _ = io.Copy(w, zr)
+	// G110: a decompression bomb needs an attacker who controls the compressed
+	// bytes. These are vendored and compiled into the binary by //go:embed —
+	// the same build that produced this line produced them.
+	_, _ = io.Copy(w, zr) //nolint:gosec // G110: embedded asset, see above
 }
 
 func acceptsGzip(r *http.Request) bool {

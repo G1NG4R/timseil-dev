@@ -16,6 +16,13 @@
 #      one thing standing between a bug in a handler and the host is then the
 #      kernel.
 #
+#   5. The last stage carries org.opencontainers.image.source. Without it a
+#      GHCR package hangs on nothing — no link back to the repository, and no
+#      way to get from a published artefact to the commit that made it. E3
+#      signs these images and E4 pushes them; a provenance chain that starts
+#      at an untraceable image starts one link short. Issue #111. Production
+#      files only, same exemption Dockerfile.dev has from rule 1.
+#
 #   4. No `go mod download` in the API image. The reflex caches the module graph
 #      in its own layer; here it would pull the tool dependencies — sqlc,
 #      oapi-codegen and the indirect lines behind them — into a layer nothing in
@@ -73,13 +80,15 @@ scan() {
       }
       last_from = NR
       have_user = 0
+      have_source = 0
       # Rule 1.
       if (image !~ /@sha256:[0-9a-f]{64}$/)
         printf "line %d: FROM %s is not pinned by digest — a tag can be moved\n", NR, $2
     }
 
-    # Rule 3: remembered per stage, reported at the end for the last one.
+    # Rules 3 and 5: remembered per stage, reported at the end for the last one.
     /^[[:space:]]*USER[[:space:]]/ { have_user = 1 }
+    /org\.opencontainers\.image\.source[[:space:]]*=/ { have_source = 1 }
 
     # Rule 4.
     /go[[:space:]]+mod[[:space:]]+download/ {
@@ -89,6 +98,8 @@ scan() {
     END {
       if (prod == "1" && last_from > 0 && have_user == 0)
         printf "line %d: the last stage sets no USER — it would run as root\n", last_from
+      if (prod == "1" && last_from > 0 && have_source == 0)
+        printf "line %d: the last stage sets no org.opencontainers.image.source — the package would hang on no repository (#111)\n", last_from
     }
   ' "$file")
 

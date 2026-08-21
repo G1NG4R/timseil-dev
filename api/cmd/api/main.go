@@ -97,7 +97,11 @@ func main() {
 
 	if err := run(ctx, cfg, log); err != nil {
 		log.Error("server stopped", "err", err)
-		os.Exit(1)
+		// exitAfterDefer is correct that `defer stop()` above will not run, and
+		// it does not matter: stop() only unregisters the signal handler, and
+		// the process is one statement away from not having one. Restructuring
+		// main to return an error just so a no-op can run would be ceremony.
+		os.Exit(1) //nolint:gocritic // exitAfterDefer: stop() is moot at exit
 	}
 }
 
@@ -178,7 +182,12 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		BaseContext: func(net.Listener) context.Context { return context.Background() },
 	}
 
-	ln, err := net.Listen("tcp", listenAddr)
+	// G102 is right about what this does and wrong about what it means here:
+	// the process has no host interfaces to be careful about. It listens inside a
+	// container whose port is never published (compose.yaml, ADR 0027) and is
+	// reached over the docker network by Traefik alone. Binding to the container
+	// IP instead would be a value nothing here knows at start.
+	ln, err := net.Listen("tcp", listenAddr) //nolint:gosec // G102: see above
 	if err != nil {
 		aggregator.Stop()
 		refresher.Stop()

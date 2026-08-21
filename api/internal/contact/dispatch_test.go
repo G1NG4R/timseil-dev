@@ -369,7 +369,7 @@ func TestATickRunsAgain(t *testing.T) {
 	waitFor(t, func() bool { return q.listCall >= 2 })
 }
 
-func TestStopIsIdempotent(t *testing.T) {
+func TestStopIsIdempotent(_ *testing.T) {
 	// The shutdown path reaches it on two routes and must not have to reason
 	// about which one ran.
 	d := startDispatcher(&stubDispatchQueries{}, &stubSender{}, "inbox@timseil.dev",

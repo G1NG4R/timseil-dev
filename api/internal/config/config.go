@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/netip"
 	"net/url"
 	"os"
@@ -50,15 +51,18 @@ const (
 	EnvAllowedOrigins   = "CORS_ALLOWED_ORIGINS"
 	EnvSiteSystemSlug   = "SITE_SYSTEM_SLUG"
 	EnvContribTransport = "CONTRIBUTIONS_TRANSPORT"
-	EnvGitHubToken      = "GITHUB_TOKEN"
-	EnvGitHubLogin      = "GITHUB_LOGIN"
-	EnvMailTransport    = "MAIL_TRANSPORT"
-	EnvSMTPUsername     = "SMTP_USERNAME"
-	EnvSMTPPassword     = "SMTP_PASSWORD"
-	EnvMailTo           = "MAIL_TO"
-	EnvContactIPPepper  = "CONTACT_IP_PEPPER"
-	EnvProbeToken       = "INTERNAL_PROBE_TOKEN"
-	EnvDeployToken      = "INTERNAL_DEPLOY_TOKEN"
+	// G101 reads the string and sees a credential. It is the NAME of the
+	// variable that carries one; the value is read from the environment and
+	// never appears in this file — config_test.go holds that as its own test.
+	EnvGitHubToken     = "GITHUB_TOKEN" //nolint:gosec // G101: a variable name, not a secret
+	EnvGitHubLogin     = "GITHUB_LOGIN"
+	EnvMailTransport   = "MAIL_TRANSPORT"
+	EnvSMTPUsername    = "SMTP_USERNAME"
+	EnvSMTPPassword    = "SMTP_PASSWORD"
+	EnvMailTo          = "MAIL_TO"
+	EnvContactIPPepper = "CONTACT_IP_PEPPER"
+	EnvProbeToken      = "INTERNAL_PROBE_TOKEN"
+	EnvDeployToken     = "INTERNAL_DEPLOY_TOKEN"
 )
 
 // The two answers CONTRIBUTIONS_TRANSPORT accepts.
@@ -311,8 +315,8 @@ func Load() (Config, error) {
 		ShutdownGrace:  l.duration(EnvShutdownGrace, defaultShutdownGrace),
 
 		DB: DB{
-			MaxConns:         int32(l.positive(EnvDBMaxConns, defaultMaxConns)),
-			MinConns:         int32(l.atLeastZero(EnvDBMinConns, defaultMinConns)),
+			MaxConns:         l.positiveInt32(EnvDBMaxConns, defaultMaxConns),
+			MinConns:         l.atLeastZeroInt32(EnvDBMinConns, defaultMinConns),
 			StatementTimeout: l.duration(EnvStatementTimeout, defaultStatementTimeout),
 			LockTimeout:      l.duration(EnvLockTimeout, defaultLockTimeout),
 			IdleTxTimeout:    l.duration(EnvIdleTxTimeout, defaultIdleTxTimeout),
@@ -642,13 +646,53 @@ func (l *loader) positive(key string, def int) int {
 	return n
 }
 
-func (l *loader) atLeastZero(key string, def int) int {
-	n, ok := l.number(key, def)
-	if ok && n < 0 {
+// positiveInt32 and atLeastZeroInt32 exist because the pool fields are int32 and
+// the environment is not.
+//
+// The version this replaces was `int32(l.positive(...))`, and the hole it left
+// is narrow but silent: `positive` rejects zero and below, so DB_MAX_CONNS=0 was
+// caught — but 4294967306 was not. It is positive, it survives the check, and
+// the conversion wraps it to 10. A number nobody typed, accepted as if it had
+// been, in a loader whose whole promise (ADR 0014) is that the configuration is
+// completely validated before anything starts.
+//
+// Refusing the range here rather than converting afterwards is also why the
+// conversion is gone: there is nothing left for gosec's G115 to warn about,
+// because the value cannot be out of range by the time it is one.
+//
+// internal/intake does the same thing for the same reason and calls it
+// checkInt32 — there the source is a probe report, here it is an environment
+// variable, and both widen to a 64-bit int on the way in.
+func (l *loader) positiveInt32(key string, def int32) int32 {
+	n, ok := l.number(key, int(def))
+	if !ok {
+		return def
+	}
+	if n <= 0 {
+		l.fail("%s is %d — want a positive number", key, n)
+		return def
+	}
+	if n > math.MaxInt32 {
+		l.fail("%s is %d — want at most %d", key, n, math.MaxInt32)
+		return def
+	}
+	return int32(n)
+}
+
+func (l *loader) atLeastZeroInt32(key string, def int32) int32 {
+	n, ok := l.number(key, int(def))
+	if !ok {
+		return def
+	}
+	if n < 0 {
 		l.fail("%s is %d — want zero or more", key, n)
 		return def
 	}
-	return n
+	if n > math.MaxInt32 {
+		l.fail("%s is %d — want at most %d", key, n, math.MaxInt32)
+		return def
+	}
+	return int32(n)
 }
 
 func (l *loader) number(key string, def int) (value int, parsed bool) {

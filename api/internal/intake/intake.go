@@ -110,6 +110,7 @@ func (h *Handler) ReportProbe(ctx context.Context, req httpx.ReportProbeRequestO
 		Up:         report.Up,
 	}
 	if report.LatencyMs != nil {
+		//nolint:gosec // G115: validateProbe ran checkInt32 on this above
 		latency := int32(*report.LatencyMs)
 		arg.LatencyMs = &latency
 	}
@@ -192,8 +193,9 @@ func (h *Handler) ReportDeploy(ctx context.Context, req httpx.ReportDeployReques
 	}
 
 	rows, err := h.queries.InsertDeploy(ctx, store.InsertDeployParams{
-		SystemID:    systemID,
-		Sha:         report.Sha,
+		SystemID: systemID,
+		Sha:      report.Sha,
+		//nolint:gosec // G115: validateDeploy ran checkInt32 on this above
 		DurationSec: int32(report.DurationSec),
 		Result:      string(report.Result),
 		DeployedAt:  timestamp(report.At),

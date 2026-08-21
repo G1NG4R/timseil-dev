@@ -55,7 +55,7 @@ func TestServedSpecParses(t *testing.T) {
 		OpenAPI string                 `yaml:"openapi"`
 		Paths   map[string]interface{} `yaml:"paths"`
 	}
-	if err := yaml.Unmarshal([]byte(get(t, "/api/openapi.yaml", nil).Body.String()), &doc); err != nil {
+	if err := yaml.Unmarshal(get(t, "/api/openapi.yaml", nil).Body.Bytes(), &doc); err != nil {
 		t.Fatalf("served document does not parse: %v", err)
 	}
 	if !strings.HasPrefix(doc.OpenAPI, "3.1") {
@@ -111,7 +111,11 @@ func TestDocsPageSendsAClosedContentSecurityPolicy(t *testing.T) {
 	}
 	// 'unsafe-inline' for scripts would let anything injected into the page run.
 	// The bootstrap is a constant, so it travels as a hash instead.
-	scriptSrc, _, _ := strings.Cut(csp[strings.Index(csp, "script-src"):], ";")
+	_, after, found := strings.Cut(csp, "script-src")
+	if !found {
+		t.Fatalf("CSP has no script-src at all:\n%s", csp)
+	}
+	scriptSrc, _, _ := strings.Cut(after, ";")
 	if strings.Contains(scriptSrc, "unsafe-inline") {
 		t.Fatalf("script-src allows unsafe-inline: %s", scriptSrc)
 	}

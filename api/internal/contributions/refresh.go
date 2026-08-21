@@ -266,7 +266,8 @@ func (r *Refresher) write(ctx context.Context, result calendar) error {
 	}
 
 	return r.queries.UpsertContributions(ctx, store.UpsertContributionsParams{
-		Login:              r.login,
+		Login: r.login,
+		//nolint:gosec // G115: github.go bounds total to [0, MaxInt32] before this
 		TotalContributions: int32(result.total),
 		Weeks:              weeks,
 	})
