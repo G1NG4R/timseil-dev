@@ -145,6 +145,59 @@ check-contract: ## Validate the OpenAPI contract and check for codegen drift
 		}; \
 		printf '  ✓ no codegen drift\n'
 
+# ---------------------------------------------------------------- bootstrap
+#
+# The two steps a fresh clone needs before `make check` and `make dev` work,
+# and both were missing from the README quickstart until the check that runs it
+# said so.
+
+.PHONY: deps
+deps: ## Install the web dependencies a fresh clone needs
+	@printf 'deps\n'
+	@cd web && npm ci
+
+# What .env.example deliberately does not carry, filled in for a local run.
+#
+# The file is committed, so it cannot hold secrets and it cannot hold a personal
+# access token. The api refuses to start without either (C1), and that refusal
+# is correct and stays. What was missing is one command that satisfies it,
+# instead of four things a reader has to be told about one at a time — the
+# quickstart said `cp .env.example .env` and then `make dev`, and `make dev`
+# could never have worked.
+#
+# Throwaway values: they authenticate nothing that outlives this machine.
+# Production values come from Dokploy.
+#
+# Idempotent. A variable that already has a value is left alone, so running this
+# twice does not rotate tokens under a running stack.
+REQUIRED_SECRETS := CONTACT_IP_PEPPER INTERNAL_PROBE_TOKEN INTERNAL_DEPLOY_TOKEN
+
+.PHONY: env-dev
+env-dev: ## Fill .env with what a local run needs and .env.example cannot carry
+	@printf 'env-dev\n'
+	@[ -f .env ] || { printf '  ✗ no .env — run: cp .env.example .env\n'; exit 1; }
+	@for k in $(REQUIRED_SECRETS); do \
+		if grep -qE "^$$k=.+" .env; then \
+			printf '  – %s already set, left alone\n' "$$k"; \
+		else \
+			sed -i.bak "/^$$k=/d" .env && rm -f .env.bak; \
+			printf '%s=%s\n' "$$k" "$$(openssl rand -hex 32)" >> .env; \
+			printf '  ✓ %s generated\n' "$$k"; \
+		fi; \
+	done
+# The contribution calendar is the one thing a stranger cannot have: it needs a
+# personal access token, and there is no throwaway version of somebody else's
+# GitHub account. The transport switches off instead, which is a documented
+# state (ADR 0020) and not a workaround — the api starts, every endpoint answers,
+# and /api/contributions serves whatever the cache holds.
+	@if grep -qE '^GITHUB_TOKEN=.+' .env; then \
+		printf '  – GITHUB_TOKEN is set, leaving the calendar on\n'; \
+	else \
+		sed -i.bak "/^CONTRIBUTIONS_TRANSPORT=/d" .env && rm -f .env.bak; \
+		printf 'CONTRIBUTIONS_TRANSPORT=off\n' >> .env; \
+		printf '  ✓ no GITHUB_TOKEN, so CONTRIBUTIONS_TRANSPORT=off — the calendar is never refreshed\n'; \
+	fi
+
 # ------------------------------------------------------------------- dev
 
 COMPOSE_DEV := docker compose -f compose.dev.yaml

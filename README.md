@@ -122,8 +122,10 @@ POSIX shell.
 git clone https://github.com/G1NG4R/timseil-dev.git
 cd timseil-dev
 git config core.hooksPath .githooks   # arms the commit and push hooks
+make deps                             # web dependencies; make check needs them
 make check                            # every check that applies today
 cp .env.example .env                  # local values, none of them secret
+make env-dev                          # what .env.example cannot carry: secrets, no PAT
 make dev                              # postgres + migrations + seed + api + web
 make design                           # design handoff on http://localhost:4000
 make images && make check-images      # the two images that actually ship
