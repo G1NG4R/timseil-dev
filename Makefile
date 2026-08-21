@@ -245,6 +245,24 @@ seed: ## Write the curated content — systems, modules, tracks, evidence
 
 # The acceptance criterion of this phase, and it needs a real Postgres: three
 # up/down/up cycles plus every invariant proven against its broken case.
+# ------------------------------------------------------------- scanners
+#
+# Neither of these is in `make check`, and they are outside it for two
+# different reasons — ADR 0031 has the rule.
+#
+# check-secrets is deterministic but needs a container, like check-db.
+# check-vuln is the other case: it can turn red on a tree nobody touched,
+# because somebody else published a CVE. A gate in the check chain that breaks
+# without a code change is a gate people learn to run `make check` around.
+#
+# Both are one command in CI and on a laptop, which is the part of ADR 0030
+# that does not bend.
+
+.PHONY: check-secrets
+check-secrets: ## Plant a key, prove gitleaks rejects it, then scan this history
+	@printf 'secrets\n'
+	@tools/check-secrets.sh . $(RANGE)
+
 #
 # Behind the `db` build tag rather than an env guard with t.Skip. With the tag
 # the tests do not appear in `go test ./...` at all, so there is no skip line to

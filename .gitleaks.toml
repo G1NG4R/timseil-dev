@@ -1,0 +1,48 @@
+# The secret scanner's configuration, which is almost entirely "use the
+# defaults" — and one allowlist with two values in it.
+#
+# What the first full-history run actually found (40 commits, 4.3 MB, five
+# findings, all from commit fde29534 in C7): the same two synthetic tokens
+# repeated across three test files. Nothing else. The things this file was
+# expected to have to excuse — `dev_only_not_a_secret` throughout
+# .env.example, `github_pat_not_a_real_token_…`, `ghp_not_a_real_token`, the
+# `0123456789abcdef…` pepper — were never flagged, because the default rules
+# weigh entropy and these have almost none. The allowlist is therefore two
+# lines instead of the dozen that were planned for it.
+#
+# **No rotation was needed.** That was the open question before the first run,
+# and it is worth recording that the answer was measured rather than assumed.
+#
+# Build plan E2, ADR 0031.
+
+title = "timseil.dev"
+
+[extend]
+# Every rule gitleaks ships. Nothing is disabled: a disabled rule is a class of
+# secret this repository has decided it does not care about, and there is no
+# such class.
+useDefault = true
+
+[[allowlists]]
+description = """
+Two synthetic tokens, and only where they belong.
+
+They are the fixtures that let the internal endpoints be tested at all: ADR
+0023 gave probe and deploy separate tokens precisely so that a test can prove
+one does not open the other, and proving it needs two literal values that
+differ. They are sequential nibbles — 0f1e2d3c4b5a6978… counts down while
+a1b2c3d4e5f60718… counts up — which is what makes them readable as fixtures
+at a glance and worthless as credentials.
+
+The condition is AND on purpose. These two values are excused ONLY inside test
+files: the same string in api/ or in a compose file is still a finding, and any
+OTHER token in a test file is still a finding. An allowlist that excused
+_test.go wholesale would hide the one mistake most likely to happen — a real
+token pasted into a test while debugging.
+"""
+condition = "AND"
+paths = ['''_test\.go$''']
+regexes = [
+  '''0f1e2d3c4b5a69788796a5b4c3d2e1f0''',
+  '''a1b2c3d4e5f60718293a4b5c6d7e8f90''',
+]
