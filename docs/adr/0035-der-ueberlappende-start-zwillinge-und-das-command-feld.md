@@ -125,6 +125,77 @@ Sekunde Rand. Die beiden Zahlen sind gegeneinander gewählt.
 
 **Danach: drei Läufe, `110 Anfragen je Pfad, 110×200`, kein Ausschlag.**
 
+### 6. Jeder Container definiert, worauf er zeigt
+
+**Nachgetragen am 22.08.2026, nach der ersten Produktionsmessung.**
+
+Traefiks Docker-Provider liest Middlewares aus Container-Labels. Eine Middleware
+existiert also nur, solange ein Container mit ihrem Label existiert — und ein
+Router, der eine nennt, die niemand definiert, **geht in Fehler** und der Pfad
+antwortet mit Traefiks Standard-404, während jeder Container gesund ist.
+
+Bis E5b lagen `timseil-www` und `timseil-retry` allein an `web`, während der
+api-Router sie nannte. Fällt web aus und api nicht — ein gescheiterter
+web-Deploy, eine Neustartschleife, ein OOM-Kill —, antwortet `/api` 404, und die
+Ursache ist ein Label zweihundert Zeilen weiter.
+
+Beide sind jetzt an **beiden** Diensten definiert, wortgleich.
+`make check-compose` hält es: wer nennt, definiert — und wo ein Name zweimal
+vorkommt, müssen die Definitionen übereinstimmen. Die zweite Hälfte ist die
+wichtigere, siehe unten.
+
+## Die gemessene Grenze — ein Deploy, der ein Traefik-Label ändert
+
+**Der erste Produktions-Deploy dieser Stufe hat die Abnahme verfehlt**, und was
+er stattdessen gezeigt hat, gehört hierher, weil es die Reichweite dieser
+Entscheidung beschreibt.
+
+22.08.2026, 19:19 UTC, `make witness --until-restart`, von außen:
+
+| | `/` | `/api/health` |
+|---|---|---|
+| `200` | 420 | 411 |
+| `404` | 1 | **10** |
+
+Die Kette selbst hat getragen — `verify-deploy` sah den Zwilling
+(`19:19:19.364`), `/api/health` nennt danach einen anderen Prozess
+(`19:19:34.596`). Traefiks Log sagt, was gefehlt hat:
+
+```
+ERR HTTP service defined multiple times with different configurations
+    configuration=["web-timseil-3eca0d87…","web2-timseil-d25f44a2…"]
+    serviceName=timseil-web
+ERR error="the service \"timseil-web@docker\" does not exist"
+```
+
+12× für `timseil-api`, 4× für `timseil-web`, im Labor gegen den echten
+Vor-Merge-Stand reproduziert.
+
+**Der Grund ist der überlappende Start selbst.** Genau dieser Deploy hat acht
+Traefik-Labels geändert — die Healthchecks und `timseil-retry` aus §4. Der alte
+Container trug die alten, sein Zwilling die neuen: **derselbe Router- und
+Service-Name, zwei verschiedene Konfigurationen.** Traefik verwirft dann beide.
+
+Damit steht die Reichweite fest, gemessen in beide Richtungen:
+
+| Ein Deploy ändert … | Ergebnis |
+|---|---|
+| nur das Image | **sauber** — drei Läufe, `100 requests, 100×200` je Pfad |
+| ein Traefik-Label | ein Trichter, so lang wie der Rollout braucht |
+
+**Das wird benannt statt behoben.** Behoben wäre es nur mit eigenen
+Router-Namen für die Zwillinge, und `extends` kann geerbte Labels überschreiben,
+aber nicht entfernen — die Zwillinge definierten den Basis-Router weiter mit.
+Es ginge nur, indem die Router-Labels aus `compose.yaml` in eine eigene Datei
+wandern, die die Zwillinge nicht erben; das zerlegt die Produktions-Topologie
+auf zwei Dateien und baut `check-compose` Regel 9 um. Der Preis steht nicht
+gegen den Nutzen: Label-Änderungen sind selten, und die Fallstudie kann eine
+Grenze nennen, die gemessen ist.
+
+**Für die Fallstudie heißt das:** „kein Besucher sieht einen Fehler, solange ein
+Deploy die Routing-Labels nicht anfasst" — und die Zahl für den anderen Fall
+steht daneben.
+
 ## Konsequenzen
 
 - **Die Abnahme von E5 ist im Labor erfüllt** — keine Antwort, die nicht 200
@@ -168,6 +239,12 @@ ist **hier** unbedenklich und nur wegen der Reihenfolge: wenn die Pause vorbei
 ist, hat der Healthcheck sekundenlang 503 gesagt und Traefik schickt nichts mehr
 her. Die Pause macht den harten Ausgang harmlos — ohne sie wäre der Tausch
 schlecht.
+
+**Eine Middleware steht jetzt zweimal in der Datei.** Der Preis von §6: zwei
+Stellen für einen Wert, gehalten von einer Prüfung statt von Disziplin. Ohne die
+zweite Hälfte dieser Prüfung wäre die Reparatur ein neuer stiller Fehler —
+zwei Fassungen eines Namens sind schlimmer als eine fehlende, weil Traefik dann
+eine nimmt und nicht sagt, welche.
 
 **Zwei Dienste mehr, die niemand im Panel sieht.** `api2` und `web2` erscheinen
 zwischen den Deploys nirgends. Wer den Stack von Hand ansieht, findet sie nur,

@@ -1019,7 +1019,9 @@ docker compose rm -s -f api2 web2
 
 **Die Abnahme zählt Nicht-200, nicht 5xx** — und das ist seit E4b eine Korrektur, keine Formulierungsfrage. Am 22.08.2026 während des Rollback-Drills mitgeschrieben, eine Anfrage je Sekunde auf `/`: **rund zehn Sekunden je Container-Wechsel, und zwar 404.** Traefiks Router hängt an den Labels des Containers; ist der Container weg, ist der Router weg, und es antwortet die Standard-404. Eine Abnahme, die 5xx zählt, hätte diesen Zustand durchgewinkt. Eine 404 ist dabei die unfreundlichere der beiden Antworten: eine 502 lädt zum Wiederkommen ein, eine 404 sagt einem Crawler, die Adresse gebe es nicht.
 
-**Im Labor erreicht, drei Läufe, 22.08.2026:** `110 requests, 110×200` auf beiden Pfaden, kein Ausschlag. Die Grundlinie auf derselben Anlage waren 13×`404` auf `/` und 8×`404` auf `/api/health`. Die Zahlen und ihr Zustandekommen stehen in `docs/runbooks/compose.md`.
+**Im Labor erreicht, drei Läufe, 22.08.2026:** `110 requests, 110×200` auf beiden Pfaden, kein Ausschlag. Die Grundlinie auf derselben Anlage waren 13×`404` auf `/` und 8×`404` auf `/api/health`.
+
+**In Produktion beim ersten Versuch verfehlt**, und das gehört genauso hierher: 10×`404` auf `/api/health`, 1× auf `/`. Nicht die Kette hat versagt — der Deploy änderte acht Traefik-Labels, und dann beschreiben der alte Container und sein Zwilling denselben Router unter demselben Namen verschieden. Traefik verwirft in dem Fall **beide**. Die Grenze ist damit gemessen: ein Deploy, der nur das Image tauscht, ist sauber; einer, der ein Routing-Label ändert, kostet einen Trichter. ADR 0035. Die Zahlen und ihr Zustandekommen stehen in `docs/runbooks/compose.md`.
 
 Falls es gegen Produktion nicht sauber gelingt: dann steht in der Fallstudie die **gemessene** geplante Downtime pro Deploy statt „Zero-Downtime". Die Zahl muss stimmen — und „~3 s" stand hier, bevor jemand nachgemessen hat.
 
