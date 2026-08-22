@@ -12,7 +12,42 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 22.08.2026, nach dem ersten Produktions-Deploy von E5b
+## Wo wir stehen — 22.08.2026, E5b abgenommen
+
+**Die Abnahme ist erfüllt, gegen Produktion.** 20:07:44–20:13:16 UTC,
+`make witness --until-restart`, **vor** dem Merge gestartet, von außen über den
+öffentlichen Namen:
+
+```
+/               333 requests, 333×200
+/api/health     333 requests, 333×200
+
+  ✓ every answer was 200
+```
+
+Der Deploy darin: `8e4e444`, `report ok … 222s`. Ein echter Tausch —
+`verify-deploy` sah einen Prozess von `20:11:34.485`, `/api/health` nennt
+danach `20:11:55.656`. Zwei Container haben nacheinander bedient.
+
+**Damit ist die Kette von E5b in Produktion belegt** und nicht nur im Labor:
+zwei Schattendienste tragen die Router, während `api` und `web` neu angelegt
+werden; die vier Schritte laufen in Dokploys Command-Feld; `SHUTDOWN_DELAY` und
+der Traefik-Healthcheck nehmen das Backend aus dem Pool, bevor seine Adresse
+verschwindet.
+
+**Was dabei zweimal schiefgegangen ist, steht unten unter „Gefunden" und bleibt
+stehen:** der erste Produktions-Deploy hat die Abnahme verfehlt, und die Grenze,
+die dabei sichtbar wurde, ist benannt statt weggebaut (ADR 0035).
+
+**Für die Fallstudie:** BUILD + DEPLOY = **222 s**, und der Satz daneben lautet
+nicht „Zero-Downtime", sondern „kein Besucher sieht einen Fehler, solange ein
+Deploy die Routing-Labels nicht anfasst". Beide Zahlen sind gemessen.
+
+**Offen:** die Triage der Stufe. Und `release-please` ist **E5c**.
+
+---
+
+## Vorher — der erste Produktions-Deploy von E5b
 
 **E5b ist gemergt** ([#154](https://github.com/G1NG4R/timseil-dev/pull/154),
 `153eb80`), **und die Abnahme ist verfehlt.** Gemessen, 19:19 UTC, von außen:
@@ -210,6 +245,7 @@ Vorherige Triage: nach E4b, 22.08.2026 — siehe oben.
 |---|---|---|---|
 | 2026-08-22 | E5b | **`web2` erreicht die API über `http://api:8080`, und in Schritt 3 ist `api` kurz weg.** Compose gibt jedem Dienst seinen eigenen Netz-Alias, der Zwilling heißt also `api2` und deckt den Namen `api` nicht mit ab. Solange keine Seite server-seitig aus der API liest, kostet das nichts. **Ab Stufe G kostet es** — dann rendert `web2` in genau dem Fenster, in dem sein Gegenüber neu angelegt wird, und ein Deploy erzeugt 500er statt 404er | offen — **Arbeit von G**, hier nur benannt |
 | 2026-08-22 | E5b | **Der Zeuge sieht im Deploy-Fenster zwei Backends und liest `.startedAt` von beiden.** Während Schritt 2 und 3 antworten alter und neuer Container abwechselnd, `--until-restart` sieht also einen Wechsel, sobald der Zwilling oben ist. Das ist hier zufällig richtig — ein neuer Prozess *antwortet* ja — aber die Begründung im Kopf von `witness.sh` beschreibt einen Fall mit genau einem Backend. Nachlesen, ob der Satz noch stimmt, bevor jemand sich darauf verlässt | offen |
+| 2026-08-22 | E5b | **`Closes #N` im PR-Text schließt das Issue beim Merge — die Abnahme dieses Projekts wird aber danach gemessen.** #143 und #65 gingen um 19:15 zu, drei Stunden bevor ein Deploy sie verdient hatte; die Messung an diesem Merge war rot. Der grüne Haken stand über einer Messung, die nicht stattgefunden hatte — genau die Form, gegen die `witness.sh`, `deploy-gate.sh` und `verify-deploy.sh` gebaut sind. Beide tragen die echte Messung jetzt als Kommentar | offen — Regel für PR-Texte: `Closes #N` nur, wenn der Merge selbst die Abnahme ist, sonst „Measured in #N" und von Hand schließen |
 | 2026-08-22 | E5b | **Ein Deploy, der ein Traefik-Label ändert, verliert den Router.** Alter Container und Zwilling definieren denselben Namen mit verschiedener Konfiguration; Traefik meldet `defined multiple times with different configurations` und verwirft **beide**. In Produktion gemessen (10×`404`) und im Labor gegen den echten Vor-Merge-Stand reproduziert (11× / 7×). Wegzubauen wäre es nur mit eigenen Router-Namen für die Zwillinge — `extends` kann geerbte Labels überschreiben, aber nicht entfernen, also müssten die Router-Labels in eine eigene Datei, die die Zwillinge nicht erben | **bewusst benannt statt behoben** — ADR 0035, „Die gemessene Grenze". Neu aufmachen, wenn Label-Änderungen häufig werden |
 | 2026-08-22 | E5b | **Das Labor hat den Übergang nie abgebildet.** Es tauschte immer neu-gegen-neu; der Fall alt-gegen-neu — der einzige, den ein echter Merge fährt — kam nicht vor. Der erste Versuch, ihn nachzustellen, war zusätzlich wertlos, weil die Grundlinie nicht geprüft wurde: `/api/health` war schon vor dem Start 404 | **erledigt** — der Übergangslauf steht als Schritt im Runbook, mit der Grundlinie als Vorbedingung |
 | 2026-08-22 | E5b | **Ein Router nannte zwei Middlewares, die nur ein anderer Dienst definierte.** `timseil-www` (seit D3) und `timseil-retry` (seit E5b) lagen allein an `web`, während der api-Router sie nannte. Fällt web aus und api nicht, antwortet `/api` 404, während alles gesund ist. Nicht die Ursache der Produktionsmessung, aber dieselbe Familie | **erledigt** — beide an beiden Diensten, plus `check-compose`: wer nennt, definiert; und zwei Definitionen eines Namens müssen übereinstimmen |
