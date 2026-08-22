@@ -12,7 +12,46 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 22.08.2026, E5b abgenommen
+## Wo wir stehen — 22.08.2026, Stufe E ist fertig
+
+**E5c ist abgenommen, und damit die ganze Stufe E.** `v0.1.0` steht.
+
+```
+/               422 requests, 422×200
+/api/health     422 requests, 422×200
+
+  ✓ every answer was 200
+```
+
+Zeuge 22:01:12–22:08:14 UTC, **vor** dem Merge gestartet, quer über den Deploy
+von `99281cf` (`report ok … 233 s`).
+
+| Geprüft | Ergebnis |
+|---|---|
+| Tag auf origin | `refs/tags/v0.1.0`, annotiert, auf `99281cf` |
+| GitHub-Release | 22:06:06, Changelog aus den Commits |
+| Tagger | **G1NG4R** — kein Bot, kein Werkzeugname |
+| `/api/health` · `/api/badge/version` | `v0.1.0` statt einer Kurz-SHA |
+
+**Der erste Versuch ist rot geworden, und an der richtigen Stelle.** `git tag -a`
+verlangt einen Tagger, ein Runner hat keinen: `fatal: empty ident name`. Der
+Schritt liegt **vor** `make images`, also war nichts gebaut, nichts gepusht,
+nichts signiert — nachgesehen statt angenommen: Produktion unverändert, **0**
+Tags auf origin, kein Release. Die Reihenfolge, um die E5c gebaut wurde, hat bei
+ihrer ersten Berührung mit der Wirklichkeit gehalten.
+
+**Damit sind drei der vier heute rotierten Werte bewiesen** — `GITHUB_TOKEN`
+(der Refresher hat GitHub erreicht), `SMTP_PASSWORD` (die Mail kam an),
+`INTERNAL_DEPLOY_TOKEN` (dieser Deploy-Report). `INTERNAL_PROBE_TOKEN` erst mit
+F4, dort wird er benutzt.
+
+**Als Nächstes: Stufe F**, und sie beginnt mit F1 (strukturierte Logs und
+Korrelation). Die Datenbank-Rotation liegt weiter auf L5, mit Auslöser statt
+Datum in der lokalen Datei.
+
+---
+
+## Vorher — 22.08.2026, E5b abgenommen
 
 **Die Abnahme ist erfüllt, gegen Produktion.** 20:07:44–20:13:16 UTC,
 `make witness --until-restart`, **vor** dem Merge gestartet, von außen über den
@@ -163,6 +202,28 @@ Abhängigkeit kostet **null** — jetzt an diesem Graphen gemessen statt aus E4a
 
 ---
 
+**Triage nach E5c, 22.08.2026.** Vier Funde, **alle vier in der Stufe
+erledigt**, keiner als Issue. Der Abschnitt bleibt leer.
+
+- **`release-please` ist an diesem Repository nicht benutzbar.** Es arbeitet über
+  einen Release-PR, und ein PR vom eingebauten `GITHUB_TOKEN` löst keine
+  `pull_request`-Workflows aus — kein erforderlicher Kontext meldet, mit
+  `enforce_admins: true` ist er nicht mergebar. Steht als Kontext in ADR 0036;
+  kein Ticket, weil es nichts zu tun gibt, sondern etwas zu wissen.
+- **`git tag -a` braucht einen Tagger, ein Runner hat keinen.** Lokal unsichtbar,
+  weil diese Maschine eine Identität hat. Erledigt: der Tag übernimmt den Autor
+  des Commits, den er benennt, und der Selbsttest schiebt `GIT_CONFIG_GLOBAL`
+  und `GIT_CONFIG_SYSTEM` beiseite, damit er den Fall auch sieht.
+- **Eine laufende Bewertung verschluckte den höheren Sprung.** Ein frühes `fix:`
+  nagelte die Antwort auf `patch` fest, ein späteres `feat:` änderte nichts —
+  ein Release, das untertreibt, was drinsteckt. Erledigt, drei Flags und eine
+  Entscheidung am Ende.
+- **`--publish` las den Tag neu, den `--tag` gerade gesetzt hatte.** Der Bereich
+  wäre leer gewesen, der Text des allerersten Releases also blank. Erledigt: der
+  Bereich ist ein Argument statt einer globalen Variablen.
+
+Die letzten drei hat der Selbsttest gefunden, nicht das Lesen.
+
 **Triage nach E5b, 22.08.2026.** 15 Zeilen unter „Gefunden" →
 **9 erledigt**, **2 als Issue**, **3 bewusst verworfen**, **1 als Regel
 aufgeschrieben**. Der Abschnitt ist leer.
@@ -296,7 +357,7 @@ der Grund, warum `--until-restart` existiert.
 
 ## Gefunden — Bug oder Unklarheit
 
-Vorherige Triage: nach E5b, 22.08.2026 — siehe oben.
+Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
