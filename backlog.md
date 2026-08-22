@@ -14,89 +14,80 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ## Wo wir stehen — 22.08.2026, nach E4b
 
-**E4b ist gebaut, noch nicht gemergt.** Alle fünf Punkte sind durch, dazu zwei
-Reparaturen, die die Stufe selbst gefunden hat.
+**E4b ist gemergt** ([#142](https://github.com/G1NG4R/timseil-dev/pull/142), `ae39e04`)
+**und hat sich selbst deployt.** Produktion läuft `ae39e04`, `report ok … 226s`,
+`make check-deployed` grün.
 
 **Der Rollback ist provoziert** — 13:53 UTC, gegen die echte Produktion.
-Deployt `sha-581f5c0`, verifiziert gegen `21de41d` (nie gebaut, kann nie
-antworten). Sechzig Sekunden liefen ab, der Rollback auf `sha-ae939d4` griff,
-Exit 1, 84 s Wanduhr, keine Zeile in `deploys`. Damit ist Bauplan Zeile 1127
-erfüllt. Transkript im Dokploy-Runbook unter „Der Drill", Begründung in ADR 0034.
+Deployt `sha-581f5c0`, verifiziert gegen einen Commit, den nie jemand gebaut
+hat. Die sechzig Sekunden liefen ab, der Rollback griff, Exit 1, 84 s, keine
+Zeile in `deploys`. Bauplan Zeile 1127 ist damit erfüllt. Transkript im
+Dokploy-Runbook, Begründung in ADR 0034.
 
 **Der erste Versuch war grün nach drei Sekunden**, und das war der wertvollste
 Teil des Tages: nicht der Drill war falsch, sondern der Verify hatte eine Lücke.
-Dokploy antwortet auf *angenommen*, nicht auf *gewechselt*, also befragt das
-erste Sample den alten Prozess. Bei jedem Redeploy desselben Tags meldet das
-Gate seitdem Erfolg für einen Deploy, der nicht stattgefunden hat. Repariert als
-fünfte Verify-Bedingung — `startedAt` von vorher gegen `startedAt` von jetzt.
+Repariert als fünfte Bedingung.
 
-**Was neu ist:** `make check-deployed` (neun Behauptungen, acht von überall, die
-neunte nur auf dem Host und laut übersprungen statt still), `tools/registry.sh`,
-`tools/prune-registry.sh` mit der Aufbewahrungsregel und dem `retention`-Job,
-`DEPLOY_DRILL` in der Gate, `deploy` hängt an `check` und `db`, und die Abnahme
-„0 B Build-Cache" ist an sechs Stellen durch den Digest-Vergleich ersetzt.
-`sha-3890180` ist gelöscht, der README-Absatz umgeschrieben.
-
-**Offen, bevor die Stufe zu ist:**
-
-- **Die Triage.** 27 Zeilen unter „Gefunden", davon vieles älter als diese
-  Stufe. Muss vor dem Merge durch.
-- **Die Aufbewahrung ist unscharf.** `retention` druckt montags den Plan und
-  löscht nichts. Zwei Wochen Trockenläufe, dann ein Beweis gegen ein
-  Wegwerf-Paket, dann `GHCR_PRUNE_ENABLED`. Der Lösch-Pfad des Werkzeugs ist
-  **nie ausgeführt worden** — deshalb ist `sha-3890180` von Hand gelöscht
-  worden und nicht mit ihm.
-- **Die gemessene Wartezeit** von `needs: [check, db, publish]` steht noch nicht
-  im ADR-Beleg; sie kommt aus dem ersten Merge.
-
-Nicht E4: [#139](https://github.com/G1NG4R/timseil-dev/issues/139) und
-[#140](https://github.com/G1NG4R/timseil-dev/issues/140).
+**Gemessen beim ersten Merge mit `needs: [check, db, publish]`:** `db` war 77 s
+vor dem Start des Deploys fertig, `check` 57 s, `publish` 3 s. Die neue
+Abhängigkeit kostet **null** — jetzt an diesem Graphen gemessen statt aus E4a
+übernommen.
 
 ---
 
-**Letzte Triage: nach E2, 21.08.2026.** 15 Zeilen → **11 in der Stufe selbst
-erledigt**, **2 als Kommentar an bestehende Issues**, **1 bewusst verworfen**,
-**1 als Abnahme dieser Phase offen**.
+**Triage nach E4b, 22.08.2026.** 27 Zeilen unter „Gefunden" →
+**13 erledigt**, **7 als Issue**, **6 an bestehende Issues oder bewusst
+verworfen**, **1 lokal**. Der Abschnitt ist leer.
 
-Stufe E2 lief über zwei Pull Requests — E2a (#126, Scanner und Lieferkette),
-E2b (Doku-Drift und die Prüfungen aus den Issues) — plus einen Chore-PR (#129),
-den die erste Dependabot-Welle nötig gemacht hat.
+**Die sieben neuen Issues:**
 
-**Was die Scanner in ihrer ersten Woche gefunden haben**, weil es der Grund für
-die Stufe ist und nicht als Fußnote taugt:
-
-| Fund | Wo |
+| Issue | Was |
 |---|---|
-| `DB_MAX_CONNS` über 2³² wurde still auf **10** gekürzt statt abgelehnt | golangci-lint, ADR 0031 §3 |
-| `totalContributions` prüfte Unter- und Obergrenze an zwei verschiedenen Orten | dito |
-| `mail` verkettete einen Fehler mit `%v` — bricht `errors.Is` | dito |
-| Eine CSP-Assertion wäre mit Slice-Bounds paniert statt zu scheitern | dito |
-| **7 HIGH/CRITICAL im web-Image**, alle in npms eigenen Bundle-Abhängigkeiten | Trivy, ADR 0031 §9 |
-| **21 erreichbare stdlib-Schwachstellen**, weil `go.mod` `1.26.0` sagte und das Image auf `1.26.6` baute | govulncheck, ADR 0031 §Belege |
-| Dependabots erste Welle bot drei verbotene Majors an | ADR 0031 §8, PR #129 |
-| `go.sum` fehlten **49** Prüfsummen | `go mod tidy -diff`, ADR 0032 §Belege |
-| Ein toter ADR-Verweis, zwanzig Minuten alt, von mir | `check-adrs`, ADR 0032 §Was das kostet |
+| [#143](https://github.com/G1NG4R/timseil-dev/issues/143) | Jeder Container-Wechsel liefert zehn Sekunden `404` — beim Drill gemessen, trifft jeden Merge |
+| [#144](https://github.com/G1NG4R/timseil-dev/issues/144) | `internal/buildinfo` hat keine Testdatei — und drei Prüfungen lesen aus ihm |
+| [#145](https://github.com/G1NG4R/timseil-dev/issues/145) | ~200 alte `rejects` im Selftest können aus dem falschen Grund grün sein |
+| [#146](https://github.com/G1NG4R/timseil-dev/issues/146) | „nur 22, 80, 443" stimmt nicht — Regel oder Host muss sich bewegen, vor L3 |
+| [#147](https://github.com/G1NG4R/timseil-dev/issues/147) | Der Host trägt mehr als diesen Stack, F2 und ADR 0027 planen anders |
+| [#148](https://github.com/G1NG4R/timseil-dev/issues/148) | Dokploy heben, bevor L3 das Panel schließt |
+| [#149](https://github.com/G1NG4R/timseil-dev/issues/149) | Ein GHCR-Paket zu verknüpfen hat keinen Klickweg |
 
-**Die zwei, die an bestehende Issues gingen:**
+**Bewusst verworfen, mit Begründung:**
 
-| Issue | Was dazukam |
-|---|---|
-| [#112](https://github.com/G1NG4R/timseil-dev/issues/112) | Die OCI-Labels aus E2a veröffentlichen den Backup-Tag jetzt als `image.version` auf **jedem** Image. Vorher eine API-Antwort, ab E4 ein Artefakt in GHCR — **fällig vor E4**, nicht danach |
-| [#45](https://github.com/G1NG4R/timseil-dev/issues/45) | Beide Images tragen `org.opencontainers.image.licenses="NOASSERTION"`. Sobald die Lizenzfrage entschieden ist, muss dieser Wert mitwandern, sonst behauptet das Image etwas anderes als das Repo |
+- **Zwei sachlich falsche Kommentare in `ci.yml`** (aus #112). Die Instanzen sind
+  korrigiert. Als *Klasse* — Kommentare driften von dem weg, was sie beschreiben
+  — ist es unbegrenzt und kein Issue: `check-adrs`, `check-readme`, `check-env`
+  und `check-stack` greifen genau die Fälle, die maschinell prüfbar sind, und
+  für den Rest ist ein Ticket eine Absichtserklärung.
+- **`gh` kann die GHCR-Versionen nicht lesen.** Umgangen über die Registry-API
+  mit anonymem Pull-Token, und die Umgehung ist besser als die direkte Lösung:
+  sie misst, was ein Fremder sieht. Preis: Tags ja, Datum und Größe je Version
+  nein. `tools/registry.sh` trägt es.
+- **227 s stammen aus einem Wiederholungslauf** und **eine zweite Signatur auf
+  demselben Digest.** Beides war Kontext, kein Fund. Die zweite Zeile hat sich
+  in E4b sogar als falsch herausgestellt — es waren zwei *verschiedene* Digests,
+  und daraus wurde die Waise, an der die Aufbewahrungsregel hängt.
 
-**Das eine Verworfene:** der Gedanke, im `db`-Job den Runner-Cache in den
-`migrate`-Container zu mounten. Er stand unter der Bedingung „nur wenn der Job
-das 5-Minuten-Budget bedroht" — und die Bedingung ist jetzt gemessen und
-falsch: `db` läuft in 1:45, die Wall-Clock des ganzen Laufs liegt bei 2:15. Der
-Preis wäre eine CI-spezifische Compose-Override-Datei, also ein zweiter Weg in
-dieselbe Datenbank, wovor ADR 0030 ausdrücklich warnt.
+**An bestehende Issues gegeben:** die Rotation aus
+[#109](https://github.com/G1NG4R/timseil-dev/issues/109) als Kommentar dort;
+[#139](https://github.com/G1NG4R/timseil-dev/issues/139) und
+[#140](https://github.com/G1NG4R/timseil-dev/issues/140) trugen schon ihre
+Zeilen.
 
-**Das eine Offene:** der `quickstart`-Job läuft nicht auf Pull Requests und ist
-deshalb erst nach dem Merge messbar. Er ist die letzte offene Abnahme dieser
-Phase, kein Backlog-Eintrag.
+**Eine Zeile ist lokal geworden**, nicht öffentlich: die laufende Panel-Version.
+Bei einem Panel, das noch von außen erreichbar ist, ist sie eine Wegbeschreibung
+zu den passenden Advisories. Öffentlich steht die Aufgabe (#148), der Stand in
+`backlog.local.md`. Beim selben Durchgang ist aufgefallen, dass der öffentliche
+Backlog die anderen Dienste der Maschine **namentlich** nannte — das ist
+korrigiert, aber es steht auf `main` und damit in der Historie; ob das einen
+Rewrite rechtfertigt, ist lokal notiert und noch offen.
 
-Vorherige Triage: nach L1, 20.08.2026 — 21 Zeilen → 4 Issues (#118–#121),
-16 in der Phase erledigt, 1 nach L5 verschoben.
+**Offen, ohne Issue, weil es Ablauf und kein Fund ist:** die Aufbewahrung ist
+unscharf. `retention` druckt montags den Plan und löscht nichts. Zwei Wochen
+Trockenläufe, dann ein Beweis gegen ein Wegwerf-Paket, dann
+`GHCR_PRUNE_ENABLED`. Der Lösch-Pfad ist bis heute **nie ausgeführt worden**.
+
+Vorherige Triage: nach E2, 21.08.2026 — 15 Zeilen → 11 in der Stufe erledigt,
+2 als Kommentar an bestehende Issues, 1 bewusst verworfen, 1 als Abnahme offen.
 
 ---
 
@@ -104,49 +95,17 @@ Vorherige Triage: nach L1, 20.08.2026 — 21 Zeilen → 4 Issues (#118–#121),
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
-| 2026-08-21 | E3b | **`sha-3890180` ist unsigniert und läuft auf dem VPS.** Bewusst in GHCR gelassen: es ist das Rollback-Ziel des laufenden Deploys, und es ist der Beleg dafür, dass die Signatur an einem Zeitpunkt begonnen hat statt behauptet zu werden. Der README benennt es. **Fällig mit E4** — sobald die Pipeline deployt, läuft eine Version, die sie selbst gebaut und signiert hat, und dann darf der alte Tag weg. Vorher nicht. | **E4b** — E4a hat den Deploy gebaut, aber noch keiner ist gelaufen. Der Tag ist in Runbook 3.5 mit gemessen |
+| 2026-08-21 | E3b | **`sha-3890180` ist unsigniert und läuft auf dem VPS.** Bewusst in GHCR gelassen: es ist das Rollback-Ziel des laufenden Deploys, und es ist der Beleg dafür, dass die Signatur an einem Zeitpunkt begonnen hat statt behauptet zu werden. Der README benennt es. **Fällig mit E4** — sobald die Pipeline deployt, läuft eine Version, die sie selbst gebaut und signiert hat, und dann darf der alte Tag weg. Vorher nicht. | **erledigt in E4b** — von Hand über die Paket-Oberfläche gelöscht, nicht mit `prune-registry.sh`: dessen Lösch-Pfad war nie ausgeführt worden, und sein Debüt gegen die echte Registry wäre dieselbe Wette gewesen, die der erste Drill an diesem Tag verloren hat |
 | 2026-08-21 | E3b | **Vier Werkzeug-Versionen, die kein Dependabot hebt.** `.golangci-lint-version` (E2), `.cosign-image` (E3b) und die Digests von gitleaks (`check-secrets.sh`) und syft (`sbom.sh`). Das Ökosystem `docker` liest Dockerfiles und Compose-Dateien, nicht Hashes in Shell-Skripten oder Textdateien. Bei vier Stellen wäre eine Prüfung billiger als die Disziplin — `check-versions.sh` wäre der Ort. | **erledigt in E4a** — `tools/check-pins.sh`, nicht in `check-versions.sh`: das dort ist ein anderer Vergleich (deklarierte Laufzeit gegen bauendes Image). Zwei Hälften: Form in `make check`, „ist eine neuer?" wöchentlich im `scan`-Job. Die Pins werden über ihre **Form** gefunden, nicht aufgezählt — eine fünfte fällt automatisch darunter |
 | 2026-08-21 | E3a | **Kein eigener ADR für diese Stufe** — die nächste freie Nummer bleibt frei. Die Regel, die E3 aufstellt — gültig ist nur eine Signatur, deren `certificate-identity` dieser Workflow auf `refs/heads/main` ist — lebt in den Kopfkommentaren von `tools/sign.sh` und `tools/verify-supply-chain.sh`, nicht in `docs/adr/`. Bewusst so entschieden; die drei ADRs vor diesem kamen jeweils mit ihrer Phase, dieser Bruch gehört benannt. Nebenbei: `check-adrs` verbietet, den Verzicht unter seiner Nummer aufzuschreiben — eine Prüfung, die eine bewusste Lücke nicht von einem toten Verweis unterscheiden kann. | offen |
 | 2026-08-21 | E3a | **Sechs Schritte stehen zweimal in `ci.yml`** (`images` und `publish`). Der bezahlte Preis dafür, dass derselbe Job baut, prüft, scannt und veröffentlicht — sonst wäre das signierte Artefakt nicht das geprüfte (ADR 0026). Wird die Datei unübersichtlich, ist ein gemeinsames `make`-Ziel der Weg, keine Reusable Workflow. | bewusst |
 
 ## Gefunden — Bug oder Unklarheit
 
+_Leer. Triage nach E4b, 22.08.2026 — siehe oben._
+
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
-| 2026-08-22 | E4b | **Jeder Container-Wechsel kostet rund zehn Sekunden `404` auf der öffentlichen Seite.** Beim Drill gemessen, ein Zeuge mit einer Anfrage je Sekunde auf `/`: 19 von 73 Antworten waren `404`, verteilt auf zwei Fenster von je zehn Sekunden — eins je Wechsel, dazwischen und danach durchgehend `200`. **Nicht 502.** Der alte Container ist weg, der neue noch nicht da, und Traefik fällt auf seine Standardantwort zurück; für einen Besucher heißt das „diese Seite gibt es nicht", für einen Crawler dasselbe. Zwei Wechsel in drei Minuten sind drill-spezifisch, der einzelne Trichter ist es nicht — er trifft jeden Merge. `verify-deploy.sh` sieht ihn nicht, weil es `/` einmal ganz am Ende fragt. Die Zusicherung des Gates lautet „der bestellte Build bedient die Seite", nicht „kein Besucher hat einen Fehler gesehen", und so darf sie nach dieser Messung auch nicht gelesen werden. Richtung der Reparatur: überlappender Start statt Austausch, damit Traefik nie ohne Backend dasteht. | offen — eigenes Thema, nicht E4b |
-| 2026-08-22 | E4b | **Der erste Drill war grün nach drei Sekunden, ohne dass ein Rollback stattfand** — und der Grund war kein Fehler im Drill, sondern eine Lücke im Verify. Dokploy antwortet, wenn es den Auftrag *angenommen* hat; die Container wechseln danach. Das erste Sample befragt also den alten Prozess. Solange der gesuchte SHA ein anderer ist als der laufende, fällt das nicht auf. **Fällt beides zusammen — jeder Redeploy desselben Tags —, meldet das Gate Erfolg für einen Deploy, der nicht stattgefunden hat**, auch wenn die neuen Container nie hochkommen. Dass ein Re-Run einen Tag auf neue Bytes schiebt, ist keine Theorie: die Waise dazu liegt in GHCR. **Erledigt in E4b:** fünfte Bedingung in `verify-deploy.sh` — `startedAt` von vor dem Deploy gegen `startedAt` von jetzt, ein Feld aus einer Quelle mit sich selbst, also kein Zeitversatz. Ohne den Wert sagt das Skript, dass es die Bedingung nicht machen kann. ADR 0034 §4a. | **erledigt** |
-| 2026-08-22 | E4b | **Nebenwirkung des ersten Drills:** die Seite lief rund vier Minuten auf `sha-581f5c0` statt auf dem Kopf von `main`, weil das Gate nach drei Sekunden zufrieden ausstieg und Dokploy danach in Ruhe weiterdeployte. Aufgefallen ist es durch `make check-deployed`, das genau diesen Fall meldet — der erste Ernstfall der Prüfung, und sie hat ihn gefangen. Zurückgesetzt mit `tools/deploy.sh` plus `tools/verify-deploy.sh` von Hand; bewusst **ohne** `deploy-gate`, weil die Dauer einer Handkorrektur nichts in `deploys` zu suchen hat. | **erledigt** |
-| 2026-08-22 | E3 | **[#109](https://github.com/G1NG4R/timseil-dev/issues/109) im Runbook behoben, auf dem Server nicht.** `docs/runbooks/dokploy.md` verlangt jetzt ein Token mit nur `read:user`, und die Rotation steht als Verfahren daneben. Das Token, das **heute** in Dokploy liegt, trägt weiter `write:packages` — der `api`-Container hat also bis zur Rotation Push-Rechte auf GHCR. Doku und Wirklichkeit stimmen erst überein, wenn Schritt 1–4 aus 0.1 gelaufen sind. | Doku behoben, Rotation offen |
-| 2026-08-21 | E3b | **Der Wochenlauf prüfte auf `push` ein Image, das es noch nicht gab.** `scan` und `publish` starten gleichzeitig, also fragte `scan` nach `sha-c738b2a`, während `publish` es eine Spalte weiter gerade hochlud — `MANIFEST_UNKNOWN`, roter Lauf, nichts kaputt. Mein Denkfehler steckte im Kommentar: ich schrieb *„same reasoning as the `quickstart` job"*, aber `quickstart` prüft den Baum und läuft deshalb auf `push`; diese Prüfung braucht ein **veröffentlichtes Artefakt** und kann das frühestens danach. Behoben: nur noch `schedule`. Als Klasse offen — ein Kommentar, der plausibel liest und falsch ist, ist genau der Fund aus #112, und keine Prüfung fängt Prosa über Nebenläufigkeit. | behoben |
-| 2026-08-21 | E3a | **Kein Klickweg konnte die GHCR-Paket-Verknüpfung herstellen.** Vier rote `publish`-Läufe, alle an `denied: permission_denied: write_package`. Der Job hatte `Packages: write` (im Setup-Log nachgelesen), der Login gelang, die Pakete waren public, „Manage Actions access" war gesetzt, und die API meldete danach sogar `repo=G1NG4R/timseil-dev` — abgelehnt wurde trotzdem. Geholfen hat erst: Pakete löschen, die Pipeline legt sie neu an; das `image.source`-Label aus E2a verknüpft sie beim Push von allein. Kommt je ein drittes Paket dazu, ist das die Antwort, die man nicht zweimal suchen will. | gelöst, als Klasse offen |
-| 2026-08-21 | E3a | **Der syft-Digest bewegt kein Dependabot.** `.github/dependabot.yml` liest Dockerfiles und Compose-Dateien, nicht einen Hash in einer `.sh`. `tools/sbom.sh` und `tools/check-secrets.sh` tragen damit zwei Versionen, die ein Mensch heben muss — dieselbe Klasse wie `.golangci-lint-version` aus E2. Drei Stellen sind der Punkt, an dem eine Prüfung dafür billiger wäre als die Disziplin. | **erledigt in E4a** — `tools/check-pins.sh`. Alle vier waren beim Bau aktuell, gemessen gegen die GitHub-Releases |
-| 2026-08-21 | E3a | **`licenses="NOASSERTION"` steht ab jetzt auch im SBOM.** Anschluss an [#45](https://github.com/G1NG4R/timseil-dev/issues/45): das Label war eine Behauptung an einem Image, ab E3b ist es ein Feld in einem signierten Dokument, das jemand herunterladen kann. Die Lizenzfrage wird damit teurer, je später sie beantwortet wird. | als Kommentar an #45 |
-| 2026-08-21 | E3a | **[#90](https://github.com/G1NG4R/timseil-dev/issues/90) ist zur Hälfte erledigt.** Der Push kommt aus der Pipeline, die Brücke im Dokploy-Runbook ist abgebaut. Offen bleibt die zweite Hälfte: die GHCR-Aufbewahrung ist ungemessen, und solange sie das ist, hat „roll back to any previous deploy" einen Horizont, den niemand kennt. Bleibt E4. | **gemessen in E4a**, Runbook 3.5: je 8 Tags, 5 Builds, nichts löscht, Wachstum 2 Tags/Merge. Die **Regel** bleibt E4b |
-| 2026-08-21 | #112 | **`internal/buildinfo` hat keine Testdatei.** Die Rückfallwerte `dev`/`unknown`, die Reihenfolge der zwei Quellen (ldflags vor Gos VCS-Stempel) und die Kürzung auf sieben Zeichen sind ungeprüft — in einem Paket, dessen Ausgabe auf `/api/health` steht und das gerade eine falsche Angabe veröffentlicht hat. Beim Fix aufgefallen, bewusst nicht mitgenommen, um den PR eng zu halten. | offen |
-| 2026-08-21 | #112 | **Zwei Kommentare in `ci.yml` waren sachlich falsch**: sie begründeten die Checkout-Tiefe 1 damit, dass geholte Tags den Backup-Tag mitbrächten — der liegt nur lokal, GitHub hat null Tags. Eine Begründung, die plausibel liest und falsch ist; keine der vier Drift-Prüfungen aus E2 fängt Prosa über Git-Verhalten. | korrigiert im selben PR — als Klasse offen |
-
-| 2026-08-22 | E4a | **Die Dokploy-API war eine Erwartung und ist jetzt gemessen** — 22.08.2026, gegen die laufende Fassung; welche das ist, steht in `backlog.local.md`. Der Weg dorthin war lang und der Grund ist eine Falle, die von außen unsichtbar ist: **ein API-Key ohne `organizationId` in `metadata` ist gültig, `enabled` — und wertlos.** `validateRequest` verifiziert ihn, liest dann `organizationId` aus den Metadaten und gibt gar keine Sitzung zurück; jede Route antwortet `401 {"message":"Unauthorized"}`. Der von Hand über `POST /api/auth/api-key/create` erzeugte Key hatte `metadata: null`; Dokploys eigener Knopf hängt die Organisation an. **Zwei falsche Fährten unterwegs**, beide von mir und beide zu früh „bestätigt" genannt: `canAccessToAPI` (steht auf `f`, kommt in diesem Pfad aber gar nicht vor) und der `Host`-Header (drei Varianten, alle 401). Was schließlich half, war Dokploys Quelltext zu lesen statt Verhalten zu deuten. **Nebenertrag:** `compose.saveEnvironment` statt `compose.update` — engere Eingabe, engere Berechtigung; und `updateCompose` schreibt partiell, vor dem ersten Schreiben geprüft statt danach. | **erledigt** |
-| 2026-08-22 | E4a | **`rejects` im Selftest konnte aus dem falschen Grund grün sein.** Jeder Nicht-Null-Exit erfüllt es — auch ein Skript, das gar nicht existiert. Eine gelöschte Prüfung ließ ihren eigenen Test also stehen. Behoben mit `refuses <desc> <pattern> …`, das zusätzlich die erwartete Meldung verlangt, und nachgewiesen: gegen einen erfundenen Dateinamen wird es rot, gegen das echte Skript grün. **Angewandt nur auf die neuen Fälle** — die rund 200 bestehenden `rejects` tragen die Schwäche weiter. | teilweise behoben |
-| 2026-08-22 | E4a | **`gh` kann die GHCR-Versionen nicht lesen** — dem Token fehlt `read:packages`, die Packages-API antwortet `403`. Umgangen über die Registry-API mit anonymem Pull-Token, und das ist der bessere Weg: er misst, was ein Fremder sieht, und braucht überhaupt kein Geheimnis. Der Nachteil bleibt benannt: Tags ja, Datum und Größe je Version nein. Für „wie viele Rollback-Ziele gibt es" reicht es. | umgangen, bewusst |
-| 2026-08-22 | E4a | **Der Bauplan nennt für E4 `latest` und `v1.2.3`, das Runbook verbietet `latest`.** Ein Widerspruch im eigenen Material, kein Fund im Code. Aufgelöst zugunsten des Runbooks (ADR 0033 §7): Rollback braucht einen Namen, der nicht umgehängt werden kann. `v1.2.3` kommt mit `release-please` in E5. Der Bauplan-Satz steht weiter da. | entschieden, Bauplan ungeändert |
-
-| 2026-08-22 | E4a | **Die Aussage „von außen erreichbar sind 22, 80, 443" gilt für diesen Host so nicht.** Beim Einrichten des Deploy-Zugangs geprüft. `CLAUDE.md` schreibt sie als Sicherheitsregel, der Bauplan macht daraus das Abnahmekriterium von L3 (*„`nmap` von außen zeigt **ausschließlich** 22, 80, 443"*), und `docs/threat-model.md` wird sie übernehmen. **Ein Abnahmekriterium, das der Wirklichkeit widerspricht, wird bei der Abnahme angepasst statt geprüft** — die teure Sorte Drift. Zu entscheiden vor L3 ([#139](https://github.com/G1NG4R/timseil-dev/issues/139)): Regel korrigieren oder Host angleichen. Der `deploy`-Job liest den Port aus `VPS_SSH_PORT`, im Repository steht keine Zahl. | **offen — betrifft CLAUDE.md und L3** |
-| 2026-08-22 | E4a | **SSH-Kontoebene gegen L5 geprüft, Ergebnis nicht hier.** L5 verlangt „SSH per Key ohne Passwort, kein Root-Login". Der Ist-Stand wurde am 22.08.2026 erhoben und gehört nicht in ein öffentliches Repository. Relevanz für E4: die Aussage aus ADR 0033, ein kompromittierter GitHub-Account koste einen Deploy und keinen Host, gilt nur für **diesen einen** Weg — sie sagt nichts über andere Wege auf den Host. [#140](https://github.com/G1NG4R/timseil-dev/issues/140). | als Issue #140 |
-
-| 2026-08-22 | E4a | **Die Gegenprobe zum beschränkten Schlüssel war selbst wirkungslos.** Im Runbook stand `ssh -N -L 5432:…` als „muss scheitern". Tut es nicht: `-L` baut nur einen lokalen Lauschsocket, `permitopen` ist serverseitig und greift erst beim Öffnen eines Kanals — der Aufruf bleibt stehen und sieht bestanden aus, auch wenn die Regel gar nicht da wäre. Korrigiert auf `-W host:port`, das den Kanal sofort verlangt. **Dieselbe Klasse wie `rejects` im Selftest**, am selben Tag zum zweiten Mal: eine Prüfung, die im kaputten Fall genauso aussieht wie im guten. Es lohnt, bei jeder neuen Prüfung zu fragen, ob sie den kaputten Fall überhaupt sehen kann. | behoben |
-
-| 2026-08-22 | E4a | **Der Host trägt mehr als nur diesen Stack.** Beim Ablesen der `composeId` mitgesehen. Zwei Folgen, beide vor F2 zu entscheiden. **F2** plant Prometheus und Loki „im selben Dokploy-Stack", während der Bauplan an anderer Stelle „bestehende Grafana-Instanz einbinden" sagt — was davon gilt, gehört entschieden, nicht während der Stufe herausgefunden. **ADR 0008** („ein Host zum Launch") rechnet mit acht Diensten; die tatsächliche Belegung von Platte und RAM ist damit eine andere als die, gegen die die Grenzen in ADR 0027 gesetzt wurden. Ungemessen. Die Belegung selbst steht in `backlog.local.md`. | offen, vor F2 |
-
-| 2026-08-22 | E4a | **Panel-Zugang gegen L3 geprüft, Ergebnis nicht hier.** Handbuch 1106 nennt die Dokploy-Oberfläche „das lohnendste Ziel der ganzen Maschine" — sie kennt Host, Deploys und jede Umgebungsvariable jeder App. L3 verlangt: kein Traefik-Router, Port in der Firewall zu, Zugriff nur über `ssh -L`. Der Ist-Stand wurde am 22.08.2026 erhoben und gehört nicht in ein öffentliches Repository. **E4 verschiebt hier nichts**: die Pipeline geht durch den Tunnel, nicht über eine Domain, und ist damit schon auf den L3-Zustand gebaut. [#139](https://github.com/G1NG4R/timseil-dev/issues/139). | als Issue #139 |
-| 2026-08-22 | E4a | **`canAccessToAPI` steht per Vorgabe auf `false`** — gemessen: beide `member`-Zeilen `f`. Dokploys Quelltext (`packages/server/src/db/schema/account.ts`, `services/permission.ts`) bestätigt Vorgabe und Wirkung. Ein gültiger, aktiver API-Key antwortet ohne dieses Recht mit `{"message":"Unauthorized"}`, und der Abschnitt „API/CLI" im Profil bleibt unsichtbar. Kostet drei Stunden, wenn man es nicht weiß. **Gehört ins Dokploy-Runbook**, sobald der Weg steht. | zu dokumentieren |
-| 2026-08-22 | E4a | **Dokploy ist nicht auf dem neuesten Stand.** Die laufende und die aktuelle Version stehen in `backlog.local.md` — eine Panel-Version ist bei erreichbarem Panel eine Wegbeschreibung zu den passenden CVEs. Kein bekannter Bezug zu unserem 401: der wurde in Dokploys Issue #1757 gemeldet und mit PR #1864 am 10.05.2025 behoben, lange vor der laufenden Reihe. **Die Aufgabe:** heben, und zwar bevor L3 das Panel schließt — danach ist jedes Upgrade ein Handgriff durch den Tunnel. | offen |
-
-| 2026-08-22 | E4a | **`publish` hat kein `needs:`, `deploy` hängt nur an `publish`.** Auf `main` läuft `publish` also parallel zu `check` und `db` — und seit E4 wird das Ergebnis automatisch deployt. Zusammen mit `strict: false` in der Branch Protection (bewusst so, sonst rebast jeder PR vor dem Merge) heißt das: der Squash-Commit kann einen Baum tragen, den in dieser Zusammensetzung nie ein `check` gesehen hat. Für sequenzielle Solo-Merges unwahrscheinlich, aber nicht nichts. **`deploy` zusätzlich an `check` und `db` zu hängen kostet gemessen null Wartezeit** — er wartet ohnehin ~3 min auf `publish`, `check` ist nach 2:16 fertig. Aus der Frage „warum kommt deploy vor quickstart" entstanden; die Antwort darauf war harmlos (nur `deploy` hat eine Abhängigkeit, alles andere startet gleichzeitig), der Nebenbefund nicht. | offen — kleiner eigener PR |
-| 2026-08-22 | E4a | **Ein grüner Lauf, in dem nichts deployt wurde — und nichts hätte es gemerkt.** Beim ersten Merge fehlte `DEPLOY_ENABLED`; der Job wurde übersprungen, und der **Lauf** schloss mit `success` ab (nachgeprüft: `attempts/1` → `conclusion: success`, Job `skipped`). Das Verhalten des Schalters war richtig — nichts angefasst, Produktion stabil. **Die Anzeige war es nicht:** ADR 0033 §8 argumentiert „grau statt grün" auf der Job-Ebene und übersieht, dass man auf die Lauf-Ebene sieht. Schlimmer: der Schalter unterscheidet nicht zwischen *absichtlich nicht scharf* und *vergessen*. Aufgefallen ist es nur, weil wir von Hand nachgesehen haben — die Seite antwortete weiter `200`, nur mit dem alten Build, und `ops.lastDeploy` bleibt `null` an einer Stelle, die vor Stufe H niemand liest. **Fix: nicht den Mechanismus prüfen, sondern das Ergebnis** — `make check-deployed`: `/api/health .sha` gegen den Kopf von `main`. Wöchentlich im `scan`-Job, mit Toleranz für einen Merge, der gerade noch deployt. Fängt jeden Grund, nicht nur diesen: übersprungener Job, abgeschaltete Workflow-Datei, Deploy von Hand. **E4b.** | offen — E4b |
-| 2026-08-22 | E4a | **Die erste gemessene Deploy-Dauer ist 227 s, und sie stammt aus einem Wiederholungslauf.** Nach dem Nachsetzen von `DEPLOY_ENABLED` wurde der Lauf wiederholt, `run_started_at` also neu gesetzt — die 227 s enthalten einen vollständigen Neubau beider Images plus Signatur plus Deploy. Als erster Datenpunkt ehrlich, aber nicht typisch; die Zahlen der nächsten Merges werden anders liegen. Gehört gewusst, bevor jemand daraus einen Trend liest. | Kontext, nichts zu tun |
-| 2026-08-22 | E4a | **Zweite Signatur auf demselben Digest.** Der Wiederholungslauf hat `publish` erneut gefahren: gleicher Commit, gleicher Tag, gleiche Schichten — aber `make sign` lief ein zweites Mal. Cosign hängt an, ersetzt nicht. `verify-supply-chain` prüft „es gibt eine gültige Signatur", nicht „genau eine", also unschädlich. Notiert, damit niemand die doppelte Attestierung an `sha-ae939d4` für einen Angriff hält. | Kontext, nichts zu tun |
-
-| 2026-08-22 | E4a | **„`docker system df` zeigt 0 B Build-Cache" misst auf diesem Host nichts mehr.** Gemessen: 50 Einträge, 782,9 MB. Das Kriterium (Bauplan Kapitel 10, D3-Abnahme, E4-Abnahme) wurde für eine Maschine geschrieben, auf der **nur** unser Stack läuft; die Maschine trägt inzwischen mehr, und Dokploy baut andere App-Typen auf dem Host, weil das seine Aufgabe ist. Aus der Zahl folgt über unseren Stack nichts — weder im Guten noch im Schlechten. **Dieselbe Klasse wie „22, 80, 443": ein Kriterium für einen Ein-Zweck-Host auf einer geteilten Maschine.** Ersetzt durch die direkte Messung derselben Behauptung: der `RepoDigest` der laufenden Container gegen den in GHCR veröffentlichten. Am 22.08.2026 geprüft, beide identisch, beide signiert. **Das gehört als `make check-deployed` automatisiert** — und dann gegen den Digest, nicht nur gegen den SHA: ein Tag kann umgehängt werden, ein Digest nicht. Kapitel 10 und die D3-Abnahme im Dokploy-Runbook sind entsprechend nachzuziehen. | offen — E4b, zusammen mit `check-deployed` |
 
 ## Idee — noch nicht entschieden
 
