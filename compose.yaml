@@ -263,8 +263,28 @@ services:
       - traefik.http.routers.timseil-api.entrypoints=websecure
       - traefik.http.routers.timseil-api.tls.certresolver=letsencrypt
       - traefik.http.routers.timseil-api.priority=100
-      - traefik.http.routers.timseil-api.middlewares=timseil-www@docker
+      - traefik.http.routers.timseil-api.middlewares=timseil-www@docker,timseil-retry@docker
       - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+      # THE READER FOR SHUTDOWN_DELAY, and without it that variable is a knob
+      # with no effect. Traefik's docker provider drops a backend when the
+      # container leaves the running state — it does not read /readyz unless it
+      # is told to, and by the time a container has left, the request that was
+      # already on its way has nowhere to land. On SIGTERM this answers 503
+      # while still accepting, so the check below takes the backend out of the
+      # pool first and the socket closes to an address nobody is using.
+      #
+      # One second, and a matching timeout. The pause on the other side is three
+      # (api/internal/config), which is one interval plus one timeout plus a
+      # second of margin — the two numbers are chosen against each other and
+      # neither is a round number picked alone.
+      #
+      # /readyz and /healthz are exempt from the rate limiter for this: sixty
+      # requests a minute all keyed on the proxy's own address would otherwise
+      # spend half of RATE_LIMIT_RPM, and the 429 at the end of that reads to
+      # Traefik as an unhealthy backend. internal/middleware.Except.
+      - traefik.http.services.timseil-api.loadbalancer.healthcheck.path=/readyz
+      - traefik.http.services.timseil-api.loadbalancer.healthcheck.interval=1s
+      - traefik.http.services.timseil-api.loadbalancer.healthcheck.timeout=1s
 
     # Both, and the order does not matter but the presence of each does: a
     # service that names `networks:` joins ONLY those, so dropping `default`
@@ -291,6 +311,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-}
       REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-}
       SHUTDOWN_GRACE: ${SHUTDOWN_GRACE:-}
+      SHUTDOWN_DELAY: ${SHUTDOWN_DELAY:-}
       DB_MAX_CONNS: ${DB_MAX_CONNS:-}
       DB_MIN_CONNS: ${DB_MIN_CONNS:-}
       DB_STATEMENT_TIMEOUT: ${DB_STATEMENT_TIMEOUT:-}
@@ -402,11 +423,45 @@ services:
       - traefik.http.routers.timseil-web.entrypoints=websecure
       - traefik.http.routers.timseil-web.tls.certresolver=letsencrypt
       - traefik.http.routers.timseil-web.priority=10
-      - traefik.http.routers.timseil-web.middlewares=timseil-www@docker
+      - traefik.http.routers.timseil-web.middlewares=timseil-www@docker,timseil-retry@docker
       - traefik.http.services.timseil-web.loadbalancer.server.port=3000
+      # The same mechanism as the api's above, against web/app/healthz. NOT
+      # against `/`: a check every second on the homepage is a full render every
+      # second, and from stage H that stops being free.
+      #
+      # The image's own HEALTHCHECK stays on `/` on purpose. The two ask
+      # different questions — Docker's is "does this application work", which is
+      # what `--wait` needs before the rollout moves on, and Traefik's is
+      # "should I send this container traffic", which has to say no three
+      # seconds before the answer to the first one changes.
+      - traefik.http.services.timseil-web.loadbalancer.healthcheck.path=/healthz
+      - traefik.http.services.timseil-web.loadbalancer.healthcheck.interval=1s
+      - traefik.http.services.timseil-web.loadbalancer.healthcheck.timeout=1s
       - traefik.http.middlewares.timseil-www.redirectregex.regex=^https://www\.timseil\.dev/(.*)
       - traefik.http.middlewares.timseil-www.redirectregex.replacement=https://timseil.dev/$${1}
       - traefik.http.middlewares.timseil-www.redirectregex.permanent=true
+
+      # THE ONE THING THAT COVERS THE SWAP, and it is three lines rather than a
+      # knob in the application. During a rollout Traefik has two backends for
+      # each service — the container being replaced and its twin from
+      # compose.rollout.yaml — and the one failure left after E5b's lab runs was
+      # a single request landing on the socket of a container that had just
+      # stopped accepting. That is a connection error, which is precisely and
+      # only what `retry` retries: the request is forwarded again, round-robin
+      # moves on, and the other backend answers it.
+      #
+      # attempts=2, not more. With two backends a second attempt has already
+      # asked the other one; a third would ask the first again. A number picked
+      # to match the topology rather than to sound generous.
+      #
+      # It does NOT retry a 5xx, and that is the point rather than a limitation:
+      # a 502 from a healthy backend is an answer, and replaying a request that
+      # reached the application is how one submitted contact form becomes two.
+      #
+      # Defined here once, like timseil-www above, and referenced by both
+      # routers — the docker provider registers middlewares globally.
+      - traefik.http.middlewares.timseil-retry.retry.attempts=2
+      - traefik.http.middlewares.timseil-retry.retry.initialinterval=100ms
 
       # The HTTP entrypoint, because Dokploy's Traefik has no global redirect.
       # Measured on the host rather than assumed: a request to port 80 answers
@@ -445,6 +500,9 @@ services:
       # read-only rootfs working: telemetry is the thing that would try to write
       # into $HOME, which is not writable here.
       NEXT_TELEMETRY_DISABLED: "1"
+      # The same pause as the api's, and the same variable: one number,
+      # one meaning, both containers. instrumentation.ts reads it.
+      SHUTDOWN_DELAY: ${SHUTDOWN_DELAY:-}
       # Node sizes its default old-space from TOTAL SYSTEM MEMORY, not from the
       # cgroup — on this 12 GB host it would pick well over 2 GB and then be killed
       # at the 512M below. This line is not tuning; it is the difference between
