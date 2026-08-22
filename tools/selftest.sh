@@ -521,6 +521,76 @@ accepts "MAIL_TRANSPORT pinned in the dev compose accepted" tools/check-compose.
 
 rm -f compose.dev.yaml compose.yaml
 
+# Rule 14b. A service that names a middleware defines it.
+#
+# The failure this catches does not go red anywhere: every container is healthy,
+# Traefik has a router in error, and the path answers 404. It cost a production
+# deploy on 2026-08-22 to find, so it gets its broken cases here.
+#
+# The second service is `edge`, not `web`: rule 9 demands the complete label set
+# from `api` and `web` BY NAME, and a case that also tripped that one would stop
+# failing for the reason it is named after.
+mw_def='      - traefik.http.middlewares.timseil-www.redirectregex.regex=^https://www\.x\.dev/(.*)
+      - traefik.http.middlewares.timseil-www.redirectregex.permanent=true
+'
+
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+$routed      - traefik.http.routers.timseil-api.middlewares=timseil-www@docker
+$mw_def$limited"
+accepts "a service that defines the middleware it names accepted" tools/check-compose.sh
+
+# The state compose.yaml was in until E5b: the api router named timseil-www and
+# only web defined it. Green everywhere, 404 whenever web is not up.
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+$routed      - traefik.http.routers.timseil-api.middlewares=timseil-www@docker
+$limited"
+refuses "a router naming a middleware its service does not define rejected" \
+  "does not define it" tools/check-compose.sh
+
+# The worse one. Two services, one name, two bodies — Traefik logs `defined
+# multiple times with different configurations` and then discards BOTH, so the
+# router disappears rather than picking a side.
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+$routed      - traefik.http.routers.timseil-api.middlewares=timseil-www@docker
+$mw_def$limited  edge:
+    image: ghcr.io/g1ng4r/timseil-web:\${IMAGE_TAG}
+    labels:
+      - traefik.http.middlewares.timseil-www.redirectregex.regex=^https://www\.OTHER\.dev/(.*)
+      - traefik.http.middlewares.timseil-www.redirectregex.permanent=true
+$limited"
+refuses "two services disagreeing about one middleware rejected" \
+  "two versions of" tools/check-compose.sh
+
+# Word for word at both, which is what compose.yaml now does on purpose.
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+$routed      - traefik.http.routers.timseil-api.middlewares=timseil-www@docker
+$mw_def$limited  edge:
+    image: ghcr.io/g1ng4r/timseil-web:\${IMAGE_TAG}
+    labels:
+      - traefik.http.routers.timseil-edge.middlewares=timseil-www@docker
+$mw_def$limited"
+accepts "the same middleware at two services, word for word, accepted" tools/check-compose.sh
+
+# Another provider's middleware. It belongs to Dokploy's own configuration,
+# which this repository does not version, so requiring a definition here would
+# be requiring something that cannot exist.
+write_prod "services:
+  api:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+$routed      - traefik.http.routers.timseil-api.middlewares=redirect-to-https@file
+$limited"
+accepts "a middleware from another provider accepted" tools/check-compose.sh
+
+rm -f compose.yaml
+
 # Rule 15. The twins may extend and do nothing else.
 #
 # A twin that has drifted from its original is the worst shape available here:
