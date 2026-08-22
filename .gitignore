@@ -26,6 +26,14 @@ blob-report/
 .env.*
 !.env.example
 
+# The private half of the backlog.
+#
+# backlog.md is a notepad in a PUBLIC repository. Anything about THIS host that
+# a stranger could use — addresses, ports, what is open today, which hardening
+# is still outstanding — belongs in the local file and nowhere else. Written
+# during E4a, after three such lines had been put in the tracked one.
+backlog.local.md
+
 # Local scratch
 tmp/
 *.log

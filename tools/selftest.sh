@@ -15,6 +15,19 @@ no() { printf '  ✗ %s\n' "$1"; fail=1; }
 
 # Expect a command to fail (the broken case) or to succeed (the good case).
 rejects() { desc=$1; shift; if "$@" >/dev/null 2>&1; then no "$desc (accepted, should reject)"; else ok "$desc"; fi; }
+
+# rejects, plus the reason. `rejects` alone is satisfied by any non-zero exit,
+# and a script that is missing, unreadable or broken exits non-zero too — so a
+# guard that was deleted can leave its own test green. Where that is a plausible
+# way to be wrong, the expected message is named as well.
+refuses() { # refuses <desc> <pattern> <command...>
+  desc=$1; pattern=$2; shift 2
+  out=$("$@" 2>&1) && { no "$desc (accepted, should reject)"; return; }
+  case $out in
+    *"$pattern"*) ok "$desc" ;;
+    *) no "$desc (rejected, but not for '$pattern')" ;;
+  esac
+}
 accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$desc (rejected, should accept)"; fi; }
 
 mkdir -p "$tmp/tools" "$tmp/.githooks"
@@ -25,7 +38,10 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
    "$root/tools/check-adrs.sh" "$root/tools/check-readme.sh" \
    "$root/tools/version.sh" \
-   "$root/tools/check-dockerfiles.sh" "$root/tools/verify-supply-chain.sh" "$tmp/tools/"
+   "$root/tools/check-dockerfiles.sh" "$root/tools/verify-supply-chain.sh" \
+   "$root/tools/check-pins.sh" "$root/tools/check-secrets.sh" "$root/tools/sbom.sh" \
+   "$root/tools/deploy-env.sh" "$root/tools/report-deploy.sh" \
+   "$root/tools/verify-deploy.sh" "$root/tools/deploy-gate.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -81,6 +97,16 @@ rm -rf docs
 git config --unset core.hooksPath
 rejects "unset core.hooksPath rejected" tools/check-repo.sh --staged
 git config core.hooksPath .githooks
+
+# The private half of the backlog, and the reason it gets a check instead of a
+# convention: .gitignore stops mattering the second somebody types `git add -f`.
+# The file holds what a stranger could use against the host.
+accepts "no backlog.local.md is fine"        tools/check-repo.sh
+printf 'the panel is at …\n' > backlog.local.md
+accepts "an untracked backlog.local.md is fine" tools/check-repo.sh
+git add -f backlog.local.md
+refuses "a tracked backlog.local.md rejected" "must not be public" tools/check-repo.sh
+git rm -q --cached backlog.local.md && rm -f backlog.local.md
 
 printf 'markers\n'
 printf 'x = 1  # %s: later\n' "TO""DO" > bare.py
@@ -1289,6 +1315,102 @@ rejects "an empty cosign pin is rejected"     tools/verify-supply-chain.sh sha-n
 printf 'ghcr.io/sigstore/cosign/cosign:v3\n' > .cosign-image
 rejects "a tag-pinned cosign image is rejected" tools/verify-supply-chain.sh sha-nothing
 cp cosign-image.good .cosign-image && rm cosign-image.good
+
+# --------------------------------------------------------------------- pins
+#
+# The four tools no ecosystem lifts. check-secrets.sh and sbom.sh are copied
+# into this throwaway repository for no other reason than this section: they are
+# where two of the four pins live, and a check that finds its inputs by shape
+# has to be tested against a tree that actually contains them.
+#
+# .golangci-lint-version is written here rather than copied, because the lint
+# section above deletes it when it is done — and a fixture that depends on
+# another section not having tidied up is a test that fails for a reason that
+# has nothing to do with what it checks.
+printf 'pins\n'
+printf 'v2.13.1\n' > .golangci-lint-version
+accepts "four pinned tools with digests and versions accepted" tools/check-pins.sh .
+
+cp tools/sbom.sh sbom.good
+sed -i 's/^# syft v[0-9.]*$/# syft/' tools/sbom.sh
+refuses "a pin with no readable version rejected" "no readable version" tools/check-pins.sh .
+cp sbom.good tools/sbom.sh
+
+sed -i 's/@sha256:678bfa565b60f747aac0f8e964fe5588a24445b8d0a480e91f6efd70020dfbb0/@sha256:678bfa565b60f747aac0f8e964fe5588a/' tools/sbom.sh
+refuses "a truncated digest rejected" "not 64" tools/check-pins.sh .
+cp sbom.good tools/sbom.sh
+
+# The failure mode a green log hides: the scan stopped finding things. Without
+# this the check would pass loudly on a tree where three of the four pins had
+# moved somewhere it does not look.
+mv tools/sbom.sh sbom.hidden
+refuses "a scan that lost a pin rejected" "expected at least the four" tools/check-pins.sh .
+mv sbom.hidden tools/sbom.sh
+rm -f sbom.good
+
+accepts "back to four pins" tools/check-pins.sh .
+
+# ------------------------------------------------------------------- deploy
+#
+# The guards that stand between a merge and production, tested where they can be
+# tested: on their arguments and on their input, with no Dokploy, no network and
+# no site.
+#
+# What is NOT here is the sixty-second timeout and the rollback that follows it.
+# Both need a running deploy to fail, and a selftest that could fake one would be
+# testing the fake. They are the drill in docs/runbooks/dokploy.md, run against
+# production on purpose — the build plan's wording for E4 is "einmal wirklich
+# provozieren", and that is a different instrument than this file.
+printf 'deploy\n'
+
+# The environment rewrite: the one destructive step of the phase, and the reason
+# it is a separate script at all. Every case below took a live panel to reach
+# while the logic still lived inside deploy.sh.
+printf 'POSTGRES_PASSWORD=hunter2\nIMAGE_TAG=sha-a0872c1\nCORS=https://timseil.dev\n' > dep.env
+accepts "one IMAGE_TAG line is rewritten"       tools/deploy-env.sh sha-1234abc dep.env dep.out
+accepts "the previous tag is what it returns"   sh -c '[ "$(tools/deploy-env.sh sha-1234abc dep.env dep.out)" = "sha-a0872c1" ]'
+accepts "the new tag is in the result"          grep -qx 'IMAGE_TAG=sha-1234abc' dep.out
+accepts "the other lines are untouched"         grep -qx 'POSTGRES_PASSWORD=hunter2' dep.out
+
+printf 'A=1\n' > dep-none.env
+refuses "an environment with no IMAGE_TAG rejected" "0 IMAGE_TAG lines" tools/deploy-env.sh sha-1234abc dep-none.env dep.out
+printf 'IMAGE_TAG=sha-aaaaaaa\nIMAGE_TAG=sha-bbbbbbb\n' > dep-two.env
+refuses "two IMAGE_TAG lines rejected"          "2 IMAGE_TAG lines" tools/deploy-env.sh sha-1234abc dep-two.env dep.out
+printf 'IMAGE_TAG=\n' > dep-empty.env
+refuses "an empty IMAGE_TAG rejected"           "no rollback target" tools/deploy-env.sh sha-1234abc dep-empty.env dep.out
+refuses "a missing environment file rejected"   "does not exist" tools/deploy-env.sh sha-1234abc dep-absent.env dep.out
+
+# `latest` is the one that matters: the build plan mentions it and the rollback
+# section of the runbook forbids it, because rolling back needs a name that
+# cannot be repointed at other bytes.
+refuses "latest rejected"                       "not a sha- tag" tools/deploy-env.sh latest dep.env dep.out
+refuses "a non-hex tag rejected"                "not lowercase hexadecimal" tools/deploy-env.sh sha-abcdefg dep.env dep.out
+refuses "a short tag rejected"                  "seven hex characters" tools/deploy-env.sh sha-abc12 dep.env dep.out
+
+# The report. Every rule here restates api/internal/intake/validate.go and
+# deploys_sha_shape_ck; one that drifts away from those shows up as a 400 the
+# pipeline logs and nobody reads, which is a number that silently never arrived.
+export INTERNAL_DEPLOY_TOKEN=selftest
+refuses "an uppercase sha rejected"             "not lowercase hexadecimal" tools/report-deploy.sh ABCDEF1 10 ok
+refuses "a six-character sha rejected"          "7 to 40 characters" tools/report-deploy.sh abcdef 10 ok
+refuses "a negative duration rejected"          "whole number of seconds" tools/report-deploy.sh abcdef1 -1 ok
+refuses "a non-numeric duration rejected"       "whole number of seconds" tools/report-deploy.sh abcdef1 ten ok
+refuses "a result that is neither rejected"     "must be ok or rollback" tools/report-deploy.sh abcdef1 10 maybe
+refuses "no token rejected"                     "INTERNAL_DEPLOY_TOKEN" env -u INTERNAL_DEPLOY_TOKEN tools/report-deploy.sh abcdef1 10 ok
+unset INTERNAL_DEPLOY_TOKEN
+
+# The verify gate refuses a sha it could never see. Its timeout is not exercised
+# here — see the note at the top of this section.
+refuses "verify refuses an uppercase sha"       "not lowercase hexadecimal" tools/verify-deploy.sh ABCDEF1
+refuses "verify refuses a short sha"            "shorter than seven" tools/verify-deploy.sh abcdef
+
+# The gate's third argument has no default anywhere, and these two are what keep
+# it that way: a duration measured from a clock the pipeline started itself would
+# describe the last two steps while claiming all seven.
+refuses "the gate refuses a non-numeric start"  "must be epoch seconds" tools/deploy-gate.sh sha-1234abc 1234abc now
+refuses "the gate refuses a missing start"      "started-at-epoch" tools/deploy-gate.sh sha-1234abc 1234abc
+
+rm -f dep.env dep.out dep-none.env dep-two.env dep-empty.env
 
 printf 'pre-commit hook\n'
 printf 'bad \n' > hookws.txt

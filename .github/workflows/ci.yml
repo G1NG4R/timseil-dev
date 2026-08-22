@@ -16,8 +16,10 @@
 # person performs — the bridge off a laptop that D3 needed is gone, and the
 # first half of #90 with it — and then the signature, the SBOM attestation and
 # the SLSA provenance that make a published image traceable back to this file.
-# There is still no deploy; nothing here talks to Dokploy, and that is E4. See
-# ADR 0030 for the three original jobs and ADR 0031 for what E2 hung off them.
+# E4 added `deploy`, and with it the last handgriff: nobody types a tag into a
+# panel any more, and a release that does not answer within sixty seconds rolls
+# itself back. See ADR 0030 for the three original jobs, ADR 0031 for what E2
+# hung off them and ADR 0033 for why the deploy goes through an ssh tunnel.
 #
 # Where each check lives follows one rule (ADR 0031): a deterministic gate that
 # needs no container is part of `make check` and runs inside the `check` job; a
@@ -492,6 +494,153 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+  # ------------------------------------------------------------------ deploy
+  #
+  # Steps six and seven. Until E4 this file stopped after five: it built, it
+  # checked, it scanned, it pushed and it signed, and then a person read
+  # `make image-tag`, typed the value into a field in the Dokploy panel and
+  # pressed a button. That handgriff was the last place where "the artefact that
+  # was tested is the artefact that runs" was held by discipline instead of by a
+  # gate, and this job is what replaces it.
+  #
+  # HOW IT REACHES THE HOST. Through ssh, to the Dokploy API on 127.0.0.1. The
+  # panel has no Traefik router and its port is closed — build plan L3, system
+  # handbook chapter 27 — so the pipeline goes through the same door a person
+  # goes through, and L3 has nothing to tear down later. The key it uses can
+  # open that one forward and execute no command; the authorized_keys line and
+  # its counter-test are in docs/runbooks/dokploy.md.
+  #
+  # WHY DOKPLOY AND NOT `docker compose` OVER SSH. Dokploy owns the environment
+  # and writes the .env that compose interpolates IMAGE_TAG from. Running
+  # compose directly would leave the panel saying something else, and the next
+  # person to press Deploy there would perform a silent rollback. ADR 0033.
+  #
+  # WHAT IT MAY DO. contents: read to check out, actions: read to ask when this
+  # run started. Not packages, not id-token, not attestations — this job cannot
+  # push an image and cannot sign one. `publish` can do those and cannot deploy.
+  #
+  # The whole of the job is one make target, and that is the rule this file has
+  # followed since E1: nothing in YAML that is not a command a person can run.
+  # tools/deploy-gate.sh carries the deploy, the sixty-second verify, the
+  # rollback and the report — and the drill in the runbook runs the same file.
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    needs: publish
+    # vars.DEPLOY_ENABLED is the arming switch, and it exists because this
+    # pipeline landed before the last measurement did.
+    #
+    # tools/deploy.sh talks to Dokploy over five values that were taken from
+    # documentation and never read off the running panel. Everything else in
+    # this phase — the verify gate, the rollback, the report — was exercised end
+    # to end against a stand-in and is ready. Holding all of it back for one
+    # unread config line would be the wrong trade; shipping it armed, and
+    # letting the first merge discover the line, would be the other wrong one.
+    #
+    # A skipped job is the honest rendering of "not armed yet": Actions shows it
+    # grey, not green. The alternative — run, notice the secret is missing, exit
+    # 0 with an explanation — would paint a green tick over a deploy that did
+    # not happen, which is the same comfortable lie this job refuses to tell
+    # about a rollback.
+    #
+    # To arm:  gh variable set DEPLOY_ENABLED --body true
+    # docs/runbooks/github.md says what has to be true first.
+    if: >-
+      github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
+      && vars.DEPLOY_ENABLED == 'true'
+
+    permissions:
+      contents: read
+      actions: read
+
+    # Two merges landing minutes apart must not deploy at the same time: they
+    # would race over one IMAGE_TAG and the loser's rollback target would be the
+    # winner's build. cancel-in-progress is false because a deploy interrupted
+    # halfway is worse than a deploy that waits — the workflow-level group makes
+    # the same choice for runs on main, for the same reason.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # StrictHostKeyChecking=yes against a pinned known_hosts, so an unexpected
+      # host key is an abort rather than a question. ExitOnForwardFailure=yes,
+      # because ssh will otherwise sit there happily with no forward and let the
+      # deploy fail one step later against a connection refused on localhost —
+      # a message about the wrong thing entirely.
+      #
+      # The key is written with install -m 600 rather than by redirecting into a
+      # file that exists for an instant at the default mode.
+      - name: Open the tunnel to Dokploy
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          VPS_SSH_USER: ${{ secrets.VPS_SSH_USER }}
+          VPS_SSH_HOST: ${{ secrets.VPS_SSH_HOST }}
+          # A secret rather than a literal, and not because a port number is
+          # confidential — it plainly is not. This repository is public, and
+          # writing the real port here would spend the small amount that moving
+          # it off 22 buys, for nothing. No default either: a fallback to 22
+          # would turn a missing secret into a connection timeout instead of a
+          # sentence naming the missing secret.
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT }}
+        run: |
+          : "${VPS_SSH_PORT:?VPS_SSH_PORT is not set — docs/runbooks/github.md}"
+          install -d -m 700 ~/.ssh
+          install -m 600 /dev/null ~/.ssh/ci-deploy
+          install -m 600 /dev/null ~/.ssh/known_hosts
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/ci-deploy
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -f -N \
+            -p "$VPS_SSH_PORT" \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            -o ExitOnForwardFailure=yes \
+            -o ConnectTimeout=15 \
+            -i ~/.ssh/ci-deploy \
+            -L 3000:127.0.0.1:3000 \
+            "$VPS_SSH_USER@$VPS_SSH_HOST"
+
+      # The instant the RUN began, not the instant this job began.
+      #
+      # `check`, `db` and `publish` have already spent their minutes by the time
+      # this step runs, and those minutes are part of what the case study means
+      # by BUILD + DEPLOY. Measuring from here would publish a number that is
+      # correct about the wrong interval. Read from the Actions API rather than
+      # from a clock this workflow started itself.
+      - name: When this run began
+        id: began
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          started=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --jq .run_started_at)
+          printf 'epoch=%s\n' "$(date -u -d "$started" +%s)" >> "$GITHUB_OUTPUT"
+
+      # Deploy, verify against the public URL for sixty seconds, roll back to
+      # the previous tag if it does not come up, and report the measured
+      # duration to the site's own API either way. A rollback exits non-zero:
+      # it worked, and the deploy still failed.
+      #
+      # DEPLOY_TAG and DEPLOY_SHA are left at their defaults, which follow HEAD
+      # — the merge commit `publish` just built and signed. Spelling them here
+      # would be a second definition of a name that already exists in one place.
+      - name: make deploy-gate
+        env:
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+          INTERNAL_DEPLOY_TOKEN: ${{ secrets.INTERNAL_DEPLOY_TOKEN }}
+        run: make deploy-gate DEPLOY_STARTED_AT=${{ steps.began.outputs.epoch }}
+
+      # always(), because a runner that goes away with a forward still open is
+      # a connection the host has to time out. Cheap here, tidy there.
+      - name: Close the tunnel
+        if: always()
+        run: pkill -f 'ssh -f -N' || true
+
   # ------------------------------------------------------------------- scan
   #
   # The two scanners that read the world outside this repository: secrets that
@@ -545,6 +694,25 @@ jobs:
 
       - name: make check-vuln
         run: make check-vuln
+
+      # E4's half of the same argument, pointed at the toolchain instead of at
+      # the dependencies.
+      #
+      # Dependabot covers Dockerfiles, compose files, go.mod, package.json and
+      # workflow files. It does not read a digest inside a shell script or a
+      # version inside a text file, and four tools live in exactly those two
+      # shapes — cosign, golangci-lint, gitleaks, syft. `make check` already
+      # asserts they are pinned by full digest and carry a readable version;
+      # this asks upstream whether any of them has moved, which is a question no
+      # diff can answer and which goes red on a tree nobody touched.
+      #
+      # On the schedule only. On a pull request it would fail for a release that
+      # landed this morning and has nothing to do with the change under review.
+      - name: make check-pins-online
+        if: github.event_name == 'schedule'
+        run: make check-pins-online
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       # E3's claim, re-asked once a week.
       #

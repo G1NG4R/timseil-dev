@@ -107,6 +107,27 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - **Am Anfang jeder Session lesen, am Ende aktualisieren.** Alles, was wir
   verschieben, finden oder als Idee notieren, kommt dort rein — mit Datum und
   Ursprungsphase.
+- **Zwei Backlogs, und jeder Eintrag wird zugeordnet, bevor er geschrieben
+  wird.** Kein Eintrag entsteht, ohne dass diese Frage beantwortet ist:
+
+  > **Nützt das jemandem, der diese Maschine angreifen will?**
+
+  | Antwort | Datei |
+  |---|---|
+  | nein | `backlog.md` — öffentlich, im Repository |
+  | ja, oder unsicher | `backlog.local.md` — `.gitignore`, nie im Repository |
+
+  **Unsicher zählt als ja.** Der Preis, etwas zu Unrecht lokal zu führen, ist
+  eine Zeile, die ein Fremder nicht liest. Der Preis andersherum ist eine
+  Wegbeschreibung.
+
+  Ins öffentliche Backlog kommt dann trotzdem eine Zeile — die **Aufgabe**,
+  nicht der **Zustand**: „gegen L3 geprüft, Ergebnis nicht hier" ist eine
+  vollständige Notiz für einen Notizblock und eine unvollständige
+  Wegbeschreibung für jemand anderen.
+
+  `check-repo` weist `backlog.local.md` ab, wenn sie je im Repository landet —
+  auch nach `git add -f`; `selftest` beweist die Abweisung.
 - Drei Abschnitte: Verschoben · Gefunden · Idee.
 - Der Backlog ist ein Notizblock, kein Ticketsystem. Am Ende jeder Stufe wird
   triagiert: Issue, bewusst verworfen (mit Begründung), oder erledigt — und
@@ -114,6 +135,13 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 
 ## Was du nicht tun sollst
 
+- **Nie den Ist-Stand einer Sicherheitsfrage dieses Hosts veröffentlichen.**
+  Die Regel gilt nicht nur für `backlog.md`, sondern für alles, was nach außen
+  geht: README, ADRs, Runbooks, Commit-Nachrichten, PR-Beschreibungen, Issues.
+  Adressen, Ports, Kennungen, welche Härtung noch aussteht. Beschreibe die
+  **Arbeit und ihr Abnahmekriterium**, nie die offene Flanke. Der Ist-Stand
+  gehört in `backlog.local.md`. Passiert in E4a — drei Zeilen, korrigiert
+  bevor irgendetwas gepusht war.
 - Keine Abhängigkeit ohne Rückfrage. Bundle-Budget ist eng.
 - Nichts in `docs/design/` ändern.
 - Keinen Wert in `tokens.css` ändern, außer ich sage es explizit.

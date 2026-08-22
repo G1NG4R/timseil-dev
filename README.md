@@ -22,12 +22,14 @@ yet.
 ![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
 -->
 
-> **Status:** in build — stage E of 13, phase E2. The site is deployed and
+> **Status:** in build — stage E of 13, phase E4. The site is deployed and
 > answering at [timseil.dev](https://timseil.dev); `/api/health` is the shortest
-> way to check that for yourself. The pipeline that gets code there is being
-> built now: every gate in `make check` runs on every pull request, alongside
-> static analysis, dependency and secret scanning — the push to the registry
-> does not yet. See [the build plan](docs/build-plan.md) (German).
+> way to check that for yourself, and it names the commit it was built from.
+> The pipeline that gets code there is complete as of this phase: every gate in
+> `make check` runs on every pull request, alongside static analysis, dependency
+> and secret scanning, and a merge to `main` builds, scans, publishes, signs and
+> deploys without anybody pressing anything. See
+> [the build plan](docs/build-plan.md) (German).
 
 ## The one rule
 
@@ -62,6 +64,52 @@ The contract itself is readable at **`/api/docs`**, rendered from
 `contract/openapi.yaml`. It is served from the API binary, so opening it pulls
 nothing from a CDN — the same rule the privacy page states applies to the
 documentation page.
+
+## Seven steps, and the one that can undo itself
+
+```
+01 PUSH  →  02 LINT  →  03 TEST  →  04 BUILD  →  05 PUSH IMG  →  06 DEPLOY  →  07 VERIFY
+```
+
+Nobody types a tag into a panel. A merge to `main` runs
+[`ci.yml`](.github/workflows/ci.yml) end to end: the images are built once,
+checked, scanned by Trivy, pushed to GHCR, signed and attested — and then the
+`deploy` job opens an ssh tunnel to the host, sets the image tag through
+Dokploy's own API and starts the release.
+
+> The `deploy` job is gated on a repository variable. It stays gated on purpose:
+> it needs a host that has been set up for it — eight secrets, a restricted ssh
+> key, an API key scoped to an organisation — and a checkout that does not have
+> those should be skipped, not failed.
+> [ADR 0033](docs/adr/0033-der-deploy-durch-den-tunnel-und-die-sechzig-sekunden.md) §8.
+
+**Step seven is the one worth reading.** For sixty seconds it asks the public
+URL four questions, from outside, the way a visitor would:
+
+| | |
+|---|---|
+| `/api/health` answers `200` | the api is up at all |
+| `.status` is `ok` | up and not degraded |
+| `.sha` is the commit that was deployed | it is the **build that was ordered** |
+| `/` answers `200` | the web container came up too |
+
+The third is the one an uptime check does not make. A `docker compose up` with
+an unchanged environment is a successful no-op — every container healthy, the
+pipeline green, and the previous build still serving. From outside that looks
+exactly like a good deploy unless somebody compares the commit.
+
+If any of the four is still false after sixty seconds, the pipeline sets the
+previous tag back, redeploys, verifies again, and **fails the run**. The
+rollback worked; the deploy did not, and a green tick over that would be a
+comfortable lie.
+
+Either way it reports the measured duration of the whole run to
+`POST /api/internal/deploy`. That is why the deploy time on the case study is
+allowed to call itself measured — before this phase, `ops.lastDeploy` was
+`null` and the site correctly said `— NO DATA`.
+
+Reasoning in [ADR 0033](docs/adr/0033-der-deploy-durch-den-tunnel-und-die-sechzig-sekunden.md)
+(German), including what it costs.
 
 ## Supply chain — verify it yourself
 
