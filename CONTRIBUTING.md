@@ -51,6 +51,23 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 **The pull request title becomes the commit on `main`**, because merges are
 squash-only — so write the title as the commit you want in the history.
 
+### `Closes #N` only when the merge itself is the acceptance
+
+GitHub closes a linked issue the moment the pull request merges. That is right
+for work whose acceptance is the diff, and wrong for work whose acceptance is a
+measurement taken afterwards — a deploy watched from outside, a probe that has to
+run, a number that only exists once the thing is live.
+
+On 2026-08-22 two issues closed at 19:15 because a pull request body said
+`Closes`. The deploy that merge produced went on to measure ten seconds of `404`,
+so for three hours the repository showed a green tick over a measurement that had
+failed. That is the exact shape `witness.sh`, `verify-deploy.sh` and
+`deploy-gate.sh` exist to refuse, one level up, in prose.
+
+So: write `Measured in #N` in the body, and close the issue by hand with the
+numbers once they exist. `Closes #N` stays for everything the merge finishes on
+its own.
+
 There is no `dev` branch. It would cost two pull requests per change and buy
 nothing that the phase branch does not already provide. If a staging environment
 ever exists, `dev` comes back and points at it; until then it would point at
