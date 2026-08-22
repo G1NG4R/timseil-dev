@@ -1230,6 +1230,8 @@ vorherige Tag von Hand in `IMAGE_TAG`, über die API oder im Panel. Deshalb wird
 ein Drill nur gefahren, solange mindestens ein weiterer funktionierender Stand
 in GHCR liegt.
 
+---
+
 ### Handbetrieb
 
 Von deinem Rechner, durch denselben Tunnel und dieselben Skripte, die die
@@ -1260,6 +1262,65 @@ keine Empfehlung mehr, sondern die Bedingung, unter der der Automatismus sicher
 ist: eine Migration, die eine Spalte löscht, macht einen automatischen Rollback
 zu einem Ausfall. Expand/Contract in zwei Deploys,
 `docs/runbooks/migrations.md`.
+
+---
+
+## Der Zeuge
+
+Die Tabelle oben entstand mit einer von Hand getippten Schleife, die mit ihrem
+Terminal wieder verschwand. Seit E5a ist sie ein Befehl im Repository — Issue
+[#143](https://github.com/G1NG4R/timseil-dev/issues/143) verlangt genau das:
+*„whatever produces the witness is a command in the repository, not a shell loop
+somebody remembers"*.
+
+```bash
+make witness WITNESS_UNTIL="--until-sha $(git rev-parse --short=7 HEAD)"
+```
+
+Eine Anfrage je Sekunde auf `/` **und** `/api/health`, von außen über den
+öffentlichen Namen. Der Lauf endet dreißig Sekunden nachdem `/api/health` den
+genannten Commit meldet — der Drill hat gezeigt, warum nicht früher: der zweite
+Wechsel begann 44 Sekunden nach dem ersten.
+
+**Gestartet wird er, bevor der Merge die Pipeline erreicht**, nicht danach.
+Zwischen Merge und Container-Wechsel liegen `check`, `db` und `publish`; wer
+erst beim Deploy anfängt, misst die zweite Hälfte des Trichters.
+
+### Was die Ausgabe sagt
+
+Läufe gleicher Antwort werden zu einer Zeile zusammengefasst — dieselbe Form wie
+die Drill-Tabelle oben, sonst begräbt eine Fünf-Minuten-Messung zehn Sekunden
+unter dreihundert Zeilen `200`.
+
+```
+/
+  1–14        200
+  15          no connection
+  16–25       404
+  26–61       200
+
+  ✗ / — 61 requests, 55×200, 10×404, 1×no connection
+```
+
+Drei Klassen, nicht zwei: `200`, jede andere Statuszeile, und **keine
+Verbindung**. Die dritte wegzulassen wäre derselbe Fehler eine Etage tiefer, den
+„null 5xx" eine Etage höher war — der Drill hat beide Fehlerarten gesehen.
+
+### Die zwei Fälle, in denen er rot wird, ohne dass die Seite schuld ist
+
+- **`✗ … never answered — this window is not the deploy`.** Der genannte Commit
+  ist in der ganzen Zeit nie erschienen. Dann ist die Tabelle die Messung eines
+  anderen Zeitraums, und grün darüber wäre ein Haken über einer Messung, die
+  nicht stattgefunden hat. Meist ist der Deploy gescheitert, bevor er tauschte —
+  der Actions-Lauf sagt, woran.
+- **`429`.** Das wäre der Zeuge selbst: eine Anfrage je Sekunde je Pfad, davon
+  eine an die API, gegen `RATE_LIMIT_RPM=120`. Erscheint sie trotzdem, hat
+  jemand das Limit gesenkt oder ein zweiter Zeuge läuft mit.
+
+Der Zeuge ist ein **zweites Instrument neben `verify-deploy.sh`**, keine sechste
+Bedingung darin. Die beiden beantworten verschiedene Fragen, und das ist der
+ganze Punkt: „läuft der bestellte Build" und „hat ein Besucher einen Fehler
+gesehen" sind nicht dieselbe Zusage.
 
 ---
 

@@ -102,10 +102,13 @@ Vorherige Triage: nach E2, 21.08.2026 — 15 Zeilen → 11 in der Stufe erledigt
 
 ## Gefunden — Bug oder Unklarheit
 
-_Leer. Triage nach E4b, 22.08.2026 — siehe oben._
+Vorherige Triage: nach E4b, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-22 | E5a | **Der Zweizeiler aus dem Bauplan ist vermutlich falsch.** `docker compose up -d --no-deps --scale api=2` mit geändertem `IMAGE_TAG` legt wahrscheinlich **beide** Container neu an statt einen dazuzustellen, und `--scale api=1` entfernt den mit dem **höchsten** Index — also den neuen. Wäre beides so, tut die dokumentierte Reparatur das Gegenteil dessen, was sie soll. Bisher ist das eine Behauptung über Compose-Verhalten, keine Messung; sie steht hier, weil E5b darauf aufbaut. Gemessen wird sie im Labor, nicht in Produktion | offen — **Abnahme von E5a** |
+| 2026-08-22 | E5a | **`witness.sh` meldete grün, wenn der beobachtete Commit nie erschien.** Erste Fassung: `--until-sha` lief in die Wächtergrenze, druckte eine `!`-Zeile und ging mit `0` heraus — ein Haken über einer Messung, die den falschen Zeitraum erfasst hat. Dieselbe Klasse wie der Drill, der nach drei Sekunden grün war. Beim Schreiben des Selbsttests gefunden, nicht beim Lesen des Codes | **erledigt in E5a** — die Wächtergrenze setzt jetzt Exit 1, und `selftest` beweist beide Richtungen |
+| 2026-08-22 | E5a | **Das Labor braucht eine Traefik-Version, und ihre Zuordnung zum Host darf nicht ins Repository.** Ein lokales Traefik-Doppel reproduziert den 404-Trichter ohne Produktions-Merge. Welche Version dort läuft, ist eine Wegbeschreibung zu den passenden Advisories — dieselbe Überlegung wie bei der Panel-Version aus der E4b-Triage. Im Repository steht die gepinnte Version des Labors, nicht der Satz „so läuft es auf dem Host". Zuordnung in `backlog.local.md` | offen |
 
 ## Idee — noch nicht entschieden
 
