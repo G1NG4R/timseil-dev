@@ -12,7 +12,31 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 22.08.2026, nach E4b
+## Wo wir stehen — 22.08.2026, nach E5a
+
+**E5a ist gemergt**, in zwei Teilen: [#152](https://github.com/G1NG4R/timseil-dev/pull/152)
+(`9dbeae4`) bringt den Zeugen und das Labor, [#153](https://github.com/G1NG4R/timseil-dev/pull/153)
+(`6f262e3`) repariert ihn. Produktion läuft `6f262e3`, Deploy 249 s, `ok`.
+
+**Der Trichter ist gegen Produktion gemessen** — 19 Sekunden, 16×404 je Pfad,
+keine einzige 5xx. Die Zahlen und die Kreuzprobe gegen die Pipeline stehen
+weiter unten unter „Die Produktionsmessung von E5a".
+
+**Das Labor trägt die Reparatur, bevor sie Produktion kostet.** `make rolling-lab`
+plus `make witness` reproduziert den Trichter lokal. Dort ist auch gemessen, dass
+der Zweizeiler aus dem Bauplan in beiden Hälften falsch ist und welche Folge
+stattdessen trägt — `docs/runbooks/compose.md`, Abschnitt „Das rollende Labor".
+
+**Was E5b vorfindet:** die Ausgangszahl in Produktion, die korrigierte
+Drei-Schritt-Folge aus dem Labor, und einen Rest-Ausschlag je Dienst, an dem
+`SHUTDOWN_DELAY` ([#65](https://github.com/G1NG4R/timseil-dev/issues/65))
+bemessen wird. Offen und noch nicht entschieden ist, **wie die Folge den Host
+erreicht** — Dokploy besitzt den Deploy (ADR 0033 §2), und der Pipeline-Schlüssel
+kann einen Port forwarden und kein Kommando.
+
+---
+
+### Vorher — nach E4b
 
 **E4b ist gemergt** ([#142](https://github.com/G1NG4R/timseil-dev/pull/142), `ae39e04`)
 **und hat sich selbst deployt.** Produktion läuft `ae39e04`, `report ok … 226s`,
