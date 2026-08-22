@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-env check-adrs check-readme check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -35,6 +35,21 @@ check-node: ## The running Node major must match .nvmrc
 check-versions: ## The declared Node and Go versions match the images that build them
 	@printf 'versions\n'
 	@tools/check-versions.sh .
+
+# The four tool versions no ecosystem lifts — cosign, golangci-lint, gitleaks,
+# syft — found by shape rather than from a list. Named twice in backlog.md, in
+# two different phases, as versions a person has to remember; four places is
+# where a check gets cheaper than the discipline.
+.PHONY: check-pins
+check-pins: ## Every externally pinned tool carries a full digest and a readable version
+	@tools/check-pins.sh .
+
+# The same pins, asked of the world: is any of them behind? Weekly rather than
+# per-diff, next to check-vuln and verify-supply-chain, because the answer can
+# change on a tree nobody touched — ADR 0031 §1.
+.PHONY: check-pins-online
+check-pins-online: ## Ask upstream whether any pinned tool has a newer release
+	@tools/check-pins.sh --online .
 
 .PHONY: check-env
 check-env: ## Every Env* constant appears in .env.example, the runbook and compose.dev.yaml
@@ -545,6 +560,59 @@ sign: sbom ## Sign both images and attach their SBOM — needs an OIDC identity
 verify-supply-chain: ## Verify signature, SBOM attestation and provenance — and the broken case
 	@printf 'supply chain\n'
 	@tools/verify-supply-chain.sh $(REF)
+
+# --------------------------------------------------------------------- deploy
+
+# What the `deploy` job in ci.yml runs, and what a person runs when the pipeline
+# is not the one deploying. Same rule as everywhere else in this file: nothing
+# in YAML that is not a command you can type — and here that includes the
+# rollback, because a rollback you can only trigger by merging to main is one
+# you get to test once.
+#
+# `deploy-gate` is the whole of steps six and seven. The three below it are its
+# parts, and they stay separately runnable because the rollback drill in
+# docs/runbooks/dokploy.md needs to combine them in a way the gate never would.
+#
+# All three default to HEAD, so on `main` right after a merge they name the
+# commit that was just published — and on any other commit they name something
+# the registry does not have, which tools/deploy.sh says out loud instead of
+# taking the site down to find out.
+#
+# NEEDS A TUNNEL. `deploy` talks to Dokploy on 127.0.0.1:3000, which is where
+# the panel is and where it stays (build plan L3). Open it first:
+#
+#     ssh -N -L 3000:127.0.0.1:3000 <vps>
+#
+# DEPLOY_TAG is separate from IMAGE_TAG on purpose. IMAGE_TAG names what this
+# machine builds; DEPLOY_TAG names what production is asked to run, and the
+# rollback path needs to pass a value that is deliberately not HEAD.
+DEPLOY_TAG ?= $(IMAGE_TAG)
+DEPLOY_SHA ?= $(GIT_SHA)
+
+# DEPLOY_STARTED_AT has no default. The number reported is the whole run, and a
+# start instant this Makefile invented would measure the last two steps while
+# claiming to measure all seven — invariant 1 applies to what a number MEANS,
+# not only to whether something produced it. In ci.yml the value is the run's
+# own `run_started_at`; by hand it is the `date +%s` you took before you began.
+.PHONY: deploy-gate
+deploy-gate: ## Deploy, verify, roll back if it does not come up — needs DEPLOY_STARTED_AT
+	@tools/deploy-gate.sh $(DEPLOY_TAG) $(DEPLOY_SHA) $(DEPLOY_STARTED_AT)
+
+.PHONY: deploy
+deploy: ## Point production at a build — make deploy DEPLOY_TAG=sha-abc1234
+	@tools/deploy.sh $(DEPLOY_TAG)
+
+.PHONY: verify-deploy
+verify-deploy: ## Poll the public URL until it serves that build, 60s budget
+	@tools/verify-deploy.sh $(DEPLOY_SHA)
+
+# DEPLOY_RESULT and DEPLOY_SECONDS have no defaults, deliberately. A duration
+# this Makefile guessed would be the one thing invariant 1 forbids, and a result
+# defaulting to `ok` would report success for a rollback. The DEPLOY_ prefix is
+# not decoration either: a bare SECONDS is a variable the shell already owns.
+.PHONY: report-deploy
+report-deploy: ## Report the measured duration — make report-deploy DEPLOY_SECONDS=214 DEPLOY_RESULT=ok
+	@tools/report-deploy.sh $(DEPLOY_SHA) $(DEPLOY_SECONDS) $(DEPLOY_RESULT)
 
 # ------------------------------------------------------------------- topology
 

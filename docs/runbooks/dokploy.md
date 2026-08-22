@@ -148,7 +148,7 @@ Bevor du zur Dokploy-Oberfläche gehst, sollte das hier vollständig sein:
 
 | Variable | Woher |
 |---|---|
-| `IMAGE_TAG` | `make image-tag` auf `main`, Teil 1.3 |
+| `IMAGE_TAG` | **einmal** beim Anlegen: `make image-tag` auf `main`, Teil 1.3. Danach setzt ihn die Pipeline bei jedem Merge (E4, ADR 0033) — ein Wert von Hand hält bis zum nächsten |
 | `POSTGRES_DB` | `timseil` |
 | `POSTGRES_USER` | `timseil_boot` |
 | `POSTGRES_PASSWORD` | 0.2 |
@@ -260,19 +260,20 @@ dig +short www.timseil.dev
 
 Seit E3 pusht der `publish`-Job in `.github/workflows/ci.yml` beide Images bei
 jedem Merge auf `main` — bauen, prüfen, scannen, pushen, in dieser Reihenfolge
-und in einem Job. **Hier steht nichts mehr, was du regelmäßig tust.** Der
-Handgriff, der bis D3 an dieser Stelle stand, war eine Brücke und ist abgebaut;
-Issue #90 hält fest, was davon noch offen ist (die GHCR-Aufbewahrung, E4).
+und in einem Job. Seit E4 **deployt** der `deploy`-Job sie direkt danach.
+**Hier steht nichts mehr, was du regelmäßig tust**, und in 2.3 auch nicht.
 
-Was du brauchst, ist der Tag:
+Der Tag, falls du ihn lesen willst — nicht, weil du ihn irgendwo eintragen musst:
 
 ```bash
 git checkout main && git pull
-make image-tag                              # DAS ist der Wert für Dokploy
+make image-tag                              # sha-<7>, aus HEAD
 ```
 
-Er entsteht aus `HEAD`, also nennt er genau den Commit, den der letzte grüne
-`publish`-Lauf veröffentlicht hat.
+Er entsteht aus `HEAD`, nennt also genau den Commit, den der letzte grüne
+`publish`-Lauf veröffentlicht hat, und `tools/deploy.sh` setzt ihn in Dokploy
+ein, ohne dass ihn jemand abschreibt. Ein Wert, den du von Hand in das Feld
+`IMAGE_TAG` schreibst, hält bis zum nächsten Merge.
 
 **Einmalig, falls der Push mit 403 scheitert.** Die Pakete entstanden in D3
 durch einen Push mit persönlichem Token und sind dann nicht mit dem Repo
@@ -364,12 +365,22 @@ nächsten Deploy nicht, weil die Datei jedes Mal neu geschrieben wird.
 
 ### 2.3 Deployen und zusehen
 
+**Seit E4 drückt niemand mehr.** Ein Merge auf `main` löst den `deploy`-Job aus:
+er öffnet den Tunnel, setzt `IMAGE_TAG` über Dokploys API, startet den Deploy,
+prüft sechzig Sekunden lang von außen, ob die Seite den bestellten Commit
+ausliefert, und rollt zurück, wenn nicht. Was hier steht, ist der **Handbetrieb**
+— der Weg, wenn die Pipeline nicht kann.
+
 **Nicht zwischen 23:45 und 00:00 UTC deployen.** Dokploys `docker-cleanup` läuft
 um 23:50 UTC und fährt `docker system prune --all --force`. Der Wrapper
 `dockerSafeExec` wartet zwar bis zu 300 s auf einen ruhenden Docker, startet
 danach aber trotzdem — ein Redeploy in diesem Fenster überschneidet sich mit dem
 Prune. Volumes sind dabei sicher (siehe 3.3), gestoppte Container und nicht
 referenzierte Images nicht.
+
+`tools/deploy-gate.sh` weigert sich in diesem Fenster von selbst und misst die
+Uhrzeit mit `date -u`, statt sie zu schätzen. Die Sperre gilt damit auch für
+dich, wenn du von Hand deployst — sie lebt nicht mehr nur in `CLAUDE.md`.
 
 Deploy drücken, dann auf dem VPS:
 
@@ -589,6 +600,167 @@ diesen Sekunden kein Docker-Prozess läuft, auf den er warten könnte.
 
 ---
 
+### 3.4 Der Deploy-Zugang für die Pipeline
+
+**Kommt mit E4.** Die Pipeline deployt durch einen SSH-Tunnel auf Dokploys API
+— nicht über einen öffentlichen Router, weil die Oberfläche in L3 zugemacht
+wird und ein Weg, der ihre Erreichbarkeit voraussetzt, dann wieder abzureißen
+wäre. Begründung vollständig in ADR 0033.
+
+Sechs Schritte, einmal:
+
+1. **Schlüsselpaar erzeugen**, auf deinem Rechner, nur für diesen Zweck:
+
+   ```bash
+   ssh-keygen -t ed25519 -C ci-deploy -f ~/.ssh/ci-deploy -N ''
+   ```
+
+   Kein Arbeitsplatz-Schlüssel. Dieser hier landet in GitHub.
+
+2. **Konto auf dem VPS.** Ein eigenes, ohne `sudo` und ohne Docker-Gruppe:
+
+   ```bash
+   sudo useradd -m -s /usr/sbin/nologin ci-deploy
+   sudo install -d -m 700 -o ci-deploy -g ci-deploy /home/ci-deploy/.ssh
+   ```
+
+3. **Den öffentlichen Schlüssel eintragen — mit der Beschränkung.** Das ist die
+   Zeile, an der die ganze Sicherheitsaussage dieser Phase hängt:
+
+   ```
+   restrict,port-forwarding,permitopen="127.0.0.1:3000",command="/bin/false" ssh-ed25519 AAAA… ci-deploy
+   ```
+
+   Ein Forward auf einen Port. Kein Kommando, keine Shell, kein zweiter Port.
+   In `/home/ci-deploy/.ssh/authorized_keys`, Modus 600, Eigentümer `ci-deploy`.
+
+   **`restrict` zuerst, und deshalb.** Es schaltet alles ab, was ein Schlüssel
+   kann — Pty, Agent- und X11-Weiterleitung, `user-rc`, Port-Weiterleitung —
+   und danach wird genau eines wieder angeschaltet. Eine Liste aus `no-…`
+   deckt nur ab, was es zum Zeitpunkt des Schreibens gab; `restrict` deckt auch
+   ab, was OpenSSH morgen dazubekommt. Die Reihenfolge zählt: `port-forwarding`
+   muss nach `restrict` stehen, sonst bleibt es aus.
+
+   `command="/bin/false"` ist der Gürtel zum Hosenträger. Die Pipeline
+   verbindet sich mit `-N`, öffnet also gar keinen Session-Kanal — der Forward
+   läuft ohne Shell, weshalb auch `nologin` als Login-Shell nichts stört. Wer
+   trotzdem einen Befehl anhängt, bekommt `/bin/false`.
+
+4. **Die Beschränkung nachmessen.** Eine Beschränkung, die nie getestet wurde,
+   ist keine:
+
+   ```bash
+   K="-p <port> -i ~/.ssh/ci-deploy -o BatchMode=yes"
+
+   ssh $K ci-deploy@<host> 'id'                      # muss scheitern: command="/bin/false"
+   ssh $K -W 127.0.0.1:5432 ci-deploy@<host> </dev/null   # muss scheitern: permitopen
+   printf 'GET /api/health HTTP/1.0\r\n\r\n' \
+     | ssh $K -W 127.0.0.1:3000 ci-deploy@<host> | head -3   # muss Dokploy zeigen
+   ```
+
+   **`-W`, nicht `-L`, und das ist kein Stilfrage.** `permitopen` ist eine
+   serverseitige Regel und greift erst, wenn ein Kanal geöffnet wird. Ein
+   `ssh -N -L 5432:…` baut aber nur einen **lokalen** Lauschsocket auf und
+   öffnet gar keinen Kanal — es bleibt fröhlich stehen und sieht aus wie ein
+   bestandener Test, obwohl nichts geprüft wurde. `-W` verlangt den Kanal
+   sofort und bekommt deshalb sofort die Antwort. Eine Gegenprobe, die auch
+   dann grün ist, wenn die Regel fehlt, ist keine Gegenprobe — dieselbe Sorte
+   Fehler, die `refuses` in `tools/selftest.sh` behebt.
+
+   **`<port>` ist auf diesem Host nicht 22.** Steht in
+   `/etc/ssh/sshd_config`; die Zahl gehört nicht in dieses Repository, sondern
+   in das Secret `VPS_SSH_PORT`.
+
+   Antwortet auch der dritte mit `administratively prohibited`, steht in
+   `/etc/ssh/sshd_config` ein `AllowTcpForwarding no`. Das gilt global und die
+   Zeile oben kann nichts daran ändern.
+
+   **Was die erste Zeile beweist und was nicht.** Sie antwortet
+   `This account is currently not available.` — das ist `nologin`, die
+   Login-Shell, nicht `command="/bin/false"`. Die Shell kommt zuerst dran, also
+   ist von den zwei Schichten nur die äußere vorgeführt. Das ist in Ordnung und
+   gehört gesagt: `command=` ist die Schicht, die noch steht, wenn jemand dem
+   Konto später eine echte Shell gibt. Wer sie sehen will, setzt für einen
+   Versuch `sudo chsh -s /bin/sh ci-deploy` — die Meldung fällt dann weg und
+   der Exit-Code bleibt 1.
+
+   Der Tunnel, den du danach zum Arbeiten offen lässt, ist wieder der gewohnte:
+   `ssh -p <port> -i ~/.ssh/ci-deploy -N -L 3000:127.0.0.1:3000 ci-deploy@<host>`.
+
+5. **API-Key in Dokploy.** `/dashboard/settings/profile` → Abschnitt
+   **API/CLI Keys** → **Generate**. Er wird genau einmal angezeigt.
+
+   **Nimm diesen Knopf, und keinen anderen Weg.** Ein Key, den man selbst über
+   `POST /api/auth/api-key/create` erzeugt, bekommt kein `metadata` — und ist
+   damit wertlos, ohne dass irgendetwas es sagt. `validateRequest`
+   (`packages/server/src/lib/auth.ts`) prüft den Key erfolgreich, liest dann
+   `organizationId` aus dessen `metadata` und gibt **keine Sitzung** zurück,
+   wenn das Feld leer ist. Das Ergebnis ist auf jedem Pfad
+   `401 {"message":"Unauthorized"}`, während die Datenbank den Key als gültig
+   und `enabled` führt. Nachsehen kann man es so:
+
+   ```sql
+   select id, name, metadata from apikey;   -- metadata darf nicht null sein
+   ```
+
+   Gemessen am 22.08.2026, Dokploy v0.30.0. Der Irrweg hat einen Nachmittag
+   gekostet; er steht hier, damit er keinen zweiten kostet.
+
+6. **Die `composeId` ablesen.** Sie steht in der URL der Compose-App im Panel.
+
+Die **acht** Werte gehen als Repository-Secrets nach GitHub — welche, und wie sie
+rotiert werden, steht in `docs/runbooks/github.md`.
+
+**`INTERNAL_DEPLOY_TOKEN` wird nicht neu erzeugt, sondern kopiert.** Derselbe
+Wert liegt ab jetzt in Dokploy *und* in GitHub; ein Wert an zwei Stellen ist
+ein Wert, den man bei der Rotation an einer Stelle vergisst. Beide Kopien
+stehen im github-Runbook nebeneinander, damit die Rotation beide sieht.
+
+### 3.5 Was GHCR aufhebt
+
+Die zweite Hälfte von [#90](https://github.com/G1NG4R/timseil-dev/issues/90).
+Seit E4 rollt die Pipeline selbsttätig zurück — damit ist die Frage, wie viele
+Stände in der Registry liegen, keine Neugier mehr, sondern die Bedingung, unter
+der „roll back to any previous deploy" ein Versprechen ist.
+
+**Gemessen am 22.08.2026, anonym** — also so, wie ein Fremder es sieht, ohne
+Token und ohne `gh`:
+
+```bash
+for repo in timseil-api timseil-web; do
+  t=$(curl -s "https://ghcr.io/token?scope=repository:g1ng4r/$repo:pull&service=ghcr.io" | jq -r .token)
+  curl -s -H "Authorization: Bearer $t" "https://ghcr.io/v2/g1ng4r/$repo/tags/list" | jq '.tags|length'
+done
+```
+
+Ergebnis, für beide Pakete gleich: **8 Tags — 5 Builds und 3 Signatur-Artefakte.**
+
+| Tag | Was | Signiert |
+|---|---|---|
+| `sha-3890180` | von Hand vom Arbeitsplatz gepusht (D3) | nein |
+| `sha-a0872c1` | erster Push aus der Pipeline (E3a) | nein |
+| `sha-c738b2a` · `sha-8acdd53` · `sha-581f5c0` | Pipeline, ab E3b | ja |
+| 3 × `sha256-…` | die `cosign`- und Attestierungs-Artefakte, eins je signiertem Build | — |
+
+**Nichts wurde je gelöscht, und nichts löscht.** GHCR hat für dieses Repository
+keine Aufbewahrungsregel; der Horizont ist heute unbegrenzt, und der Bestand
+wächst um **zwei Tags pro Merge** (ein Build, ein Signatur-Artefakt). Das ist
+der Zustand, nicht die Absicht — die Regel folgt in E4b, wenn der erste
+automatische Deploy gelaufen ist. Eine Löschautomatik am selben Tag scharf zu
+schalten wie den ersten automatischen Deploy wären zwei Änderungen auf einmal.
+
+Der Unterschied zur Platte, weil er leicht verwechselt wird:
+
+| | Horizont | Wer räumt |
+|---|---|---|
+| VPS-Platte | **1 Tag** | Dokploys `docker-cleanup`, täglich 23:50 UTC, `prune --all` |
+| GHCR | **unbegrenzt** (heute) | niemand |
+
+Ein Rollback auf etwas, das nicht der unmittelbar vorherige Stand ist, ist
+deshalb immer ein `docker pull` — siehe 3.3.
+
+---
+
 ## Teil 4 — Die Abnahme
 
 Das „fertig wenn" des Bauplans für D3, als Kommandos. **Erst wenn das hier
@@ -707,18 +879,53 @@ die falsche Route, sobald jemand eine Regel umformuliert.
 
 ## Rollback
 
-Im Panel den vorherigen SHA-Tag deployen. Kein Git-Revert, kein Build — deshalb
-nie `latest`.
+### Der Normalfall: die Pipeline hat ihn schon gemacht
+
+Seit E4 rollt ein fehlgeschlagener Deploy sich selbst zurück. `tools/deploy-gate.sh`
+merkt sich den Tag, der vor dem Deploy in Dokploy stand, prüft sechzig Sekunden
+lang von außen und setzt bei Ausbleiben den alten Tag zurück, deployt erneut und
+verifiziert nochmal. **Der Job wird trotzdem rot** — der Rollback hat
+funktioniert, der Deploy nicht, und ein grüner Haken darüber wäre eine bequeme
+Lüge.
+
+Was du dann siehst und was es heißt:
+
+| Im Actions-Log | Lage |
+|---|---|
+| `✗ sha-… did not come up; sha-… is live again` | erledigt. Die Seite läuft auf dem vorherigen Stand, die `rollback`-Zeile steht in `deploys` |
+| `✗ nothing to roll back to` | der neue Tag war schon der laufende. Handbetrieb, unten |
+| `✗ THE ROLLBACK DID NOT COME UP EITHER` | die Seite ist unten. Teil 5, und `docs/runbooks/compose.md` für die Kette |
+
+### Handbetrieb
+
+Von deinem Rechner, durch denselben Tunnel und dieselben Skripte, die die
+Pipeline fährt:
+
+```bash
+ssh -N -L 3000:127.0.0.1:3000 <vps> &          # der Tunnel aus 3.4
+export DOKPLOY_API_KEY=… DOKPLOY_COMPOSE_ID=…
+make deploy DEPLOY_TAG=sha-XXXXXXX             # gibt den vorherigen Tag aus
+make verify-deploy DEPLOY_SHA=XXXXXXX
+```
+
+Oder im Panel den vorherigen SHA-Tag in `IMAGE_TAG` eintragen und deployen.
+Kein Git-Revert, kein Build — deshalb nie `latest`; ein Tag, der umgehängt
+werden kann, ist kein Rollback-Ziel. `tools/deploy.sh` weist `latest`
+ausdrücklich ab.
 
 **Rechne damit, dass das Image lokal nicht mehr liegt.** Dokploys
 `docker-cleanup` läuft täglich um 23:50 UTC mit `docker image prune --all`, und
 das entfernt jedes Image ohne laufenden Container — den vorherigen Stand also
 schon in der Nacht nach dem Deploy, nicht erst nach einer Woche. Ein Rollback am
 Tag darauf beginnt deshalb praktisch immer mit den zwei `docker pull` aus 3.3.
-Die lokale Platte ist nicht die Aufbewahrung, **GHCR ist es.**
+Die lokale Platte ist nicht die Aufbewahrung, **GHCR ist es** — und was GHCR
+aufhebt, steht in 3.5.
 
-**Ein Rollback des Images rollt das Schema nicht mit zurück.** Deshalb
-expand/contract in zwei Deploys, `docs/runbooks/migrations.md`.
+**Ein Rollback des Images rollt das Schema nicht mit zurück.** Seit E4 ist das
+keine Empfehlung mehr, sondern die Bedingung, unter der der Automatismus sicher
+ist: eine Migration, die eine Spalte löscht, macht einen automatischen Rollback
+zu einem Ausfall. Expand/Contract in zwei Deploys,
+`docs/runbooks/migrations.md`.
 
 ---
 
@@ -793,4 +1000,4 @@ Damit eine Lücke als Verschiebung lesbar ist und nicht als Vergessen:
 | Rate-Limit in Traefik, fail2ban, Firewall, CAA, DNSSEC | **L5** |
 | Nächtlicher `pg_dump` nach S3 mit Löschschutz | **L6** |
 | Prometheus, Loki, Alloy, Grafana — und das Scrapen der Metriken aus 3.2 | **F2 / F3** |
-| Die Pipeline, die baut, pusht und den Deploy-Webhook ruft (siehe 1.3) | **E1 / E4** |
+| Die Pipeline, die baut, pusht und deployt (siehe 1.3, 2.3 und ADR 0033) | **E1 / E3 / E4 — gebaut** |

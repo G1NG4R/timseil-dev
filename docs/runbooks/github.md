@@ -108,3 +108,98 @@ laufen lassen. Zwei Bedingungen, beide schon einmal teuer gewesen:
 Squash-only, PR-Titel wird das Commit-Subject, Branch wird beim Merge gelöscht.
 Deshalb gilt beim Mergen: **ohne `--subject` und ohne `--body`.** Sonst fehlt
 das `(#N)` im Verlauf — passiert bei #16, nachzulesen in CLAUDE.md.
+
+---
+
+## Die Secrets, die der `deploy`-Job braucht
+
+**Nicht in `tools/github-setup.sh`, und das ist Absicht.** Das Skript setzt
+Einstellungen; ein Secret, das es setzen könnte, müsste es zuerst irgendwo
+lesen — und dann läge der Wert an einer dritten Stelle. Diese sechs werden von
+Hand gesetzt, einmal, und hier steht wo sie herkommen.
+
+```bash
+gh secret set VPS_SSH_HOST        # die Adresse des VPS
+gh secret set VPS_SSH_PORT        # der SSH-Port — NICHT 22 auf diesem Host
+gh secret set VPS_SSH_USER        # ci-deploy
+gh secret set VPS_SSH_KEY   < ~/.ssh/ci-deploy      # der PRIVATE Schlüssel
+gh secret set VPS_KNOWN_HOSTS                        # siehe unten
+gh secret set DOKPLOY_API_KEY     # Dokploy → Settings → API/CLI
+gh secret set DOKPLOY_COMPOSE_ID  # steht in der URL der Compose-App
+gh secret set INTERNAL_DEPLOY_TOKEN   # KOPIERT aus Dokploy, nicht neu erzeugt
+```
+
+**Der Port ist kein Geheimnis und liegt trotzdem hier.** Dieses Repository ist
+öffentlich; die Zahl in `ci.yml` zu schreiben gäbe das bisschen aus der Hand,
+das ein Port abseits von 22 überhaupt einbringt. Einen Vorgabewert hat er
+absichtlich nicht — ein stilles Zurückfallen auf 22 würde ein fehlendes Secret
+in eine Zeitüberschreitung verwandeln statt in einen Satz, der das fehlende
+Secret nennt.
+
+Den Host-Key holst du dir so — **mit `-p`**, und du **prüfst den Fingerabdruck
+gegen den, den dein eigener `known_hosts` schon kennt**, sonst pinnst du, was
+gerade geantwortet hat:
+
+```bash
+ssh-keyscan -p <port> -t ed25519 <host> | tee /tmp/hk
+ssh-keygen -lf /tmp/hk                    # gegen ssh-keygen -F '[<host>]:<port>' vergleichen
+gh secret set VPS_KNOWN_HOSTS < /tmp/hk
+```
+
+Auf einem Port abseits von 22 schreibt `ssh-keyscan` den Eintrag als
+`[host]:port`. Genau diese Form braucht der Job auch, weil er mit `-p`
+verbindet — ein Eintrag ohne Klammern passt dann auf nichts und der Deploy
+scheitert an `Host key verification failed`.
+
+### Wo dieselben Werte sonst noch liegen
+
+Ein Wert an zwei Stellen ist ein Wert, den man bei der Rotation an einer Stelle
+vergisst. Deshalb steht das hier als Tabelle und nicht als Nebensatz:
+
+| Wert | GitHub | Dokploy | VPS |
+|---|---|---|---|
+| `INTERNAL_DEPLOY_TOKEN` | Secret | Env-Variable | — |
+| `DOKPLOY_API_KEY` | Secret | Settings → API/CLI | — |
+| `VPS_SSH_KEY` | Secret (privat) | — | `authorized_keys` (öffentlich) |
+| `VPS_SSH_PORT` | Secret | — | `/etc/ssh/sshd_config` |
+
+**Rotation `INTERNAL_DEPLOY_TOKEN`:** neuen Wert erzeugen → in Dokploy
+eintragen → deployen → **erst dann** das GitHub-Secret setzen. In der
+umgekehrten Reihenfolge meldet der nächste Deploy eine `401` und die Dauer geht
+verloren, obwohl der Deploy geglückt ist.
+
+**Rotation `VPS_SSH_KEY`:** neues Paar erzeugen → den neuen öffentlichen
+Schlüssel **zusätzlich** in `authorized_keys` (mit derselben
+`command=…,permitopen=…`-Zeile aus `docs/runbooks/dokploy.md` 3.4) → GitHub-Secret
+setzen → einen Deploy abwarten → alten Eintrag entfernen. Nie andersherum: der
+Deploy-Job ist dann der Erste, der es merkt, und er merkt es an einer roten
+Produktion.
+
+### Was der Job damit darf
+
+`contents: read` und `actions: read`, sonst nichts — kein `packages`, kein
+`id-token`, kein `attestations`. Der `deploy`-Job kann kein Image pushen und
+keines signieren; `publish` kann beides und kann nicht deployen. Der
+SSH-Schlüssel kann einen Tunnel auf einen Port öffnen und kein Kommando
+ausführen.
+
+### Scharfschalten
+
+Der Job läuft erst, wenn **alle acht Secrets stehen** und die fünf API-Angaben
+in `tools/deploy.sh` am laufenden Panel nachgemessen sind (ADR 0033 §8). Dann:
+
+```bash
+gh variable set DEPLOY_ENABLED --body true
+gh variable list
+```
+
+Zurücknehmen geht genauso — `--body false`. Solange die Variable fehlt oder
+etwas anderes als `true` enthält, zeigt Actions den Job **grau/übersprungen**.
+Das ist die richtige Anzeige: nicht grün, denn es wurde nichts deployt, und
+nicht rot, denn es ist nichts kaputt.
+
+### `deploy` steht nicht in den Required Contexts
+
+Aus demselben Grund wie `publish` und `quickstart`: er läuft nicht auf Pull
+Requests. Ein geforderter Kontext, der nie meldet, sperrt `main` dauerhaft —
+und dann gilt der Abschnitt „`main` nimmt nichts mehr an" weiter oben.

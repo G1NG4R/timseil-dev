@@ -167,6 +167,25 @@ Deshalb in zwei Deploys statt einem:
 Ein Deploy, der eine Spalte anlegt und die alte im selben Zug löscht, macht das
 Rollback unmöglich — man kann das Image zurückdrehen, das Schema nicht.
 
+### Seit E4 ist das keine Empfehlung mehr
+
+Bis E4 war der Rollback ein Klickweg, den ein Mensch geht — und ein Mensch, der
+weiß, dass die letzte Migration eine Spalte gelöscht hat, geht ihn nicht.
+
+Seit E4 rollt die Pipeline **von selbst** zurück: bleibt `/api/health` sechzig
+Sekunden lang die richtige Antwort schuldig, setzt `tools/deploy-gate.sh` den
+vorherigen Tag und startet neu, ohne jemanden zu fragen. Sie weiß nichts über
+dein Schema und kann es nicht wissen.
+
+**Damit ist Expand/Contract die Bedingung, unter der der Automatismus sicher
+ist.** Eine verengende Migration und ein fehlschlagender Deploy im selben Merge
+ergeben eine alte Anwendung auf einem Schema, das ihre Spalten nicht mehr hat —
+und der Automatismus hat das gerade so schnell hergestellt, wie er konnte.
+
+Praktisch heißt das: **ein verengender Schritt geht nie im selben Merge wie eine
+Änderung, die den Deploy scheitern lassen kann.** Er ist ein eigener Merge, und
+sein Vorgänger läuft schon.
+
 ---
 
 ## Indizes begründen: das EXPLAIN-Experiment

@@ -55,6 +55,18 @@ for f in $files; do
   fi
 done
 
+# backlog.local.md must never be tracked.
+#
+# .gitignore already covers it, and .gitignore is exactly the kind of protection
+# that stops working the moment somebody runs `git add -f` or reaches for it
+# from an editor that knows better. The file holds what a stranger could use
+# against this host, so the rule gets a check rather than a convention — and the
+# check runs on `git ls-files`, which answers the only question that matters:
+# is it IN the repository, whatever the ignore rules say.
+if git ls-files --error-unmatch backlog.local.md >/dev/null 2>&1; then
+  bad "backlog.local.md" "is tracked — it holds operational detail that must not be public. run: git rm --cached backlog.local.md"
+fi
+
 # Hooks are the local half of the two gates from build-plan 8.4. A fresh clone
 # has core.hooksPath unset — then nothing here fires and nobody notices.
 hookspath=$(git config --get core.hooksPath || echo "")
