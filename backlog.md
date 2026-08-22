@@ -91,6 +91,34 @@ Vorherige Triage: nach E2, 21.08.2026 — 15 Zeilen → 11 in der Stufe erledigt
 
 ---
 
+## Die Produktionsmessung von E5a — 22.08.2026, 17:17 UTC
+
+Nachgeholt beim Merge von [#153](https://github.com/G1NG4R/timseil-dev/pull/153),
+mit `make witness WITNESS_UNTIL="--until-restart"`, **vor** dem Merge gestartet.
+Eine Anfrage je Sekunde auf `/` und `/api/health`, von außen über den
+öffentlichen Namen, 317 Anfragen je Pfad.
+
+| | `/` | `/api/health` |
+|---|---|---|
+| `200` | 301 | 299 |
+| `404` | **16** | **16** |
+| keine Verbindung | — | 2 |
+| Sekunden ohne Stichprobe | 8 | 8 |
+
+**Das Fenster: 17:17:44 bis 17:18:02 UTC — neunzehn Sekunden.** Es liegt um den
+Moment, in dem der neue Prozess oben war (17:17:51,85), und endet elf Sekunden
+danach. Merge 17:13:54, Deploy gemeldet 17:18:06 mit 249 s.
+
+Damit ist der Bauplan-Satz belegt und die Zahl gemessen statt geschätzt: **keine
+5xx im Fenster, sondern 404** — die Abnahme, die 5xx zählt, hätte diesen Deploy
+durchgewinkt.
+
+Der erste Versuch derselben Messung ging daneben: dreieinhalb Minuten nach dem
+Merge gestartet, alles `200`, kein Deploy darin. Das ist repariert (#153) und
+der Grund, warum `--until-restart` existiert.
+
+---
+
 ## Verschoben — bewusste Entscheidung
 
 | Datum | Aus Phase | Was | Status |
@@ -106,6 +134,7 @@ Vorherige Triage: nach E4b, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-22 | E5a | **Der Trichter ist doppelt so breit wie beim Drill, und das ist nicht erklärt.** Die Produktionsmessung mit dem eigenen Werkzeug (unten) hat **19 Sekunden** ergeben, der Drill am selben Tag **9**. Kandidaten: der Drill tauschte nur den Tag, dieser Merge legt `api` und `web` neu an und fährt `migrate` und `seed` dazu; oder der Netzweg dieser Maschine; oder die Drill-Tabelle hatte unbeprobte Sekunden, die sie nicht ausgewiesen hat — die Spalte gab es damals noch nicht. **Für die Fallstudie zählt die größere Zahl**, solange die kleinere nicht erklärt ist | offen — **E5b** misst nach der Reparatur ohnehin neu |
 | 2026-08-22 | E5a | **Der Zeuge meldete grün über ein Fenster, in dem kein Deploy vorkam.** Beim Merge von [#152](https://github.com/G1NG4R/timseil-dev/pull/152) um 16:59:53 UTC gestartet — der neue Prozess war seit 16:56:22 oben. `/api/health` nannte den Ziel-Commit schon bei der ersten Stichprobe, und `--until-sha` hielt das für Erfolg. **Dritter Fall derselben Form an einem Tag**, nach dem Drill, der nach drei Sekunden grün war, und nach der Wächtergrenze von heute Nachmittag. Die verpasste Produktionsmessung ist nachzuholen | **erledigt** — `.startedAt` gegen sich selbst, wie `verify-deploy.sh` Bedingung 4; dazu `--until-restart`, das ohne SHA auskommt und deshalb **vor** dem Merge gestartet werden kann |
 | 2026-08-22 | E5a | **Der Zweizeiler aus dem Bauplan ist in beiden Hälften falsch — gemessen, nicht mehr vermutet.** `--scale api=2` meldet `Container timseil-api-1 Recreate`: der bestehende Container geht mit runter, der Rollout tut also genau das, was er verhindern soll. Und `--scale api=1` entfernt den **höchsten** Index, also den gerade gestarteten. Bauplan Zeile 1131–1136 und Handbuch Kapitel 26 tragen die Folge wörtlich | **gemessen in E5a**, Labor, 22.08.2026 · Korrektur der beiden Dokumente ist **E5b**, weil erst dort die Folge steht, die sie ersetzt |
 | 2026-08-22 | E5a | **Die korrigierte Folge trägt — bis auf einen Ausschlag je Dienst.** `--no-recreate --scale 2` · den alten Container beim Namen entfernen · `--no-recreate --scale 1`. Drei Läufe: **kein einziges `404` mehr**, übrig bleibt eine Anfrage ohne Verbindung auf `/` und eine `502` auf `/api/health`. Das ist die Fehlerart aus [#65](https://github.com/G1NG4R/timseil-dev/issues/65) — der alte Container hört auf anzunehmen, bevor der Proxy ihn aus dem Pool genommen hat. `SHUTDOWN_DELAY` hat damit eine Messung, an der es bemessen werden kann, statt einer geschätzten Zahl | offen — **Arbeit von E5b** |
