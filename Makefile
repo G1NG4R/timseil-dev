@@ -735,6 +735,29 @@ prod-down: ## Stop the production stack, keep the database
 prod-reset: ## Stop it and drop the database volume
 	@$(COMPOSE) down --volumes
 
+# ---------------------------------------------------------------- rolling lab
+#
+# The same production compose, plus a Traefik of our own on loopback, so the
+# ten-second 404 funnel from issue #143 can be reproduced and repaired without
+# spending a public deploy on every attempt. What it does and does not reproduce
+# is written at the top of compose.lab.yaml, and reading that comes before
+# believing a number measured here.
+COMPOSE_LAB := docker compose -f compose.yaml -f compose.lab.yaml
+
+LAB_URL := http://127.0.0.1:8080
+
+.PHONY: rolling-lab
+rolling-lab: require-images require-network ## Production compose behind a local Traefik — the E5 measuring rig
+	@$(TOPOLOGY_ENV) $(COMPOSE_LAB) up -d --wait api web traefik
+	@printf '  ✓ lab up — %s\n' '$(LAB_URL)'
+	@printf '    witness it:  make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=%s\n' '$(LAB_URL)'
+
+# Down, not down --volumes. The database is the slow part of coming back up, and
+# a lab that costs a re-seed per run is a lab nobody uses twice.
+.PHONY: rolling-lab-down
+rolling-lab-down: ## Stop the lab, keep the database
+	@$(COMPOSE_LAB) down
+
 # The acceptance criterion of phase D2, as a command rather than as a paragraph:
 # "down -v && up reproduziert den Zustand ohne Handgriff".
 #

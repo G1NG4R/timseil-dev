@@ -295,11 +295,26 @@ for p in $paths; do
     END { if (NR > 0) emit() }
   ' "$file"
 
+  # THE GAP LINE, and it is not decoration. A request that outlasts the interval
+  # costs the seconds it ran through, and those seconds carry no sample at all.
+  # Without this line a reader takes "10×404" for "ten seconds of 404" — and in
+  # the first lab run the window was eleven seconds wide with three of them
+  # unsampled. A count of samples and a length of time are two different
+  # numbers, and publishing one as the other is invariant 1 from the inside.
   awk -F'\t' -v path="$p" '
-    { total++; if ($2 == "200") ok++; else bad[$2]++ }
+    NR == 1 { first = $1 }
+    { total++; last = $1; if (!($1 in secs)) { secs[$1]; distinct++ }
+      if ($2 == "200") ok++; else bad[$2]++ }
     END {
+      span = last - first + 1
       line = total " requests, " ok+0 "×200"
       for (a in bad) line = line ", " bad[a] "×" a
+      # DISTINCT seconds, not the request count. After a request that outlasted
+      # the interval the loop catches up, so two samples can land in one second
+      # and the two numbers stop agreeing — which is precisely when the sentence
+      # below is needed and a count-based test would have stayed silent.
+      if (total > 0 && span > distinct)
+        line = line " — over " span "s, " (span - distinct) "s of which carry no sample"
       print (ok == total && total > 0 ? "ok" : "bad") "\t" path "\t" line
     }
   ' "$file" >> "$summary"

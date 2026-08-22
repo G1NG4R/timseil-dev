@@ -277,3 +277,78 @@ Routern referenziert; der Docker-Provider registriert Middlewares global.
 Beide sind von außen erreichbar und tragen genau **eine** Verteidigung, ihr
 Token — Kapitel 29 des Handbuchs verlangt zwei. L3 zieht die zweite ein und muss
 dabei #40 auflösen.
+
+---
+
+## Das rollende Labor
+
+`compose.lab.yaml` legt ein eigenes Traefik vor denselben Stack, auf
+`127.0.0.1:8080`, damit der Zehn-Sekunden-404-Trichter aus
+[#143](https://github.com/G1NG4R/timseil-dev/issues/143) reproduzierbar ist,
+ohne dafür jedes Mal einen Merge und einen öffentlichen Ausfall auszugeben.
+
+```bash
+make images          # IMAGE_TAG folgt HEAD, ein neuer Commit braucht einen neuen Build
+make rolling-lab
+make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=http://127.0.0.1:8080
+make rolling-lab-down
+```
+
+**Was das Labor beweist, ist genau eine Sache:** Traefiks Docker-Provider liest
+Router von Container-Labels, und ein Router verschwindet, solange sein Container
+neu angelegt wird. Was es nicht nachbildet — TLS, ACME, die Host-Regeln, der
+www-Redirect, Dokploys eigene Traefik-Konfiguration — steht im Kopf der Datei.
+Eine hier gemessene Zahl ist eine Zahl über Compose und den Provider, nicht über
+die Produktion.
+
+### Was am 22.08.2026 gemessen wurde
+
+**Der Ist-Zustand**, `up -d --force-recreate`, drei Läufe: `/` verliert 10–11
+Stichproben an `404`, dazu eine ohne Verbindung, über ein Fenster von 11–15
+Sekunden. Gleiche Größenordnung und **dieselbe Antwort** wie die zehn Sekunden,
+die der Drill gegen Produktion gesehen hat. Das Labor bildet den Fehler ab.
+
+**Der Zweizeiler aus dem Bauplan ist in beiden Hälften falsch**, und beides ist
+jetzt gemessen statt vermutet:
+
+```bash
+docker compose up -d --no-deps --scale api=2 --wait api   # legt den ALTEN Container neu an
+docker compose up -d --no-deps --scale api=1 --wait api   # entfernt den NEUEN, höchster Index
+```
+
+Die erste Zeile meldet `Container timseil-api-1 Recreate` — der bestehende
+Container geht mit runter, statt stehen zu bleiben. Damit tut der Rollout genau
+das, was er verhindern soll. Die zweite entfernt `api-2`, also den gerade
+gestarteten.
+
+**Die Folge, die trägt** — drei Schritte statt zwei:
+
+```bash
+docker compose up -d --no-deps --no-recreate --scale api=2 --wait api
+docker stop <alter-container> && docker rm <alter-container>
+docker compose up -d --no-deps --no-recreate --scale api=1 --wait api
+```
+
+`--no-recreate` ist der ganze Unterschied im ersten Schritt: der neue Container
+kommt dazu, der alte bleibt stehen und trägt weiter seinen Router. Der zweite
+Schritt muss den alten Container **beim Namen** entfernen, weil Compose sonst
+den falschen wegnimmt. Der dritte fasst nichts mehr an — nachgemessen: `Container
+timseil-api-2 Running`, kein Neuanlegen, keine Neunummerierung.
+
+**Ergebnis, drei Läufe, identisch:** kein einziges `404` mehr. Übrig bleibt je
+Dienst **ein** Ausschlag — eine Anfrage ohne Verbindung auf `/`, eine `502` auf
+`/api/health`.
+
+Das ist kein Rest-Rauschen, sondern die Fehlerart aus
+[#65](https://github.com/G1NG4R/timseil-dev/issues/65): der alte Container hört
+auf anzunehmen, bevor Traefik ihn aus dem Pool genommen hat. **Damit hat
+`SHUTDOWN_DELAY` eine Messung, an der es bemessen werden kann** — das war der
+Grund, es aus C1 nach E5 zu verschieben. Ob `--rm -f` oder ein sauberes
+`docker stop` verwendet wird, ändert nichts daran; beides gemessen.
+
+**Nebenbefund:** die Indizes wandern. Nach jedem Durchlauf heißt der überlebende
+Container eine Nummer höher (`api-1` → `api-2` → `api-3`). Harmlos — Compose
+findet ihn über das Label, nicht über die Nummer — aber wer `docker logs
+timseil-api-1` in ein Runbook schreibt, schreibt etwas, das nach dem ersten
+Rollout nicht mehr stimmt. Das ist derselbe Grund, aus dem oben schon
+`docker ps | grep` statt eines festen Namens steht.

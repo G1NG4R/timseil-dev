@@ -1,0 +1,92 @@
+# The rolling lab. An overlay on compose.yaml that puts a Traefik in front of
+# the production stack ON THIS MACHINE, so the ten-second 404 funnel can be
+# reproduced and repaired without spending a merge on every attempt.
+#
+#     make rolling-lab          # up, with Traefik on 127.0.0.1:8080
+#     make rolling-lab-down
+#
+# WHY THIS EXISTS
+#
+# E4b measured it against production, one request a second, twice: every
+# container swap serves about ten seconds of 404. The routers are labels on the
+# containers (compose.yaml), so a container being recreated takes its router with
+# it and Traefik answers its own default. Issue #143. The repair is E5b's job,
+# and repairing it against production means one public outage per attempt.
+#
+# WHAT IT REPRODUCES FAITHFULLY — and it is exactly one thing:
+#
+#   Traefik's docker provider watches container labels, and a router that lives
+#   on a container disappears while that container is being recreated.
+#
+# The lab routers below are container labels on the same containers, resolved by
+# the same provider, so they come and go the same way. That is the property
+# under test, and it is measured here rather than assumed.
+#
+# WHAT IT DOES NOT REPRODUCE, said out loud so no result is read too widely:
+#
+#   · TLS, ACME and the certresolver. The lab speaks plain HTTP.
+#   · The apex/www rules and the www → apex redirect. The lab matches on path.
+#   · Dokploy's Traefik configuration, which this repository does not version
+#     (runbook step 1.1) and which a Dokploy upgrade rewrites.
+#   · The host's Traefik version. The pin below is the lab's own; whether it
+#     matches the host is a question the runbook answers on the host.
+#
+# A number measured here is a number about compose and the docker provider. It
+# is not a number about production, and E5b's acceptance is still a real deploy.
+#
+# NOT DEPLOYABLE, AND STRUCTURALLY SO. Dokploy deploys compose.yaml from its own
+# checkout and knows nothing about this file. It carries the one bind mount this
+# repository otherwise refuses — the docker socket, read-only, which is how a
+# docker provider works at all — and that is the second reason it stays a
+# separate file rather than a service in compose.yaml.
+
+services:
+  # The stand-in. Read-only socket, no dashboard, no API, no metrics: none of
+  # them is what is being measured, and every one of them would be a port.
+  traefik:
+    # traefik v3.7.11
+    image: traefik@sha256:5203c3f39ca70de6790d964624e042463ffbd57715bc82be155cf224c0dd5144
+    restart: "no"
+    command:
+      - --global.checknewversion=false
+      - --global.sendanonymoususage=false
+      - --log.level=INFO
+      - --accesslog=false
+      - --api=false
+      - --providers.docker=true
+      # The same setting the host has, read on 18.08.2026 (runbook 1.1): a
+      # provider that routes everything by default would build routers for db,
+      # migrate and seed as well, and the lab would measure noise.
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=dokploy-network
+      - --entrypoints.web.address=:8080
+    ports:
+      # Bound to loopback on purpose. This is a laboratory on a developer
+      # machine, not a service, and :8080 without an address would put it on
+      # every interface the machine has.
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dokploy-network
+
+  # The two lab routers. They are ADDED, not substituted: compose merges labels
+  # by key, so the production routers above stay exactly as they are and are
+  # simply never matched here, having no `websecure` entrypoint to sit on.
+  #
+  # Matching on path rather than on Host keeps `curl http://127.0.0.1:8080/`
+  # honest — a Host header nobody else sends is the thing verify-deploy.sh
+  # refuses to check with, and the same objection applies to a measurement.
+  api:
+    labels:
+      - traefik.http.routers.timseil-api-lab.rule=PathPrefix(`/api`)
+      - traefik.http.routers.timseil-api-lab.entrypoints=web
+      - traefik.http.routers.timseil-api-lab.priority=100
+      - traefik.http.routers.timseil-api-lab.service=timseil-api
+
+  web:
+    labels:
+      - traefik.http.routers.timseil-web-lab.rule=PathPrefix(`/`)
+      - traefik.http.routers.timseil-web-lab.entrypoints=web
+      - traefik.http.routers.timseil-web-lab.priority=10
+      - traefik.http.routers.timseil-web-lab.service=timseil-web
