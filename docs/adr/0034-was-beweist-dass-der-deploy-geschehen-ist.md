@@ -249,8 +249,19 @@ vor dem Merge — trägt der Squash-Commit einen Baum, den `check` in dieser
 Zusammensetzung nie gesehen hat. Vor E4 kostete das ein rotes Abzeichen auf
 `main`; seit E4 wird es automatisch deployt.
 
-Gemessen kostet die Änderung nichts: `deploy` wartet ohnehin rund drei Minuten
-auf `publish`, `check` ist nach 2:16 fertig.
+Gemessen am ersten Merge mit dieser Abhängigkeit — Lauf 32579492840, 22.08.2026,
+Squash-Commit `ae39e04`:
+
+| Job | fertig | vor dem Start von `deploy` |
+|---|---|---|
+| `db` | 14:44:20 | 77 s |
+| `check` | 14:44:40 | **57 s** |
+| `publish` | 14:45:34 | 3 s |
+
+`publish` war mit weitem Abstand die bindende Bedingung, und `deploy` startete
+drei Sekunden danach. **Die neue Abhängigkeit hat null Sekunden gekostet** — an
+diesem Graphen gemessen, nicht aus E4a übernommen. Der Deploy selbst lief 38 s,
+gemeldet wurden 226 s für den ganzen Lauf.
 
 **Die bewusste Folge:** ein rotes `check` auf `main` blockiert ab jetzt den
 Deploy. Das ist der Zweck, kein Fehler.
