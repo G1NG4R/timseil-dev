@@ -2,6 +2,7 @@
 # What a visitor saw while the deploy was happening.
 #
 #   witness.sh --seconds N        [--path P]… [base-url]
+#   witness.sh --until-restart    [--path P]… [base-url]
 #   witness.sh --until-sha <sha7> [--path P]… [base-url]
 #
 # THE INSTRUMENT E5 IS MISSING, AND WHY IT IS A FILE RATHER THAN A LOOP
@@ -52,6 +53,25 @@
 # assumed: a 429 in the table would be this script's own fault, and it would say
 # so by appearing as a status like any other.
 #
+# IT HAS TO SEE THE SWAP, AND SAYING SO COST A MEASUREMENT.
+#
+# On 2026-08-22 this script was started three and a half minutes after the merge
+# it was meant to measure. /api/health already answered the target sha on the
+# first sample, so the run ended thirty seconds later with "every answer was
+# 200" over a window that contained no deploy at all. A green tick above nothing
+# — the third time this repository has caught that shape in one day, after the
+# drill that passed in three seconds and after --until-sha's own guard rail.
+#
+# The repair is the one verify-deploy.sh already uses for its fourth condition,
+# and it is the same field: .startedAt read against itself. A deploy is a NEW
+# PROCESS, so nothing counts as one until that value changes. Two consequences,
+# and the second is the one that matters:
+#
+#   · --until-sha now needs the sha AND a restart. Started too late, it is red.
+#   · --until-restart needs no sha at all, which is what lets it be started
+#     BEFORE the merge — and a squash sha does not exist before the merge, which
+#     is exactly how the run above ended up starting too late.
+#
 # TIME IS RECORDED, NOT ASSUMED. Each sample carries the wall-clock second it
 # was taken in. A request that outlasts the interval leaves a gap in the numbers
 # rather than a smoothed-over row: an instrument that hides its own hiccups is
@@ -84,12 +104,14 @@ MAX_SEC=${WITNESS_MAX_SEC:-900}
 
 usage() {
   printf 'usage: witness.sh --seconds N [--path P]… [base-url]\n' >&2
+  printf '       witness.sh --until-restart [--path P]… [base-url]\n' >&2
   printf '       witness.sh --until-sha <sha7> [--path P]… [base-url]\n' >&2
   exit 1
 }
 
 seconds=''
 until_sha=''
+until_restart=''
 base=''
 paths=''
 
@@ -104,6 +126,10 @@ while [ $# -gt 0 ]; do
       [ $# -ge 2 ] || usage
       until_sha=$2
       shift 2
+      ;;
+    --until-restart)
+      until_restart=1
+      shift
       ;;
     --path)
       [ $# -ge 2 ] || usage
@@ -128,13 +154,17 @@ done
 
 # NO DEFAULT DURATION. A witness that ran "for a while" would publish a count
 # nobody can hold against anything, and picking a number here would be this
-# repository inventing one. One of the two has to be said.
-if [ -n "$seconds" ] && [ -n "$until_sha" ]; then
-  printf '  ✗ --seconds and --until-sha say two different things about when to stop\n' >&2
+# repository inventing one. Exactly one of the three has to be said.
+ends=0
+[ -n "$seconds" ] && ends=$(( ends + 1 ))
+[ -n "$until_sha" ] && ends=$(( ends + 1 ))
+[ -n "$until_restart" ] && ends=$(( ends + 1 ))
+if [ "$ends" -gt 1 ]; then
+  printf '  ✗ --seconds, --until-restart and --until-sha say different things about when to stop\n' >&2
   exit 1
 fi
-[ -n "$seconds" ] || [ -n "$until_sha" ] || {
-  printf '  ✗ say when to stop: --seconds N or --until-sha <sha7>\n' >&2
+[ "$ends" -eq 1 ] || {
+  printf '  ✗ say when to stop: --seconds N, --until-restart or --until-sha <sha7>\n' >&2
   usage
 }
 
@@ -162,14 +192,18 @@ base=${base%/}
 # the other container, and the only path that can say which build is answering.
 [ -n "$paths" ] || paths='/ /api/health'
 
-# --until-sha reads .sha off /api/health, so a path list without it would leave
-# the run with no way to end except the guard rail. Said here in one line rather
-# than discovered fifteen minutes later.
-if [ -n "$until_sha" ]; then
+# Both waiting modes read /api/health, so a path list without it would leave the
+# run with no way to end except the guard rail. Said here in one line rather than
+# discovered fifteen minutes later.
+# Not `[ … ] || [ … ] && watching=1`: with set -e that chain exits the script
+# when both are empty, which is the ordinary --seconds run.
+watching=''
+if [ -n "$until_sha" ] || [ -n "$until_restart" ]; then watching=1; fi
+if [ -n "$watching" ]; then
   case " $paths " in
     *' /api/health '*) ;;
     *)
-      printf '  ✗ --until-sha reads .sha from /api/health, which is not in the paths\n' >&2
+      printf '  ✗ waiting for a deploy reads /api/health, which is not in the paths\n' >&2
       exit 1
       ;;
   esac
@@ -181,9 +215,9 @@ for tool in curl awk; do
     exit 1
   }
 done
-if [ -n "$until_sha" ]; then
+if [ -n "$watching" ]; then
   command -v jq >/dev/null 2>&1 || {
-    printf '  ✗ jq is not available, and --until-sha reads .sha from /api/health\n' >&2
+    printf '  ✗ jq is not available, and waiting for a deploy reads /api/health\n' >&2
     exit 1
   }
 fi
@@ -206,15 +240,25 @@ printf 'witness %s\n' "$base"
 printf '  one request a second, per path:%s\n' "$(printf ' %s' $paths)"
 if [ -n "$seconds" ]; then
   printf '  for %ss\n' "$seconds"
-else
-  printf '  until /api/health answers sha %s, then %ss more (giving up after %ss)\n' \
+elif [ -n "$until_sha" ]; then
+  printf '  until /api/health answers sha %s from a NEW process, then %ss more (giving up after %ss)\n' \
     "$until_sha" "$TAIL_SEC" "$MAX_SEC"
+else
+  printf '  until /api/health answers from a NEW process, then %ss more (giving up after %ss)\n' \
+    "$TAIL_SEC" "$MAX_SEC"
 fi
 
 start=$(date +%s)
 tick=0
-seen_sha_at=''
+seen_at=''
 gave_up=''
+# The instant this run first got an answer out of /api/health, and the build it
+# named. Both are read once and then held: what ends the wait is a CHANGE in the
+# first of them, which is the same comparison verify-deploy.sh makes and needs no
+# second clock to reason about.
+first_start=''
+first_sha=''
+restarted=''
 
 while :; do
   tick=$(( tick + 1 ))
@@ -222,14 +266,33 @@ while :; do
   elapsed=$(( now - start + 1 ))
 
   for p in $paths; do
-    if [ -n "$until_sha" ] && [ "$p" = '/api/health' ]; then
+    if [ -n "$watching" ] && [ "$p" = '/api/health' ]; then
       # -f is deliberately absent here too: the status code is the measurement,
       # and a 502 must be reported as a 502 rather than as exit code 22.
       body=$(curl -sS --max-time "$TIMEOUT_SEC" -o - -w '\n%{http_code}' "$base$p" 2>/dev/null) || body=''
       code=$(printf '%s' "$body" | tail -1)
-      if [ "$code" = '200' ] && [ -z "$seen_sha_at" ]; then
-        running=$(printf '%s' "$body" | sed '$d' | jq -r '.sha // empty' 2>/dev/null || true)
-        [ "$running" = "$until_sha" ] && seen_sha_at=$(date +%s)
+      if [ "$code" = '200' ] && [ -z "$seen_at" ]; then
+        doc=$(printf '%s' "$body" | sed '$d')
+        running=$(printf '%s' "$doc" | jq -r '.sha // empty' 2>/dev/null || true)
+        began=$(printf '%s' "$doc" | jq -r '.startedAt // empty' 2>/dev/null || true)
+
+        if [ -z "$first_start" ]; then
+          # The first answer of the run. It is the baseline, never the result:
+          # whatever is running now was running before this witness existed.
+          first_start=$began
+          first_sha=$running
+        elif [ -n "$began" ] && [ "$began" != "$first_start" ]; then
+          restarted=1
+        fi
+
+        # A deploy is a new process. The sha alone cannot say that — it is equal
+        # to itself on a redeploy of the same tag, and it is already correct for
+        # a witness that arrived after the swap.
+        if [ -n "$restarted" ]; then
+          if [ -z "$until_sha" ] || [ "$running" = "$until_sha" ]; then
+            seen_at=$(date +%s)
+          fi
+        fi
       fi
     else
       code=$(curl -sS --max-time "$TIMEOUT_SEC" -o /dev/null -w '%{http_code}' "$base$p" 2>/dev/null) || code=''
@@ -254,7 +317,7 @@ while :; do
     # stays true when a slow request stretches the run.
     [ "$tick" -lt "$seconds" ] || break
   else
-    if [ -n "$seen_sha_at" ] && [ "$(( now - seen_sha_at ))" -ge "$TAIL_SEC" ]; then
+    if [ -n "$seen_at" ] && [ "$(( now - seen_at ))" -ge "$TAIL_SEC" ]; then
       break
     fi
     if [ "$elapsed" -ge "$MAX_SEC" ]; then
@@ -338,17 +401,28 @@ if [ ! -s "$summary" ]; then
   exit 1
 fi
 
-# THE RUN THAT MEASURED THE WRONG WINDOW.
+# THE RUN THAT MEASURED THE WRONG WINDOW, in the three shapes it comes in.
 #
-# --until-sha says which deploy is being watched. If that sha never answered,
-# every sample in the table is from before it — the site was quietly healthy the
-# whole time and the deploy happened somewhere else, or never. Reporting "every
-# answer was 200" over that would be a green tick above a measurement that did
-# not take place, which is the same comfortable lie deploy-gate.sh refuses to
-# tell about a rollback, one instrument along.
-if [ -n "${gave_up:-}" ]; then
-  printf '  ✗ %ss elapsed and sha %s never answered — this window is not the deploy\n' \
-    "$MAX_SEC" "$until_sha"
+# All three end the same way — status 1 — because all three describe a table of
+# samples that does not contain a deploy. Reporting "every answer was 200" over
+# any of them would be a green tick above a measurement that did not take place,
+# the same comfortable lie deploy-gate.sh refuses to tell about a rollback.
+#
+# They are told apart because the repair differs: wait longer, look at the
+# pipeline, or start earlier next time. A single sentence covering all three
+# would send a reader to the wrong one twice out of three times.
+if [ -n "$gave_up" ]; then
+  if [ -n "$until_sha" ] && [ "$first_sha" = "$until_sha" ] && [ -z "$restarted" ]; then
+    printf '  ✗ sha %s was already answering when this run began, and nothing restarted\n' "$until_sha"
+    printf '    this window is after the deploy, not around it — the site was up %ss ago\n' "$MAX_SEC"
+    printf '    start the witness BEFORE the merge, with --until-restart\n'
+  elif [ -n "$until_sha" ] && [ -z "$restarted" ] && [ -n "$first_start" ]; then
+    printf '  ✗ %ss elapsed and sha %s never answered — this window is not the deploy\n' \
+      "$MAX_SEC" "$until_sha"
+  else
+    printf '  ✗ %ss elapsed and no new process answered — this window is not the deploy\n' "$MAX_SEC"
+    [ -z "$first_start" ] || printf '    still the process that started at %s\n' "$first_start"
+  fi
   status=1
 fi
 

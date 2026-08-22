@@ -623,8 +623,15 @@ report-deploy: ## Report the measured duration — make report-deploy DEPLOY_SEC
 #
 # WITNESS_UNTIL has no default, for the same reason DEPLOY_STARTED_AT has none:
 # a duration this Makefile picked would be a number nobody can hold against
-# anything. Either say how many seconds, or say which sha ends the run.
+# anything. Say how many seconds, or say which end to wait for.
 #
+# START IT BEFORE THE MERGE. The swap happens three to four minutes after a
+# merge (228 s and 258 s, the last two deploys), and a witness started after that
+# has measured the wrong window — which happened, on 2026-08-22, to this file's
+# own phase. --until-restart is the mode for it: it needs no sha, and a squash
+# sha does not exist until the merge has already happened.
+#
+#     make witness WITNESS_UNTIL="--until-restart"
 #     make witness WITNESS_UNTIL="--until-sha $$(git rev-parse --short=7 HEAD)"
 #     make witness WITNESS_UNTIL="--seconds 120"
 .PHONY: witness
