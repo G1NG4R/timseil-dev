@@ -1963,6 +1963,22 @@ emits "a backup tag is not a release tag" "v0.1.0" rel --next
 relrepo "just some words" "another line"
 emits "commits without a conventional prefix produce no release" "" rel --next
 
+# THE CASE THAT COST A PIPELINE RUN. An annotated tag carries a tagger, and
+# `git tag -a` refuses to invent one — a runner with no git identity stops with
+# `fatal: empty ident name`. The first real run of the publish job ended exactly
+# there, before it had built anything.
+#
+# GIT_CONFIG_GLOBAL and GIT_CONFIG_SYSTEM point at /dev/null so the machine
+# running this suite cannot lend its own identity to the case and hide the very
+# thing being tested.
+relrepo "feat: something"
+(cd "$tmp/rel" && git config --unset user.name && git config --unset user.email)
+accepts "a tag is made without any configured git identity" \
+  env RELEASE_DIR="$tmp/rel" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+    tools/release.sh --tag
+accepts "and it is tagged by the author of the commit it names" \
+  sh -c "cd $tmp/rel && git for-each-ref refs/tags/v0.1.0 --format='%(taggername)' | grep -q selftest"
+
 relrepo "feat: something"
 accepts "notes name the first release" \
   sh -c "RELEASE_DIR=$tmp/rel tools/release.sh --notes | grep -q 'The first release'"
