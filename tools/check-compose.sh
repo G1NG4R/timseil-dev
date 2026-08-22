@@ -350,10 +350,16 @@ check_foreign_images_are_pinned() {
 
 # compose.dev.yaml may build; it may still not open db to the host.
 scan compose.dev.yaml 0
+# compose.lab.yaml is an overlay and defines neither db nor a build, so the
+# closed-port rule is all there is to say about it today — which is exactly why
+# it is named here. A third compose file that no check reads is a third place to
+# put a published port, and this file's whole job is that there is no such place.
+scan compose.lab.yaml 0
 # compose.yaml may do neither, and carries the six D2 rules on top.
 scan compose.yaml 1
 check_db_image_agrees
 check_foreign_images_are_pinned compose.yaml
 check_foreign_images_are_pinned compose.dev.yaml
+check_foreign_images_are_pinned compose.lab.yaml
 
 [ "$fail" -eq 0 ] || exit 1

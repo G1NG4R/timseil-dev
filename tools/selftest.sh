@@ -43,7 +43,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/deploy-env.sh" "$root/tools/report-deploy.sh" \
    "$root/tools/verify-deploy.sh" "$root/tools/deploy-gate.sh" \
    "$root/tools/check-deployed.sh" "$root/tools/registry.sh" \
-   "$root/tools/prune-registry.sh" "$tmp/tools/"
+   "$root/tools/prune-registry.sh" "$root/tools/witness.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1459,6 +1459,40 @@ accepts "--started reads the instant back out" \
   sh -c "[ \"\$(VERIFY_BASE_URL=$NOOP tools/verify-deploy.sh --started)\" = 2026-08-22T10:00:00Z ]"
 accepts "--started is empty and calm when nothing answers" \
   sh -c "[ -z \"\$(VERIFY_BASE_URL=http://127.0.0.1:1 tools/verify-deploy.sh --started)\" ]"
+
+# THE WITNESS. The same no-op tree serves it, and that is not laziness: a static
+# file server answers 200 for a path that exists and 404 for one that does not,
+# which is exactly the two answers the drill saw and the only two this script has
+# to tell apart.
+refuses "the witness refuses to run without an end"  "say when to stop" tools/witness.sh
+refuses "the witness refuses two ends at once"       "two different things" tools/witness.sh --seconds 3 --until-sha 1234abc
+refuses "the witness refuses zero seconds"           "positive whole number" tools/witness.sh --seconds 0
+refuses "the witness refuses an uppercase sha"       "not lowercase hexadecimal" tools/witness.sh --until-sha ABCDEF1
+refuses "the witness refuses a short sha"            "shorter than seven" tools/witness.sh --until-sha abcdef
+refuses "the witness refuses a path without a slash" "starts with /" tools/witness.sh --seconds 2 --path health
+# Without /api/health there is nothing to read .sha from, and the run could only
+# end at the guard rail — fifteen minutes to learn that an argument was wrong.
+refuses "the witness refuses --until-sha with no health path" \
+  "not in the paths" tools/witness.sh --until-sha 1234abc --path /
+
+accepts "the witness accepts a site that stays 200" \
+  env WITNESS_BASE_URL="$NOOP" tools/witness.sh --seconds 2 --path / --path /api/health
+
+# The reason this file exists. A witness that counted only 5xx would call this
+# green, and every visitor in that window read "this page does not exist".
+accepts "the witness fails on a 404, not only on a 5xx" \
+  sh -c "! WITNESS_BASE_URL=$NOOP tools/witness.sh --seconds 2 --path /does-not-exist > w.out 2>&1; grep -q '2.404' w.out"
+accepts "and nothing answering at all counts as well" \
+  sh -c "! WITNESS_BASE_URL=http://127.0.0.1:1 tools/witness.sh --seconds 2 --path / > w.out 2>&1; grep -q 'no connection' w.out"
+
+# A run that never saw the build it was told to watch has measured some other
+# window. Green over that would be a tick above a measurement that did not take
+# place — the lie deploy-gate.sh refuses about a rollback, one instrument along.
+accepts "the witness refuses a window that never carried the sha" \
+  sh -c "! WITNESS_BASE_URL=$NOOP WITNESS_TAIL_SEC=1 WITNESS_MAX_SEC=2 tools/witness.sh --until-sha 9999999 > w.out 2>&1; grep -q 'never answered' w.out"
+accepts "and accepts the window that did" \
+  env WITNESS_BASE_URL="$NOOP" WITNESS_TAIL_SEC=1 tools/witness.sh --until-sha 1234abc
+rm -f w.out
 
 kill "$NOOP_PID" 2>/dev/null
 rm -rf noop

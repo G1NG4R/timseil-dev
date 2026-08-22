@@ -614,6 +614,23 @@ verify-deploy: ## Poll the public URL until it serves that build, 60s budget
 report-deploy: ## Report the measured duration — make report-deploy DEPLOY_SECONDS=214 DEPLOY_RESULT=ok
 	@tools/report-deploy.sh $(DEPLOY_SHA) $(DEPLOY_SECONDS) $(DEPLOY_RESULT)
 
+# The second instrument, and it measures a different claim than verify-deploy.
+# That one asks five questions once, at the end, and answers "the build we
+# ordered is serving the site". This one asks one question a second for the
+# whole deploy and answers "no visitor saw an error" — the E5 acceptance, which
+# counts anything that is not 200 rather than only 5xx, because the ten-second
+# window E4b measured was 404s and the old wording would have passed it.
+#
+# WITNESS_UNTIL has no default, for the same reason DEPLOY_STARTED_AT has none:
+# a duration this Makefile picked would be a number nobody can hold against
+# anything. Either say how many seconds, or say which sha ends the run.
+#
+#     make witness WITNESS_UNTIL="--until-sha $$(git rev-parse --short=7 HEAD)"
+#     make witness WITNESS_UNTIL="--seconds 120"
+.PHONY: witness
+witness: ## Write down what a visitor saw, one request a second — needs WITNESS_UNTIL
+	@tools/witness.sh $(WITNESS_UNTIL) $(WITNESS_BASE)
+
 # NOT part of `make check`, and for a reason beyond the usual one. It needs the
 # network and a running production, which is already the line ADR 0031 §1 draws
 # — but inside `check` it would also let one merge be blocked by the deploy of
@@ -717,6 +734,29 @@ prod-down: ## Stop the production stack, keep the database
 .PHONY: prod-reset
 prod-reset: ## Stop it and drop the database volume
 	@$(COMPOSE) down --volumes
+
+# ---------------------------------------------------------------- rolling lab
+#
+# The same production compose, plus a Traefik of our own on loopback, so the
+# ten-second 404 funnel from issue #143 can be reproduced and repaired without
+# spending a public deploy on every attempt. What it does and does not reproduce
+# is written at the top of compose.lab.yaml, and reading that comes before
+# believing a number measured here.
+COMPOSE_LAB := docker compose -f compose.yaml -f compose.lab.yaml
+
+LAB_URL := http://127.0.0.1:8080
+
+.PHONY: rolling-lab
+rolling-lab: require-images require-network ## Production compose behind a local Traefik — the E5 measuring rig
+	@$(TOPOLOGY_ENV) $(COMPOSE_LAB) up -d --wait api web traefik
+	@printf '  ✓ lab up — %s\n' '$(LAB_URL)'
+	@printf '    witness it:  make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=%s\n' '$(LAB_URL)'
+
+# Down, not down --volumes. The database is the slow part of coming back up, and
+# a lab that costs a re-seed per run is a lab nobody uses twice.
+.PHONY: rolling-lab-down
+rolling-lab-down: ## Stop the lab, keep the database
+	@$(COMPOSE_LAB) down
 
 # The acceptance criterion of phase D2, as a command rather than as a paragraph:
 # "down -v && up reproduziert den Zustand ohne Handgriff".
