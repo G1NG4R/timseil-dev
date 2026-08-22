@@ -749,7 +749,12 @@ prod-reset: ## Stop it and drop the database volume
 # spending a public deploy on every attempt. What it does and does not reproduce
 # is written at the top of compose.lab.yaml, and reading that comes before
 # believing a number measured here.
-COMPOSE_LAB := docker compose -f compose.yaml -f compose.lab.yaml
+# All three files, and compose.rollout.yaml is the one that makes the lab worth
+# running: without the twins the rollout has nothing to hold the routers up with
+# and the lab would measure the old, broken swap.
+LAB_FILES := -f compose.yaml -f compose.rollout.yaml -f compose.lab.yaml
+
+COMPOSE_LAB := docker compose $(LAB_FILES)
 
 LAB_URL := http://127.0.0.1:8080
 
@@ -758,6 +763,20 @@ rolling-lab: require-images require-network ## Production compose behind a local
 	@$(TOPOLOGY_ENV) $(COMPOSE_LAB) up -d --wait api web traefik
 	@printf '  ✓ lab up — %s\n' '$(LAB_URL)'
 	@printf '    witness it:  make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=%s\n' '$(LAB_URL)'
+	@printf '    roll it:     make rollout\n'
+
+# The four steps of a real deploy, against the lab. tools/rollout.sh holds them;
+# this target only says which files they run against, and the point of both is
+# that Dokploy's Command field, this lab and the check in tools/deploy.sh cannot
+# say three different things.
+#
+# Watch it from the other terminal, or the run proves nothing:
+#
+#     make witness WITNESS_UNTIL="--seconds 90" WITNESS_BASE=http://127.0.0.1:8080
+#
+.PHONY: rollout
+rollout: ## Run the overlapping start against the lab — the E5b measurement
+	@$(TOPOLOGY_ENV) tools/rollout.sh --run $(LAB_FILES)
 
 # Down, not down --volumes. The database is the slow part of coming back up, and
 # a lab that costs a re-seed per run is a lab nobody uses twice.

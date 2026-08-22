@@ -70,9 +70,9 @@ services:
     networks:
       - dokploy-network
 
-  # The two lab routers. They are ADDED, not substituted: compose merges labels
-  # by key, so the production routers above stay exactly as they are and are
-  # simply never matched here, having no `websecure` entrypoint to sit on.
+  # The lab routers. They are ADDED, not substituted: compose merges labels by
+  # key, so the production routers above stay exactly as they are and are simply
+  # never matched here, having no `websecure` entrypoint to sit on.
   #
   # Matching on path rather than on Host keeps `curl http://127.0.0.1:8080/`
   # honest — a Host header nobody else sends is the thing verify-deploy.sh
@@ -83,6 +83,7 @@ services:
       - traefik.http.routers.timseil-api-lab.entrypoints=web
       - traefik.http.routers.timseil-api-lab.priority=100
       - traefik.http.routers.timseil-api-lab.service=timseil-api
+      - traefik.http.routers.timseil-api-lab.middlewares=timseil-retry@docker
 
   web:
     labels:
@@ -90,3 +91,31 @@ services:
       - traefik.http.routers.timseil-web-lab.entrypoints=web
       - traefik.http.routers.timseil-web-lab.priority=10
       - traefik.http.routers.timseil-web-lab.service=timseil-web
+      - traefik.http.routers.timseil-web-lab.middlewares=timseil-retry@docker
+
+  # The twins carry the same two routers, and that is the whole point of writing
+  # them out again here rather than leaving them to compose.rollout.yaml: while
+  # api is being recreated it is api2 that has to be holding the router up, and a
+  # lab in which only the originals are routed would measure a rollout nobody
+  # performs.
+  #
+  # Identical definitions, not merely similar ones. Traefik's docker provider
+  # merges routers of the same name across containers and complains only when two
+  # of them disagree — so a drift here would not fail loudly, it would pick one
+  # and the lab would quietly stop describing the thing under test. Same reason
+  # tools/check-compose.sh refuses a twin that declares anything of its own.
+  api2:
+    labels:
+      - traefik.http.routers.timseil-api-lab.rule=PathPrefix(`/api`)
+      - traefik.http.routers.timseil-api-lab.entrypoints=web
+      - traefik.http.routers.timseil-api-lab.priority=100
+      - traefik.http.routers.timseil-api-lab.service=timseil-api
+      - traefik.http.routers.timseil-api-lab.middlewares=timseil-retry@docker
+
+  web2:
+    labels:
+      - traefik.http.routers.timseil-web-lab.rule=PathPrefix(`/`)
+      - traefik.http.routers.timseil-web-lab.entrypoints=web
+      - traefik.http.routers.timseil-web-lab.priority=10
+      - traefik.http.routers.timseil-web-lab.service=timseil-web
+      - traefik.http.routers.timseil-web-lab.middlewares=timseil-retry@docker
