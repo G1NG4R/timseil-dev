@@ -970,10 +970,12 @@ image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG}   # ✅
 Drei Gründe, der dritte ist der wichtigste:
 
 1. **RAM** — ein Next.js-Build zieht kurzzeitig 2–4 GB, genau während des Deploys.
-2. **Disk** — der Build-Cache belegt mehrere GB auf einer 40-GB-Platte.
+2. **Disk** — der Build-Cache belegt mehrere GB auf einer 100-GB-Platte, die sich Postgres, Loki und Prometheus teilen.
 3. **Verifizierbarkeit** — baut man auf dem Host, ist das getestete Artefakt **nicht** das laufende. Der Contract-Test lief gegen ein anderes Image, und die Signatur gilt für eines, das nie deployed wurde. Auf dieser Seite bricht damit die ganze Kette.
 
-Abnahmekriterium: `docker system df` auf dem Host zeigt 0 B Build-Cache.
+Abnahmekriterium seit E4b: `tools/check-deployed.sh --host` auf dem Host zeigt, dass der `RepoDigest` der laufenden Container gleich dem Digest ist, den GHCR unter demselben Tag ausliefert.
+
+Vorher stand hier „`docker system df` zeigt 0 B Build-Cache". Das war ein Indiz und es misst nichts mehr: auf dieser Maschine laufen weitere Dienste, und der Cache, den man dort sieht, gehört ihnen. Der Digest-Vergleich prüft dieselbe Behauptung unmittelbar — ein hier gebautes Image trägt diesen Digest nicht, und ein hier gebautes Image trägt überhaupt keinen `RepoDigest`.
 
 ### Named Volumes, keine Bind Mounts
 
