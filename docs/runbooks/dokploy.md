@@ -363,7 +363,54 @@ lohnendste Ziel der Maschine. Sie zuzumachen ist L3. Und sie landen zusätzlich
 als Klartext in jener `.env`, mit Modus 0644 root:root; ein `chmod` überlebt den
 nächsten Deploy nicht, weil die Datei jedes Mal neu geschrieben wird.
 
-### 2.3 Deployen und zusehen
+### 2.3 Das Command-Feld — der überlappende Start
+
+**Seit E5b. Ohne diesen Schritt serviert jeder Deploy zehn bis zwanzig Sekunden
+`404`** — die Router sind Labels an den Containern, und Dokploys Vorgabebefehl
+legt `api` und `web` gleichzeitig neu an. Issue #143, ADR 0035.
+
+Der Wert wird nicht getippt, sondern erzeugt — er steht an genau einer Stelle im
+Repository, und `tools/deploy.sh` vergleicht das Panel vor jedem Deploy dagegen.
+
+1. **Den Wert erzeugen**, im Klon, mit dem `appName` und dem Compose-Pfad dieser
+   App:
+
+   ```bash
+   tools/rollout.sh --print \
+     -p <appName> \
+     -f compose.yaml -f compose.rollout.yaml
+   ```
+
+   Der `appName` steht in der `.env` der App als `COMPOSE_PROJECT_NAME` und im
+   `-p` des Deploy-Logs. **Er gehört nicht in dieses Repository** — er ist
+   Host-Zustand; der Zettel dafür ist `backlog.local.md`.
+
+2. **Panel → die Compose-App → Tab „General"**, Feld **Command**. Einfügen,
+   speichern. Das Feld **ersetzt** Dokploys Vorgabebefehl vollständig; ein
+   `--build` braucht es nicht, weil `compose.yaml` kein `build:` hat und keins
+   haben darf.
+
+3. **Gegenprobe, bevor irgendetwas deployt wird.** Der Vergleich ignoriert `-p`
+   und `-f`, prüft also die Form und nicht die Zuordnung zur Maschine:
+
+   ```bash
+   printf '%s' '<der eingefügte Wert>' | tools/rollout.sh --check
+   ```
+
+   Erwartet: `✓ the panel runs the four-step rollout`.
+
+**Was Dokploy annimmt und was nicht.** `sanitizeCommand` (v0.30.0) weist
+Shell-Metazeichen ab und verlangt, dass **jedes Kettenglied nach dem ersten
+wörtlich mit `docker compose ` beginnt**. Ein `docker stop <container>` in der
+Mitte — der naheliegende Weg — ist damit ausgeschlossen; deshalb arbeitet die
+Kette über Dienstnamen und deshalb gibt es `compose.rollout.yaml`.
+
+**Nach einem Dokploy-Upgrade nachsehen.** Wird das Feld zurückgesetzt, ist der
+404-Trichter zurück. Der nächste Deploy bricht dann mit
+`the panel does not run the rollout this repository defines` ab und deployt
+nicht — laut statt still, aber verhindern kann die Prüfung es nicht.
+
+### 2.4 Deployen und zusehen
 
 **Seit E4 drückt niemand mehr.** Ein Merge auf `main` löst den `deploy`-Job aus:
 er öffnet den Tunnel, setzt `IMAGE_TAG` über Dokploys API, startet den Deploy,

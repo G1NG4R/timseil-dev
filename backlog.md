@@ -12,7 +12,52 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 22.08.2026, nach E4b
+## Wo wir stehen — 22.08.2026, E5b im Labor fertig
+
+**Der Trichter ist zu, im Labor.** Drei Läufe, `110 requests, 110×200` auf `/`
+und auf `/api/health`, kein Ausschlag. Grundlinie auf derselben Anlage:
+13×`404` auf `/`, 8×`404` auf `/api/health`. Die Zahlen und wie sie zustande
+kamen: `docs/runbooks/compose.md`, „Was am 22.08.2026 danach gemessen wurde".
+
+**Wie es zugeht:** zwei Schattendienste (`compose.rollout.yaml`) tragen die
+Router, während `api` und `web` neu angelegt werden; die vier Schritte stehen in
+`tools/rollout.sh` und laufen auf dem Host in Dokploys Command-Feld, weil
+`sanitizeCommand` nur `docker compose`-Glieder in einer Kette zulässt. Dazu zwei
+Pausen mit einem Leser — `SHUTDOWN_DELAY` (#65) und, in `web`,
+`NEXT_MANUAL_SIG_HANDLE` plus `/healthz`, gelesen von einem
+`loadbalancer.healthcheck`. ADR 0035.
+
+**Was noch aussteht:** das Command-Feld im Panel setzen (Runbook 2.3) und die
+**Produktionsmessung** — Zeuge **vor** dem Merge starten,
+`make witness WITNESS_UNTIL="--until-restart"`. Erst die schließt #143 und #65.
+
+---
+
+## Vorher — nach E5a
+
+**E5a ist gemergt**, in zwei Teilen: [#152](https://github.com/G1NG4R/timseil-dev/pull/152)
+(`9dbeae4`) bringt den Zeugen und das Labor, [#153](https://github.com/G1NG4R/timseil-dev/pull/153)
+(`6f262e3`) repariert ihn. Produktion läuft `6f262e3`, Deploy 249 s, `ok`.
+
+**Der Trichter ist gegen Produktion gemessen** — 19 Sekunden, 16×404 je Pfad,
+keine einzige 5xx. Die Zahlen und die Kreuzprobe gegen die Pipeline stehen
+weiter unten unter „Die Produktionsmessung von E5a".
+
+**Das Labor trägt die Reparatur, bevor sie Produktion kostet.** `make rolling-lab`
+plus `make witness` reproduziert den Trichter lokal. Dort ist auch gemessen, dass
+der Zweizeiler aus dem Bauplan in beiden Hälften falsch ist und welche Folge
+stattdessen trägt — `docs/runbooks/compose.md`, Abschnitt „Das rollende Labor".
+
+**Was E5b vorfindet:** die Ausgangszahl in Produktion, die korrigierte
+Drei-Schritt-Folge aus dem Labor, und einen Rest-Ausschlag je Dienst, an dem
+`SHUTDOWN_DELAY` ([#65](https://github.com/G1NG4R/timseil-dev/issues/65))
+bemessen wird. Offen und noch nicht entschieden ist, **wie die Folge den Host
+erreicht** — Dokploy besitzt den Deploy (ADR 0033 §2), und der Pipeline-Schlüssel
+kann einen Port forwarden und kein Kommando.
+
+---
+
+### Vorher — nach E4b
 
 **E4b ist gemergt** ([#142](https://github.com/G1NG4R/timseil-dev/pull/142), `ae39e04`)
 **und hat sich selbst deployt.** Produktion läuft `ae39e04`, `report ok … 226s`,
@@ -91,6 +136,34 @@ Vorherige Triage: nach E2, 21.08.2026 — 15 Zeilen → 11 in der Stufe erledigt
 
 ---
 
+## Die Produktionsmessung von E5a — 22.08.2026, 17:17 UTC
+
+Nachgeholt beim Merge von [#153](https://github.com/G1NG4R/timseil-dev/pull/153),
+mit `make witness WITNESS_UNTIL="--until-restart"`, **vor** dem Merge gestartet.
+Eine Anfrage je Sekunde auf `/` und `/api/health`, von außen über den
+öffentlichen Namen, 317 Anfragen je Pfad.
+
+| | `/` | `/api/health` |
+|---|---|---|
+| `200` | 301 | 299 |
+| `404` | **16** | **16** |
+| keine Verbindung | — | 2 |
+| Sekunden ohne Stichprobe | 8 | 8 |
+
+**Das Fenster: 17:17:44 bis 17:18:02 UTC — neunzehn Sekunden.** Es liegt um den
+Moment, in dem der neue Prozess oben war (17:17:51,85), und endet elf Sekunden
+danach. Merge 17:13:54, Deploy gemeldet 17:18:06 mit 249 s.
+
+Damit ist der Bauplan-Satz belegt und die Zahl gemessen statt geschätzt: **keine
+5xx im Fenster, sondern 404** — die Abnahme, die 5xx zählt, hätte diesen Deploy
+durchgewinkt.
+
+Der erste Versuch derselben Messung ging daneben: dreieinhalb Minuten nach dem
+Merge gestartet, alles `200`, kein Deploy darin. Das ist repariert (#153) und
+der Grund, warum `--until-restart` existiert.
+
+---
+
 ## Verschoben — bewusste Entscheidung
 
 | Datum | Aus Phase | Was | Status |
@@ -106,6 +179,11 @@ Vorherige Triage: nach E4b, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-22 | E5b | **`web2` erreicht die API über `http://api:8080`, und in Schritt 3 ist `api` kurz weg.** Compose gibt jedem Dienst seinen eigenen Netz-Alias, der Zwilling heißt also `api2` und deckt den Namen `api` nicht mit ab. Solange keine Seite server-seitig aus der API liest, kostet das nichts. **Ab Stufe G kostet es** — dann rendert `web2` in genau dem Fenster, in dem sein Gegenüber neu angelegt wird, und ein Deploy erzeugt 500er statt 404er | offen — **Arbeit von G**, hier nur benannt |
+| 2026-08-22 | E5b | **Der Zeuge sieht im Deploy-Fenster zwei Backends und liest `.startedAt` von beiden.** Während Schritt 2 und 3 antworten alter und neuer Container abwechselnd, `--until-restart` sieht also einen Wechsel, sobald der Zwilling oben ist. Das ist hier zufällig richtig — ein neuer Prozess *antwortet* ja — aber die Begründung im Kopf von `witness.sh` beschreibt einen Fall mit genau einem Backend. Nachlesen, ob der Satz noch stimmt, bevor jemand sich darauf verlässt | offen |
+| 2026-08-22 | E5b | **Traefiks Docker-Provider registriert `serversTransports`-Labels nicht.** Am Container gesetzt (`docker inspect` zeigt sie), von Traefik ignoriert: jeder Dienst, der auf sie zeigt, antwortet `servers transport not found` und der Router fällt auf 404. Damit ist `forwardingTimeouts.dialTimeout` für uns nicht erreichbar — es lebt nur im Datei- oder KV-Provider, und der gehört Dokploy und wird bei einem Upgrade überschrieben (ADR 0028). Folge: eine Anfrage, die auf die IP eines gerade entfernten Containers trifft, hängt bis zu Traefiks Vorgabe von 30 s, statt schnell zu scheitern — und `retry` kann sie nicht retten, weil sie nie scheitert | **gemessen in E5b**, Labor, 22.08.2026 · umgangen, indem das Backend den Pool verlässt, **bevor** seine IP verschwindet |
+| 2026-08-22 | E5b | **Eine Middleware, die an einem Container definiert ist, verschwindet mit ihm — und reißt jeden Router mit, der auf sie zeigt.** Im Labor gesehen: `middleware "timseil-retry@docker" does not exist`, Router in Fehler, 404. Betrifft `timseil-www` seit D3 genauso: sie ist an `web` definiert, und **beide** Router zeigen auf sie. Damit war der 404-Trichter womöglich nicht nur eine Frage der Router-Labels, sondern auch dieser Verweise. Die Zwillinge decken es ab, weil sie dieselben Definitionen tragen — das ist ein zweiter Grund für sie, der beim Entwurf nicht bekannt war | offen — als Begründung in ADR 0035, aber die alte Erklärung des Trichters in #143 ist damit unvollständig |
+| 2026-08-22 | E5a | **Der Trichter ist doppelt so breit wie beim Drill, und das ist nicht erklärt.** Die Produktionsmessung mit dem eigenen Werkzeug (unten) hat **19 Sekunden** ergeben, der Drill am selben Tag **9**. Kandidaten: der Drill tauschte nur den Tag, dieser Merge legt `api` und `web` neu an und fährt `migrate` und `seed` dazu; oder der Netzweg dieser Maschine; oder die Drill-Tabelle hatte unbeprobte Sekunden, die sie nicht ausgewiesen hat — die Spalte gab es damals noch nicht. **Für die Fallstudie zählt die größere Zahl**, solange die kleinere nicht erklärt ist | offen — **E5b** misst nach der Reparatur ohnehin neu |
 | 2026-08-22 | E5a | **Der Zeuge meldete grün über ein Fenster, in dem kein Deploy vorkam.** Beim Merge von [#152](https://github.com/G1NG4R/timseil-dev/pull/152) um 16:59:53 UTC gestartet — der neue Prozess war seit 16:56:22 oben. `/api/health` nannte den Ziel-Commit schon bei der ersten Stichprobe, und `--until-sha` hielt das für Erfolg. **Dritter Fall derselben Form an einem Tag**, nach dem Drill, der nach drei Sekunden grün war, und nach der Wächtergrenze von heute Nachmittag. Die verpasste Produktionsmessung ist nachzuholen | **erledigt** — `.startedAt` gegen sich selbst, wie `verify-deploy.sh` Bedingung 4; dazu `--until-restart`, das ohne SHA auskommt und deshalb **vor** dem Merge gestartet werden kann |
 | 2026-08-22 | E5a | **Der Zweizeiler aus dem Bauplan ist in beiden Hälften falsch — gemessen, nicht mehr vermutet.** `--scale api=2` meldet `Container timseil-api-1 Recreate`: der bestehende Container geht mit runter, der Rollout tut also genau das, was er verhindern soll. Und `--scale api=1` entfernt den **höchsten** Index, also den gerade gestarteten. Bauplan Zeile 1131–1136 und Handbuch Kapitel 26 tragen die Folge wörtlich | **gemessen in E5a**, Labor, 22.08.2026 · Korrektur der beiden Dokumente ist **E5b**, weil erst dort die Folge steht, die sie ersetzt |
 | 2026-08-22 | E5a | **Die korrigierte Folge trägt — bis auf einen Ausschlag je Dienst.** `--no-recreate --scale 2` · den alten Container beim Namen entfernen · `--no-recreate --scale 1`. Drei Läufe: **kein einziges `404` mehr**, übrig bleibt eine Anfrage ohne Verbindung auf `/` und eine `502` auf `/api/health`. Das ist die Fehlerart aus [#65](https://github.com/G1NG4R/timseil-dev/issues/65) — der alte Container hört auf anzunehmen, bevor der Proxy ihn aus dem Pool genommen hat. `SHUTDOWN_DELAY` hat damit eine Messung, an der es bemessen werden kann, statt einer geschätzten Zahl | offen — **Arbeit von E5b** |

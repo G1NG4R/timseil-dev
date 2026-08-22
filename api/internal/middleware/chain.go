@@ -20,6 +20,40 @@ func Chain(h http.Handler, links ...Func) http.Handler {
 	return h
 }
 
+// Except returns link, skipped for the given exact paths.
+//
+// It exists for one pair of routes and says so at the call site rather than in
+// this file: /healthz and /readyz are asked by Docker and by Traefik, not by
+// visitors, and putting them through the rate limiter counts an operational
+// probe against a human being's budget.
+//
+// That is not a tidiness argument. Traefik's load-balancer health check runs
+// once a second (compose.yaml), Traefik's own requests carry no forwarded
+// header, so all of them share one bucket keyed on the proxy's address — sixty
+// a minute against a RATE_LIMIT_RPM of 120. The failure that buys is the worst
+// shape available: a 429 on /readyz reads to Traefik as an unhealthy backend,
+// so the limiter would take the service out of the pool it is protecting.
+//
+// EXACT paths, not prefixes. A prefix match is how /readyz-and-something-else
+// gets in for free, and a limiter with a hole in it is worth more attention
+// than a limiter without one.
+func Except(link Func, paths ...string) Func {
+	skip := make(map[string]struct{}, len(paths))
+	for _, p := range paths {
+		skip[p] = struct{}{}
+	}
+	return func(next http.Handler) http.Handler {
+		limited := link(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := skip[r.URL.Path]; ok {
+				next.ServeHTTP(w, r)
+				return
+			}
+			limited.ServeHTTP(w, r)
+		})
+	}
+}
+
 // recorder tracks what a handler did with the response, which the links after
 // it need in order to stay out of each other's way: the log needs the status,
 // the timeout needs to know whether writing has already started, and the

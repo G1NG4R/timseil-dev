@@ -17,8 +17,14 @@ import (
 // A real listener rather than httptest.Server, because what is under test is
 // the drain: httptest.Server closes connections itself, which is the behaviour
 // this file exists to distinguish from.
-func startServing(t *testing.T, h http.Handler, grace time.Duration) (
-	base string, cancel context.CancelFunc, wait func() error, poolClosed *atomic.Int32,
+// The delay is a separate parameter from the grace and every existing caller
+// passes zero, deliberately: those tests are about the drain, and three seconds
+// of waiting for a proxy that does not exist in them would be three seconds
+// added to the suite for nothing. The one test that is about the delay passes a
+// real one.
+func startServing(t *testing.T, h http.Handler, delay, grace time.Duration) (
+	base string, cancel context.CancelFunc, wait func() error,
+	poolClosed *atomic.Int32, accepting *atomic.Bool,
 ) {
 	t.Helper()
 
@@ -31,7 +37,10 @@ func startServing(t *testing.T, h http.Handler, grace time.Duration) (
 	// goroutine and the assertions read it from a handler, so an unsynchronised
 	// append would be a data race in the test that proves ordering.
 	var closes atomic.Int32
-	var accepting atomic.Bool
+	// Returned as well as used, so a test can hand it to a handler and assert
+	// what a caller sees at the instant serve() flips it. That overlap is the
+	// whole of the shutdown delay, and it cannot be observed from outside.
+	accepting = &atomic.Bool{}
 	accepting.Store(true)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -45,12 +54,12 @@ func startServing(t *testing.T, h http.Handler, grace time.Duration) (
 
 	done := make(chan error, 1)
 	go func() {
-		done <- serve(ctx, srv, ln, grace, &accepting,
+		done <- serve(ctx, srv, ln, delay, grace, accepting,
 			func() { closes.Add(1) },
 			slog.New(slog.NewTextHandler(io.Discard, nil)))
 	}()
 
-	return "http://" + ln.Addr().String(), cancel, func() error { return <-done }, &closes
+	return "http://" + ln.Addr().String(), cancel, func() error { return <-done }, &closes, accepting
 }
 
 // The Definition of Done, literally: "SIGTERM beendet ohne abgeschnittene
@@ -59,13 +68,13 @@ func startServing(t *testing.T, h http.Handler, grace time.Duration) (
 func TestShutdownDoesNotCutAnInFlightRequest(t *testing.T) {
 	started := make(chan struct{})
 
-	base, cancel, wait, _ := startServing(t, http.HandlerFunc(
+	base, cancel, wait, _, _ := startServing(t, http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			close(started)
 			time.Sleep(300 * time.Millisecond)
 			w.WriteHeader(http.StatusOK)
 			_, _ = io.WriteString(w, "complete")
-		}), 5*time.Second)
+		}), 0, 5*time.Second)
 
 	type result struct {
 		status int
@@ -113,7 +122,7 @@ func TestShutdownDoesNotCancelTheRequestContext(t *testing.T) {
 	started := make(chan struct{})
 	ctxErr := make(chan error, 1)
 
-	base, cancel, wait, _ := startServing(t, http.HandlerFunc(
+	base, cancel, wait, _, _ := startServing(t, http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			close(started)
 			time.Sleep(200 * time.Millisecond)
@@ -121,7 +130,7 @@ func TestShutdownDoesNotCancelTheRequestContext(t *testing.T) {
 			// alive, because this request was accepted before it.
 			ctxErr <- r.Context().Err()
 			w.WriteHeader(http.StatusOK)
-		}), 5*time.Second)
+		}), 0, 5*time.Second)
 
 	// The response does not matter here; the handler's context does.
 	go func() {
@@ -148,10 +157,10 @@ func TestShutdownDoesNotCancelTheRequestContext(t *testing.T) {
 // signal has to be refused at the socket, so the client retries against the
 // instance that is coming up instead of queueing behind the one going away.
 func TestTheListenerStopsAcceptingImmediately(t *testing.T) {
-	base, cancel, wait, _ := startServing(t, http.HandlerFunc(
+	base, cancel, wait, _, _ := startServing(t, http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
-		}), 5*time.Second)
+		}), 0, 5*time.Second)
 
 	cancel()
 	if err := wait(); err != nil {
@@ -172,14 +181,14 @@ func TestThePoolIsClosedAfterTheServerHasDrained(t *testing.T) {
 	poolStillOpen := make(chan bool, 1)
 
 	var closes *atomic.Int32
-	base, cancel, wait, c := startServing(t, http.HandlerFunc(
+	base, cancel, wait, c, _ := startServing(t, http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			close(inHandler)
 			time.Sleep(200 * time.Millisecond)
 			// The pool must not have been closed while this handler runs.
 			poolStillOpen <- closes.Load() == 0
 			w.WriteHeader(http.StatusOK)
-		}), 5*time.Second)
+		}), 0, 5*time.Second)
 	closes = c
 
 	go func() {
@@ -210,12 +219,12 @@ func TestThePoolIsClosedAfterTheServerHasDrained(t *testing.T) {
 func TestAnExpiredGracePeriodIsReportedAndNotFatal(t *testing.T) {
 	started := make(chan struct{})
 
-	base, cancel, wait, _ := startServing(t, http.HandlerFunc(
+	base, cancel, wait, _, _ := startServing(t, http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			close(started)
 			time.Sleep(2 * time.Second)
 			w.WriteHeader(http.StatusOK)
-		}), 50*time.Millisecond)
+		}), 0, 50*time.Millisecond)
 
 	go func() {
 		resp, err := http.Get(base + "/slow")
@@ -231,4 +240,90 @@ func TestAnExpiredGracePeriodIsReportedAndNotFatal(t *testing.T) {
 	if err := wait(); err != nil {
 		t.Errorf("serve returned %v, want nil even after the grace period expired", err)
 	}
+}
+
+// THE BROKEN CASE FOR THE SHUTDOWN DELAY, and it is not "does it sleep".
+//
+// A test that only measured the pause would pass on a `time.Sleep` sitting
+// anywhere in the shutdown — including after the listener has closed, which is
+// where it would do nothing at all. What issue #65 asks for is an ORDER:
+//
+//	the readiness probe says 503   …while the listener is still accepting…
+//
+// That overlap is the whole mechanism. It is the window the proxy in front uses
+// to take this instance out of its pool, and without it a request that arrives
+// during the swap lands on a socket that is going away — which in E5b's lab did
+// not come back refused, it hung, because the address had stopped belonging to
+// anything.
+//
+// So this asserts both halves at one instant: 503 from /readyz AND 200 from a
+// normal route, after the shutdown has begun. Delete the delay from serve() and
+// the second half fails with a connection error.
+func TestReadinessIsAlreadyRefusingWhileTheListenerStillAccepts(t *testing.T) {
+	var accepting *atomic.Bool
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {
+		if !accepting.Load() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("GET /work", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = io.WriteString(w, "served")
+	})
+
+	// The flag serve() flips is the one the handler above reads — the same
+	// wiring cmd/api uses, rather than a copy that could disagree with it.
+	base, cancel, wait, _, flag := startServing(t, mux, 2*time.Second, 5*time.Second)
+	accepting = flag
+
+	// Alive before anything happens, or the assertions below prove nothing.
+	if code := statusOf(t, base+"/readyz"); code != http.StatusOK {
+		t.Fatalf("before shutdown: /readyz = %d, want 200", code)
+	}
+
+	cancel()
+
+	// Inside the delay, comfortably: 2s of delay, asked at 500ms. Not a race —
+	// the failing direction of this test is the listener being GONE by now, and
+	// a delay that is accidentally too short fails it the same way.
+	time.Sleep(500 * time.Millisecond)
+
+	if code := statusOf(t, base+"/readyz"); code != http.StatusServiceUnavailable {
+		t.Errorf("during the delay: /readyz = %d, want 503 — nothing tells the proxy to stop", code)
+	}
+
+	resp, err := http.Get(base + "/work") //nolint:noctx // the point is a plain request
+	if err != nil {
+		t.Fatalf("during the delay: /work failed with %v — the listener closed before the "+
+			"proxy could have noticed the 503, which is the defect issue #65 describes", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("during the delay: /work = %d, want 200", resp.StatusCode)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "served" {
+		t.Errorf("during the delay: /work said %q, want %q", body, "served")
+	}
+
+	if err := wait(); err != nil {
+		t.Errorf("serve returned %v", err)
+	}
+}
+
+// statusOf is one GET whose only interesting part is the code.
+func statusOf(t *testing.T, url string) int {
+	t.Helper()
+	resp, err := http.Get(url) //nolint:noctx // see above
+	if err != nil {
+		t.Fatalf("GET %s: %v", url, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	return resp.StatusCode
 }

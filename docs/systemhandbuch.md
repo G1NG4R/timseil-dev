@@ -1002,18 +1002,26 @@ Das muss **einmal wirklich provoziert werden** — ein Rollback, der nie ausgel�
 
 ### Zero-Downtime mit Compose
 
-Compose kann kein Rolling Update wie Swarm. Der Weg:
+Compose kann kein Rolling Update wie Swarm. **Der Zweizeiler, der hier stand, war in beiden Hälften falsch** — am 22.08.2026 im Labor gemessen, nicht überlegt: `--scale api=2` meldet `Container timseil-api-1 Recreate`, legt also den bestehenden Container mit neu an und tut genau das, was es verhindern soll; `--scale api=1` entfernt danach den **höchsten** Index, also den gerade gestarteten.
+
+Der Weg, der trägt, benutzt **Dienstnamen statt Containernamen** — Indizes wandern bei jedem Rollout (`api-1` → `api-2` → `api-3`), und Dokploys Command-Feld erlaubt nur `docker compose`-Aufrufe. Zwei Schattendienste `api2` und `web2` (`compose.rollout.yaml`) tragen dieselben Router und existieren nur während des Deploys:
 
 ```bash
-docker compose up -d --no-deps --scale api=2 --wait api
-docker compose up -d --no-deps --scale api=1 --wait api
+docker compose up -d --remove-orphans --wait api2   # db, migrate, seed über depends_on
+docker compose up -d --no-deps --wait web2
+docker compose up -d --no-deps --wait api web       # der Tausch, die Zwillinge halten die Router
+docker compose rm -s -f api2 web2
 ```
 
-Zweite Instanz hoch, Healthcheck abwarten, Traefik nimmt sie auf, alte Instanz runter. **Das setzt Graceful Shutdown voraus** — sonst schneidet das Herunterskalieren laufende Anfragen ab.
+`tools/rollout.sh` ist die eine Stelle, an der die vier Schritte stehen; `tools/deploy.sh` prüft vor jedem Deploy, dass Dokploys Panel sie auch fährt. ADR 0035.
+
+**Das setzt zwei Pausen voraus, und die reichen nicht allein.** Nach dem Tausch blieb je Rollout eine Anfrage übrig, die nicht abgelehnt wurde, sondern **hing**: der Container war weg, seine Adresse gehörte niemandem mehr. `SHUTDOWN_DELAY` in der API und dasselbe in `web` lassen `/readyz` bzw. `/healthz` auf 503 gehen, *während* der Listener noch annimmt — und ein `loadbalancer.healthcheck` an Traefik ist der **Leser**, ohne den beide Pausen wirkungslos wären. Der Docker-Provider verwirft ein Backend sonst erst, wenn der Container den Laufzustand verlässt. Issue #65.
 
 **Die Abnahme zählt Nicht-200, nicht 5xx** — und das ist seit E4b eine Korrektur, keine Formulierungsfrage. Am 22.08.2026 während des Rollback-Drills mitgeschrieben, eine Anfrage je Sekunde auf `/`: **rund zehn Sekunden je Container-Wechsel, und zwar 404.** Traefiks Router hängt an den Labels des Containers; ist der Container weg, ist der Router weg, und es antwortet die Standard-404. Eine Abnahme, die 5xx zählt, hätte diesen Zustand durchgewinkt. Eine 404 ist dabei die unfreundlichere der beiden Antworten: eine 502 lädt zum Wiederkommen ein, eine 404 sagt einem Crawler, die Adresse gebe es nicht.
 
-Falls es nicht sauber gelingt: dann steht in der Fallstudie die **gemessene** geplante Downtime pro Deploy statt „Zero-Downtime". Die Zahl muss stimmen — und „~3 s" stand hier, bevor jemand nachgemessen hat.
+**Im Labor erreicht, drei Läufe, 22.08.2026:** `110 requests, 110×200` auf beiden Pfaden, kein Ausschlag. Die Grundlinie auf derselben Anlage waren 13×`404` auf `/` und 8×`404` auf `/api/health`. Die Zahlen und ihr Zustandekommen stehen in `docs/runbooks/compose.md`.
+
+Falls es gegen Produktion nicht sauber gelingt: dann steht in der Fallstudie die **gemessene** geplante Downtime pro Deploy statt „Zero-Downtime". Die Zahl muss stimmen — und „~3 s" stand hier, bevor jemand nachgemessen hat.
 
 ### Migrations abwärtskompatibel
 

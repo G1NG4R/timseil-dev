@@ -291,7 +291,22 @@ ohne dafür jedes Mal einen Merge und einen öffentlichen Ausfall auszugeben.
 make images          # IMAGE_TAG folgt HEAD, ein neuer Commit braucht einen neuen Build
 make rolling-lab
 make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=http://127.0.0.1:8080
+make rollout         # die vier Schritte, die auch Dokploy fährt
 make rolling-lab-down
+```
+
+**Ein Rollout braucht einen anderen Tag als den laufenden**, sonst legt Compose
+nichts neu an und die Messung zeigt einen Deploy, den es nicht gab — dieselbe
+Falle wie beim Zeugen, der das falsche Fenster erwischt. Im Labor reicht ein
+zweiter Name für dasselbe Image:
+
+```bash
+docker tag ghcr.io/g1ng4r/timseil-api:sha-$(git rev-parse --short=7 HEAD) \
+           ghcr.io/g1ng4r/timseil-api:sha-labbbb1
+docker tag ghcr.io/g1ng4r/timseil-web:sha-$(git rev-parse --short=7 HEAD) \
+           ghcr.io/g1ng4r/timseil-web:sha-labbbb1
+IMAGE_TAG=sha-labbbb1 tools/rollout.sh --run \
+  -f compose.yaml -f compose.rollout.yaml -f compose.lab.yaml
 ```
 
 **Was das Labor beweist, ist genau eine Sache:** Traefiks Docker-Provider liest
@@ -345,6 +360,66 @@ auf anzunehmen, bevor Traefik ihn aus dem Pool genommen hat. **Damit hat
 `SHUTDOWN_DELAY` eine Messung, an der es bemessen werden kann** — das war der
 Grund, es aus C1 nach E5 zu verschieben. Ob `--rm -f` oder ein sauberes
 `docker stop` verwendet wird, ändert nichts daran; beides gemessen.
+
+### Was am 22.08.2026 danach gemessen wurde — die Reparatur
+
+Dieselbe Anlage, dieselbe Methode, ein Tag-Wechsel statt eines `--force-recreate`,
+damit gemessen wird, was ein Deploy tut und nicht was ein Neustart tut.
+
+**Die Grundlinie auf dieser Anlage**, `up -d --remove-orphans` mit neuem Tag —
+also das, was Dokploy von sich aus tut:
+
+| | `/` | `/api/health` |
+|---|---|---|
+| `200` | 56 | 62 |
+| `404` | **13** | **8** |
+| `502` | 1 | — |
+
+**Die Vier-Glieder-Kette** (`tools/rollout.sh`), drei Läufe:
+**kein einziges `404` mehr.** Übrig blieb je Lauf **eine** Anfrage, und sie kam
+nicht abgelehnt zurück — **sie hing.** Die Lückenzeile des Zeugen sagt es: um
+die verlorene Stichprobe herum tragen drei bis vier Sekunden gar keine Probe,
+also lief die Anfrage in ihr Zeitlimit. Der Container war weg, seine Adresse
+gehörte niemandem mehr, und Pakete dorthin verschwinden, statt zurückgewiesen zu
+werden.
+
+Das ist die Fehlerart aus [#65](https://github.com/G1NG4R/timseil-dev/issues/65),
+und **`retry` kann sie nicht auffangen**: Traefik wiederholt eine Anfrage, die
+scheitert, nicht eine, die hängt. Nachgemessen, mit `retry` an beiden Routern —
+zwei verlorene Stichproben statt einer, also keine Änderung.
+
+**Was sie auffängt, sind zwei Pausen und ihr Leser:**
+
+| Hälfte | Was | Wirkung |
+|---|---|---|
+| `api` | `SHUTDOWN_DELAY=3s` | `/readyz` sagt 503, der Listener nimmt weiter an |
+| `web` | `NEXT_MANUAL_SIG_HANDLE` + `/healthz` | dasselbe für einen Prozess, der kein Bereitschaftsflag hatte |
+| beide | `loadbalancer.healthcheck`, 1 s | **der Leser.** Ohne ihn ist die Pause ein Knopf ohne Wirkung |
+
+Die Reihenfolge ist an einem Container einzeln nachgeprüft, nicht aus dem
+Ergebnis geschlossen — eine Sekunde nach `docker compose stop web`:
+
+```
+HTTP/1.1 503 Service Unavailable        ← /healthz, direkt im Container
+{"level":"INFO","msg":"shutdown requested, readiness is now 503","delay":"3000ms"}
+{"level":"INFO","msg":"leaving","signal":"SIGTERM"}
+```
+
+Der Listener hat also geantwortet, während er schon 503 sagte. Genau das ist das
+Fenster.
+
+**Ergebnis, drei Läufe, identisch:**
+
+```
+/               110 requests, 110×200
+/api/health     110 requests, 110×200
+
+  ✓ every answer was 200
+```
+
+**Die Zahlen gelten für Compose und den Docker-Provider auf dieser Maschine.**
+Die Abnahme der Stufe ist ein echter Deploy, und die steht oben im Kopf von
+`compose.lab.yaml`, damit sie niemand mit dieser hier verwechselt.
 
 **Nebenbefund:** die Indizes wandern. Nach jedem Durchlauf heißt der überlebende
 Container eine Nummer höher (`api-1` → `api-2` → `api-3`). Harmlos — Compose

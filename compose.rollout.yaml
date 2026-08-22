@@ -1,0 +1,68 @@
+# The twins. Two shadow services that exist only while a deploy is happening,
+# so that no container swap ever leaves Traefik without a backend.
+#
+#     tools/rollout.sh --print     # the chain, as Dokploy's Command field wants it
+#     make rollout                 # the same chain, against the lab
+#
+# WHY THIS FILE EXISTS
+#
+# Every container swap served the public site about ten seconds of 404, measured
+# against production twice and reproduced in the lab (issue #143). The routers
+# are labels on the containers, so a container being recreated takes its router
+# with it and Traefik answers its own default 404 — not a 502, which is the
+# friendlier of the two: a 502 invites a crawler back, a 404 tells it the address
+# does not exist.
+#
+# The repair is an overlapping start: something else has to carry the router
+# while api and web are recreated. E5a measured a three-step sequence that does
+# it with `--scale` and it works — and it cannot be used here, because its middle
+# step names a container that nobody can know in advance:
+#
+#     up -d --no-deps --no-recreate --scale api=2 --wait api
+#     docker stop <old-container> && docker rm <old-container>     # <- this
+#     up -d --no-deps --no-recreate --scale api=1 --wait api
+#
+# Dokploy owns the deploy (ADR 0033 §2) and the pipeline's key can forward one
+# port and run no command, so the sequence has to be expressible in Dokploy's
+# Command field. That field takes an `&&` chain in which every link after the
+# first must begin literally with `docker compose ` — measured by reading
+# `sanitizeCommand` in Dokploy v0.30.0, not by guessing at the behaviour.
+#
+# A SERVICE has a name. A container has an index that moves (api-1 → api-2 →
+# api-3 after two rollouts). So the swap is written in service names, and these
+# two services are what makes that possible: `compose rm -s -f api2 web2`
+# removes exactly the twins and nothing else. ADR 0035.
+#
+# WHY `extends` AND NOTHING ELSE
+#
+# A twin that differs from its original is worse than no twin at all: it would
+# carry a stale router and serve it without anything going red. So these
+# definitions hold no image, no labels, no environment and no networks of their
+# own — every one of them comes from compose.yaml, and tools/check-compose.sh
+# refuses a service in this file that declares anything besides `extends`.
+#
+# `extends` DOES copy `depends_on` — measured with `docker compose config` on
+# Compose 5.4.0, because the specification says the opposite and the twins would
+# have been written around a rule that does not hold. It costs nothing: every
+# step of the chain passes --no-deps, and db, migrate and seed are already up by
+# then. What it buys is a `docker compose up -d api2` typed by hand doing the
+# right thing instead of starting a twin against a database with no schema.
+#
+# WHAT HAPPENS IF THE COMMAND FIELD IS LOST
+#
+# A Dokploy upgrade that resets it deploys with the default command again. That
+# command does not pass `-f compose.rollout.yaml`, so the twins become orphans
+# and `--remove-orphans` takes them away: the failure degrades to the behaviour
+# this repository had before E5b, not to a broken stack. tools/deploy.sh checks
+# the field before every deploy so the degradation is loud rather than silent.
+
+services:
+  api2:
+    extends:
+      file: compose.yaml
+      service: api
+
+  web2:
+    extends:
+      file: compose.yaml
+      service: web

@@ -40,6 +40,7 @@ const (
 	EnvLogLevel         = "LOG_LEVEL"
 	EnvRequestTimeout   = "REQUEST_TIMEOUT"
 	EnvShutdownGrace    = "SHUTDOWN_GRACE"
+	EnvShutdownDelay    = "SHUTDOWN_DELAY"
 	EnvDBMaxConns       = "DB_MAX_CONNS"
 	EnvDBMinConns       = "DB_MIN_CONNS"
 	EnvStatementTimeout = "DB_STATEMENT_TIMEOUT"
@@ -85,9 +86,37 @@ const forbiddenRole = "timseil_migrate"
 // Defaults. Every one of them is a decision with a reason, and the reasons live
 // in ADR 0014 rather than in this list.
 const (
-	defaultLogLevel         = "info"
-	defaultRequestTimeout   = 15 * time.Second
-	defaultShutdownGrace    = 20 * time.Second
+	defaultLogLevel       = "info"
+	defaultRequestTimeout = 15 * time.Second
+	defaultShutdownGrace  = 20 * time.Second
+
+	// The pause between "stop sending me work" and "the socket is closing", and
+	// the only number in this list that was read off a measurement rather than
+	// reasoned to. Issue #65 asked for it in C1 and it was refused there for the
+	// right reason: there was no proxy in front, so it would have been a knob
+	// with no effect and a number nobody could justify.
+	//
+	// E5b put the proxy in front and measured what it costs to leave it out. On
+	// every rollout one request landed on the socket of a container Traefik had
+	// not stopped using yet, and it did not fail — it HUNG, because the address
+	// belongs to a container that is gone and packets to it go nowhere. The
+	// retry middleware cannot rescue a request that never fails.
+	//
+	// Three seconds, and the three is not padding: Traefik's health check on
+	// /readyz runs every second (compose.yaml), so a 503 is seen after at most
+	// one interval plus one timeout. Three gives that a whole second of margin
+	// and still leaves the drain its full SHUTDOWN_GRACE inside the container's
+	// stop_grace_period — 3 + 20 < 30, and Load() below refuses any combination
+	// where that stops being true.
+	defaultShutdownDelay = 3 * time.Second
+
+	// What compose.yaml writes as `stop_grace_period` for the api service. It is
+	// not configurable and it is not read from anywhere: it is Docker's number,
+	// this process cannot see it, and restating it here is the only way the check
+	// below can exist at all. If that line in compose.yaml moves, this one moves
+	// with it — tools/check-compose.sh refuses the two of them disagreeing so
+	// that the copy cannot rot quietly.
+	stopGracePeriod         = 30 * time.Second
 	defaultMaxConns         = 10
 	defaultMinConns         = 2
 	defaultStatementTimeout = 5 * time.Second
@@ -150,8 +179,15 @@ type Config struct {
 	// ShutdownGrace is how long a stopping server waits for what is still in
 	// flight. The first must be smaller than the second, or the grace period
 	// expires while a request it is waiting for is still legally running.
+	//
+	// ShutdownDelay sits before both of them: on SIGTERM the readiness probe
+	// goes to 503 immediately, and then nothing else happens for this long. It
+	// is time bought for the proxy in front to notice and stop routing here,
+	// and it is the difference between a graceful shutdown of the PROCESS and a
+	// graceful shutdown as seen by a VISITOR. Issue #65, ADR 0035.
 	RequestTimeout time.Duration
 	ShutdownGrace  time.Duration
+	ShutdownDelay  time.Duration
 
 	DB        DB
 	RateLimit RateLimit
@@ -313,6 +349,11 @@ func Load() (Config, error) {
 
 		RequestTimeout: l.duration(EnvRequestTimeout, defaultRequestTimeout),
 		ShutdownGrace:  l.duration(EnvShutdownGrace, defaultShutdownGrace),
+		// Zero is a legal value and means "do not wait": a deployment with no
+		// proxy in front of it — `make dev`, a test, anybody's laptop — has
+		// nobody to wait for, and making them sit through three seconds on
+		// every Ctrl-C would be this repository imposing production on them.
+		ShutdownDelay: l.atLeastZeroDuration(EnvShutdownDelay, defaultShutdownDelay),
 
 		DB: DB{
 			MaxConns:         l.positiveInt32(EnvDBMaxConns, defaultMaxConns),
@@ -366,6 +407,20 @@ func Load() (Config, error) {
 		l.fail("%s (%s) must be shorter than %s (%s) — otherwise a request is still "+
 			"legally running when the grace period ends and the shutdown cuts it",
 			EnvRequestTimeout, cfg.RequestTimeout, EnvShutdownGrace, cfg.ShutdownGrace)
+	}
+	// THE OTHER HALF OF THIS NUMBER IS IN compose.yaml, and no runtime notices
+	// when only one of them moves — the same shape as limits.memory and
+	// GOMEMLIMIT, which the compose runbook already lists as a pair.
+	//
+	// stop_grace_period is what Docker waits between SIGTERM and SIGKILL. Spend
+	// longer than that between the two and the delay is not a courtesy, it is a
+	// cut: SIGKILL arrives while the drain is still running and the requests
+	// this whole mechanism exists to protect are dropped after all. Refused
+	// here rather than discovered as a truncated response in production.
+	if cfg.ShutdownDelay+cfg.ShutdownGrace > stopGracePeriod {
+		l.fail("%s (%s) plus %s (%s) exceeds the container's stop_grace_period (%s) — "+
+			"SIGKILL would arrive mid-drain. compose.yaml holds the other half of this pair",
+			EnvShutdownDelay, cfg.ShutdownDelay, EnvShutdownGrace, cfg.ShutdownGrace, stopGracePeriod)
 	}
 	if cfg.DB.StatementTimeout > cfg.RequestTimeout {
 		l.fail("%s (%s) must not exceed %s (%s) — a query may not outlive the request that asked for it",
@@ -632,6 +687,30 @@ func (l *loader) duration(key string, def time.Duration) time.Duration {
 	}
 	if d <= 0 {
 		l.fail("%s is %q — want a positive duration", key, raw)
+		return def
+	}
+	return d
+}
+
+// atLeastZeroDuration is duration() with zero allowed.
+//
+// Its own function rather than a flag on duration(), because the two answer
+// different questions: a REQUEST_TIMEOUT of zero is a configuration mistake,
+// and a SHUTDOWN_DELAY of zero is the honest setting for a process with no
+// proxy in front of it. A boolean argument at the call site would have said
+// which one this is only to whoever went and read the signature.
+func (l *loader) atLeastZeroDuration(key string, def time.Duration) time.Duration {
+	raw := os.Getenv(key)
+	if strings.TrimSpace(raw) == "" {
+		return def
+	}
+	d, err := time.ParseDuration(strings.TrimSpace(raw))
+	if err != nil {
+		l.fail("%s is %q — want a duration such as 3s or 0", key, raw)
+		return def
+	}
+	if d < 0 {
+		l.fail("%s is %q — want a duration of zero or more", key, raw)
 		return def
 	}
 	return d

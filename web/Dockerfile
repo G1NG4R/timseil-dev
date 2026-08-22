@@ -101,6 +101,18 @@ ENV PORT=3000
 # only itself, and the published port looks dead from every side.
 ENV HOSTNAME=0.0.0.0
 
+# Stops Next registering its own SIGTERM handler so instrumentation.ts can
+# register one that pauses first. The pause is what lets Traefik take this
+# container out of its pool before the socket goes away — without it every
+# rollout loses a request on `/`, measured in E5b's lab. instrumentation.ts
+# carries the reasoning and what the trade gives up. Issue #65, ADR 0035.
+#
+# In the image and not in compose, because it is a property of how this image
+# is built rather than a knob: an image whose shutdown handler depends on an
+# environment variable somebody remembered to set is an image with two
+# behaviours. The DURATION is the knob, and that one is SHUTDOWN_DELAY.
+ENV NEXT_MANUAL_SIG_HANDLE=true
+
 # THE STANDALONE TRAP. Three copies, and the last two are the ones everybody
 # forgets: `.next/standalone` contains NEITHER `public/` NOR `.next/static`.
 # Next.js leaves them out on the assumption that a CDN serves them — this site

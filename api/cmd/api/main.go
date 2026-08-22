@@ -207,7 +207,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	// halfway loses nothing that the next tick does not redo, and a delivery cut
 	// halfway costs at worst one duplicate mail to our own inbox, which is
 	// cheaper than holding the drain open for an SMTP conversation.
-	return serve(ctx, srv, ln, cfg.ShutdownGrace, &accepting, func() {
+	return serve(ctx, srv, ln, cfg.ShutdownDelay, cfg.ShutdownGrace, &accepting, func() {
 		aggregator.Stop()
 		refresher.Stop()
 		dispatcher.Stop()
@@ -221,10 +221,27 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 // Split out of run so the shutdown can be tested against the code that actually
 // ships rather than against a copy of it. onDrained is the pool: it is closed
 // last, on purpose.
+//
+// THREE PHASES, AND THE MIDDLE ONE IS THE ONE E5B ADDED.
+//
+//  1. accepting := false. /readyz answers 503 from here on. Nothing else
+//     changes: the listener is open and every request still gets a real answer.
+//  2. delay. Nothing happens for this long on purpose. It is the window the
+//     proxy in front needs to see the 503 on its own schedule and take this
+//     instance out of its pool.
+//  3. Shutdown(grace). The listener closes and what is in flight is finished.
+//
+// Without phase 2 the process is still shutting down gracefully and the VISITOR
+// still sees an error, which is the distinction issue #65 is about: Traefik
+// keeps the address in its pool until it notices, and a request that lands on a
+// container which has just gone away does not get refused — it hangs, because
+// the address no longer belongs to anything. Measured in E5b's lab, one such
+// request on every single rollout.
 func serve(
 	ctx context.Context,
 	srv *http.Server,
 	ln net.Listener,
+	delay time.Duration,
 	grace time.Duration,
 	accepting *atomic.Bool,
 	onDrained func(),
@@ -245,7 +262,23 @@ func serve(
 	}
 
 	accepting.Store(false)
-	log.Info("shutdown requested, draining", "grace", grace.String())
+	log.Info("shutdown requested, readiness is now 503",
+		"delay", delay.String(), "grace", grace.String())
+
+	// A plain sleep, and it is worth saying what it is not. A second SIGTERM
+	// does not cut it short: signal.NotifyContext leaves its channel registered
+	// after the first one, so the second is captured and nothing reads it. That
+	// is three seconds a person pressing Ctrl-C twice has to sit through, and
+	// the alternative — a second signal channel of our own, so that Ctrl-C
+	// Ctrl-C is honoured — is machinery bought for three seconds of somebody's
+	// patience. The ceiling that matters is not this one: it is
+	// stop_grace_period, after which Docker sends SIGKILL, and config.Load
+	// refuses a delay that would let this run into it.
+	if delay > 0 {
+		time.Sleep(delay)
+	}
+
+	log.Info("draining", "grace", grace.String())
 
 	// context.Background again: the shutdown must not inherit the deadline of
 	// the signal that asked for it.

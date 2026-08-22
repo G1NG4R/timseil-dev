@@ -1128,14 +1128,20 @@ Lint-Regel: **nichts Geheimes hinter `NEXT_PUBLIC_`** — der Präfix bedeutet, 
 *Korrigiert in E4b.* Hier stand „`docker system df` zeigt 0 B unter Build Cache". Das Kriterium war für eine Maschine geschrieben, auf der nur dieser Stack läuft; die Maschine trägt weitere Dienste, gemessen 50 Einträge / 782,9 MB, die ihnen gehören — daraus folgt über diesen Stack nichts. Dieselbe Klasse wie „nur 22, 80, 443". Der Digest-Vergleich misst dieselbe Behauptung direkt statt über ein Indiz: ein auf dem Host gebautes Image hat diesen Digest nicht — und überhaupt keinen `RepoDigest`.
 *Fertig wenn:* Absichtlich kaputter Healthcheck löst Rollback aus — **einmal wirklich provozieren.**
 
-**E5 · Zero-Downtime & Release-Automatik** — Compose kann kein Rolling Update:
+**E5 · Zero-Downtime & Release-Automatik** — Compose kann kein Rolling Update.
+*Korrigiert in E5b, und die Korrektur ist der Punkt.* Hier stand ein Zweizeiler mit `--scale api=2` und `--scale api=1`. **Beide Hälften sind falsch, im Labor gemessen:** die erste meldet `Container timseil-api-1 Recreate` — der bestehende Container geht mit runter, der Rollout tut also genau das, was er verhindern soll — und die zweite entfernt den **höchsten** Index, also den gerade gestarteten.
+
+Was trägt, sind vier Schritte über **Dienstnamen**, weil Container-Indizes bei jedem Rollout wandern und Dokploys Command-Feld nur `docker compose`-Aufrufe annimmt. Zwei Schattendienste tragen die Router, während `api` und `web` neu angelegt werden:
 ```bash
-docker compose up -d --no-deps --scale api=2 --wait api
-docker compose up -d --no-deps --scale api=1 --wait api
+docker compose up -d --remove-orphans --wait api2   # db, migrate, seed über depends_on
+docker compose up -d --no-deps --wait web2
+docker compose up -d --no-deps --wait api web
+docker compose rm -s -f api2 web2
 ```
-Setzt Graceful Shutdown aus C1 voraus. Plus `release-please`.
+`tools/rollout.sh` hält sie an einer Stelle, `tools/deploy.sh` prüft vor jedem Deploy, dass das Panel sie fährt. Setzt Graceful Shutdown aus C1 voraus **und zwei Pausen mit einem Leser**: `SHUTDOWN_DELAY` schickt `/readyz` auf 503, während der Listener noch annimmt, und erst ein `loadbalancer.healthcheck` an Traefik liest das — ohne ihn ist die Pause ein Knopf ohne Wirkung (#65). ADR 0035. Plus `release-please`, das nach E5b als **E5c** kommt.
 *Fertig wenn:* Ein Deploy, von außen über den öffentlichen Namen mitgeschrieben, zeigt **keine einzige Antwort, die nicht 200 ist** — eine Anfrage je Sekunde über die ganze Dauer. Falls nicht: ehrlich die **gemessene** Downtime in die Fallstudie schreiben statt „Zero-Downtime" zu behaupten.
 *Korrigiert nach E4b, und die Korrektur ist der Punkt.* Hier stand „zeigt **null** 5xx" und „~3 s". Beides gemessen am 22.08.2026 beim Rollback-Drill: **rund zehn Sekunden je Container-Wechsel, und es sind keine 5xx, sondern 404.** Die Router sind Labels auf den Containern; verschwindet der Container, entfernt Traefik den Router ganz und antwortet mit seiner Standard-404. **Die alte Abnahme wäre also grün gewesen**, während jeder Besucher „diese Seite gibt es nicht" gelesen hätte — und ein Crawler die URL aus dem Index genommen hätte, was eine 502 nicht auslöst. Eine Abnahme, die 5xx zählt, misst an diesem Fehler vorbei. Die drei Sekunden waren geschätzt; zehn sind gemessen. [#143](https://github.com/G1NG4R/timseil-dev/issues/143)
+*Stand nach E5b, im Labor.* Grundlinie auf derselben Anlage: 13×`404` auf `/`, 8×`404` auf `/api/health`. Nach der Reparatur, drei Läufe: `110 requests, 110×200` auf beiden Pfaden. Die Abnahme bleibt trotzdem ein echter Deploy — eine im Labor gemessene Zahl ist eine Zahl über Compose und den Docker-Provider, nicht über die Produktion.
 
 ---
 

@@ -83,7 +83,11 @@ func New(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 		middleware.Recover(log),
 		middleware.Timeout(cfg.RequestTimeout, log),
 		middleware.CORS(cfg.AllowedOrigins),
-		limiter.Middleware(),
+		// The two operational probes go round it. Traefik asks /readyz once a
+		// second so that it can take a draining container out of its pool
+		// before the socket closes (ADR 0035, issue #65), and those requests
+		// all share one bucket — the reasoning is written out on Except.
+		middleware.Except(limiter.Middleware(), "/healthz", "/readyz"),
 		// Not a policy link: an adapter that turns ServeMux's own plain-text
 		// 404 and 405 into problem documents. Innermost, closest to the routes.
 		middleware.ProblemErrors(),
