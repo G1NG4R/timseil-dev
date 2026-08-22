@@ -197,8 +197,25 @@ case $1 in
       printf '  ! %s already exists here\n' "$v" >&2
       exit 0
     fi
-    git tag -a "$v" -m "$v"
-    printf '  ✓ tagged %s locally — not pushed\n' "$v" >&2
+
+    # WHO TAGS, and why it is asked at all.
+    #
+    # An annotated tag carries a tagger, and `git tag -a` refuses to invent one:
+    # on a runner with no git identity it stops with `fatal: empty ident name`.
+    # That is not a hypothetical — it is how the first real run of this job
+    # ended, before a single image was built.
+    #
+    # NOT a bot account and not a tool name. CLAUDE.md is explicit that no model
+    # or tool name appears in commits, pull requests, issues, TAGS or release
+    # notes. So the tag is made by whoever authored the commit it names: the
+    # honest answer, and one that needs no value written into this file to rot
+    # there. On main that is the author of the squash commit.
+    who_name=$(git log -1 --format='%an')
+    who_mail=$(git log -1 --format='%ae')
+    [ -n "$who_name" ] || { printf '  ✗ the commit being tagged has no author\n' >&2; exit 1; }
+
+    git -c user.name="$who_name" -c user.email="$who_mail" tag -a "$v" -m "$v"
+    printf '  ✓ tagged %s locally as %s — not pushed\n' "$v" "$who_name" >&2
     ;;
 
   --publish)
