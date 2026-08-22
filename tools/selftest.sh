@@ -1465,15 +1465,19 @@ accepts "--started is empty and calm when nothing answers" \
 # which is exactly the two answers the drill saw and the only two this script has
 # to tell apart.
 refuses "the witness refuses to run without an end"  "say when to stop" tools/witness.sh
-refuses "the witness refuses two ends at once"       "two different things" tools/witness.sh --seconds 3 --until-sha 1234abc
+refuses "the witness refuses two ends at once"       "different things" tools/witness.sh --seconds 3 --until-sha 1234abc
 refuses "the witness refuses zero seconds"           "positive whole number" tools/witness.sh --seconds 0
 refuses "the witness refuses an uppercase sha"       "not lowercase hexadecimal" tools/witness.sh --until-sha ABCDEF1
 refuses "the witness refuses a short sha"            "shorter than seven" tools/witness.sh --until-sha abcdef
 refuses "the witness refuses a path without a slash" "starts with /" tools/witness.sh --seconds 2 --path health
-# Without /api/health there is nothing to read .sha from, and the run could only
-# end at the guard rail — fifteen minutes to learn that an argument was wrong.
+# Without /api/health there is nothing to read .startedAt from, and the run could
+# only end at the guard rail — fifteen minutes to learn that an argument was wrong.
 refuses "the witness refuses --until-sha with no health path" \
   "not in the paths" tools/witness.sh --until-sha 1234abc --path /
+refuses "the witness refuses --until-restart with no health path" \
+  "not in the paths" tools/witness.sh --until-restart --path /
+refuses "the witness refuses three ends at once" \
+  "different things" tools/witness.sh --until-restart --until-sha 1234abc
 
 accepts "the witness accepts a site that stays 200" \
   env WITNESS_BASE_URL="$NOOP" tools/witness.sh --seconds 2 --path / --path /api/health
@@ -1490,8 +1494,26 @@ accepts "and nothing answering at all counts as well" \
 # place — the lie deploy-gate.sh refuses about a rollback, one instrument along.
 accepts "the witness refuses a window that never carried the sha" \
   sh -c "! WITNESS_BASE_URL=$NOOP WITNESS_TAIL_SEC=1 WITNESS_MAX_SEC=2 tools/witness.sh --until-sha 9999999 > w.out 2>&1; grep -q 'never answered' w.out"
-accepts "and accepts the window that did" \
-  env WITNESS_BASE_URL="$NOOP" WITNESS_TAIL_SEC=1 tools/witness.sh --until-sha 1234abc
+
+# AND THE OTHER DIRECTION, which cost a real measurement on 2026-08-22. Started
+# after the swap, /api/health answers the target sha on the very first sample and
+# nothing ever restarts. The sha condition alone said yes to that. This document
+# is static, so it IS that case, exactly.
+accepts "the witness refuses a window that began after the swap" \
+  sh -c "! WITNESS_BASE_URL=$NOOP WITNESS_TAIL_SEC=1 WITNESS_MAX_SEC=2 tools/witness.sh --until-sha 1234abc > w.out 2>&1; grep -q 'already answering' w.out"
+accepts "and it says what to do instead" \
+  grep -q -- '--until-restart' w.out
+accepts "the same window is refused without a sha at all" \
+  sh -c "! WITNESS_BASE_URL=$NOOP WITNESS_TAIL_SEC=1 WITNESS_MAX_SEC=2 tools/witness.sh --until-restart > w.out 2>&1; grep -q 'no new process' w.out"
+
+# The accept path needs a process that actually changes, so the document has to
+# change under the witness. A fixture that could only ever say no would leave the
+# yes untested — and a condition nothing can satisfy is the failure one door down
+# from a condition everything satisfies.
+( sleep 3; printf '{"status":"ok","sha":"1234abc","startedAt":"2026-08-22T11:00:00Z"}\n' > noop/api/health ) &
+accepts "the witness accepts a window in which the process restarted" \
+  env WITNESS_BASE_URL="$NOOP" WITNESS_TAIL_SEC=1 WITNESS_MAX_SEC=20 tools/witness.sh --until-restart
+printf '{"status":"ok","sha":"1234abc","startedAt":"2026-08-22T10:00:00Z"}\n' > noop/api/health
 rm -f w.out
 
 kill "$NOOP_PID" 2>/dev/null

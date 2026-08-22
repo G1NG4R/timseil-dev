@@ -1274,17 +1274,30 @@ Terminal wieder verschwand. Seit E5a ist sie ein Befehl im Repository — Issue
 somebody remembers"*.
 
 ```bash
-make witness WITNESS_UNTIL="--until-sha $(git rev-parse --short=7 HEAD)"
+make witness WITNESS_UNTIL="--until-restart"
 ```
 
 Eine Anfrage je Sekunde auf `/` **und** `/api/health`, von außen über den
-öffentlichen Namen. Der Lauf endet dreißig Sekunden nachdem `/api/health` den
-genannten Commit meldet — der Drill hat gezeigt, warum nicht früher: der zweite
-Wechsel begann 44 Sekunden nach dem ersten.
+öffentlichen Namen. Der Lauf endet dreißig Sekunden nachdem `/api/health` von
+einem **neuen Prozess** antwortet — der Drill hat gezeigt, warum nicht früher:
+der zweite Wechsel begann 44 Sekunden nach dem ersten.
 
-**Gestartet wird er, bevor der Merge die Pipeline erreicht**, nicht danach.
-Zwischen Merge und Container-Wechsel liegen `check`, `db` und `publish`; wer
-erst beim Deploy anfängt, misst die zweite Hälfte des Trichters.
+### Vor dem Merge starten, nicht danach
+
+**Das ist keine Feinheit, das ist die Bedienung.** Zwischen Merge und
+Container-Wechsel liegen `check`, `db` und `publish` — gemessen 228 s und 258 s
+bei den letzten beiden Deploys. Wer danach anfängt, schreibt eine Tabelle mit
+lauter `200` mit, in der kein Deploy vorkommt.
+
+Genau das ist am 22.08.2026 passiert, beim Merge der Phase, die den Zeugen
+gebaut hat: gestartet um 16:59:53 UTC, der neue Prozess war seit 16:56:22 oben.
+Dreieinhalb Minuten zu spät, und das Ergebnis las sich wie ein sauberer Deploy.
+
+Deshalb gibt es `--until-restart` **ohne** SHA: den Squash-SHA gibt es erst,
+wenn der Merge schon durch ist, und ein Schalter, der den Start bis dahin
+aufhält, ist ein Schalter, der zu spät startet. `--until-sha` bleibt für den
+Fall, dass ein bestimmter Build gemeint ist — es verlangt jetzt zusätzlich einen
+neuen Prozess und wird rot, wenn der Commit schon bediente, als der Lauf begann.
 
 ### Was die Ausgabe sagt
 
