@@ -51,6 +51,29 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 **The pull request title becomes the commit on `main`**, because merges are
 squash-only — so write the title as the commit you want in the history.
 
+### The type is a decision, not a formality
+
+Since E5c the type in that title decides whether the merge publishes a release.
+`tools/release.sh` reads the commits since the last `v*` tag and `publish`
+creates the tag; there is no release pull request and no `CHANGELOG.md` — the
+changelog is the body of the GitHub release. [ADR 0036](docs/adr/0036-releases-als-tag-ohne-release-pr.md).
+
+| Type | Effect |
+|---|---|
+| `feat:` | minor — `v0.2.0` |
+| `fix:` · `perf:` | patch — `v0.1.1` |
+| `docs:` `chore:` `ci:` `test:` `refactor:` `style:` `build:` | no release at all |
+
+**A breaking change is a minor bump, and that is deliberate.** While the major
+version is 0, semver promises nothing about stability — `0.y.z` is allowed to
+break. Reaching `v1.0.0` is the statement "the public interface holds", and the
+launch makes it, not whichever commit happens to break something first.
+
+So: a merge that only moves documentation should say `docs:` and will publish
+nothing. A merge that adds behaviour should say `feat:` and will. Choosing the
+type carelessly does not produce a wrong changelog; it produces a wrong version
+number on `/api/health`.
+
 ### `Closes #N` only when the merge itself is the acceptance
 
 GitHub closes a linked issue the moment the pull request merges. That is right

@@ -235,9 +235,12 @@ jobs:
   # it. The wrong version in production came from an image built locally during
   # D3's manual deploy, not from this job. Issue #112.
   #
-  # **E5 has to revisit this.** Once release-please starts tagging, VERSION here
-  # will still answer the short sha unless the job fetches tags, which is
-  # correct but less than it could say.
+  # **Resolved in E5c, and only for `publish`.** That job now checks out with
+  # fetch-depth: 0 and tags the commit before it builds, so a released build
+  # names itself v0.2.0 rather than its sha. This job keeps the shallow checkout
+  # on purpose: it runs on pull requests, where no tag is ever created, and
+  # paying for the full history to describe against a tag that will not exist
+  # would be a cost with nothing on the other side.
   #
   # On a pull_request the checked-out commit is the merge result, so what gets
   # built and measured is what would land, not the branch tip in isolation.
@@ -363,14 +366,32 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
+    # contents: write is E5c, and it is the one permission in this file that
+    # buys something outside the job. It exists so this job can push a release
+    # TAG. `main` itself stays out of reach — branch protection runs with
+    # enforce_admins: true — but a tag is not a branch, and that is the point.
+    #
+    # The alternative was a separate release job holding this permission alone,
+    # which is the shape codeql has for security-events: write. It was refused
+    # for a reason worth stating: the tag has to exist BEFORE `make images`, or
+    # the image of a release commit carries the previous version while the
+    # GitHub release carries the new one — two names for one build, on a site
+    # whose first rule is that a number says what it measured. ADR 0036.
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
       attestations: write
 
     steps:
+      # fetch-depth: 0, and not for comfort. tools/version.sh answers
+      # `git describe --match 'v*'`, and with the default shallow checkout there
+      # is no history to describe against — it would fall back to the short sha
+      # and quietly undo this whole phase. Depth 1 plus fetch-tags is not enough
+      # either: the tag object arrives, the commit it points at does not.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       # Same three generated values as in `images`, same reason: check-topology
       # runs the real api binary, and it refuses to start on an incomplete
@@ -380,6 +401,16 @@ jobs:
         run: |
           cp .env.example .env
           make env-dev
+
+      # BEFORE the build, and locally. tools/release.sh reads the conventional
+      # commits since the last v* tag and decides whether this merge is a
+      # release; if it is, the tag exists from here on and `make images` stamps
+      # v0.2.0 into the binary and into org.opencontainers.image.version instead
+      # of a commit sha. Nothing is pushed by this step — the tag reaches GitHub
+      # at the end of the job, once the thing it names has been built, scanned
+      # and signed.
+      - name: Tag this build if it is a release
+        run: tools/release.sh --tag
 
       - name: make images
         run: make images
@@ -491,6 +522,18 @@ jobs:
       # a deliberately wrong certificate identity that must fail.
       - name: make verify-supply-chain
         run: make verify-supply-chain
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # LAST, and that ordering is the argument. A release tag is a public name
+      # for a build; it is pushed only once that build exists in the registry,
+      # has been scanned, signed and verified. Break the job anywhere above and
+      # the commit stays untagged everywhere — the next merge that qualifies
+      # picks the release up again.
+      #
+      # A no-op when this merge was not a release, which is most of them.
+      - name: Publish the release
+        run: tools/release.sh --publish
         env:
           GH_TOKEN: ${{ github.token }}
 

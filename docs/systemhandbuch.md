@@ -1025,6 +1025,16 @@ docker compose rm -s -f api2 web2
 
 Falls es gegen Produktion nicht sauber gelingt: dann steht in der Fallstudie die **gemessene** geplante Downtime pro Deploy statt „Zero-Downtime". Die Zahl muss stimmen — und „~3 s" stand hier, bevor jemand nachgemessen hat.
 
+### Releases
+
+Seit E5c benennt sich ein Build nicht mehr nach seinem Commit, sondern nach seiner Version. **Kein `release-please` und kein Release-PR:** ein Pull Request, den der eingebaute `GITHUB_TOKEN` erstellt, löst keine `pull_request`-Workflows aus — er bekäme keinen der sieben erforderlichen Kontexte und wäre nicht mergebar.
+
+`tools/release.sh` liest stattdessen die Conventional Commits seit dem letzten `v*`-Tag: `feat:` → minor, `fix:`/`perf:` → patch, alles andere → **kein Release**. Solange die Hauptversion `0` ist, ist auch ein Breaking Change nur ein Minor-Sprung; `v1.0.0` ist die Aussage „die öffentliche Schnittstelle steht", und die trifft der Launch.
+
+**Der Job, der signiert, ist der Job, der benennt.** `publish` setzt den Tag lokal, **bevor** es baut — sonst trüge das Image des Release-Commits die vorherige Version, während das GitHub-Release die neue nennt. Veröffentlicht wird der Tag als **letzte** Handlung des Jobs, wenn das Artefakt in der Registry liegt, gescannt und signiert ist.
+
+Der Changelog ist der Text des GitHub-Releases, es gibt keine `CHANGELOG.md`. Die Images behalten `sha-<short>` als einzigen Namen — ein `v1.2.3` dort wäre dekorativ, weil der Deploy ohnehin nur SHA-Tags annimmt, und eine Falle, weil die Aufbewahrung nur `sha-<7hex>` kennt. ADR 0036.
+
 ### Migrations abwärtskompatibel
 
 Expand/Contract. Rollt der Code zurück, rollt das Schema nicht mit — ein Deploy, der eine Spalte löscht, macht den Rollback unmöglich.

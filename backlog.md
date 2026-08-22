@@ -48,8 +48,21 @@ Deploy die Routing-Labels nicht anfasst". Beide Zahlen sind gemessen.
 [#158](https://github.com/G1NG4R/timseil-dev/issues/158)), 3 bewusst verworfen,
 1 als Regel in `CONTRIBUTING.md`. Der Durchgang steht unten.
 
-**Als Nächstes: E5c** — `release-please`, CHANGELOG, `v1.2.3`-Tags und die in
-`ci.yml` Zeile 238 angekündigte `VERSION`-Umstellung.
+**E5c ist gebaut und wartet auf seinen Merge.** Nicht mit `release-please`: es
+arbeitet über einen Release-PR, und ein PR vom eingebauten `GITHUB_TOKEN` löst
+keine `pull_request`-Workflows aus — kein einziger der sieben erforderlichen
+Kontexte meldet, und mit `enforce_admins: true` ist so ein PR **nicht mergebar**.
+Die Auswege wären eine GitHub-App oder ein PAT, also ein weiteres Dauer-Geheimnis
+mit `contents: write`, vier Tage nach dem Token-Vorfall.
+
+Stattdessen `tools/release.sh`: Tag und GitHub-Release aus den Conventional
+Commits, gesetzt von `publish` selbst — **vor** dem Build, damit das Image des
+Release-Commits nicht die vorherige Version trägt, und **veröffentlicht als
+letzte Handlung**, wenn das Artefakt signiert ist. Keine `CHANGELOG.md`, kein
+`v1.2.3` am Image, Start bei `v0.1.0`. ADR 0036.
+
+**Die Abnahme ist der Merge selbst:** er muss `v0.1.0` erzeugen, und
+`/api/health` muss danach diese Nummer nennen statt einer Kurz-SHA.
 
 ---
 

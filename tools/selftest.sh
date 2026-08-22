@@ -30,6 +30,19 @@ refuses() { # refuses <desc> <pattern> <command...>
 }
 accepts() { desc=$1; shift; if "$@" >/dev/null 2>&1; then ok "$desc"; else no "$desc (rejected, should accept)"; fi; }
 
+# says compares stdout, and prints what it got. `accepts` would only say that a
+# command failed, and for a computed version number the interesting part is
+# always which number came out instead.
+# NOT called `says`: tools/version.sh's own block further down defines one with
+# a different signature, and the later definition is the one in force by the
+# time these cases run. The first version of this collided silently and every
+# case reported `dev` — version.sh's fallback — instead of a version.
+emits() { # emits <desc> <expected> <command...>
+  desc=$1; want=$2; shift 2
+  got=$("$@" 2>/dev/null || true)
+  if [ "$got" = "$want" ]; then ok "$desc"; else no "$desc (want '"'"'$want'"'"', got '"'"'$got'"'"')"; fi
+}
+
 mkdir -p "$tmp/tools" "$tmp/.githooks"
 cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-node.sh" \
    "$root/tools/check-compose.sh" "$root/tools/check-contract.sh" \
@@ -44,7 +57,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/verify-deploy.sh" "$root/tools/deploy-gate.sh" \
    "$root/tools/check-deployed.sh" "$root/tools/registry.sh" \
    "$root/tools/prune-registry.sh" "$root/tools/witness.sh" \
-   "$root/tools/rollout.sh" "$tmp/tools/"
+   "$root/tools/rollout.sh" "$root/tools/release.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1869,6 +1882,104 @@ refuses "the rollout refuses to print without a file" "needs at least one -f" \
 refuses "the rollout refuses two modes at once" "one of" \
   tools/rollout.sh --steps --run
 refuses "the rollout refuses no mode" "usage" tools/rollout.sh
+
+printf 'the release version\n'
+
+# A throwaway repository per case. The rules only mean something against a real
+# `git log`, and RELEASE_DIR is the seam for pointing the script at one — the
+# same shape CHECK_VERSION_DIR has in tools/version.sh.
+relrepo() { # relrepo <commit subject>…
+  rm -rf "$tmp/rel"
+  mkdir -p "$tmp/rel"
+  (
+    cd "$tmp/rel"
+    git init -q -b main .
+    git config user.email selftest@localhost
+    git config user.name selftest
+    git config commit.gpgsign false
+    : > f
+    git add f
+    for msg in "$@"; do
+      printf '%s\n' "$msg" >> f
+      git add f
+      git commit -q -m "$msg"
+    done
+  )
+}
+reltag() { (cd "$tmp/rel" && git tag -a "$1" -m "$1" HEAD~"${2:-0}"); }
+rel() { RELEASE_DIR="$tmp/rel" tools/release.sh "$@"; }
+
+# Nothing in a branch of chores asks for a release, and saying so is a decision
+# rather than a failure.
+relrepo "docs: explain the thing" "chore: bump a pin"
+emits "chores and docs produce no release" "" rel --next
+
+relrepo "feat: the first feature"
+emits "the first release of an untagged repository is v0.1.0" "v0.1.0" rel --next
+
+relrepo "feat: base" "fix: a bug"
+reltag v0.1.0 1
+emits "a fix after a release is a patch" "v0.1.1" rel --next
+
+relrepo "feat: base" "feat: another"
+reltag v0.1.0 1
+emits "a feature after a release is a minor" "v0.2.0" rel --next
+
+# THE RULE THAT SURPRISES PEOPLE. While the major is 0, semver promises no
+# stability, so a breaking change is a minor bump and NOT v1.0.0 — going to 1.0
+# is the launch's statement, not a commit's.
+relrepo "feat: base" "feat!: break it"
+reltag v0.1.0 1
+emits "a breaking change at 0.x is a minor, not v1.0.0" "v0.2.0" rel --next
+
+relrepo "feat: base" "refactor: rework
+
+BREAKING CHANGE: the shape moved"
+reltag v0.1.0 1
+emits "a BREAKING CHANGE footer counts like the bang" "v0.2.0" rel --next
+
+# …and the same input once the promise has been made.
+relrepo "feat: base" "feat!: break it"
+reltag v1.0.0 1
+emits "a breaking change after 1.0 is a major" "v2.0.0" rel --next
+
+# THE ORDERING BUG, and it is here because the first version had it: a single
+# running verdict let an early `fix:` lock the answer to patch, and the `feat:`
+# after it changed nothing. A release that understates what is in it is worse
+# than no release.
+relrepo "feat: base" "fix: first" "feat: second"
+reltag v0.1.0 2
+emits "a fix before a feature still yields a minor" "v0.2.0" rel --next
+
+# The backup tag from the 2026-08-17 rewrite. Reading it as a version is exactly
+# what put `backup/pre-rewrite-2026-08-17-22-g3890180` on /api/health in
+# production for as long as that image ran — issue #112.
+relrepo "feat: base" "fix: a bug"
+reltag backup/pre-rewrite-2026-08-17 1
+emits "a backup tag is not a release tag" "v0.1.0" rel --next
+
+# Not every commit in this repository's history is conventional, and one that is
+# not must be ignored rather than guessed at or crashed on.
+relrepo "just some words" "another line"
+emits "commits without a conventional prefix produce no release" "" rel --next
+
+relrepo "feat: something"
+accepts "notes name the first release" \
+  sh -c "RELEASE_DIR=$tmp/rel tools/release.sh --notes | grep -q 'The first release'"
+accepts "notes list a feature under Features" \
+  sh -c "RELEASE_DIR=$tmp/rel tools/release.sh --notes | grep -q '^- something'"
+
+refuses "release.sh refuses two modes" "usage" tools/release.sh --next --notes
+refuses "release.sh refuses no mode" "usage" tools/release.sh
+# OUTSIDE $tmp, because $tmp is itself a repository and `git rev-parse` walks
+# upwards — a directory nested in one is in one, which is git behaving normally
+# and the first version of this case not accounting for it.
+notrepo=$(mktemp -d)
+refuses "release.sh refuses a directory that is no repository" "not a git repository" \
+  env RELEASE_DIR="$notrepo" tools/release.sh --next
+rmdir "$notrepo"
+
+rm -rf "$tmp/rel"
 
 printf 'pre-commit hook\n'
 printf 'bad \n' > hookws.txt
