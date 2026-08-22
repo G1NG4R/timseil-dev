@@ -1011,7 +1011,9 @@ docker compose up -d --no-deps --scale api=1 --wait api
 
 Zweite Instanz hoch, Healthcheck abwarten, Traefik nimmt sie auf, alte Instanz runter. **Das setzt Graceful Shutdown voraus** — sonst schneidet das Herunterskalieren laufende Anfragen ab.
 
-Falls es nicht sauber gelingt: dann steht in der Fallstudie „~3 s geplante Downtime pro Deploy" statt „Zero-Downtime". Die Zahl muss stimmen.
+**Die Abnahme zählt Nicht-200, nicht 5xx** — und das ist seit E4b eine Korrektur, keine Formulierungsfrage. Am 22.08.2026 während des Rollback-Drills mitgeschrieben, eine Anfrage je Sekunde auf `/`: **rund zehn Sekunden je Container-Wechsel, und zwar 404.** Traefiks Router hängt an den Labels des Containers; ist der Container weg, ist der Router weg, und es antwortet die Standard-404. Eine Abnahme, die 5xx zählt, hätte diesen Zustand durchgewinkt. Eine 404 ist dabei die unfreundlichere der beiden Antworten: eine 502 lädt zum Wiederkommen ein, eine 404 sagt einem Crawler, die Adresse gebe es nicht.
+
+Falls es nicht sauber gelingt: dann steht in der Fallstudie die **gemessene** geplante Downtime pro Deploy statt „Zero-Downtime". Die Zahl muss stimmen — und „~3 s" stand hier, bevor jemand nachgemessen hat.
 
 ### Migrations abwärtskompatibel
 
