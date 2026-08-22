@@ -158,12 +158,23 @@ must be rejected. It also runs at the end of every publish, and again every
 Monday against what is already published — a signature that verified at merge
 time and does not verify today means the registry changed underneath it.
 
-**Where the chain starts.** Signing begins with the first image this section
-describes. `sha-3890180` and `sha-a0872c1` are older: the first was pushed by
-hand from a workstation before the pipeline could publish at all, the second by
-the pipeline before it could sign. Both are unsigned, both are still in the
-registry, and `cosign verify` says so. Saying *we sign our images* would have
-been shorter; only *we sign them from here on* is checkable.
+**Where the chain starts.** Signing begins with `sha-c738b2a`. One older image
+is still in the registry and still unsigned: `sha-a0872c1`, the pipeline's first
+push, from before it could sign. Pull it and `cosign verify` will refuse it —
+that refusal is the point, and it is the reason the tag is kept rather than
+tidied away. Saying *we sign our images* would have been shorter; only *we sign
+them from here on* is checkable, and it is only checkable while something from
+before the line is still there to fail.
+
+There was one older still, pushed by hand from a workstation before the pipeline
+could publish anything at all. It ran in production until 2026-08-22, when the
+pipeline first deployed a build it had made and signed itself, and it was
+deleted once nothing depended on it any more. It is described here and not
+named, deliberately: the registry keeps the last ten builds per image, and the
+one exemption from that rule is *every tag this file names*, read out of this
+file rather than maintained beside it. A name in this paragraph is an
+instruction to keep something, so a name for something already gone would be an
+instruction nobody can carry out.
 
 ## One contract, generated types
 

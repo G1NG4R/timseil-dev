@@ -203,3 +203,58 @@ nicht rot, denn es ist nichts kaputt.
 Aus demselben Grund wie `publish` und `quickstart`: er läuft nicht auf Pull
 Requests. Ein geforderter Kontext, der nie meldet, sperrt `main` dauerhaft —
 und dann gilt der Abschnitt „`main` nimmt nichts mehr an" weiter oben.
+
+---
+
+## Die Aufbewahrung in GHCR — ein Schalter, vielleicht ein Token
+
+Seit E4b räumt der `retention`-Job in `ci.yml` montags die Registry auf: die
+letzten zehn Builds je Paket bleiben, der Rest geht, und der Build, den
+Produktion fährt, bleibt in jedem Fall. Die Regel selbst und ihre Begründung
+stehen in `docs/runbooks/dokploy.md` 3.5; hier steht nur, was auf GitHub dafür
+gesetzt sein muss.
+
+### Erst zusehen, dann scharf schalten
+
+Der Job hat zwei Schritte. Der erste — `make prune-registry` — druckt den Plan
+und löscht nichts; er braucht kein Geheimnis und läuft ab sofort jede Woche. Der
+zweite läuft nur mit:
+
+```bash
+gh variable set GHCR_PRUNE_ENABLED --body true
+```
+
+**Vorher zwei Wochen zusehen.** Der Plan muss Woche für Woche derselbe sein.
+Bewegt er sich in einer Woche, in der nichts gemerged wurde, ist die Regel
+falsch — und das ist der einzige Zeitpunkt, an dem man das noch feststellen
+kann, bevor etwas fehlt. Zurücknehmen geht wie beim Deploy, `--body false`.
+
+### Das Token, und warum hier eine Frage offen steht
+
+Gelöscht wird über die Packages-API; die Registry-API kann es nicht. Der Job
+trägt `packages: write` und greift auf `secrets.GHCR_PRUNE_TOKEN` zurück, sonst
+auf das Token des Laufs.
+
+**Ob das Lauf-Token reicht, ist nicht gemessen.** Die beiden Pakete liegen in
+einem **Nutzer**-Namensraum, nicht in dem einer Organisation, und dafür sind die
+Regeln andere als für den Push. Der Beleg dagegen ist klein, aber deutlich: ein
+gewöhnlich angemeldetes `gh` kann die Versionen dieser Pakete nicht einmal
+lesen — `403, You need at least read:packages scope`.
+
+Reicht es nicht, sagt `tools/prune-registry.sh` das im Fehlertext, und der Weg
+ist ein Token mit `read:packages` und `delete:packages` als
+`GHCR_PRUNE_TOKEN`. Es gehört dann in dieselbe Rotation wie die acht Werte
+oben — mit einer Lebensdauer, nicht ohne.
+
+**Die erste scharfe Löschung von Hand.** Weil es ein Skript ist und kein
+Workflow-Baustein, geht das:
+
+```bash
+GHCR_TOKEN=… make prune-registry-apply
+```
+
+Danach die Abnahme, die als einzige zählt: `make verify-supply-chain` für
+**jeden** behaltenen Build. Signatur, SBOM-Attestierung, Provenance und der
+Gegentest mit der falschen Identität müssen alle weiter durchlaufen. Die
+Bündel sind ungetaggt und hängen nur am Index — wenn eine Aufräumregel etwas
+kaputtmacht, dann genau das, und nur dieser Befehl merkt es.

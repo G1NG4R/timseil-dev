@@ -770,7 +770,7 @@ Der freie Speicher ist nicht verschwendet — Postgres nutzt ihn als Page Cache.
 **Eine Bedingung: gebaut wird in GitHub Actions, nie auf dem VPS.** Drei Gründe, der dritte ist der wichtigste:
 
 1. **RAM** — ein Next.js-Build zieht kurzzeitig 2–4 GB, genau während des Deploys, also wenn die Seite Reserven braucht.
-2. **Disk** — der Build-Cache belegt mehrere GB auf einer 40-GB-Platte.
+2. **Disk** — der Build-Cache belegt mehrere GB auf einer 100-GB-Platte, die sich Postgres, Loki und Prometheus teilen. (Stand hier bis E4b als „40-GB-Platte" — die Zahl von vor dem Upgrade am 18.08.2026, die derselbe Abschnitt drei Absätze weiter oben schon widerlegt.)
 3. **Verifizierbarkeit** — baust du auf dem VPS, ist das Artefakt, das du getestet hast, **nicht** das Artefakt, das läuft. Damit bricht die ganze Kette: der Contract-Test lief gegen ein anderes Image, und die Signatur aus E3 gilt für ein Image, das nie deployed wurde. Auf einer Seite, deren These „alles ist prüfbar" lautet, ist das kein Detail.
 
 **Umgesetzt wird das durch genau eine Zeile im Compose** — `image:` statt `build:`, siehe D3. Steht dort ein `build:`, nützt dir die ganze CI-Pipeline nichts.
@@ -1122,8 +1122,10 @@ Lint-Regel: **nichts Geheimes hinter `NEXT_PUBLIC_`** — der Präfix bedeutet, 
 *Fertig wenn:* `cosign verify` bestätigt das Image; die Provenance ist öffentlich prüfbar. **Das ist ein Absatz in deiner Fallstudie wert.**
 
 **E4 · Deploy-Pipeline** — die sieben Schritte aus dem Design: `PUSH → LINT → TEST → BUILD → PUSH IMG → DEPLOY → VERIFY`, Rollback bei ausbleibendem 200 nach 60 s.
-**Gebaut wird ausschließlich in Actions**, nie auf dem VPS: `docker buildx` mit GitHub-Actions-Cache → Push nach GHCR mit den Tags `sha-<short>`, `v1.2.3`, `latest` → Dokploy-Webhook setzt `IMAGE_TAG` und zieht.
-*Fertig wenn:* Auf dem VPS existiert **kein Build-Cache** — `docker system df` zeigt 0 B unter „Build Cache". Abwärtskompatible Migrations (expand/contract). Am Ende `POST /api/internal/deploy` mit gemessener Dauer.
+**Gebaut wird ausschließlich in Actions**, nie auf dem VPS: `docker buildx` mit GitHub-Actions-Cache → Push nach GHCR mit dem Tag `sha-<short>` → die Pipeline setzt `IMAGE_TAG` über Dokploys API durch einen SSH-Tunnel und startet den Deploy.
+*Korrigiert in E4b, drei Angaben.* `latest` ist **verboten** und `tools/deploy.sh` weist es ab: ein Rollback braucht einen Namen, den niemand umhängen kann (ADR 0033 §7). `v1.2.3` kommt mit `release-please` in E5, nicht hier. Und es ist kein Webhook — Dokploy besitzt die Umgebung, also wird sie über seine API geschrieben, sonst sagt das Panel danach etwas anderes als der laufende Stack (ADR 0033 §2).
+*Fertig wenn:* Auf dem VPS läuft, was veröffentlicht wurde — `tools/check-deployed.sh --host` hält den `RepoDigest` der laufenden Container gegen den Digest, den GHCR unter demselben Tag ausliefert. Abwärtskompatible Migrations (expand/contract). Am Ende `POST /api/internal/deploy` mit gemessener Dauer.
+*Korrigiert in E4b.* Hier stand „`docker system df` zeigt 0 B unter Build Cache". Das Kriterium war für eine Maschine geschrieben, auf der nur dieser Stack läuft; die Maschine trägt weitere Dienste, gemessen 50 Einträge / 782,9 MB, die ihnen gehören — daraus folgt über diesen Stack nichts. Dieselbe Klasse wie „nur 22, 80, 443". Der Digest-Vergleich misst dieselbe Behauptung direkt statt über ein Indiz: ein auf dem Host gebautes Image hat diesen Digest nicht — und überhaupt keinen `RepoDigest`.
 *Fertig wenn:* Absichtlich kaputter Healthcheck löst Rollback aus — **einmal wirklich provozieren.**
 
 **E5 · Zero-Downtime & Release-Automatik** — Compose kann kein Rolling Update:
@@ -1417,7 +1419,7 @@ Burn-Rate-Alerts: schnelles Fenster (1 h, 14,4×) → sofort; langsames (6 h, 6�
 | **Dokploy-UI öffentlich** | Vollzugriff auf Host, Deploys **und alle Secrets** — das lohnendste Ziel der Maschine | Nur SSH-Tunnel, kein Traefik-Router (L3) |
 | **Observability-Dienste ohne Auth** | Prometheus und Loki haben keine; der Tunnel-Schutz entfiel mit dem Zusammenlegen auf einen Host | Keine Labels, keine `ports:` — Abnahme per `nmap` (L3) |
 | **Backups löschbar bei Kompromittierung** | Klassisches Ransomware-Muster: Schlüssel liegt auf dem Host | Object-Lock oder Schlüssel ohne `DeleteObject` (L6) |
-| **Build landet auf dem VPS** | Getestetes und laufendes Artefakt sind nicht dasselbe — die Signatur gilt für ein Image, das nie lief | `image:` statt `build:` im Produktions-Compose (D3); Abnahme: kein Build-Cache auf dem Host |
+| **Build landet auf dem VPS** | Getestetes und laufendes Artefakt sind nicht dasselbe — die Signatur gilt für ein Image, das nie lief | `image:` statt `build:` im Produktions-Compose (D3); Abnahme: laufender Digest = veröffentlichter Digest (`make check-deployed-host`, E4b) |
 | **Bundle wächst unbemerkt** | „Schnell auf dem Handy" ist Constraint 04 | Budget in CI, Build bricht |
 
 ---
@@ -1554,7 +1556,7 @@ Schreib noch keinen Code, und pushe nichts.
 - [ ] Fremde Actions auf Commit-SHA gepinnt
 - [ ] `gitleaks` über die volle History grün
 - [ ] `cosign verify` bestätigt das laufende Image
-- [ ] Kein Build-Cache auf dem VPS (`docker system df`)
+- [ ] Laufender Digest = veröffentlichter Digest (`make check-deployed-host`) — ersetzt „kein Build-Cache auf dem VPS", das auf einer geteilten Maschine nichts mehr über diesen Stack aussagt (E4b)
 
 **Betrieb & Konten**
 - [ ] Löschversuch auf dem Backup-Bucket mit dem Produktionsschlüssel **scheitert**

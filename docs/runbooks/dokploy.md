@@ -716,6 +716,14 @@ Wert liegt ab jetzt in Dokploy *und* in GitHub; ein Wert an zwei Stellen ist
 ein Wert, den man bei der Rotation an einer Stelle vergisst. Beide Kopien
 stehen im github-Runbook nebeneinander, damit die Rotation beide sieht.
 
+**Zwei Vorgaben, die dabei niemand erwähnt.** `canAccessToAPI` steht per Vorgabe
+auf `false`; ohne sie antwortet jeder Pfad ablehnend, auch mit gültigem Key. Und
+der Key muss über Dokploys **eigene Schaltfläche** entstehen — ein von Hand über
+den Auth-Endpunkt erzeugter Key hat `metadata: null`, ist gültig und `enabled`
+und antwortet trotzdem auf jedem Pfad mit `401`, weil `validateRequest` die
+`organizationId` aus den Metadaten liest und ohne sie gar keine Sitzung
+zurückgibt. Der Irrweg hat einen Nachmittag gekostet.
+
 ### 3.5 Was GHCR aufhebt
 
 Die zweite Hälfte von [#90](https://github.com/G1NG4R/timseil-dev/issues/90).
@@ -723,31 +731,140 @@ Seit E4 rollt die Pipeline selbsttätig zurück — damit ist die Frage, wie vie
 Stände in der Registry liegen, keine Neugier mehr, sondern die Bedingung, unter
 der „roll back to any previous deploy" ein Versprechen ist.
 
-**Gemessen am 22.08.2026, anonym** — also so, wie ein Fremder es sieht, ohne
-Token und ohne `gh`:
+**Gemessen am 22.08.2026, 13:23 UTC, anonym** — also so, wie ein Fremder es
+sieht, ohne Token und ohne `gh`. Seit E4b ist die Messung ein Kommando statt
+einer Zeile in dieser Datei, damit die Zahl unten keine Behauptung über einen
+Tag bleibt:
 
 ```bash
-for repo in timseil-api timseil-web; do
-  t=$(curl -s "https://ghcr.io/token?scope=repository:g1ng4r/$repo:pull&service=ghcr.io" | jq -r .token)
-  curl -s -H "Authorization: Bearer $t" "https://ghcr.io/v2/g1ng4r/$repo/tags/list" | jq '.tags|length'
-done
+tools/registry.sh tags timseil-api        # ein Tag pro Zeile
+make prune-registry                       # der ganze Bestand, und was die Regel wegnähme
 ```
 
-Ergebnis, für beide Pakete gleich: **8 Tags — 5 Builds und 3 Signatur-Artefakte.**
+**Zehn Tags je Paket — aber 26 Versionen.** Der Unterschied ist der Kern dieses
+Abschnitts, und er hat E4b eine falsche Regel erspart:
+
+| Art | Anzahl | Wie sie heißt | Getaggt |
+|---|---|---|---|
+| Build-Manifeste | 5 | `sha-<7hex>` | ja |
+| Build-Manifest ohne Namen | 1 | — | **nein** |
+| Referrers-Indizes | 5 | `sha256-<64hex des Builds>` | ja |
+| Sigstore-Bündel | 15 | — | **nein** |
 
 | Tag | Was | Signiert |
 |---|---|---|
-| `sha-3890180` | von Hand vom Arbeitsplatz gepusht (D3) | nein |
 | `sha-a0872c1` | erster Push aus der Pipeline (E3a) | nein |
-| `sha-c738b2a` · `sha-8acdd53` · `sha-581f5c0` | Pipeline, ab E3b | ja |
-| 3 × `sha256-…` | die `cosign`- und Attestierungs-Artefakte, eins je signiertem Build | — |
+| `sha-c738b2a` · `sha-8acdd53` · `sha-581f5c0` · `sha-ae939d4` | Pipeline, ab E3b | ja |
+| 5 × `sha256-…` | der Index je signiertem Build — und der fünfte gehört zu keinem | — |
 
-**Nichts wurde je gelöscht, und nichts löscht.** GHCR hat für dieses Repository
-keine Aufbewahrungsregel; der Horizont ist heute unbegrenzt, und der Bestand
-wächst um **zwei Tags pro Merge** (ein Build, ein Signatur-Artefakt). Das ist
-der Zustand, nicht die Absicht — die Regel folgt in E4b, wenn der erste
-automatische Deploy gelaufen ist. Eine Löschautomatik am selben Tag scharf zu
-schalten wie den ersten automatischen Deploy wären zwei Änderungen auf einmal.
+**Elf Tags waren es bis 14:05 UTC desselben Tages.** `sha-3890180`, der Handpush
+aus D3, ist gelöscht, sobald die Pipeline einen Stand deployt hatte, den sie
+selbst gebaut und signiert hat — von Hand über die Paket-Oberfläche, in beiden
+Paketen je eine Version, ohne Index und ohne Bündel. Bewusst **nicht** als erster
+scharfer Lauf des Werkzeugs unten: dessen Lösch-Pfad war zu diesem Zeitpunkt nie
+ausgeführt worden, und sein Debüt gegen die echte Registry wäre dieselbe Wette
+gewesen, die der erste Drill an diesem Tag verloren hat.
+
+Drei Dinge, die aus dieser Aufstellung folgen und nirgends sonst stehen.
+
+**Erstens: die Bündel sind ungetaggt.** Signatur, SBOM-Attestierung und
+SLSA-Provenance liegen als drei namenlose Manifeste unter dem Index. Eine Regel
+„lösche, was keinen Tag hat" — das Rezept, zu dem jeder zuerst greift — würde
+**jede Signatur in dieser Registry vernichten**. Sie ist hier nicht ungenau,
+sie ist umgekehrt.
+
+**Zweitens: der Index *ist* der Auffindeweg.** GHCRs
+`/v2/…/referrers/<digest>`-Endpunkt antwortet für diese Pakete nichts;
+gefunden werden die Bündel ausschließlich über den Fallback-Tag
+`sha256-<hex des Builds>`. Löscht man diese eine Version, ist `cosign verify`
+für einen Build kaputt, dessen Bündel alle noch daliegen.
+
+**Drittens: ein Build liegt da, den kein Tag mehr benennt.** Commit `ae939d4`
+wurde zweimal gebaut — `sha256:8a16…` um 11:54:46 UTC, `sha256:1c43…` um
+12:08:59 UTC —, beide tragen `org.opencontainers.image.revision=ae939d4`, und
+`sha-ae939d4` benennt nur den zweiten. Der Re-Run hat den Tag umgehängt und die
+Signatur der alten Bytes stehen lassen. Produktion startete um 12:11:55 UTC,
+also auf den zweiten; wäre sie früher gestartet, hätte `/api/health` weiterhin
+`ae939d4` gesagt und der Tag hätte aufgelöst — grün über Bytes, die unter
+diesem Namen nie veröffentlicht wurden. **Das ist der Grund, warum
+`make check-deployed` gegen den Digest prüft und nicht gegen den SHA.**
+
+### Die Regel
+
+**Behalten werden die letzten zehn Builds je Paket**, geordnet nach `created`
+aus ihrem eigenen Config-Blob — plus zu jedem behaltenen Build sein Index und
+jedes Manifest, das der Index auflistet.
+
+**Nie gelöscht, unabhängig vom Alter:**
+
+1. der Build, den Produktion gerade fährt — aus `/api/health` gelesen, nicht
+   angenommen. Ist die Antwort nicht zu bekommen, löscht das Werkzeug nichts;
+2. jeder Tag, den `README.md` namentlich nennt. Der README zeigt auf einen
+   unsignierten Build als Beleg dafür, dass die Signatur an einem Zeitpunkt
+   begonnen hat statt behauptet zu werden — eine Regel, die den Beleg löscht,
+   macht die Seite zur Lügnerin. `tools/prune-registry.sh` liest die Namen aus
+   der Datei, statt sie zu führen: so können die beiden nicht auseinanderlaufen.
+
+**Zusätzlich gelöscht wird jede Waise** — ein Index, dessen Build kein Tag mehr
+benennt, samt seinen Bündeln und dem Build-Manifest selbst.
+
+**Gelöscht wird in dieser Reihenfolge: Index, dann seine Kinder, dann das
+Build-Manifest.** Nicht als Geschmacksfrage — GHCR weigert sich, ein Manifest
+zu entfernen, auf das ein Index noch zeigt, und ein halb entfernter Satz ist
+der Zustand, über den hinterher niemand mehr nachdenken kann.
+
+**Warum eine Anzahl und kein Alter.** Ein ruhiger Monat darf den Speicher nicht
+leeren. Seine Aufgabe ist „N Rollback-Ziele", und das ist eine Anzahl.
+Altersbasiert löscht am schnellsten genau dann, wenn nichts deployt wird — also
+wenn der letzte bekannte gute Stand am meisten zählt.
+
+**Warum zehn.** Gemessene Rate über E3/E4: fünf Builds in zwei Tagen im
+Spitzenfall, sonst etwa einer am Tag. Zehn sind damit zwischen zwei Tagen und
+zwei Wochen. Jeder Rollback dieses Projekts ging genau einen Schritt zurück.
+3.3 setzt Dokploys eigene Image-Retention auf drei bis fünf, und GHCR muss
+strikt tiefer sein als die Platte, sonst ist es nicht der Speicher. Und das
+Argument, das über den Beharrungszustand hinausgeht: **bei zehn löscht der
+erste scharfe Lauf ausschließlich die Waise und ihre vier Anhänge.** Bei fünf
+entspräche das Fenster dem heutigen Bestand und der erste Lauf nähme einen
+echten, signierten, referenzierten Build mit — der schlechtestmögliche erste
+Lauf eines Werkzeugs, das nichts zurückholen kann.
+
+**Was sich damit an einem Versprechen ändert.** Aus „roll back to any previous
+deploy" (Issue #90) wird „auf jeden der letzten zehn". Wer den alten Satz
+irgendwo stehen lässt, lässt eine Zusage stehen, die die Regel still gebrochen
+hat.
+
+### Das Werkzeug
+
+```bash
+make prune-registry          # der Plan. Löscht nichts, braucht kein Token.
+make prune-registry-apply    # UNUMKEHRBAR. Braucht GHCR_TOKEN mit delete:packages.
+```
+
+Zwei Ziele und nicht eines mit einem Schalter, damit weder `make`- noch
+Shell-Verlauf das unumkehrbare eine Taste vom harmlosen entfernt halten.
+
+**Der Plan braucht kein Geheimnis.** Er wird aus der öffentlichen Registry-API
+gerechnet — ein Fremder kann ihn nachrechnen, und ein falscher Plan steht eine
+Woche lang im Log, bevor irgendetwas fehlt. Nur der zweite Befehl liest ein
+Token, und nur, um die Packages-API zu rufen; die Registry-API kann nicht
+löschen.
+
+**Zum Token.** `gh` mit dem üblichen Login kann die Versionen dieses Pakets
+nicht einmal *lesen* — `403, You need at least read:packages scope`. Ob das
+`GITHUB_TOKEN` eines Laufs mit `packages: write` für ein Paket im
+**Nutzer**-Namensraum zum Löschen reicht, ist nicht gemessen; das Werkzeug
+nennt im Fehlerfall die Abhilfe, statt sie hier vorwegzunehmen. Reicht es
+nicht, ist ein fein granuliertes Token in `GHCR_PRUNE_TOKEN` der Weg — siehe
+`docs/runbooks/github.md`.
+
+**Wöchentlich, und erst unscharf.** Der `retention`-Job in `ci.yml` druckt jeden
+Montag den Plan. Gelöscht wird erst, wenn `GHCR_PRUNE_ENABLED` auf `true` steht
+— dieselbe Form wie `DEPLOY_ENABLED`, aus demselben Grund: das Werkzeug landet
+vor der Messung, die es scharf macht. Bis dahin sind die Läufe genau die
+Trockenläufe, die die Abnahme verlangt: derselbe Plan, Woche für Woche
+unverändert. Bewegt er sich in einer Woche ohne Merge, ist die Regel falsch —
+und das sieht man, bevor etwas weg ist.
 
 Der Unterschied zur Platte, weil er leicht verwechselt wird:
 
@@ -778,7 +895,7 @@ curl -s   https://timseil.dev/api/health | jq .sha  # der deployte Commit
 curl -sI  https://timseil.dev/api/docs              # 200
 sh ops/host/check-traefik-metrics.sh                # traefik_* innen, nichts außen
 docker volume ls | grep timseil_db-data             # der feste Name
-docker system df                                    # 0 B Build-Cache
+sh tools/check-deployed.sh --host                   # laufender Digest = veröffentlichter
 ```
 
 Die `jq .sha`-Zeile ist die, an der alles hängt: sie sagt, dass das, was gemergt
@@ -792,8 +909,33 @@ interner ACME-Router gewonnen und die Erneuerung funktioniert. Antwortet er mit
 Zertifikat in rund 60 Tagen nicht, und auffallen würde es erst, wenn die Seite
 offline ist. Deshalb trägt der Router `priority=1`.
 
-Der Build-Cache mit **0 B** ist die Abnahme aus Anhang C — steht dort etwas,
-wurde auf dem VPS gebaut, und dann stimmt die ganze Kette nicht mehr.
+**Die letzte Zeile ist seit E4b eine andere, und das ist eine Korrektur, keine
+Erweiterung.** Dort stand `docker system df` mit der Abnahme „0 B Build-Cache"
+(Anhang C): liegt dort etwas, wurde auf dem VPS gebaut, und dann ist das
+Artefakt, das geprüft wurde, nicht das Artefakt, das läuft.
+
+Das Kriterium wurde für eine Maschine geschrieben, auf der **nur** unser Stack
+läuft. Diese Maschine trägt weitere Dienste. Gemessen am 22.08.2026: 50
+Einträge, 782,9 MB — sie gehören ihnen. Aus der Zahl folgt über unseren Stack
+nichts, weder im Guten noch im Schlechten. Dieselbe Klasse wie „nur 22, 80,
+443": ein Kriterium für einen Ein-Zweck-Host, angewandt auf eine geteilte
+Maschine.
+
+Ersetzt wird es durch die **direkte** Messung derselben Behauptung, statt durch
+einen Indizienbeweis: `tools/check-deployed.sh --host` hält den `RepoDigest` der
+laufenden Container gegen den Digest, den GHCR unter demselben Tag ausliefert.
+Sind sie gleich, wurde nicht hier gebaut — denn ein hier gebautes Image hat
+diesen Digest nicht, und ein hier gebautes Image hat überhaupt keinen
+`RepoDigest`. Das Skript sagt beides mit eigenen Worten.
+
+**Von deinem Rechner aus fehlt genau diese eine Behauptung**, weil nur der Host
+den laufenden Container sieht. `make check-deployed` macht die anderen acht und
+druckt die neunte als „not asked here" samt der zwei Digests, die zu vergleichen
+sind. Wöchentlich läuft dieselbe Prüfung im `scan`-Job.
+
+Die `jq .sha`-Zeile darüber bleibt, ist aber die schwächste der neun: sie sagt
+*welcher Commit*, nicht *welche Bytes*. Zwei Builds desselben Commits liegen in
+dieser Registry — 3.5 erzählt, wie das kam.
 
 ---
 
@@ -895,6 +1037,198 @@ Was du dann siehst und was es heißt:
 | `✗ sha-… did not come up; sha-… is live again` | erledigt. Die Seite läuft auf dem vorherigen Stand, die `rollback`-Zeile steht in `deploys` |
 | `✗ nothing to roll back to` | der neue Tag war schon der laufende. Handbetrieb, unten |
 | `✗ THE ROLLBACK DID NOT COME UP EITHER` | die Seite ist unten. Teil 5, und `docs/runbooks/compose.md` für die Kette |
+
+### Der Drill — den Rollback absichtlich auslösen
+
+Der Bauplan verlangt für E4 wörtlich: „Absichtlich kaputter Healthcheck löst
+Rollback aus — **einmal wirklich provozieren.**" Gegen ein Double ist der Pfad
+gelaufen, und das zählt nicht: ein Rollback, den nur ein Merge auslösen kann,
+probiert man einmal und hofft danach.
+
+**Was der Drill tut.** Er deployt einen Build und verifiziert gegen einen
+anderen. Das ist der ganze Trick, und es ist der schonendste, den es gibt: die
+Seite liefert die ganze Minute lang einen echten, signierten, funktionierenden
+Stand aus, und der einzige Grund, warum `verify-deploy.sh` nein sagt, ist
+Bedingung drei — *ist der laufende SHA der Build, den wir bestellt haben*. Genau
+die Bedingung, die ein Uptime-Check nicht stellt. Nichts wird kaputtgemacht, die
+Seite geht nicht unten.
+
+**Er schreibt nichts in `deploys`.** `report-deploy.sh` berichtet den SHA, der
+*deployt* wurde, und im Drill ist das ein Build, der tadellos hochkam. Eine
+Zeile „dieser Build endete im Rollback" wäre eine erfundene Tatsache —
+Invariante 1 gilt auch für Zeilen, die etwas Falsches *bedeuten*. Die echte
+Messung von Schritt sieben existiert bereits (22.08.2026, `report ok … 227s`);
+der Drill schuldet sie nicht zweimal. `DEPLOY_DRILL=1` überspringt sie und sagt
+es hin.
+
+**Das Flag und die Ungleichheit bedingen einander**, in beide Richtungen — jede
+Hälfte allein ist ein Fehler, den niemand bemerkt:
+
+| Lage | Antwort |
+|---|---|
+| Tag ≠ SHA, kein `DEPLOY_DRILL` | abgewiesen. Das wären zwei Tippfehler, die einen Build deployen und einen anderen prüfen |
+| `DEPLOY_DRILL=1`, Tag = SHA | abgewiesen. Eine vergessene Variable würde still den Bericht eines echten Deploys verschlucken |
+
+#### Das Ziel wählen
+
+**Der unmittelbar vorherige signierte Build**, nicht irgendeiner. Prüfe vorher,
+dass er sich vom laufenden Stand nur in Dingen unterscheidet, die nicht im Image
+landen:
+
+```bash
+git diff --name-only <ziel>..<laufend>     # kein api/, kein web/, kein contract/,
+                                           # keine Migration, kein compose.yaml
+```
+
+Trifft der Diff `api/`, `web/`, `contract/`, `compose.yaml` oder
+`api/migrations/`, ist es das falsche Ziel: dann ist der Drill ein echter
+Versionswechsel mit echten Folgen, und `seed` schreibt zweimal etwas anderes.
+Unsignierte Stände kommen ohnehin nicht in Frage — E3 hat sie abgeschafft, und
+eine Minute Ausnahme ist auch eine Ausnahme.
+
+#### Vorbedingungen, in dieser Reihenfolge
+
+```bash
+date -u                                              # 1. NICHT zwischen 23:45 und 00:00
+curl -s https://timseil.dev/api/health | jq -r .sha   # 2. der Kopf von main, und nur der
+make check-deployed                                   # 3. alle Behauptungen grün
+```
+
+1. **Gemessen, nicht geschätzt.** `deploy-gate.sh` weigert sich im Prune-Fenster
+   von selbst, aber die Uhrzeit wird gelesen, bevor man anfängt: um 23:50 UTC
+   räumt Dokploys `docker-cleanup` unreferenzierte Images weg, und während eines
+   Deploys ist das Rollback-Ziel genau so eines.
+2. Läuft nicht der Kopf von `main`, ist etwas anderes im Gange, und der Drill
+   würde es verdecken.
+3. Ist hier schon etwas rot, findet der Drill es nicht heraus, sondern
+   verwirrt die Spur.
+
+Dann der Tunnel und die zwei Werte aus 3.4:
+
+```bash
+ssh -M -S /tmp/dok.sock -N -L 3000:127.0.0.1:3000 <vps> &
+export DOKPLOY_API_KEY=… DOKPLOY_COMPOSE_ID=…
+```
+
+Und in einem **zweiten Terminal** der Zeuge. Er ist kein Beiwerk: er ist der
+Beleg dafür, dass der Drill keinen Ausfall gekostet hat, und das ist die Zahl,
+die diesen Abschnitt trägt.
+
+```bash
+while :; do printf '%s ' "$(curl -s -o /dev/null -w '%{http_code}' https://timseil.dev/)"; sleep 1; done
+```
+
+#### Der Lauf
+
+```bash
+DEPLOY_DRILL=1 make deploy-gate \
+  DEPLOY_TAG=sha-<ziel> DEPLOY_SHA=<nie-gebaut> DEPLOY_STARTED_AT=$(date +%s)
+```
+
+`DEPLOY_TAG` ist der Build, der hingeschoben wird. `DEPLOY_SHA` ist der, gegen
+den geprüft wird, und **er muss ein Commit sein, den nie jemand gebaut hat** —
+der Kopf des Arbeitszweigs zum Beispiel. Dass die beiden sich widersprechen,
+*ist* der Drill.
+
+> **Nicht gegen den laufenden SHA verifizieren.** Das war der erste Versuch am
+> 22.08.2026, und er ist nach drei Sekunden grün geworden, ohne dass ein
+> Rollback stattfand. Dokploy antwortet, wenn es den Auftrag *angenommen* hat;
+> die Container wechseln danach. Der Verify fragt also zuerst den **alten**
+> Prozess, und der meldete genau den SHA, auf den gewartet wurde. Danach
+> deployte Dokploy in Ruhe weiter, und die Seite lief eine Viertelstunde auf dem
+> falschen Stand. Seit E4b hat `verify-deploy.sh` eine fünfte Bedingung, die
+> genau das abfängt — aber die Wahl des Verify-SHA bleibt die Verantwortung
+> dessen, der den Drill fährt.
+
+#### Was gemessen wurde — 22.08.2026, 13:53 UTC
+
+Deployt `sha-581f5c0`, verifiziert gegen `21de41d` (der Kopf des Arbeitszweigs,
+nie gebaut). Ungekürzt:
+
+```
+  ! DRILL — deploying sha-581f5c0 while verifying 21de41d; the verify must fail
+    nothing will be reported to /api/internal/deploy. header of this file says why.
+
+─── deploy ───────────────────────────────────────────
+  ✓ both images exist in the registry
+deploy sha-581f5c0
+  ✓ previous sha-ae939d4
+  ✓ IMAGE_TAG set to sha-581f5c0
+  ✓ dokploy accepted the deploy — verify decides whether it worked
+
+─── verify ───────────────────────────────────────────
+verify https://timseil.dev
+  waiting up to 60s for sha 21de41d
+  and for a process that did not start at 2026-08-22T13:46:59.326415933Z
+  ✗ 60s elapsed and the deploy did not come up
+    last seen: status ok, running sha 581f5c0
+    expected:  status ok, sha 21de41d, / 200, not started at 2026-08-22T13:46:59.326415933Z
+
+─── rollback ─────────────────────────────────────────
+  rolling back to sha-ae939d4
+  ✓ both images exist in the registry
+deploy sha-ae939d4
+  ✓ previous sha-581f5c0
+  ✓ IMAGE_TAG set to sha-ae939d4
+  ✓ dokploy accepted the deploy — verify decides whether it worked
+verify https://timseil.dev
+  waiting up to 60s for sha ae939d4
+  and for a process that did not start at 2026-08-22T13:54:17.424789126Z
+  ✓ /api/health 200 · status ok · sha ae939d4
+  ✓ a new process, up since 2026-08-22T13:55:21.603661784Z
+  ✓ / 200
+
+─── report ───────────────────────────────────────────
+  ! drill — nothing reported to /api/internal/deploy
+    21de41d would have been recorded as rollback after 84s
+
+  ✗ sha-581f5c0 did not come up; sha-ae939d4 is live again
+```
+
+Exit-Code **1**. Wanduhr **84 s**. `deploys` hat keine neue Zeile bekommen,
+`IMAGE_TAG` stand danach wieder auf `sha-ae939d4`, und `make check-deployed`
+meldete alle acht Behauptungen grün.
+
+`last seen: status ok, running sha 581f5c0` ist die Zeile, an der alles hängt:
+die Seite war **gesund** und lieferte den falschen Build aus. Ein Uptime-Check
+hätte grün gemeldet.
+
+#### Was der Zeuge gefunden hat, und es war nicht geplant
+
+73 Anfragen an `/`, eine pro Sekunde:
+
+| Sekunde | Antwort | Was da war |
+|---|---|---|
+| 1–7 | `200` | der alte Stand |
+| 8 | keine Verbindung | der Wechsel beginnt |
+| 9–17 | **`404`** | Traefik hat keinen Backend für die Regel |
+| 18–61 | `200` | `sha-581f5c0` bedient |
+| 62 | keine Verbindung | der Rollback beginnt |
+| 63–72 | **`404`** | dasselbe noch einmal |
+| 73 | `200` | `sha-ae939d4` bedient |
+
+**Jeder Container-Wechsel kostet rund zehn Sekunden, in denen die öffentliche
+Seite 404 antwortet.** Nicht 502 — *404*. Der alte Container ist weg, der neue
+noch nicht da, und Traefik fällt auf seine Standardantwort zurück. Für einen
+Besucher heißt das „diese Seite gibt es nicht", für einen Crawler dasselbe.
+
+Das trifft **jeden** Deploy, nicht nur den Drill: zwei Wechsel in drei Minuten
+sind Drill-spezifisch, der einzelne Zehn-Sekunden-Trichter ist es nicht.
+
+`verify-deploy.sh` sieht davon nichts. Es fragt `/` genau einmal, ganz am Ende,
+und da steht die Seite wieder. Die Zusicherung des Gates lautet „der bestellte
+Build bedient die Seite" — sie lautet **nicht** „kein Besucher hat einen Fehler
+gesehen", und nach dieser Messung darf sie auch nicht so gelesen werden. Der
+Backlog führt es als Fund; die Reparatur ist ein Thema für sich
+(`traefik.http.services…` und ein überlappender Start), nicht für E4b.
+
+#### Wenn der Rollback nicht hochkommt
+
+`✗ THE ROLLBACK DID NOT COME UP EITHER` heißt: die Seite ist unten, und dieses
+Skript kann es nicht mehr richten. Dann Handbetrieb, direkt darunter — der
+vorherige Tag von Hand in `IMAGE_TAG`, über die API oder im Panel. Deshalb wird
+ein Drill nur gefahren, solange mindestens ein weiterer funktionierender Stand
+in GHCR liegt.
 
 ### Handbetrieb
 

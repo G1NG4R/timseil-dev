@@ -614,6 +614,45 @@ verify-deploy: ## Poll the public URL until it serves that build, 60s budget
 report-deploy: ## Report the measured duration — make report-deploy DEPLOY_SECONDS=214 DEPLOY_RESULT=ok
 	@tools/report-deploy.sh $(DEPLOY_SHA) $(DEPLOY_SECONDS) $(DEPLOY_RESULT)
 
+# NOT part of `make check`, and for a reason beyond the usual one. It needs the
+# network and a running production, which is already the line ADR 0031 §1 draws
+# — but inside `check` it would also let one merge be blocked by the deploy of
+# the previous one, and be red for every stranger who cloned the repository and
+# has no production at all. `make check` has to pass on a fork.
+#
+# The last claim, the digest of the RUNNING container, cannot be made from here:
+# the CI deploy key opens one port-forward and executes no command, so nothing in
+# Actions can run `docker inspect` on the host. The script says so out loud and
+# prints the digests to compare. `check-deployed-host` is the same file on the
+# other side of that line, and it belongs in the D3 acceptance where
+# `docker system df` used to stand.
+.PHONY: check-deployed
+check-deployed: ## Does production run the head of main — every claim a stranger can make
+	@tools/check-deployed.sh $(REF)
+
+.PHONY: check-deployed-host
+check-deployed-host: ## The same, plus the digest of the running container — run it ON the VPS
+	@tools/check-deployed.sh --host $(REF)
+
+# ---------------------------------------------------------------- retention
+#
+# GHCR is the rollback store — the VPS disk keeps a build for about a day, and
+# Dokploy's nightly prune takes the rest (runbook 3.3, 3.5). So this is the one
+# file in the repository that can destroy something nothing else holds a copy of,
+# and the two targets are deliberately not one target with a flag: `make` history
+# and shell history should never be one keystroke away from the irreversible one.
+#
+# The plan needs no credential at all. It is computed from the public registry
+# API, which means a stranger can reproduce it and a wrong plan is visible before
+# anything is gone. Only the second target reads GHCR_TOKEN.
+.PHONY: prune-registry
+prune-registry: ## What the GHCR retention rule would remove — removes nothing, needs no token
+	@tools/prune-registry.sh
+
+.PHONY: prune-registry-apply
+prune-registry-apply: ## Apply it — IRREVERSIBLE, needs GHCR_TOKEN with delete:packages
+	@tools/prune-registry.sh --delete
+
 # ------------------------------------------------------------------- topology
 
 # compose.yaml is the file Dokploy runs. It is also the file this target runs, on
