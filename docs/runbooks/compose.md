@@ -421,6 +421,60 @@ Fenster.
 Die Abnahme der Stufe ist ein echter Deploy, und die steht oben im Kopf von
 `compose.lab.yaml`, damit sie niemand mit dieser hier verwechselt.
 
+### Was die erste Produktionsmessung gezeigt hat — 22.08.2026, 19:19 UTC
+
+**Die Abnahme ist dort verfehlt worden**, und das Labor hatte den Fall nicht
+abgebildet: es hat immer neu-gegen-neu getauscht, nie alt-gegen-neu.
+
+| | `/` | `/api/health` |
+|---|---|---|
+| `200` | 420 | 411 |
+| `404` | 1 | **10** |
+
+Die Kette lief — `verify-deploy.sh` sah den Zwilling um `19:19:19.364`, und
+`/api/health` nennt danach einen **anderen** Prozess (`19:19:34.596`). Zwei
+Startzeiten, zwei Container.
+
+Gefehlt hat etwas anderes, und Traefiks Log sagt es wörtlich:
+
+```
+ERR HTTP service defined multiple times with different configurations
+    configuration=["web-timseil-3eca0d87…","web2-timseil-d25f44a2…"]
+    serviceName=timseil-web
+ERR error="the service \"timseil-web@docker\" does not exist"
+```
+
+12× für `timseil-api`, 4× für `timseil-web`. **Der alte Container und sein
+Zwilling beschreiben denselben Router unter demselben Namen verschieden, und
+Traefik verwirft dann beide.** Der Deploy hatte acht Traefik-Labels geändert;
+der alte Container trug die alten.
+
+Nachgestellt statt geschlossen: mit `git show 6f262e3:compose.yaml` als
+Ausgangsstand, **Grundlinie vorher behauptet** — beide Pfade 200 —, dann die
+neue Kette dagegen. 11×`404` auf `/api/health`, 7× auf `/`, dieselben Logzeilen.
+Ein erster Versuch war wertlos, weil `/api/health` schon vor dem Start 404 war
+und niemand hingesehen hatte; deshalb steht die Grundlinie jetzt als Schritt da.
+
+**Die Grenze, in beide Richtungen gemessen:**
+
+| Ein Deploy ändert … | Ergebnis |
+|---|---|
+| nur das Image | drei Läufe, `100 requests, 100×200` je Pfad |
+| ein Traefik-Label | ein Trichter über die Dauer des Rollouts |
+
+Sie wird benannt, nicht behoben — die Begründung steht in ADR 0035.
+
+**Was danach repariert wurde:** `timseil-www` und `timseil-retry` stehen jetzt an
+**beiden** Diensten, wortgleich. Das behebt den obigen Fall nicht, sondern einen
+zweiten: bis dahin nannte der api-Router zwei Middlewares, die allein an `web`
+definiert waren — fällt web aus und api nicht, antwortet `/api` 404, während
+alles gesund aussieht. `make check-compose` hält beides: wer nennt, definiert,
+und zwei Definitionen eines Namens müssen übereinstimmen.
+
+Nachgemessen mit der Reparatur, drei Läufe: `100 requests, 100×200` auf beiden
+Pfaden, und Traefiks Log ohne eine einzige Zeile `defined multiple times` oder
+`does not exist`.
+
 **Nebenbefund:** die Indizes wandern. Nach jedem Durchlauf heißt der überlebende
 Container eine Nummer höher (`api-1` → `api-2` → `api-3`). Harmlos — Compose
 findet ihn über das Label, nicht über die Nummer — aber wer `docker logs

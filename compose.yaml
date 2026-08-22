@@ -265,6 +265,29 @@ services:
       - traefik.http.routers.timseil-api.priority=100
       - traefik.http.routers.timseil-api.middlewares=timseil-www@docker,timseil-retry@docker
       - traefik.http.services.timseil-api.loadbalancer.server.port=8080
+
+      # THE SAME TWO MIDDLEWARES ARE DEFINED AT `web`, WORD FOR WORD, AND THE
+      # DOUBLING IS THE POINT — it is not a leftover and removing it is a bug.
+      #
+      # Traefik's docker provider reads middlewares off container labels. A
+      # router that names one no container defines goes into ERROR, and the path
+      # answers Traefik's own 404. Until now both of these lived at `web` alone
+      # while THIS router named them: with web gone and api up — a failed web
+      # deploy, a crash loop, an OOM kill — /api answers 404 rather than serving.
+      # The failure would look like a routing problem and be a label.
+      #
+      # So the rule, and tools/check-compose.sh holds it: a service that NAMES a
+      # middleware DEFINES it. Then the reference cannot dangle while the
+      # container that makes it exists. The same check refuses two definitions of
+      # one name that disagree — two versions of a middleware are worse than a
+      # missing one, because Traefik picks one and does not say which.
+      #
+      # The `$$` is not a typo, here for the same reason it is not one below.
+      - traefik.http.middlewares.timseil-www.redirectregex.regex=^https://www\.timseil\.dev/(.*)
+      - traefik.http.middlewares.timseil-www.redirectregex.replacement=https://timseil.dev/$${1}
+      - traefik.http.middlewares.timseil-www.redirectregex.permanent=true
+      - traefik.http.middlewares.timseil-retry.retry.attempts=2
+      - traefik.http.middlewares.timseil-retry.retry.initialinterval=100ms
       # THE READER FOR SHUTDOWN_DELAY, and without it that variable is a knob
       # with no effect. Traefik's docker provider drops a backend when the
       # container leaves the running state — it does not read /readyz unless it
@@ -408,11 +431,18 @@ services:
     # The same shape as the api's above, one priority lower: this rule catches
     # everything the api's PathPrefix did not.
     #
-    # The www → apex redirect is defined HERE, once, and both routers reference
-    # it as timseil-www@docker — the docker provider registers a middleware
-    # globally, so it does not need repeating on the api. One canonical URL:
-    # two would leave G5 repairing them with rel=canonical, and M6 does the same
-    # thing later for timseil.com.
+    # The www → apex redirect is defined here AND at the api, word for word.
+    #
+    # "It does not need repeating on the api" is what this comment said until
+    # E5b, and it was true only while nothing ever ran without web. The docker
+    # provider does register a middleware globally — but only for as long as a
+    # container carrying the label exists, and a router that names a middleware
+    # nobody defines goes into error and answers 404. The doubling is deliberate
+    # and tools/check-compose.sh holds it; the reasoning is written out once, at
+    # the api.
+    #
+    # One canonical URL either way: two would leave G5 repairing them with
+    # rel=canonical, and M6 does the same thing later for timseil.com.
     #
     # The $$ is not a typo. Compose interpolates $ and would eat $1 before
     # Traefik ever sees it; $$ reaches the label as a single $.

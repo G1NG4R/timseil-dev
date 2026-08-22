@@ -405,6 +405,14 @@ wörtlich mit `docker compose ` beginnt**. Ein `docker stop <container>` in der
 Mitte — der naheliegende Weg — ist damit ausgeschlossen; deshalb arbeitet die
 Kette über Dienstnamen und deshalb gibt es `compose.rollout.yaml`.
 
+**`autoDeploy` gehört dabei aus.** Steht der Schalter an, deployt Dokploy bei
+jedem Push auf `main` von sich aus — mit dem `IMAGE_TAG`, der gerade dasteht,
+also dem **alten** — und die Pipeline deployt vier Minuten später noch einmal.
+Ein Merge löst dann **zwei** Deploys aus, und eine Messung über einen Merge
+beschreibt zwei überlagerte Rollouts statt eines. ADR 0033 hat den Webhook als
+Mechanismus verworfen; der Schalter ist davon unabhängig und will einzeln
+umgelegt werden.
+
 **Nach einem Dokploy-Upgrade nachsehen.** Wird das Feld zurückgesetzt, ist der
 404-Trichter zurück. Der nächste Deploy bricht dann mit
 `the panel does not run the rollout this repository defines` ab und deployt

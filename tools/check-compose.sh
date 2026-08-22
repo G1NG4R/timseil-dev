@@ -348,6 +348,100 @@ check_foreign_images_are_pinned() {
   fi
 }
 
+# Rule 14b. A service that NAMES a middleware DEFINES it.
+#
+# Traefik's docker provider reads middlewares off container labels, so a
+# middleware exists only while a container carrying its label does. A router
+# that names one nobody defines does not degrade — it goes into ERROR, and the
+# path answers Traefik's own 404 while every container involved is healthy and
+# green. That is the D3 family of failures exactly: the proxy and the stack lose
+# each other and nothing turns red.
+#
+# Until E5b both timseil-www and timseil-retry lived at `web` alone while the
+# api router named them. With web gone and api up — a failed web deploy, a crash
+# loop, an OOM kill — /api answers 404 and the cause is a label two hundred
+# lines away.
+#
+# THE SECOND HALF IS NOT OPTIONAL. Where one name is defined by more than one
+# service the definitions must agree, and disagreement is the worse failure:
+# Traefik logs `defined multiple times with different configurations` and then
+# discards BOTH, so the router vanishes entirely. Measured on 2026-08-22, in
+# production and reproduced in the lab — it is what a deploy costs when the old
+# container and its twin describe the same router differently.
+#
+# `@file` and other providers are skipped and say so here rather than being an
+# unexplained gap: those belong to Dokploy's own configuration, which this
+# repository deliberately does not version (ADR 0028).
+check_middlewares_are_defined_where_named() {
+  [ -f "$1" ] || return 0
+  out=$(awk '
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ { in_services = ($0 ~ /^services:[[:space:]]*$/); svc = ""; next }
+    !in_services { next }
+    /^  [A-Za-z0-9_.-]+:[[:space:]]*$/ { svc = $0; sub(/^  /, "", svc); sub(/:.*$/, "", svc); next }
+    svc == "" { next }
+
+    # A reference: traefik.http.routers.<r>.middlewares=<a>@docker,<b>@docker
+    /traefik\.http\.routers\.[A-Za-z0-9_.-]+\.middlewares=/ {
+      line = $0
+      sub(/^.*\.middlewares=/, "", line)
+      sub(/[[:space:]]*$/, "", line)
+      n = split(line, refs, ",")
+      for (i = 1; i <= n; i++) {
+        name = refs[i]
+        gsub(/[[:space:]]/, "", name)
+        if (name ~ /@/) {
+          if (name !~ /@docker$/) continue
+          sub(/@docker$/, "", name)
+        }
+        if (name != "") named[svc SUBSEP name] = 1
+      }
+      next
+    }
+
+    # A definition: traefik.http.middlewares.<m>.<rest>=<value>
+    /traefik\.http\.middlewares\.[A-Za-z0-9_.-]+\./ {
+      line = $0
+      sub(/^.*traefik\.http\.middlewares\./, "", line)
+      sub(/[[:space:]]*$/, "", line)
+      name = line
+      sub(/\..*$/, "", name)
+      defined[svc SUBSEP name] = 1
+      # The whole label, so two services can be compared line for line. Sorted
+      # by construction: both sides are read in file order and a middleware is
+      # written as one block.
+      body[svc SUBSEP name] = body[svc SUBSEP name] line "\n"
+      seen[name] = 1
+      next
+    }
+
+    END {
+      for (k in named) {
+        split(k, part, SUBSEP)
+        if (!((part[1] SUBSEP part[2]) in defined))
+          printf "names %s but does not define it: service %s\n", part[2], part[1]
+      }
+      for (m in seen) {
+        first = ""; firstsvc = ""
+        for (k in body) {
+          split(k, part, SUBSEP)
+          if (part[2] != m) continue
+          if (first == "") { first = body[k]; firstsvc = part[1]; continue }
+          if (body[k] != first)
+            printf "two versions of %s: service %s and service %s disagree\n", m, firstsvc, part[1]
+        }
+      }
+    }
+  ' "$1")
+  if [ -n "$out" ]; then
+    printf '  ✗ %s has a middleware a router cannot rely on\n' "$1"
+    printf '%s\n' "$out" | sed 's/^/    /'
+    printf '    a router naming a middleware nobody defines answers 404 while everything is green\n'
+    fail=1
+  else
+    printf '  ✓ %s defines every middleware it names\n' "$1"
+  fi
+}
+
 # Rule 15. The twins may declare nothing but `extends`.
 #
 # api2 and web2 exist so that something carries the routers while api and web are
@@ -428,6 +522,7 @@ check_db_image_agrees
 check_foreign_images_are_pinned compose.yaml
 check_foreign_images_are_pinned compose.dev.yaml
 check_foreign_images_are_pinned compose.lab.yaml
+check_middlewares_are_defined_where_named compose.yaml
 check_twins_only_extend
 check_stop_grace_agrees
 
