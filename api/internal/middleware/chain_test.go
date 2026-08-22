@@ -312,3 +312,41 @@ func TestTheQueryStringIsNotLogged(t *testing.T) {
 		t.Errorf("the access line carries the query string:\n%s", logged.String())
 	}
 }
+
+// The broken case for Except, and it is the one that matters: a probe must get
+// through a limiter that has already refused everybody else. Written as "the
+// bucket is empty and /readyz still answers", because that is the state Traefik
+// finds the service in when a rate limit has been reached — and taking the
+// backend out of the pool at exactly that moment would turn a busy minute into
+// an outage.
+func TestExceptLetsThroughWhatTheLinkWouldHaveRefused(t *testing.T) {
+	refuse := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusTooManyRequests)
+		})
+	}
+
+	h := Except(refuse, "/healthz", "/readyz")(
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}))
+
+	for _, tc := range []struct {
+		path string
+		want int
+	}{
+		{"/readyz", http.StatusOK},
+		{"/healthz", http.StatusOK},
+		{"/api/health", http.StatusTooManyRequests},
+		// Exact, not prefix. This is the case a `strings.HasPrefix` would let
+		// through, and letting it through is a hole in the limiter.
+		{"/readyz/../api/health", http.StatusTooManyRequests},
+		{"/readyzz", http.StatusTooManyRequests},
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tc.path, nil))
+		if rec.Code != tc.want {
+			t.Errorf("%s = %d, want %d", tc.path, rec.Code, tc.want)
+		}
+	}
+}
