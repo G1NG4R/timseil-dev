@@ -102,13 +102,21 @@ gegeneinander — das ist als Prüfung für E2 gefiltert.
 ### Die Kaskade
 
 ```
-DB_STATEMENT_TIMEOUT  5s  <  REQUEST_TIMEOUT 15s  <  SHUTDOWN_GRACE 20s  <  stop_grace_period 30s
+DB_STATEMENT_TIMEOUT  5s  <  REQUEST_TIMEOUT 15s  <  SHUTDOWN_GRACE 20s
+
+SHUTDOWN_DELAY 3s  +  SHUTDOWN_GRACE 20s  <  stop_grace_period 30s
 ```
 
-Die ersten drei erzwingt der Start. **Das vierte Glied steht im Compose und wird
-von nichts geprüft** — Dockers Default sind zehn Sekunden, also kürzer als die
-Gnadenfrist. Fehlt `stop_grace_period`, entwässert der Prozess höflich, bis
-SIGKILL kommt, und die Tests bleiben trotzdem grün.
+Die erste Zeile erzwingt der Start. Die zweite seit E5b auch: `config.Load`
+weist eine Kombination ab, bei der Verzögerung plus Gnadenfrist über
+`stop_grace_period` hinausreicht — dann käme SIGKILL mitten in die Entwässerung,
+und die Höflichkeit wäre ein Schnitt.
+
+**`stop_grace_period` steht im Compose, und der Prozess kann es nicht lesen.**
+Deshalb steht die Zahl als Konstante `stopGracePeriod` in `config.go` noch
+einmal — eine Kopie, und Kopien driften. `make check-compose` weist die beiden
+zurück, wenn sie auseinanderlaufen. Dockers Default wären zehn Sekunden, also
+kürzer als die Gnadenfrist allein.
 
 ---
 
@@ -122,11 +130,18 @@ docker compose -f compose.dev.yaml logs api | tail -4
 Erwartet:
 
 ```
-{"level":"INFO","msg":"shutdown requested, draining","grace":"20s"}
+{"level":"INFO","msg":"shutdown requested, readiness is now 503","delay":"3s","grace":"20s"}
+{"level":"INFO","msg":"draining","grace":"20s"}
 {"level":"INFO","msg":"drained cleanly"}
 ```
 
-Fehlen die zwei Zeilen, hat der Prozess kein Signal bekommen. In der Entwicklung
+**Zwischen der ersten und der zweiten Zeile liegen drei Sekunden, und das ist
+kein Hänger.** `/readyz` antwortet ab der ersten Zeile 503, der Listener nimmt
+aber weiter an — das ist das Fenster, in dem Traefik diesen Container aus seinem
+Pool nimmt, bevor seine Adresse verschwindet. `SHUTDOWN_DELAY=0` schaltet es ab,
+und ohne Proxy davor ist 0 die richtige Einstellung.
+
+Fehlen die Zeilen, hat der Prozess kein Signal bekommen. In der Entwicklung
 ist `air` PID 1; `send_interrupt = true` in `api/.air.toml` ist der Grund, warum
 es überhaupt ankommt.
 
@@ -639,6 +654,7 @@ Default", damit die Zahlen nur an einer Stelle existieren — in
 | `LOG_LEVEL` | `info` | |
 | `REQUEST_TIMEOUT` | `15s` | Obergrenze pro Anfrage |
 | `SHUTDOWN_GRACE` | `20s` | Entwässerungsfrist |
+| `SHUTDOWN_DELAY` | `3s` | Pause zwischen 503 und schließendem Listener · `0` schaltet ab |
 | `DB_MAX_CONNS` / `DB_MIN_CONNS` | `10` / `2` | Rechnung in ADR 0014 |
 | `DB_STATEMENT_TIMEOUT` | `5s` | |
 | `DB_LOCK_TIMEOUT` | `2s` | |
