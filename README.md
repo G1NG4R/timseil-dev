@@ -391,6 +391,14 @@ args either image takes: a build arg lands in the image layers and survives the
 rotation of whatever it carried, so every secret is runtime environment and
 nothing else.
 
+Since E5c that describe answers a release number. `tools/release.sh` reads the
+conventional commits since the last `v*` tag and the `publish` job creates the
+tag **before** it builds, so a released build names itself `v0.2.0` and the ones
+between name themselves `v0.2.0-3-gabc1234` — three commits after that release,
+which is more than a bare sha could say. There is no release pull request and no
+`CHANGELOG.md`; the changelog is the body of the GitHub release, and the images
+keep `sha-<short>` as their only name. [ADR 0036](docs/adr/0036-releases-als-tag-ohne-release-pr.md).
+
 **The contact form's mail is measured, not assumed.** The domain publishes one
 `v=spf1`, a DKIM key that OVH delegates by CNAME rather than publishing as TXT,
 and DMARC at `p=none` while the reports accumulate. Every one of those was read

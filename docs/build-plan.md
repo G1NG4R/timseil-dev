@@ -355,7 +355,7 @@ Coverage unter Schwelle · Lint- oder Typfehler · Contract-Drift · bekannte Sc
 
 ### 5.4 Konventionen
 
-Conventional Commits → `release-please` erzeugt CHANGELOG und Tags · Branches `phase/c3-training-endpoint` · SemVer · Image-Tags `sha-<short>`, `v1.2.3`, `latest` · reproduzierbare Builds (`-trimpath`, `SOURCE_DATE_EPOCH`, Base-Images per Digest) · **Code Review auch solo:** nach dem PR `/clear`, dann Review in eigener Session.
+Conventional Commits → Tags und Release-Text · Branches `phase/c3-training-endpoint` · SemVer · Image-Tags `sha-<short>` · reproduzierbare Builds (`-trimpath`, `SOURCE_DATE_EPOCH`, Base-Images per Digest) · **Code Review auch solo:** nach dem PR `/clear`, dann Review in eigener Session.
 
 ---
 
@@ -1138,7 +1138,7 @@ docker compose up -d --no-deps --wait web2
 docker compose up -d --no-deps --wait api web
 docker compose rm -s -f api2 web2
 ```
-`tools/rollout.sh` hält sie an einer Stelle, `tools/deploy.sh` prüft vor jedem Deploy, dass das Panel sie fährt. Setzt Graceful Shutdown aus C1 voraus **und zwei Pausen mit einem Leser**: `SHUTDOWN_DELAY` schickt `/readyz` auf 503, während der Listener noch annimmt, und erst ein `loadbalancer.healthcheck` an Traefik liest das — ohne ihn ist die Pause ein Knopf ohne Wirkung (#65). ADR 0035. Plus `release-please`, das nach E5b als **E5c** kommt.
+`tools/rollout.sh` hält sie an einer Stelle, `tools/deploy.sh` prüft vor jedem Deploy, dass das Panel sie fährt. Setzt Graceful Shutdown aus C1 voraus **und zwei Pausen mit einem Leser**: `SHUTDOWN_DELAY` schickt `/readyz` auf 503, während der Listener noch annimmt, und erst ein `loadbalancer.healthcheck` an Traefik liest das — ohne ihn ist die Pause ein Knopf ohne Wirkung (#65). ADR 0035. Plus die Release-Automatik als **E5c** — und dort **kein `release-please`**: es arbeitet über einen Release-PR, und ein PR vom eingebauten `GITHUB_TOKEN` löst keine `pull_request`-Workflows aus, meldet also keinen der sieben erforderlichen Kontexte und ist mit `enforce_admins: true` nicht mergebar. Stattdessen `tools/release.sh`: Tag und GitHub-Release aus den Conventional Commits, erzeugt von `publish` selbst, damit der Tag existiert, bevor das Image gebaut wird. Keine `CHANGELOG.md`, kein `v1.2.3` am Image (der Pruner sieht nur `sha-<7hex>`), Start bei `v0.1.0`. ADR 0036.
 *Fertig wenn:* Ein Deploy, von außen über den öffentlichen Namen mitgeschrieben, zeigt **keine einzige Antwort, die nicht 200 ist** — eine Anfrage je Sekunde über die ganze Dauer. Falls nicht: ehrlich die **gemessene** Downtime in die Fallstudie schreiben statt „Zero-Downtime" zu behaupten.
 *Korrigiert nach E4b, und die Korrektur ist der Punkt.* Hier stand „zeigt **null** 5xx" und „~3 s". Beides gemessen am 22.08.2026 beim Rollback-Drill: **rund zehn Sekunden je Container-Wechsel, und es sind keine 5xx, sondern 404.** Die Router sind Labels auf den Containern; verschwindet der Container, entfernt Traefik den Router ganz und antwortet mit seiner Standard-404. **Die alte Abnahme wäre also grün gewesen**, während jeder Besucher „diese Seite gibt es nicht" gelesen hätte — und ein Crawler die URL aus dem Index genommen hätte, was eine 502 nicht auslöst. Eine Abnahme, die 5xx zählt, misst an diesem Fehler vorbei. Die drei Sekunden waren geschätzt; zehn sind gemessen. [#143](https://github.com/G1NG4R/timseil-dev/issues/143)
 *Stand nach E5b, im Labor.* Grundlinie auf derselben Anlage: 13×`404` auf `/`, 8×`404` auf `/api/health`. Nach der Reparatur, drei Läufe: `110 requests, 110×200` auf beiden Pfaden.
