@@ -320,7 +320,9 @@ func TestTheQueryStringIsNotLogged(t *testing.T) {
 // backend out of the pool at exactly that moment would turn a busy minute into
 // an outage.
 func TestExceptLetsThroughWhatTheLinkWouldHaveRefused(t *testing.T) {
-	refuse := func(next http.Handler) http.Handler {
+	// The parameter is deliberately unused: this stand-in refuses before it ever
+	// reaches what it wraps, which is what a rate limiter at its ceiling does.
+	refuse := func(_ http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusTooManyRequests)
 		})
