@@ -106,7 +106,12 @@ announce_skip() {
   digest_asked=1
   printf '  – not asked here: whether the running containers are THOSE bytes\n'
   printf '    only the host can see it. from the clone on the VPS:\n'
-  printf '        git -C ~/timseil-dev pull && sh tools/check-deployed.sh --host\n'
+  # `cd` first, and it is not pedantry: `git -C` moves for git alone, so the
+  # `sh tools/…` after it ran in whatever directory the reader was standing in
+  # and answered `No such file`. An instruction that fails when it is followed
+  # literally is worse than none — whoever hits it now doubts the tool rather
+  # than the sentence. Found on 2026-08-22, the first time anybody ran it.
+  printf '        cd ~/timseil-dev && git pull && sh tools/check-deployed.sh --host\n'
   [ -z "$api_digest" ] || printf '    expected  ghcr.io/g1ng4r/timseil-api  %s\n' "$api_digest"
   [ -z "$web_digest" ] || printf '    expected  ghcr.io/g1ng4r/timseil-web  %s\n' "$web_digest"
 }

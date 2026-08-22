@@ -45,6 +45,13 @@ ihrer ersten Berührung mit der Wirklichkeit gehalten.
 `INTERNAL_DEPLOY_TOKEN` (dieser Deploy-Report). `INTERNAL_PROBE_TOKEN` erst mit
 F4, dort wird er benutzt.
 
+**Die E4-Abnahme ist nachgeholt, und sie fehlte wirklich.**
+`tools/check-deployed.sh --host` stand seit E4b als Kriterium im Bauplan, im
+Handbuch und in ADR 0034 — ausgeführt hatte es niemand. Am 22.08.2026 gegen
+`b4bd8fa`: **10 von 10 Behauptungen**, darunter die zwei, die nur der Host
+machen kann — die laufenden Container **sind** die veröffentlichten Digests.
+Vorher waren acht davon vom Klon aus grün und die neunte hieß `– not asked here`.
+
 **Als Nächstes: Stufe F**, und sie beginnt mit F1 (strukturierte Logs und
 Korrelation). Die Datenbank-Rotation liegt weiter auf L5, mit Auslöser statt
 Datum in der lokalen Datei.

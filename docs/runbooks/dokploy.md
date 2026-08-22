@@ -956,6 +956,36 @@ sh tools/check-deployed.sh --host                   # laufender Digest = veröff
 Die `jq .sha`-Zeile ist die, an der alles hängt: sie sagt, dass das, was gemergt
 wurde, tatsächlich läuft. Sie muss die sieben Zeichen aus Teil 1.3 zeigen.
 
+**Am 22.08.2026 zum ersten Mal wirklich ausgeführt — und das war überfällig.**
+`--host` steht seit E4b als Abnahmekriterium im Bauplan, im Handbuch und in ADR
+0034, und niemand hatte es je laufen lassen; die neunte und zehnte Behauptung
+existierten als Satz, nicht als Messung. Ergebnis, gegen `b4bd8fa`:
+
+```
+  ✓ it runs b4bd8fa — the head of main
+  ✓ the site reports that deploy itself: ok, 216s, 2026-08-22T22:38:19Z
+  ✓ the running timseil-api container is sha256:28a5172f… — the published digest
+  ✓ the running timseil-web container is sha256:e810db71… — the published digest
+
+  ✓ 10 claims
+```
+
+Damit ist belegt, was der Klon nur folgern kann: **die laufenden Container sind
+die Bytes, die die Pipeline gebaut, gescannt und signiert hat.** Ein auf dem
+Host gebautes Image hätte diesen Digest nicht — und überhaupt keinen
+`RepoDigest`.
+
+Zwei Nebenbefunde aus demselben Lauf, beide klein und beide notiert, weil sie
+sonst der Nächste wieder findet:
+
+- Der Klon auf dem Host stand noch auf `3890180`, dem D3-Stand. Er wird
+  read-only für `ops/host/` benutzt und deployt nichts (Teil 1.1), also hat das
+  nichts gekostet — aber wer `--host` ausführt, zieht ihn vorher.
+- Die Zeile, die `check-deployed.sh` selbst zum Nachmachen druckte, scheiterte
+  beim wörtlichen Befolgen: `git -C … pull && sh tools/…` bewegt nur git, das
+  `sh` lief im Heimatverzeichnis und fand die Datei nicht. Korrigiert auf
+  `cd ~/timseil-dev && git pull && …`.
+
 **Die `acme-challenge`-Zeile ist die zweitwichtigste, und sie ist neu.** Der
 Router `timseil-http` sitzt auf demselben Entrypoint, über den der Certresolver
 seine `httpChallenge` abwickelt. Antwortet dieser Pfad mit **404**, hat Traefiks
