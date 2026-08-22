@@ -1134,7 +1134,8 @@ docker compose up -d --no-deps --scale api=2 --wait api
 docker compose up -d --no-deps --scale api=1 --wait api
 ```
 Setzt Graceful Shutdown aus C1 voraus. Plus `release-please`.
-*Fertig wenn:* Lasttest während eines Deploys zeigt **null** 5xx. Falls nicht: ehrlich „~3 s geplante Downtime" in die Fallstudie schreiben statt „Zero-Downtime" zu behaupten.
+*Fertig wenn:* Ein Deploy, von außen über den öffentlichen Namen mitgeschrieben, zeigt **keine einzige Antwort, die nicht 200 ist** — eine Anfrage je Sekunde über die ganze Dauer. Falls nicht: ehrlich die **gemessene** Downtime in die Fallstudie schreiben statt „Zero-Downtime" zu behaupten.
+*Korrigiert nach E4b, und die Korrektur ist der Punkt.* Hier stand „zeigt **null** 5xx" und „~3 s". Beides gemessen am 22.08.2026 beim Rollback-Drill: **rund zehn Sekunden je Container-Wechsel, und es sind keine 5xx, sondern 404.** Die Router sind Labels auf den Containern; verschwindet der Container, entfernt Traefik den Router ganz und antwortet mit seiner Standard-404. **Die alte Abnahme wäre also grün gewesen**, während jeder Besucher „diese Seite gibt es nicht" gelesen hätte — und ein Crawler die URL aus dem Index genommen hätte, was eine 502 nicht auslöst. Eine Abnahme, die 5xx zählt, misst an diesem Fehler vorbei. Die drei Sekunden waren geschätzt; zehn sind gemessen. [#143](https://github.com/G1NG4R/timseil-dev/issues/143)
 
 ---
 
