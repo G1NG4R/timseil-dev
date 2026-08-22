@@ -348,6 +348,73 @@ check_foreign_images_are_pinned() {
   fi
 }
 
+# Rule 15. The twins may declare nothing but `extends`.
+#
+# api2 and web2 exist so that something carries the routers while api and web are
+# recreated (compose.rollout.yaml, ADR 0035). A twin whose labels have drifted
+# from its original does not fail: it serves a stale router to real visitors and
+# nothing goes red. So the file is allowed exactly one shape — a service name,
+# `extends:`, `file:` and `service:` — and every image, label, network and
+# environment comes from compose.yaml by construction rather than by discipline.
+check_twins_only_extend() {
+  [ -f compose.rollout.yaml ] || return 0
+  bad=$(awk '
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ { in_services = ($0 ~ /^services:[[:space:]]*$/); next }
+    !in_services { next }
+    /^[[:space:]]*#/ { next }
+    /^[[:space:]]*$/ { next }
+    /^  [A-Za-z0-9_.-]+:[[:space:]]*$/ { next }
+    /^    extends:[[:space:]]*$/ { next }
+    /^      (file|service):[[:space:]]/ { next }
+    { printf "line %d: %s\n", NR, $0 }
+  ' compose.rollout.yaml)
+  if [ -n "$bad" ]; then
+    printf '  ✗ compose.rollout.yaml declares something besides extends\n'
+    printf '%s\n' "$bad" | sed 's/^/    /'
+    printf '    a twin that differs from its original serves a stale router without going red\n'
+    fail=1
+  else
+    printf '  ✓ compose.rollout.yaml only extends\n'
+  fi
+}
+
+# Rule 16. One number, written in two files, and no runtime notices when only
+# one of them moves.
+#
+# api/internal/config restates the api service's stop_grace_period as a constant
+# because the process cannot read it, and refuses a SHUTDOWN_DELAY plus
+# SHUTDOWN_GRACE that would run past it. Let the two drift apart and the check
+# in Go is measuring a container that no longer exists: raise the compose value
+# and the guard stays needlessly tight, lower it and SIGKILL arrives mid-drain
+# with nothing having complained.
+check_stop_grace_agrees() {
+  [ -f compose.yaml ] && [ -f api/internal/config/config.go ] || return 0
+  yaml=$(awk '
+    /^[A-Za-z_][A-Za-z0-9_-]*:/ { in_services = ($0 ~ /^services:[[:space:]]*$/); svc = ""; next }
+    !in_services { next }
+    /^  [A-Za-z0-9_.-]+:[[:space:]]*$/ { svc = $0; sub(/^  /, "", svc); sub(/:.*$/, "", svc); next }
+    svc == "api" && /^    stop_grace_period:/ {
+      sub(/^    stop_grace_period:[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); print; exit }
+  ' compose.yaml)
+  go=$(sed -n 's/^[[:space:]]*stopGracePeriod[[:space:]]*=[[:space:]]*\([0-9]*\)[[:space:]]*\*[[:space:]]*time\.Second.*/\1s/p' \
+    api/internal/config/config.go)
+  if [ -z "$yaml" ] || [ -z "$go" ]; then
+    printf '  ✗ could not read stop_grace_period from both sides\n'
+    printf '    compose.yaml services.api: %s\n' "${yaml:-<none>}"
+    printf '    config.go stopGracePeriod: %s\n' "${go:-<none>}"
+    printf '    a check that reads nothing reports success on everything\n'
+    fail=1
+  elif [ "$yaml" != "$go" ]; then
+    printf '  ✗ stop_grace_period disagrees between the file and the code\n'
+    printf '    compose.yaml services.api: %s\n' "$yaml"
+    printf '    config.go stopGracePeriod: %s\n' "$go"
+    printf '    config.Load bounds SHUTDOWN_DELAY + SHUTDOWN_GRACE by that number\n'
+    fail=1
+  else
+    printf '  ✓ stop_grace_period is %s on both sides\n' "$yaml"
+  fi
+}
+
 # compose.dev.yaml may build; it may still not open db to the host.
 scan compose.dev.yaml 0
 # compose.lab.yaml is an overlay and defines neither db nor a build, so the
@@ -361,5 +428,7 @@ check_db_image_agrees
 check_foreign_images_are_pinned compose.yaml
 check_foreign_images_are_pinned compose.dev.yaml
 check_foreign_images_are_pinned compose.lab.yaml
+check_twins_only_extend
+check_stop_grace_agrees
 
 [ "$fail" -eq 0 ] || exit 1

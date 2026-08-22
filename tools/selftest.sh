@@ -43,7 +43,8 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/deploy-env.sh" "$root/tools/report-deploy.sh" \
    "$root/tools/verify-deploy.sh" "$root/tools/deploy-gate.sh" \
    "$root/tools/check-deployed.sh" "$root/tools/registry.sh" \
-   "$root/tools/prune-registry.sh" "$root/tools/witness.sh" "$tmp/tools/"
+   "$root/tools/prune-registry.sh" "$root/tools/witness.sh" \
+   "$root/tools/rollout.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -519,6 +520,64 @@ rm -f compose.yaml
 accepts "MAIL_TRANSPORT pinned in the dev compose accepted" tools/check-compose.sh
 
 rm -f compose.dev.yaml compose.yaml
+
+# Rule 15. The twins may extend and do nothing else.
+#
+# A twin that has drifted from its original is the worst shape available here:
+# it carries a stale router, real visitors are load-balanced onto it during
+# every rollout, and nothing goes red. So the file is allowed one shape and the
+# broken case is any second line.
+write_rollout() { printf '%s' "$1" > compose.rollout.yaml; }
+
+write_rollout 'services:
+  api2:
+    extends:
+      file: compose.yaml
+      service: api
+'
+accepts "a twin that only extends accepted" tools/check-compose.sh
+
+write_rollout 'services:
+  api2:
+    extends:
+      file: compose.yaml
+      service: api
+    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG}
+'
+rejects "a twin with an image of its own rejected" tools/check-compose.sh
+
+# The one that would actually happen: somebody edits a router on api and not on
+# its twin, and half the requests during a deploy meet last week's rule.
+write_rollout 'services:
+  web2:
+    extends:
+      file: compose.yaml
+      service: web
+    labels:
+      - traefik.http.routers.timseil-web.priority=10
+'
+rejects "a twin with a label of its own rejected" tools/check-compose.sh
+rm -f compose.rollout.yaml
+
+# Rule 16. stop_grace_period is written in compose.yaml and restated in Go,
+# because the process cannot read the file it runs under. Two copies of one
+# number and no runtime that notices when only one of them moves.
+mkdir -p api/internal/config
+write_go_grace() { printf 'const (\n\tstopGracePeriod = %s * time.Second\n)\n' "$1" > api/internal/config/config.go; }
+
+write_prod "$api_head$routed$limited    stop_grace_period: 30s
+"
+write_go_grace 30
+accepts "stop_grace_period agreeing on both sides accepted" tools/check-compose.sh
+
+write_go_grace 45
+rejects "stop_grace_period disagreeing rejected" tools/check-compose.sh
+
+# The failure that a check reading only one side would report as success: the
+# constant renamed away, so the parser finds nothing and has nothing to compare.
+printf 'const ()\n' > api/internal/config/config.go
+refuses "stop_grace_period unreadable in Go rejected" "could not read" tools/check-compose.sh
+rm -rf api compose.yaml
 
 accepts "absent compose files skip" tools/check-compose.sh
 
@@ -1687,6 +1746,59 @@ refuses "an unknown argument rejected" "usage" tools/prune-registry.sh --force
 
 unset PRUNE_REGISTRY_SH PRUNE_HEALTH_FILE FIXTURE
 rm -rf fake fx
+
+printf 'the rollout chain\n'
+
+# THE ROUND TRIP, and it is here because it already caught a real bug.
+#
+# --print builds Dokploy's Command field out of the steps; --check takes such a
+# field apart again. If the two disagree, --check is comparing something other
+# than what --print writes, and the assertion in tools/deploy.sh passes or fails
+# for the wrong reason. The first version stripped every `-f`, including the one
+# inside `rm -s -f api2 web2` — which quietly turned a WRONG panel setting into
+# a matching one, exactly the direction a check must never be wrong in.
+accepts "a printed command checks out against its own steps" \
+  sh -c 'tools/rollout.sh --print -p someapp -f compose.yaml -f compose.rollout.yaml | tools/rollout.sh --check'
+
+# The state the panel is in before anybody sets the field, and the one a Dokploy
+# upgrade puts it back into. It is the default that serves the 404s, so it has
+# to be the loudest of these.
+refuses "an empty command field rejected" "does not run the rollout" \
+  sh -c 'printf "" | tools/rollout.sh --check'
+
+# The pattern is the command that was FOUND, not the refusal — a message that
+# only said "wrong" would send somebody to look at the repository when the thing
+# to look at is the panel.
+refuses "Dokploy's own default command rejected" "up -d --build --remove-orphans" \
+  sh -c 'printf "compose -p app -f compose.yaml up -d --build --remove-orphans" | tools/rollout.sh --check'
+
+# The steps, all four, in the wrong order. Every link is right on its own; the
+# rollout it describes recreates api and web BEFORE the twins are up, which is
+# the ten seconds of 404 with extra ceremony. A check that only counted the
+# links would pass this.
+refuses "the four steps in the wrong order rejected" "does not run the rollout" \
+  sh -c 'printf "%s" "compose -p a -f c.yaml up -d --no-deps --wait api web && docker compose -p a -f c.yaml up -d --remove-orphans --wait api2 && docker compose -p a -f c.yaml up -d --no-deps --wait web2 && docker compose -p a -f c.yaml rm -s -f api2 web2" | tools/rollout.sh --check'
+
+# One flag missing, and it is the one that matters: without --wait, step three
+# starts recreating api while the twin meant to cover for it is still booting,
+# and the gap moves rather than closing.
+refuses "a step with --wait dropped rejected" "does not run the rollout" \
+  sh -c 'printf "%s" "compose -p a -f c.yaml up -d --remove-orphans --wait api2 && docker compose -p a -f c.yaml up -d --no-deps --wait web2 && docker compose -p a -f c.yaml up -d --no-deps api web && docker compose -p a -f c.yaml rm -s -f api2 web2" | tools/rollout.sh --check'
+
+# The step that removes the twins, gone. The rollout still works and still
+# serves no 404 — and leaves two containers of the previous build running behind
+# both routers, so /api/health starts answering two different shas and every
+# check that reads it becomes a coin toss.
+refuses "the chain without its cleanup step rejected" "does not run the rollout" \
+  sh -c 'printf "%s" "compose -p a -f c.yaml up -d --remove-orphans --wait api2 && docker compose -p a -f c.yaml up -d --no-deps --wait web2 && docker compose -p a -f c.yaml up -d --no-deps --wait api web" | tools/rollout.sh --check'
+
+refuses "the rollout refuses to print without a project" "needs -p" \
+  tools/rollout.sh --print -f compose.yaml
+refuses "the rollout refuses to print without a file" "needs at least one -f" \
+  tools/rollout.sh --print -p someapp
+refuses "the rollout refuses two modes at once" "one of" \
+  tools/rollout.sh --steps --run
+refuses "the rollout refuses no mode" "usage" tools/rollout.sh
 
 printf 'pre-commit hook\n'
 printf 'bad \n' > hookws.txt

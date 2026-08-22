@@ -181,6 +181,26 @@ jq -e '.createEnvFile == true' "$work/body" >/dev/null 2>&1 \
 
 jq -r --arg f "$ENV_FIELD" '.[$f] // ""' "$work/body" > "$work/env"
 
+# ---------------------------------------------------- the rollout, asserted
+#
+# Dokploy's Command field is what actually swaps the containers. Left at its
+# default it runs one `up -d` over the whole stack, which recreates api and web
+# together and serves ten seconds of 404 to the public site while it happens —
+# the defect issue #143 exists for. The chain that does not is tools/rollout.sh,
+# and --check is where the panel and the repository are held equal.
+#
+# ASSERTED, NEVER SET. Exactly the treatment createEnvFile gets above and for
+# the same reason: a pipeline that quietly writes a panel setting is a pipeline
+# that hides a misconfiguration. A Dokploy upgrade that resets the field should
+# stop a deploy and say so, not be repaired behind somebody's back and then do
+# it again next time.
+#
+# BEFORE anything is written. A refusal here has changed nothing.
+jq -e 'has("command")' "$work/body" >/dev/null 2>&1 \
+  || fail "the answer has no 'command' field — the API changed, see the block at the top of this file"
+
+jq -r '.command // ""' "$work/body" | "$here/rollout.sh" --check || exit 1
+
 # ----------------------------------------------------------------- rewrite
 #
 # The one destructive step, and it lives in its own file so that it can be
