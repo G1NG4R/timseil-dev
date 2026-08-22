@@ -41,7 +41,9 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-dockerfiles.sh" "$root/tools/verify-supply-chain.sh" \
    "$root/tools/check-pins.sh" "$root/tools/check-secrets.sh" "$root/tools/sbom.sh" \
    "$root/tools/deploy-env.sh" "$root/tools/report-deploy.sh" \
-   "$root/tools/verify-deploy.sh" "$root/tools/deploy-gate.sh" "$tmp/tools/"
+   "$root/tools/verify-deploy.sh" "$root/tools/deploy-gate.sh" \
+   "$root/tools/check-deployed.sh" "$root/tools/registry.sh" \
+   "$root/tools/prune-registry.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1404,13 +1406,231 @@ unset INTERNAL_DEPLOY_TOKEN
 refuses "verify refuses an uppercase sha"       "not lowercase hexadecimal" tools/verify-deploy.sh ABCDEF1
 refuses "verify refuses a short sha"            "shorter than seven" tools/verify-deploy.sh abcdef
 
+# THE NO-OP, and it needs a server rather than an argument check — this is the
+# one condition that only exists as a behaviour over time. A static tree served
+# on loopback is enough: /api/health is a file, / is index.html.
+#
+# Found on 2026-08-22 by a drill that passed in three seconds and should have
+# taken sixty: dokploy answers when it has ACCEPTED the deploy, so the first
+# sample is still the old process. Harmless while the sha differs, and a green
+# tick over nothing when it does not — which is every redeploy of a tag that was
+# republished onto new bytes.
+mkdir -p noop/api
+printf '{"status":"ok","sha":"1234abc","startedAt":"2026-08-22T10:00:00Z"}\n' > noop/api/health
+printf 'ok\n' > noop/index.html
+( cd noop && exec python3 -m http.server 8731 --bind 127.0.0.1 >/dev/null 2>&1 ) &
+NOOP_PID=$!
+NOOP=http://127.0.0.1:8731
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  curl -s -o /dev/null --max-time 1 "$NOOP/api/health" && break
+  sleep 0.3
+done
+
+accepts "verify accepts a build that is up" \
+  env VERIFY_BASE_URL="$NOOP" tools/verify-deploy.sh 1234abc
+
+# The same document, and now the caller knows which process was answering before
+# the deploy. Nothing restarted, so nothing may be accepted. `timeout` rather
+# than the full sixty seconds: what is being proven is that it does not say yes
+# on the first sample, and that is decided in the first three.
+# Not `refuses` with an empty pattern: the timeout kills the script before it can
+# print its closing line, so there is no message to match on and the assertion
+# would collapse to "it exited non-zero" — the weakness the whole `rejects` →
+# `refuses` change was about. What is asserted instead is the thing that matters:
+# it never printed the sentence that means yes.
+accepts "verify will not accept the process that was already answering" \
+  sh -c "VERIFY_BASE_URL=$NOOP VERIFY_PREVIOUS_START=2026-08-22T10:00:00Z timeout 6 tools/verify-deploy.sh 1234abc > noop.out 2>&1; [ \$? -ne 0 ] && ! grep -q 'status ok . sha' noop.out"
+accepts "and it says which process it is waiting past" \
+  grep -q 'did not start at 2026-08-22T10:00:00Z' noop.out
+rm -f noop.out
+
+accepts "verify accepts once the process is a new one" \
+  env VERIFY_BASE_URL="$NOOP" VERIFY_PREVIOUS_START=2026-08-22T09:00:00Z \
+      tools/verify-deploy.sh 1234abc
+
+# And it says which of the two it is doing, because a condition that silently
+# was not made is the failure this whole phase is about.
+accepts "verify names the process it will not accept" \
+  sh -c "VERIFY_BASE_URL=$NOOP VERIFY_PREVIOUS_START=2026-08-22T09:00:00Z tools/verify-deploy.sh 1234abc | grep -q 'did not start at'"
+accepts "verify warns when it cannot tell a no-op apart" \
+  sh -c "VERIFY_BASE_URL=$NOOP tools/verify-deploy.sh 1234abc | grep -q 'no previous startedAt'"
+
+accepts "--started reads the instant back out" \
+  sh -c "[ \"\$(VERIFY_BASE_URL=$NOOP tools/verify-deploy.sh --started)\" = 2026-08-22T10:00:00Z ]"
+accepts "--started is empty and calm when nothing answers" \
+  sh -c "[ -z \"\$(VERIFY_BASE_URL=http://127.0.0.1:1 tools/verify-deploy.sh --started)\" ]"
+
+kill "$NOOP_PID" 2>/dev/null
+rm -rf noop
+
 # The gate's third argument has no default anywhere, and these two are what keep
 # it that way: a duration measured from a clock the pipeline started itself would
 # describe the last two steps while claiming all seven.
 refuses "the gate refuses a non-numeric start"  "must be epoch seconds" tools/deploy-gate.sh sha-1234abc 1234abc now
 refuses "the gate refuses a missing start"      "started-at-epoch" tools/deploy-gate.sh sha-1234abc 1234abc
 
+# The drill, in both directions. Neither half is a lie the gate may tell by
+# itself: a tag and a sha that disagree without the flag is two typos deploying
+# one build and verifying another, and the flag without a disagreement is a
+# leftover environment variable swallowing the report of a real deploy. Both
+# refuse before the tunnel, before the prune window, before anything is sent.
+refuses "a mismatched tag and sha need the drill flag" "DEPLOY_DRILL=1" \
+  tools/deploy-gate.sh sha-1234abc 7654321 1700000000
+refuses "the drill flag without a mismatch rejected"   "not a drill" \
+  env DEPLOY_DRILL=1 tools/deploy-gate.sh sha-1234abc 1234abc 1700000000
+
 rm -f dep.env dep.out dep-none.env dep-two.env dep-empty.env
+
+# ----------------------------------------------------------------- deployed
+#
+# What is provable with no network: everything before the first request. Given a
+# sha on the command line the script never asks GitHub what main is, and that is
+# the seam every case below uses.
+#
+# What is NOT here, for the same reason the deploy block above gives: the
+# tolerance arithmetic, the digest comparison and the rate-limit branch all need
+# a health document and a registry, and a selftest that could fake those would be
+# testing the fake. They are the acceptance in docs/runbooks/dokploy.md.
+printf 'deployed\n'
+
+refuses "check-deployed refuses an uppercase sha" "not lowercase hexadecimal" tools/check-deployed.sh ABCDEF1
+refuses "check-deployed refuses latest"           "not lowercase hexadecimal" tools/check-deployed.sh latest
+refuses "check-deployed refuses a short sha"      "seven hex characters"      tools/check-deployed.sh abcdef
+refuses "check-deployed refuses a long sha"       "seven hex characters"      tools/check-deployed.sh ae939d4ab
+refuses "check-deployed refuses an unknown flag"  "unknown flag"              tools/check-deployed.sh --hosts
+
+# The claim is about the PUBLIC site. Answered over plaintext, it is answered by
+# whoever is on the path.
+refuses "an http base url rejected" "is not https" \
+  env VERIFY_BASE_URL=http://timseil.dev tools/check-deployed.sh abcdef1
+
+# A site that does not answer is a failure, never a skip. A green run that meant
+# nothing is the entire reason this file exists.
+refuses "no answer from the site is a failure" "did not answer 200" \
+  env VERIFY_BASE_URL=http://127.0.0.1:1 tools/check-deployed.sh abcdef1
+
+# And the claim that cannot be made here is announced even on the failure path.
+# Dropping it quietly would leave the reader believing the digest was compared.
+refuses "the unmade digest claim is announced when the run fails" "not asked here" \
+  env VERIFY_BASE_URL=http://127.0.0.1:1 tools/check-deployed.sh abcdef1
+
+# registry.sh assembles a URL out of its arguments, so nothing may be smuggled in.
+refuses "registry.sh refuses an unknown subcommand" "usage"                 tools/registry.sh fetch timseil-api sha-abc1234
+refuses "registry.sh refuses a foreign repository" "not timseil-api"        tools/registry.sh digest ubuntu latest
+refuses "registry.sh refuses a path in a tag"      "not a valid tag"        tools/registry.sh digest timseil-api ../../etc
+refuses "registry.sh refuses an empty repository"  "usage"                  tools/registry.sh digest
+
+# ---------------------------------------------------------------- retention
+#
+# The one file here that destroys something, so its arithmetic is exercised on
+# inventories rather than on the registry. A stand-in registry.sh answers out of
+# fixture files and the health document comes from disk; both are the seams the
+# header of prune-registry.sh describes.
+#
+# The fixture is the shape measured on 2026-08-22: four signed builds, two older
+# unsigned ones, and an orphan — an index for bytes no tag resolves to, left
+# behind when a re-run moved sha-ae939d4 onto new bytes.
+printf 'registry retention\n'
+
+mkdir -p fake fx
+cat > fake/registry.sh <<'FAKE'
+#!/bin/sh
+set -eu
+case $1 in
+  tags)   cat "$FIXTURE/tags" ;;
+  digest) sed -n "s/^$3	//p" "$FIXTURE/digests" | grep . ;;
+  config) printf '{"created":"%s"}\n' "$(sed -n "s/^$3	//p" "$FIXTURE/created")" ;;
+  index)  sed -n "s/^$3	//p" "$FIXTURE/children" | tr ' ' '\n' ;;
+esac
+FAKE
+chmod +x fake/registry.sh
+
+cat > fx/tags <<'T'
+sha-3890180
+sha-a0872c1
+sha-c738b2a
+sha-8acdd53
+sha-581f5c0
+sha-ae939d4
+sha256-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+sha256-8888888888888888888888888888888888888888888888888888888888888888
+sha256-5555555555555555555555555555555555555555555555555555555555555555
+sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+sha256-0000000000000000000000000000000000000000000000000000000000000000
+T
+cat > fx/digests <<'T'
+sha-3890180	sha256:3333333333333333333333333333333333333333333333333333333333333333
+sha-a0872c1	sha256:1111111111111111111111111111111111111111111111111111111111111111
+sha-c738b2a	sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+sha-8acdd53	sha256:8888888888888888888888888888888888888888888888888888888888888888
+sha-581f5c0	sha256:5555555555555555555555555555555555555555555555555555555555555555
+sha-ae939d4	sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+T
+cat > fx/created <<'T'
+sha-3890180	2026-08-18T10:00:00Z
+sha-a0872c1	2026-08-21T10:00:00Z
+sha-c738b2a	2026-08-21T12:00:00Z
+sha-8acdd53	2026-08-21T14:00:00Z
+sha-581f5c0	2026-08-21T16:00:00Z
+sha-ae939d4	2026-08-22T12:08:59Z
+T
+cat > fx/children <<'T'
+sha256-0000000000000000000000000000000000000000000000000000000000000000	sha256:0a sha256:0b sha256:0c
+sha256-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc	sha256:ca sha256:cb sha256:cc
+T
+printf '{"sha":"ae939d4"}\n' > fx/health.json
+
+PRUNE_REGISTRY_SH="$PWD/fake/registry.sh"; export PRUNE_REGISTRY_SH
+PRUNE_HEALTH_FILE="$PWD/fx/health.json";   export PRUNE_HEALTH_FILE
+FIXTURE="$PWD/fx";                         export FIXTURE
+
+# The orphan goes: its index, its three bundles, and the build manifest behind
+# them — in that order, because GHCR will not remove a manifest an index names.
+accepts "the orphaned index is in the plan" \
+  sh -c 'tools/prune-registry.sh timseil-api | grep -q "index   sha256-0000"'
+accepts "the three orphan bundles are in the plan" \
+  sh -c '[ "$(tools/prune-registry.sh timseil-api | grep -c "^    bundle")" = 3 ]'
+accepts "the orphaned build manifest is in the plan" \
+  sh -c 'tools/prune-registry.sh timseil-api | grep -q "build   sha256:0000"'
+
+# And nothing else. This is the assertion that matters, and it is why the rule
+# cannot reason about tags: the sigstore bundles are untagged by construction, so
+# "delete the untagged ones" would take every signature in the registry with it.
+accepts "a kept build's index is never in the plan" \
+  sh -c '! tools/prune-registry.sh timseil-api | grep -q "sha256-cccc"'
+accepts "a kept build's bundles are never in the plan" \
+  sh -c '! tools/prune-registry.sh timseil-api | grep -q "sha256:ca"'
+accepts "six builds under a window of ten means five removals" \
+  sh -c '[ "$(tools/prune-registry.sh timseil-api | grep -cE "^    (index|bundle|build) ")" = 5 ]'
+
+# Two builds survive the window closing on them: the one production serves, and
+# one the README names as evidence. Both are read from the running system and
+# from the file, never maintained in the rule.
+accepts "the deployed build survives a window of one" \
+  sh -c '! KEEP_BUILDS=1 tools/prune-registry.sh timseil-api | grep -q "sha256:aaaa"'
+accepts "a build the README names survives" \
+  sh -c '! KEEP_BUILDS=1 tools/prune-registry.sh timseil-api | grep -q "sha256:1111"'
+
+# The guards. Each one is a way a plausible run destroys something.
+printf '{"status":"ok"}\n' > fx/nosha.json
+refuses "no answer from production deletes nothing" "could not read what production is running" \
+  env PRUNE_HEALTH_FILE="$PWD/fx/nosha.json" tools/prune-registry.sh timseil-api
+printf '{"sha":"9999999"}\n' > fx/gone.json
+refuses "a running build absent from the registry stops it" "the inventory is wrong" \
+  env PRUNE_HEALTH_FILE="$PWD/fx/gone.json" tools/prune-registry.sh timseil-api
+# A build from the signed era whose index has vanished. Either somebody has
+# already pruned by hand, or GHCR stopped writing the fallback tag — and both are
+# a stop, because the next step would delete signatures it can no longer find.
+# The two builds that predate signing never had an index and must NOT trip it.
+grep -v '^sha256-8888' fx/tags > fx/tags.noindex && mv fx/tags.noindex fx/tags
+refuses "a kept build with no signature artefacts stops it" "no signature artefacts" \
+  tools/prune-registry.sh timseil-api
+refuses "--delete without a token rejected" "GHCR_TOKEN" \
+  env -u GHCR_TOKEN tools/prune-registry.sh --delete timseil-api
+refuses "an unknown argument rejected" "usage" tools/prune-registry.sh --force
+
+unset PRUNE_REGISTRY_SH PRUNE_HEALTH_FILE FIXTURE
+rm -rf fake fx
 
 printf 'pre-commit hook\n'
 printf 'bad \n' > hookws.txt

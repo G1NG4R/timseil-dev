@@ -25,6 +25,37 @@
 # and in ci.yml that value is `run_started_at` read back from the Actions API
 # rather than a clock this pipeline started itself.
 #
+# THE DRILL, AND WHY IT WRITES NOTHING DOWN
+#
+# DEPLOY_DRILL=1 is how the acceptance criterion of this phase is met against real
+# production: the build plan asks for the rollback to be provoked once, for real,
+# and a rollback that only a merge can trigger is one you get to test once.
+#
+# A drill deploys one build while verifying another. That is the whole trick, and
+# it is the safest one available: the site keeps serving a real, signed, working
+# build for the whole minute, and the only reason verify says no is condition
+# three — is the running sha the build we ordered — which is exactly the condition
+# a plain uptime check does not make. Nothing is broken on purpose; the site never
+# goes down.
+#
+# IT SKIPS STEP SEVEN. report-deploy.sh writes the sha that was DEPLOYED, and in a
+# drill that build came up perfectly well. A row saying "this build ended in a
+# rollback" would be a fact nobody produced — invariant 1 is about what a number
+# MEANS, not only about whether something measured it. The real measurement
+# already exists: 2026-08-22, `report ok … 227s`. The drill does not owe it twice.
+# The skip is printed, never silent.
+#
+# THE FLAG AND THE MISMATCH IMPLY EACH OTHER, in both directions, because each
+# half alone is a mistake nobody notices:
+#
+#   tag != sha, no flag   somebody typed one of the two wrong, and the pipeline
+#                         would deploy one build and verify another by accident
+#   flag, tag == sha      a DEPLOY_DRILL left over in a shell would silently
+#                         swallow the report of a real deploy
+#
+# It is never set in ci.yml, the same way DEPLOY_SKIP_REGISTRY_CHECK in deploy.sh
+# is never set there. docs/runbooks/dokploy.md carries the drill itself.
+#
 # EXIT CODE. Zero only when the requested build is live. A rollback that worked
 # perfectly still exits 1: the deploy failed, and a green tick over a rolled-back
 # deploy is the pipeline telling a comfortable lie.
@@ -40,12 +71,39 @@ case $started in
   '' | *[!0-9]*) printf '  ✗ started-at must be epoch seconds — got %s\n' "$started"; exit 1 ;;
 esac
 
-# The tag names the build; the sha names what /api/health will answer. They are
-# two spellings of one commit, and letting them disagree would mean deploying
-# one build and verifying another — which is a real drill (the runbook uses it)
-# but never something a pipeline should do by accident.
-[ "$tag" = "sha-$sha" ] || {
-  printf '  ! deploying %s but verifying against %s — this is a drill, not a deploy\n' "$tag" "$sha"
+# The tag names the build; the sha names what /api/health will answer. Two
+# spellings of one commit — unless this is the drill, and then a drill says so.
+# Both halves are checked, for the two reasons in the header.
+drill=${DEPLOY_DRILL:-}
+
+if [ "$tag" = "sha-$sha" ]; then
+  [ -z "$drill" ] || {
+    printf '  ✗ DEPLOY_DRILL is set but %s and %s are the same build\n' "$tag" "$sha"
+    printf '    this is a deploy, not a drill, and a drill is the only thing that may\n'
+    printf '    skip the report. unset DEPLOY_DRILL, or deploy a different tag.\n'
+    exit 1
+  }
+else
+  [ -n "$drill" ] || {
+    printf '  ✗ deploying %s but verifying against %s\n' "$tag" "$sha"
+    printf '    that is a drill, and a drill says so: DEPLOY_DRILL=1.\n'
+    printf '    without it this is two typos that would deploy one build and verify another.\n'
+    printf '    docs/runbooks/dokploy.md, the drill under Rollback\n'
+    exit 1
+  }
+  printf '  ! DRILL — deploying %s while verifying %s; the verify must fail\n' "$tag" "$sha"
+  printf '    nothing will be reported to /api/internal/deploy. header of this file says why.\n'
+fi
+
+# Step seven, or the sentence that says it did not happen. One place, so that
+# neither path can forget the skip and neither can report a drill.
+report() { # report <sha7> <duration-sec> <ok|rollback>
+  if [ -n "$drill" ]; then
+    printf '  ! drill — nothing reported to /api/internal/deploy\n'
+    printf '    %s would have been recorded as %s after %ss\n' "$1" "$3" "$2"
+    return 0
+  fi
+  "$here/report-deploy.sh" "$1" "$2" "$3"
 }
 
 # ---------------------------------------------------------- the prune window
@@ -69,16 +127,29 @@ fi
 
 printf '\n─── deploy ───────────────────────────────────────────\n'
 
+# WHEN THE PROCESS THAT IS ANSWERING NOW CAME UP, read BEFORE the deploy and
+# handed to the verify afterwards.
+#
+# Dokploy answers the deploy call once it has accepted the job, not once the
+# containers have swapped. Without this value the verify's first sample is the
+# OLD process, and if it happens to satisfy every condition — which it does on a
+# redeploy of the tag already running — the gate reports a deploy that has not
+# happened. Measured on 2026-08-22: three seconds, green, and the containers
+# swapped a minute later. The header of verify-deploy.sh carries the argument.
+#
+# Read again before the rollback, because by then the process is a different one.
+before=$("$here/verify-deploy.sh" --started)
+
 # stdout of deploy.sh is the previous tag and nothing else; its narration went
 # to stderr and has already been printed above this line.
 previous=$("$here/deploy.sh" "$tag")
 
 printf '\n─── verify ───────────────────────────────────────────\n'
 
-if "$here/verify-deploy.sh" "$sha"; then
+if VERIFY_PREVIOUS_START="$before" "$here/verify-deploy.sh" "$sha"; then
   elapsed=$(( $(date +%s) - started ))
   printf '\n─── report ───────────────────────────────────────────\n'
-  "$here/report-deploy.sh" "$sha" "$elapsed" ok
+  report "$sha" "$elapsed" ok
   printf '\n  ✓ %s is live\n' "$tag"
   exit 0
 fi
@@ -94,9 +165,10 @@ if [ "$previous" = "$tag" ]; then
 fi
 
 printf '  rolling back to %s\n' "$previous"
+before=$("$here/verify-deploy.sh" --started)
 "$here/deploy.sh" "$previous" >/dev/null
 
-if ! "$here/verify-deploy.sh" "${previous#sha-}"; then
+if ! VERIFY_PREVIOUS_START="$before" "$here/verify-deploy.sh" "${previous#sha-}"; then
   printf '\n  ✗ THE ROLLBACK DID NOT COME UP EITHER — the site is down\n'
   printf '    docs/runbooks/dokploy.md part 5, and docs/runbooks/compose.md for the chain\n'
   exit 1
@@ -109,7 +181,7 @@ printf '\n─── report ─────────────────�
 # previous sha instead would record a deploy that never happened and quietly
 # lose the failure.
 elapsed=$(( $(date +%s) - started ))
-"$here/report-deploy.sh" "$sha" "$elapsed" rollback || \
+report "$sha" "$elapsed" rollback || \
   printf '  ! the report did not land — the rollback still happened\n'
 
 printf '\n  ✗ %s did not come up; %s is live again\n' "$tag" "$previous"

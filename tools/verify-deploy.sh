@@ -18,21 +18,47 @@
 # the answer Dokploy's API gives it: Dokploy reports that it started a compose
 # project, which is a different claim.
 #
-# FOUR CONDITIONS, and each one exists because a deploy has failed that way
+# FIVE CONDITIONS, and each one exists because a deploy has failed that way
 # somewhere:
 #
 #   1. /api/health answers 200            — the api is up at all
 #   2. .status is "ok"                    — it is up and not degraded
 #   3. .sha equals the sha we deployed    — it is the BUILD we ordered
-#   4. / answers 200                      — the web container came up too
+#   4. .startedAt is not the one from before — it is a NEW process
+#   5. / answers 200                      — the web container came up too
 #
 # The third is the one a plain uptime check does not make. `docker compose up`
 # with an unchanged .env is a successful no-op: every container healthy, the
 # pipeline green, and the previous build still serving. That failure looks
 # exactly like a good deploy from the outside unless somebody compares the sha.
 #
-# The fourth is there because two images are deployed and only one of them has
-# a health endpoint. A broken web image behind a healthy api would pass three
+# THE FOURTH IS NEW IN E4b, AND IT WAS FOUND THE HARD WAY. Dokploy answers the
+# deploy call the moment it has ACCEPTED the job; the containers swap seconds
+# later. So this script's first sample is normally still the OLD process. When
+# the sha being verified differs from the one already running that is harmless
+# — the old process fails condition three and the loop waits. But when the two
+# are the same, the old process satisfies every condition instantly and this
+# script says yes to a deploy that has not happened yet.
+#
+# That is not only the drill's problem. **A redeploy of the same tag is exactly
+# this case**, and it is not hypothetical: a workflow re-run republishes
+# `sha-<S>` onto new bytes and deploys it again, the old container answers `S`
+# on the first sample, and the pipeline reports success even if the new
+# containers never come up. Green over a deploy that did not happen — the same
+# family of lie as the skipped job that concluded `success`, one layer down.
+#
+# The repair compares ONE FIELD FROM ONE SOURCE WITH ITSELF: `.startedAt` read
+# before the deploy against `.startedAt` read now. No second clock, so no skew
+# to reason about — which a `date` on the runner would have brought with it.
+# The caller supplies the earlier value in VERIFY_PREVIOUS_START;
+# `verify-deploy.sh --started` is how it gets one, so the base URL and the shape
+# of the health document stay defined in this file and nowhere else.
+#
+# Without that value the condition cannot be made, and the script SAYS so rather
+# than quietly dropping to four.
+#
+# The fifth is there because two images are deployed and only one of them has
+# a health endpoint. A broken web image behind a healthy api would pass four
 # checks and serve a 502 to every visitor.
 #
 # A CONNECTION ERROR IS NOT A FAILURE, it is the expected middle of a deploy.
@@ -40,8 +66,19 @@
 # nothing listening. Only the clock ends this loop.
 set -eu
 
+# --started prints the instant the running process came up, and nothing else, so
+# that a caller can hold it across a deploy. Empty and exit 0 when the site does
+# not answer: there is then no previous process to be confused with a new one,
+# and that is a fact rather than a failure.
+if [ "${1:-}" = "--started" ]; then
+  base=${2:-${VERIFY_BASE_URL:-https://timseil.dev}}
+  curl -sS --max-time 10 "$base/api/health" 2>/dev/null | jq -r '.startedAt // empty' 2>/dev/null || true
+  exit 0
+fi
+
 sha=${1:?usage: verify-deploy.sh <sha7> [base-url]}
 base=${2:-${VERIFY_BASE_URL:-https://timseil.dev}}
+previous_start=${VERIFY_PREVIOUS_START:-}
 
 # The budget, and the gap between attempts. 3 s gives twenty samples inside the
 # window, which is enough resolution to see in the log roughly when the new
@@ -67,6 +104,12 @@ esac
 
 printf 'verify %s\n' "$base"
 printf '  waiting up to %ss for sha %s\n' "$BUDGET_SEC" "$sha"
+if [ -n "$previous_start" ]; then
+  printf '  and for a process that did not start at %s\n' "$previous_start"
+else
+  printf '  ! no previous startedAt was given — a redeploy of the tag that is already\n'
+  printf '    running would pass here on its first sample, before anything restarted\n'
+fi
 
 deadline=$(( $(date +%s) + BUDGET_SEC ))
 last='no answer yet'
@@ -84,13 +127,20 @@ while :; do
     status=$(printf '%s' "$json" | jq -r '.status // "?"' 2>/dev/null || printf '?')
     running=$(printf '%s' "$json" | jq -r '.sha // "?"' 2>/dev/null || printf '?')
 
-    if [ "$status" = "ok" ] && [ "$running" = "$sha" ]; then
+    began=$(printf '%s' "$json" | jq -r '.startedAt // "?"' 2>/dev/null || printf '?')
+
+    if [ -n "$previous_start" ] && [ "$began" = "$previous_start" ]; then
+      # Right build, right status, and still the process that was answering
+      # before the deploy. Dokploy has accepted the job and not yet acted on it.
+      last="still the process that started at $began"
+    elif [ "$status" = "ok" ] && [ "$running" = "$sha" ]; then
       # Only now the web container, and only once. Asking for it on every
       # sample would triple the requests to learn nothing: the api is the slow
       # one to come up, because it waits for migrate and seed.
       web=$(curl -sS --max-time 5 -o /dev/null -w '%{http_code}' "$base/" 2>/dev/null) || web='000'
       if [ "$web" = "200" ]; then
         printf '  ✓ /api/health 200 · status ok · sha %s\n' "$running"
+        [ -z "$previous_start" ] || printf '  ✓ a new process, up since %s\n' "$began"
         printf '  ✓ / 200\n'
         exit 0
       fi
@@ -108,5 +158,6 @@ done
 
 printf '  ✗ %ss elapsed and the deploy did not come up\n' "$BUDGET_SEC"
 printf '    last seen: %s\n' "$last"
-printf '    expected:  status ok, sha %s, / 200\n' "$sha"
+printf '    expected:  status ok, sha %s, / 200' "$sha"
+[ -z "$previous_start" ] && printf '\n' || printf ', not started at %s\n' "$previous_start"
 exit 1
