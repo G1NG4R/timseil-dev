@@ -10,6 +10,38 @@ Repository lässt. Hier steht dann die Aufgabe, nicht der Zustand: „gegen L3
 geprüft, Ergebnis nicht hier" ist eine vollständige Notiz für einen Notizblock
 und eine unvollständige Wegbeschreibung für jemand anderen.
 
+---
+
+## Wo wir stehen — 22.08.2026, nach E4a
+
+**E4a ist abgenommen.** Die Pipeline deployt ohne Menschen: Merge → bauen,
+prüfen, scannen, pushen, signieren → Tunnel → `IMAGE_TAG` über Dokploys API →
+sechzig Sekunden gegen die öffentliche URL → Dauer an `/api/internal/deploy`.
+Erster Lauf: `sha-3890180` → `sha-ae939d4`, verify nach 20 s, `report ok … 227s`.
+Laufender Digest = veröffentlichter Digest, beide signiert. Begründung in
+ADR 0033.
+
+**E4b — fünf Punkte, in dieser Reihenfolge:**
+
+1. **Der provozierte Rollback.** Das Abnahmekriterium, das der Bauplan wörtlich
+   fordert („einmal wirklich provozieren"), gegen die echte Produktion. Gegen
+   ein Double ist er gelaufen; das zählt nicht.
+2. **`make check-deployed`.** Läuft in Produktion, was auf `main` steht —
+   gegen den **Digest**, nicht den Tag. Weil ein grüner Lauf am 22.08. nichts
+   deployt hat und es niemandem aufgefallen wäre.
+3. **`sha-3890180` löschen**, README-Absatz „Where the chain starts"
+   umschreiben statt entfernen.
+4. **GHCR-Aufbewahrungsregel** auf Basis der gemessenen Zahlen (Runbook 3.5).
+5. **`deploy` an `check` und `db` hängen** — gemessen null Wartezeit.
+
+Dazu nachzuziehen: „0 B Build-Cache" als Abnahme in Bauplan Kapitel 10 und im
+Dokploy-Runbook — auf einem Host mit fünf Apps misst es nichts mehr.
+
+Nicht E4: [#139](https://github.com/G1NG4R/timseil-dev/issues/139) und
+[#140](https://github.com/G1NG4R/timseil-dev/issues/140).
+
+---
+
 **Letzte Triage: nach E2, 21.08.2026.** 15 Zeilen → **11 in der Stufe selbst
 erledigt**, **2 als Kommentar an bestehende Issues**, **1 bewusst verworfen**,
 **1 als Abnahme dieser Phase offen**.
@@ -93,6 +125,13 @@ Vorherige Triage: nach L1, 20.08.2026 — 21 Zeilen → 4 Issues (#118–#121),
 | 2026-08-22 | E4a | **Panel-Zugang gegen L3 geprüft, Ergebnis nicht hier.** Handbuch 1106 nennt die Dokploy-Oberfläche „das lohnendste Ziel der ganzen Maschine" — sie kennt Host, Deploys und jede Umgebungsvariable jeder App. L3 verlangt: kein Traefik-Router, Port in der Firewall zu, Zugriff nur über `ssh -L`. Der Ist-Stand wurde am 22.08.2026 erhoben und gehört nicht in ein öffentliches Repository. **E4 verschiebt hier nichts**: die Pipeline geht durch den Tunnel, nicht über eine Domain, und ist damit schon auf den L3-Zustand gebaut. [#139](https://github.com/G1NG4R/timseil-dev/issues/139). | als Issue #139 |
 | 2026-08-22 | E4a | **`canAccessToAPI` steht per Vorgabe auf `false`** — gemessen: beide `member`-Zeilen `f`. Dokploys Quelltext (`packages/server/src/db/schema/account.ts`, `services/permission.ts`) bestätigt Vorgabe und Wirkung. Ein gültiger, aktiver API-Key antwortet ohne dieses Recht mit `{"message":"Unauthorized"}`, und der Abschnitt „API/CLI" im Profil bleibt unsichtbar. Kostet drei Stunden, wenn man es nicht weiß. **Gehört ins Dokploy-Runbook**, sobald der Weg steht. | zu dokumentieren |
 | 2026-08-22 | E4a | **Dokploy läuft auf v0.30.0, aktuell ist v0.30.2** (18.08.2026). Kein bekannter Bezug zu unserem Problem — der API-401 aus Issue #1757 wurde mit PR #1864 am 10.05.2025 behoben, liegt also lange vor v0.30.0. Nur als Stand notiert. | offen |
+
+| 2026-08-22 | E4a | **`publish` hat kein `needs:`, `deploy` hängt nur an `publish`.** Auf `main` läuft `publish` also parallel zu `check` und `db` — und seit E4 wird das Ergebnis automatisch deployt. Zusammen mit `strict: false` in der Branch Protection (bewusst so, sonst rebast jeder PR vor dem Merge) heißt das: der Squash-Commit kann einen Baum tragen, den in dieser Zusammensetzung nie ein `check` gesehen hat. Für sequenzielle Solo-Merges unwahrscheinlich, aber nicht nichts. **`deploy` zusätzlich an `check` und `db` zu hängen kostet gemessen null Wartezeit** — er wartet ohnehin ~3 min auf `publish`, `check` ist nach 2:16 fertig. Aus der Frage „warum kommt deploy vor quickstart" entstanden; die Antwort darauf war harmlos (nur `deploy` hat eine Abhängigkeit, alles andere startet gleichzeitig), der Nebenbefund nicht. | offen — kleiner eigener PR |
+| 2026-08-22 | E4a | **Ein grüner Lauf, in dem nichts deployt wurde — und nichts hätte es gemerkt.** Beim ersten Merge fehlte `DEPLOY_ENABLED`; der Job wurde übersprungen, und der **Lauf** schloss mit `success` ab (nachgeprüft: `attempts/1` → `conclusion: success`, Job `skipped`). Das Verhalten des Schalters war richtig — nichts angefasst, Produktion stabil. **Die Anzeige war es nicht:** ADR 0033 §8 argumentiert „grau statt grün" auf der Job-Ebene und übersieht, dass man auf die Lauf-Ebene sieht. Schlimmer: der Schalter unterscheidet nicht zwischen *absichtlich nicht scharf* und *vergessen*. Aufgefallen ist es nur, weil wir von Hand nachgesehen haben — die Seite antwortete weiter `200`, nur mit dem alten Build, und `ops.lastDeploy` bleibt `null` an einer Stelle, die vor Stufe H niemand liest. **Fix: nicht den Mechanismus prüfen, sondern das Ergebnis** — `make check-deployed`: `/api/health .sha` gegen den Kopf von `main`. Wöchentlich im `scan`-Job, mit Toleranz für einen Merge, der gerade noch deployt. Fängt jeden Grund, nicht nur diesen: übersprungener Job, abgeschaltete Workflow-Datei, Deploy von Hand. **E4b.** | offen — E4b |
+| 2026-08-22 | E4a | **Die erste gemessene Deploy-Dauer ist 227 s, und sie stammt aus einem Wiederholungslauf.** Nach dem Nachsetzen von `DEPLOY_ENABLED` wurde der Lauf wiederholt, `run_started_at` also neu gesetzt — die 227 s enthalten einen vollständigen Neubau beider Images plus Signatur plus Deploy. Als erster Datenpunkt ehrlich, aber nicht typisch; die Zahlen der nächsten Merges werden anders liegen. Gehört gewusst, bevor jemand daraus einen Trend liest. | Kontext, nichts zu tun |
+| 2026-08-22 | E4a | **Zweite Signatur auf demselben Digest.** Der Wiederholungslauf hat `publish` erneut gefahren: gleicher Commit, gleicher Tag, gleiche Schichten — aber `make sign` lief ein zweites Mal. Cosign hängt an, ersetzt nicht. `verify-supply-chain` prüft „es gibt eine gültige Signatur", nicht „genau eine", also unschädlich. Notiert, damit niemand die doppelte Attestierung an `sha-ae939d4` für einen Angriff hält. | Kontext, nichts zu tun |
+
+| 2026-08-22 | E4a | **„`docker system df` zeigt 0 B Build-Cache" misst auf diesem Host nichts mehr.** Gemessen: 50 Einträge, 782,9 MB. Das Kriterium (Bauplan Kapitel 10, D3-Abnahme, E4-Abnahme) wurde für eine Maschine geschrieben, auf der **nur** unser Stack läuft; dort liegen inzwischen fünf Compose-Apps, und Dokploy baut andere App-Typen auf dem Host, weil das seine Aufgabe ist. Aus der Zahl folgt über unseren Stack nichts — weder im Guten noch im Schlechten. **Dieselbe Klasse wie „22, 80, 443": ein Kriterium für einen Ein-Zweck-Host auf einer geteilten Maschine.** Ersetzt durch die direkte Messung derselben Behauptung: der `RepoDigest` der laufenden Container gegen den in GHCR veröffentlichten. Am 22.08.2026 geprüft, beide identisch, beide signiert. **Das gehört als `make check-deployed` automatisiert** — und dann gegen den Digest, nicht nur gegen den SHA: ein Tag kann umgehängt werden, ein Digest nicht. Kapitel 10 und die D3-Abnahme im Dokploy-Runbook sind entsprechend nachzuziehen. | offen — E4b, zusammen mit `check-deployed` |
 
 ## Idee — noch nicht entschieden
 
