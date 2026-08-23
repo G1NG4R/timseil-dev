@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
-	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
 // idleTTL is how long a bucket outlives its last request.
@@ -182,8 +181,7 @@ func (rl *RateLimiter) Gate(next http.Handler) http.Handler {
 
 			allowed, retryAfter := rl.take(rl.hasher.Hash(rl.client.Bucket(addr)))
 			if !allowed {
-				rl.log.Warn("rate limit exceeded",
-					"request_id", reqid.From(r.Context()),
+				rl.log.WarnContext(r.Context(), "rate limit exceeded",
 					"path", r.URL.Path,
 					"retry_after", retryAfter.String(),
 				)
@@ -241,10 +239,24 @@ func (rl *RateLimiter) warnMisconfigured(r *http.Request) {
 	if quiet {
 		return
 	}
-	rl.log.Warn("a trusted proxy sent no usable X-Forwarded-For — "+
-		"requests are not being rate limited, because attributing them all to the "+
-		"proxy would put every visitor in one bucket",
-		"peer", r.RemoteAddr,
+	// The peer is labelled, not named. This is the one line in the service that
+	// used to print an address in the clear, and "it is only the proxy" is not
+	// an exception the operations sheet makes — it says no IP, and a log line
+	// cannot know whose address it is holding.
+	//
+	// The same hash the access line uses for `client`, so the two are the same
+	// value for the same machine and a misconfiguration is still recognisable
+	// across lines. Whoever needs the real address reads TRUSTED_PROXY_CIDRS.
+	peer := "unknown"
+	if addr, err := peerAddr(r); err == nil {
+		peer = rl.hasher.Hash(rl.client.Bucket(addr))
+	}
+
+	rl.log.WarnContext(r.Context(),
+		"a trusted proxy sent no usable X-Forwarded-For — "+
+			"requests are not being rate limited, because attributing them all to the "+
+			"proxy would put every visitor in one bucket",
+		"peer", peer,
 		"path", r.URL.Path,
 	)
 }
