@@ -2,7 +2,7 @@
 
 **Status:** Angenommen
 **Datum:** 2026-08-23
-**Betrifft:** F1, F2, F3, F6, F8, F11, L7
+**Betrifft:** F1 (F1a und F1b), F2, F3, F6, F8, F11, L7
 **Invarianten:** —
 
 ## Kontext
@@ -181,6 +181,109 @@ nichts über Steuerzeichen.
   Operationen neu auf den Basis-Handler, damit die Korrelation an der Wurzel des
   Objekts bleibt statt in der Gruppe zu landen. Heute gruppiert niemand, also
   läuft immer der Pfad ohne Zusatzkosten.
+
+## Die Web-Hälfte (F1b)
+
+**Nachgetragen am 23.08.2026**, nach demselben Muster wie oben und unter
+derselben Nummer: F1 ist **eine** Phase, `Betrifft` nennt sie, und ein zweiter
+ADR für die zweite Hälfte wäre genau das, wovor `Maß halten` warnt. Was hier
+steht, sind die vier Entscheidungen, die sonst ein zweites Mal geführt werden.
+
+**Der Scrubber steht zweimal da, in zwei Sprachen.** Es gibt keinen Weg, `Scrub`
+aus Node aufzurufen, der billiger wäre als ihn zu portieren. Portiert ist die
+**Form** — ein Durchlauf, Längstes-zuerst-dann-kürzer, die 64-Zeichen-Grenze —
+weil jede davon ein Fehler ist, den der Fuzzer gefunden hat, und eine
+Neuentwicklung aus der Beschreibung sie noch einmal finden würde.
+
+Dass web ihn überhaupt braucht, war die Frage, die ein früherer Entwurf falsch
+beantwortet hat („web loggt keine Formularinhalte"). Die Arbeitsteilung oben geht
+nicht nach unseren Feldern, sondern nach **wessen Worten**, und web bekommt
+fremde, sobald es fetcht:
+
+```
+TypeError: fetch failed
+  cause: Error: connect ECONNREFUSED 172.18.0.3:8080
+```
+
+Gemessen im laufenden Container gegen den echten Fehlerwert:
+`fetch failed: connect ECONNREFUSED redacted-ip`. ADR 0035 sagt, dass `api` in
+Schritt 3 jedes Rollouts kurz weg ist — ohne Filter schreibt also **jeder
+Rollout** die Container-Adressen ins Log.
+
+Zwei Unterschiede zum Original, beide bewusst. Es gibt **keine Ausnahme nach
+Schlüssel**: web schreibt kein selbst erzeugtes adressförmiges Feld, und eine
+Liste für einen Fall, den es nicht gibt, ist Ballast. Und der Adress-Parser ist
+**von Hand geschrieben statt `node:net`** — Next übersetzt `instrumentation.ts`
+auch für die Edge-Runtime, wo das Modul nicht lädt. Der Umweg hat mehr gebracht
+als einen ruhigen Build: `net.isIP` ist damit ein **unabhängiges Orakel** im
+Test statt einer geteilten Abhängigkeit.
+
+**Die IDs reisen als Header, nicht als Global.** Next' eigene Anleitung zu
+`proxy.ts`: die Datei läuft getrennt vom Rendering, und Information erreicht die
+Anwendung über Header, nicht über geteilte Module. `lib/drain.ts` beschreibt
+dieselbe Falle von der anderen Seite — `output: "standalone"` verfolgt jeden
+Einstiegspunkt einzeln. Dazu gibt es keinen Moment, in dem man einen
+`AsyncLocalStorage` betreten könnte: `proxy.ts` ist fertig, bevor gerendert wird,
+und `instrumentation.ts` läuft einmal pro Prozess. `lib/correlation.ts` ist die
+Rückrichtung.
+
+**web schreibt keine Access-Zeile.** `proxy.ts` läuft vor der Antwort und kennt
+weder Status noch Dauer — die zwei Felder, für die die Access-Zeile der API
+existiert. Eine Zeile ohne sie verdoppelt Traefiks Log und sagt weniger. web
+protokolliert, was web **tut**: den Upstream-Aufruf, die Fehler über
+`onRequestError`, die Lebenszyklus-Zeilen. Nebeneffekt, der die Entscheidung
+mitträgt: `proxy.ts` loggt nicht und bleibt damit frei von allem, was nur unter
+Node läuft.
+
+**`upstream_request_id` ist die Brücke, `trace_id` bleibt der Schlüssel.** Die
+API übernimmt eine eingehende `X-Request-Id` nur vom vertrauenswürdigen Peer, und
+`TRUSTED_PROXY_CIDRS` ist im Dev-Stack absichtlich leer — die von web gesendete
+ID wird also **nicht** die der API. Die Web-Zeile trägt deshalb die ID, die die
+API in ihrer Antwort nennt. Damit gilt der Wortlaut des Bauplans („eine
+Request-ID findet alle Zeilen aus beiden Diensten") in **einem** Sprung, und über
+`trace_id` in keinem. Gemessen:
+
+```
+{"msg":"request","path":"/api/health","status":200,
+ "request_id":"eff2c10b…","trace_id":"d2ad2aad…"}                        ← api
+{"msg":"upstream request","path":"/api/health","status":200,
+ "upstream_request_id":"eff2c10b…","request_id":"dc51add8…","trace_id":"d2ad2aad…"}  ← web
+```
+
+**Was F1b in der API geändert hat.** Der Port hat einen Fehler im Original
+gefunden: `matchAddr` übersprang jeden Kandidaten, der auf einen Doppelpunkt
+endet, als Satzzeichen — und `::` ist Syntax. `Scrub("peer 2001:db8:: is gone")`
+gab seine Eingabe zurück. Der Fuzzer konnte das nicht finden, und **das** ist der
+übertragbare Teil: `addressesIn` rescannt mit demselben `matchAddr`, die
+Eigenschaft lautet also „der Filter sieht keine Adresse mehr, **die er sehen
+kann**". Der Web-Test rescannt stattdessen mit `net.isIP` über jeden Teilstring
+und teilt keine Zeile mit dem Matcher. Beide Seiten tragen die Reparatur
+(`worthParsing`), das Korpus hat einen Eintrag mehr, und die zwei Rescans bleiben
+**absichtlich verschieden**.
+
+**Der Docker-Healthcheck fragt `/healthz` statt `/`.** Nicht wegen der Zahl
+(17 280 API-Aufrufe pro Tag), sondern wegen ADR 0035: ein `/`-Check, der fetcht,
+macht die Gesundheit von `web` von der Erreichbarkeit von `api` abhängig, und
+`docker compose up --wait` wartet dann im Rollout auf einen Container, der genau
+deshalb nie gesund wird. Aufgegeben wird damit „beweist, dass React rendert";
+bewiesen wird „der Prozess bedient HTTP und ein Route-Handler läuft", und das ist
+das, was `--wait` wissen muss.
+
+### Was das kostet
+
+- **Eine Prüfung mehr in `make check`**, und sie ist die erste ihrer Art in
+  `web/`: `npm test` war bis F1b ein `echo`. `node --test` liest TypeScript
+  direkt, also keine neue Abhängigkeit — der Preis ist
+  `allowImportingTsExtensions` in `tsconfig.json` und die Regel, dass alles unter
+  Test relativ und mit Endung importiert und nichts aus `next/*` zieht.
+- **`@typescript-eslint/no-floating-promises` ist für `*.test.ts` aus.**
+  `describe` und `it` geben ein Promise zurück, damit ein Runner es awaiten kann;
+  eine Testdatei ist dieser Runner nicht. Achtzig `void` wären Rauschen.
+- **Zeitstempel unterschiedlicher Präzision.** Go schreibt Nanosekunden, Node
+  Millisekunden. Beides RFC 3339, für F1s Abnahme (`grep`) egal — ab **F2** muss
+  Alloy beide als Timestamp parsen. Steht im Backlog.
+- **`span_id` wird auch hier nicht geloggt**, `tracestate` nicht durchgereicht.
+  Dieselben Gründe wie oben, dieselben Phasen: F8 und F6.
 
 ## Verworfene Alternativen
 
