@@ -37,38 +37,50 @@ describe("stripControl", () => {
 });
 
 describe("scrub removes what it recognises", () => {
-  it("takes an email out of a relay refusal", () => {
-    const line = scrub("550 5.1.1 <someone@example.com>: Recipient address rejected");
-    assert.ok(!line.includes("someone"));
-    assert.ok(!line.includes("example.com"));
-    assert.ok(line.includes("redacted-email"));
-    // The reason survives — a filter that eats the line it protects gets
-    // switched off after two weeks.
-    assert.ok(line.includes("Recipient address rejected"));
-  });
+  // Asserted as whole strings rather than as "does not contain the address".
+  // Two reasons, and the second one is the one worth writing down.
+  //
+  // It is the stricter test: it pins what SURVIVES as well as what goes, and a
+  // filter that eats the reason a line exists is a filter somebody switches off
+  // after two weeks. A `!includes` assertion passes on an empty string.
+  //
+  // And a containment check against a host name is the exact shape of
+  // js/incomplete-url-substring-sanitization, which CodeQL raised on this file.
+  // It was a false positive — nothing here sanitises a URL — but "the rule is
+  // wrong about us" is an argument somebody has to make again on every scan,
+  // and an equality assertion does not need it made.
+  const cases: [string, string, string][] = [
+    [
+      "a relay refusal quoting the address it refused",
+      "550 5.1.1 <someone@example.com>: Recipient address rejected",
+      "550 5.1.1 <redacted-email>: Recipient address rejected",
+    ],
+    [
+      "the failure web will actually see",
+      "fetch failed: connect ECONNREFUSED 172.18.0.3:8080",
+      "fetch failed: connect ECONNREFUSED redacted-ip",
+    ],
+    [
+      "an IPv6 address with a port",
+      "peer [2001:db8::1]:443 went away",
+      "peer redacted-ip went away",
+    ],
+    // The one this port found in the ORIGINAL. Go skipped every candidate ending
+    // in a colon as trailing punctuation, and "::" is syntax, not punctuation —
+    // so an address that ends on its zero run went into the log untouched. Both
+    // implementations carry the repair; see worthParsing.
+    [
+      "an IPv6 address that ends on its zero run",
+      "peer 2001:db8:: is gone",
+      "peer redacted-ip is gone",
+    ],
+  ];
 
-  it("takes the address out of the failure web will actually see", () => {
-    const line = scrub("fetch failed: connect ECONNREFUSED 172.18.0.3:8080");
-    assert.ok(!line.includes("172.18.0.3"));
-    assert.ok(line.includes("redacted-ip"));
-    assert.ok(line.includes("ECONNREFUSED"));
-  });
-
-  it("takes an IPv6 address with a port", () => {
-    const line = scrub("peer [2001:db8::1]:443 went away");
-    assert.ok(!line.includes("2001:db8"));
-    assert.ok(line.includes("redacted-ip"));
-  });
-
-  // The one this port found in the ORIGINAL. Go skipped every candidate ending
-  // in a colon as trailing punctuation, and "::" is syntax, not punctuation —
-  // so an address that ends on its zero run went into the log untouched. Both
-  // implementations carry the repair; see worthParsing.
-  it("takes an IPv6 address that ends on its zero run", () => {
-    const line = scrub("peer 2001:db8:: is gone");
-    assert.ok(!line.includes("2001:db8"), line);
-    assert.ok(line.includes("redacted-ip"), line);
-  });
+  for (const [name, input, expected] of cases) {
+    it(name, () => {
+      assert.equal(scrub(input), expected);
+    });
+  }
 });
 
 describe("the counterexamples the Go fuzzer found", () => {
