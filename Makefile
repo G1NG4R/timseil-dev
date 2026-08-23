@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-probe-cadence check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-rollout check-dockerfiles check-migrations check-stack check-probe-cadence check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -80,6 +80,11 @@ check-todo: ## Reject TODO/FIXME without an issue reference
 check-compose: ## No published port for db, no build: in the production compose
 	@printf 'compose\n'
 	@tools/check-compose.sh
+
+.PHONY: check-rollout
+check-rollout: ## Every service compose.yaml defines is started by the rollout
+	@printf 'rollout\n'
+	@tools/check-rollout.sh .
 
 .PHONY: check-dockerfiles
 check-dockerfiles: ## Digest pins, no secret build args, non-root, no module cache layer
