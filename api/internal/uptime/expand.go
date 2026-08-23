@@ -2,19 +2,24 @@ package uptime
 
 import "time"
 
-// observation is one row this package will write: the instant a check would
-// have run, and the reason it would have failed.
+// outage is one closed down/up pair, expanded into the instants a check would
+// have run at while the host was away.
+//
+// Grouped by outage rather than flattened into single observations, because the
+// outage is the unit that shares a reason and the unit BackfillOpsChecks writes:
+// one statement, one reason, one array of instants. A flat list would have to be
+// regrouped at the call site to say the same thing.
 //
 // There is no `up` field. A backfilled row is always down — the store query
-// writes the column as a constant and ADR 0038 says why: the file is an OUTAGE
-// log, "up" is bezeugt by a live probe or by nobody, and a replayed line must
+// writes that column as a constant and ADR 0038 says why: the file is an OUTAGE
+// log, "up" is witnessed by a live probe or by nobody, and a replayed line must
 // not be able to claim the site was answering.
-type observation struct {
-	at     time.Time
+type outage struct {
 	reason string
+	at     []time.Time
 }
 
-// observations turns transitions into the checks the prober could not deliver.
+// outages turns transitions into the checks the prober could not deliver.
 //
 // One pair at a time: a `down` and the `up` that closes it become an instant
 // every step from the first, up to but NOT including the recovery. The
@@ -33,7 +38,7 @@ type observation struct {
 // There is no cap on how long one outage may be. maxLines already bounds the
 // work, and the case a duration cap would "protect" against — a host away for
 // weeks — is precisely the record this file exists to keep.
-func observations(ts []transition, step time.Duration) []observation {
+func outages(ts []transition, step time.Duration) []outage {
 	// A non-positive step would spin forever. It cannot happen from cmd/api,
 	// which passes a constant, and the guard is here so that it cannot happen
 	// from the next caller either.
@@ -41,12 +46,12 @@ func observations(ts []transition, step time.Duration) []observation {
 		return nil
 	}
 
-	var out []observation
+	var out []outage
 
 	// Walked from the second transition, so every step has the pair it needs and
 	// the first line is only ever somebody's opening. That also states the
 	// trailing-down rule without a special case: an outage whose recovery has not
-	// been written has no i to be closed by, so the loop never reaches it.
+	// been written has no successor to be closed by, so the loop never reaches it.
 	//
 	// parse guarantees the alternation, which is what lets the predecessor of an
 	// `up` be a `down` without asking.
@@ -56,10 +61,24 @@ func observations(ts []transition, step time.Duration) []observation {
 			continue
 		}
 
-		for at := down.at; at.Before(up.at); at = at.Add(step) {
-			out = append(out, observation{at: at, reason: down.reason})
+		var at []time.Time
+		for t := down.at; t.Before(up.at); t = t.Add(step) {
+			at = append(at, t)
 		}
+
+		out = append(out, outage{reason: down.reason, at: at})
 	}
 
 	return out
+}
+
+// checks is how many rows a replay of these outages would write, before the
+// database discards the ones it already has. The log line the loop prints is
+// the only place anybody sees it.
+func checks(os []outage) int {
+	n := 0
+	for _, o := range os {
+		n += len(o.at)
+	}
+	return n
 }

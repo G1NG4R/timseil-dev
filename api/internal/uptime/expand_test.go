@@ -20,7 +20,10 @@ func TestObservationsExpandsAnOutageOntoTheProbeInterval(t *testing.T) {
 		{at: stamp(t, "2026-08-24T09:40:00Z"), up: true},
 	}
 
-	got := observations(ts, step)
+	got := outages(ts, step)
+	if len(got) != 1 {
+		t.Fatalf("got %d outages, want 1", len(got))
+	}
 
 	want := []string{
 		"2026-08-24T09:15:00Z",
@@ -30,19 +33,19 @@ func TestObservationsExpandsAnOutageOntoTheProbeInterval(t *testing.T) {
 		"2026-08-24T09:35:00Z",
 	}
 
-	if len(got) != len(want) {
-		t.Fatalf("got %d observations, want %d", len(got), len(want))
+	if len(got[0].at) != len(want) {
+		t.Fatalf("got %d instants, want %d", len(got[0].at), len(want))
 	}
 	for i, at := range want {
-		if got[i].at.Format(stampLayout) != at {
-			t.Errorf("observation %d is %s, want %s", i, got[i].at.Format(stampLayout), at)
-		}
-		if got[i].reason != "connect timeout" {
-			t.Errorf("observation %d carries reason %q, want the one from its down line", i, got[i].reason)
+		if got[0].at[i].Format(stampLayout) != at {
+			t.Errorf("instant %d is %s, want %s", i, got[0].at[i].Format(stampLayout), at)
 		}
 	}
+	if got[0].reason != "connect timeout" {
+		t.Errorf("the outage carries reason %q, want the one from its down line", got[0].reason)
+	}
 
-	if downSec := len(got) * int(step.Seconds()); downSec != 1500 {
+	if downSec := checks(got) * int(step.Seconds()); downSec != 1500 {
 		t.Errorf("the roll-up would compute down_sec %d, want 1500", downSec)
 	}
 }
@@ -69,8 +72,8 @@ func TestObservationsExcludesTheRecovery(t *testing.T) {
 				{at: stamp(t, tc.up), up: true},
 			}
 
-			if got := observations(ts, step); len(got) != tc.want {
-				t.Fatalf("got %d observations, want %d", len(got), tc.want)
+			if got := checks(outages(ts, step)); got != tc.want {
+				t.Fatalf("got %d instants, want %d", got, tc.want)
 			}
 		})
 	}
@@ -85,8 +88,10 @@ func TestObservationsCrossMidnight(t *testing.T) {
 	}
 
 	days := map[string]int{}
-	for _, o := range observations(ts, step) {
-		days[o.at.UTC().Format(time.DateOnly)]++
+	for _, o := range outages(ts, step) {
+		for _, at := range o.at {
+			days[at.UTC().Format(time.DateOnly)]++
+		}
 	}
 
 	if len(days) != 2 || days["2026-08-24"] != 2 || days["2026-08-25"] != 2 {
@@ -102,14 +107,14 @@ func TestObservationsIgnoresAnOpenOutage(t *testing.T) {
 		{at: stamp(t, "2026-08-24T09:15:00Z"), reason: "dns failure"},
 	}
 
-	if got := observations(open, step); len(got) != 0 {
-		t.Fatalf("got %d observations from an open outage, want none", len(got))
+	if got := outages(open, step); len(got) != 0 {
+		t.Fatalf("got %d outages from an open one, want none", len(got))
 	}
 
 	// The same log one probe later, once the recovery is on the branch.
 	closed := []transition{open[0], {at: stamp(t, "2026-08-24T09:25:00Z"), up: true}}
-	if got := observations(closed, step); len(got) != 2 {
-		t.Fatalf("got %d observations once it closed, want 2", len(got))
+	if got := checks(outages(closed, step)); got != 2 {
+		t.Fatalf("got %d instants once it closed, want 2", got)
 	}
 }
 
@@ -121,12 +126,12 @@ func TestObservationsHandlesSeveralOutages(t *testing.T) {
 		{at: stamp(t, "2026-08-25T14:15:00Z"), up: true},
 	}
 
-	got := observations(ts, step)
-	if len(got) != 5 {
-		t.Fatalf("got %d observations, want 2 from the first outage and 3 from the second", len(got))
+	got := outages(ts, step)
+	if len(got) != 2 || len(got[0].at) != 2 || len(got[1].at) != 3 {
+		t.Fatalf("got %d outages with %v instants, want 2 and 3", len(got), got)
 	}
-	if got[0].reason != "connect timeout" || got[4].reason != "api unreachable" {
-		t.Errorf("the reasons did not stay with their own outage: %q and %q", got[0].reason, got[4].reason)
+	if got[0].reason != "connect timeout" || got[1].reason != "api unreachable" {
+		t.Errorf("the reasons did not stay with their own outage: %q and %q", got[0].reason, got[1].reason)
 	}
 }
 
@@ -138,8 +143,8 @@ func TestObservationsRefusesANonPositiveStep(t *testing.T) {
 
 	for name, bad := range map[string]time.Duration{"zero": 0, "negative": -step} {
 		t.Run(name, func(t *testing.T) {
-			if got := observations(ts, bad); got != nil {
-				t.Fatalf("got %d observations, want none", len(got))
+			if got := outages(ts, bad); got != nil {
+				t.Fatalf("got %d outages, want none", len(got))
 			}
 		})
 	}
@@ -157,7 +162,7 @@ func TestParseAndObservationsAgree(t *testing.T) {
 		t.Fatalf("parse: %v", err)
 	}
 
-	if got := observations(ts, step); len(got) != 5 {
-		t.Fatalf("got %d observations, want 5", len(got))
+	if got := checks(outages(ts, step)); got != 5 {
+		t.Fatalf("got %d instants, want 5", got)
 	}
 }

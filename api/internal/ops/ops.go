@@ -36,17 +36,23 @@ import (
 // limits — they answer no question that differs between one deployment and
 // another — and two of these carry a second reason on top of it.
 //
-// probeInterval and outageChecks decide what a public cell CLAIMS: down_sec is
+// ProbeInterval and outageChecks decide what a public cell CLAIMS: down_sec is
 // failed checks times the interval, and the threshold is the line between amber
 // and red. An operator who could move either from the environment would recolour
 // months of history on the next tick, and the site would go on looking correct.
 // That is invariant 1's failure mode wearing an operations hat, so the values
 // live in the repository, in a commit, next to the reason for them.
 const (
-	// The cadence of the external probe (F4). The other half of this number is a
-	// cron expression in a workflow that does not exist yet, and the two have to
-	// move together — docs/runbooks/ops.md is where that is written down.
-	probeInterval = 5 * time.Minute
+	// The cadence of the external probe (F4). The other half of this number is
+	// the cron expression in .github/workflows/probe.yml, and the two have to
+	// move together — tools/check-probe-cadence.sh is what makes that true
+	// rather than remembered, and docs/runbooks/ops.md says why.
+	//
+	// Exported, alone among the four. internal/uptime expands an outage onto
+	// this same interval when it replays the log, and the two have to agree for
+	// the same reason the cron does: down_sec is failed checks TIMES this
+	// number. A private copy over there would be one number with two truths.
+	ProbeInterval = 5 * time.Minute
 
 	// One failed check is a bad ten minutes, two is an outage. The Incident
 	// fixture already states this split and deliberately calls it a convention of
@@ -182,7 +188,7 @@ func (a *Aggregator) runOnce(ctx context.Context) {
 	days, err := a.queries.RollUpOpsDays(ctx, store.RollUpOpsDaysParams{
 		LookbackSec:      int32(lookback.Seconds()),
 		OutageChecks:     outageChecks,
-		ProbeIntervalSec: int32(probeInterval.Seconds()),
+		ProbeIntervalSec: int32(ProbeInterval.Seconds()),
 	})
 	switch {
 	case errors.Is(err, context.Canceled):

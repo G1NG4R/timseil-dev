@@ -22,6 +22,7 @@ package uptime
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -222,6 +223,11 @@ func parseLine(line string) (transition, error) {
 		return transition{}, fmt.Errorf("%q is neither up nor down", fields[1])
 	}
 }
+
+// newReader is bytes.NewReader, named here so that backfill.go does not import
+// bytes for one call and the grammar's entry point stays in the file that owns
+// the grammar.
+func newReader(b []byte) io.Reader { return bytes.NewReader(b) }
 
 // stateName exists so an error message reads in the same words as the file it
 // is complaining about.

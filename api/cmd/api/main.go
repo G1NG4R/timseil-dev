@@ -43,6 +43,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/ops"
 	"github.com/G1NG4R/timseil-dev/api/internal/server"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
+	"github.com/G1NG4R/timseil-dev/api/internal/uptime"
 )
 
 // The port is fixed inside the container. Which port it appears on for the
@@ -136,6 +137,16 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	// calendar with an honest age rather than an error.
 	refresher := contributions.NewRefresher(store.New(pool), cfg.GitHub, log)
 
+	// The third background user of the pool, and the one whose first run at
+	// startup is the point rather than a nicety: a process starting is usually a
+	// host that has just come back, and this is what turns the outage nobody here
+	// could record into rows in ops_checks (F4).
+	//
+	// ops.ProbeInterval and not a literal. down_sec is failed checks times that
+	// number, so the expansion over there and the roll-up in here are two halves
+	// of one arithmetic — see ADR 0019 §6.
+	backfiller := uptime.New(store.New(pool), cfg.Uptime, cfg.SiteSystemSlug, ops.ProbeInterval, log)
+
 	// The mail transport, and the hourly ceiling both users of it share.
 	//
 	// One Budget for the handler and the dispatcher together, because it stands
@@ -146,7 +157,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	sender := newSender(cfg.Mail, log)
 	budget := contact.NewBudget(time.Now())
 
-	// The third background user of the pool. It carries out what the handler
+	// The fourth background user of the pool. It carries out what the handler
 	// could not: a visitor gets one attempt because they are waiting on the
 	// answer, and everything after that is this loop's.
 	dispatcher := contact.NewDispatcher(store.New(pool), sender, cfg.Mail.To, budget, log)
@@ -192,6 +203,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	if err != nil {
 		aggregator.Stop()
 		refresher.Stop()
+		backfiller.Stop()
 		dispatcher.Stop()
 		stopLimiters()
 		pool.Close()
@@ -211,6 +223,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	return serve(ctx, srv, ln, cfg.ShutdownDelay, cfg.ShutdownGrace, &accepting, func() {
 		aggregator.Stop()
 		refresher.Stop()
+		backfiller.Stop()
 		dispatcher.Stop()
 		stopLimiters()
 		pool.Close()
