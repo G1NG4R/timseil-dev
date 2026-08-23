@@ -1,0 +1,178 @@
+// The collector. Every container log line on this stack passes through here on
+// its way to Loki, and nothing else does — metrics go straight from Prometheus
+// to their targets. ADR 0007 drew it that way for one reason: when the
+// observability stack moves to a second host, only this file's write target
+// changes and the application notices nothing.
+//
+// WHY THIS CONTAINER HAS THE DOCKER SOCKET, and it is the one exception in the
+// whole compose file. There is no other way to read what a container wrote to
+// stdout: the daemon owns those streams. The alternatives were weighed in
+// ADR 0039 §3 — a logging driver moves the configuration into every service and
+// breaks the "only the target changes" promise above; pushing OTLP from the
+// application misses db and the proxy entirely. The socket is mounted :ro and
+// on exactly one service, and tools/check-compose.sh refuses it anywhere else.
+// Read-only is not root-safe: it is narrower, not safe, and ADR 0039 says so
+// rather than implying otherwise.
+
+logging {
+  // warn, for the same reason Loki logs at warn: at info this process narrates
+  // every discovery refresh into the pipeline it is the source of.
+  level  = "warn"
+  format = "logfmt"
+}
+
+// Everything the daemon knows about. The filtering happens below, deliberately
+// in one place, because "which containers are ours" is one question and it
+// should have one answer.
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "15s"
+}
+
+discovery.relabel "ours" {
+  targets = discovery.docker.containers.targets
+
+  // 1. OUR PROJECT ONLY. This host carries other compose apps, and their lines
+  //    are neither our data nor our disk budget.
+  //
+  //    The value cannot be the literal `timseil`. Dokploy starts compose with
+  //    its own `-p <appName>` and writes COMPOSE_PROJECT_NAME into the .env it
+  //    generates, so in production the project label is the Dokploy app name —
+  //    the same mechanism that produced timseildev-timseildev-eixe3r_db-data
+  //    and made compose.yaml pin the volume name. compose.yaml therefore passes
+  //    that variable in, defaulting to `timseil` where nobody sets it.
+  //
+  //    If this is ever wrong the failure is silent — zero targets, an empty
+  //    Loki, and a stack that looks healthy. tools/check-observability.sh
+  //    counts the discovered targets against the running services for exactly
+  //    that reason.
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    regex         = sys.env("COMPOSE_PROJECT")
+    action        = "keep"
+  }
+
+  // NO SECOND FILTER ON THE NETWORK, and the reason is measured rather than
+  // assumed. Prometheus's docker discovery is documented as emitting a target
+  // per container-network pair, so this file first kept only `<project>_default`
+  // to stop api and web — which are in two networks each (ADR 0028 §1) — from
+  // arriving twice. What discovery.docker actually emits here is ONE target per
+  // container, on whichever network it happens to report:
+  //
+  //     loki       | observability-network
+  //     api, web   | dokploy-network
+  //     db, alloy  | timseil_default
+  //
+  // With that rule in place exactly the single-network containers came through
+  // and the four interesting ones did not — a stack that looked healthy with
+  // half a log. It is gone. The duplicate it guarded against does not exist,
+  // and inventing a guard for it cost the phase its first green run.
+  //
+  // THE LABEL SET, and it is one label plus the level added downstream.
+  //    Loki labels are an index, not metadata: every distinct combination is a
+  //    stream with its own chunks. request_id and trace_id stay IN the line
+  //    where a filter expression reads them — as labels they would be a stream
+  //    per request, which is the classic Loki mistake and lands on the disk
+  //    Postgres shares. Build plan F3 says "Loki-Labels sparsam"; this is what
+  //    that means in practice.
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.relabel.ours.output
+  forward_to       = [loki.process.json_lines.receiver]
+  refresh_interval = "15s"
+}
+
+loki.process "json_lines" {
+  // THE RATE LIMIT THAT BELONGS AT THE SOURCE, and F2's flood run is why it is
+  // here rather than only in Loki.
+  //
+  // Measured: five gigabytes from one container, 52 seconds. Loki refused 91 %
+  // of what reached it and its store grew by 2 MB — the limit worked. But this
+  // collector had read 645 022 lines and sent 2 379, and everything between the
+  // two went into loki.write's write-ahead log below. alloy-data came out at
+  // 76 MB, thirty-eight times the store it was protecting, on the same disk as
+  // Postgres.
+  //
+  // A rate limit downstream does not remove pressure, it relocates it. So the
+  // same ceiling is stated here, where the line can be dropped before it costs
+  // anything: per `service`, so one runaway container cannot spend another's
+  // budget, and dropping rather than blocking, because a collector that blocks
+  // is a collector whose backlog is somewhere else again.
+  //
+  // 500 lines/s per service against Loki's 256 KB/s: at the ~500-byte lines
+  // this stack writes those are the same ceiling from two sides. They are meant
+  // to move together, and ops/loki/loki.yaml says so from its end.
+  stage.limit {
+    rate           = 500
+    burst          = 1000
+    by_label_name  = "service"
+    drop           = true
+  }
+
+  // api and web both write one JSON object per line with the keys `time`,
+  // `level`, `msg` — Go's slog shape, reproduced key for key in web/lib/log.ts.
+  // A line that is not JSON (postgres, prometheus, loki itself) fails this
+  // stage, keeps its ingest timestamp and travels on unlabelled by level. That
+  // is the right outcome: those lines are context, not the ones the site's
+  // claims rest on.
+  stage.json {
+    expressions = {
+      level = "level",
+      ts    = "time",
+    }
+  }
+
+  // THE PRECISION THAT WAS AN OPEN POINT SINCE F1a. Go writes RFC 3339 with
+  // nanoseconds, Node's toISOString() writes milliseconds. Both are RFC 3339,
+  // and F1's acceptance grepped, so it did not matter then. It matters here:
+  // without this stage every line carries its INGEST time and the two
+  // containers' accounts of the same request drift apart by the scrape delay.
+  //
+  // RFC3339Nano is the layout that accepts both — Go's time package treats the
+  // fractional part as optional and as any length. tools/check-observability.sh
+  // sends one line of each precision and asserts the stored timestamp is the
+  // one in the line, because a format string describes what you want to accept
+  // and a parser usually accepts more.
+  stage.timestamp {
+    source = "ts"
+    format = "RFC3339Nano"
+  }
+
+  // Four values, upper case, from a closed set in both producers. A level as a
+  // label is what makes "show me every ERROR across both containers" an index
+  // lookup instead of a scan.
+  stage.labels {
+    values = {
+      level = "level",
+    }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+
+  // The write-ahead log is why Loki may restart without the stack losing lines.
+  // It lives on alloy-data, a named volume, for the same reason: a container
+  // replacement during a deploy must not be a gap in the record.
+  //
+  // max_segment_age is the belt to the stage.limit braces above. The limit is
+  // what keeps a flood out of this log; this is what keeps the log from holding
+  // a backlog it will never drain — an hour of unsent lines is not a recovery,
+  // it is a second copy of an outage. Alloy's default is 1h; five minutes is
+  // longer than any Loki restart in this stack and shorter than anything worth
+  // keeping.
+  wal {
+    enabled         = true
+    max_segment_age = "5m"
+  }
+}

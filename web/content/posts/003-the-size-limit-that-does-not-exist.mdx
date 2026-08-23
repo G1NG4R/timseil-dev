@@ -1,0 +1,173 @@
+---
+title: 'The size limit that does not exist'
+deck: 'My build plan asked for a 5 GB ceiling on Loki. Loki has no such setting — and when I built the ceiling out of what it does have, the first green test run was still wrong.'
+published: 2026-08-23
+tags: ['observability', 'loki', 'limits']
+system: 'timseil-dev'
+summary: |
+  Postgres and the log store share one disk on this machine, which makes a
+  runaway logger the most likely self-inflicted outage on the whole site. My
+  plan handled it in one line: a size limit on Loki next to the time-based
+  retention. That setting does not exist in any released version. Building the
+  ceiling out of rate limits instead worked on the first try, passed its
+  acceptance test, and had moved the problem thirty-eight times over into a
+  place I was not measuring.
+---
+
+## One line, one disk, one bad assumption
+
+There is a sentence in my build plan I have read maybe forty times:
+
+> Prometheus 7 d **and** `retention.size=2GB`, Loki 14 d **and** a compactor
+> limit of ~5 GB, plus stream limits.
+
+It is a good sentence. It knows the real threat: on this host Postgres, Loki and
+Prometheus sit on the same NVMe, so a service that loops on an error and writes
+a line per second does not make the site slow, it makes the database stop
+accepting writes. It also knows why time alone is useless against that — a loop
+fills gigabytes in hours, and a fourteen-day rule applies in fourteen days.
+
+The sentence has one flaw. **Loki has no size-based retention.** Not a differently
+named one, not one behind a feature flag. Retention is time, the compactor
+deletes by age, and there is no counterpart to Prometheus's
+`--storage.tsdb.retention.size`.
+
+I could have written the number down anyway. `max_size: 5GB` in a config file
+looks exactly as enforced as a setting that exists, and nothing would have
+complained — not the linter, not Loki, which ignores unknown keys in some places
+and fails loudly in others depending on where you put them. It would have been a
+limit that *reads* as enforced, on a site whose entire claim is that every number
+has a running system behind it.
+
+So the ceiling had to be built out of what Loki does have, and the honest
+version has three layers rather than one number:
+
+```yaml
+per_stream_rate_limit: 256KB      # one container looping on an error
+ingestion_rate_mb: 1              # the same flood, spread across streams
+retention_period: 336h            # fourteen days, for the steady state
+```
+
+The first layer is the one the build plan was actually about. "Gigabytes in
+**hours**" is a rate, and a rate limit is what answers a rate.
+
+## What the acceptance criterion measures now
+
+The phase's criterion was written before any of this: *an artificial 5 GB log
+trips the limit instead of filling the disk.* With a size setting, that would
+have been a threshold crossing. Without one, it is better — what trips is the
+ingestion limit, and a refused write is a counter going up rather than the
+absence of a problem:
+
+```
+loki_discarded_samples_total{reason="per_stream_rate_limit"}  10483
+loki_discarded_samples_total{reason="rate_limited"}            1165
+```
+
+Five gigabytes out of one container in 52 seconds. The store grew by 2 MB.
+Postgres kept answering. Green.
+
+## The green run that was wrong
+
+I nearly stopped there. What made me look further was a number I had collected
+out of habit rather than suspicion — the size of every volume, not just the one
+under test:
+
+```
+loki-data      2 MB
+alloy-data    76 MB
+prom-data      1 MB
+```
+
+Seventy-six megabytes in the collector. Thirty-eight times the store whose disk
+usage I had just proved was bounded, on the same disk, for the same reason.
+
+The collector had read 645,022 lines and sent 2,379. Everything in between was
+sitting in its write-ahead log, waiting for a Loki that was refusing it — and
+the WAL is a file, on the NVMe, next to the database. My limit had not removed
+the pressure. It had relocated it, from a store I was measuring to a buffer I
+was not.
+
+This is the part I want to keep, because it generalises past this stack: **a
+rate limit at the destination is a statement about what the destination
+accepts, not about what the system produces.** Everything upstream of it still
+produces at full speed, and whatever sits between the producer and the limit
+becomes the new place the flood lives. In my case that was Alloy's WAL. In
+somebody else's it is a Kafka topic, a retry queue, or a sidecar's memory.
+
+## Saying the same thing at both ends
+
+The fix is not clever, and that is a point in its favour: the same ceiling, one
+step earlier, where a line can be dropped before it costs anything.
+
+```alloy
+stage.limit {
+  rate          = 500
+  burst         = 1000
+  by_label_name = "service"
+  drop          = true
+}
+```
+
+Per `service`, so one runaway container cannot spend another's budget. Dropping
+rather than blocking, because a collector that blocks is a collector whose
+backlog is somewhere else again — and I had just spent an afternoon learning
+where "somewhere else" is.
+
+Same flood, same 52 seconds:
+
+|                        | destination limit only | both ends |
+| ---------------------- | ---------------------- | --------- |
+| `loki-data`            | 2 MB                   | 6 MB      |
+| **`alloy-data`**       | **76 MB**              | **3 MB**  |
+| lines read by Alloy    | 645,022                | 1,182,325 |
+| lines sent to Loki     | 2,379                  | 11,606    |
+| dropped at the collector | 0                    | 1,162,520 |
+
+More lines got stored, not fewer — with the collector no longer choking on its
+own backlog, the writes that were within the limit went through instead of
+queuing behind the ones that were not. The two numbers, 256 KB/s in Loki and
+500 lines/s in Alloy, are the same ceiling from two sides at the roughly
+500-byte lines this stack writes. They are meant to move together, and each
+config file says so in a comment next to the other's name.
+
+## The filter I wrote for a duplicate that did not exist
+
+One more thing from the same afternoon, because it failed in the same shape:
+silently, while everything looked healthy.
+
+Two of my services sit in two Docker networks each. Prometheus's docker service
+discovery is documented as emitting one target per container-network pair, so I
+wrote a relabel rule keeping only the internal network — otherwise, I reasoned,
+every line from those two would arrive twice.
+
+Then four of six services had no logs at all, and the two that did were exactly
+the ones with a single network. What the discovery component actually emits here
+is **one target per container**, on whichever network it happens to report:
+
+```
+loki       | observability-network
+api, web   | dokploy-network
+db, alloy  | timseil_default
+```
+
+My filter was not deduplicating anything. It was deleting most of the stack, and
+the only symptom was a half-empty log store behind a green `docker compose ps`.
+
+The rule is gone and the measurement is a comment where the rule used to be. The
+transferable half: **a guard against a failure mode you have not observed can
+itself be the failure.** I did not have duplicate lines. I had a paragraph of
+documentation and an inference from it.
+
+## What I can claim, and what I can't
+
+I can claim that a container writing five gigabytes as fast as a shell can write
+it does not grow the log store past single-digit megabytes, does not fill the
+collector's buffer, and does not stop the database — measured, on this
+configuration, with the counters to show which mechanism did the refusing.
+
+I cannot claim a 5 GB ceiling. Rate times retention is not five gigabytes, and a
+flood held at exactly the limit for days still outgrows the budget. No Loki
+setting closes that. The honest guard is a disk alert at 70 %, and it is not
+built yet — it belongs to a later phase, and writing it down here is cheaper
+than remembering that the sentence in the build plan was never quite true.

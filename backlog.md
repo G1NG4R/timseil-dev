@@ -12,7 +12,91 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, F2 ist entblockt
+## Wo wir stehen — 23.08.2026, F2 gebaut
+
+**Seit heute hebt etwas die Zeilen auf, und die Grenze darauf ist gemessen.**
+Drei Container mehr: `prometheus`, `loki`, `alloy` — keiner davon mit einem
+`depends_on` in seine Richtung, weil die Seite weiterläuft, wenn alle drei weg
+sind.
+
+```
+✓ prometheus scrapes itself, alloy and loki — all up
+✓ loki holds alloy api db loki prometheus web
+✓ api: the stored timestamp is the one in the line (2026-08-23T18:51:43.363325483Z)
+✓ web: the stored timestamp is the one in the line (2026-08-23T18:51:43.398Z)
+```
+
+**Der offene Punkt aus F1a ist damit geschlossen** — Nanosekunden aus Go,
+Millisekunden aus Node, beide mit *ihrer eigenen* Zeit in Loki statt mit der des
+Ingests. Gemessen gegen die echten Produzenten, nicht gegen eine Vorrichtung.
+
+### Der Fund, und er ist eine Korrektur am eigenen Plan
+
+**Loki hat keine größenbasierte Retention.** Bauplan Kapitel 10 und ADR 0007
+verlangen beide eine „Compactor-Grenze ~5 GB" — die Einstellung existiert nicht.
+Lokis Retention ist ausschließlich zeitbasiert. Prometheus hat
+`--storage.tsdb.retention.size`, Loki hat keine Entsprechung, und eine Zeile in
+unserer Konfiguration, die so täte, wäre ein Limit, das durchgesetzt *aussieht*.
+
+Die Decke ist deshalb eine **Rate**, kein Volumen: `per_stream_rate_limit` gegen
+den Amoklauf, `ingestion_rate_mb` gegen denselben Flood über mehrere Streams,
+die 14 Tage für den Dauerbetrieb. Der Bauplan bleibt unverändert (ADR 0027 §2);
+korrigiert wird ADR 0039 und das Runbook, also das, was behauptet, was **gilt**.
+
+### Der zweite Fund kam erst durch die Abnahme, und er hat den Entwurf geändert
+
+Der erste 5-GB-Lauf war **grün und trotzdem falsch**:
+
+| | nur das Loki-Limit | mit Limit an beiden Enden |
+|---|---|---|
+| `loki-data` | 2 MB | 6 MB |
+| **`alloy-data`** | **76 MB** | **3 MB** |
+| von Alloy gelesen | 645 022 Zeilen | 1 182 325 |
+| an Loki gesendet | 2 379 | 11 606 |
+| im Collector verworfen | 0 | 1 162 520 |
+
+Loki hielt seine Grenze und wuchs um 2 MB — der Rückstau lag danach im
+Write-Ahead-Log des Collectors, achtunddreißigmal so groß wie der Speicher, den
+die Grenze geschützt hatte, **auf derselben Platte wie Postgres**. Ein
+Rate-Limit am Ziel entfernt keinen Druck, es verschiebt ihn. Also steht dieselbe
+Decke jetzt auch an der Quelle (`stage.limit`, 500 Zeilen/s je `service`,
+verwerfend). Beide Zahlen bewegen sich zusammen, und beide Dateien sagen das im
+Kommentar.
+
+**Was die Abnahme nicht beweist**, und es steht bewusst hier statt als Haken:
+Rate × Retention sind keine 5 GB. Der über Tage gehaltene Flood wächst weiter —
+kein Loki-Schalter schließt das, der Wächter dafür ist der Disk-Alarm bei 70 %
+aus **F10**.
+
+### Ein dritter Fund, klein und übertragbar
+
+`discovery.docker` liefert **ein** Ziel je Container, nicht eins je
+Container-Netz-Paar. Die Regel, die Duplikate von api und web verhindern sollte,
+behielt nur Ziele im `*_default`-Netz — und ließ damit genau die Container
+durch, die **ein** Netz haben. Vier von sechs Diensten fehlten, der Stack war
+grün, Loki halb leer. Die Regel ist weg; die Messung steht als Kommentar in
+`ops/alloy/config.alloy`. Ein Duplikat, das man nicht gemessen hat, ist ein
+Duplikat, gegen das man keinen Filter schreiben sollte.
+
+**Der Socket ist die eine Ausnahme dieses Repositories**, und sie ist eng: ein
+Dienst, ein literaler Pfad, `:ro` erzwungen, drei Selbsttests. Read-only macht
+ihn enger, nicht sicher — ADR 0039 §3 sagt das, statt es zu umschreiben.
+
+**Gegen den Host geprüft ist noch nichts.** Der 5-GB-Lauf lief lokal gegen
+dieselbe Datei, die dort laufen wird; auf dem Host folgt ein Hash-Vergleich der
+geladenen Konfiguration, keine zweite Messung.
+
+**Die drei Fragen an den bestehenden Prometheus sind beantwortet, das Ergebnis
+steht nicht hier.** Ausgang, soweit er die Aufgabe betrifft: die Vorbedingung
+für den Host-Teil ist erfüllt, es wird nichts doppelt gescrapt, und dabei sind
+drei Punkte aufgefallen, die nicht F2 sind und nicht hierher gehören.
+
+**Als Nächstes: ein Alias, dann der Host-Teil von F2** (Netz anlegen, Grafana
+anhängen, zwei Datasources, Config-Hash), dann F3, F5.
+
+---
+
+## Vorher — 23.08.2026, F2 ist entblockt
 
 **Gegen [#147](https://github.com/G1NG4R/timseil-dev/issues/147) gemessen, das
 Ergebnis steht nicht hier.** Es ist Ist-Stand dieses Hosts und liegt in der
@@ -798,6 +882,7 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | F2 | **Auf einem geteilten `external`-Netz gehört uns der Dienstname nicht.** Hängt ein Leser an zwei Netzen und existiert derselbe Name in beiden, ist die Auflösung nicht unsere. Gemessen statt geschlossen, und die erste Erklärung war falsch: der erste Aufbau sah aus wie „der fremde Eintrag gewinnt immer", ein zweiter gegen die echte `compose.yaml` gab das Gegenteil. Vier Läufe später steht die Regel — **es gewinnt der alphabetisch erste Netzname**, nicht die Anbindungsreihenfolge, nicht die Erstellungsreihenfolge, nicht das Subnetz. Der entscheidende Lauf hatte den Gewinner später angelegt und auf dem höheren Subnetz. Ein eigener Alias hängt an keiner dieser Reihenfolgen und ist deshalb die Antwort, nicht der zufällig gewinnende Name. Teuer ist daran nicht der Fehlschlag, sondern sein Aussehen: die Datasource antwortet, das Panel bleibt leer, und das liest sich als „scrapt nicht" statt als „falscher Server". Dieselbe Klasse wie die zwei anderen F2-Funde — grün und trotzdem falsch. | **offen** — unser `prometheus` und `loki` bekommen dort einen eindeutigen Alias, Runbook und Datasource-URL ziehen nach, vor dem PR |
 | 2026-08-23 | F4 | **`time.Parse` akzeptiert einen Sekundenbruchteil, auch wenn das Layout keinen nennt.** `09:15:00.123Z` parste gegen `"2006-01-02T15:04:05Z"` sauber und formatierte sich zu `09:15:00Z` zurück — die Grammatik hätte zwei Schreibweisen für einen Zeitstempel zugelassen und beim Rundlauf still gerundet. Gefunden von einem Test, der scheiterte, weil er **akzeptiert** wurde. | **erledigt in F4** — die Regel ist jetzt der Rundlauf selbst |
 | 2026-08-23 | F4 | **`unnest` mit zwei Argumenten kommt nicht durch sqlcs Analyzer** (`function unnest(unknown, unknown) does not exist`, auch mit `::typ[]` an `sqlc.arg`). Der erzwungene Umbau war der bessere Schnitt: eine Anweisung **pro Ausfall** statt pro Datei, weil der Ausfall die Einheit ist, die sich einen `reason` teilt — und die Form muss dann nicht versprechen, dass zwei Arrays gleich lang bleiben. | **erledigt in F4**, als Entwurfsentscheidung |
 | 2026-08-23 | F4 | **Die tatsächliche Kadenz der Sonde ist nicht belegt, nur ihr Anlaufen.** Der Cron steht auf `3-58/5`, also zwölf Läufe je Stunde. Bis 15:04 UTC gab es seit 14:56 **einen** geplanten Lauf, wo zwei fällig gewesen wären. GitHub verzögert geplante Workflows und lässt sie unter Last auch aus — beides bekannt und beides unbeeinflussbar. **Das zählt:** `down_sec` ist fehlgeschlagene Checks **mal `ProbeInterval`**, und wenn real seltener gemessen wird als die Konstante behauptet, ist jede Ausfalldauer zu klein. `check-probe-cadence` prüft die zwei *deklarierten* Hälften, nicht die gefahrene. Über einen Tag nachzählen: `gh run list --workflow=probe.yml` — erwartet ~288/Tag. Weicht es deutlich ab, gehört die Abweichung benannt statt die Konstante gedreht. | offen, nachzählen ab 24.08. |
@@ -818,7 +903,7 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 |---|---|---|---|
 | 2026-08-23 | F4 | **Der Backfill-Leser hat kein Ende-zu-Ende gegen den echten Branch mit Inhalt.** Er ist gegen `httptest` bewiesen und gegen den echten Branch **ohne** Datei (404 → `no log yet`). Sobald die erste echte Zeile auf `ops-data` steht, ist der Lauf, der sie einspielt, der fehlende Beleg — dann gehört die `uptime backfill`-Zeile mit `rows_new > 0` hier hereingeschrieben. | offen, fällig beim ersten echten Ausfall |
 | 2026-08-23 | F4 | **`tools/probe.sh` hat keinen dauerhaften Testaufbau.** Die sechs kaputten Fälle sind einmal gegen einen lokalen Server gefahren und im Commit benannt; laufend geprüft wird nur die Datei, die dabei entstand (`internal/uptime/testdata/uptime-log.txt`). Ein Harness wäre Werkzeug, das Werkzeug prüft — „Maß halten" sagt: im Zweifel Inhalt. Wieder aufnehmen, wenn ein zweiter Fund in diesem Skript auftaucht. | bewusst |
-| 2026-08-23 | F1a | **Zeitstempel-Präzision zwischen den Containern.** Go schreibt RFC3339 mit Nanosekunden, Node wird Millisekunden schreiben. Für F1s Abnahme egal (`grep`), ab **F2** nicht mehr: die Alloy-Pipeline muss `time` als Timestamp parsen, und beide Präzisionen müssen durchgehen. | offen, fällig mit F2 |
+| 2026-08-23 | F1a | **Zeitstempel-Präzision zwischen den Containern.** Go schreibt RFC3339 mit Nanosekunden, Node wird Millisekunden schreiben. Für F1s Abnahme egal (`grep`), ab **F2** nicht mehr: die Alloy-Pipeline muss `time` als Timestamp parsen, und beide Präzisionen müssen durchgehen. | **erledigt in F2** — `stage.timestamp` mit `RFC3339Nano`, gemessen gegen beide Produzenten: api `…363325483Z`, web `…398Z`, beide mit ihrer eigenen Zeit in Loki statt der des Ingests |
 | 2026-08-23 | F1a | **Ein `component`-Attribut auf den Hintergrundschleifen** (`ops.aggregator`, `contact.dispatcher`, `contributions.refresher`) würde „läuft die Schleife noch?" zu einem Label statt zu einem Nachrichtentext machen. In F1a bewusst **nicht** gebaut — die Nachrichten benennen die Schleife bereits, und ein Feld auf jeder Zeile ohne genannten Bedarf ist das, wovor „Maß halten" warnt. Wieder aufnehmen, wenn **F3** die Loki-Labels schneidet. | offen, fällig mit F3 |
 | 2026-08-23 | F1a | **`tracestate` wird ignoriert.** Das zweite W3C-Feld; F1 ist kein Vendor und hat nichts hineinzuschreiben. **F6** sollte es aber durchreichen statt fallen lassen, sonst verliert ein Trace, der durch uns läuft, den Zustand seines Urhebers. | offen, fällig mit F6 |
 | 2026-08-23 | vor F1 | **Das Frontmatter des ersten Log-Beitrags ist erfunden** — `title`, `deck`, `published`, `tags`, `system`, `summary`, abgelesen am Design-Blatt `Blog Post`, nicht an einem Renderer. H9 baut den Renderer und entscheidet das Schema; bis dahin prüft **nichts** diese Datei, weder Form noch Links. Wenn H9 anders schneidet, wird die eine Datei nachgezogen. | offen, fällig mit H9 |

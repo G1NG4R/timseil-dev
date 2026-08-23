@@ -27,8 +27,8 @@ flowchart TB
             db[("db — PostgreSQL 18.6<br/><i>Named Volume</i>")]
             alloy["alloy<br/><i>der eine Collector</i>"]
             prom[("prometheus 3.13 LTS<br/><i>7 d + 2 GB</i>")]
-            loki[("loki 3.7<br/><i>14 d + ~5 GB</i>")]
-            graf["grafana<br/><i>Dashboards, Alerting</i>"]
+            loki[("loki 3.7<br/><i>14 d + Rate-Limits</i>")]
+            graf["grafana<br/><i>fremde App auf demselben Host,<br/>über observability-network</i>"]
             tempo[("tempo 3.0<br/><i>Traces — nach Launch, F8</i>")]
         end
     end
@@ -44,10 +44,10 @@ flowchart TB
     web -->|"generierter Client aus dem Contract"| api
     api -->|"pgx v5, Rolle timseil_app"| db
 
-    proxy -.->|"Metriken"| alloy
-    api -.->|"OTel"| alloy
-    web -.->|"Container-Logs"| alloy
-    alloy --> prom
+    proxy -.->|"Metriken — F3"| prom
+    api -.->|"OTel — F6"| alloy
+    web -.->|"Container-Logs über den Docker-Socket"| alloy
+    prom -.->|"scrapt — F2: sich, alloy, loki"| alloy
     alloy --> loki
     alloy -.-> tempo
     prom --> graf
@@ -79,10 +79,10 @@ behauptet einen Betrieb, den es am Launch-Tag nicht gibt.
 | **api** | Go 1.26, `distroless/static:nonroot`, read-only rootfs | Postgres, Ableitungen, Contract, Validierung, Mail, Snapshots | nein |
 | **migrate**, **seed** | dasselbe api-Image, andere Unterbefehle | Init-Container: Schema (`timseil_migrate`), dann Inhalt (`timseil_app`). Laufen durch und enden | **nie** |
 | **db** | PostgreSQL 18.6 | Systeme, Tracks, Belege, Vorfälle, Deploys, Snapshots | **nie** |
-| **alloy** | Grafana Alloy | scrapt Traefik, API und Node, tailt Container-Logs, empfängt OTLP und Faro | **nie** |
+| **alloy** | Grafana Alloy | tailt die Container-Logs dieses Projekts über den Docker-Socket (`:ro`, ADR 0039 §3); OTLP und Faro ab F6/F11 | **nie** |
 | **prometheus** | 3.13 LTS | Metriken, 7 d **und** 2 GB | **nie** |
-| **loki** | 3.7 | Logs, 14 d **und** Größen-Limit ~5 GB | **nie** |
-| **grafana** | aktuell | Dashboards, Alerting | Entscheidung in L3 |
+| **loki** | 3.7 | Logs, 14 d **und** Rate-Limits an beiden Enden — ein Größen-Limit gibt es in Loki nicht, ADR 0039 §4 | **nie** |
+| **grafana** | fremde App auf demselben Host | Oberfläche, kein Speicher. Angehängt über `observability-network`, Datasources zeigen auf unsere zwei | gehört ihr, nicht uns |
 
 Startreihenfolge (`compose.yaml`, seit D2): `db` (`pg_isready`) → `migrate` als
 Init-Container (Rolle `timseil_migrate`, DDL) → `seed` als Init-Container (Rolle
@@ -147,12 +147,22 @@ dokumentiert es nur, was ohnehin passiert ist.
 Log-Producer kann die Datenbank lahmlegen — ein selbstgebauter Ausfall, und der
 wahrscheinlichste. Deshalb sind die Limits in der Tabelle oben keine Empfehlung:
 **Zeit-Retention allein reicht nicht**, eine Fehlerschleife füllt in Stunden
-Gigabytes und die 14-Tage-Regel greift erst in 14 Tagen. Dazu Disk-Alert ab 70 %.
+Gigabytes und die 14-Tage-Regel greift erst in 14 Tagen.
+
+Seit F2 steht die Decke deshalb an **beiden** Enden: Loki weist über
+`per_stream_rate_limit` ab, und Alloy verwirft schon vor seinem eigenen
+Write-Ahead-Log. Gemessen an 5 GB aus einem Container: mit nur der Loki-Seite
+wuchs `loki-data` um 2 MB und `alloy-data` um 76 — der Rückstau war nicht weg,
+er lag woanders auf derselben Platte. Mit beiden Enden: 3 MB. ADR 0039 §5.
+
+Was keine Konfiguration abdeckt, ist der über Tage gehaltene Flood; dafür ist
+der **Disk-Alert ab 70 %** aus F10 da, und er ist damit kein Extra, sondern die
+zweite Hälfte dieser Zeile.
 
 ## Belege
 
 Build-Plan Kapitel 4.1–4.3, Kapitel 10, Kapitel 11.1–11.4 ·
-ADR 0005, 0007, 0008 · Phasen D1, D2, F2, L3, M3 ·
+ADR 0005, 0007, 0008, 0039 · Phasen D1, D2, F2, L3, M3 ·
 Form angelehnt an `docs/design/Case Study Map` (MAP.03 Schichtenbild).
 Die **Fakten** des Blattes — SQLite, Postgres 16, Health-Container,
 Access-Log-Parsing — sind überholt; es gelten ADR 0005 und ADR 0007.

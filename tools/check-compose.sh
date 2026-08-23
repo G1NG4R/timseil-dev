@@ -17,9 +17,19 @@
 # assertion ADR 0027 makes and this repository does not ship assertions it has
 # not mechanised:
 #
-#   3. The only bind mount is the read-only initdb script under ./ops. Dokploy's
-#      volume backups to S3 see named volumes and nothing else, so any other
-#      host path is data you find out you cannot restore on the day you need it.
+#   3. The only bind mounts are read-only paths under ./ops. Dokploy's volume
+#      backups to S3 see named volumes and nothing else, so any other host path
+#      is data you find out you cannot restore on the day you need it.
+#
+#      ONE EXCEPTION, and F2 added it rather than loosening the pattern: the
+#      docker socket, `:ro`, on the service `alloy` and on no other. The daemon
+#      owns the stdout streams a log collector exists to read, and there is no
+#      second way to reach them — the alternatives (a logging driver per
+#      service, OTLP from the application only) are weighed and rejected in
+#      ADR 0039 §3. Read-only narrows that socket; it does not make it safe, so
+#      the exception is one service and one literal path. A socket anywhere
+#      else, or a writable one here, is still refused, and selftest.sh proves
+#      all three answers.
 #   4. Every service carries a memory limit. "Ressourcen-Limits pro Service" is
 #      the phase requirement; without this it is an intention.
 #   5. No `env_file:`. Production values come from the Dokploy UI. A file on the
@@ -255,12 +265,17 @@ scan() {
       }
 
       # Rule 3. List items under volumes: only, and only in the production file.
+      # The socket exception is matched as a WHOLE line on a NAMED service, so
+      # loosening it takes an edit that a reviewer can see rather than a widened
+      # character class that nobody notices.
       if (key == "volumes" && $0 ~ /^      -[[:space:]]/) {
         src = $0
         sub(/^      -[[:space:]]*/, "", src)
         sub(/:.*$/, "", src)
-        if (src ~ /^[.\/~]/ && $0 !~ /^      -[[:space:]]*\.\/ops\/[^:]+:[^:]+:ro[[:space:]]*$/)
-          printf "line %d: %s bind-mounts %s — only ./ops/...:ro may be a host path\n", NR, svc, src
+        socket = (svc == "alloy" && \
+                  $0 ~ /^      -[[:space:]]*\/var\/run\/docker\.sock:\/var\/run\/docker\.sock:ro[[:space:]]*$/)
+        if (src ~ /^[.\/~]/ && !socket && $0 !~ /^      -[[:space:]]*\.\/ops\/[^:]+:[^:]+:ro[[:space:]]*$/)
+          printf "line %d: %s bind-mounts %s — only ./ops/...:ro, or the docker socket :ro on alloy, may be a host path\n", NR, svc, src
       }
     }
 
