@@ -93,6 +93,12 @@ bump() {
     {
       subject = $1; body = $2
       sub(/^[[:space:]]+/, "", subject)
+      sub(/[[:space:]]+$/, "", subject)
+      # git writes a newline after the last record separator, so awk sees one
+      # more record than there are commits. It has a field, it is just empty —
+      # which is why `NF == 0` above does not catch it. In --notes it reached
+      # the release as an empty bullet, and it did: v0.1.1 shipped with one.
+      if (subject == "") next
 
       # type(scope)!: description — the ! and the footer say the same thing.
       if ((subject ~ /^[a-zA-Z]+(\([^)]*\))?!:/) || (body ~ /BREAKING[ -]CHANGE/)) breaking = 1
@@ -157,6 +163,8 @@ notes() { # notes <range> <previous-tag-or-empty>
     {
       subject = $1
       sub(/^[[:space:]]+/, "", subject)
+      sub(/[[:space:]]+$/, "", subject)
+      if (subject == "") next          # the phantom record — see bump()
       type = subject; sub(/[(!:].*$/, "", type)
       text = subject; sub(/^[a-zA-Z]+(\([^)]*\))?!?:[[:space:]]*/, "", text)
       if (type == "feat")                        feats = feats "- " text "\n"

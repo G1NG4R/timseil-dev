@@ -1985,6 +1985,13 @@ accepts "notes name the first release" \
 accepts "notes list a feature under Features" \
   sh -c "RELEASE_DIR=$tmp/rel tools/release.sh --notes | grep -q '^- something'"
 
+# THE EMPTY BULLET, and v0.1.1 shipped with one. git writes a newline after the
+# last record separator, so awk sees one more record than there are commits — it
+# has a field, it is just empty, which is why an `NF == 0` guard walks straight
+# past it. The result reached a published release as `- ` under Everything else.
+accepts "no release note carries an empty bullet" \
+  sh -c "! RELEASE_DIR=$tmp/rel tools/release.sh --notes | grep -qE '^- *$'"
+
 refuses "release.sh refuses two modes" "usage" tools/release.sh --next --notes
 refuses "release.sh refuses no mode" "usage" tools/release.sh
 # OUTSIDE $tmp, because $tmp is itself a repository and `git rev-parse` walks
