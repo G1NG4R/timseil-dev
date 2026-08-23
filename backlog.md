@@ -12,7 +12,34 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 22.08.2026, Stufe E ist fertig
+## Wo wir stehen — 23.08.2026, der erste Text vor der ersten Seite
+
+**Zwei Entscheidungen, beide gegen die Reihenfolge des Bauplans, beide bewusst.**
+
+1. **Der erste Log-Beitrag ist geschrieben, bevor es einen Renderer gibt** —
+   `web/content/posts/001-zero-downtime-measured-not-claimed.mdx`, englisch,
+   über Stufe E: der 404-Trichter, die drei Messungen, der Zweizeiler, der in
+   beiden Hälften falsch war, und die Grenze, die benannt statt wegoptimiert
+   wurde. Gerendert wird er in H9; bis dahin ist er Text im Repository, den
+   keine Prüfung anfasst. Grund: die Zahlen verfallen nicht, die Erinnerung
+   daran, **warum** jede so aussieht, schon.
+2. **Eine Fallstudie, viele Beiträge.** Die Fallstudie (H1/H2) ist eine Seite
+   pro System; eine zweite gibt es mit einem zweiten System (P7), nicht mit
+   einer neuen Stufe. Die Stufen-Tiefe gehört nach `web/content/posts/`. Damit
+   ist der E-Beitrag der CI/CD-Beitrag und nicht Kapitel 1 von sechs.
+
+**`CLAUDE.md` hat einen Abschnitt `Maß halten`** — fünf Regeln mit Auslöser
+statt gutem Vorsatz, gegen das Verhältnis, das die Zählung an diesem Tag gezeigt
+hat: 9.544 Zeilen in `tools/`, `Makefile` und `ci.yml`, 36 ADRs, `ci.yml` zu
+59 % Kommentar — und `web/` eine Seite ohne Inhalt. `selftest.sh` und
+`check-compose.sh` sind damit eingefroren: Reparaturen ja, neue Regeln nur nach
+einem Vorfall, den man benennen kann.
+
+**An der Reihenfolge danach ändert das nichts: als Nächstes F1.**
+
+---
+
+## Vorher — 22.08.2026, Stufe E ist fertig
 
 **E5c ist abgenommen, und damit die ganze Stufe E.** `v0.1.0` steht.
 
@@ -373,3 +400,5 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | vor F1 | **Das Frontmatter des ersten Log-Beitrags ist erfunden** — `title`, `deck`, `published`, `tags`, `system`, `summary`, abgelesen am Design-Blatt `Blog Post`, nicht an einem Renderer. H9 baut den Renderer und entscheidet das Schema; bis dahin prüft **nichts** diese Datei, weder Form noch Links. Wenn H9 anders schneidet, wird die eine Datei nachgezogen. | offen, fällig mit H9 |
+| 2026-08-23 | vor F1 | **Der Beitrag verlinkt `docs/adr/0035` als Beleg, und der ist auf Deutsch.** Für einen englischen Leser ist das ein halber Beleg. Entweder bleibt es dabei (die ADRs schreibe ich für mich, so steht es in CLAUDE.md) oder die Fallstudie trägt die Belegkette in H2 selbst. Nicht jetzt entscheiden — erst wenn H2 gebaut wird. | offen |

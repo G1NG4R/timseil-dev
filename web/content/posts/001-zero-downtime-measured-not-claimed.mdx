@@ -1,0 +1,206 @@
+---
+title: 'Zero-downtime, measured instead of claimed'
+deck: 'My build plan promised about three seconds and no 5xx. The first honest measurement found nineteen seconds of 404s — and two more numbers that were wrong for the same reason.'
+published: 2026-08-23
+tags: ['ci-cd', 'deploys', 'traefik']
+system: 'timseil-dev'
+summary: |
+  Every container swap on this site served about ten seconds of 404 to the
+  public, and the acceptance criterion I had written for it counted 5xx — so it
+  would have passed the exact defect it existed to catch. The repair took an
+  overlapping start, two shadow services, and a pause that only works because
+  something reads it. What I can claim at the end is narrower than
+  "zero-downtime", and it is measured.
+---
+
+## The number that was never measured
+
+My build plan had one line about deploys: roughly three seconds of downtime, and
+zero 5xx. I wrote it before there was anything to measure, the way you write a
+placeholder you intend to replace. Then I stopped seeing it. It survived four
+stages of work and two rewrites of the file around it.
+
+The first time I put a loop against the site during a container swap — one
+request a second to `/`, printing the status code — it came back with about ten
+seconds of failures. Twice in a row, identical. Not three.
+
+And they were not 5xx. They were 404.
+
+That second half is the one that mattered. The routers on this stack are labels
+on the containers themselves: the proxy discovers a service because the
+container carries the labels that describe it. Recreate the container and its
+router disappears with it, the rule matches nothing, and the proxy answers with
+its own default — which is 404, not 502.
+
+The difference is not cosmetic. A 502 invites a crawler to come back later. A
+404 tells it the address is gone, and it acts accordingly. My criterion said
+"zero 5xx", so it would have gone green while every visitor read *this page does
+not exist*.
+
+An acceptance criterion that counts the wrong failure is worse than no criterion
+at all. It turns a defect into a certificate.
+
+## An instrument, not a shell loop
+
+The loop that found this was typed by hand and died with the terminal it ran in.
+So the first thing this stage produced was not the fix. It was
+`tools/witness.sh`: one request a second per path, from outside over the public
+name, for as long as a deploy takes.
+
+It counts three classes, not two:
+
+- `200` — the only good answer
+- any other status — 404 and 502 alike; a status is an answer
+- no connection at all — which a visitor also cannot use
+
+The third one is easy to leave out, and leaving it out would have repeated the
+same mistake one level down. A request that never gets an answer is not a
+status code, and it is not a success either.
+
+Watching from outside over the public name is the other half. Not through a
+tunnel, not against a container address, not with a `Host` header nobody else
+sends. The claim being tested is *a visitor can use the site*, and the only
+honest way to check that is to be one.
+
+Then the baseline, taken against production during a real deploy:
+
+```
+/               16 × 404
+/api/health     16 × 404
+                19 s, and not one 5xx in the window
+```
+
+Nineteen seconds. The three in my plan were a guess I had been repeating for
+months.
+
+## A two-liner that was wrong in both halves
+
+The plan's repair was two lines: scale the service to two containers, then back
+to one. Start a second one, let the proxy find it, remove the old one.
+
+I ran it in a lab against the real compose file before it could cost anything in
+production. The first line prints `Container timseil-api-1  Recreate` — Compose
+takes the existing container down as part of scaling up, so the step meant to
+prevent an outage causes one. The second line removes the *highest* index, which
+is the container that just started.
+
+Both halves. The fix and the bug pointed in the same direction.
+
+What holds is four steps over **service names**, with two shadow services
+carrying the routers while the real ones are recreated:
+
+```
+docker compose up -d --remove-orphans --wait api2   # the api twin
+docker compose up -d --no-deps --wait web2          # the web twin
+docker compose up -d --no-deps --wait api web       # the swap
+docker compose rm -s -f api2 web2                   # the twins go
+```
+
+Service names rather than container names, and that constraint came from
+outside the repository. The deploy is owned by a panel, its command field
+accepts only `docker compose` calls in a chain, and container indices move on
+every rollout — `api-1` becomes `api-2` becomes `api-3`. A fixed container name
+is wrong after the first run. I read that rule out of the panel's source rather
+than inferring it from behaviour, because the two disagree often enough.
+
+Each twin is nothing but an `extends` on its original, and a check rejects any
+line in that file which is not `extends`, `file` or `service`. A twin that
+drifts from its original is worse than no twin at all: it would serve real
+visitors from a stale configuration for the length of the deploy window, and
+nothing would turn red.
+
+## The request that did not fail
+
+With the twins in place the funnel was gone — three lab runs, 110 requests per
+path, all 200. Except one request per rollout, which never came back.
+
+It had not been refused. It hung. The container was gone, its address belonged
+to nobody, and packets sent there vanish instead of being rejected. The proxy's
+`retry` middleware cannot rescue a request that never fails.
+
+The repair is a pause, and it only works with both halves:
+
+- `SHUTDOWN_DELAY=3s` — on `SIGTERM` the API answers `/readyz` with 503 while
+  the listener keeps accepting.
+- A load-balancer health check on that path, one second interval, one second
+  timeout. Without it the proxy's Docker provider drops a backend only when the
+  container leaves the running state; it never reads `/readyz` unless it is told
+  to. The delay on its own is a knob wired to nothing, which is exactly why the
+  issue asking for it had been left open for two stages.
+
+Three seconds is not a round number. It is one interval, plus one timeout, plus
+a second of margin. The two values were chosen against each other.
+
+The web container had no readiness flag at all, so it needed its own version of
+the same thing: taking over the framework's signal handler, adding a `/healthz`
+route, and giving it the same reader. It gives up its own request draining in
+exchange — which is safe here only because of the order. By the time the pause
+is over, the health check has been answering 503 for seconds and nothing is
+being sent any more. The pause is what makes the hard exit harmless.
+
+## What holds, and where it stops
+
+Two production deploys, written down from outside, one request a second per path
+across the whole run:
+
+| deploy | duration | requests per path | not 200 |
+|---|---|---|---|
+| first | 222 s | 333 | 0 |
+| second | 233 s | 422 | 0 |
+
+Against the baseline:
+
+| | before | after |
+|---|---|---|
+| window per swap | 19 s | none observed |
+| non-200 on `/api/health` | 16 | 0 |
+| non-200 on `/` | 16 | 0 |
+
+And then the limit, which exists in writing because the first production deploy
+of this fix *failed its own acceptance*: 10 × 404 on `/api/health`, 1 on `/`.
+The chain itself worked. What broke was that this particular deploy changed
+eight proxy labels. The old container carried the old ones, its twin the new
+ones, and the proxy saw a single router name described two different ways —
+so it discarded both and answered its default 404 while every container was
+healthy.
+
+That is a property of the overlapping start itself, not an accident. So the
+sentence I can defend is not "zero-downtime". It is:
+
+> No visitor sees an error as long as a deploy does not touch the routing
+> labels — and for the other case, the number is written next to it.
+
+I could have removed that limit too. It would mean giving the twins their own
+router names, and `extends` can override an inherited label but not remove one,
+so the routing labels would have to move into a file the twins do not inherit —
+splitting the production topology across two files to fix something that happens
+when I edit proxy configuration, which is rare. A measured limit is worth more
+than an unmeasured absence of one.
+
+## What I would do differently
+
+**Build the instrument before the repair.** I spent two stages designing a fix
+for three seconds, and the real number was nineteen. That did not just change
+the size of the problem; it changed what "fixed" meant, because the failures
+were a status code my acceptance criterion did not look at.
+
+**Distrust every number in my own plan that has no source.** The three seconds
+were not the only one. The same stage retired a disk figure that had been stale
+since an upgrade months earlier, and an acceptance criterion that measured a
+proxy's build cache on a machine which also runs other people's containers —
+where the measurement says nothing about this stack at all. Three numbers, one
+habit: writing down a plausible value and never coming back for the real one.
+
+**Write acceptance criteria against the failure you expect to see**, not against
+the family of failures you happen to know the name of. "Zero 5xx" is a sentence
+about my assumptions. "No answer that is not 200" is a sentence about the
+visitor, and it is the one that caught this.
+
+---
+
+**Evidence.** The instrument is `tools/witness.sh` in the repository; the
+decision and every measurement behind it are in `docs/adr/0035` (in German). The
+production runs quoted here were started before their merges and recorded across
+the deploys of `8e4e444` and `99281cf` on 22 August 2026. Deploy durations are
+reported by the pipeline itself, from the instant the run began — push to live,
+not the last two steps.
