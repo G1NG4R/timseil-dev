@@ -2,7 +2,7 @@
 # The overlapping start: how a deploy swaps both containers without ever leaving
 # Traefik holding a rule with no backend.
 #
-#   rollout.sh --steps                       the four steps, one per line, bare
+#   rollout.sh --steps                       the five steps, one per line, bare
 #   rollout.sh --print -p <app> -f <path>…   the same, as Dokploy's Command field
 #   rollout.sh --run   [-f <path>]…          run it here, against a local stack
 #   rollout.sh --check                       read a panel's Command field on
@@ -10,7 +10,7 @@
 #
 # WHY THERE IS A FILE INSTEAD OF FOUR LINES IN A RUNBOOK
 #
-# The same four steps have to exist in three places that cannot be allowed to
+# The same five steps have to exist in three places that cannot be allowed to
 # disagree: the Command field of a Compose app in Dokploy's panel, the lab that
 # measures whether they work, and the check in tools/deploy.sh that refuses to
 # deploy against a panel saying something else. Written three times they would
@@ -79,6 +79,29 @@
 # container exists" and "the container answers": without it step 3 would begin
 # recreating api while the twin that is supposed to be covering for it is still
 # booting, and the gap this whole file exists to close would simply move.
+
+# STEP 5, AND IT IS HERE BECAUSE ITS ABSENCE WAS GREEN FOR ONE DEPLOY.
+#
+# F2's three services carry no depends_on and nothing points one at them — that
+# is the design (ADR 0039: the site keeps serving when all three are gone) and
+# it is exactly why they never started. This field replaces Dokploy's default
+# `up -d`, which would have started everything; naming services instead means
+# the ones nobody names do not run. db, migrate and seed survive that because
+# api2 pulls them in as dependencies. The collector has no such sponsor.
+#
+# The symptom was the one this phase keeps producing: a green deploy, a serving
+# site, and `docker exec ...-alloy-1` answering "No such container". Nothing was
+# broken, which is the whole problem — nothing was measuring either.
+#
+# LAST, not first, and that is the same argument as depends_on. A collector that
+# will not start must never stand between a visitor and the site, so the rollout
+# is complete before this line runs. It still turns the deploy red, which is the
+# other half: not depending on something is not the same as not noticing it.
+#
+# --no-deps for the reason steps 2 and 3 have it; there is nothing to pull in
+# today, and the flag says that on purpose rather than by luck. --wait works
+# here even though loki and alloy carry no healthcheck: it settles for running
+# when there is nothing to be healthy about, and prometheus does have one.
 set -eu
 
 # THE FOUR STEPS. Everything else in this file is transport.
@@ -98,6 +121,7 @@ up -d --remove-orphans --wait api2
 up -d --no-deps --wait web2
 up -d --no-deps --wait api web
 rm -s -f api2 web2
+up -d --no-deps --wait prometheus loki alloy
 STEPS
 }
 
@@ -106,7 +130,7 @@ STEPS
 # The project name and the file paths of the production app are host state and
 # do not belong in a public repository (CLAUDE.md), so `-p X` and `-f Y` are
 # stripped from both sides first. What is versioned is the SHAPE of the rollout
-# — four steps, in this order, with these flags — never its mapping to a machine.
+# — five steps, in this order, with these flags — never its mapping to a machine.
 #
 # ONLY THE FLAGS BEFORE THE SUBCOMMAND. `rm -s -f api2 web2` carries an -f of its
 # own, and stripping that one ate `api2` and made a wrong panel setting compare
@@ -203,7 +227,7 @@ case $mode in
     steps | normalize > "$work/want"
 
     if cmp -s "$work/actual" "$work/want"; then
-      printf '  ✓ the panel runs the four-step rollout\n' >&2
+      printf '  ✓ the panel runs the five-step rollout\n' >&2
       exit 0
     fi
 

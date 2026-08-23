@@ -58,7 +58,8 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/verify-deploy.sh" "$root/tools/deploy-gate.sh" \
    "$root/tools/check-deployed.sh" "$root/tools/registry.sh" \
    "$root/tools/prune-registry.sh" "$root/tools/witness.sh" \
-   "$root/tools/rollout.sh" "$root/tools/release.sh" "$tmp/tools/"
+   "$root/tools/rollout.sh" "$root/tools/release.sh" \
+   "$root/tools/check-rollout.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1890,7 +1891,7 @@ refuses "Dokploy's own default command rejected" "up -d --build --remove-orphans
 # rollout it describes recreates api and web BEFORE the twins are up, which is
 # the ten seconds of 404 with extra ceremony. A check that only counted the
 # links would pass this.
-refuses "the four steps in the wrong order rejected" "does not run the rollout" \
+refuses "the five steps in the wrong order rejected" "does not run the rollout" \
   sh -c 'printf "%s" "compose -p a -f c.yaml up -d --no-deps --wait api web && docker compose -p a -f c.yaml up -d --remove-orphans --wait api2 && docker compose -p a -f c.yaml up -d --no-deps --wait web2 && docker compose -p a -f c.yaml rm -s -f api2 web2" | tools/rollout.sh --check'
 
 # One flag missing, and it is the one that matters: without --wait, step three
@@ -1913,6 +1914,63 @@ refuses "the rollout refuses to print without a file" "needs at least one -f" \
 refuses "the rollout refuses two modes at once" "one of" \
   tools/rollout.sh --steps --run
 refuses "the rollout refuses no mode" "usage" tools/rollout.sh
+
+# WHAT THE CHAIN SAYS AND WHAT COMPOSE DEFINES, held against each other.
+#
+# On 2026-08-23 F2 was merged, released and did not run: the Command field names
+# services one by one, prometheus/loki/alloy were not among them, and nothing
+# depends on them because ADR 0039 says nothing may. Green deploy, serving site,
+# no collector. tools/check-rollout.sh is the gate that came out of that hour.
+#
+# The steps are hardcoded in rollout.sh, so the broken case has to arrive from
+# the compose side — which is also the shape the real incident had: the file
+# grew a service and the chain did not.
+covered='services:
+  db:
+    image: x
+  api:
+    image: x
+    depends_on:
+      db:
+        condition: service_healthy
+  web:
+    image: x
+  prometheus:
+    image: x
+  loki:
+    image: x
+  alloy:
+    image: x
+'
+twins='services:
+  api2:
+    extends:
+      file: compose.yaml
+      service: api
+  web2:
+    extends:
+      file: compose.yaml
+      service: web
+'
+printf '%s' "$covered" > compose.yaml
+printf '%s' "$twins"   > compose.rollout.yaml
+accepts "a rollout that starts every service accepted" tools/check-rollout.sh
+
+# db is reached ONLY through api2 -> api -> depends_on, and only because step 1
+# is the one without --no-deps. Drop the twins file and db must be reported:
+# without that the green above would be luck rather than resolution.
+mv compose.rollout.yaml twins.away
+refuses "a twin that cannot be resolved reports its dependencies" "db" \
+  tools/check-rollout.sh
+mv twins.away compose.rollout.yaml
+
+# The incident itself, in miniature.
+printf '%s' "$covered" > compose.yaml
+printf '  orphan:\n    image: x\n' >> compose.yaml
+refuses "a service no step starts rejected" "never starts" tools/check-rollout.sh
+
+rm -f compose.yaml compose.rollout.yaml
+unset covered twins
 
 printf 'the release version\n'
 

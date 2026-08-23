@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-probe-cadence check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-rollout check-dockerfiles check-migrations check-stack check-probe-cadence check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -80,6 +80,11 @@ check-todo: ## Reject TODO/FIXME without an issue reference
 check-compose: ## No published port for db, no build: in the production compose
 	@printf 'compose\n'
 	@tools/check-compose.sh
+
+.PHONY: check-rollout
+check-rollout: ## Every service compose.yaml defines is started by the rollout
+	@printf 'rollout\n'
+	@tools/check-rollout.sh .
 
 .PHONY: check-dockerfiles
 check-dockerfiles: ## Digest pins, no secret build args, non-root, no module cache layer
@@ -792,7 +797,7 @@ rolling-lab: require-images require-network ## Production compose behind a local
 	@printf '    witness it:  make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=%s\n' '$(LAB_URL)'
 	@printf '    roll it:     make rollout\n'
 
-# The four steps of a real deploy, against the lab. tools/rollout.sh holds them;
+# The five steps of a real deploy, against the lab. tools/rollout.sh holds them;
 # this target only says which files they run against, and the point of both is
 # that Dokploy's Command field, this lab and the check in tools/deploy.sh cannot
 # say three different things.
