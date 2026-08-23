@@ -32,8 +32,6 @@
 // is what "Maß halten" warns about. If web ever logs one, that is when the list
 // appears — and it is a claim about the value, not a convenience for the key.
 
-import { isIP } from "node:net";
-
 // What a redacted value is replaced with. A marker rather than an empty string:
 // "this line had an address and it was removed" is a different fact from "this
 // line had no address", and only the first tells a reader the filter runs.
@@ -272,30 +270,131 @@ function worthParsing(s: string, i: number, end: number): boolean {
 
 /**
  * Whether one candidate is an address, with or without a port.
- *
- * WHERE THIS DIVERGES FROM GO, said out loud. `net/netip` accepts a zone
- * (`fe80::1%eth0`) and a host:port in one call; Node's `isIP` accepts neither,
- * so the port is split by hand and the zone is not handled at all. That is not a
- * leak: `fe80::1%eth0` fails as a whole run, and matchAddr's shrinking loop then
- * tries `fe80::1`, which parses. The address disappears and a bare `%eth0` stays
- * behind — which is exactly the property ADR 0037 promises and no more: what the
- * filter recognises, it removes.
  */
 function parsesAsAddr(token: string): boolean {
-  if (isIP(token) !== 0) return true;
+  if (addrKind(token) !== 0) return true;
 
   // "[::1]:8080". Brackets mean IPv6 and mean a port follows.
   if (token.startsWith("[")) {
     const close = token.indexOf("]");
     if (close < 2 || close + 1 >= token.length || token[close + 1] !== ":") return false;
-    return isPort(token.slice(close + 2)) && isIP(token.slice(1, close)) === 6;
+    return isPort(token.slice(close + 2)) && addrKind(token.slice(1, close)) === 6;
   }
 
   // "127.0.0.1:8080". The port goes with it: an address is not less identifying
   // for having one.
   const colon = token.lastIndexOf(":");
   if (colon < 1) return false;
-  return isPort(token.slice(colon + 1)) && isIP(token.slice(0, colon)) === 4;
+  return isPort(token.slice(colon + 1)) && addrKind(token.slice(0, colon)) === 4;
+}
+
+/**
+ * 4, 6 or 0 — the same answer `net.isIP` gives, written out here.
+ *
+ * WHY NOT node:net, which already does this. Because importing it makes this
+ * module Node-only, and Next builds `instrumentation.ts` for the edge runtime
+ * too whether or not this application has an edge route — so the import turned
+ * every production build into a warning about a module that cannot load there.
+ *
+ * The rewrite is worth more than it costs, and not because of the build: it
+ * turns `net.isIP` into an INDEPENDENT oracle. scrub.test.ts rescans every
+ * output with it, so the test now disagrees with this function on any input
+ * where the two read the address differently, over four hundred thousand
+ * generated cases. While this file called isIP, the test and the code shared
+ * their idea of what an address is, and only the scanning strategy was checked.
+ *
+ * Deliberately identical to isIP where it matters and never looser: a candidate
+ * this accepts and isIP does not is over-redaction, which costs a word; the
+ * other direction is a promise broken, and the test fails on it.
+ *
+ * Exported for that test alone. The boundary is the thing worth checking
+ * directly, and api/internal/logx exports Scrub for the same reason.
+ */
+export function addrKind(token: string): 0 | 4 | 6 {
+  const percent = token.indexOf("%");
+  if (percent >= 0) {
+    // A zone, and only IPv6 carries one. It has to be non-empty and may not
+    // contain a second '%' or a bracket — measured against isIP rather than
+    // guessed, and it matters: without the rule this accepted 13000 non-addresses
+    // per three million generated tokens. Over-redaction costs a word rather than
+    // a promise, but a filter that redacts noise is one somebody switches off.
+    const zone = token.slice(percent + 1);
+    if (zone === "" || /[%[\]]/.test(zone)) return 0;
+    return isIPv6(token.slice(0, percent)) ? 6 : 0;
+  }
+  if (token.includes(":")) return isIPv6(token) ? 6 : 0;
+  return isIPv4(token) ? 4 : 0;
+}
+
+function isIPv4(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length !== 4) return false;
+  for (const part of parts) {
+    if (!isOctet(part)) return false;
+  }
+  return true;
+}
+
+function isOctet(part: string): boolean {
+  if (part.length === 0 || part.length > 3) return false;
+  for (const c of part) {
+    if (c < "0" || c > "9") return false;
+  }
+  // "01.2.3.4" is not an address anywhere that matters, and accepting it would
+  // let one address be spelled several ways.
+  if (part.length > 1 && part.startsWith("0")) return false;
+  return Number(part) <= 255;
+}
+
+function isIPv6(token: string): boolean {
+  let head = token;
+  let tail = "";
+  let compressed = false;
+
+  const zeros = token.indexOf("::");
+  if (zeros >= 0) {
+    // One zero run only. Two would leave the length ambiguous, which is the
+    // whole reason the notation allows exactly one.
+    if (token.includes("::", zeros + 1)) return false;
+    compressed = true;
+    head = token.slice(0, zeros);
+    tail = token.slice(zeros + 2);
+  }
+
+  const headParts = head === "" ? [] : head.split(":");
+  const tailParts = tail === "" ? [] : tail.split(":");
+  const parts = [...headParts, ...tailParts];
+
+  // A group count, not a part count: a trailing IPv4 occupies two.
+  let groups = parts.length;
+
+  const last = parts[parts.length - 1];
+  if (parts.length > 0 && last.includes(".")) {
+    // An embedded IPv4 is the last 32 bits of the address, so nothing may follow
+    // it — a zero run included. "0.0.0.0::" reads as one until this line.
+    if (compressed && tailParts.length === 0) return false;
+    if (!isIPv4(last)) return false;
+    groups += 1;
+    parts.pop();
+  }
+
+  for (const part of parts) {
+    if (!isHexGroup(part)) return false;
+  }
+
+  // With a zero run there has to be at least one group left to compress;
+  // without one, every group is spelled out.
+  return compressed ? groups <= 7 : groups === 8;
+}
+
+function isHexGroup(part: string): boolean {
+  if (part.length === 0 || part.length > 4) return false;
+  for (const c of part) {
+    if (!((c >= "0" && c <= "9") || (c >= "a" && c <= "f") || (c >= "A" && c <= "F"))) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function isPort(s: string): boolean {

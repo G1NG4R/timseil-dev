@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { isIP } from "node:net";
 import { describe, it } from "node:test";
 
-import { errorText, scrub, stripControl } from "./scrub.ts";
+import { addrKind, errorText, scrub, stripControl } from "./scrub.ts";
 
 describe("stripControl", () => {
   it("replaces a control character with a space rather than deleting it", () => {
@@ -194,6 +194,51 @@ describe("the property: what the filter recognises, it removes", () => {
       const out = scrub(input);
       assert.ok(!containsAddress(out), `input ${JSON.stringify(input)} left ${JSON.stringify(out)}`);
     }
+  });
+});
+
+describe("the address parser against an independent one", () => {
+  // lib/scrub.ts used to call net.isIP. It stopped for a build reason — Next
+  // compiles instrumentation.ts for the edge runtime too, where node:net cannot
+  // load — and the rewrite bought something better than a quiet build: isIP is
+  // now an ORACLE rather than a shared dependency. While both sides called it,
+  // only the scanning strategy was ever checked; now a disagreement about what
+  // an address IS fails here.
+  //
+  // One direction is fatal and one is not. An address isIP accepts and this
+  // misses is a promise broken. The other way round is over-redaction, which
+  // costs a word — but it is held to zero anyway, because a filter that redacts
+  // noise is one somebody switches off.
+  it("agrees with net.isIP on generated address-shaped tokens", () => {
+    const rand = mulberry32(0x4242);
+    const alphabets = [
+      "0123456789abcdefABCDEF.:%",
+      "0:.",
+      "0123456789.",
+      "fe80:%ht0.",
+      "0123456789abcdef:",
+      "::0.%aF",
+      "0123456789abcdefABCDEF.:%[]",
+    ];
+
+    let seen = 0;
+    for (let n = 0; n < 200_000; n++) {
+      const alphabet = alphabets[n % alphabets.length];
+      const length = 1 + Math.floor(rand() * 26);
+      let token = "";
+      for (let i = 0; i < length; i++) {
+        token += alphabet[Math.floor(rand() * alphabet.length)];
+      }
+
+      const oracle = isIP(token);
+      const mine = addrKind(token);
+      if (oracle !== 0) seen++;
+      assert.equal(mine, oracle, `disagreed on ${JSON.stringify(token)}`);
+    }
+
+    // A corpus that generated no addresses would pass the assertion above and
+    // prove nothing.
+    assert.ok(seen > 500, `only ${String(seen)} addresses in the corpus`);
   });
 });
 
