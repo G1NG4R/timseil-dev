@@ -69,6 +69,9 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
   Begründungs-Kommentar.
 - `docs/design/` — **Read-only.** `INDEX.md` sagt, welches Blatt zu welcher Phase
   gehört. **Lies nur die Blätter deiner Phase.**
+- `web/content/posts/` — Log-Beiträge als MDX, **englisch**, Dateiname `NNN-slug`
+  (dieselbe Form, auf die `incidents.post_slug` zeigt). Das Frontmatter-Schema
+  ist vorläufig, bis H9 den Renderer baut.
 - `docs/adr/` · `docs/runbooks/` · `docs/threat-model.md`
 
 ## Prüfbreiten
@@ -132,6 +135,28 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - Der Backlog ist ein Notizblock, kein Ticketsystem. Am Ende jeder Stufe wird
   triagiert: Issue, bewusst verworfen (mit Begründung), oder erledigt — und
   der Backlog geleert.
+
+## Maß halten
+
+Gezählt am 23.08.2026, nach Stufe E: 9.544 Zeilen in `tools/`, `Makefile` und
+`ci.yml` zusammen, 36 ADRs plus Vorlage, `ci.yml` zu 59 % Kommentar,
+`compose.yaml` zu 62 % — und `web/` ist **eine Seite ohne Inhalt**. Die
+Maschine ist der Beleg, aber sie ist nicht das Produkt. Die Regeln hier haben
+deshalb alle einen **Auslöser** statt eines guten Vorsatzes:
+
+- **Ein ADR pro Phase, nicht vier.** Ein ADR ist für eine Entscheidung, die
+  sonst ein zweites Mal geführt wird. Alles andere ist ein Kommentar.
+- **Keine neue Prüfregel ohne einen Fehler, der wirklich passiert ist.**
+  `selftest.sh` und `check-compose.sh` sind eingefroren: Reparaturen jederzeit,
+  neue Regeln nur mit einem Vorfall, den man benennen kann.
+- **Kommentare erklären das Warum, nicht das Was.** Ist der Kopfkommentar länger
+  als die Datei unter ihm, gehört er in ein ADR — oder er ist das Anzeichen,
+  dass die Datei zu clever ist.
+- **Vor jedem Werkzeug: sieht das jemand?** Werkzeug, das nur Werkzeug prüft,
+  wird gegen die Zeit abgewogen, die es dem Inhalt wegnimmt. Im Zweifel Inhalt.
+- **Jede Stufe schreibt ihren stärksten Fund auf, solange er frisch ist** —
+  englisch, nach `web/content/posts/`. Die Zahlen verfallen nicht, die
+  Erinnerung daran, *warum* jede so aussieht, schon.
 
 ## Was du nicht tun sollst
 
