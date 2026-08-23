@@ -15,6 +15,14 @@ The API reads the log from this branch.
 
 ---
 
+## Where is `uptime-log.txt`
+
+**It does not exist until the first outage, and that is not a fault.** The prober
+writes it into its own checkout on every run, but it commits only when the state
+changes — so nothing is pushed here while there is nothing to record. A 404 on
+that path means this host has not gone down since F4 landed, and the API's reader
+treats it as its ordinary state.
+
 ## What is in `uptime-log.txt`
 
 Two lines per outage, tab separated, UTC. The full grammar and the reasons
