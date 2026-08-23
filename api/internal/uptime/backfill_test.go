@@ -144,14 +144,22 @@ func (f writerFunc) Write(p []byte) (int, error) { return f(p) }
 
 var _ io.Writer = writerFunc(nil)
 
-// run drives exactly one pass of the loop and stops it, so no test depends on a
-// ticker or on a sleep.
-func run(t *testing.T, q Queries, fetch fetchFunc, log *slog.Logger) *Backfiller {
-	t.Helper()
-
-	ticks := make(chan time.Time)
-	b := start(q, slug, 5*time.Minute, fetch, log, ticks, func() { close(ticks) })
-	t.Cleanup(b.Stop)
+// once runs exactly one pass, on this goroutine, with nothing running in the
+// background.
+//
+// The first version of this file started the real loop and waited on a channel
+// the stubs fired. That was wrong in a way worth keeping written down: the
+// signal fires when a run REACHES the fetch or the insert, and the line under
+// test is written after the run finishes — so an assertion could read the log
+// before the run had put anything in it. It passed under `go test`, where the
+// result was cached, and failed under `make check-db`, which forces -count=1.
+//
+// What the loop itself promises — a read at startup, and a Stop that waits — is
+// one property with one test, below. Everything else here is about what a
+// single run does, and a single run needs no goroutine at all.
+func once(q Queries, fetch fetchFunc, log *slog.Logger) *Backfiller {
+	b := idle(q, fetch, log)
+	b.runOnce(context.Background())
 	return b
 }
 
@@ -176,9 +184,7 @@ func TestAReplayWritesOneStatementPerOutage(t *testing.T) {
 	})
 
 	log, read := logs(t)
-	run(t, q, rec.fetch, log)
-
-	waitFor(t, q.called, 2)
+	once(q, rec.fetch, log)
 
 	calls := q.seen()
 	if len(calls) != 2 {
@@ -229,9 +235,7 @@ func TestNothingIsWrittenWhenThereIsNothingNew(t *testing.T) {
 			q := newStub()
 			log, read := logs(t)
 
-			rec := scripted(tc.doc)
-			run(t, q, rec.fetch, log)
-			waitFor(t, rec.fired, 1)
+			once(q, scripted(tc.doc).fetch, log)
 
 			if calls := q.seen(); len(calls) != 0 {
 				t.Fatalf("got %d statements, want none", len(calls))
@@ -259,8 +263,7 @@ func TestABrokenFileWritesNothingAtAll(t *testing.T) {
 		),
 	})
 
-	b := run(t, q, rec.fetch, log)
-	waitFor(t, rec.fired, 1)
+	b := once(q, rec.fetch, log)
 
 	if calls := q.seen(); len(calls) != 0 {
 		t.Fatalf("got %d statements from a file that does not parse, want none", len(calls))
@@ -289,10 +292,7 @@ func TestTheEtagIsKeptOnlyAfterTheRowsAre(t *testing.T) {
 		)
 
 		log, _ := logs(t)
-		b := run(t, q, rec.fetch, log)
-		waitFor(t, q.called, 1)
-
-		// Second pass, driven directly rather than through the ticker.
+		b := once(q, rec.fetch, log)
 		b.runOnce(context.Background())
 
 		if sent := rec.sentEtags(); len(sent) < 2 || sent[0] != "" || sent[1] != `W/"one"` {
@@ -310,9 +310,7 @@ func TestTheEtagIsKeptOnlyAfterTheRowsAre(t *testing.T) {
 		)
 
 		log, read := logs(t)
-		b := run(t, q, rec.fetch, log)
-		waitFor(t, q.called, 1)
-
+		b := once(q, rec.fetch, log)
 		b.runOnce(context.Background())
 
 		if sent := rec.sentEtags(); len(sent) < 2 || sent[1] != "" {
@@ -336,8 +334,7 @@ func TestAFailingStoreDoesNotOpenTheBreaker(t *testing.T) {
 	})
 
 	log, _ := logs(t)
-	b := run(t, q, rec.fetch, log)
-	waitFor(t, q.called, 1)
+	b := once(q, rec.fetch, log)
 
 	if b.breaker.Open() {
 		t.Error("a database failure opened the breaker that stands in front of GitHub")
@@ -458,5 +455,45 @@ func waitFor(t *testing.T, c chan struct{}, n int) {
 		case <-time.After(2 * time.Second):
 			t.Fatal("timed out waiting for the loop")
 		}
+	}
+}
+
+// The loop's own promise, and the only test here that owns a goroutine: it
+// reads at startup, it reads on a tick, and Stop ends it.
+//
+// The read at startup is the one that matters in production. A process starting
+// is usually a host that has just come back, so waiting for the first tick would
+// leave the outage unrecorded for another quarter of an hour.
+func TestTheLoopReadsAtStartupTicksAndStops(t *testing.T) {
+	q := newStub()
+	rec := scripted(document{missing: true}, document{missing: true})
+	log, _ := logs(t)
+
+	ticks := make(chan time.Time)
+	tickerStopped := false
+
+	b := start(q, slug, 5*time.Minute, rec.fetch, log, ticks, func() { tickerStopped = true })
+
+	waitFor(t, rec.fired, 1)
+
+	// One more, not two: waitFor consumes what it waits for, and the startup read
+	// has already been taken off the channel above.
+	ticks <- time.Time{}
+	waitFor(t, rec.fired, 1)
+
+	b.Stop()
+	b.Stop() // idempotent: cmd/api reaches it on two routes
+
+	if !tickerStopped {
+		t.Error("Stop left the ticker running")
+	}
+
+	// Nothing is reading the channel any more. A send that succeeds here would
+	// mean the goroutine outlived Stop, which is the leak that shows up as a
+	// pool being closed under a query.
+	select {
+	case ticks <- time.Time{}:
+		t.Error("something still reads the tick channel after Stop")
+	default:
 	}
 }

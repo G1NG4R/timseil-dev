@@ -49,6 +49,15 @@ Bauplan oder darüber hinaus: kein SMTP aus dem Workflow (der rote Lauf ist der
 Alarm, F10 baut den richtigen Pfad), `GITHUB_TOKEN` mit Job-Scope statt eines
 langlebigen PAT, und „`401` ist kein Ausfall, sondern unser Tippfehler".
 
+**Ein zweiter Fund kam erst beim letzten Prüflauf.** `make check-db` fährt mit
+`-count=1`, `make check` nicht — und unter `-count=1` waren **meine eigenen**
+Tests flakig: `waitFor` wartete auf ein Signal, das die Schleife *vor* der
+Logzeile setzt, also las die Zusicherung manchmal ein leeres Log. Der Testcache
+hatte das in `make check` verdeckt. Repariert, indem die Naht wegfiel: die
+Zusicherungen fahren `runOnce` jetzt synchron, und die Schleife selbst hat
+**einen** Test für ihre **eine** Eigenschaft (Start-Lauf, Tick, Stop). Danach die
+Suite unter `-race` — das fand den Eintrag zu `internal/contact` unten.
+
 **Der stärkste Fund ist klein und übertragbar.** `time.Parse` akzeptiert einen
 Sekundenbruchteil **auch dann, wenn das Layout keinen nennt** — dokumentiert,
 und die einzige Stelle, an der die Funktion großzügig ist. `09:15:00.123Z`
@@ -674,6 +683,7 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 |---|---|---|---|
 | 2026-08-23 | F4 | **`time.Parse` akzeptiert einen Sekundenbruchteil, auch wenn das Layout keinen nennt.** `09:15:00.123Z` parste gegen `"2006-01-02T15:04:05Z"` sauber und formatierte sich zu `09:15:00Z` zurück — die Grammatik hätte zwei Schreibweisen für einen Zeitstempel zugelassen und beim Rundlauf still gerundet. Gefunden von einem Test, der scheiterte, weil er **akzeptiert** wurde. | **erledigt in F4** — die Regel ist jetzt der Rundlauf selbst |
 | 2026-08-23 | F4 | **`unnest` mit zwei Argumenten kommt nicht durch sqlcs Analyzer** (`function unnest(unknown, unknown) does not exist`, auch mit `::typ[]` an `sqlc.arg`). Der erzwungene Umbau war der bessere Schnitt: eine Anweisung **pro Ausfall** statt pro Datei, weil der Ausfall die Einheit ist, die sich einen `reason` teilt — und die Form muss dann nicht versprechen, dass zwei Arrays gleich lang bleiben. | **erledigt in F4**, als Entwurfsentscheidung |
+| 2026-08-23 | F4 | **`go test -race` findet ein Datenrennen in `internal/contact/dispatch_test.go:369`** — der `waitFor`-Helfer liest `q.listCall` ohne den Mutex, den der Dispatcher-Goroutine beim Schreiben nimmt (`dispatch_test.go:43`). Rein im Test, seit E2 (#126), und **kein Gate fährt `-race`**: weder `make check` noch `check-db`. Gefunden, weil F4 dieselbe Fehlerklasse in seinen *eigenen* Tests hatte und ich danach die Suite unter `-race` gefahren habe. Zwei Aufgaben, nicht eine: die Sperre im Helfer, und die Frage, ob `-race` irgendwo hingehört (kostet Laufzeit, findet genau diese Klasse). | offen |
 | 2026-08-23 | F4 | **Der Dev-Stack hat keine Kante, die `/` und `/api/*` unter einer Adresse ausliefert.** `web` liegt auf 3000, `api` auf 8080, kein Traefik in `compose.dev.yaml`. `tools/probe.sh` prüft aber beides gegen **eine** Basis-URL, weil Produktion das so ausliefert. Ende-zu-Ende ging deshalb nur über einen Wegwerf-Proxy im Scratchpad. Kein Fehler, aber eine Lücke zwischen Dev und Produktion, die die nächste Phase mit einer Kante wieder trifft. | offen |
 | 2026-08-23 | F1a | **CodeQL meldet 98 offene Alarme, davon die weit überwiegende Mehrheit `js/useless-expression` in `docs/design/*.dc.html`.** Die Blätter sind read-only, werden nie ausgeliefert und enthalten JSX, das ein JS-Parser nicht als solches liest. Eine Liste, in der das echte Signal unter Rauschen aus einem Verzeichnis liegt, das gar nicht gescannt gehört, ist keine Liste. `paths-ignore` in der CodeQL-Konfiguration wäre der Ort. | offen |
 | 2026-08-23 | F1a | **Drei `go/log-injection`-Alarme (medium) auf `bearer.go:47`, `problem.go:103`, `intake.go:208`.** Alle drei älter als F1a — das Diff hat dort nur `Warn` zu `WarnContext` geändert, und CodeQL meldet auf geänderten Zeilen. Nachgemessen falsch positiv: der JSON-Handler escapt, aus dem Versuch wird eine Zeile. In F1a trotzdem strukturell entschärft (`StripControl`), weil „der Encoder escapt es" eine Zusage ist, die in einer anderen Datei lebt als die Werte, die sie schützt. | **erledigt in F1a**, Alarme mit dieser Begründung zu schließen |
