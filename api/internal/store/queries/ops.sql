@@ -167,6 +167,58 @@ VALUES (
 )
 ON CONFLICT (system_id, observed_at) DO NOTHING;
 
+-- BackfillOpsChecks replays the outages this host could not record about itself.
+--
+-- The other half of the sentence InsertOpsCheck above starts. That one is the
+-- live prober and writes origin='probe'; this one is F4's replay of
+-- uptime-log.txt from the ops-data branch, and every column that could carry a
+-- claim is a constant here rather than an argument:
+--
+--   up          is false, always. The file is an OUTAGE log. "The site was up"
+--               is witnessed by a live probe or by nobody at all, and a replayed
+--               line must not be able to say it (ADR 0038).
+--   latency_ms  is left out of the column list, so it is NULL. There is no
+--               measurement to report from a request that never completed, and
+--               ops_checks_no_latency_when_down_ck is satisfied by construction
+--               rather than by the caller remembering.
+--   origin      is 'backfill', so the grid can tell a measurement from a
+--               reconstruction without asking anybody's word for it.
+--
+-- source_ref IS an argument, and it is the one this table's CHECK insists on:
+-- the commit on ops-data the lines were read from. That is what makes a derived
+-- row traceable to something a stranger can fetch and count for themselves.
+--
+-- ONE STATEMENT PER OUTAGE, not per instant and not per file. An outage of a day
+-- is 288 rows, and 288 round trips through the pool during startup is a cost with
+-- nothing to show for it; unnest turns the instants into rows in one pass. The
+-- outage is also the unit that shares a reason, which is why reason is a scalar
+-- here — a shape that carried one reason per row would have to promise that the
+-- two arrays stay the same length, and Postgres answers a mismatch with NULLs
+-- rather than with an error.
+--
+-- ORDER BY is not decoration. ADR 0035 runs two instances of this binary during
+-- a rollout and both start their backfill; RollUpOpsDays already sorts before
+-- its ON CONFLICT so that two writers take the same rows in the same order, and
+-- this statement wants the same protection from the same deadlock.
+--
+-- ON CONFLICT DO NOTHING is what makes re-reading the file free — the loop reads
+-- it again after every restart — and it is also the rule "a backfill never
+-- overwrites a live probe", enforced rather than promised. The caller counts the
+-- affected rows so the discarded ones are visible in the log.
+--
+-- name: BackfillOpsChecks :execrows
+INSERT INTO ops_checks (system_id, observed_at, up, reason, origin, source_ref)
+SELECT
+    sqlc.arg(system_id),
+    o.observed_at,
+    false,
+    sqlc.arg(reason),
+    'backfill',
+    sqlc.arg(source_ref)
+FROM unnest(sqlc.arg(observed_at)::timestamptz[]) AS o (observed_at)
+ORDER BY o.observed_at
+ON CONFLICT (system_id, observed_at) DO NOTHING;
+
 -- InsertDeploy records what the pipeline says its own release cost.
 --
 -- The unique constraint is (system_id, sha, deployed_at) and the migration says

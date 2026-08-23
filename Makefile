@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-dockerfiles check-migrations check-stack check-probe-cadence check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -95,6 +95,11 @@ check-migrations: ## Migration hygiene and the invariants that are greppable
 check-stack: ## Every stack.yaml entry resolves, and none of them types a version
 	@printf 'stack\n'
 	@tools/check-stack.sh
+
+.PHONY: check-probe-cadence
+check-probe-cadence: ## The probe's cron and ops.ProbeInterval are the same number
+	@printf 'probe cadence\n'
+	@tools/check-probe-cadence.sh .
 
 .PHONY: check-go
 check-go: ## gofmt, go vet, go test
@@ -613,6 +618,16 @@ verify-deploy: ## Poll the public URL until it serves that build, 60s budget
 .PHONY: report-deploy
 report-deploy: ## Report the measured duration — make report-deploy DEPLOY_SECONDS=214 DEPLOY_RESULT=ok
 	@tools/report-deploy.sh $(DEPLOY_SHA) $(DEPLOY_SECONDS) $(DEPLOY_RESULT)
+
+# The same script .github/workflows/probe.yml runs every five minutes, so a
+# suspicion can be checked from here instead of by reading a workflow log.
+#
+# PROBE_LOG is optional and unset by default: without it nothing is appended
+# anywhere, and the run is a measurement and a report and nothing more. The
+# workflow passes its checkout of the ops-data branch.
+.PHONY: probe
+probe: ## Measure the site once and report it — make probe PROBE_BASE=https://timseil.dev
+	@tools/probe.sh $(if $(PROBE_LOG),--log $(PROBE_LOG)) $(PROBE_BASE)
 
 # The second instrument, and it measures a different claim than verify-deploy.
 # That one asks five questions once, at the end, and answers "the build we

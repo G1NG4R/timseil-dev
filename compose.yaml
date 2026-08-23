@@ -368,6 +368,11 @@ services:
       INTERNAL_PROBE_TOKEN: ${INTERNAL_PROBE_TOKEN:-}
       INTERNAL_DEPLOY_TOKEN: ${INTERNAL_DEPLOY_TOKEN:-}
 
+      # The outage-log replay (F4). Passed through; `github` is the default and
+      # lives in api/internal/config. There is no token beside it — the branch is
+      # public and the reader is unauthenticated on purpose.
+      UPTIME_TRANSPORT: ${UPTIME_TRANSPORT:-}
+
       # Empty in development because nothing forwards anything there. Here
       # Traefik does forward, and Dokploy sets this to the network it reaches the
       # api on. Believing X-Forwarded-For from anyone else would let a client

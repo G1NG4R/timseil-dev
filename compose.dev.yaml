@@ -165,6 +165,16 @@ services:
       # never invents a calendar to fill the gap.
       CONTRIBUTIONS_TRANSPORT: ${CONTRIBUTIONS_TRANSPORT:-}
 
+      # The off switch for the outage-log replay (F4). Same shape as the line
+      # above, same reason for passing through rather than restating the default.
+      #
+      # Left on in development on purpose: the branch is public, so a dev stack
+      # can read it without a credential, and reading it is harmless — the rows
+      # it writes are the same rows production has, and ON CONFLICT DO NOTHING
+      # means a second reader writes nothing. Set UPTIME_TRANSPORT=off in .env
+      # when you want the api to stay off the network entirely.
+      UPTIME_TRANSPORT: ${UPTIME_TRANSPORT:-}
+
       # The contact form. `log` rather than `smtp`, and that is the one value in
       # this block chosen by the file rather than passed through. At C6 the
       # reason was that the OVH mailbox and the DNS records did not exist yet;

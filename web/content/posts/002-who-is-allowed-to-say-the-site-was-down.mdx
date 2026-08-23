@@ -1,0 +1,253 @@
+---
+title: 'Who is allowed to say the site was down'
+deck: 'A host cannot witness its own outage. Building the thing that can turned into six decisions about what a record is permitted to claim — and one Go function that quietly accepted a spelling I had just forbidden.'
+published: 2026-08-23
+tags: ['observability', 'uptime', 'evidence']
+system: 'timseil-dev'
+summary: |
+  The operations grid on this site promises ninety-one days of measured
+  availability, and until this week every cell in it read `nodata` — correctly,
+  because nothing was measuring. Fixing that meant deciding who may write which
+  row: a watcher outside the host, a file on a branch that does not die with the
+  machine, and rows that say out loud when they were derived rather than
+  observed. The hardest cases were not the outages. They were the things that
+  look like outages and are not.
+---
+
+## The cell that had no witness
+
+The case study on this site draws a grid of ninety-one days. Green means the
+day was measured and fine, amber means degraded, red means an outage, and grey
+means nobody looked. Every cell had been grey since the table existed.
+
+That was the honest display. The endpoint that accepts uptime observations has
+been there since an earlier stage, with a token in front of it and a row shape
+waiting behind it — and nothing had ever called it. The aggregation loop
+announced its own emptiness every five minutes, in a log line I had been
+reading for weeks without hearing it:
+
+```
+{"level":"INFO","msg":"ops roll-up","days":0}
+```
+
+Zero days rolled up, because zero days had any measurements in them.
+
+The reason it stayed that way is the interesting part, and it is not that I
+forgot. A service cannot report its own outage. Whatever writes that red cell
+has to be somewhere else, and "somewhere else" for a one-host project is a
+decision with consequences, not a checkbox. Everything below is what fell out
+of taking it seriously.
+
+## Two lines instead of two hundred and eighty-eight
+
+The watcher is a scheduled job on someone else's infrastructure. Every five
+minutes it fetches the site and reports what it saw. While the host answers,
+that report goes straight into the database and there is nothing to discuss.
+
+The question is what happens when it does not answer. The report has nowhere to
+land — the thing that would accept it is the thing that is down — so the
+watcher writes to a branch in the repository instead, and the running service
+replays that file when it comes back.
+
+The obvious shape is one line per failed check. Every row is then individually
+witnessed and nothing is inferred. It also means committing to that branch every
+five minutes for as long as the outage lasts: up to two hundred and eighty-eight
+commits in a day, on a data branch whose history would become unreadable, from a
+job that is hammering an API during someone else's bad afternoon.
+
+So the file holds transitions instead. Two lines per outage:
+
+```
+2026-08-24T09:15:00Z	down	connect timeout
+2026-08-24T09:40:00Z	up
+```
+
+and the service expands that into five observations, one every five minutes,
+recovery exclusive. Five failed checks times a three-hundred-second interval is
+fifteen hundred seconds of downtime, which is the twenty-five minutes that
+actually happened.
+
+I want to be exact about what this costs, because it is the whole trade. Those
+five rows are **derived**. Two instants were witnessed and the rest is
+arithmetic. That is a real reduction in what the data proves, and the only
+honest response is to make the reduction visible rather than to argue it away.
+So every replayed row carries two columns a live measurement does not: a marker
+saying it came from the file, and the commit hash it was read from. A stranger
+can fetch that commit, read the two lines, do the multiplication, and get my
+number.
+
+The rule is enforced where it cannot be forgotten. The insert that replays the
+file writes `false` for "was the site up" as a literal in the SQL, not as a
+parameter — there is no argument a caller could pass to make a replayed row
+claim the site was answering. The latency column is left out of the statement
+entirely, so it is null by construction rather than by anyone remembering.
+
+## A 401 is not an outage
+
+Here is the case that took the longest to get right, and it never involves the
+site being down at all.
+
+I decided that "up" means two things: the page answers 200, and the report
+arrives. The write path is the second probe — if the API is gone, the report
+cannot land, and the API is part of the system whose availability this grid
+describes. That felt clean until I wrote the error handling.
+
+If the endpoint answers `401`, the report also did not land. By the rule above,
+that is an outage. But it is not one. It means the token in the watcher does not
+match the token in the container — my typo, my rotation done in the wrong order,
+my mistake. Recording it as downtime would paint a public grid red because I
+fumbled a secret.
+
+So a `401` or a `400` stops the run loudly and writes nothing at all. No line,
+no state change, a red job and an email. The outcome is a gap in the data, and a
+gap is the right answer: nobody measured, so the day says nobody measured.
+
+The same shape came up a second time, from a direction I did not expect. This
+site does zero-downtime deploys by starting the new container before stopping
+the old one, and there is a moment in that dance where the API is briefly
+unreachable while the site is still served. A watcher with no patience would
+write a genuine five-minute outage into a public history every time I deployed —
+an outage no visitor experienced. The report now retries three times over
+fifteen seconds before it gives up.
+
+If a deploy ever does land inside that window anyway, the fix is the window. Not
+the row. A record you delete because it is inconvenient is not a record, and
+this whole site is an argument against that move.
+
+## The word that is not a quote
+
+The file is public. That single fact decided the format more than anything else.
+
+An earlier stage of this project found an email address in a log line, in a
+function whose own comment said *never the address*. The intent was right and
+the line leaked anyway, because the address was not a field anyone chose — it
+arrived inside an error string from a mail server, and got logged as prose.
+
+Curl does the same thing. Its error text names the address it could not reach.
+If the outage reason in that file were the error text, then the first time DNS
+did something strange, a public branch in a public repository would carry an IP
+address that this site's privacy page promises not to keep.
+
+So the reason is **mapped**, never quoted. Eight words, and the parser on the
+other side knows the same eight:
+
+```
+dns failure · connect refused · connect timeout · tls failure
+http 5xx · http 4xx · api unreachable · probe failed
+```
+
+A line carrying anything else is rejected — and not just that line. The whole
+file. A parser that skips what it does not understand turns a corrupted outage
+log into a shorter one, and a shorter outage log is a claim that the site was
+up.
+
+The last word in that list is the one I argued with myself about. It means "a
+probe failed in a way this mapping has no word for", which is unsatisfying. But
+the alternative was to make an unmapped failure pick the nearest neighbour, and
+`connect refused` for something nobody mapped is not a shrug — it is a
+diagnosis, and a wrong one. An honest "no word for this" beats a confident lie.
+
+## A grammar that did not enforce itself
+
+Then the smallest finding of the phase, and the most portable one.
+
+Timestamps in that file are UTC, whole seconds, ending in a literal `Z`. I
+wrote the format string with exactly that shape and considered the rule
+implemented:
+
+```go
+const stampLayout = "2006-01-02T15:04:05Z"
+```
+
+My test for a fractional second failed. Not because the parse rejected it —
+because it accepted it. Go's time parser will read a fractional second
+immediately after the seconds field even when the layout does not mention one.
+It is documented behaviour, and it is the one place that function is generous.
+
+So `09:15:00.123Z` parsed cleanly into an instant, and formatting that instant
+back through the same layout produced `09:15:00Z`. A spelling the grammar said
+it forbade, accepted and silently rounded. Nothing would have failed. The file
+would simply have contained two ways of writing one timestamp, and the
+round-trip would have been lossy in a way no test I had written was looking at.
+
+The fix is a comparison, and I like it better than the rule it replaces:
+
+```go
+if at.Format(stampLayout) != fields[0] {
+	return transition{}, fmt.Errorf("%q is not a stamp of the form %s", fields[0], stampLayout)
+}
+```
+
+Exactly one spelling survives a round trip, whatever the parser is willing to
+forgive. The lesson generalises past Go: a format string is a description of
+what you will accept, and the set of things a parser accepts is usually larger
+than the set of things it describes. If the exact bytes matter, compare the
+exact bytes.
+
+## The number nobody could see was wrong
+
+One more, and it is the one I would have shipped broken.
+
+Downtime on this site is computed as failed checks times the probe interval.
+The failed checks come from however often the watcher actually ran — a cron
+expression in a workflow file. The interval is a constant in Go. They are two
+halves of one number, and nothing connected them.
+
+Change the cron to every ten minutes and leave the constant at five, and every
+outage duration on the public page is exactly half of what happened. The grid
+still has ninety-one cells. They are still the right colours. The failure is
+invisible from the outside and from the inside, and it stays invisible until
+someone times an outage with a wristwatch.
+
+There is now a check in the build that reads both files as text and compares
+them in seconds, plus a case proving it rejects a cron that runs only on
+Mondays — that one keeps the right interval and leaves six sevenths of the grid
+empty, so comparing the step alone is not enough.
+
+I do not like adding checks. This repository already produces far more machinery
+than readable output, and I have a rule against new gates without a failure that
+actually happened. This one earns its place on a technicality I am comfortable
+with: the runbook has carried the sentence *nothing checks that today* since the
+day the constant was written. The failure had not happened. The way it would
+happen was already documented, and so was the fact that nobody would notice.
+
+## What I can claim, and what I can't
+
+The live half is done and the first cell is green. The grid now has one measured
+day in it, from a log line that finally says something other than zero:
+
+```
+{"level":"INFO","msg":"ops roll-up","days":1}
+```
+
+That is day one of ninety-one, and the number that matters most about this phase
+is not in the code — it is the date. Ninety-one days of history cannot be built
+retroactively. Every week I had delayed this was a week the grid could never
+show.
+
+Three things I am not claiming.
+
+**The replay is not proven in production, and it cannot be.** Proving it needs a
+real outage, and I am not going to cause one to make a test green. It is proven
+against a real database and against the file the watcher actually wrote — the
+test fixture is that file, byte for byte, because the two halves of this format
+are written in different languages and nothing in a type system holds them
+together. The production proof is scheduled for the chaos drill, where the plan
+already calls for restarting the whole host and checking that the outage gets
+backfilled.
+
+**The uptime badge on this page did not move.** It reads a different number,
+from a metrics snapshot that a later stage builds. I nearly wrote it into my own
+acceptance criteria, which would have given me a green checkmark for work I had
+not done.
+
+**The alarm is somebody else's email.** When the watcher finds the host gone,
+the job ends red and the platform sends the notification. That is not an
+alerting system; it is a failure with a mailing list attached. Sending it myself
+would mean putting a mail password in a job that runs every five minutes on a
+public repository's runner, and the whole gain would be my own wording. It waits
+for the stage that builds alerting properly.
+
+What I can say is narrow and it is measured: from now on, something outside this
+machine writes down whether it answered, every five minutes, and when it stops
+answering the record survives in a place that does not stop with it.

@@ -64,9 +64,10 @@ const (
 	EnvContactIPPepper = "CONTACT_IP_PEPPER"
 	EnvProbeToken      = "INTERNAL_PROBE_TOKEN"
 	EnvDeployToken     = "INTERNAL_DEPLOY_TOKEN"
+	EnvUptimeTransport = "UPTIME_TRANSPORT"
 )
 
-// The two answers CONTRIBUTIONS_TRANSPORT accepts.
+// The two answers CONTRIBUTIONS_TRANSPORT and UPTIME_TRANSPORT accept.
 //
 // Here and not in internal/contributions, which is where the matching pair for
 // mail lives one package over. internal/mail is a leaf and can hold its own
@@ -146,6 +147,15 @@ const (
 	// exactly where it was.
 	defaultContribTransport = "github"
 
+	// The same direction as the two above, and the strongest case of the three.
+	// The outage log is the only record of a failure this host could not write
+	// down for itself; a deployment that quietly does not replay it shows an
+	// unbroken grid over an outage that happened, which is worse than a gap.
+	//
+	// off is for a container being checked by hand and for the tests, which
+	// point the reader at an httptest server instead.
+	defaultUptimeTransport = "github"
+
 	// The pepper has no default at all, for the same reason GITHUB_TOKEN has
 	// none: a shipped value is a value every deployment shares, and a shared
 	// pepper is no pepper. minPepperLength is the floor rather than a
@@ -195,6 +205,7 @@ type Config struct {
 	Mail      Mail
 	Contact   Contact
 	Internal  Internal
+	Uptime    Uptime
 
 	// TrustedProxies decides whether X-Forwarded-For is believed at all. Empty
 	// is the default and means "believe nobody" — then the peer address is the
@@ -335,6 +346,28 @@ type Internal struct {
 	DeployToken string
 }
 
+// Uptime is what the outage-log reader needs, and it is one field because it
+// needs almost nothing.
+//
+// No token: this repository is public, so the log is fetched unauthenticated.
+// That is a smaller surface than the alternative, not a shortcut — a credential
+// exists to be leaked, and the only thing this reader does is read a file
+// anybody can read.
+//
+// No URLs either, for the reason config.GitHub gives above: the two addresses
+// internal/uptime reaches are compiled into it, because a URL that can come
+// from the environment is one edit away from a URL that can come from a request.
+type Uptime struct {
+	// Transport is TransportGitHub or TransportOff. Off means the replay loop is
+	// never started — nothing is fetched and nothing is written. Live probes are
+	// unaffected: POST /api/internal/probe keeps recording what it is told.
+	Transport string
+}
+
+// Replays reports whether this deployment reads the outage log at all. Shaped
+// like GitHub.Fetches and Mail.Sends, and read in the same two places.
+func (u Uptime) Replays() bool { return u.Transport == TransportGitHub }
+
 // Load reads and validates the environment.
 //
 // The error it returns names every problem it found, one per line, so a cold
@@ -389,6 +422,11 @@ func Load() (Config, error) {
 
 		Contact: Contact{
 			IPPepper: l.pepper(EnvContactIPPepper),
+		},
+
+		Uptime: Uptime{
+			Transport: l.oneOf(EnvUptimeTransport, defaultUptimeTransport,
+				TransportGitHub, TransportOff),
 		},
 
 		Internal: Internal{

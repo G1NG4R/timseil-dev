@@ -89,6 +89,18 @@ func wipeRollUp(t *testing.T, db *sql.DB) {
 	}
 }
 
+// scalarFloat is scalar for the one question that is not a count: how old a
+// timestamp is, in seconds, as Postgres computes it.
+func scalarFloat(t *testing.T, db *sql.DB, query string, args ...any) float64 {
+	t.Helper()
+
+	var v float64
+	if err := db.QueryRow(query, args...).Scan(&v); err != nil {
+		t.Fatalf("%s: %v", query, err)
+	}
+	return v
+}
+
 func scalar(t *testing.T, db *sql.DB, query string, args ...any) int {
 	t.Helper()
 

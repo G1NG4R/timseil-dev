@@ -709,6 +709,7 @@ Default", damit die Zahlen nur an einer Stelle existieren — in
 | `CONTACT_IP_PEPPER` | — | Pflicht, ≥ 32 Zeichen. Schlüsselt den gespeicherten `ip_hash` |
 | `INTERNAL_PROBE_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/probe` |
 | `INTERNAL_DEPLOY_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/deploy` |
+| `UPTIME_TRANSPORT` | `github` | `github` \| `off`. `off` startet die Wiedereinspielung des Ausfallprotokolls nie — **kein Token dazu**, der Branch ist öffentlich |
 
 **Zwei interne Tokens und nicht eines.** Sie sind nicht austauschbar: das
 Sonden-Token wird an `/api/internal/deploy` mit einer 401 abgewiesen und

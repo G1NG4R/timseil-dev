@@ -12,7 +12,76 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, Stufe F1 abgenommen
+## Wo wir stehen — 23.08.2026, F4 gebaut
+
+**Seit heute misst etwas von außen, und das Raster hat seine erste gemessene
+Zelle.** Gegen den Dev-Stack, durch einen Traefik-Ersatz, damit `/` und
+`/api/*` unter einer Adresse liegen wie in Produktion:
+
+```
+probe up http://127.0.0.1:18090 38ms
+{"level":"INFO","msg":"ops roll-up","days":1}
+
+ day        | state | checks_total | checks_up | down_sec
+ 2026-08-23 | ok    |            1 |         1 |        0
+```
+
+`days: 0` stand dort seit C7. Das war richtig — der Endpoint nahm Rohdaten an,
+und niemand rief ihn. Jetzt ruft alle fünf Minuten jemand an.
+
+**Der Leser hat den echten Branch erreicht, ohne dass irgendetwas gepusht war:**
+
+```
+{"level":"INFO","msg":"uptime backfill","state":"no log yet"}
+```
+
+Das ist ein 404 von `raw.githubusercontent.com` auf `ops-data/uptime-log.txt`,
+unauthentifiziert, als Normalzustand behandelt. Ein Host, der seit F4 nicht weg
+war, hat kein Ausfallprotokoll.
+
+**Was gebaut ist**, in fünf Commits: `api/internal/uptime` (Grammatik,
+Expansion, Leser), `BackfillOpsChecks`, `tools/probe.sh`,
+`.github/workflows/probe.yml`, `tools/check-probe-cadence.sh`. Dazu ADR 0038,
+zwei Runbooks, `UPTIME_TRANSPORT` und der Log-Beitrag 002.
+
+**Die fünf Entscheidungen stehen in ADR 0038**, drei davon abweichend vom
+Bauplan oder darüber hinaus: kein SMTP aus dem Workflow (der rote Lauf ist der
+Alarm, F10 baut den richtigen Pfad), `GITHUB_TOKEN` mit Job-Scope statt eines
+langlebigen PAT, und „`401` ist kein Ausfall, sondern unser Tippfehler".
+
+**Ein zweiter Fund kam erst beim letzten Prüflauf.** `make check-db` fährt mit
+`-count=1`, `make check` nicht — und unter `-count=1` waren **meine eigenen**
+Tests flakig: `waitFor` wartete auf ein Signal, das die Schleife *vor* der
+Logzeile setzt, also las die Zusicherung manchmal ein leeres Log. Der Testcache
+hatte das in `make check` verdeckt. Repariert, indem die Naht wegfiel: die
+Zusicherungen fahren `runOnce` jetzt synchron, und die Schleife selbst hat
+**einen** Test für ihre **eine** Eigenschaft (Start-Lauf, Tick, Stop). Danach die
+Suite unter `-race` — das fand den Eintrag zu `internal/contact` unten.
+
+**Der stärkste Fund ist klein und übertragbar.** `time.Parse` akzeptiert einen
+Sekundenbruchteil **auch dann, wenn das Layout keinen nennt** — dokumentiert,
+und die einzige Stelle, an der die Funktion großzügig ist. `09:15:00.123Z`
+parste sauber und formatierte sich zu `09:15:00Z` zurück: eine Schreibweise, die
+die Grammatik zu verbieten behauptet, still akzeptiert und gerundet. Die Regel
+ist jetzt der Rundlauf selbst, `at.Format(layout) != feld`. Ein Formatstring
+beschreibt, was man akzeptieren *will*; die Menge dessen, was ein Parser
+akzeptiert, ist meistens größer.
+
+**Was noch fehlt** — beides ist eine Aufgabe für dich, nicht für mich:
+
+1. **`INTERNAL_PROBE_TOKEN` als Repository-Secret.** Muss **vor** dem Merge
+   stehen: sobald `probe.yml` auf `main` liegt, läuft die Sonde alle fünf
+   Minuten, und ohne Token läuft sie rot. Klickweg in
+   `docs/runbooks/github.md`, Abschnitt „Der `probe`-Workflow".
+2. **`ops-data` ist lokal einen Commit voraus** (`ec86c83`, der Branch-README
+   erklärt jetzt das Dateiformat). Eigener Push, nicht Teil des PR.
+
+**Als Nächstes: F2** — Alloy, Prometheus, Loki. Die offene Vorbedingung dazu
+steht weiter unten ([#147](https://github.com/G1NG4R/timseil-dev/issues/147)).
+
+---
+
+## Vorher — 23.08.2026, Stufe F1 abgenommen
 
 **F1 ist gemergt und in Produktion belegt.** [#167](https://github.com/G1NG4R/timseil-dev/pull/167),
 `1f56a8c`, Release **`v0.3.0`** (Tagger G1NG4R, kein Bot), Deploy `ok … 245 s`,
@@ -602,6 +671,8 @@ der Grund, warum `--until-restart` existiert.
 | 2026-08-21 | E3b | **`sha-3890180` ist unsigniert und läuft auf dem VPS.** Bewusst in GHCR gelassen: es ist das Rollback-Ziel des laufenden Deploys, und es ist der Beleg dafür, dass die Signatur an einem Zeitpunkt begonnen hat statt behauptet zu werden. Der README benennt es. **Fällig mit E4** — sobald die Pipeline deployt, läuft eine Version, die sie selbst gebaut und signiert hat, und dann darf der alte Tag weg. Vorher nicht. | **erledigt in E4b** — von Hand über die Paket-Oberfläche gelöscht, nicht mit `prune-registry.sh`: dessen Lösch-Pfad war nie ausgeführt worden, und sein Debüt gegen die echte Registry wäre dieselbe Wette gewesen, die der erste Drill an diesem Tag verloren hat |
 | 2026-08-21 | E3b | **Vier Werkzeug-Versionen, die kein Dependabot hebt.** `.golangci-lint-version` (E2), `.cosign-image` (E3b) und die Digests von gitleaks (`check-secrets.sh`) und syft (`sbom.sh`). Das Ökosystem `docker` liest Dockerfiles und Compose-Dateien, nicht Hashes in Shell-Skripten oder Textdateien. Bei vier Stellen wäre eine Prüfung billiger als die Disziplin — `check-versions.sh` wäre der Ort. | **erledigt in E4a** — `tools/check-pins.sh`, nicht in `check-versions.sh`: das dort ist ein anderer Vergleich (deklarierte Laufzeit gegen bauendes Image). Zwei Hälften: Form in `make check`, „ist eine neuer?" wöchentlich im `scan`-Job. Die Pins werden über ihre **Form** gefunden, nicht aufgezählt — eine fünfte fällt automatisch darunter |
 | 2026-08-21 | E3a | **Kein eigener ADR für diese Stufe** — die nächste freie Nummer bleibt frei. Die Regel, die E3 aufstellt — gültig ist nur eine Signatur, deren `certificate-identity` dieser Workflow auf `refs/heads/main` ist — lebt in den Kopfkommentaren von `tools/sign.sh` und `tools/verify-supply-chain.sh`, nicht in `docs/adr/`. Bewusst so entschieden; die drei ADRs vor diesem kamen jeweils mit ihrer Phase, dieser Bruch gehört benannt. Nebenbei: `check-adrs` verbietet, den Verzicht unter seiner Nummer aufzuschreiben — eine Prüfung, die eine bewusste Lücke nicht von einem toten Verweis unterscheiden kann. | offen |
+| 2026-08-23 | F4 | **Die Backfill-Hälfte ist in Produktion nicht abgenommen.** Sie ist gegen einen echten Postgres bewiesen (`internal/store/uptime_db_test.go`, fünf Fälle) und gegen die Datei, die `probe.sh` wirklich geschrieben hat. Der Produktionsbeweis braucht einen echten Ausfall, und einen zu erzeugen, damit ein Haken grün wird, ist die falsche Richtung. **Fällig mit M1**, wo der Bauplan (Zeile 1346) ohnehin „den ganzen Host neustarten und prüfen, ob das Ausfallprotokoll den Ausfall korrekt nachträgt" verlangt. | offen, fällig mit M1 |
+| 2026-08-23 | F4 | **Der Alarm ist ein roter Lauf, kein eigener Mailpfad.** Der Bauplan verlangt SMTP aus dem Workflow; ADR 0038 sagt, warum nicht — das Mail-Passwort läge als Secret in einem Job, der alle fünf Minuten auf fremden Runnern läuft, für ein öffentliches Repository. Dazu: GitHub schaltet geplante Workflows nach 60 Tagen Repo-Stille leise ab. Beides fängt **F10** mit dem Dead Man's Switch. | bewusst, fällig mit F10 |
 | 2026-08-21 | E3a | **Sechs Schritte stehen zweimal in `ci.yml`** (`images` und `publish`). Der bezahlte Preis dafür, dass derselbe Job baut, prüft, scannt und veröffentlicht — sonst wäre das signierte Artefakt nicht das geprüfte (ADR 0026). Wird die Datei unübersichtlich, ist ein gemeinsames `make`-Ziel der Weg, keine Reusable Workflow. | bewusst |
 
 ## Gefunden — Bug oder Unklarheit
@@ -610,6 +681,10 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | F4 | **`time.Parse` akzeptiert einen Sekundenbruchteil, auch wenn das Layout keinen nennt.** `09:15:00.123Z` parste gegen `"2006-01-02T15:04:05Z"` sauber und formatierte sich zu `09:15:00Z` zurück — die Grammatik hätte zwei Schreibweisen für einen Zeitstempel zugelassen und beim Rundlauf still gerundet. Gefunden von einem Test, der scheiterte, weil er **akzeptiert** wurde. | **erledigt in F4** — die Regel ist jetzt der Rundlauf selbst |
+| 2026-08-23 | F4 | **`unnest` mit zwei Argumenten kommt nicht durch sqlcs Analyzer** (`function unnest(unknown, unknown) does not exist`, auch mit `::typ[]` an `sqlc.arg`). Der erzwungene Umbau war der bessere Schnitt: eine Anweisung **pro Ausfall** statt pro Datei, weil der Ausfall die Einheit ist, die sich einen `reason` teilt — und die Form muss dann nicht versprechen, dass zwei Arrays gleich lang bleiben. | **erledigt in F4**, als Entwurfsentscheidung |
+| 2026-08-23 | F4 | **`go test -race` findet ein Datenrennen in `internal/contact/dispatch_test.go:369`** — der `waitFor`-Helfer liest `q.listCall` ohne den Mutex, den der Dispatcher-Goroutine beim Schreiben nimmt (`dispatch_test.go:43`). Rein im Test, seit E2 (#126), und **kein Gate fährt `-race`**: weder `make check` noch `check-db`. Gefunden, weil F4 dieselbe Fehlerklasse in seinen *eigenen* Tests hatte und ich danach die Suite unter `-race` gefahren habe. Zwei Aufgaben, nicht eine: die Sperre im Helfer, und die Frage, ob `-race` irgendwo hingehört (kostet Laufzeit, findet genau diese Klasse). | offen |
+| 2026-08-23 | F4 | **Der Dev-Stack hat keine Kante, die `/` und `/api/*` unter einer Adresse ausliefert.** `web` liegt auf 3000, `api` auf 8080, kein Traefik in `compose.dev.yaml`. `tools/probe.sh` prüft aber beides gegen **eine** Basis-URL, weil Produktion das so ausliefert. Ende-zu-Ende ging deshalb nur über einen Wegwerf-Proxy im Scratchpad. Kein Fehler, aber eine Lücke zwischen Dev und Produktion, die die nächste Phase mit einer Kante wieder trifft. | offen |
 | 2026-08-23 | F1a | **CodeQL meldet 98 offene Alarme, davon die weit überwiegende Mehrheit `js/useless-expression` in `docs/design/*.dc.html`.** Die Blätter sind read-only, werden nie ausgeliefert und enthalten JSX, das ein JS-Parser nicht als solches liest. Eine Liste, in der das echte Signal unter Rauschen aus einem Verzeichnis liegt, das gar nicht gescannt gehört, ist keine Liste. `paths-ignore` in der CodeQL-Konfiguration wäre der Ort. | offen |
 | 2026-08-23 | F1a | **Drei `go/log-injection`-Alarme (medium) auf `bearer.go:47`, `problem.go:103`, `intake.go:208`.** Alle drei älter als F1a — das Diff hat dort nur `Warn` zu `WarnContext` geändert, und CodeQL meldet auf geänderten Zeilen. Nachgemessen falsch positiv: der JSON-Handler escapt, aus dem Versuch wird eine Zeile. In F1a trotzdem strukturell entschärft (`StripControl`), weil „der Encoder escapt es" eine Zusage ist, die in einer anderen Datei lebt als die Werte, die sie schützt. | **erledigt in F1a**, Alarme mit dieser Begründung zu schließen |
 | 2026-08-23 | F1a | **`cors.go` setzt nirgends `Access-Control-Expose-Headers`.** Ein fremder Aufrufer der öffentlichen Lese-API kann `X-Request-Id` deshalb nicht auslesen — die Zusage aus ADR 0009 („die ID zitieren findet die Zeilen") gilt für ihn nur über den Body von Fehlern, nicht über Erfolge. Eine Zeile Code, aber ein anderer Auslöser als F1: fällig, wenn ein Aufrufer von anderer Herkunft existiert (H8 ist same-origin, also frühestens P-Phase). | offen |
@@ -622,6 +697,8 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | F4 | **Der Backfill-Leser hat kein Ende-zu-Ende gegen den echten Branch mit Inhalt.** Er ist gegen `httptest` bewiesen und gegen den echten Branch **ohne** Datei (404 → `no log yet`). Sobald die erste echte Zeile auf `ops-data` steht, ist der Lauf, der sie einspielt, der fehlende Beleg — dann gehört die `uptime backfill`-Zeile mit `rows_new > 0` hier hereingeschrieben. | offen, fällig beim ersten echten Ausfall |
+| 2026-08-23 | F4 | **`tools/probe.sh` hat keinen dauerhaften Testaufbau.** Die sechs kaputten Fälle sind einmal gegen einen lokalen Server gefahren und im Commit benannt; laufend geprüft wird nur die Datei, die dabei entstand (`internal/uptime/testdata/uptime-log.txt`). Ein Harness wäre Werkzeug, das Werkzeug prüft — „Maß halten" sagt: im Zweifel Inhalt. Wieder aufnehmen, wenn ein zweiter Fund in diesem Skript auftaucht. | bewusst |
 | 2026-08-23 | F1a | **Zeitstempel-Präzision zwischen den Containern.** Go schreibt RFC3339 mit Nanosekunden, Node wird Millisekunden schreiben. Für F1s Abnahme egal (`grep`), ab **F2** nicht mehr: die Alloy-Pipeline muss `time` als Timestamp parsen, und beide Präzisionen müssen durchgehen. | offen, fällig mit F2 |
 | 2026-08-23 | F1a | **Ein `component`-Attribut auf den Hintergrundschleifen** (`ops.aggregator`, `contact.dispatcher`, `contributions.refresher`) würde „läuft die Schleife noch?" zu einem Label statt zu einem Nachrichtentext machen. In F1a bewusst **nicht** gebaut — die Nachrichten benennen die Schleife bereits, und ein Feld auf jeder Zeile ohne genannten Bedarf ist das, wovor „Maß halten" warnt. Wieder aufnehmen, wenn **F3** die Loki-Labels schneidet. | offen, fällig mit F3 |
 | 2026-08-23 | F1a | **`tracestate` wird ignoriert.** Das zweite W3C-Feld; F1 ist kein Vendor und hat nichts hineinzuschreiben. **F6** sollte es aber durchreichen statt fallen lassen, sonst verliert ein Trace, der durch uns läuft, den Zustand seines Urhebers. | offen, fällig mit F6 |

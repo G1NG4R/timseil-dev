@@ -50,6 +50,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
    "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
    "$root/tools/check-adrs.sh" "$root/tools/check-readme.sh" \
+   "$root/tools/check-probe-cadence.sh" \
    "$root/tools/version.sh" \
    "$root/tools/check-dockerfiles.sh" "$root/tools/verify-supply-chain.sh" \
    "$root/tools/check-pins.sh" "$root/tools/check-secrets.sh" "$root/tools/sbom.sh" \
@@ -2003,6 +2004,35 @@ refuses "release.sh refuses a directory that is no repository" "not a git reposi
 rmdir "$notrepo"
 
 rm -rf "$tmp/rel"
+
+printf 'probe cadence\n'
+# The one rule in this file that guards a number nobody can see is wrong.
+#
+# down_sec is failed checks times ops.ProbeInterval, and the failed checks are
+# however often the workflow ran. Halve one of the two and every outage on the
+# site is half as long as it was — with the right number of cells, in the right
+# colour, and no error anywhere. docs/runbooks/ops.md has asked for this check
+# since C7; these are its broken cases.
+mkdir -p .github/workflows api/internal/ops
+
+write_cadence() {
+  printf 'on:\n  schedule:\n    - cron: "%s"\n' "$1" > .github/workflows/probe.yml
+  printf 'package ops\n\nconst (\n\tProbeInterval = %s\n)\n' "$2" > api/internal/ops/ops.go
+}
+
+cadence_check() { write_cadence "$1" "$2" && tools/check-probe-cadence.sh "$tmp"; }
+
+accepts "matching cadence accepted"          cadence_check '3-58/5 * * * *' '5 * time.Minute'
+accepts "the plain star form accepted"       cadence_check '*/5 * * * *'    '5 * time.Minute'
+accepts "seconds and minutes compared"       cadence_check '*/1 * * * *'    '60 * time.Second'
+rejects "a cron twice the constant rejected" cadence_check '*/10 * * * *'   '5 * time.Minute'
+rejects "a constant twice the cron rejected" cadence_check '*/5 * * * *'    '10 * time.Minute'
+# A probe that only runs on Mondays keeps the right step and leaves six sevenths
+# of the grid empty, so the step alone is not the whole rule.
+rejects "a cron that skips days rejected"    cadence_check '*/5 * * * 1'    '5 * time.Minute'
+rejects "a cron without a step rejected"     cadence_check '17 * * * *'     '5 * time.Minute'
+rejects "an unreadable constant rejected"    cadence_check '*/5 * * * *'    'probeEvery'
+rm -rf .github api/internal/ops
 
 printf 'pre-commit hook\n'
 printf 'bad \n' > hookws.txt

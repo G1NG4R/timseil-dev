@@ -1,0 +1,144 @@
+# The thing that measures whether this host answers, from somewhere that is not
+# this host.
+#
+# A host cannot report its own outage — handbook ch. 8 — so the uptime series on
+# the case study is written by a watcher that dies with GitHub rather than with
+# the VPS. Every five minutes it fetches the site, reports what it saw to
+# POST /api/internal/probe, and when the answer changes it writes a line to
+# uptime-log.txt on the ops-data branch. The api replays that file when it is
+# back, and every replayed row cites the commit it came from. ADR 0038.
+#
+# A SEPARATE FILE, NOT A JOB IN ci.yml. Different trigger, different lifetime,
+# and different reach: this is the only job in the repository that may write to
+# it. Folding it into a 993-line file that runs on every pull request would put
+# `contents: write` next to jobs that handle branches under review.
+#
+# NOTHING HERE REIMPLEMENTS THE PROBE. tools/probe.sh is a make target a person
+# can run from a laptop, and this file schedules it, commits what it wrote and
+# decides what a change is worth — ADR 0031's rule, unchanged.
+
+name: probe
+
+on:
+  # Twelve runs an hour, offset by three minutes. Not `*/5`: GitHub's cron queue
+  # is longest at :00, and every `*/5` expression in the world fires there.
+  #
+  # This expression is one half of a number. The other half is ops.ProbeInterval
+  # in api/internal/ops/ops.go, because down_sec is failed checks TIMES that
+  # interval — probing every ten minutes against a constant that says five would
+  # halve every outage duration on a public page and look entirely correct.
+  # tools/check-probe-cadence.sh is what holds the two together.
+  schedule:
+    - cron: "3-58/5 * * * *"
+
+  # Required, not a convenience: the acceptance for this phase needs a run on
+  # demand, and so does anybody debugging at two in the morning.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two runs must not race on the same push. Not cancel-in-progress: a measurement
+# that was cancelled is a measurement that did not happen, and this workflow
+# exists to have one every five minutes.
+concurrency:
+  group: probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: probe
+    runs-on: ubuntu-latest
+
+    # The one job in this repository that may write to it, and it may write
+    # nothing else. The build plan asks for a fine-grained token here instead;
+    # ADR 0038 records why this is the same answer, better: a job-scoped
+    # permission expires with the run, cannot be leaked into next month, and
+    # GitHub's fine-grained tokens cannot be narrowed to a branch or a file
+    # anyway. Direct commits to main stay blocked by the branch protection,
+    # which is what actually bounds this token.
+    permissions:
+      contents: write
+
+    # A probe that has not finished in five minutes has been overtaken by the
+    # next one. curl's own timeouts are tighter; this is the backstop for a
+    # runner that hangs somewhere else.
+    timeout-minutes: 5
+
+    steps:
+      # main for the script, ops-data for the file. Two checkouts because they
+      # are two branches with no shared history — that separation is the whole
+      # reason the log lives where it does (build plan 8.9).
+      #
+      # persist-credentials: false here. Nothing pushes from this checkout, and
+      # a token written into .git/config that no step needs is reach nobody
+      # asked for.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ops-data
+          path: ops-data
+
+      # Measure, report, and append a line if the answer changed. The script
+      # creates uptime-log.txt with its header when it is missing, so the branch
+      # never needs a commit made by hand.
+      #
+      # It exits non-zero only on a misconfiguration — a 401 from the endpoint is
+      # our own typo and explicitly not an outage. An unreachable host is a
+      # successful run of this step.
+      - name: make probe
+        id: probe
+        env:
+          INTERNAL_PROBE_TOKEN: ${{ secrets.INTERNAL_PROBE_TOKEN }}
+        run: make probe PROBE_LOG=ops-data/uptime-log.txt
+
+      # Only on a change, so an unchanged file never produces an empty commit.
+      #
+      # The author is the prober and says so. It is not G1NG4R, because he did
+      # not write this line, and it is not a bot name either — CLAUDE.md keeps
+      # tool names out of anything this site publishes, and this branch is
+      # published.
+      - name: Commit the state change
+        if: steps.probe.outputs.changed == 'yes'
+        working-directory: ops-data
+        run: |
+          git config user.name  'timseil.dev prober'
+          git config user.email 'noreply@timseil.dev'
+          git add uptime-log.txt
+          git commit -m "probe: the host is ${{ steps.probe.outputs.state }}"
+
+          # Three tries with a rebase between them. The concurrency group makes a
+          # collision unlikely and not impossible: a manual dispatch can land
+          # beside a scheduled run, and losing a state change to a rejected push
+          # would lose the only record of an outage.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:ops-data; then
+              exit 0
+            fi
+            printf 'push %s rejected, rebasing\n' "$attempt"
+            git pull --rebase origin ops-data
+            sleep 2
+          done
+
+          printf 'the state change could not be pushed\n'
+          exit 1
+
+      # The alarm, and it is deliberately the crudest one that works: this run
+      # ends red, and GitHub sends the mail. Only the run that FINDS the host
+      # gone does — every later run of the same outage ends green, so one outage
+      # is one message rather than one every five minutes.
+      #
+      # SMTP from this workflow is what the build plan asks for. ADR 0038 says
+      # why not: the mail password would live as a repository secret in a job
+      # that runs every five minutes on somebody else's runner, for a public
+      # repository, and the whole gain would be our own wording. F10 builds the
+      # alarm path that earns a credential.
+      - name: The host has just gone away
+        if: steps.probe.outputs.changed == 'yes' && steps.probe.outputs.state == 'down'
+        run: |
+          printf 'timseil.dev stopped answering: %s\n' '${{ steps.probe.outputs.reason }}'
+          printf 'The outage is on the ops-data branch. The api backfills it when it is back.\n'
+          exit 1
