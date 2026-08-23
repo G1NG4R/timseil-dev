@@ -12,7 +12,62 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, der erste Text vor der ersten Seite
+## Wo wir stehen — 23.08.2026, F1a abgenommen
+
+**Jede Zeile der API trägt jetzt `request_id` und `trace_id`, und keine trägt
+PII.** Gemessen gegen den laufenden Dev-Stack, nicht gegen Tests:
+
+```
+{"level":"WARN","msg":"internal endpoint refused a request","path":"/api/internal/probe",
+ "request_id":"c1ae68…","trace_id":"c6526a…"}
+{"level":"INFO","msg":"request","method":"POST","status":401,
+ "request_id":"c1ae68…","trace_id":"c6526a…"}
+```
+
+Handler-Zeile und Access-Zeile unter einer ID — vorher trug nur die zweite eine.
+Ein eingehender `traceparent` von außen wurde übernommen (`4bf92f…4736`), die
+eingehende `X-Request-Id` nicht: die Unterscheidung ist ADR 0037.
+
+**Der Fund, der die Phase getragen hat, war fremder Text, nicht ein Feld.**
+`mail/smtp.go` verpackt die Antwort des Relays in einen Fehler, `contact` loggt
+ihn — und eine SMTP-Ablehnung lautet `550 5.1.1 <jemand@example.com>: …`. Über
+dem Aufruf stand bereits *„never the address. F1's PII rule."* Die Absicht war
+richtig, die Zeile leckte trotzdem. Zwei weitere Stellen kamen beim Durchsehen
+dazu: `mail/log.go` schrieb die **komplette Nachricht** (`envelope`), und
+`ratelimit.go` schrieb `r.RemoteAddr` im Klartext. Beide sind an der Call-Site
+repariert, nicht im Filter — ein Filter hätte in `envelope` die Adresse
+redigiert und Name und Text stehen lassen.
+
+Gegenprobe: Kontaktformular mit Name, Adresse und Merksatz abgeschickt,
+**0 Treffer** für alle drei im gesamten Container-Log.
+
+**Zwei Fehler sind beim Bauen entstanden und beide von einer Maschine gefunden,
+nicht vom Lesen.**
+
+1. Der Fuzzer: `[redacted-email]` mit Klammern beendete den Domain-Scan und ließ
+   das Davorstehende wie eine gültige Domain aussehen — ein zweiter Durchlauf
+   redigierte mehr als der erste. Der Marker besteht jetzt nur aus
+   Domain-Zeichen und enthält immer einen Bindestrich.
+2. Der erste Lauf gegen den Stack: `"message_id":"redacted-email"`. Eine
+   RFC-5322-Message-ID **ist** adressförmig, der Filter hat folgerichtig das
+   Feld gefressen, für das die Zeile existiert. Genau eine Ausnahme nach
+   Schlüssel, und sie ist eine Aussage über den Wert.
+
+Beide hätten kein Review gefunden. Das ist der Grund, warum `traceparent.Parse`
+und `Scrub` je einen Fuzz-Test bekommen haben.
+
+**Zahlen der Phase:** 48 Call-Sites auf `…Context` umgestellt, 13 handgesetzte
+`request_id`-Attribute entfernt (`slog` dedupliziert nicht — zwei gleiche
+Schlüssel in einem Objekt sind gültiges JSON, dessen Bedeutung vom Parser
+abhängt). `internal/reqid` und `middleware/requestid.go` **unverändert**, wie es
+der Kopfkommentar von `reqid.go` seit C1 versprochen hatte.
+
+**Als Nächstes: F1b** — Web-Logger in derselben Form, `proxy.ts`, `serverFetch`,
+und der Beweis über beide Container.
+
+---
+
+## Vorher — 23.08.2026, der erste Text vor der ersten Seite
 
 **Zwei Entscheidungen, beide gegen die Reihenfolge des Bauplans, beide bewusst.**
 
@@ -395,10 +450,16 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | F1a | **`cors.go` setzt nirgends `Access-Control-Expose-Headers`.** Ein fremder Aufrufer der öffentlichen Lese-API kann `X-Request-Id` deshalb nicht auslesen — die Zusage aus ADR 0009 („die ID zitieren findet die Zeilen") gilt für ihn nur über den Body von Fehlern, nicht über Erfolge. Eine Zeile Code, aber ein anderer Auslöser als F1: fällig, wenn ein Aufrufer von anderer Herkunft existiert (H8 ist same-origin, also frühestens P-Phase). | offen |
+| 2026-08-23 | F1a | **`.env.example:110` behauptet „compose.dev.yaml fills in the docker networks".** Tut es nicht — `compose.dev.yaml:207` reicht die Variable nur durch und begründet elf Zeilen später ausdrücklich, warum sie leer **bleibt**. `make env-dev` fasst sie auch nicht an. Der Satz ist seit C1 falsch und hat beim Planen von F1 fast zu einer falschen Entscheidung geführt. | offen, eine Zeile |
+| 2026-08-23 | F1a | **`web/Dockerfile:142` zieht `/` als HEALTHCHECK, alle 5 s.** `app/healthz/route.ts` schreibt in seinem eigenen Kopfkommentar, warum das falsch ist, und Traefik hält sich daran — der Docker-Healthcheck nicht. Solange `/` ein Platzhalter ist, kostet es nichts; sobald F1b dort serverseitig fetcht, sind es 17 280 API-Aufrufe pro Tag aus dem Healthcheck allein. | **fällig mit F1b**, dort im selben Commit wie der Fetch |
 
 ## Idee — noch nicht entschieden
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | F1a | **Zeitstempel-Präzision zwischen den Containern.** Go schreibt RFC3339 mit Nanosekunden, Node wird Millisekunden schreiben. Für F1s Abnahme egal (`grep`), ab **F2** nicht mehr: die Alloy-Pipeline muss `time` als Timestamp parsen, und beide Präzisionen müssen durchgehen. | offen, fällig mit F2 |
+| 2026-08-23 | F1a | **Ein `component`-Attribut auf den Hintergrundschleifen** (`ops.aggregator`, `contact.dispatcher`, `contributions.refresher`) würde „läuft die Schleife noch?" zu einem Label statt zu einem Nachrichtentext machen. In F1a bewusst **nicht** gebaut — die Nachrichten benennen die Schleife bereits, und ein Feld auf jeder Zeile ohne genannten Bedarf ist das, wovor „Maß halten" warnt. Wieder aufnehmen, wenn **F3** die Loki-Labels schneidet. | offen, fällig mit F3 |
+| 2026-08-23 | F1a | **`tracestate` wird ignoriert.** Das zweite W3C-Feld; F1 ist kein Vendor und hat nichts hineinzuschreiben. **F6** sollte es aber durchreichen statt fallen lassen, sonst verliert ein Trace, der durch uns läuft, den Zustand seines Urhebers. | offen, fällig mit F6 |
 | 2026-08-23 | vor F1 | **Das Frontmatter des ersten Log-Beitrags ist erfunden** — `title`, `deck`, `published`, `tags`, `system`, `summary`, abgelesen am Design-Blatt `Blog Post`, nicht an einem Renderer. H9 baut den Renderer und entscheidet das Schema; bis dahin prüft **nichts** diese Datei, weder Form noch Links. Wenn H9 anders schneidet, wird die eine Datei nachgezogen. | offen, fällig mit H9 |
 | 2026-08-23 | vor F1 | **Der Beitrag verlinkt `docs/adr/0035` als Beleg, und der ist auf Deutsch.** Für einen englischen Leser ist das ein halber Beleg. Entweder bleibt es dabei (die ADRs schreibe ich für mich, so steht es in CLAUDE.md) oder die Fallstudie trägt die Belegkette in H2 selbst. Nicht jetzt entscheiden — erst wenn H2 gebaut wird. | offen |
