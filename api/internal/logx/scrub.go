@@ -235,9 +235,7 @@ func matchAddr(s string, i int) (int, bool) {
 	}
 
 	for ; end > i; end-- {
-		// Trailing punctuation is never part of an address, so these lengths
-		// are not worth a parse.
-		if c := s[end-1]; c == '.' || c == ':' {
+		if !worthParsing(s, i, end) {
 			continue
 		}
 
@@ -289,6 +287,31 @@ func isDomainByte(c byte) bool {
 		return true
 	}
 	return c == '.' || c == '-'
+}
+
+// worthParsing reports whether a candidate ending at end can be an address at
+// all, so that the loop in matchAddr does not spend a parse on a length that
+// cannot be one.
+//
+// A trailing dot is punctuation. A trailing colon is punctuation TOO — except
+// when it is the second half of "::", which is IPv6 syntax and part of the
+// address rather than after it. Skipping those left every address ending in a
+// zero run standing: "peer 2001:db8:: is gone" came out of Scrub unchanged.
+//
+// The fuzzer could not have found this, and that is the part worth writing
+// down. FuzzScrubRemovesEveryAddressItCanSee asks whether the filter still sees
+// an address in its own output — so a candidate this matcher never looks at is
+// one the property never asks about. The web port in F1b checks the output with
+// net.isIP over every substring instead, which shares no code with the matcher,
+// and it produced this input in three thousand random cases.
+func worthParsing(s string, i, end int) bool {
+	switch s[end-1] {
+	case '.':
+		return false
+	case ':':
+		return end-2 >= i && s[end-2] == ':'
+	}
+	return true
 }
 
 // maxAddrLen bounds one candidate. See matchAddr for what it costs and why.
