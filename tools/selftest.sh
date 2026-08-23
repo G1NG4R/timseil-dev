@@ -1890,7 +1890,7 @@ refuses "Dokploy's own default command rejected" "up -d --build --remove-orphans
 # rollout it describes recreates api and web BEFORE the twins are up, which is
 # the ten seconds of 404 with extra ceremony. A check that only counted the
 # links would pass this.
-refuses "the four steps in the wrong order rejected" "does not run the rollout" \
+refuses "the five steps in the wrong order rejected" "does not run the rollout" \
   sh -c 'printf "%s" "compose -p a -f c.yaml up -d --no-deps --wait api web && docker compose -p a -f c.yaml up -d --remove-orphans --wait api2 && docker compose -p a -f c.yaml up -d --no-deps --wait web2 && docker compose -p a -f c.yaml rm -s -f api2 web2" | tools/rollout.sh --check'
 
 # One flag missing, and it is the one that matters: without --wait, step three

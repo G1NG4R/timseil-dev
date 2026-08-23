@@ -792,7 +792,7 @@ rolling-lab: require-images require-network ## Production compose behind a local
 	@printf '    witness it:  make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=%s\n' '$(LAB_URL)'
 	@printf '    roll it:     make rollout\n'
 
-# The four steps of a real deploy, against the lab. tools/rollout.sh holds them;
+# The five steps of a real deploy, against the lab. tools/rollout.sh holds them;
 # this target only says which files they run against, and the point of both is
 # that Dokploy's Command field, this lab and the check in tools/deploy.sh cannot
 # say three different things.
