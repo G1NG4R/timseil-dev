@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
-	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
 // Timeout bounds how long a handler may take.
@@ -42,9 +41,8 @@ func Timeout(limit time.Duration, log *slog.Logger) Func {
 				return
 			}
 
-			log.Error("the request ran past its deadline",
+			log.ErrorContext(r.Context(), "the request ran past its deadline",
 				"limit", limit.String(),
-				"request_id", reqid.From(r.Context()),
 				"path", r.URL.Path,
 			)
 			httpx.WriteProblem(rec, r, http.StatusInternalServerError,

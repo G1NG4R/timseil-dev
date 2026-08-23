@@ -12,6 +12,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/config"
 	"github.com/G1NG4R/timseil-dev/api/internal/resilience"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
+	"github.com/G1NG4R/timseil-dev/api/internal/traceparent"
 )
 
 // RefreshQueries is the slice of the store the refresher needs. Narrow on
@@ -173,6 +174,13 @@ func (r *Refresher) loop(ctx context.Context) {
 // rather than an error — the acceptance criterion of C5 is a property of this
 // shape and not a rule anybody has to remember.
 func (r *Refresher) runOnce(ctx context.Context) {
+	// One trace per run, and that is the whole of what correlation means for a
+	// loop: no visitor asked for this, so there is no request id, but the four
+	// or five lines a single run writes belong together and are otherwise
+	// indistinguishable from the run before it. F6 hangs a real span here later
+	// and changes nothing about the shape.
+	ctx = traceparent.With(ctx, traceparent.New())
+
 	if ctx.Err() != nil {
 		return
 	}
@@ -180,7 +188,7 @@ func (r *Refresher) runOnce(ctx context.Context) {
 	if !r.breaker.Allow() {
 		// INFO and not WARN: a shut breaker is this package working, and the
 		// thing that is wrong was already reported when it shut.
-		r.log.Info("contributions refresh", "state", "breaker open", "login", r.login)
+		r.log.InfoContext(ctx, "contributions refresh", "state", "breaker open", "login", r.login)
 		return
 	}
 
@@ -192,10 +200,10 @@ func (r *Refresher) runOnce(ctx context.Context) {
 		// Not a breaker failure. The database being unreachable says nothing
 		// about GitHub, and counting it here would shut the breaker for half an
 		// hour over an outage on the wrong side.
-		r.log.Error("contributions refresh", "state", "cache unreadable", "err", err)
+		r.log.ErrorContext(ctx, "contributions refresh", "state", "cache unreadable", "err", err)
 		return
 	case cached && age < staleAfter:
-		r.log.Info("contributions refresh", "state", "fresh", "age_sec", int(age.Seconds()))
+		r.log.InfoContext(ctx, "contributions refresh", "state", "fresh", "age_sec", int(age.Seconds()))
 		return
 	}
 
@@ -218,7 +226,7 @@ func (r *Refresher) runOnce(ctx context.Context) {
 		// calendar and an honest age. It becomes worth waking up for when the
 		// age on the page gets embarrassing, which is a judgement the runbook
 		// makes and a log level cannot.
-		r.log.Warn("contributions refresh",
+		r.log.WarnContext(ctx, "contributions refresh",
 			"state", "failed", "attempts", attempts, "breaker", r.breaker.Open(), "err", err)
 		return
 	}
@@ -229,7 +237,7 @@ func (r *Refresher) runOnce(ctx context.Context) {
 		}
 		// The fetch worked, so the breaker stays closed: GitHub is fine and
 		// this is our own storage failing.
-		r.log.Error("contributions refresh", "state", "not stored", "err", err)
+		r.log.ErrorContext(ctx, "contributions refresh", "state", "not stored", "err", err)
 		return
 	}
 
@@ -238,7 +246,7 @@ func (r *Refresher) runOnce(ctx context.Context) {
 	// At INFO and on every successful run. Together with the "fresh" line above
 	// this is the only evidence that the loop is alive, and the runbook's first
 	// question — "has the calendar stopped ageing?" — is answered by its absence.
-	r.log.Info("contributions refresh",
+	r.log.InfoContext(ctx, "contributions refresh",
 		"state", "fetched", "attempts", attempts,
 		"weeks", len(result.weeks), "total", result.total)
 }

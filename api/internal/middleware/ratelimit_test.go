@@ -279,3 +279,32 @@ func gateThrough(h http.Handler) *httptest.ResponseRecorder {
 	h.ServeHTTP(w, r)
 	return w
 }
+
+// The one line in this service that printed an address in the clear.
+//
+// It fires when a trusted proxy forwards nothing usable, and "it is only the
+// proxy" is not an exception the operations sheet makes: it says no IP, and a
+// log line cannot know whose address it is holding. The label stays, so a
+// misconfiguration is still recognisable across lines — it is the same value
+// the access line writes as `client` for the same machine.
+func TestTheMisconfigurationWarningCarriesNoRawAddress(t *testing.T) {
+	log, logged := capture()
+
+	rl := NewRateLimiter(120, 3, dockerNet(t), NewIPHasher(), log)
+	t.Cleanup(rl.Stop)
+	h := Chain(okHandler(), RequestID(dockerNet(t)), rl.Middleware())
+
+	// A trusted peer — 172.16/12 is in dockerNet — that forwarded nothing.
+	serve(h, from("172.17.0.4:5555"))
+
+	line := logged.String()
+	if !strings.Contains(line, "not being rate limited") {
+		t.Fatalf("the warning did not fire, so this test proves nothing:\n%s", line)
+	}
+	if strings.Contains(line, "172.17.0.4") {
+		t.Errorf("the peer address reached the log in the clear:\n%s", line)
+	}
+	if !strings.Contains(line, `"peer"`) {
+		t.Errorf("the peer label is gone, and it was how two lines get tied together:\n%s", line)
+	}
+}

@@ -207,7 +207,7 @@ func (h *Handler) ServeUptime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitGetUptimeBadgeResponse(w); err != nil {
-		h.log.Error("writing the uptime badge", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the uptime badge", "err", err)
 	}
 }
 
@@ -218,7 +218,7 @@ func (h *Handler) ServeVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitGetVersionBadgeResponse(w); err != nil {
-		h.log.Error("writing the version badge", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the version badge", "err", err)
 	}
 }
 
@@ -229,6 +229,6 @@ func (h *Handler) ServeSystems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitGetSystemsBadgeResponse(w); err != nil {
-		h.log.Error("writing the systems badge", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the systems badge", "err", err)
 	}
 }

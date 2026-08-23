@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/logx"
 	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
@@ -18,9 +19,15 @@ func quiet() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)
 
 // capture returns a logger writing JSON into a buffer, so a test can assert
 // what was logged rather than that logging was called.
+//
+// Built through logx, exactly as cmd/api builds the real one. That matters here
+// more than it looks: since F1 the request id and the trace id come off the
+// context inside the handler chain, not from the call site. A bare JSONHandler
+// would make these tests pass against a logger this service never uses, and the
+// first thing they would stop noticing is correlation going missing.
 func capture() (*slog.Logger, *bytes.Buffer) {
 	var buf bytes.Buffer
-	return slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug})), &buf
+	return logx.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug})), &buf
 }
 
 func serve(h http.Handler, r *http.Request) *httptest.ResponseRecorder {
@@ -350,5 +357,28 @@ func TestExceptLetsThroughWhatTheLinkWouldHaveRefused(t *testing.T) {
 		if rec.Code != tc.want {
 			t.Errorf("%s = %d, want %d", tc.path, rec.Code, tc.want)
 		}
+	}
+}
+
+// net/http accepts a request line far longer than any route here, and the
+// access line writes the path on every single request. Unbounded, that is a way
+// to fill the disk Loki shares with Postgres — and since F1a it is also a way
+// to spend CPU in the scrubber. Same answer internal/contact gives an Origin.
+func TestALongPathIsBoundedBeforeItReachesTheLog(t *testing.T) {
+	log, logged := capture()
+	client := dockerNet(t)
+
+	long := "/api/" + strings.Repeat("a", 16*1024)
+	r := from("203.0.113.7:1234")
+	r.URL.Path = long
+
+	serve(Chain(okHandler(), RequestID(client), Logging(log, client, NewIPHasher())), r)
+
+	line := logged.String()
+	if len(line) > 1024 {
+		t.Errorf("one access line is %d bytes for a %d byte path", len(line), len(long))
+	}
+	if !strings.Contains(line, "/api/aaa") {
+		t.Errorf("the beginning of the path is gone, so the line says nothing:\n%s", line)
 	}
 }

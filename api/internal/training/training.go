@@ -216,7 +216,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := resp.VisitGetTrainingResponse(w); err != nil {
 		// The status line is already out; there is nothing left to send but a
 		// log line.
-		h.log.Error("writing the training response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the training response", "err", err)
 	}
 }
 

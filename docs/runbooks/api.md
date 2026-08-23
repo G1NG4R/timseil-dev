@@ -628,12 +628,37 @@ Jede Antwort trägt `X-Request-Id`, jede Fehlerantwort denselben Wert als
 docker compose -f compose.dev.yaml logs api | grep 0a3ea5d8730791a5e0f0b02ae6e2687f
 ```
 
-Ab F1 findet dieselbe ID auch die Zeilen des Web-Containers.
+**Seit F1a findet das nicht mehr nur die Access-Zeile, sondern alle Zeilen der
+Anfrage** — `internal/logx` nimmt `request_id` und `trace_id` für jede Zeile aus
+dem Context, statt sie an der Call-Site zu setzen. Eine abgewiesene interne
+Anfrage sieht dann so aus:
 
-Was **nicht** im Log steht und auch nicht hingehört: die Query-Zeichenkette und
-die Client-Adresse im Klartext. `client` ist ein Hash. Die Sondierungspfade
-`/healthz` und `/readyz` protokollieren auf `debug`, sonst wären sie der größte
-Teil des Logs.
+```
+{"level":"WARN","msg":"internal endpoint refused a request","path":"/api/internal/probe",
+ "request_id":"c1ae68…","trace_id":"c6526a…"}
+{"level":"INFO","msg":"request","method":"POST","status":401,
+ "request_id":"c1ae68…","trace_id":"c6526a…"}
+```
+
+**`trace_id` ist der Schlüssel über Dienstgrenzen, nicht `request_id`.** Die API
+übernimmt einen eingehenden `traceparent` von jedem Peer, weil er nirgendwo
+hinausgeht und streng geparst wird; eine eingehende `X-Request-Id` nur vom
+vertrauenswürdigen Proxy, weil sie in jeder Antwort steht. ADR 0037.
+
+Zeilen ohne Anfrage tragen **kein** leeres `request_id`, sondern gar keins. Die
+Hintergrundschleifen (`ops roll-up`, `contact dispatch`, `contributions refresh`)
+bekommen stattdessen einen eigenen Trace pro Durchlauf — alle Zeilen eines Laufs
+unter einer `trace_id`, und der Lauf davor unter einer anderen.
+
+Was **nicht** im Log steht und auch nicht hingehört: die Query-Zeichenkette, die
+Client-Adresse im Klartext (`client` ist ein Hash, `peer` in der
+Rate-Limit-Warnung seit F1a auch), E-Mail-Adressen und Formularinhalte. Die
+letzten beiden fallen nicht der Disziplin zum Opfer, sondern einem Filter im
+Handler: fremder Text — eine SMTP-Ablehnung, ein `net/http`-Fehler — wird auf dem
+Weg zum Writer redigiert und erscheint als `redacted-email` bzw. `redacted-ip`.
+Der Dev-Mail-Transport schreibt seit F1a nur noch Kennung und Bytezahl, nicht
+mehr die Nachricht. Die Sondierungspfade `/healthz` und `/readyz` protokollieren
+auf `debug`, sonst wären sie der größte Teil des Logs.
 
 ---
 

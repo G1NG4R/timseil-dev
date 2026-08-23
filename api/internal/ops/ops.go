@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
+	"github.com/G1NG4R/timseil-dev/api/internal/traceparent"
 )
 
 // The four numbers the roll-up runs on.
@@ -167,6 +168,13 @@ func (a *Aggregator) loop(ctx context.Context) {
 // goes stale is bad, and a grid that never updates again because Postgres was
 // restarted once is worse.
 func (a *Aggregator) runOnce(ctx context.Context) {
+	// One trace per run, and that is the whole of what correlation means for a
+	// loop: no visitor asked for this, so there is no request id, but the four
+	// or five lines a single run writes belong together and are otherwise
+	// indistinguishable from the run before it. F6 hangs a real span here later
+	// and changes nothing about the shape.
+	ctx = traceparent.With(ctx, traceparent.New())
+
 	if ctx.Err() != nil {
 		return
 	}
@@ -182,12 +190,12 @@ func (a *Aggregator) runOnce(ctx context.Context) {
 		// package failing, and an ERROR line here would cry wolf on every deploy.
 		return
 	case err != nil:
-		a.log.Error("the ops roll-up failed", "err", err)
+		a.log.ErrorContext(ctx, "the ops roll-up failed", "err", err)
 		return
 	}
 
 	// At INFO and on every run, including the runs that write nothing. This line
 	// is the only evidence that the loop is alive, and the runbook's first
 	// question — "has the grid stopped updating?" — is answered by its absence.
-	a.log.Info("ops roll-up", "days", days)
+	a.log.InfoContext(ctx, "ops roll-up", "days", days)
 }

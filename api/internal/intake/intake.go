@@ -129,7 +129,7 @@ func (h *Handler) ReportProbe(ctx context.Context, req httpx.ReportProbeRequestO
 	// a prober stuck resending one timestamp looks exactly like a healthy one
 	// from here, and this line is the only place the difference shows.
 	if rows == 0 {
-		h.log.Info("probe already recorded", "observedAt", report.At.UTC())
+		h.log.InfoContext(ctx, "probe already recorded", "observedAt", report.At.UTC())
 	}
 
 	return probeAccepted(), nil
@@ -205,7 +205,7 @@ func (h *Handler) ReportDeploy(ctx context.Context, req httpx.ReportDeployReques
 	}
 
 	if rows == 0 {
-		h.log.Info("deploy already recorded", "sha", report.Sha, "at", report.At.UTC())
+		h.log.InfoContext(ctx, "deploy already recorded", "sha", report.Sha, "at", report.At.UTC())
 	}
 
 	return deployAccepted(), nil
@@ -250,7 +250,7 @@ func (h *Handler) systemID(ctx context.Context) (int64, error) {
 	id, err := h.queries.SystemIDBySlug(ctx, h.selfSlug)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
-		h.log.Error("the configured site system does not exist", "slug", h.selfSlug)
+		h.log.ErrorContext(ctx, "the configured site system does not exist", "slug", h.selfSlug)
 		return 0, errNoSuchSystem
 	case err != nil:
 		return 0, err
@@ -342,7 +342,7 @@ func (h *Handler) ServeProbe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitReportProbeResponse(w); err != nil {
-		h.log.Error("writing the probe response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the probe response", "err", err)
 	}
 }
 
@@ -359,6 +359,6 @@ func (h *Handler) ServeDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitReportDeployResponse(w); err != nil {
-		h.log.Error("writing the deploy response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the deploy response", "err", err)
 	}
 }
