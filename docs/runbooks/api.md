@@ -640,6 +640,11 @@ Anfrage sieht dann so aus:
  "request_id":"c1ae68…","trace_id":"c6526a…"}
 ```
 
+**Seit F1b gilt dasselbe für den Web-Container** — gleiche Zeilenform, gleiche
+zwei Felder. Was er schreibt und was er absichtlich nicht schreibt, steht in
+[`web.md`](web.md); dort steht auch der Grep, der einen Trace über beide
+Container verfolgt.
+
 **`trace_id` ist der Schlüssel über Dienstgrenzen, nicht `request_id`.** Die API
 übernimmt einen eingehenden `traceparent` von jedem Peer, weil er nirgendwo
 hinausgeht und streng geparst wird; eine eingehende `X-Request-Id` nur vom
@@ -649,6 +654,12 @@ Zeilen ohne Anfrage tragen **kein** leeres `request_id`, sondern gar keins. Die
 Hintergrundschleifen (`ops roll-up`, `contact dispatch`, `contributions refresh`)
 bekommen stattdessen einen eigenen Trace pro Durchlauf — alle Zeilen eines Laufs
 unter einer `trace_id`, und der Lauf davor unter einer anderen.
+
+**`upstream_request_id` in einer Web-Zeile ist die `request_id` einer
+API-Zeile.** web sendet seine eigene ID mit, die API übernimmt sie nicht — kein
+vertrauenswürdiger Peer — und prägt ihre eigene; web schreibt deshalb auf, welche
+das war. Eine zitierte Web-ID führt damit in **einem** Sprung auf die API-Zeilen,
+und über `trace_id` in keinem.
 
 Was **nicht** im Log steht und auch nicht hingehört: die Query-Zeichenkette, die
 Client-Adresse im Klartext (`client` ist ein Hash, `peer` in der

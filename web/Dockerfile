@@ -138,8 +138,22 @@ EXPOSE 3000
 # busybox wget is available here, unlike in the API's distroless image, so the
 # probe is a command rather than a flag on the binary. Exec form so no shell is
 # involved even though one exists.
+#
+# /healthz, not `/`, and it changed in F1b when `/` started fetching the api.
+#
+# The cost was the obvious half: a render every five seconds is 17280 api calls
+# a day from the probe alone. The reason is the other half. ADR 0035 says the
+# api is briefly gone during step 3 of a rollout — so a probe that renders a page
+# which fetches makes THIS container's health depend on the OTHER container being
+# up, and `docker compose up --wait` would then sit waiting for a container that
+# is unhealthy for a reason it cannot fix.
+#
+# What is given up, said out loud: this no longer proves that React renders. It
+# proves the process serves HTTP and that a route handler runs, which is what
+# --wait actually needs to know before a rollout moves on. compose.yaml carries
+# the same note at the Traefik health check, which asks a different question.
 HEALTHCHECK --interval=5s --timeout=3s --start-period=15s --retries=3 \
-  CMD ["wget", "--quiet", "--spider", "http://127.0.0.1:3000/"]
+  CMD ["wget", "--quiet", "--spider", "http://127.0.0.1:3000/healthz"]
 
 # server.js, not `next start`. It is what standalone emits, and it is the whole
 # reason node_modules is absent from this stage.

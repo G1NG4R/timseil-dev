@@ -459,11 +459,19 @@ services:
       # against `/`: a check every second on the homepage is a full render every
       # second, and from stage H that stops being free.
       #
-      # The image's own HEALTHCHECK stays on `/` on purpose. The two ask
-      # different questions — Docker's is "does this application work", which is
-      # what `--wait` needs before the rollout moves on, and Traefik's is
-      # "should I send this container traffic", which has to say no three
-      # seconds before the answer to the first one changes.
+      # The image's own HEALTHCHECK asked `/` until F1b, and the two questions
+      # were worth keeping apart: Docker's is "does this application work", which
+      # is what `--wait` needs before the rollout moves on, and Traefik's is
+      # "should I send this container traffic", which has to say no three seconds
+      # before the answer to the first one changes.
+      #
+      # They are on the same path now, and the reason is upstairs in this file:
+      # `/` fetches the api since F1b, and step 3 of a rollout has the api
+      # briefly gone. A Docker probe that renders would make web unhealthy
+      # because the api is — and `--wait` would sit there waiting for a container
+      # to fix something that is not its to fix. The two questions still differ;
+      # what changed is that only one of them can be asked without a second
+      # container answering.
       - traefik.http.services.timseil-web.loadbalancer.healthcheck.path=/healthz
       - traefik.http.services.timseil-web.loadbalancer.healthcheck.interval=1s
       - traefik.http.services.timseil-web.loadbalancer.healthcheck.timeout=1s
@@ -525,6 +533,11 @@ services:
       - "3000"
     environment:
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8080}
+      # The api's variable, not a second one with WEB_ in front of it. One knob
+      # with one meaning, the same way SHUTDOWN_DELAY is shared below — and a
+      # web-only name would be invisible to tools/check-env.sh, which derives
+      # what must exist from api/internal/config/config.go.
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       # A site whose argument is "everything here is checkable" does not ship a
       # build tool that reports home in the background. It is also what keeps the
       # read-only rootfs working: telemetry is the thing that would try to write

@@ -12,7 +12,83 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, F1a abgenommen
+## Wo wir stehen — 23.08.2026, F1b gebaut
+
+**Eine Anfrage an `/` hinterlässt jetzt eine Zeile in beiden Containern, und
+eine ID findet beide.** Gemessen gegen den Dev-Stack, mit einem von außen
+vorgegebenen `traceparent`:
+
+```
+{"msg":"request","path":"/api/health","status":200,
+ "request_id":"eff2c10b…","trace_id":"d2ad2aad…"}                        ← api
+{"msg":"upstream request","path":"/api/health","status":200,"duration_ms":88,
+ "upstream_request_id":"eff2c10b…","request_id":"dc51add8…","trace_id":"d2ad2aad…"}  ← web
+```
+
+`upstream_request_id` **ist** die `request_id` der API-Zeile. Das ist die
+Brücke: die API übernimmt eine eingehende `X-Request-Id` nur vom
+vertrauenswürdigen Peer, also wird die von web gesendete nicht ihre — web
+schreibt deshalb auf, welche es war. Der Wortlaut des Bauplans gilt damit in
+einem Sprung, über `trace_id` in keinem.
+
+**Der Fund der Phase steckte nicht im neuen Code, sondern im alten.**
+`Scrub("peer 2001:db8:: is gone")` gab in der API seine Eingabe zurück:
+`matchAddr` übersprang jeden Kandidaten, der auf einen Doppelpunkt endet, als
+Satzzeichen — und `::` ist Syntax. Jede IPv6-Adresse, die auf ihrem Nulllauf
+endet, stand seit F1a im Log eines Dienstes, dessen Datenschutzseite keine
+verspricht.
+
+**Warum der Fuzzer das nicht finden konnte, ist der übertragbare Teil.**
+`FuzzScrubRemovesEveryAddressItCanSee` rescannt mit `addressesIn`, und das ruft
+denselben `matchAddr` — die Eigenschaft lautet also „der Filter sieht keine
+Adresse mehr, **die er sehen kann**". Ein Kandidat, den der Matcher nie ansieht,
+ist einer, nach dem die Eigenschaft nie fragt. Der Web-Test rescannt stattdessen
+mit `net.isIP` über jeden Teilstring und teilt keine Zeile mit dem Matcher; er
+hat `bA::` in dreitausend Zufallseingaben erzeugt. Beide Seiten tragen die
+Reparatur, das Korpus einen Eintrag mehr, und die zwei Rescans bleiben
+**absichtlich verschieden**.
+
+**Daraus wurde eine zweite Entscheidung.** `lib/scrub.ts` rief anfangs
+`net.isIP` — dasselbe wie der Test. Rausgeflogen ist es aus einem Bauzwang
+(Next übersetzt `instrumentation.ts` auch für die Edge-Runtime, wo `node:net`
+nicht lädt), und der Umweg war mehr wert als der ruhige Build: seitdem ist
+`isIP` ein **unabhängiges Orakel**. Gemessen über sechs Millionen erzeugte
+Token: **0 verpasste** von 35 401 Adressen, **0 über-redigiert**. Der erste Lauf
+stand bei 0 verpasst und **12 906** über-redigiert — alle eine Zone-Regel, die
+nach `%` alles durchließ; die letzten zwei waren `0.0.0.0::`, wo eine
+eingebettete IPv4 nicht das Ende der Adresse ist.
+
+**Die PII-Gegenprobe, gegen den echten Fehlerwert im laufenden Container:**
+
+```
+raw   : fetch failed: connect ECONNREFUSED 127.0.0.1:9999
+logged: fetch failed: connect ECONNREFUSED redacted-ip
+```
+
+**0 Treffer** für das Container-Subnetz im gesamten Log beider Container. Das
+ist der Fall, für den der Scrubber in web überhaupt existiert — ADR 0035 hat
+`api` in Schritt 3 jedes Rollouts kurz weg, ohne Filter schriebe also jeder
+Rollout die Adressen mit.
+
+**Der kaputte Fall der Seite:** `api` gestoppt, `/` abgerufen → **HTTP 200**,
+`— NO DATA` in beiden Feldern, Web-Zeile mit `status: 0` unter derselben
+`trace_id`, kein Absturz. `serverFetch` wirft nie.
+
+**Zahlen der Phase:** `web/` hatte 195 Zeilen Handcode und **null Tests**; jetzt
+99 Tests auf `node --test`, ohne neue Abhängigkeit. Der 2 700-Zeichen-Lauf, der
+in Go sieben Sekunden kostete, braucht hier 37 ms; die reine Doppelpunkt-Variante
+48 ms.
+
+**`v0.2.0` steht auf origin und zeigt auf `26ffaf7`** — den F1a-Merge. Die
+Produktionsabnahme von F1a gehört noch hierher nachgetragen, sobald
+`make check-deployed --host` gegen sie gelaufen ist; die Zahlen dieser Phase
+oben sind Dev-Stack, nicht Produktion.
+
+**Als Nächstes: F2** — Alloy, Prometheus, Loki. Zwei Zeilen unten warten darauf.
+
+---
+
+## Vorher — 23.08.2026, F1a abgenommen
 
 **Jede Zeile der API trägt jetzt `request_id` und `trace_id`, und keine trägt
 PII.** Gemessen gegen den laufenden Dev-Stack, nicht gegen Tests:
@@ -482,8 +558,9 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 | 2026-08-23 | F1a | **CodeQL meldet 98 offene Alarme, davon die weit überwiegende Mehrheit `js/useless-expression` in `docs/design/*.dc.html`.** Die Blätter sind read-only, werden nie ausgeliefert und enthalten JSX, das ein JS-Parser nicht als solches liest. Eine Liste, in der das echte Signal unter Rauschen aus einem Verzeichnis liegt, das gar nicht gescannt gehört, ist keine Liste. `paths-ignore` in der CodeQL-Konfiguration wäre der Ort. | offen |
 | 2026-08-23 | F1a | **Drei `go/log-injection`-Alarme (medium) auf `bearer.go:47`, `problem.go:103`, `intake.go:208`.** Alle drei älter als F1a — das Diff hat dort nur `Warn` zu `WarnContext` geändert, und CodeQL meldet auf geänderten Zeilen. Nachgemessen falsch positiv: der JSON-Handler escapt, aus dem Versuch wird eine Zeile. In F1a trotzdem strukturell entschärft (`StripControl`), weil „der Encoder escapt es" eine Zusage ist, die in einer anderen Datei lebt als die Werte, die sie schützt. | **erledigt in F1a**, Alarme mit dieser Begründung zu schließen |
 | 2026-08-23 | F1a | **`cors.go` setzt nirgends `Access-Control-Expose-Headers`.** Ein fremder Aufrufer der öffentlichen Lese-API kann `X-Request-Id` deshalb nicht auslesen — die Zusage aus ADR 0009 („die ID zitieren findet die Zeilen") gilt für ihn nur über den Body von Fehlern, nicht über Erfolge. Eine Zeile Code, aber ein anderer Auslöser als F1: fällig, wenn ein Aufrufer von anderer Herkunft existiert (H8 ist same-origin, also frühestens P-Phase). | offen |
-| 2026-08-23 | F1a | **`.env.example:110` behauptet „compose.dev.yaml fills in the docker networks".** Tut es nicht — `compose.dev.yaml:207` reicht die Variable nur durch und begründet elf Zeilen später ausdrücklich, warum sie leer **bleibt**. `make env-dev` fasst sie auch nicht an. Der Satz ist seit C1 falsch und hat beim Planen von F1 fast zu einer falschen Entscheidung geführt. | offen, eine Zeile |
-| 2026-08-23 | F1a | **`web/Dockerfile:142` zieht `/` als HEALTHCHECK, alle 5 s.** `app/healthz/route.ts` schreibt in seinem eigenen Kopfkommentar, warum das falsch ist, und Traefik hält sich daran — der Docker-Healthcheck nicht. Solange `/` ein Platzhalter ist, kostet es nichts; sobald F1b dort serverseitig fetcht, sind es 17 280 API-Aufrufe pro Tag aus dem Healthcheck allein. | **fällig mit F1b**, dort im selben Commit wie der Fetch |
+| 2026-08-23 | F1b | **Next übersetzt `instrumentation.ts` auch für die Edge-Runtime**, obwohl diese Anwendung keine Edge-Route hat, und warnt dort über `process.on` und `process.exit` — drei Warnungen in jedem Produktionsbuild, seit D1. Sie waren bis F1b unter einer vierten begraben (`node:net`), die jetzt weg ist. Wegzubauen nur, indem `instrumentation.ts` sich in eine Node- und eine Edge-Hälfte teilt, wie Nexts eigene Doku es zeigt — drei Dateien für eine Warnung, die nichts kaputt macht. Wieder aufnehmen, wenn F11 eine echte Edge-Route bringt. | offen |
+| 2026-08-23 | F1a | **`.env.example:110` behauptet „compose.dev.yaml fills in the docker networks".** Tut es nicht — `compose.dev.yaml:207` reicht die Variable nur durch und begründet elf Zeilen später ausdrücklich, warum sie leer **bleibt**. `make env-dev` fasst sie auch nicht an. Der Satz ist seit C1 falsch und hat beim Planen von F1 fast zu einer falschen Entscheidung geführt. | **erledigt in F1b** — und länger als eine Zeile: die Korrektur sagt jetzt auch, dass sie eine Korrektur ist, weil der Satz vier Phasen lang gelesen wurde, ohne aufzufallen |
+| 2026-08-23 | F1a | **`web/Dockerfile:142` zieht `/` als HEALTHCHECK, alle 5 s.** `app/healthz/route.ts` schreibt in seinem eigenen Kopfkommentar, warum das falsch ist, und Traefik hält sich daran — der Docker-Healthcheck nicht. Solange `/` ein Platzhalter ist, kostet es nichts; sobald F1b dort serverseitig fetcht, sind es 17 280 API-Aufrufe pro Tag aus dem Healthcheck allein. | **erledigt in F1b**, im selben Commit wie der Fetch — und der tragende Grund war nicht die Zahl, sondern ADR 0035: ein `/`-Check, der fetcht, macht `web` von `api` abhängig und lässt `docker compose up --wait` im Rollout auf einen Container warten, der nichts reparieren kann |
 
 ## Idee — noch nicht entschieden
 

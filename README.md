@@ -22,7 +22,7 @@ yet.
 ![systems](https://img.shields.io/endpoint?url=https://timseil.dev/api/badge/systems)
 -->
 
-> **Status:** in build — stage F of 13, phase F1. The site is deployed and
+> **Status:** in build — stage F of 13, phase F1 done. The site is deployed and
 > answering at [timseil.dev](https://timseil.dev); `/api/health` is the shortest
 > way to check that for yourself, and it names the commit it was built from.
 > The pipeline that gets code there is complete as of this phase: every gate in

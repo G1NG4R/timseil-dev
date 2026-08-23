@@ -82,6 +82,26 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // Unit tests, and one rule that is wrong about them.
+  //
+  // `describe` and `it` from node:test return a promise so that a runner CAN
+  // await a suite. A test file is not that runner — the runner is the `node
+  // --test` process, which awaits them itself — so every call here is a
+  // deliberate floating promise, and there are as many of them as there are
+  // tests. Writing `void` in front of eighty calls would be noise that teaches a
+  // reader nothing; turning the rule off for this one file shape says the same
+  // thing once.
+  //
+  // Nothing else is relaxed. The type-aware rules still read these files, which
+  // is the point: a test that lies about a type is a test that passes for the
+  // wrong reason.
+  {
+    files: ["**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "off",
+    },
+  },
+
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

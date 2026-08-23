@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node -e \"console.log('  – no web tests yet: unit tests arrive with G1, e2e before H1')\""
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.ts\""
   },
   "dependencies": {
     "next": "16.3.1",

@@ -72,6 +72,12 @@ func TestIPAddressesAreRemoved(t *testing.T) {
 		{"ipv6", "2001:db8::8a2e:370:7334"},
 		{"ipv6 loopback", "listening on ::1"},
 		{"ipv6 bracketed with port", "dial tcp [2001:db8::1]:8080: timeout"},
+		// The address ends where the string does, on the "::" itself. This one
+		// SURVIVED until F1b: matchAddr skipped every candidate ending in a
+		// colon as punctuation, and "::" is syntax rather than punctuation.
+		// Found by the web port's property test, which rescans with net.isIP
+		// rather than with this package's own matcher — see addressesIn.
+		{"ipv6 ending in a zero run", "peer 2001:db8:: is gone"},
 		{"cidr-ish", "not in 198.51.100.0"},
 	}
 
@@ -241,6 +247,20 @@ func TestTheExemptionIsNarrow(t *testing.T) {
 // addressesIn collects what the filter recognises, using the filter's own
 // matchers. Circular on purpose: the promise is "what this recognises, it
 // removes", and that is exactly what gets asserted below.
+// WHAT THIS CANNOT SEE, and it cost an address in production to learn.
+//
+// It rescans with matchEmail and matchAddr — the very functions under test — so
+// the property it feeds reads as "the filter no longer sees an address it can
+// see". A value the matcher never looks at is one the property never asks
+// about, and that is exactly what happened: every candidate ending in a colon
+// was skipped as punctuation, so "2001:db8::" was invisible to the filter AND
+// invisible to its own fuzz property, and no amount of fuzzing would have said
+// so.
+//
+// The independent check lives in web/lib/scrub.test.ts, where the port's output
+// is rescanned with net.isIP over every substring — no shared line with the
+// matcher. That is what produced the input above. Keep the two different on
+// purpose; a second copy of this function over there would have the same hole.
 func addressesIn(s string) []string {
 	var found []string
 	for i := 0; i < len(s); {
@@ -288,6 +308,7 @@ func FuzzScrubRemovesEveryAddressItCanSee(f *testing.F) {
 	f.Add("0@0.AX0.0.0.0")
 	f.Add("::0X%::0")
 	f.Add("0.0.0.0X0.0.0.00")
+	f.Add("bA::")
 
 	f.Fuzz(func(t *testing.T, s string) {
 		got := Scrub(s)

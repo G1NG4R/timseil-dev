@@ -259,6 +259,8 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8080}
+      # The api's variable, not a second one. See compose.yaml for why.
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       # A site whose argument is "everything here is checkable" does not ship a
       # build tool that reports home in the background.
       NEXT_TELEMETRY_DISABLED: "1"
