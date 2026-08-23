@@ -86,6 +86,12 @@ jobs:
       # creates uptime-log.txt with its header when it is missing, so the branch
       # never needs a commit made by hand.
       #
+      # It creates it in THIS CHECKOUT, and the commit step below runs only on a
+      # change — so on an ordinary run the file is written here and never pushed,
+      # and the branch keeps no file at all until the first outage. That is the
+      # intended shape: nothing is committed while there is nothing to record.
+      # The api's reader treats the resulting 404 as its ordinary state.
+      #
       # It exits non-zero only on a misconfiguration — a 401 from the endpoint is
       # our own typo and explicitly not an outage. An unreachable host is a
       # successful run of this step.
