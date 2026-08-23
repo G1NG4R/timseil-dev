@@ -12,7 +12,84 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, F4 gebaut
+## Wo wir stehen — 23.08.2026, F4 abgenommen
+
+**F4 ist gemergt und in Produktion belegt.** [#169](https://github.com/G1NG4R/timseil-dev/pull/169),
+`dbea559`, Release **`v0.4.0`**, Deploy `ok … 249 s`, gemeldet 14:40:48 UTC.
+
+**`INTERNAL_PROBE_TOKEN` ist bewiesen** — die erste Benutzung überhaupt, seit
+E5c als offener Punkt geführt. Der Lauf sagt beides in einer Zeile:
+
+```
+probe up https://timseil.dev 489ms
+```
+
+`up` heißt hier `GET /` → 200 **und** `POST /api/internal/probe` → 204. Ein
+falscher Token hätte den Lauf mit „misconfiguration, not an outage" rot beendet
+und **nichts** geschrieben.
+
+**Die Sonde läuft von selbst.** Erster geplanter Lauf 14:56:27 UTC,
+`event: schedule`, ohne dass jemand ihn angestoßen hat.
+
+**Der Beleg steht auf der Seite und ist von außen nachzählbar:**
+
+```
+GET https://timseil.dev/api/systems/timseil-dev
+vorher :  byState = {"nodata": 91}
+nachher:  byState = {"nodata": 90, "ok": 1}
+          days[-1] = {"d":"2026-08-23","state":"ok","downSec":0}
+```
+
+90 + 1 = 91. Invariante 7 hält.
+
+**`make check-deployed --host`: 10 von 10 Behauptungen**, darunter die zwei, die
+nur der Host machen kann — die laufenden Container **sind** die veröffentlichten
+Digests, für api und für web.
+
+**Die Zeitreihe auf dem Host, und sie sagt mehr als „grün":**
+
+```
+14:40:59  uptime backfill  no log yet     ← Lauf beim Start
+14:45:59  ops roll-up      days: 0
+14:47:58  ← Sondenzeile (workflow_dispatch)
+14:50:59  ops roll-up      days: 1        ← das Raster kippt
+14:55:59  uptime backfill  no log yet     ← exakt 15 min nach dem ersten
+14:56:34  ← Sondenzeile (schedule)
+```
+
+Die 15-Minuten-Kadenz aus `policy.go` ist damit gegen die Uhr belegt, nicht gegen
+den Code. `ops_checks` trägt **2 Zeilen, beide `origin = probe`**, keine
+`backfill` — richtig, es gab keinen Ausfall. Dass `ops_days.checks_total` bei der
+Messung auf **1** stand, ist kein Fehler: der Roll-up lief 14:55:59, die zweite
+Zeile kam 14:56:34. Das Raster darf bis zu fünf Minuten hinter den Daten liegen,
+`aggregateEvery` ist genau dafür auf `ProbeInterval` gesetzt.
+
+---
+
+### **Tag 1 von 91 ist der 23.08.2026**
+
+Das ist die Zahl, die diese Phase eigentlich liefert. Ab hier ist jede Zelle im
+Betriebsraster gemessen. Der Bauplan (Zeile 1481) verlangt **≥ 7 Tage vor
+Launch** — frühestes ehrliches Launch-Datum für das Raster: **30.08.2026.**
+
+---
+
+**Was nicht abgenommen ist, und es steht bewusst hier statt als Haken:**
+
+- **Die Backfill-Hälfte.** Sie braucht einen echten Ausfall. Bewiesen gegen einen
+  echten Postgres und gegen die Datei, die `probe.sh` selbst geschrieben hat —
+  Produktionsbeweis liegt auf **M1**.
+- **`source_ref`.** Entsteht erst bei einer Wiedereinspielung, also mit demselben
+  Ausfall.
+- **Der Uptime-Badge bewegt sich nicht.** `uptime90d` ist weiter `null`, er liest
+  `metric_snapshots` — das baut **F5**.
+
+**Als Nächstes: die Messung vor F2** ([#147](https://github.com/G1NG4R/timseil-dev/issues/147)),
+dann F2, F3, F5.
+
+---
+
+## Vorher — 23.08.2026, F4 gebaut
 
 **Seit heute misst etwas von außen, und das Raster hat seine erste gemessene
 Zelle.** Gegen den Dev-Stack, durch einen Traefik-Ersatz, damit `/` und
@@ -672,6 +749,7 @@ der Grund, warum `--until-restart` existiert.
 | 2026-08-21 | E3b | **Vier Werkzeug-Versionen, die kein Dependabot hebt.** `.golangci-lint-version` (E2), `.cosign-image` (E3b) und die Digests von gitleaks (`check-secrets.sh`) und syft (`sbom.sh`). Das Ökosystem `docker` liest Dockerfiles und Compose-Dateien, nicht Hashes in Shell-Skripten oder Textdateien. Bei vier Stellen wäre eine Prüfung billiger als die Disziplin — `check-versions.sh` wäre der Ort. | **erledigt in E4a** — `tools/check-pins.sh`, nicht in `check-versions.sh`: das dort ist ein anderer Vergleich (deklarierte Laufzeit gegen bauendes Image). Zwei Hälften: Form in `make check`, „ist eine neuer?" wöchentlich im `scan`-Job. Die Pins werden über ihre **Form** gefunden, nicht aufgezählt — eine fünfte fällt automatisch darunter |
 | 2026-08-21 | E3a | **Kein eigener ADR für diese Stufe** — die nächste freie Nummer bleibt frei. Die Regel, die E3 aufstellt — gültig ist nur eine Signatur, deren `certificate-identity` dieser Workflow auf `refs/heads/main` ist — lebt in den Kopfkommentaren von `tools/sign.sh` und `tools/verify-supply-chain.sh`, nicht in `docs/adr/`. Bewusst so entschieden; die drei ADRs vor diesem kamen jeweils mit ihrer Phase, dieser Bruch gehört benannt. Nebenbei: `check-adrs` verbietet, den Verzicht unter seiner Nummer aufzuschreiben — eine Prüfung, die eine bewusste Lücke nicht von einem toten Verweis unterscheiden kann. | offen |
 | 2026-08-23 | F4 | **Die Backfill-Hälfte ist in Produktion nicht abgenommen.** Sie ist gegen einen echten Postgres bewiesen (`internal/store/uptime_db_test.go`, fünf Fälle) und gegen die Datei, die `probe.sh` wirklich geschrieben hat. Der Produktionsbeweis braucht einen echten Ausfall, und einen zu erzeugen, damit ein Haken grün wird, ist die falsche Richtung. **Fällig mit M1**, wo der Bauplan (Zeile 1346) ohnehin „den ganzen Host neustarten und prüfen, ob das Ausfallprotokoll den Ausfall korrekt nachträgt" verlangt. | offen, fällig mit M1 |
+| 2026-08-23 | F4 | **Die Sonde ruft `/api/internal/*` von außen — L3 muss das entwerfen, nicht entdecken.** Bauplan 11.1 führt die Fläche als „darf nicht öffentlich sein: Traefik blockt den Pfad **plus** Token". Seit F4 gibt es einen Aufrufer, der zwingend von draußen kommt, alle fünf Minuten. L3s Aufgabe ist damit nicht „Präfix blocken", sondern „Präfix blocken **außer** für diesen einen Aufrufer". Der Contract nennt den Konflikt seit C7 und hält `operationId` fest, damit ein Pfadwechsel kein Contract-Bruch ist — F4 hat ihn von theoretisch auf real gestellt. | offen, fällig mit L3 |
 | 2026-08-23 | F4 | **Der Alarm ist ein roter Lauf, kein eigener Mailpfad.** Der Bauplan verlangt SMTP aus dem Workflow; ADR 0038 sagt, warum nicht — das Mail-Passwort läge als Secret in einem Job, der alle fünf Minuten auf fremden Runnern läuft, für ein öffentliches Repository. Dazu: GitHub schaltet geplante Workflows nach 60 Tagen Repo-Stille leise ab. Beides fängt **F10** mit dem Dead Man's Switch. | bewusst, fällig mit F10 |
 | 2026-08-21 | E3a | **Sechs Schritte stehen zweimal in `ci.yml`** (`images` und `publish`). Der bezahlte Preis dafür, dass derselbe Job baut, prüft, scannt und veröffentlicht — sonst wäre das signierte Artefakt nicht das geprüfte (ADR 0026). Wird die Datei unübersichtlich, ist ein gemeinsames `make`-Ziel der Weg, keine Reusable Workflow. | bewusst |
 
@@ -683,6 +761,7 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 |---|---|---|---|
 | 2026-08-23 | F4 | **`time.Parse` akzeptiert einen Sekundenbruchteil, auch wenn das Layout keinen nennt.** `09:15:00.123Z` parste gegen `"2006-01-02T15:04:05Z"` sauber und formatierte sich zu `09:15:00Z` zurück — die Grammatik hätte zwei Schreibweisen für einen Zeitstempel zugelassen und beim Rundlauf still gerundet. Gefunden von einem Test, der scheiterte, weil er **akzeptiert** wurde. | **erledigt in F4** — die Regel ist jetzt der Rundlauf selbst |
 | 2026-08-23 | F4 | **`unnest` mit zwei Argumenten kommt nicht durch sqlcs Analyzer** (`function unnest(unknown, unknown) does not exist`, auch mit `::typ[]` an `sqlc.arg`). Der erzwungene Umbau war der bessere Schnitt: eine Anweisung **pro Ausfall** statt pro Datei, weil der Ausfall die Einheit ist, die sich einen `reason` teilt — und die Form muss dann nicht versprechen, dass zwei Arrays gleich lang bleiben. | **erledigt in F4**, als Entwurfsentscheidung |
+| 2026-08-23 | F4 | **`uptime-log.txt` entsteht erst beim ersten Zustandswechsel, nicht beim ersten Lauf.** `probe.sh` legt sie im Checkout an, der Commit-Schritt läuft aber nur bei `changed == yes` — ohne Wechsel wird nichts gepusht, und ein Leser des Branches findet 404. Das **Verhalten ist richtig** (nichts committen, solange nichts aufzuzeichnen ist); falsch war die Abnahmezeile, die „die Datei soll leer sein" ankündigte. `docs/runbooks/ops.md` sagt es bereits korrekt (`no log yet` = Normalzustand). | **erledigt hier** — zwei Wortlaute nachgezogen |
 | 2026-08-23 | F4 | **`go test -race` findet ein Datenrennen in `internal/contact/dispatch_test.go:369`** — der `waitFor`-Helfer liest `q.listCall` ohne den Mutex, den der Dispatcher-Goroutine beim Schreiben nimmt (`dispatch_test.go:43`). Rein im Test, seit E2 (#126), und **kein Gate fährt `-race`**: weder `make check` noch `check-db`. Gefunden, weil F4 dieselbe Fehlerklasse in seinen *eigenen* Tests hatte und ich danach die Suite unter `-race` gefahren habe. Zwei Aufgaben, nicht eine: die Sperre im Helfer, und die Frage, ob `-race` irgendwo hingehört (kostet Laufzeit, findet genau diese Klasse). | offen |
 | 2026-08-23 | F4 | **Der Dev-Stack hat keine Kante, die `/` und `/api/*` unter einer Adresse ausliefert.** `web` liegt auf 3000, `api` auf 8080, kein Traefik in `compose.dev.yaml`. `tools/probe.sh` prüft aber beides gegen **eine** Basis-URL, weil Produktion das so ausliefert. Ende-zu-Ende ging deshalb nur über einen Wegwerf-Proxy im Scratchpad. Kein Fehler, aber eine Lücke zwischen Dev und Produktion, die die nächste Phase mit einer Kante wieder trifft. | offen |
 | 2026-08-23 | F1a | **CodeQL meldet 98 offene Alarme, davon die weit überwiegende Mehrheit `js/useless-expression` in `docs/design/*.dc.html`.** Die Blätter sind read-only, werden nie ausgeliefert und enthalten JSX, das ein JS-Parser nicht als solches liest. Eine Liste, in der das echte Signal unter Rauschen aus einem Verzeichnis liegt, das gar nicht gescannt gehört, ist keine Liste. `paths-ignore` in der CodeQL-Konfiguration wäre der Ort. | offen |
