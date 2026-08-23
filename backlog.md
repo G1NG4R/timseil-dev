@@ -12,7 +12,44 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, F4 abgenommen
+## Wo wir stehen — 23.08.2026, F2 ist entblockt
+
+**Gegen [#147](https://github.com/G1NG4R/timseil-dev/issues/147) gemessen, das
+Ergebnis steht nicht hier.** Es ist Ist-Stand dieses Hosts und liegt in der
+lokalen Datei; öffentlich gehört die Aufgabe und ihr Ausgang, nicht der Zustand.
+
+**Der Ausgang, in drei Sätzen:**
+
+1. **Die Grenzen aus ADR 0027 halten.** `db`, `api` und `web` liegen alle weit
+   unter ihrem Limit — nachgetragen als §3a dort, mitsamt dem, was die Messung
+   *nicht* beweist: sie war Leerlauf, die Gegenprobe unter Last gehört zu L8.
+2. **RAM und Platte sind kein Engpass.** Das war die Sorge, mit der #147
+   aufgemacht hat, und beide Antworten sind entspannt genug für F2.
+3. **Punkt 1 von #147 ist beantwortet: es gibt eine bestehende Grafana.**
+
+**Damit ist die Entwurfsfrage entschieden, die der Bauplan offengelassen hatte.**
+Er sagt an einer Stelle „Prometheus und Loki im selben Dokploy-Stack" und an
+anderer „bestehende Grafana-Instanz einbinden. **F2 macht beides:** eigener
+Prometheus, eigener Loki, Alloy als Collector im eigenen Stack — die bestehende
+Grafana als Oberfläche, mit unseren Datasources.
+
+Der Grund ist ADR 0027s eigene Haltung: **eine Grenze, die wir behaupten, muss
+von uns durchgesetzt werden.** F2s Abnahmekriterium ist „ein künstlich erzeugtes
+5-GB-Log löst das Limit aus, statt die Platte zu füllen" — das prüft nur etwas,
+wenn das Limit in unserer Konfiguration steht und nicht in der eines fremden
+Stacks auf derselben Maschine.
+
+**Der Bauplan wird dabei nicht angefasst.** Kapitel 10 trägt drei Zahlen, die die
+Messung widerlegt; sie bleiben stehen. ADR 0027 §2 sagt warum: „den Plan an die
+Umsetzung anzupassen löscht die Spur dessen, was sich geändert hat." Korrigiert
+wird das Dokument, das behauptet, was **gilt** — nicht das, was **geplant war**.
+
+**Als Nächstes: F2a** — der Stack läuft. Dann F2b (die Grenzen sind bewiesen),
+F3, F5.
+
+---
+
+## Vorher — 23.08.2026, F4 abgenommen
 
 **F4 ist gemergt und in Produktion belegt.** [#169](https://github.com/G1NG4R/timseil-dev/pull/169),
 `dbea559`, Release **`v0.4.0`**, Deploy `ok … 249 s`, gemeldet 14:40:48 UTC.

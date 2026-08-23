@@ -104,6 +104,35 @@ gemessenen** — anders als die Größen oben. Sie stehen hier mit ihrer Herleit
 damit die nächste Phase sie gegen echte `docker stats` halten kann statt gegen
 eine Erinnerung.
 
+### 3a. Nachgemessen — 23.08.2026, vor F2
+
+Der Absatz oben endet mit einer Bringschuld: „damit die nächste Phase sie gegen
+echte `docker stats` halten kann statt gegen eine Erinnerung". Sie ist
+eingelöst — Anlass war Issue #147, das vor F2 wissen wollte, was die Maschine
+wirklich trägt.
+
+Gemessen im Leerlauf, eine Minute nach einem Deploy, ohne Verkehr:
+
+| Dienst | Limit | gemessen | Ausnutzung |
+|---|---|---|---|
+| `db` | 512 M | 57,5 MiB | 11,2 % |
+| `api` | 256 M | 8,3 MiB | 3,2 % |
+| `web` | 512 M | 42,4 MiB | 8,3 % |
+
+**Die Herleitung hält.** Alle drei Dienste liegen weit unter ihrer Grenze, die
+Limits taugen als Explosionsradius, und keine Zahl muss korrigiert werden.
+
+**Was die Messung nicht beweist**, und das gehört danebengeschrieben: es ist
+Leerlauf. Die Reservierungen wurden gegen Arbeitslast hergeleitet — 25 Backends,
+drei Autovacuum-Worker, SSR unter Verkehr —, und davon war nichts los. Die Zahlen
+sagen „die Grenzen sind nicht zu eng gesetzt", nicht „so viel braucht der Dienst".
+Die Gegenprobe unter Last gehört zu **L8** (Lasttest), nicht hierher.
+
+**Die Belegung der Maschine selbst steht nicht hier**, sondern in der lokalen
+Datei. Sie ist Ist-Stand dieses Hosts, und `CLAUDE.md` lässt den nicht ins
+öffentliche Repository. Was hier steht, sind unsere eigenen Container gegen
+unsere eigenen Grenzen.
+
 **Zwei Zahlen, die keine Laufzeit von selbst findet**, und beide sind der
 klassische OOM-Kill:
 
