@@ -24,129 +24,235 @@ const (
 	redactedIP    = "redacted-ip"
 )
 
-// Scrub removes email addresses and IP addresses from one string.
+// Scrub removes control characters, email addresses and IP addresses from one
+// string.
 //
 // Exported because the boundary is worth testing directly, and because F11 is
 // told by the build plan to scrub frontend telemetry "wie F1" — when that
 // arrives it should call this rather than write a second answer.
 func Scrub(s string) string {
+	return redactAddresses(StripControl(s))
+}
+
+// StripControl removes the bytes that let one log line pretend to be two.
+//
+// The JSON handler already escapes them, and that was measured rather than
+// assumed: a newline in r.URL.Path comes out as an escape INSIDE the string and
+// the line stays one line. So this is not what makes forging impossible today —
+// it is what keeps it impossible when the writer changes. F2 sends these lines
+// through Alloy into Loki and F11 adds a second producer, and "we are safe
+// because of how the encoder at the bottom happens to behave" is a guarantee
+// living in a different file from the values it protects.
+//
+// It also settles a recurring argument. CodeQL raises go/log-injection on every
+// line that logs a value derived from a request — three of them on this
+// service's own pre-existing code — and "the encoder escapes it" is an answer
+// somebody has to derive again each time. Removing the characters is an answer
+// that reads itself.
+//
+// A space, not a deletion: two tokens run together read as one value that was
+// never there.
+func StripControl(s string) string {
+	if !hasControl(s) {
+		return s
+	}
+
+	b := []byte(s)
+	for i := range b {
+		if isControl(b[i]) {
+			b[i] = ' '
+		}
+	}
+	return string(b)
+}
+
+func hasControl(s string) bool {
+	for i := range len(s) {
+		if isControl(s[i]) {
+			return true
+		}
+	}
+	return false
+}
+
+// isControl covers C0 and DEL. Multi-byte UTF-8 is left alone: every
+// continuation byte is >= 0x80, so this cannot cut a rune in half.
+func isControl(c byte) bool { return c < 0x20 || c == 0x7F }
+
+// redactAddresses replaces every email and IP address in one left-to-right pass.
+//
+// ONE pass, and the fuzzer is why. Doing emails and then addresses as two
+// separate sweeps was correct on every input anybody thought of and wrong on a
+// shape nobody would: replacing an address could leave the marker sitting next
+// to a domain, and that token then read as an address ITSELF on the next sweep.
+// So the answer depended on how many times the function had run, and the first
+// run had left part of an address standing. Two examples the fuzzer minimised
+// down to, both real if contrived:
+//
+//	a@b.tld@c.tld   →  the second domain survived the first sweep
+//	0@::0.XA        →  redacting the IPv6 built an email that was not there
+//
+// Walking once fixes the class rather than the two cases: what this writes is
+// never read again, so no substitution can create a match.
+//
+// A match is only attempted at the START of a run. That keeps the scan linear
+// and stops a suffix of a longer token from matching on its own.
+func redactAddresses(s string) string {
 	// The overwhelmingly common case is a line with none of this in it. One
-	// pass to find out costs less than the two scans below.
+	// pass to find out costs less than the walk below.
 	if !strings.ContainsAny(s, "@.:") {
 		return s
 	}
-	return scrubAddresses(scrubEmails(s))
-}
-
-// scrubEmails replaces anything shaped like an address around an '@'.
-//
-// Deliberately looser than RFC 5321. This is not validating an address a user
-// typed, it is finding one in a sentence somebody else's server wrote, and the
-// cost of being wrong runs one way: a redacted token that was not an address is
-// a small loss of detail in a log line, a missed address is a promise broken.
-func scrubEmails(s string) string {
-	at := strings.IndexByte(s, '@')
-	if at < 0 {
-		return s
-	}
 
 	var b strings.Builder
-	rest := s
+	b.Grow(len(s))
 
-	for {
-		at = strings.IndexByte(rest, '@')
-		if at < 0 {
-			b.WriteString(rest)
-			return b.String()
+	for i := 0; i < len(s); {
+		if runStart(s, i, isLocalByte) {
+			if end, ok := matchEmail(s, i); ok {
+				b.WriteString(redactedEmail)
+				i = end
+				continue
+			}
 		}
-
-		start := at
-		for start > 0 && isLocalByte(rest[start-1]) {
-			start--
-		}
-
-		end := at + 1
-		for end < len(rest) && isDomainByte(rest[end]) {
-			end++
-		}
-		// A trailing dot is punctuation, not part of the domain: "…from
-		// a@b.tld." ends a sentence.
-		for end > at+1 && rest[end-1] == '.' {
-			end--
-		}
-
-		if start == at || !isDomainish(rest[at+1:end]) {
-			// An '@' that is not an address after all — a rate-limit message,
-			// a Go struct printed with %v. Keep it and carry on past it.
-			b.WriteString(rest[:at+1])
-			rest = rest[at+1:]
-			continue
-		}
-
-		b.WriteString(rest[:start])
-		b.WriteString(redactedEmail)
-		rest = rest[end:]
-	}
-}
-
-// scrubAddresses replaces anything the standard library agrees is an IP.
-//
-// Candidates are cut out by shape and then handed to net/netip, rather than
-// matched by a pattern. That is what keeps a timestamp out of it: "11:19:35"
-// looks like an IPv6 address to a regular expression and does not parse as one.
-func scrubAddresses(s string) string {
-	var b strings.Builder
-	i := 0
-
-	for i < len(s) {
-		if !isAddrByte(s[i]) {
-			b.WriteByte(s[i])
-			i++
-			continue
-		}
-
-		j := i
-		for j < len(s) && isAddrByte(s[j]) {
-			j++
-		}
-		// Trailing punctuation is not part of the address.
-		for j > i && (s[j-1] == '.' || s[j-1] == ':') {
-			j--
-		}
-
-		// The run was punctuation and nothing else — a lone dot between two
-		// words. Emit it and move on; without this the index does not advance
-		// and the scan never ends, which is a hang rather than a wrong answer
-		// and so the more expensive of the two mistakes.
-		if j == i {
-			b.WriteByte(s[i])
-			i++
-			continue
-		}
-
-		token := s[i:j]
-		if isAddress(token) {
+		// No run-start guard on this one, and the fuzzer took it away: it
+		// assumed that if the whole run fails to parse, no part of it can. That
+		// is false. In "::0X%::0" the second run begins at '%', because '%' is
+		// a legal zone separator — "%::0" does not parse, and the "::0" inside
+		// it was never tried. An address survived in the output.
+		//
+		// The cost is a rescan from each position inside a run that failed, so
+		// a run of n bytes is O(n²) in the worst case. The values reaching here
+		// are bounded — a relay message is cut to 200 characters before it ever
+		// becomes an error — and correctness is not the thing to trade for it.
+		if end, ok := matchAddr(s, i); ok {
 			b.WriteString(redactedIP)
-		} else {
-			b.WriteString(token)
+			i = end
+			continue
 		}
-		i = j
+		b.WriteByte(s[i])
+		i++
 	}
 
 	return b.String()
 }
 
-// isAddress reports whether the token is an IP address, with or without a port.
-func isAddress(token string) bool {
-	if _, err := netip.ParseAddr(token); err == nil {
-		return true
+// runStart reports whether i begins a run of bytes the predicate accepts.
+//
+// Safe for the email matcher and only for it: the local part is scanned
+// greedily and the '@' after it sits at a fixed offset, so starting later can
+// only shorten a match that would be found anyway. It is NOT safe for
+// addresses — see redactAddresses.
+func runStart(s string, i int, in func(byte) bool) bool {
+	return in(s[i]) && (i == 0 || !in(s[i-1]))
+}
+
+// matchEmail reports how far an address starting at i reaches.
+//
+// Deliberately looser than RFC 5321. This is not validating an address somebody
+// typed, it is finding one in a sentence somebody else's server wrote, and the
+// cost of being wrong runs one way: a redacted token that was not an address is
+// a small loss of detail, a missed address is a promise broken.
+func matchEmail(s string, i int) (int, bool) {
+	at := i
+	for at < len(s) && isLocalByte(s[at]) {
+		at++
 	}
-	// "127.0.0.1:8080" and "[::1]:8080". The port goes with it: an address is
-	// not less identifying for having one.
-	if _, err := netip.ParseAddrPort(token); err == nil {
-		return true
+	// No local part, or no '@' after it.
+	if at == i || at >= len(s) || s[at] != '@' {
+		return 0, false
 	}
-	return false
+
+	end := at + 1
+	for end < len(s) && isDomainByte(s[end]) {
+		end++
+	}
+
+	// An '@' right after the domain means the boundary was not clean —
+	// "a@b.tld@c.tld". Swallow it and keep going rather than stop: consuming
+	// one token too many costs a word, stopping early leaves half an address.
+	for end < len(s) && s[end] == '@' {
+		end++
+		for end < len(s) && isDomainByte(s[end]) {
+			end++
+		}
+	}
+
+	// A trailing dot is punctuation, not domain: "…from a@b.tld." ends a
+	// sentence.
+	for end > at+1 && s[end-1] == '.' {
+		end--
+	}
+
+	if !isDomainish(s[at+1 : end]) {
+		return 0, false
+	}
+	return end, true
+}
+
+// matchAddr reports how far an IP address starting at i reaches.
+//
+// The candidate is cut out by shape and handed to net/netip rather than matched
+// by a pattern. That is what keeps a timestamp out of it: "11:19:35" looks like
+// an IPv6 address to a regular expression and does not parse as one.
+//
+// Longest first, then shorter — and that second half is not tidiness. The
+// maximal run is often not an address while a prefix of it is: in "::0.::0" the
+// whole run parses as nothing, and trying only the whole run left the leading
+// "::0" in the output one byte at a time. The fuzzer found it; reading did not.
+func matchAddr(s string, i int) (int, bool) {
+	end := i
+	for end < len(s) && isAddrByte(s[end]) {
+		end++
+	}
+	if end == i {
+		return 0, false
+	}
+
+	// An IPv4 needs a dot and an IPv6 needs a colon, so a run with neither
+	// cannot contain either — and no prefix of it can. This is what keeps the
+	// shrinking loop below off the values every line carries: a 32-character
+	// request id is hex and nothing else, and it leaves here without a single
+	// call into net/netip.
+	if !strings.ContainsAny(s[i:end], ".:") {
+		return 0, false
+	}
+
+	// The shrinking loop below is bounded, and the fuzzer is why it had to be.
+	//
+	// Without this, a run of n bytes costs n parses at each of n positions. A
+	// 2700-character run of colons and digits took SEVEN SECONDS in the
+	// logger — and r.URL.Path is not length-limited, so a stranger could have
+	// spent this service's CPU by asking for a long enough path. The filter
+	// that exists to protect the log would have been the way to stall it.
+	//
+	// Sixty-four is comfortably above the longest thing net/netip accepts that
+	// this service can see: "[ffff:…:255.255.255.255]:65535" is 53 characters.
+	// What it excludes is an IPv6 zone name longer than the address, and a
+	// container talking to another container over TCP does not have one.
+	if end > i+maxAddrLen {
+		end = i + maxAddrLen
+	}
+
+	for ; end > i; end-- {
+		// Trailing punctuation is never part of an address, so these lengths
+		// are not worth a parse.
+		if c := s[end-1]; c == '.' || c == ':' {
+			continue
+		}
+
+		token := s[i:end]
+		if _, err := netip.ParseAddr(token); err == nil {
+			return end, true
+		}
+		// "127.0.0.1:8080" and "[::1]:8080". The port goes with it: an address
+		// is not less identifying for having one.
+		if _, err := netip.ParseAddrPort(token); err == nil {
+			return end, true
+		}
+	}
+
+	return 0, false
 }
 
 // isDomainish rejects the half of the '@' cases that are not addresses: a
@@ -185,6 +291,9 @@ func isDomainByte(c byte) bool {
 	return c == '.' || c == '-'
 }
 
+// maxAddrLen bounds one candidate. See matchAddr for what it costs and why.
+const maxAddrLen = 64
+
 // isAddrByte covers every byte that can appear in an IPv4 or IPv6 address, its
 // zone, or a bracketed host:port.
 func isAddrByte(c byte) bool {
@@ -203,10 +312,13 @@ func isAddrByte(c byte) bool {
 // reflective walk of arbitrary values is a lot of machinery guarding a case
 // that does not exist. If one appears, this is where it goes, and the ADR says
 // so.
-func scrubValue(v slog.Value) slog.Value {
+func scrubValue(v slog.Value) slog.Value { return walk(v, Scrub) }
+
+// walk applies one string transform to every value that carries text.
+func walk(v slog.Value, f func(string) string) slog.Value {
 	switch v.Kind() {
 	case slog.KindString:
-		if s := Scrub(v.String()); s != v.String() {
+		if s := f(v.String()); s != v.String() {
 			return slog.StringValue(s)
 		}
 		return v
@@ -216,11 +328,12 @@ func scrubValue(v slog.Value) slog.Value {
 		out := make([]slog.Attr, 0, len(attrs))
 		changed := false
 		for _, a := range attrs {
-			s := scrubAttr(a)
-			if !s.Value.Equal(a.Value) {
+			next := a
+			next.Value = walk(a.Value.Resolve(), f)
+			if !next.Value.Equal(a.Value) {
 				changed = true
 			}
-			out = append(out, s)
+			out = append(out, next)
 		}
 		if !changed {
 			return v
@@ -234,11 +347,11 @@ func scrubValue(v slog.Value) slog.Value {
 		// Error() string, so that is what gets filtered.
 		switch a := v.Any().(type) {
 		case error:
-			if s := Scrub(a.Error()); s != a.Error() {
+			if s := f(a.Error()); s != a.Error() {
 				return slog.StringValue(s)
 			}
 		case fmt.Stringer:
-			if s := Scrub(a.String()); s != a.String() {
+			if s := f(a.String()); s != a.String() {
 				return slog.StringValue(s)
 			}
 		}
@@ -267,6 +380,11 @@ var selfAuthored = map[string]bool{"message_id": true}
 
 func scrubAttr(a slog.Attr) slog.Attr {
 	if selfAuthored[a.Key] {
+		// Exempt from REDACTION, not from the filter. The entry above is a
+		// claim about the SHAPE of the value and says nothing about control
+		// characters — a key nobody may redact is still not a key anyone may
+		// use to write a second line.
+		a.Value = walk(a.Value.Resolve(), StripControl)
 		return a
 	}
 	a.Value = scrubValue(a.Value.Resolve())
