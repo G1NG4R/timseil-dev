@@ -359,3 +359,26 @@ func TestExceptLetsThroughWhatTheLinkWouldHaveRefused(t *testing.T) {
 		}
 	}
 }
+
+// net/http accepts a request line far longer than any route here, and the
+// access line writes the path on every single request. Unbounded, that is a way
+// to fill the disk Loki shares with Postgres — and since F1a it is also a way
+// to spend CPU in the scrubber. Same answer internal/contact gives an Origin.
+func TestALongPathIsBoundedBeforeItReachesTheLog(t *testing.T) {
+	log, logged := capture()
+	client := dockerNet(t)
+
+	long := "/api/" + strings.Repeat("a", 16*1024)
+	r := from("203.0.113.7:1234")
+	r.URL.Path = long
+
+	serve(Chain(okHandler(), RequestID(client), Logging(log, client, NewIPHasher())), r)
+
+	line := logged.String()
+	if len(line) > 1024 {
+		t.Errorf("one access line is %d bytes for a %d byte path", len(line), len(long))
+	}
+	if !strings.Contains(line, "/api/aaa") {
+		t.Errorf("the beginning of the path is gone, so the line says nothing:\n%s", line)
+	}
+}

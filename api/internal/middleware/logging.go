@@ -42,7 +42,13 @@ func Logging(log *slog.Logger, client ClientIP, hasher IPHasher) Func {
 				"method", r.Method,
 				// The path only, never the raw query: a path here names a
 				// public resource, a query string is whatever a stranger typed.
-				"path", r.URL.Path,
+				// And bounded, for the same reason internal/contact bounds an
+				// Origin: net/http accepts a request line far longer than any
+				// route on this site, so an unbounded path is a log-flooding
+				// vector that costs one call to prevent. It also caps what the
+				// scrubber can be asked to walk on the line every request
+				// writes.
+				"path", truncatePath(r.URL.Path),
 				"status", rec.status,
 				"bytes", rec.written,
 				"duration_ms", time.Since(started).Milliseconds(),
@@ -70,4 +76,18 @@ func toAttrs(kv []any) []slog.Attr {
 		attrs = append(attrs, slog.Any(key, kv[i+1]))
 	}
 	return attrs
+}
+
+// truncatePath bounds a request path on its way into a log line.
+//
+// The longest route this service mounts is well under a hundred characters, so
+// what is longer than this is not a path anyone asked for and does not need to
+// be readable to be recognisable. Same reasoning and same shape as
+// internal/contact's truncateOrigin.
+func truncatePath(path string) string {
+	const limit = 256
+	if len(path) > limit {
+		return path[:limit] + "…"
+	}
+	return path
 }
