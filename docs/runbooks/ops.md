@@ -5,11 +5,12 @@ eine Kerbe am falschen Tag hängt.
 
 Der Roll-up ist die eine Anweisung in `api/internal/store/queries/ops.sql`,
 angetrieben von der Schleife in `api/internal/ops`, gestartet und gestoppt in
-`api/cmd/api/main.go`. Die Rohdaten kommen seit C7 aus `api/internal/intake`.
+`api/cmd/api/main.go`. Die Rohdaten kommen seit C7 aus `api/internal/intake`
+und seit F4 zusätzlich aus `api/internal/uptime`.
 ADR 0019 (diese Entscheidung), ADR 0017 (Fenster und Rasterlücken auf dem
 Lesepfad), ADR 0013 (der Seed misst nicht), ADR 0023 (woher eine Zeile in
-`ops_checks` kommt), `api/migrations/00004_operations.sql` (die Tabellen und
-ihre Constraints).
+`ops_checks` kommt), ADR 0038 (das externe Ausfallprotokoll),
+`api/migrations/00004_operations.sql` (die Tabellen und ihre Constraints).
 
 **Das ist das erste Stück dieses Systems, das ohne Request von selbst läuft und
 eine öffentliche Zahl erzeugt.** Alles darunter folgt daraus.
@@ -35,10 +36,14 @@ Beleg, dass die Schleife lebt.
 docker compose -f compose.dev.yaml logs api | grep 'ops roll-up' | tail -5
 ```
 
-**Am Tag 1 steht dort `days: 0`, und das ist richtig.** Seit C7 gibt es den
-Endpoint, der Rohdaten annimmt, aber noch keine Sonde, die ihn ruft (F4) — also
-gibt es nichts zu aggregieren, also ist das ganze Raster `nodata`. Ein volles
-Raster wäre an dieser Stelle die Lüge.
+**Bis F4 stand dort `days: 0`, und das war richtig.** Seit C7 gab es den
+Endpoint, der Rohdaten annimmt, aber keine Sonde, die ihn ruft — also nichts zu
+aggregieren, also das ganze Raster `nodata`. Ein volles Raster wäre an dieser
+Stelle die Lüge gewesen.
+
+**Seit F4 ruft alle fünf Minuten jemand an.** `days: 0` heißt jetzt: seit 24
+Stunden ist keine Messung eingetroffen. Das ist eine Frage an die Sonde, nicht
+an diese Schleife — siehe „Wenn die Sonde schweigt".
 
 ---
 
@@ -48,8 +53,8 @@ Zwei Quellen, und `origin` sagt welche:
 
 | `origin` | Wer schreibt | Wann |
 |---|---|---|
-| `probe` | `POST /api/internal/probe` (C7), gerufen von der F4-Sonde | solange der Host lebt |
-| `backfill` | die Wiedereinspielung von `uptime-log.txt` aus dem Branch `ops-data` (F4) | nachdem der Host zurück ist |
+| `probe` | `POST /api/internal/probe` (C7), gerufen von `tools/probe.sh` aus `.github/workflows/probe.yml` | solange der Host lebt |
+| `backfill` | `api/internal/uptime` spielt `uptime-log.txt` vom Branch `ops-data` ein | beim Start und alle 15 min, also sobald der Host zurück ist |
 
 **`source_ref` ist nur bei `backfill` gesetzt** und nennt den Commit, also ist
 jede nachgetragene Zeile auf etwas öffentlich Prüfbares zurückführbar. Der
@@ -112,7 +117,7 @@ Drei Befunde und ihre Bedeutung:
 
 | Befund | Heißt |
 |---|---|
-| `zuletzt_abgeleitet` frisch, `gemessene_tage = 0` | Die Schleife läuft, es gibt keine Rohdaten. Normal bis C7/F4. |
+| `zuletzt_abgeleitet` frisch, `gemessene_tage = 0` | Die Schleife läuft, es gibt keine Rohdaten. Seit F4 heißt das: die Sonde schweigt seit 24 Stunden. |
 | `zuletzt_abgeleitet` alt, `zeilen > 0` | Die Schleife steht. Logzeilen prüfen. |
 | gar keine Zeile | Weder Sonde noch Fixture hat je etwas geschrieben. Das Raster rendert trotzdem — 91 Zellen, alle `nodata`. |
 
@@ -126,6 +131,77 @@ curl -s localhost:8080/api/systems/timseil-dev | \
 `cells` ist immer gleich `window`, auch auf einer leeren Datenbank — das Fenster
 entsteht in SQL. Wären es weniger, wäre die Abfrage kaputt und nicht die
 Datenlage.
+
+---
+
+## Wenn die Sonde schweigt
+
+Seit F4 kommen die Rohdaten von außen: `.github/workflows/probe.yml` ruft alle
+fünf Minuten `tools/probe.sh`, das misst, meldet und bei einem Zustandswechsel
+eine Zeile auf den Branch `ops-data` schreibt. **Diese Schleife hier kann nichts
+aggregieren, was dort nicht ankommt.**
+
+Erste Frage: **läuft der Workflow überhaupt?**
+
+```
+github.com/G1NG4R/timseil-dev/actions  →  probe
+```
+
+| Befund | Heißt |
+|---|---|
+| Läufe kommen, alle grün | Die Zeilen sind unterwegs. Weiter unten in dieser Datei suchen. |
+| Läufe fehlen ganz | GitHub hat den Zeitplan abgeschaltet. Siehe unten. |
+| Läufe sind rot mit `401` | `INTERNAL_PROBE_TOKEN` im Repository stimmt nicht mit dem im Container überein. **Kein Ausfall** — die Sonde schreibt in diesem Fall bewusst nichts. |
+| Läufe sind rot mit „stopped answering" | Der Host antwortet wirklich nicht. Das ist der Alarm, nicht der Fehler. |
+
+**GitHub schaltet geplante Workflows nach 60 Tagen ohne Repository-Aktivität
+ab.** Sie verschwinden dann leise; es kommt keine Mail, und das Raster füllt sich
+einfach nicht mehr. Ein Blick auf die Actions-Seite ist die einzige Diagnose.
+Wieder anschalten: **Actions → probe → Enable workflow**. Ab F10 fängt der Dead
+Man's Switch genau diesen Fall.
+
+**Von Hand nachfragen, mit demselben Skript, das der Workflow ruft:**
+
+```bash
+INTERNAL_PROBE_TOKEN=… make probe PROBE_BASE=https://timseil.dev
+```
+
+Ohne `PROBE_LOG` wird nichts angehängt — der Lauf misst, meldet und schweigt
+sonst.
+
+### Die Wiedereinspielung
+
+`api/internal/uptime` liest `uptime-log.txt` beim Start und danach alle 15
+Minuten. Eine Zeile pro Lauf, und ihr Fehlen ist die Diagnose:
+
+```bash
+docker compose logs api | grep 'uptime backfill' | tail -5
+```
+
+| `state` | Heißt |
+|---|---|
+| `no log yet` | Auf `ops-data` liegt keine Datei. **Normalzustand**, solange der Host seit F4 nicht weg war. |
+| `unchanged` | 304 — die Datei hat sich seit dem letzten Lauf nicht bewegt. Der Regelfall. |
+| `replayed` | Gelesen und eingespielt. `rows_new` sind die neuen Zeilen, `checks` alle; die Differenz hatte die Datenbank schon. |
+| `unreachable` | GitHub war nicht erreichbar. Kein Datenverlust — die Datei bleibt liegen, der nächste Lauf holt sie. |
+| `unreadable` | Die Datei bricht die Grammatik. **Nichts wurde eingespielt, absichtlich.** Die Fehlermeldung nennt die Zeilennummer. |
+| `breaker open` | Fünf Läufe in Folge fehlgeschlagen, jetzt eine halbe Stunde Ruhe. |
+
+**`unreadable` ist der einzige, der Handarbeit braucht.** Die Grammatik steht in
+ADR 0038 und in `api/internal/uptime/parse.go`; die Datei wird als **Ganzes**
+abgewiesen, weil ein halb gelesenes Ausfallprotokoll ein kürzeres ist, und ein
+kürzeres Ausfallprotokoll behauptet, die Seite sei oben gewesen.
+
+### Eine rote Zelle direkt nach einem Deploy
+
+ADR 0035 hat `api` in Schritt 3 jedes Rollouts kurz weg. Die Sonde versucht den
+Bericht deshalb dreimal im Abstand von fünf Sekunden, bevor daraus ein `down`
+wird. Trifft ein Rollout das Fenster trotzdem, steht ein echter Ausfall von fünf
+Minuten im Raster, den kein Besucher gesehen hat.
+
+**Die Antwort ist dann das Fenster, nicht die Zeile.** Eine Zeile zu löschen,
+weil sie unangenehm ist, ist genau die Bewegung, gegen die diese Seite gebaut
+ist — dieselbe Regel, unter der `report-deploy.sh` einen Rollback meldet.
 
 ---
 
@@ -219,17 +295,20 @@ um, ohne dass die Seite falsch aussähe.
 
 | Konstante | Wert | Wovon sie abhängt |
 |---|---|---|
-| `probeInterval` | 5 min | **der Kadenz der F4-Sonde** |
+| `ProbeInterval` | 5 min | **dem Cron in `.github/workflows/probe.yml`** |
 | `outageChecks` | 2 | nichts — die Regel dieser Seite |
-| `aggregateEvery` | 5 min | `probeInterval` |
+| `aggregateEvery` | 5 min | `ProbeInterval` |
 | `lookback` | 24 h | wie lange die Schleife stehen darf, ohne dass etwas verloren geht |
 
-**Die eine Zeile, die hier wirklich wichtig ist:** `probeInterval` und der
-Cron-Ausdruck des F4-Workflows sind zwei Hälften derselben Zahl. `down_sec` ist
-fehlgeschlagene Checks **mal diesem Intervall** — läuft die Sonde alle zehn
-Minuten, während hier fünf steht, ist jede Ausfalldauer auf der Seite halb so
-groß wie die echte. Nichts prüft das heute. Wer eines von beiden anfasst, fasst
-beide an; F4 soll eine Prüfung dafür mitbringen (Backlog).
+**Die eine Zeile, die hier wirklich wichtig ist:** `ProbeInterval` und der
+Cron-Ausdruck in `.github/workflows/probe.yml` sind zwei Hälften derselben Zahl.
+`down_sec` ist fehlgeschlagene Checks **mal diesem Intervall** — läuft die Sonde
+alle zehn Minuten, während hier fünf steht, ist jede Ausfalldauer auf der Seite
+halb so groß wie die echte, bei richtiger Zellenzahl und richtiger Farbe.
+
+**Seit F4 prüft `make check-probe-cadence` das**, und `ProbeInterval` ist
+deshalb exportiert: `api/internal/uptime` bekommt den Wert übergeben, statt eine
+zweite Kopie zu halten. Drei Stellen, eine Zahl.
 
 ---
 

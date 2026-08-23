@@ -159,6 +159,7 @@ vergisst. Deshalb steht das hier als Tabelle und nicht als Nebensatz:
 | Wert | GitHub | Dokploy | VPS |
 |---|---|---|---|
 | `INTERNAL_DEPLOY_TOKEN` | Secret | Env-Variable | — |
+| `INTERNAL_PROBE_TOKEN` | Secret | Env-Variable | — |
 | `DOKPLOY_API_KEY` | Secret | Settings → API/CLI | — |
 | `VPS_SSH_KEY` | Secret (privat) | — | `authorized_keys` (öffentlich) |
 | `VPS_SSH_PORT` | Secret | — | `/etc/ssh/sshd_config` |
@@ -167,6 +168,11 @@ vergisst. Deshalb steht das hier als Tabelle und nicht als Nebensatz:
 eintragen → deployen → **erst dann** das GitHub-Secret setzen. In der
 umgekehrten Reihenfolge meldet der nächste Deploy eine `401` und die Dauer geht
 verloren, obwohl der Deploy geglückt ist.
+
+**Rotation `INTERNAL_PROBE_TOKEN`:** dieselbe Reihenfolge und derselbe Grund.
+Andersherum meldet die Sonde eine `401`, und weil eine `401` ausdrücklich **kein**
+Ausfall ist (ADR 0038 §D4), schreibt sie dann gar nichts: der Lauf wird rot, das
+Raster bekommt eine Lücke, und es steht keine erfundene rote Zelle darin.
 
 **Rotation `VPS_SSH_KEY`:** neues Paar erzeugen → den neuen öffentlichen
 Schlüssel **zusätzlich** in `authorized_keys` (mit derselben
@@ -203,6 +209,52 @@ nicht rot, denn es ist nichts kaputt.
 Aus demselben Grund wie `publish` und `quickstart`: er läuft nicht auf Pull
 Requests. Ein geforderter Kontext, der nie meldet, sperrt `main` dauerhaft —
 und dann gilt der Abschnitt „`main` nimmt nichts mehr an" weiter oben.
+
+---
+
+## Der `probe`-Workflow — ein Secret, eine Einstellung, eine Falle
+
+Seit F4 misst `.github/workflows/probe.yml` alle fünf Minuten, ob der Host
+antwortet, und schreibt Zustandswechsel auf den Datenbranch `ops-data`. Die
+Begründung für Datei, Branch und Rechte steht in ADR 0038; hier steht, was auf
+GitHub dafür gesetzt sein muss.
+
+**Das Secret**, und es muss **vor** dem Merge stehen — sobald die Datei auf
+`main` liegt, läuft die Sonde, und ohne Token läuft sie rot:
+
+```bash
+gh secret set INTERNAL_PROBE_TOKEN   # KOPIERT aus Dokploy, nicht neu erzeugt
+```
+
+Über die Oberfläche, wenn dir der Wert nicht in der Zwischenablage liegt:
+
+1. `https://github.com/G1NG4R/timseil-dev` öffnen
+2. Reiter **Settings**
+3. linke Spalte **Secrets and variables** → **Actions**
+4. Reiter **Secrets**, Knopf **New repository secret**
+5. **Name:** `INTERNAL_PROBE_TOKEN`
+6. **Secret:** derselbe Wert, der in Dokploy in der Umgebung des `api`-Dienstes steht
+7. **Add secret**
+
+**Die Einstellung ist der Alarm.** F4 verschickt keine Mail selbst; der Lauf, der
+den Host zum ersten Mal nicht erreicht, endet rot, und GitHub schickt die
+Benachrichtigung. Damit sie ankommt:
+
+1. `https://github.com/settings/notifications` öffnen
+2. Abschnitt **Actions**
+3. **Email** angehakt
+4. **Send notifications for: Failed workflows only**
+
+**Was der Job darf:** `contents: read` global, `contents: write` **nur** im
+Sonden-Job — der einzige Job in diesem Repository, der schreiben darf. Direkte
+Commits auf `main` bleiben durch die Branch Protection gesperrt; das ist die
+Grenze, die diesen Token einhegt, nicht sein Scope.
+
+**Die Falle: GitHub schaltet geplante Workflows nach 60 Tagen ohne
+Repository-Aktivität ab.** Leise, ohne Mail. Das Raster hört dann einfach auf,
+sich zu füllen, und nichts sagt es — wieder anschalten unter **Actions → probe →
+Enable workflow**. Ab F10 fängt der Dead Man's Switch diesen Fall; bis dahin ist
+er ein Absatz in einem Runbook, und das ist ausdrücklich zu wenig.
 
 ---
 
