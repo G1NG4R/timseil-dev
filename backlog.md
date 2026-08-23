@@ -12,7 +12,62 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, F1b gebaut
+## Wo wir stehen — 23.08.2026, Stufe F1 abgenommen
+
+**F1 ist gemergt und in Produktion belegt.** [#167](https://github.com/G1NG4R/timseil-dev/pull/167),
+`1f56a8c`, Release **`v0.3.0`** (Tagger G1NG4R, kein Bot), Deploy `ok … 245 s`,
+gemeldet 11:56:41 UTC.
+
+**Der Beleg steht auf der Seite selbst**, und er ist besser als jeder Log-Grep,
+weil ein Fremder ihn nachvollziehen kann:
+
+```
+GET https://timseil.dev/  → 200,  x-request-id: d7ae967a…
+<dl><dt>api</dt><dd>ok</dd><dt>version</dt><dd>v0.3.0</dd></dl>
+```
+
+Diese Zeichenkette ist durch die ganze Kette gelaufen — `proxy.ts` prägt die ID,
+`serverFetch` trägt sie zur API, `/api/health` antwortet, der Render zeigt sie.
+Und sie nennt die Release-Nummer **dieses** Merges. Dazu: `/healthz` trägt
+**keine** `x-request-id` (der `matcher` schließt ihn aus, Traefik fragt ihn
+einmal pro Sekunde und pro Backend), und zwei Anfragen bekommen zwei
+verschiedene IDs.
+
+**`make check-deployed --host`: 10 von 10 Behauptungen.**
+
+| | |
+|---|---|
+| head of main | `1f56a8c`, 11:52:33 UTC |
+| api-Image | `sha256:b52f3eb79598a96a2d3933c1020bd66de4990f491e22bc4e6f82a80cf9b1ee1a` |
+| web-Image | `sha256:10f7142993738c699fbd2caa0b259fda4685a4c8c194c07bd1b4642483877de4` |
+| gebaut / läuft seit | 11:53:45 / 11:56:51 UTC |
+
+**Die zwei, die nur der Host machen kann, sind darunter:** die laufenden
+Container **sind** die veröffentlichten Digests, für api und für web. Vom Klon
+aus sind acht davon grün und die neunte heißt `– not asked here` — geführt wurde
+sie auf dem VPS mit
+
+```sh
+cd ~/timseil-dev && git pull && sh tools/check-deployed.sh --host
+```
+
+Damit ist die Kette vom Commit bis zu den Bytes auf der Maschine geschlossen,
+und **auch die Produktionsabnahme von F1a ist nachgeholt** — sie fehlte seit dem
+Morgen des 23.08. und stand als Schuld in diesem Abschnitt.
+
+**Als Nächstes: F4, nicht F2** — und die Abweichung von der Bauplan-Reihenfolge
+ist bewusst. F4 ist die einzige Phase der Stufe, deren Wert vom **Startdatum**
+abhängt: das 91-Tage-Betriebsraster braucht Historie, und Historie lässt sich
+nicht nachbauen. Prometheus und Loki halten 7 und 14 Tage — dort kostet ein
+späterer Start nichts Dauerhaftes. Dazu hat F4 keine offene Vorbedingung, F2
+schon ([#147](https://github.com/G1NG4R/timseil-dev/issues/147): der Host trägt
+mehr als diesen Stack), F4 benutzt als Einziges das noch unbelegte
+`INTERNAL_PROBE_TOKEN`, und es ist die einzige F-Phase, die etwas erzeugt, das
+auf der Seite sichtbar wird. „Im Zweifel Inhalt."
+
+---
+
+## Vorher — 23.08.2026, F1b gebaut
 
 **Eine Anfrage an `/` hinterlässt jetzt eine Zeile in beiden Containern, und
 eine ID findet beide.** Gemessen gegen den Dev-Stack, mit einem von außen
@@ -558,6 +613,7 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 | 2026-08-23 | F1a | **CodeQL meldet 98 offene Alarme, davon die weit überwiegende Mehrheit `js/useless-expression` in `docs/design/*.dc.html`.** Die Blätter sind read-only, werden nie ausgeliefert und enthalten JSX, das ein JS-Parser nicht als solches liest. Eine Liste, in der das echte Signal unter Rauschen aus einem Verzeichnis liegt, das gar nicht gescannt gehört, ist keine Liste. `paths-ignore` in der CodeQL-Konfiguration wäre der Ort. | offen |
 | 2026-08-23 | F1a | **Drei `go/log-injection`-Alarme (medium) auf `bearer.go:47`, `problem.go:103`, `intake.go:208`.** Alle drei älter als F1a — das Diff hat dort nur `Warn` zu `WarnContext` geändert, und CodeQL meldet auf geänderten Zeilen. Nachgemessen falsch positiv: der JSON-Handler escapt, aus dem Versuch wird eine Zeile. In F1a trotzdem strukturell entschärft (`StripControl`), weil „der Encoder escapt es" eine Zusage ist, die in einer anderen Datei lebt als die Werte, die sie schützt. | **erledigt in F1a**, Alarme mit dieser Begründung zu schließen |
 | 2026-08-23 | F1a | **`cors.go` setzt nirgends `Access-Control-Expose-Headers`.** Ein fremder Aufrufer der öffentlichen Lese-API kann `X-Request-Id` deshalb nicht auslesen — die Zusage aus ADR 0009 („die ID zitieren findet die Zeilen") gilt für ihn nur über den Body von Fehlern, nicht über Erfolge. Eine Zeile Code, aber ein anderer Auslöser als F1: fällig, wenn ein Aufrufer von anderer Herkunft existiert (H8 ist same-origin, also frühestens P-Phase). | offen |
+| 2026-08-23 | F1b | **`onRequestError` ist nie ausgelöst worden.** Die Funktion ist geschrieben, typgeprüft und zieht ihre Korrelation aus derselben Stelle wie alles andere — aber keine Seite hat je absichtlich geworfen, also hat niemand die Zeile gesehen. Der Pfad trifft vor **H13** (`error.tsx`, `global-error.tsx`) ohnehin keinen Besucher; dort gehört er einmal wirklich provoziert, nicht nur gelesen. | offen, fällig mit H13 |
 | 2026-08-23 | F1b | **Next übersetzt `instrumentation.ts` auch für die Edge-Runtime**, obwohl diese Anwendung keine Edge-Route hat, und warnt dort über `process.on` und `process.exit` — drei Warnungen in jedem Produktionsbuild, seit D1. Sie waren bis F1b unter einer vierten begraben (`node:net`), die jetzt weg ist. Wegzubauen nur, indem `instrumentation.ts` sich in eine Node- und eine Edge-Hälfte teilt, wie Nexts eigene Doku es zeigt — drei Dateien für eine Warnung, die nichts kaputt macht. Wieder aufnehmen, wenn F11 eine echte Edge-Route bringt. | offen |
 | 2026-08-23 | F1a | **`.env.example:110` behauptet „compose.dev.yaml fills in the docker networks".** Tut es nicht — `compose.dev.yaml:207` reicht die Variable nur durch und begründet elf Zeilen später ausdrücklich, warum sie leer **bleibt**. `make env-dev` fasst sie auch nicht an. Der Satz ist seit C1 falsch und hat beim Planen von F1 fast zu einer falschen Entscheidung geführt. | **erledigt in F1b** — und länger als eine Zeile: die Korrektur sagt jetzt auch, dass sie eine Korrektur ist, weil der Satz vier Phasen lang gelesen wurde, ohne aufzufallen |
 | 2026-08-23 | F1a | **`web/Dockerfile:142` zieht `/` als HEALTHCHECK, alle 5 s.** `app/healthz/route.ts` schreibt in seinem eigenen Kopfkommentar, warum das falsch ist, und Traefik hält sich daran — der Docker-Healthcheck nicht. Solange `/` ein Platzhalter ist, kostet es nichts; sobald F1b dort serverseitig fetcht, sind es 17 280 API-Aufrufe pro Tag aus dem Healthcheck allein. | **erledigt in F1b**, im selben Commit wie der Fetch — und der tragende Grund war nicht die Zahl, sondern ADR 0035: ein `/`-Check, der fetcht, macht `web` von `api` abhängig und lässt `docker compose up --wait` im Rollout auf einen Container warten, der nichts reparieren kann |
