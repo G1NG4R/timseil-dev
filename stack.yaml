@@ -9,9 +9,12 @@
 # wrong stack claim breaks the build instead of sitting there being wrong.
 # Build plan ch. 12.3, ADR 0012.
 #
-# Adding an entry is only allowed once its source exists. Prometheus, Loki,
-# Grafana, Alloy and Tailwind are therefore absent today — the phase that lands
-# each of them appends its line. Growth, not a placeholder.
+# Adding an entry is only allowed once its source exists. Grafana and Tailwind
+# are therefore absent today — the phase that lands each of them appends its
+# line. Growth, not a placeholder. F2 appended three of them; Grafana stayed
+# out, and for the same reason Traefik did: that instance belongs to another app
+# on the host, no file here can be read for its version, and typing one would be
+# a number no running system of ours produced.
 #
 # Traefik is the exception that proves the rule: D3 landed it and appended
 # nothing, because its version is Dokploy's and no file here can be read for it.
@@ -34,6 +37,13 @@ systems:
     # Build plan ch. 12.3, issue #28, ADR 0012 and ADR 0027.
     - { name: "PostgreSQL", from: "compose.yaml", key: "services.db.image" }
     - { name: "Node",       from: ".nvmrc" }
+    # F2. Same rule as PostgreSQL above and the same reader: the production
+    # compose is what the page quotes, and the resolver cuts the digest off
+    # before it takes the tag (#93) — without that these three would each put a
+    # sha256 where a version belongs.
+    - { name: "Prometheus", from: "compose.yaml", key: "services.prometheus.image" }
+    - { name: "Loki",       from: "compose.yaml", key: "services.loki.image" }
+    - { name: "Alloy",      from: "compose.yaml", key: "services.alloy.image" }
 
   # 01 · VAT Check API — queued, and none of its sources live here. Bare names,
   # no versions: the sheet shows it that way too, and a name cannot drift.

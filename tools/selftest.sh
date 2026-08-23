@@ -300,6 +300,36 @@ write_prod "services:
 $routed$limited"
 rejects "bind-mounted docker socket rejected" tools/check-compose.sh
 
+# The F2 exception, and its three answers rather than one. Rule 3 lets alloy
+# hold the docker socket read-only because the daemon owns the stdout streams a
+# collector exists to read (ADR 0039 §3). An exception that only ever gets its
+# accepting case tested is an exception nobody has measured the edges of, so the
+# two ways to widen it by accident are here as well: the same socket on another
+# service, and a writable one on alloy.
+write_prod "services:
+  alloy:
+    image: grafana/alloy:v1.18.1@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+$limited"
+accepts "read-only docker socket on alloy accepted" tools/check-compose.sh
+
+write_prod "services:
+  alloy:
+    image: grafana/alloy:v1.18.1@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+$limited"
+rejects "writable docker socket on alloy rejected" tools/check-compose.sh
+
+write_prod "services:
+  seed:
+    image: ghcr.io/g1ng4r/timseil-api:\${IMAGE_TAG}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+$limited"
+rejects "read-only docker socket on another service rejected" tools/check-compose.sh
+
 write_prod "services:
   db:
     image: postgres:18.6-alpine@sha256:1111111111111111111111111111111111111111111111111111111111111111

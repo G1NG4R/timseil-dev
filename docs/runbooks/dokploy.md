@@ -1492,5 +1492,6 @@ Damit eine Lücke als Verschiebung lesbar ist und nicht als Vergessen:
 | Security-Header, HSTS, CSP | **L4** — HSTS bewusst erst, wenn die Domain final ist |
 | Rate-Limit in Traefik, fail2ban, Firewall, CAA, DNSSEC | **L5** |
 | Nächtlicher `pg_dump` nach S3 mit Löschschutz | **L6** |
-| Prometheus, Loki, Alloy, Grafana — und das Scrapen der Metriken aus 3.2 | **F2 / F3** |
+| Das Scrapen der Metriken aus 3.2, node- und postgres-exporter, Recording Rules | **F3** |
+| Prometheus, Loki und Alloy — und das Netz, an dem die bestehende Grafana hängt | **F2 — gebaut** → `docs/runbooks/observability.md` |
 | Die Pipeline, die baut, pusht und deployt (siehe 1.3, 2.3 und ADR 0033) | **E1 / E3 / E4 — gebaut** |

@@ -714,6 +714,12 @@ TOPOLOGY_ENV := CONTRIBUTIONS_TRANSPORT=off
 # here `require-network` below creates an empty stand-in so the same file runs.
 DOKPLOY_NETWORK := dokploy-network
 
+# The seam to the Grafana that already runs on this machine. Same shape as the
+# one above and a different owner: on the VPS it is created once and the
+# neighbouring app joins it from its own Dokploy settings, here it is a local
+# stand-in so compose.yaml runs unchanged. ADR 0039 §2.
+OBS_NETWORK := observability-network
+
 # Both targets below need the images to exist under their registry names. They do
 # not exist for a commit nobody built: IMAGE_TAG follows HEAD, so committing and
 # then running `make prod` asks docker for a tag that was never pushed, and what
@@ -728,24 +734,30 @@ require-images:
 			exit 1; }; \
 	done
 
-# The one handgriff D3 costs, and it is here rather than in your head.
+# The two handgriffe D3 and F2 cost, and they are here rather than in your head.
 #
-# compose.yaml declares dokploy-network as `external:` because on the VPS it is
-# Dokploy's — Traefik lives in it and nothing in this repository may create or
-# own it there. On any other machine it simply does not exist, and compose
-# refuses to start rather than inventing it. That would break `make prod` and
-# `make check-topology`, and "up from nothing without a handgriff" is D2's
-# acceptance criterion, so the handgriff goes in the Makefile instead. ADR 0028.
+# compose.yaml declares both networks as `external:` because on the VPS neither
+# is ours to create: Traefik lives in the first one and Dokploy owns it, and the
+# second is joined by an app that is not this stack. On any other machine they
+# simply do not exist, and compose refuses to start rather than inventing them.
+# That would break `make prod` and `make check-topology`, and "up from nothing
+# without a handgriff" is D2's acceptance criterion, so the handgriff goes in
+# the Makefile instead. ADR 0028, ADR 0039.
 .PHONY: require-network
 require-network:
-	@docker network inspect $(DOKPLOY_NETWORK) >/dev/null 2>&1 || { \
-		printf '  · creating %s — on the VPS this one is Dokploy'"'"'s, here it is a local stand-in\n' \
-			'$(DOKPLOY_NETWORK)'; \
-		docker network create $(DOKPLOY_NETWORK) >/dev/null; }
+	@for n in $(DOKPLOY_NETWORK) $(OBS_NETWORK); do \
+		docker network inspect "$$n" >/dev/null 2>&1 || { \
+			printf '  · creating %s — on the VPS this one is not ours, here it is a local stand-in\n' "$$n"; \
+			docker network create "$$n" >/dev/null; }; \
+	done
 
+# Every service, including the three that measure the other five. `make prod`
+# means "what production runs", and since F2 production runs eight containers —
+# a target that started five would be a local stack that agrees with the file
+# about everything except the part this phase added.
 .PHONY: prod
 prod: require-images require-network ## Run the production compose locally — needs `make images` first
-	@$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait api web
+	@$(TOPOLOGY_ENV) $(COMPOSE) up -d --wait api web prometheus loki alloy
 
 .PHONY: prod-down
 prod-down: ## Stop the production stack, keep the database
@@ -904,6 +916,13 @@ check-topology: require-images require-network ## The D2 acceptance: from zero, 
 	@printf '  ✓ a failed migration stops the deploy — the api process never ran\n'
 	@$(COMPOSE) down --volumes --remove-orphans >/dev/null 2>&1 || true
 	@printf '  ✓ make check-topology\n'
+
+# F2's acceptance. Not in `make check` for the same reason check-topology and
+# check-db are not: it needs Docker and a running stack. The flood half writes
+# five gigabytes and is therefore never implied — you ask for it by name.
+.PHONY: check-observability
+check-observability: ## Metrics and logs arrive — add FLOOD=1 for the 5 GB limit run
+	@tools/check-observability.sh $(if $(FLOOD),--flood,)
 
 # ---------------------------------------------------------------- placeholders
 

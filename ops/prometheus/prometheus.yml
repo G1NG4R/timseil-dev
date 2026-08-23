@@ -1,0 +1,61 @@
+# What this Prometheus scrapes, and it is deliberately three things.
+#
+# WHY A SECOND PROMETHEUS ON THIS MACHINE. There is already one here, in a stack
+# that is not ours. Sharing it would put F2's acceptance criterion in somebody
+# else's configuration file: "an artificial log trips the limit instead of
+# filling the disk" tests nothing unless the limit is ours to set and ours to
+# break. ADR 0027 §2 states the same rule for memory limits — a limit we assert
+# has to be enforced by us. ADR 0039 §1.
+#
+# WHAT IS NOT HERE YET, so that a gap reads as a deferral rather than as an
+# oversight. Traefik's metrics endpoint (switched on in D3 and unscraped since),
+# node-exporter and postgres-exporter are F3, together with the recording rules
+# for p95, error rate and availability. F2 lays the pipe; F3 connects what flows
+# through it. The three jobs below are the pipe proving it carries something.
+#
+# NO --web.enable-lifecycle IN THE COMMAND either: this service carries no
+# authentication — its protection is the network boundary and nothing else
+# (handbook ch. 29, ADR 0028 §6) — and a reload endpoint on an unauthenticated
+# service is a lever for anything that reaches the network.
+#
+# The retention flags are NOT in this file. --storage.tsdb.retention.time and
+# .size are command-line only, so they live in compose.yaml next to the memory
+# limit they belong with. That is the one place where Prometheus can do what
+# Loki cannot: bound its own disk by size. ADR 0039 §4.
+
+global:
+  # 15s is Prometheus's own default and the interval every histogram_quantile
+  # example assumes. It is also cheap here: three targets, seven days, and a
+  # 2 GB ceiling that this volume will not come close to.
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    # Named, because F5 asks this instance for snapshots over the tunnel and a
+    # snapshot that cannot say which Prometheus produced it is a number without
+    # a source. It also keeps our series apart from the neighbouring stack's if
+    # the two are ever read in one Grafana query.
+    stack: timseil
+
+scrape_configs:
+  # Itself. The first question after "did the scrape work" is "did the scraper
+  # work", and prometheus_tsdb_* is also how the size ceiling below gets watched
+  # once F10 hangs an alert on it.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # The collector. alloy_* carries what the log pipeline did — lines forwarded,
+  # bytes dropped, targets discovered — which is the half of F2 that Loki cannot
+  # answer: Loki knows what arrived, only Alloy knows what it decided not to
+  # send. The port is Alloy's HTTP listener, set explicitly in compose.yaml
+  # because its default binds to loopback and nothing would reach it.
+  - job_name: alloy
+    static_configs:
+      - targets: ["alloy:12345"]
+
+  # The log store. loki_discarded_samples_total is the counter F2's acceptance
+  # criterion reads: when the flood runs, this is where "the limit tripped"
+  # becomes a number instead of the absence of a full disk.
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]

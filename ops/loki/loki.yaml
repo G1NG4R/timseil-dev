@@ -1,0 +1,128 @@
+# Loki, single binary, on the same NVMe as Postgres — which is the fact that
+# shapes every number in this file.
+#
+# THE CORRECTION THIS FILE CARRIES. Build plan ch. 10 and ADR 0007 both ask for
+# a "Compactor-Grenze ~5 GB" beside the 14-day retention. That setting does not
+# exist. Loki's retention is time-based and nothing else: the compactor deletes
+# by age, and no released version takes a size. Prometheus has
+# --storage.tsdb.retention.size; Loki has no counterpart, and writing one here
+# would be a limit that looks enforced and is not.
+#
+# So the ceiling is built from what Loki does have, in three layers:
+#
+#   1. per_stream_rate_limit — one runaway container cannot outrun its own
+#      stream. This is the threat the build plan actually names: "eine
+#      Fehlerschleife, die pro Sekunde eine Zeile schreibt, füllt in Stunden
+#      Gigabytes". Hours is the timescale a rate limit answers.
+#   2. ingestion_rate_mb — the whole tenant, so that N streams cannot add up to
+#      what one was refused.
+#   3. retention_period — steady state over days.
+#
+# WHAT THAT LEAVES OPEN, written down rather than glossed: rate x retention is
+# not 5 GB. A flood sustained for days, exactly at the tenant limit, still
+# outgrows the budget — no Loki setting closes that, and the honest guard is the
+# disk alert at 70 % that F10 builds. F2's acceptance measures layer 1, because
+# layer 1 is the one that turns "gigabytes in hours" into a counter going up.
+# ADR 0039 §4.
+#
+# NO AUTHENTICATION, and it is a decision. auth_enabled: false makes this a
+# single-tenant store reachable by anything in the docker network. Its
+# protection is the network boundary and nothing else — no port is published, no
+# Traefik router names it (handbook ch. 29, ADR 0028 §6, and check-compose
+# rule 1 refuses both). A password here would be a second secret to rotate for a
+# door that is already in a locked room.
+
+auth_enabled: false
+
+server:
+  # 0.0.0.0 because the readers are other containers — Grafana over
+  # observability-network, Prometheus over default. Not published to the host.
+  http_listen_address: 0.0.0.0
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+  # warn, not info: at info this single binary narrates every compaction into
+  # the very stack that is collecting it. Alloy would then ship Loki's account
+  # of storing Alloy's lines, and the disk this file exists to protect pays for
+  # the loop.
+  log_level: warn
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  # One instance, one replica. The ring is in memory because there is nothing to
+  # coordinate with — a consul or etcd here would be infrastructure for a
+  # cluster of one.
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    # The day this stack first ran. A schema entry is dated because Loki reads
+    # old chunks with the schema they were written under; changing the `from` of
+    # an existing entry rewrites history it cannot actually rewrite.
+    - from: "2026-08-23"
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  # 14 days, and the compactor below is what enforces it. Without
+  # compactor.retention_enabled this number is documentation.
+  retention_period: 336h
+
+  # LAYER 1 — one stream. 256 KB/s is roughly four orders of magnitude above
+  # what this site writes when it is behaving (one access line per request, a
+  # probe every five minutes, an ops roll-up every five minutes) and low enough
+  # that a container looping on an error is refused within seconds rather than
+  # within gigabytes. The burst is twice the rate: a deploy writes a short spike
+  # of lifecycle lines and that is not the failure this guards against.
+  #
+  # ops/alloy/config.alloy states the same ceiling from the collector's side as
+  # 500 lines/s per service, and F2's flood run is why both exist: a limit only
+  # here refuses the write and leaves the backlog in Alloy's write-ahead log,
+  # which measured 76 MB while this store measured 2. THE TWO NUMBERS MOVE
+  # TOGETHER.
+  per_stream_rate_limit: 256KB
+  per_stream_rate_limit_burst: 512KB
+
+  # LAYER 2 — the whole tenant, so that layer 1 cannot be defeated by spreading
+  # the same flood across streams.
+  ingestion_rate_mb: 1
+  ingestion_burst_size_mb: 2
+
+  # Cardinality is the other way a log store eats a disk, and the labels in
+  # ops/alloy/config.alloy are deliberately two. 100 leaves room for the stack
+  # to grow to services it does not have yet and still refuses the mistake this
+  # number exists for: a label whose value comes from a request.
+  max_global_streams_per_user: 100
+
+  # A backfill or a clock skew is not a licence to write into last month.
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+
+  # Grafana's log-volume histogram over an unauthenticated single tenant. Cheap,
+  # and it is what makes "how much are we actually writing" answerable in the UI
+  # rather than by du on the host.
+  volume_enabled: true
+
+compactor:
+  working_directory: /loki/compactor
+  # The line that turns retention_period from a value into a deletion.
+  retention_enabled: true
+  retention_delete_delay: 2h
+  delete_request_store: filesystem
+  compaction_interval: 10m
+
+# Off. It phones home with usage statistics, and a page whose whole claim is
+# that every number has a running system behind it should not ship anonymous
+# telemetry to a third party without saying so on the privacy page.
+analytics:
+  reporting_enabled: false

@@ -9,21 +9,24 @@
 #      artefact that runs — and then the contract test, the SBOM and the
 #      signature all describe an image nobody ever deployed. compose.dev.yaml is
 #      the one file allowed to build.
-#   2. No bind mount except the read-only initdb script. Dokploy's volume backups
-#      to S3 see named volumes and nothing else, and a bind mount is data you
-#      find out you cannot restore on the day you need it.
-#   3. No `ports:` and no Traefik label for db. From outside this host 22, 80 and
-#      443 answer; nothing else does.
+#   2. No bind mount except the read-only ones under ./ops — and the docker
+#      socket on alloy, which is this file's one exception and carries its
+#      reasoning at the line itself. Dokploy's volume backups to S3 see named
+#      volumes and nothing else, and a bind mount is data you find out you
+#      cannot restore on the day you need it.
+#   3. No `ports:` and no Traefik label for db, prometheus, loki or alloy. From
+#      outside this host 22, 80 and 443 answer; nothing else does.
 #   4. No `env_file:`. Every value arrives from the Dokploy UI as runtime
 #      environment. A file on the host is a second home for secrets, a second
 #      thing to rotate, and a file that has to exist before `up` — which is the
 #      Handgriff this phase is defined by not needing.
-#   5. api and web sit in TWO networks and the other three in one. A service
-#      that names `networks:` joins ONLY those, so this is the rule with the
-#      most misleading failure in the file: drop `default` from the api and the
-#      database disappears, and it reads like a database outage. `db` stays out
-#      of the proxy network because that one is shared with every other app on
-#      the host.
+#   5. api and web sit in the proxy network and in default; prometheus and loki
+#      in the Grafana seam and in default; db, migrate, seed and alloy in
+#      default alone. A service that names `networks:` joins ONLY those, so this
+#      is the rule with the most misleading failure in the file: drop `default`
+#      from the api and the database disappears, and it reads like a database
+#      outage. Nothing of ours is in the proxy network that does not have to be
+#      — that one is shared with every other app on the host.
 #   6. dokploy-network is `external:` — Dokploy owns it. Without that word
 #      compose does not fail; it creates its own, and Traefik is on neither.
 #      `make require-network` makes a local stand-in so this file still runs on
@@ -34,6 +37,11 @@
 # corrected evidence line ships as a deploy instead of as handwork on the
 # production database (issue #28, ADR 0013). ADR 0027 records the divergence as
 # the plan being outrun rather than ignored.
+#
+# Beside the chain and depended on by no part of it: prometheus, loki and alloy.
+# They measure the chain, and the site keeps serving when all three are gone —
+# ADR 0007 puts Prometheus on the measuring side and Postgres on the serving
+# side precisely so that this file has no arrow pointing back. F2, ADR 0039.
 #
 # Traefik is here as labels and nowhere else. The proxy itself belongs to
 # Dokploy — one instance, not two, or they fight over 80 and 443 — and so do the
@@ -593,12 +601,189 @@ services:
       # same claim as waiting for one that can answer.
       api:
         condition: service_healthy
+  # ---------------------------------------------------------- observability
+  #
+  # Three services, and nothing in this file depends on them. That is the
+  # property, not an omission: ADR 0007 puts Prometheus on the measuring side
+  # and Postgres on the serving side, and F5's acceptance criterion is that
+  # stopping Prometheus leaves the page showing its last honest value instead of
+  # breaking. A depends_on here would trade that away for a tidier graph.
+  #
+  # None of the three is reachable from outside this host. No ports, no Traefik
+  # label, and check-compose rule 1 has named all three since D2 — the names sat
+  # in that regex for eight phases before anything answered to them.
+  #
+  # Grafana is NOT here. There is already one on this machine, in a stack that
+  # is not ours, and the build plan's own words are "bestehende Grafana-Instanz
+  # einbinden". What is ours is the data and the limits on it; the interface can
+  # be borrowed. observability-network below is how the borrowing works.
+  # ADR 0039.
+
+  prometheus:
+    image: prom/prometheus:v3.13.2@sha256:508729e0e2d18e11fd742a5a5ca70e557b940a93948c3c95fd0123a6fd538b69
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # BOTH, and the pairing is the whole point of this phase. Time alone does
+      # not help: an error loop fills gigabytes in hours and the 7-day rule
+      # applies in 7 days. Prometheus can do what Loki cannot — bound its own
+      # disk by size — so here the ceiling is a flag rather than three layers of
+      # rate limit. ops/loki/loki.yaml explains the asymmetry.
+      - --storage.tsdb.retention.time=7d
+      - --storage.tsdb.retention.size=2GB
+      # Explicit, because the default binds every interface anyway and a reader
+      # should see which port the expose: below is about.
+      - --web.listen-address=0.0.0.0:9090
+      # --web.enable-lifecycle is deliberately ABSENT rather than set to false.
+      # It defaults off, and a reload endpoint on a service with no
+      # authentication is a lever for anything that reaches this network.
+    networks: [default, observability-network]
+    expose:
+      - "9090"
+    volumes:
+      - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prom-data:/prometheus
+    environment:
+      # 80 % of the 512M limit, the same arithmetic as the api's — Go's GC sizes
+      # itself from the heap and cannot see the cgroup, so without this the
+      # limit below is a kill rather than a budget. ADR 0027 §3a.
+      GOMEMLIMIT: 400MiB
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        # Anchored on a measurement rather than a feeling: the Prometheus
+        # already running on this machine sits at 84 MiB with more targets than
+        # these three. 512M is the blast radius for a query that walks seven
+        # days of series; 192M is the budget. Build plan ch. 10 gives the group
+        # "Alloy · Prometheus · Loki · Grafana" ~800 MB, and Grafana's share is
+        # already spent by the neighbouring stack.
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        reservations:
+          memory: 192M
+
+  loki:
+    image: grafana/loki:3.7.6@sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/loki.yaml
+    networks: [default, observability-network]
+    expose:
+      - "3100"
+    volumes:
+      - ./ops/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+    environment:
+      GOMEMLIMIT: 400MiB
+    # NO healthcheck, and it is the image that decides that rather than us. This
+    # one carries no shell and no http client — `docker run --entrypoint sh` on
+    # it fails with "executable file not found", which is the right shape for a
+    # log store and the wrong shape for a probe. Writing one anyway is how you
+    # get a container that is permanently unhealthy while answering every
+    # request, which is what the first run of this file did.
+    #
+    # Readiness is asserted from OUTSIDE instead, where there is a client:
+    # prometheus scrapes loki, so `up{job="loki"}` is the signal, and
+    # tools/check-observability.sh reads it. Nothing here depends on loki, so no
+    # start order rests on the answer either.
+    read_only: true
+    tmpfs:
+      # Compaction and the index writer use os.TempDir(). Sized, noexec, nosuid
+      # — the same shape as the api's, and for the same reason: an unsized tmpfs
+      # is a way to spend the container's whole memory limit.
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+        reservations:
+          memory: 192M
+
+  alloy:
+    image: grafana/alloy:v1.18.1@sha256:0f4434c92b3e6cdac38bb129b344e1790c246f7b6e2eaffcc16a5fa363240e33
+    restart: unless-stopped
+    command:
+      - run
+      # The default HTTP listener is loopback-only, so without this Prometheus
+      # scrapes nothing and the collector is the one thing in the stack nobody
+      # can see. check-compose rule 10 does not apply here — no Traefik router
+      # names this port — so the pairing with expose: below is held by nothing
+      # but this comment and tools/check-observability.sh.
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    # No networks: key. Alloy writes inward and nobody outside this stack asks
+    # it anything — Prometheus scrapes it over the default network like any
+    # other service. Putting it in observability-network would widen its reach
+    # for no reader.
+    #
+    # No healthcheck either, and for loki's reason one step further: this image
+    # has a shell but no http client. The scrape of :12345 is the liveness
+    # statement, and it is a better one — a collector that answers a probe while
+    # forwarding nothing is exactly the failure a probe would miss.
+    expose:
+      - "12345"
+    volumes:
+      - ./ops/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      # THE ONE SOCKET IN THIS FILE, and the only host path here that is not
+      # ./ops. The daemon owns the container stdout streams; there is no other
+      # way to read them. Read-only narrows it and does not make it safe — the
+      # docker API is root on this machine, and ADR 0039 §3 says that out loud
+      # instead of implying otherwise. tools/check-compose.sh allows this exact
+      # string on this one service and refuses every other shape of it, and
+      # tools/selftest.sh proves all three refusals.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      # Which containers are ours. It cannot be the literal `timseil`: Dokploy
+      # runs compose with its own `-p <appName>` and writes COMPOSE_PROJECT_NAME
+      # into the .env it generates, both of which outrank `name:` at the top of
+      # this file — the same mechanism that made db-data need a pinned name.
+      # ops/alloy/config.alloy filters on this value, and a wrong one is silent:
+      # zero targets, an empty Loki, a green stack.
+      COMPOSE_PROJECT: ${COMPOSE_PROJECT_NAME:-timseil}
+      GOMEMLIMIT: 200MiB
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m
+    # No cap_drop: ALL. Reading /var/run/docker.sock needs either root or the
+    # host's docker group, and that group's numeric id is a fact about this
+    # machine that does not belong in this repository. The image's default user
+    # is root, no-new-privileges is set, the root filesystem is read-only, and
+    # the honest sentence is that this container is as privileged as the socket
+    # it holds — which is why it holds nothing else.
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+        reservations:
+          memory: 96M
+
 
 volumes:
-  # One volume, and it is the only persistent thing on this host that is ours.
-  # Named, because Dokploy's S3 volume backups see named volumes and nothing
-  # else. api and web write to tmpfs and to nothing that outlives them, which is
-  # the property that makes an image rollback a complete rollback.
+  # Four volumes now, and only the first one holds anything a restore would have
+  # to bring back. Named, all of them, because Dokploy's S3 volume backups see
+  # named volumes and nothing else. api and web still write to tmpfs and to
+  # nothing that outlives them, which is the property that makes an image
+  # rollback a complete rollback.
   db-data:
     # Pinned, because `name: timseil` at the top of this file does not survive
     # the deploy. Dokploy starts compose with its own `-p <appName>` and writes
@@ -612,6 +797,27 @@ volumes:
     # runs `docker volume prune --all --force`. Pinning the name makes the
     # database independent of what Dokploy calls the project.
     name: timseil_db-data
+
+  # The three observability volumes carry the same pinned-name treatment for the
+  # same reason: a recreated Dokploy app would otherwise leave the old ones
+  # beside the new, unused and in reach of the prune button.
+  #
+  # WHY THEY ARE VOLUMES AND NOT BIND MOUNTS is the ordinary rule. Why they are
+  # SEPARATE volumes is this phase's reason: build plan F2 asks for "eigene
+  # Volumes, damit die Größe messbar bleibt" — one `du -sh` per store, so the
+  # question "which of these is eating the disk" has an answer that is not an
+  # estimate.
+  #
+  # Backing them up is a different question and the answer is no: metrics and
+  # logs are the record of a machine, and restoring last week's record onto this
+  # week's machine would produce a history that never happened. L6 backs up the
+  # database. These three are allowed to be lost.
+  prom-data:
+    name: timseil_prom-data
+  loki-data:
+    name: timseil_loki-data
+  alloy-data:
+    name: timseil_alloy-data
 
 networks:
   # Traefik's network, and Dokploy owns it. `external: true` says two things at
@@ -634,4 +840,26 @@ networks:
   # refuses to start. `make require-network` creates an empty stand-in so the
   # same file still runs here — ADR 0028.
   dokploy-network:
+    external: true
+
+  # The seam to the Grafana that already runs on this machine, and the whole
+  # reason this stack needs a third network.
+  #
+  # That Grafana belongs to another compose app. Docker resolves names per
+  # network, so from where it stands `prometheus:9090` and `loki:3100` do not
+  # exist — our default network is ours alone, which is exactly why db lives in
+  # it. The two ways out of that were putting our stores into dokploy-network,
+  # which is shared with every app on the host and is what check-compose rule 1
+  # exists to prevent, or a network that means one thing and is joined on
+  # purpose. This is the second.
+  #
+  # `external:` for the same two reasons as above: nothing here creates it, and
+  # nothing here assumes its shape. The other half of the wiring is one switch
+  # in the neighbouring app's own Dokploy settings — docs/runbooks/observability.md
+  # has the click path. Doing it that way instead of `docker network connect` on
+  # the host means it survives that app's next redeploy.
+  #
+  # `make require-network` creates a stand-in for this one too, so the file
+  # still runs on a machine that is not the VPS. ADR 0039 §2.
+  observability-network:
     external: true
