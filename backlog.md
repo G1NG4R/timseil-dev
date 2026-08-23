@@ -84,12 +84,15 @@ ihn enger, nicht sicher — ADR 0039 §3 sagt das, statt es zu umschreiben.
 
 **Gegen den Host geprüft ist noch nichts.** Der 5-GB-Lauf lief lokal gegen
 dieselbe Datei, die dort laufen wird; auf dem Host folgt ein Hash-Vergleich der
-geladenen Konfiguration, keine zweite Messung. Die drei offenen Fragen an den
-bestehenden Prometheus sind gestellt und nicht beantwortet — das Ergebnis gehört
-nicht hierher.
+geladenen Konfiguration, keine zweite Messung.
 
-**Als Nächstes: der Host-Teil von F2** (Netz anlegen, Grafana anhängen, zwei
-Datasources, Config-Hash), dann F3, F5.
+**Die drei Fragen an den bestehenden Prometheus sind beantwortet, das Ergebnis
+steht nicht hier.** Ausgang, soweit er die Aufgabe betrifft: die Vorbedingung
+für den Host-Teil ist erfüllt, es wird nichts doppelt gescrapt, und dabei sind
+drei Punkte aufgefallen, die nicht F2 sind und nicht hierher gehören.
+
+**Als Nächstes: ein Alias, dann der Host-Teil von F2** (Netz anlegen, Grafana
+anhängen, zwei Datasources, Config-Hash), dann F3, F5.
 
 ---
 
@@ -879,6 +882,7 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | F2 | **Auf einem geteilten `external`-Netz gehört uns der Dienstname nicht.** Hängt ein Leser an zwei Netzen und existiert derselbe Name in beiden, ist die Auflösung nicht unsere. Gemessen statt geschlossen, und die erste Erklärung war falsch: der erste Aufbau sah aus wie „der fremde Eintrag gewinnt immer", ein zweiter gegen die echte `compose.yaml` gab das Gegenteil. Vier Läufe später steht die Regel — **es gewinnt der alphabetisch erste Netzname**, nicht die Anbindungsreihenfolge, nicht die Erstellungsreihenfolge, nicht das Subnetz. Der entscheidende Lauf hatte den Gewinner später angelegt und auf dem höheren Subnetz. Ein eigener Alias hängt an keiner dieser Reihenfolgen und ist deshalb die Antwort, nicht der zufällig gewinnende Name. Teuer ist daran nicht der Fehlschlag, sondern sein Aussehen: die Datasource antwortet, das Panel bleibt leer, und das liest sich als „scrapt nicht" statt als „falscher Server". Dieselbe Klasse wie die zwei anderen F2-Funde — grün und trotzdem falsch. | **offen** — unser `prometheus` und `loki` bekommen dort einen eindeutigen Alias, Runbook und Datasource-URL ziehen nach, vor dem PR |
 | 2026-08-23 | F4 | **`time.Parse` akzeptiert einen Sekundenbruchteil, auch wenn das Layout keinen nennt.** `09:15:00.123Z` parste gegen `"2006-01-02T15:04:05Z"` sauber und formatierte sich zu `09:15:00Z` zurück — die Grammatik hätte zwei Schreibweisen für einen Zeitstempel zugelassen und beim Rundlauf still gerundet. Gefunden von einem Test, der scheiterte, weil er **akzeptiert** wurde. | **erledigt in F4** — die Regel ist jetzt der Rundlauf selbst |
 | 2026-08-23 | F4 | **`unnest` mit zwei Argumenten kommt nicht durch sqlcs Analyzer** (`function unnest(unknown, unknown) does not exist`, auch mit `::typ[]` an `sqlc.arg`). Der erzwungene Umbau war der bessere Schnitt: eine Anweisung **pro Ausfall** statt pro Datei, weil der Ausfall die Einheit ist, die sich einen `reason` teilt — und die Form muss dann nicht versprechen, dass zwei Arrays gleich lang bleiben. | **erledigt in F4**, als Entwurfsentscheidung |
 | 2026-08-23 | F4 | **Die tatsächliche Kadenz der Sonde ist nicht belegt, nur ihr Anlaufen.** Der Cron steht auf `3-58/5`, also zwölf Läufe je Stunde. Bis 15:04 UTC gab es seit 14:56 **einen** geplanten Lauf, wo zwei fällig gewesen wären. GitHub verzögert geplante Workflows und lässt sie unter Last auch aus — beides bekannt und beides unbeeinflussbar. **Das zählt:** `down_sec` ist fehlgeschlagene Checks **mal `ProbeInterval`**, und wenn real seltener gemessen wird als die Konstante behauptet, ist jede Ausfalldauer zu klein. `check-probe-cadence` prüft die zwei *deklarierten* Hälften, nicht die gefahrene. Über einen Tag nachzählen: `gh run list --workflow=probe.yml` — erwartet ~288/Tag. Weicht es deutlich ab, gehört die Abweichung benannt statt die Konstante gedreht. | offen, nachzählen ab 24.08. |

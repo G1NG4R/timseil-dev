@@ -64,15 +64,27 @@ Grafana-App muss von ihrer Seite hineingehängt werden. **Nicht** mit
 4. **Redeploy** dieser App. Ohne Redeploy hängt das Netz in der Konfiguration
    und nicht am Container.
 5. In Grafana **Connections → Data sources → Add data source → Prometheus**,
-   URL `http://prometheus:9090`, speichern und testen.
-6. Dasselbe für **Loki**, URL `http://loki:3100`.
+   URL `http://timseil-prometheus:9090`, speichern und testen.
+6. Dasselbe für **Loki**, URL `http://timseil-loki:3100`.
 7. Gegenprobe, und sie gehört dazu: ein Panel je Quelle. Metrik
    `up{stack="timseil"}`, Logzeile `{service="api"}`. Zeigt eins von beiden „no
    data", während beide Container laufen, fehlt Schritt 4.
 
+**Nimm die Aliase, nicht `prometheus:9090`.** Das ist keine Kosmetik: jene
+Grafana hängt an mehreren Netzen, und der Name `prometheus` existiert in mehr
+als einem davon. Docker antwortet dann aus dem Netz, dessen **Name alphabetisch
+zuerst kommt** — nachgemessen am 23.08.2026, gegen drei falsche Vermutungen
+(Anbindungsreihenfolge, Erstellungsreihenfolge, Subnetz). `monitoring` sortiert
+vor `observability-network`.
+
+Die Folge, und sie ist der teure Teil: eine Datasource auf `prometheus:9090`
+**antwortet**, zeigt aber einen anderen Server. Das Panel bleibt leer, und das
+liest sich als „unser Scrape ist tot" statt als „falscher Host". ADR 0039 §2
+trägt die Messung, `compose.yaml` die Begründung an der Zeile.
+
 **Warum in ihren Einstellungen und nicht in unseren:** unser Stack kann sich
 nicht selbst in ein fremdes Netz hängen, und das Netz ist der einzige Weg, auf
-dem Docker-DNS `prometheus` für sie auflöst.
+dem Docker-DNS `timseil-prometheus` für sie überhaupt auflöst.
 
 ---
 

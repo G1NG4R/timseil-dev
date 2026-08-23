@@ -55,6 +55,36 @@ Docker löst Namen pro Netz auf. Aus der fremden Grafana heraus existieren
 `prometheus:9090` und `loki:3100` nicht, denn unser `default` gehört uns allein
 — genau deswegen liegt `db` darin.
 
+**Das Netz allein reicht aber nicht.** Der Name `prometheus` ist auf dieser
+Maschine schon vergeben; hängt jene Grafana zusätzlich in
+`observability-network`, existiert er für sie **zweimal**. Welcher Eintrag
+antwortet, ist am 23.08.2026 gemessen worden — und die Messung hat drei
+plausible Erklärungen nacheinander widerlegt:
+
+| Vermutung | Ergebnis |
+|---|---|
+| Die zuerst angebundene Netzkarte gewinnt | **nein** — beide Reihenfolgen, dieselbe Antwort |
+| Das zuerst angelegte Netz gewinnt | **nein** |
+| Das niedrigere Subnetz gewinnt | **nein** |
+| **Der alphabetisch erste Netzname gewinnt** | **ja** |
+
+Der entscheidende Lauf ist der letzte: der Gewinner war das Netz, das *später*
+angelegt wurde und das *höhere* Subnetz trug — es gewann allein über seinen
+Namen. Und `monitoring` sortiert vor `observability-network`.
+
+Deshalb tragen `prometheus` und `loki` dort einen Alias, den sonst niemand hat:
+`timseil-prometheus` und `timseil-loki`. Compose hängt den Dienstnamen weiterhin
+daneben und das lässt sich nicht abschalten; die Datasource nennt den Alias.
+**Der Alias ist dabei nicht bloß der aktuell gewinnende Name, sondern der
+einzige, der die Frage gar nicht erst stellt** — eine Lösung, die von einem
+Zeichenkettenvergleich zwischen zwei Netznamen abhängt, ist keine.
+
+Was das kostet, ist eine Zeile. Was es verhindert, ist die teurere Hälfte: eine
+Datasource auf `prometheus:9090` wäre nicht ausgefallen, sondern **grün** — mit
+leeren Panels vor einem fremden Server. Das ist derselbe Fehlermodus, den §4 und
+§5 dieser Entscheidung schon zweimal tragen, und die Reihenfolge der Entdeckung
+war jedes Mal dieselbe: erst grün, dann nachgemessen, dann falsch.
+
 `dokploy-network` scheidet aus: es wird mit jeder App auf diesem Host geteilt,
 und `check-compose` Regel 1 verbietet unseren geschlossenen Diensten den
 Zutritt. Also **`observability-network`**, `external: true`, an `prometheus` und

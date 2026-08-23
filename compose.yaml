@@ -638,7 +638,28 @@ services:
       # --web.enable-lifecycle is deliberately ABSENT rather than set to false.
       # It defaults off, and a reload endpoint on a service with no
       # authentication is a lever for anything that reaches this network.
-    networks: [default, observability-network]
+    # Long form for one reason: the alias. `prometheus` is not ours to claim on a
+    # shared external network — this host already runs one under that name.
+    #
+    # When a name exists on several of a reader's networks, Docker answers from
+    # the network whose NAME SORTS FIRST. Measured 2026-08-23, because the three
+    # plausible guesses are all wrong: not attachment order (both orders gave
+    # the same answer), not creation order, not subnet order — the decisive run
+    # had the winner created second and holding the higher subnet, and it still
+    # won on its name alone. `monitoring` sorts before `observability-network`,
+    # so the neighbouring Prometheus would answer for both of them.
+    #
+    # Compose still adds the service name here and that cannot be switched off;
+    # what we can do is publish a name that collides with nobody and point the
+    # Grafana datasource at it. The failure this avoids is not a broken
+    # datasource — it is a working one in front of the wrong server, which reads
+    # as "our scrape is dead" instead of "wrong host". And the alias does not
+    # depend on how names happen to sort, which the fix would otherwise inherit.
+    networks:
+      default:
+      observability-network:
+        aliases:
+          - timseil-prometheus
     expose:
       - "9090"
     volumes:
@@ -678,7 +699,16 @@ services:
     restart: unless-stopped
     command:
       - -config.file=/etc/loki/loki.yaml
-    networks: [default, observability-network]
+    # No collision for this name today — and the alias is here anyway. The
+    # neighbouring stack could add a loki tomorrow without telling us, and
+    # whether it would win is decided by a string comparison between two network
+    # names, which is not a thing to leave a datasource resting on. See
+    # prometheus above. A name we own is cheaper than noticing.
+    networks:
+      default:
+      observability-network:
+        aliases:
+          - timseil-loki
     expose:
       - "3100"
     volumes:
