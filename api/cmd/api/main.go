@@ -38,6 +38,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/contributions"
 	"github.com/G1NG4R/timseil-dev/api/internal/db"
 	"github.com/G1NG4R/timseil-dev/api/internal/health"
+	"github.com/G1NG4R/timseil-dev/api/internal/logx"
 	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/ops"
 	"github.com/G1NG4R/timseil-dev/api/internal/server"
@@ -106,7 +107,7 @@ func main() {
 }
 
 func newLogger(level slog.Level) *slog.Logger {
-	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
+	return logx.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 }
 
 func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {

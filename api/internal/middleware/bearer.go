@@ -44,7 +44,7 @@ func Bearer(token string, log *slog.Logger) Func {
 				// either. A log that records "wrong token" next to "no token"
 				// is a log that answers the attacker's question, one grep away
 				// from anybody who gets far enough to read it.
-				log.Warn("internal endpoint refused a request", "path", r.URL.Path)
+				log.WarnContext(r.Context(), "internal endpoint refused a request", "path", r.URL.Path)
 
 				w.Header().Set("WWW-Authenticate", bearerScheme)
 				httpx.WriteProblem(w, r, http.StatusUnauthorized, httpx.TypeUnauthorized,

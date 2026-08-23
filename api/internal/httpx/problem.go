@@ -92,12 +92,15 @@ func WriteRateLimitProblem(w http.ResponseWriter, r *http.Request, retryAfter ti
 }
 
 // WriteInternalProblem is the one every unexpected failure funnels into. The
-// cause goes to the log with the request id; the visitor gets a sentence and
-// that id, which is enough for them to quote and enough for us to find.
+// cause goes to the log; the visitor gets a sentence and the request id, which
+// is enough for them to quote and enough for us to find.
+//
+// The log line does not set the id itself. Since F1 internal/logx takes it off
+// the context for every line, and slog's JSON handler does not deduplicate — a
+// second one here would write the key twice in one object.
 func WriteInternalProblem(w http.ResponseWriter, r *http.Request, log *slog.Logger, cause error) {
-	id := reqid.From(r.Context())
 	if log != nil && cause != nil {
-		log.Error("request failed", "err", cause, "request_id", id, "path", r.URL.Path)
+		log.ErrorContext(r.Context(), "request failed", "err", cause, "path", r.URL.Path)
 	}
 	writeProblem(w, r, Problem{
 		Type:   TypeInternalError,

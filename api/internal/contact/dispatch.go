@@ -11,6 +11,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/resilience"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
+	"github.com/G1NG4R/timseil-dev/api/internal/traceparent"
 )
 
 // DispatchQueries is the slice of the store the dispatcher needs. Narrow on
@@ -142,11 +143,18 @@ func (d *Dispatcher) loop(ctx context.Context) {
 // database is a run that logs and comes back in a minute; a loop that died there
 // would leave every later message queued forever with nothing to say why.
 func (d *Dispatcher) runOnce(ctx context.Context) {
+	// One trace per run, and that is the whole of what correlation means for a
+	// loop: no visitor asked for this, so there is no request id, but the four
+	// or five lines a single run writes belong together and are otherwise
+	// indistinguishable from the run before it. F6 hangs a real span here later
+	// and changes nothing about the shape.
+	ctx = traceparent.With(ctx, traceparent.New())
+
 	if !d.breaker.Allow() {
 		// INFO and not WARN: a shut breaker is this loop working. The relay
 		// being down is what WARN was for, and it has already been logged three
 		// times.
-		d.log.Info("contact dispatch", "state", "breaker open")
+		d.log.InfoContext(ctx, "contact dispatch", "state", "breaker open")
 		return
 	}
 
@@ -167,7 +175,7 @@ func (d *Dispatcher) runOnce(ctx context.Context) {
 			// every deploy.
 			return
 		}
-		d.log.Error("contact dispatch", "state", "queue unreadable", "err", err)
+		d.log.ErrorContext(ctx, "contact dispatch", "state", "queue unreadable", "err", err)
 		return
 	}
 
@@ -175,14 +183,14 @@ func (d *Dispatcher) runOnce(ctx context.Context) {
 		// One line per run, whether or not there was work. It is the only
 		// evidence that this loop is alive — CLAUDE.md forbids a metric without
 		// a dashboard, and Prometheus arrives in stage F.
-		d.log.Info("contact dispatch", "state", "queue empty",
+		d.log.InfoContext(ctx, "contact dispatch", "state", "queue empty",
 			"budget", d.budget.remaining())
 		return
 	}
 
 	sent, failed, deferred := d.deliver(runCtx, rows)
 
-	d.log.Info("contact dispatch", "state", "ran",
+	d.log.InfoContext(ctx, "contact dispatch", "state", "ran",
 		"queued", len(rows), "sent", sent, "failed", failed, "deferred", deferred,
 		"budget", d.budget.remaining())
 
@@ -194,7 +202,7 @@ func (d *Dispatcher) runOnce(ctx context.Context) {
 	case failed > 0:
 		d.breaker.Failed()
 		if d.breaker.Open() {
-			d.log.Warn("contact dispatch has stopped reaching the relay",
+			d.log.WarnContext(ctx, "contact dispatch has stopped reaching the relay",
 				"cooldown", breakerCooldown.String())
 		}
 	}
@@ -248,7 +256,7 @@ func (d *Dispatcher) send(ctx context.Context, row store.ListDeliverableContactM
 		// Attempt number and the reason, never the address. F1's PII rule, and
 		// there is nothing a log line could do with an address that the row
 		// cannot do better.
-		d.log.Warn("contact delivery failed",
+		d.log.WarnContext(ctx, "contact delivery failed",
 			"id", row.ID, "attempt", row.DeliveryAttempts+1, "err", err)
 		d.markFailed(ctx, row, err)
 		return err
@@ -267,7 +275,7 @@ func (d *Dispatcher) send(ctx context.Context, row store.ListDeliverableContactM
 		// Delivered, not recorded. The row stays queued and the next run may
 		// send it again; a duplicate to one's own inbox is the cheaper of the
 		// two mistakes, and this line is how it gets explained.
-		d.log.Error("contact message was delivered but not marked", "id", row.ID, "err", err)
+		d.log.ErrorContext(ctx, "contact message was delivered but not marked", "id", row.ID, "err", err)
 	}
 	return nil
 }
@@ -296,7 +304,7 @@ func (d *Dispatcher) markFailed(ctx context.Context,
 		// person's. Nothing is lost — the row still holds the address and the
 		// text, so the answer can be written by hand — but nothing further
 		// happens on its own, and that is worth an ERROR rather than a WARN.
-		d.log.Error("contact message given up on",
+		d.log.ErrorContext(ctx, "contact message given up on",
 			"id", row.ID, "attempts", attempts, "err", cause)
 	}
 
@@ -306,6 +314,6 @@ func (d *Dispatcher) markFailed(ctx context.Context,
 		DeliveryStatus: status,
 		LastError:      &reason,
 	}); err != nil {
-		d.log.Error("recording a failed contact delivery", "id", row.ID, "err", err)
+		d.log.ErrorContext(ctx, "recording a failed contact delivery", "id", row.ID, "err", err)
 	}
 }

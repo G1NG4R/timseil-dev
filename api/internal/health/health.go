@@ -100,7 +100,7 @@ func (h *Handler) GetHealth(ctx context.Context, req httpx.GetHealthRequestObjec
 	selfState, err := h.queries.SelfState(ctx, h.selfSlug)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
-		h.log.Error("the configured self system does not exist", "slug", h.selfSlug)
+		h.log.ErrorContext(ctx, "the configured self system does not exist", "slug", h.selfSlug)
 	case err != nil:
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := resp.VisitGetHealthResponse(w); err != nil {
 		// The status line is already out; there is nothing left to send but a
 		// log line.
-		h.log.Error("writing the health response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the health response", "err", err)
 	}
 }
 

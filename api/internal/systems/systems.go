@@ -460,7 +460,7 @@ func (h *Handler) ServeList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitListSystemsResponse(w); err != nil {
-		h.log.Error("writing the systems response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the systems response", "err", err)
 	}
 }
 
@@ -492,7 +492,7 @@ func (h *Handler) ServeDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitGetSystemResponse(w); err != nil {
-		h.log.Error("writing the system response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the system response", "err", err)
 	}
 }
 

@@ -4,8 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
 // probePaths are answered many times a minute by the container's own
@@ -48,7 +46,10 @@ func Logging(log *slog.Logger, client ClientIP, hasher IPHasher) Func {
 				"status", rec.status,
 				"bytes", rec.written,
 				"duration_ms", time.Since(started).Milliseconds(),
-				"request_id", reqid.From(r.Context()),
+				// No request_id and no trace_id here. internal/logx puts both on
+				// every line from the context, and slog's JSON handler does not
+				// deduplicate: setting one here as well would write the key twice
+				// in one object, where Loki's parser keeps whichever came last.
 			}
 			if addr, ok := client.Resolve(r); ok {
 				attrs = append(attrs, "client", hasher.Hash(client.Bucket(addr)))

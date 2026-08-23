@@ -78,6 +78,9 @@ func New(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 	// throttled request still has an id and a log line.
 	handler := middleware.Chain(
 		routes(cfg, pool, build, sender, budget, contactLimiter, client, log, accepting).mux,
+		// Outermost. Everything below it — including the panic recovery and the
+		// rate limiter's refusals — belongs to the trace that caused it.
+		middleware.Trace(),
 		middleware.RequestID(client),
 		middleware.Logging(log, client, hasher),
 		middleware.Recover(log),
@@ -131,7 +134,7 @@ func routes(cfg config.Config, pool DB, build health.Build, sender mail.Sender,
 		if err := pool.Ping(ctx); err != nil {
 			// The reason goes to the log, never into the response: a DSN, a
 			// host name or a driver stacktrace is not an answer to give out.
-			log.Error("readiness check failed", "err", err)
+			log.ErrorContext(r.Context(), "readiness check failed", "err", err)
 			writePlain(w, http.StatusServiceUnavailable, "database unreachable")
 			return
 		}

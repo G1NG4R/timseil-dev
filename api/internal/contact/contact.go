@@ -21,7 +21,6 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/middleware"
-	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
 
@@ -224,7 +223,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := resp.VisitSubmitContactResponse(w); err != nil {
-		h.log.Error("writing the contact response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the contact response", "err", err)
 	}
 }
 
@@ -256,8 +255,8 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 		// The origin is bounded before it is logged. It is attacker-controlled
 		// and net/http accepts a header of up to a megabyte, so an unbounded
 		// one here is a log-flooding vector that costs one call to prevent.
-		h.log.Warn("contact submission from an unlisted origin",
-			"request_id", reqid.From(ctx), "origin", truncateOrigin(f.origin))
+		h.log.WarnContext(ctx, "contact submission from an unlisted origin",
+			"origin", truncateOrigin(f.origin))
 		return nil, &foreignOrigin{}
 	}
 
@@ -270,8 +269,8 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 		// The fifth answer path. No row, no mail, and a receipt that is
 		// well-formed and leads nowhere, so that a bot cannot tell this apart
 		// from success and tune its way past the rule that caught it.
-		h.log.Warn("contact submission discarded",
-			"request_id", reqid.From(ctx), "reason", discardReason(*req.Body),
+		h.log.WarnContext(ctx, "contact submission discarded",
+			"reason", discardReason(*req.Body),
 			"client", h.label(f), "dwell_ms", req.Body.DwellMs)
 		return accepted202(newID(now)), nil
 	}
@@ -292,8 +291,8 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 		if wait, err := h.overLimit(ctx, ipHash, now); err != nil {
 			return nil, err
 		} else if wait > 0 {
-			h.log.Warn("contact rate limit exceeded",
-				"request_id", reqid.From(ctx), "client", h.label(f),
+			h.log.WarnContext(ctx, "contact rate limit exceeded",
+				"client", h.label(f),
 				"retry_after", wait.String())
 			return nil, &throttled{retryAfter: wait}
 		}
@@ -308,7 +307,7 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 		// or queued; sending again would deliver the same message twice for one
 		// button press. The visitor gets the receipt they were given the first
 		// time.
-		h.log.Info("contact submission is a repeat", "request_id", reqid.From(ctx), "id", id)
+		h.log.InfoContext(ctx, "contact submission is a repeat", "id", id)
 		return accepted202(id), nil
 	}
 
@@ -318,15 +317,15 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 	// quota. Spent means the message stays queued and the dispatcher carries it
 	// out later — the visitor is told it was accepted, which is true.
 	if !h.budget.take(now) {
-		h.log.Warn("contact send budget spent — queued for the dispatcher",
-			"request_id", reqid.From(ctx), "id", id)
+		h.log.WarnContext(ctx, "contact send budget spent — queued for the dispatcher",
+			"id", id)
 		return accepted202(id), nil
 	}
 
 	if err := h.sender.Send(ctx, outgoing); err != nil {
 		h.markFailed(ctx, id, err)
-		h.log.Error("contact mail was not accepted",
-			"request_id", reqid.From(ctx), "id", id, "err", err)
+		h.log.ErrorContext(ctx, "contact mail was not accepted",
+			"id", id, "err", err)
 		return nil, errRelayUnavailable
 	}
 
@@ -344,11 +343,11 @@ func (h *Handler) SubmitContact(ctx context.Context, req httpx.SubmitContactRequ
 		// would invite a resend of a message that has already been delivered,
 		// so this is a 202 with a loud log line — the row stays 'queued' and the
 		// dispatcher may send a duplicate, which is the lesser of the two.
-		h.log.Error("contact mail was sent but the row was not marked",
-			"request_id", reqid.From(ctx), "id", id, "err", err)
+		h.log.ErrorContext(ctx, "contact mail was sent but the row was not marked",
+			"id", id, "err", err)
 	}
 
-	h.log.Info("contact message delivered", "request_id", reqid.From(ctx), "id", id)
+	h.log.InfoContext(ctx, "contact message delivered", "id", id)
 	return accepted202(id), nil
 }
 
@@ -441,7 +440,7 @@ func (h *Handler) markFailed(ctx context.Context, id string, cause error) {
 		DeliveryStatus: status,
 		LastError:      &reason,
 	}); err != nil {
-		h.log.Error("recording a failed contact delivery", "id", id, "err", err)
+		h.log.ErrorContext(ctx, "recording a failed contact delivery", "id", id, "err", err)
 	}
 }
 

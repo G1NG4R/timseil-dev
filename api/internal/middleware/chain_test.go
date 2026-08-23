@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/G1NG4R/timseil-dev/api/internal/logx"
 	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
@@ -18,9 +19,15 @@ func quiet() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)
 
 // capture returns a logger writing JSON into a buffer, so a test can assert
 // what was logged rather than that logging was called.
+//
+// Built through logx, exactly as cmd/api builds the real one. That matters here
+// more than it looks: since F1 the request id and the trace id come off the
+// context inside the handler chain, not from the call site. A bare JSONHandler
+// would make these tests pass against a logger this service never uses, and the
+// first thing they would stop noticing is correlation going missing.
 func capture() (*slog.Logger, *bytes.Buffer) {
 	var buf bytes.Buffer
-	return slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug})), &buf
+	return logx.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug})), &buf
 }
 
 func serve(h http.Handler, r *http.Request) *httptest.ResponseRecorder {

@@ -142,7 +142,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := resp.VisitGetContributionsResponse(w); err != nil {
 		// The status line is already out; there is nothing left to send but a
 		// log line.
-		h.log.Error("writing the contributions response", "err", err)
+		h.log.ErrorContext(r.Context(), "writing the contributions response", "err", err)
 	}
 }
 
@@ -158,7 +158,7 @@ func (h *Handler) writeError(w http.ResponseWriter, r *http.Request, err error) 
 		// never answered since this database was created — not that it is down
 		// now. The detail says which of the two it is, because the difference
 		// decides whether waiting helps.
-		h.log.Warn("no cached calendar to serve", "login", h.login)
+		h.log.WarnContext(r.Context(), "no cached calendar to serve", "login", h.login)
 		httpx.WriteProblem(w, r, http.StatusBadGateway, httpx.TypeUpstreamUnavailable,
 			"Upstream unavailable",
 			"GitHub has not answered since this service started and there is no "+

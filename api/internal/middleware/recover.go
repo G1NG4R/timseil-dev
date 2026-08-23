@@ -7,7 +7,6 @@ import (
 	"runtime/debug"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
-	"github.com/G1NG4R/timseil-dev/api/internal/reqid"
 )
 
 // Recover turns a panic into a 500 the caller can read and a log line the
@@ -38,9 +37,8 @@ func Recover(log *slog.Logger) Func {
 					panic(v)
 				}
 
-				log.Error("recovered from a panic",
+				log.ErrorContext(r.Context(), "recovered from a panic",
 					"panic", v,
-					"request_id", reqid.From(r.Context()),
 					"path", r.URL.Path,
 					"stack", string(debug.Stack()),
 				)
