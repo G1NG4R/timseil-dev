@@ -71,6 +71,13 @@ var reasons = map[string]struct{}{
 	"http 5xx":        {},
 	"http 4xx":        {},
 	"api unreachable": {},
+
+	// The honest catch-all, and it earns its place by being worse than the
+	// others: it says a probe failed in a way this mapping has no word for.
+	// Without it the prober would have to pick the nearest wrong label — and
+	// "connect refused" for a curl exit code nobody mapped is a lie that reads
+	// like a diagnosis.
+	"probe failed": {},
 }
 
 // transition is one line: the instant the prober saw the state change, and what

@@ -1,0 +1,4 @@
+# uptime-log.txt — machine written by tools/probe.sh (F4).
+# Grammar: docs/adr/0038. Two lines per outage, tab separated, UTC.
+2026-08-23T13:15:06Z	down	http 5xx
+2026-08-23T13:15:18Z	up

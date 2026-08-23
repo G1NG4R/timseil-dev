@@ -614,6 +614,16 @@ verify-deploy: ## Poll the public URL until it serves that build, 60s budget
 report-deploy: ## Report the measured duration — make report-deploy DEPLOY_SECONDS=214 DEPLOY_RESULT=ok
 	@tools/report-deploy.sh $(DEPLOY_SHA) $(DEPLOY_SECONDS) $(DEPLOY_RESULT)
 
+# The same script .github/workflows/probe.yml runs every five minutes, so a
+# suspicion can be checked from here instead of by reading a workflow log.
+#
+# PROBE_LOG is optional and unset by default: without it nothing is appended
+# anywhere, and the run is a measurement and a report and nothing more. The
+# workflow passes its checkout of the ops-data branch.
+.PHONY: probe
+probe: ## Measure the site once and report it — make probe PROBE_BASE=https://timseil.dev
+	@tools/probe.sh $(if $(PROBE_LOG),--log $(PROBE_LOG)) $(PROBE_BASE)
+
 # The second instrument, and it measures a different claim than verify-deploy.
 # That one asks five questions once, at the end, and answers "the build we
 # ordered is serving the site". This one asks one question a second for the

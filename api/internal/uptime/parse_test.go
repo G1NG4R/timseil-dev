@@ -7,6 +7,9 @@
 package uptime
 
 import (
+	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -236,5 +239,39 @@ func TestParseAcceptsEveryReasonInTheVocabulary(t *testing.T) {
 				t.Fatalf("got %+v, want one transition carrying %q", got, reason)
 			}
 		})
+	}
+}
+
+// The two halves of the grammar are written in different languages: tools/probe.sh
+// appends the lines, this package accepts them, and nothing in a type system
+// connects the two. So the fixture is not hand-written — it is the file the
+// script actually produced when it was driven through an outage and a recovery
+// against a local server, copied in byte for byte.
+//
+// If somebody changes the format on either side and not the other, this is the
+// test that notices. A hand-typed fixture would only prove that the parser
+// agrees with whoever typed it.
+func TestTheFileToolsProbeWritesParses(t *testing.T) {
+	in, err := os.ReadFile(filepath.Join("testdata", "uptime-log.txt"))
+	if err != nil {
+		t.Fatalf("reading the fixture: %v", err)
+	}
+
+	ts, err := parse(bytes.NewReader(in))
+	if err != nil {
+		t.Fatalf("the file tools/probe.sh wrote does not parse: %v", err)
+	}
+
+	if len(ts) != 2 || ts[0].up || !ts[1].up {
+		t.Fatalf("got %+v, want one outage and its recovery", ts)
+	}
+	if ts[0].reason != "http 5xx" {
+		t.Errorf("the outage reads %q, want the word the script mapped", ts[0].reason)
+	}
+
+	// And the header the script writes when it creates the file has to be a
+	// comment on this side, not a line.
+	if !bytes.HasPrefix(in, []byte("# uptime-log.txt")) {
+		t.Error("the fixture lost the header tools/probe.sh writes")
 	}
 }
