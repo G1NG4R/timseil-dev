@@ -116,21 +116,63 @@ Eintrag in dieser Liste ist dieselbe Aussage noch einmal — und gehört ins Rev
 Der Fund ist auch das Argument gegen einen strengeren Filter: ein Scrubber, der
 Felder frisst, für die eine Zeile existiert, wird nach zwei Wochen abgeschaltet.
 
+**Steuerzeichen fallen weg, bevor irgendetwas anderes passiert.** CodeQL meldet
+`go/log-injection` auf jeder Zeile, die einen Wert aus der Anfrage loggt — drei
+davon auf Code, der älter ist als diese Phase. Die Alarme waren falsch positiv,
+und das ist gemessen: ein Zeilenumbruch in `r.URL.Path` kommt als Escape
+**innerhalb** des Strings heraus, die Zeile bleibt eine Zeile. Aber „der Encoder
+escapt es" ist eine Zusage, die in einer anderen Datei lebt als die Werte, die
+sie schützt — F2 hängt Alloy ans Ende der Röhre, F11 einen zweiten Erzeuger.
+`StripControl` ersetzt jedes C0-Byte und DEL durch ein Leerzeichen (ein Byte, ein
+Leerzeichen: Positionen bleiben erhalten). Das gilt auch für den ausgenommenen
+Schlüssel — die Ausnahme ist eine Aussage über die *Form* des Wertes und sagt
+nichts über Steuerzeichen.
+
 ### Was das kostet
 
 - **48 angefasste Call-Sites.** Ein mechanischer Diff, den niemand gern liest.
-- **Ein Scan pro String-Attribut.** Kein Regex: der Vorfilter ist
-  `strings.ContainsAny(s, "@.:")`, und eine Zeile ohne diese drei Zeichen kehrt
-  ohne Allokation zurück. IP-Kandidaten werden nicht gemustert, sondern
-  ausgeschnitten und an `net/netip` gegeben — deshalb hält der Filter
-  `11:19:35` und `1.2.3-rc.1` heraus, woran ein Regex scheitert.
+- **Gemessen, nicht behauptet** (`BenchmarkScrub*`, `b.ReportAllocs`):
+
+  | Fall | Kosten |
+  |---|---|
+  | die Zeile, die jede Anfrage schreibt (32-Hex-ID) | **104 ns, 0 Allokationen** |
+  | ein gewöhnlicher Pfad | **86 ns, 0 Allokationen** |
+  | eine echte Relay-Ablehnung mit Adresse | 6,9 µs, 23 Allokationen |
+
+  Der teure Pfad läuft nur auf Zeilen, die wirklich eine Adresse tragen. Kein
+  Regex: IP-Kandidaten werden ausgeschnitten und an `net/netip` gegeben, deshalb
+  hält der Filter `11:19:35` und `1.2.3-rc.1` heraus, woran ein Muster scheitert.
+- **Ein Kandidat ist auf 64 Zeichen begrenzt** (`maxAddrLen`). Ohne diese Grenze
+  kostet ein Lauf von *n* Bytes *n* Parses an *n* Stellen — **2 700 Zeichen aus
+  Doppelpunkten und Ziffern brauchten sieben Sekunden im Logger**, und
+  `r.URL.Path` ist nicht längenbegrenzt. Der Filter, der das Log schützen soll,
+  wäre der Weg gewesen, den Dienst anzuhalten. Gefunden hat das der Fuzzer, nicht
+  das Review. Was die Grenze ausschließt, ist ein IPv6-Zonenname, der länger ist
+  als die Adresse — den hat ein Container, der mit einem Container spricht, nicht.
+- **Der Pfad in der Access-Zeile ist auf 256 Zeichen begrenzt.** Dieselbe
+  Begründung und dieselbe Form wie `truncateOrigin` in `internal/contact`: die
+  längste montierte Route liegt weit darunter, und `net/http` nimmt eine
+  Anfragezeile, die viel länger ist.
+- **Redigiert wird in EINEM Durchlauf, nicht in zweien.** E-Mails und dann
+  Adressen zu suchen war auf jeder Eingabe richtig, die jemand sich ausdenkt, und
+  falsch auf zweien, die der Fuzzer fand: `a@b.tld@c.tld` ließ die zweite Domain
+  stehen, und bei `0@::0.XA` **baute** die IP-Redaktion eine E-Mail, die es nicht
+  gab. Was ein Durchlauf schreibt, wird nie wieder gelesen — das schließt die
+  Klasse statt der zwei Fälle.
+- **Idempotenz ist keine Eigenschaft dieses Filters, und sie kann keine sein.**
+  Der Marker ist entweder aus Domain-Zeichen gebaut und kann Teil einer Domain
+  werden, oder er ist es nicht und kann eine Domain **beenden** — beide
+  Marker-Formen sind Duale, und der Fuzzer hat beide vorgeführt. Ein zweiter
+  Durchlauf darf also mehr redigieren als der erste. Die Eigenschaft, die gilt
+  und geprüft wird, ist die versprochene: *was der Filter erkennt, entfernt er.*
+- **`matchAddr` probiert den längsten Treffer zuerst und dann kürzere.** Nur den
+  maximalen Lauf zu probieren ließ bei `::0.::0` das erste `::0` stehen — die
+  einzige der Fuzz-Funde, die ein echtes Leck war. Der Lauf-Anfang-Test, der das
+  linear halten sollte, war derselbe Fehler in Grün: bei `::0X%::0` beginnt der
+  zweite Lauf bei `%`, `%::0` parst nicht, und das `::0` darin wurde nie probiert.
 - **Strukturen hinter `slog.Any` werden nicht durchlaufen.** Heute loggt der
   Dienst keine; täte er es, könnte ein Feld darin PII tragen. Der Ort dafür ist
-  `scrubValue`, und dieser Satz ist die Notiz.
-- **Der Redaktions-Marker ist Text ohne Klammern** (`redacted-email`). Weniger
-  hübsch, aber notwendig: mit Klammern beendete er den Domain-Scan und ließ das
-  Davorstehende wie eine gültige Domain aussehen, sodass ein zweiter Durchlauf
-  mehr redigierte als der erste. Der Fuzzer hat das gefunden, nicht das Review.
+  `walk`, und dieser Satz ist die Notiz.
 - **`span_id` wird nicht geloggt.** Erzeugt wird sie, geschrieben nicht — vor F8
   liest sie niemand, und die Platte teilt sich Loki mit Postgres.
 - **`Sampled` ist bis F6 konstant `true`.** Es gibt keinen Sampler; `false` hieße
@@ -165,6 +207,8 @@ Schlüssel offen gelassen, den F1b braucht.
 
 ## Belege
 
+- `internal/logx/scrub_test.go` — die Fuzz-Eigenschaft und das Korpus der drei
+  Eingaben, die den Filter widerlegt haben
 - Build-Plan, Stufe F, F1 · Kapitel „Die eine Sache, die technisch nicht
   verschiebbar ist"
 - Design-Blatt `Operations`, Abschnitt SYS.00.09.04 — Aufbewahrung

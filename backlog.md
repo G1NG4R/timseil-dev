@@ -41,20 +41,49 @@ redigiert und Name und Text stehen lassen.
 Gegenprobe: Kontaktformular mit Name, Adresse und Merksatz abgeschickt,
 **0 Treffer** für alle drei im gesamten Container-Log.
 
-**Zwei Fehler sind beim Bauen entstanden und beide von einer Maschine gefunden,
-nicht vom Lesen.**
+**Sechs Fehler sind beim Bauen entstanden. Einen hat das Lesen gefunden, fünf
+haben Maschinen gefunden — und der wichtigste war nicht der, den ich gesucht
+habe.**
 
-1. Der Fuzzer: `[redacted-email]` mit Klammern beendete den Domain-Scan und ließ
-   das Davorstehende wie eine gültige Domain aussehen — ein zweiter Durchlauf
-   redigierte mehr als der erste. Der Marker besteht jetzt nur aus
-   Domain-Zeichen und enthält immer einen Bindestrich.
-2. Der erste Lauf gegen den Stack: `"message_id":"redacted-email"`. Eine
-   RFC-5322-Message-ID **ist** adressförmig, der Filter hat folgerichtig das
-   Feld gefressen, für das die Zeile existiert. Genau eine Ausnahme nach
-   Schlüssel, und sie ist eine Aussage über den Wert.
+Vom ersten Lauf gegen den Stack:
 
-Beide hätten kein Review gefunden. Das ist der Grund, warum `traceparent.Parse`
-und `Scrub` je einen Fuzz-Test bekommen haben.
+1. `"message_id":"redacted-email"`. Eine RFC-5322-Message-ID **ist**
+   adressförmig, der Filter hat folgerichtig das Feld gefressen, für das die
+   Zeile existiert. Genau eine Ausnahme nach Schlüssel, und sie ist eine Aussage
+   über den Wert, nicht über den Namen.
+
+Vom Fuzzer, in dieser Reihenfolge:
+
+2. `[redacted-email]` mit Klammern **beendete** den Domain-Scan und ließ das
+   Davorstehende wie eine gültige Domain aussehen.
+3. Zwei getrennte Durchläufe (erst E-Mails, dann IPs) störten einander:
+   `a@b.tld@c.tld` ließ die zweite Domain stehen, und bei `0@::0.XA` **baute**
+   die IP-Redaktion eine E-Mail, die es nicht gab. Jetzt ein Durchlauf — was er
+   schreibt, wird nie wieder gelesen.
+4. **Ein echtes Leck:** bei `::0.::0` blieb das erste `::0` stehen, weil nur der
+   *maximale* Lauf probiert wurde. Und der Lauf-Anfang-Test, der das linear
+   halten sollte, war derselbe Fehler noch einmal: bei `::0X%::0` beginnt der
+   zweite Lauf bei `%`, `%::0` parst nicht, das `::0` darin wurde nie probiert.
+5. **Der wichtigste, und er ist kein Leck, sondern eine Zeitbombe in der
+   Gegenmaßnahme selbst.** Ein Lauf aus 2 700 Doppelpunkten und Ziffern brauchte
+   **sieben Sekunden** im Logger — und `r.URL.Path` ist nicht längenbegrenzt. Der
+   Filter, der das Log schützen soll, wäre der Weg gewesen, den Dienst
+   anzuhalten. Ein Kandidat ist jetzt auf 64 Zeichen begrenzt, und der Pfad in
+   der Access-Zeile auf 256 — dieselbe Antwort, die `internal/contact` einer
+   Origin seit C6 gibt.
+
+Dazu die Erkenntnis, dass **Idempotenz keine erreichbare Eigenschaft ist**: der
+Marker ist entweder aus Domain-Zeichen gebaut und wird Teil einer Domain, oder
+er ist es nicht und beendet eine — beide Formen sind Duale. Geprüft wird
+seitdem, was tatsächlich versprochen ist: *was der Filter erkennt, entfernt er.*
+
+Keiner dieser fünf wäre in einem Review aufgefallen. Das ist der Grund, warum
+`traceparent.Parse` und `Scrub` je einen Fuzz-Test tragen und das Korpus der
+widerlegenden Eingaben im Repository liegt.
+
+**Kosten, gemessen statt behauptet:** die Zeile, die jede Anfrage schreibt,
+kostet **104 ns und null Allokationen**; eine Zeile mit einer echten
+Relay-Ablehnung 6,9 µs.
 
 **Zahlen der Phase:** 48 Call-Sites auf `…Context` umgestellt, 13 handgesetzte
 `request_id`-Attribute entfernt (`slog` dedupliziert nicht — zwei gleiche
@@ -450,6 +479,8 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-23 | F1a | **CodeQL meldet 98 offene Alarme, davon die weit überwiegende Mehrheit `js/useless-expression` in `docs/design/*.dc.html`.** Die Blätter sind read-only, werden nie ausgeliefert und enthalten JSX, das ein JS-Parser nicht als solches liest. Eine Liste, in der das echte Signal unter Rauschen aus einem Verzeichnis liegt, das gar nicht gescannt gehört, ist keine Liste. `paths-ignore` in der CodeQL-Konfiguration wäre der Ort. | offen |
+| 2026-08-23 | F1a | **Drei `go/log-injection`-Alarme (medium) auf `bearer.go:47`, `problem.go:103`, `intake.go:208`.** Alle drei älter als F1a — das Diff hat dort nur `Warn` zu `WarnContext` geändert, und CodeQL meldet auf geänderten Zeilen. Nachgemessen falsch positiv: der JSON-Handler escapt, aus dem Versuch wird eine Zeile. In F1a trotzdem strukturell entschärft (`StripControl`), weil „der Encoder escapt es" eine Zusage ist, die in einer anderen Datei lebt als die Werte, die sie schützt. | **erledigt in F1a**, Alarme mit dieser Begründung zu schließen |
 | 2026-08-23 | F1a | **`cors.go` setzt nirgends `Access-Control-Expose-Headers`.** Ein fremder Aufrufer der öffentlichen Lese-API kann `X-Request-Id` deshalb nicht auslesen — die Zusage aus ADR 0009 („die ID zitieren findet die Zeilen") gilt für ihn nur über den Body von Fehlern, nicht über Erfolge. Eine Zeile Code, aber ein anderer Auslöser als F1: fällig, wenn ein Aufrufer von anderer Herkunft existiert (H8 ist same-origin, also frühestens P-Phase). | offen |
 | 2026-08-23 | F1a | **`.env.example:110` behauptet „compose.dev.yaml fills in the docker networks".** Tut es nicht — `compose.dev.yaml:207` reicht die Variable nur durch und begründet elf Zeilen später ausdrücklich, warum sie leer **bleibt**. `make env-dev` fasst sie auch nicht an. Der Satz ist seit C1 falsch und hat beim Planen von F1 fast zu einer falschen Entscheidung geführt. | offen, eine Zeile |
 | 2026-08-23 | F1a | **`web/Dockerfile:142` zieht `/` als HEALTHCHECK, alle 5 s.** `app/healthz/route.ts` schreibt in seinem eigenen Kopfkommentar, warum das falsch ist, und Traefik hält sich daran — der Docker-Healthcheck nicht. Solange `/` ein Platzhalter ist, kostet es nichts; sobald F1b dort serverseitig fetcht, sind es 17 280 API-Aufrufe pro Tag aus dem Healthcheck allein. | **fällig mit F1b**, dort im selben Commit wie der Fetch |
