@@ -1,0 +1,154 @@
+---
+title: 'Four lines that had never been run'
+deck: 'I merged the observability stack, the deploy went green, and the site kept serving. None of the three new containers existed. Everything that failed that evening was prose.'
+published: 2026-08-24
+tags: ['deploys', 'observability', 'acceptance']
+system: 'timseil-dev'
+summary: |
+  The phase that adds metrics and logs shipped with a passing test suite, a
+  green pipeline and a production deploy that reported success. It had started
+  nothing. The cause was the design working exactly as intended, and the reason
+  nobody noticed was that four separate written instructions — an acceptance
+  query, a proof, an allowlist, a rollout — had all been composed carefully and
+  never once executed.
+---
+
+## The green deploy that started nothing
+
+The stack I had just merged adds three containers: Prometheus, Loki, and Alloy
+as the collector. The pipeline ran, `check` passed, the deploy job reported
+success in thirty seconds, and the site served normally throughout.
+
+Then I asked the collector a question:
+
+```
+$ docker exec …-alloy-1 printenv COMPOSE_PROJECT
+Error response from daemon: No such container: …-alloy-1
+```
+
+Not a crash. Not a restart loop. The container had never been created. Neither
+had the other two.
+
+## The cause is a feature, read from the wrong end
+
+The host runs this stack through a panel whose command field replaces the
+default `docker compose up -d` wholesale. Mine names services one at a time,
+because a deploy here overlaps two versions of the site to avoid a gap:
+
+```
+up -d --remove-orphans --wait api2
+&& up -d --no-deps --wait web2
+&& up -d --no-deps --wait api web
+&& rm -s -f api2 web2
+```
+
+Four services named, three of them twice. The database, the migration and the
+seed are not named anywhere — and they start anyway, because `api2` declares
+`depends_on` on all three and drags them along.
+
+Prometheus, Loki and Alloy have no such sponsor. Nothing declares a dependency
+on them.
+
+That is not an oversight. It is the single most deliberate decision in the whole
+phase, written into its ADR: **nothing may depend on the observability stack, so
+that the site keeps serving when all of it is gone.** Stopping Prometheus must
+leave the page honest rather than broken. I had spent an afternoon making sure
+of it.
+
+A service nothing depends on is a service nothing drags along. The property I
+built on purpose is precisely the property that kept it from ever starting.
+
+## Why every gate I own said yes
+
+This is the part I keep turning over, because the pipeline is not thin. There
+are two independent assertions about a deploy, and both are good ones.
+
+The first checks that a visitor can use the site, and its own header explains
+the standard:
+
+> What is being asserted is that a visitor can use the site, and the only honest
+> way to check that is to be one.
+
+It requests the public URL from outside, over the real name, with no privileged
+access. The second checks that production runs the bytes that were published —
+against the image digest, not the tag, because the registry already holds proof
+that a tag can be moved.
+
+Both were true. A visitor could use the site. It ran the published bytes.
+
+Both are also blind to a service no visitor ever asks for, and this phase
+shipped the first three of those. Every service before them was either visible
+to a visitor or a dependency of one. My deploy verification asks "is the site
+up?" — a question that cannot see a collector, and was never meant to.
+
+The next phase adds two exporters. The hole would have opened again in a week.
+
+So there is now a fifth step in the rollout, and a check that holds the rollout
+against the compose file: every service defined must be started by some step, or
+reachable by dependency from one. The step goes **last**, for the same reason
+the dependencies are absent — a collector that will not start must never stand
+between a visitor and the site. It still turns the deploy red, because not
+depending on something is not the same as not noticing it.
+
+## Then the acceptance found three more, and none of them was in the code
+
+With the containers finally running, I opened the dashboard and followed my own
+runbook. It told me to check the metrics side with:
+
+```
+up{stack="timseil"}
+```
+
+Empty. Every time.
+
+The query cannot work and never could have. Prometheus attaches
+`external_labels` to data **leaving** the server — federation, remote writes,
+alerts. A dashboard datasource queries the local store, where that label does
+not exist. Measured, so I would stop arguing with myself:
+
+```
+up                   → { __name__, instance, job }
+up{stack="timseil"}  → []
+```
+
+The replacement is plain `up`, which is the better probe anyway. This machine
+runs a second, older Prometheus belonging to another stack. If the datasource
+has drifted onto that one, `up` answers with its job names instead of mine —
+so the failure announces itself rather than looking like an empty graph.
+
+The runbook also told me to prove the running configuration matches the
+repository by comparing two checksums. I ran it. They differed, as they must:
+that endpoint returns the *resolved* configuration with every default filled in.
+The paragraph directly beneath the command said so, in my own words. The command
+and its explanation had been sitting three lines apart, contradicting each other,
+since the day I wrote them.
+
+And the acceptance script would have called my own deploy twins foreign traffic.
+During an overlapping deploy the twins serve, and while they serve they log;
+their lines outlive the containers by the retention window. My allowlist did not
+know them, so the check was one production run away from reporting "foreign
+services in our log store" — pointing at the neighbouring stack for something
+this repository does on purpose.
+
+## What the four have in common
+
+The rollout step. The acceptance query. The configuration proof. The allowlist.
+
+Not one of them was a bug in what the phase built. The rate limits were measured
+under five gigabytes of synthetic log. The timestamp handling was verified
+against both producers. The parts I *ran* were sound.
+
+All four were sentences. Each was written with care, reviewed by me, committed,
+and never executed — three of them lived in documents whose entire job is to
+state what currently holds.
+
+I have a rule that every claim on this site must be bound to running evidence.
+I had been applying it to the product and not to its instructions. A runbook is
+a claim. An acceptance criterion is a claim. A line in an allowlist is a claim
+about who belongs. Written down, reviewed, and untested, they are exactly the
+thing the rule exists to forbid — they simply fail later, and in front of
+somebody else.
+
+The measurement I trust from that evening is not on the dashboard. It is this:
+the interval between "merged" and "running and being read" was made entirely of
+prose, and every single piece of it was wrong.
