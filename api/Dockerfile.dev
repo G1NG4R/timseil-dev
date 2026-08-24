@@ -1,7 +1,7 @@
 # Development only, used by compose.dev.yaml. The production image is phase D1
 # and shares nothing with this one: multi-stage, CGO_ENABLED=0, -trimpath,
 # distroless/static:nonroot, read-only rootfs, base pinned by digest.
-FROM golang:1.26-alpine
+FROM golang:1.27-alpine
 
 # Pinned on purpose. `@latest` in an image build means two machines get two
 # different air versions and only one of them reproduces your bug.
