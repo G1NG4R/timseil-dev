@@ -66,9 +66,27 @@ Grafana-App muss von ihrer Seite hineingehängt werden. **Nicht** mit
 5. In Grafana **Connections → Data sources → Add data source → Prometheus**,
    URL `http://timseil-prometheus:9090`, speichern und testen.
 6. Dasselbe für **Loki**, URL `http://timseil-loki:3100`.
-7. Gegenprobe, und sie gehört dazu: ein Panel je Quelle. Metrik
-   `up{stack="timseil"}`, Logzeile `{service="api"}`. Zeigt eins von beiden „no
-   data", während beide Container laufen, fehlt Schritt 4.
+7. Gegenprobe, und sie gehört dazu: eine Abfrage je Quelle, am schnellsten in
+   **Explore**.
+
+   Metrik: **`up`** — schlicht, und das ist Absicht. Erwartet werden drei
+   Reihen, `job="prometheus"`, `job="alloy"`, `job="loki"`.
+
+   **Nicht `up{stack="timseil"}`.** Das stand hier zuerst und ist falsch:
+   `external_labels` hängt Prometheus nur an Daten, die den Server *verlassen*
+   — Föderation, `remote_write`, Alarme. Eine Grafana-Datasource fragt lokal,
+   und lokal gibt es das Label nicht. Am 24.08.2026 nachgemessen: `up` liefert
+   `__name__`, `instance`, `job` und sonst nichts, `up{stack="timseil"}` liefert
+   ein leeres Ergebnis. F5 sieht das Label, weil sie über den Tunnel fragt.
+
+   `up` ist ohnehin die bessere Gegenprobe: zeigt es `job="crowdsec"`, hängt die
+   Datasource am **Nachbar-Prometheus** — der Fehler, gegen den die Aliase oben
+   stehen, wird damit sichtbar statt still.
+
+   Logzeile: **`{service="api"}`**, und **den Zeitraum auf 24 h stellen**.
+   Explore steht auf einer Stunde; auf einer unbesuchten Seite schreibt `api`
+   in einer Stunde nichts, und „no data" hieße dann „niemand war da", nicht
+   „nichts kommt an".
 
 **Nimm die Aliase, nicht `prometheus:9090`.** Das ist keine Kosmetik: jene
 Grafana hängt an mehreren Netzen, und der Name `prometheus` existiert in mehr
@@ -164,16 +182,36 @@ Der 5-GB-Lauf gehört **nicht** auf die Produktionsplatte — er wäre genau der
 Fehler, gegen den er gebaut ist. Gemessen wird lokal, gegen dieselbe Datei, die
 dort läuft; auf dem Host wird nur belegt, dass es dieselbe Datei ist:
 
+**Nicht mit `sha256sum`, und das stand hier zuerst falsch.** `/config` gibt die
+*aufgelöste* Konfiguration aus — alle Defaults ergänzt, in Lokis eigener
+Schreibweise. Zwei Hashes zu vergleichen liefert deshalb garantiert einen
+Unterschied und beweist nichts. Am 24.08.2026 einmal so ausgeführt, mit genau
+diesem Ergebnis.
+
+Verglichen werden die **gesetzten Schlüssel**:
+
 ```bash
-sha256sum ops/loki/loki.yaml                       # im Klon
+grep -E 'retention_period|per_stream_rate_limit|ingestion_rate_mb' \
+  ops/loki/loki.yaml                               # im Klon
+
 docker compose -f compose.yaml exec prometheus \
-  wget -qO- http://loki:3100/config | sha256sum    # auf dem Host
+  wget -qO- http://loki:3100/config \
+  | grep -E 'retention_period|per_stream_rate_limit|ingestion_rate_mb'
 ```
 
-Die Hashes unterscheiden sich, wenn Loki Defaults ergänzt hat — verglichen wird
-deshalb, was `/config` für die gesetzten Schlüssel ausgibt, nicht die Datei Byte
-für Byte. Die Behauptung lautet „diese Konfiguration greift dort", nicht „diese
-Platte ist dieselbe".
+**Zwei Fallen darin, beide gemessen statt vermutet:**
+
+1. `retention_period: 336h` kommt als **`2w`** zurück. Dieselbe Dauer, andere
+   Schreibweise — 336 h sind vierzehn Tage. Wer auf Zeichengleichheit prüft,
+   findet hier einen Fehler, den es nicht gibt.
+2. `retention_period` steht **zweimal** in der Ausgabe. Die zweite Zeile
+   (`0s`) gehört einem anderen Abschnitt und ist nicht unsere.
+
+`per_stream_rate_limit`, `ingestion_rate_mb` und
+`max_global_streams_per_user` kommen dagegen wörtlich zurück.
+
+Die Behauptung lautet „diese Konfiguration greift dort", nicht „diese Platte ist
+dieselbe".
 
 ---
 

@@ -99,11 +99,24 @@ rm -f /tmp/obs.$$
 # answer two questions at once: did anything arrive, and did the project filter
 # in ops/alloy/config.alloy hold. A neighbouring app's container showing up here
 # is not noise — it is our disk paying for somebody else's logs.
+#
+# api2 AND web2 ARE OURS, and the first run against production said otherwise.
+# They are the rollout twins: they exist only while a deploy is overlapping, they
+# log while they serve, and their lines stay for the retention window after the
+# containers are gone. Calling them foreign would point at the neighbouring stack
+# for something this repository does on purpose — and their lines are precisely
+# what one wants to read when a rollout goes wrong.
+#
+# loki IS ALLOWED TO BE ABSENT, which is why `need` does not ask for it. Our
+# loki.yaml sets log_level: warn on purpose (see the comment there — a chattier
+# Loki would have Alloy shipping Loki's account of storing Alloy's lines). A
+# healthy, quiet Loki therefore writes nothing for hours, and this endpoint only
+# looks back six. Requiring it here would go red for being well behaved.
 labels=$(inside 'http://loki:3100/loki/api/v1/label/service/values')
 printf '%s' "$labels" | python3 -c '
 import json, sys
 vals = set(json.load(sys.stdin).get("data") or [])
-ours = {"db", "migrate", "seed", "api", "web", "prometheus", "loki", "alloy", "flood"}
+ours = {"db", "migrate", "seed", "api", "web", "prometheus", "loki", "alloy", "flood", "api2", "web2"}
 need = {"api", "web", "db"}
 if not vals: print("no service labels at all — alloy discovered nothing"); sys.exit(1)
 if need - vals: print("no lines from:", ", ".join(sorted(need - vals))); sys.exit(1)
