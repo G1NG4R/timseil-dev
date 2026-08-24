@@ -12,7 +12,52 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 23.08.2026, F2 gebaut
+## Wo wir stehen — 24.08.2026, F2 gegen Produktion abgenommen
+
+**Der Stack läuft auf dem Host, und die Abnahme lief in Grafana statt in einem
+Skript.** Beide Hälften:
+
+```
+up  →  job="prometheus"  job="alloy"  job="loki"      alle 1
+{service="api"}  →  JSON-Zeilen mit level, msg, trace_id
+```
+
+**Was die zweite Hälfte nebenbei beweist, und es ist mehr als F2 versprochen
+hat.** Die angezeigte Zeit `21:58:54.513` (CEST) und das Feld
+`"time": "2026-08-24T19:58:54.513388797Z"` sind dieselbe Zeit — **der
+gespeicherte Zeitstempel ist der aus der Zeile**, nicht der des Ingests, und
+zwar in Produktion statt gegen eine Vorrichtung. Die Nanosekunden aus Go stehen
+unversehrt darin. Das war der offene Punkt aus F1a, und er ist damit zweimal
+belegt.
+
+Sichtbar sind außerdem die drei Hintergrundschleifen mit ihrer Korrelation —
+`contact dispatch`, `ops roll-up`, `contributions refresh`, jede mit `trace_id`.
+F1s Arbeit, zum ersten Mal von außen gelesen statt behauptet.
+
+**`job="crowdsec"` steht nicht dabei**, und das ist der eigentliche Beleg dieser
+Session: die Datasource hängt über den Alias an *unserem* Prometheus. Ohne den
+Alias hätte genau dort der Nachbar geantwortet.
+
+### Was diese Abnahme gekostet hat — vier Fehler, alle im Aufgeschriebenen
+
+Nicht einer davon war im Gebauten. Alle vier standen in Dokumenten, die
+behaupteten, was gilt, und die niemand ausgeführt hatte:
+
+1. **Der Rollout startete die drei Dienste nie.** Grün, ausgeliefert, nicht
+   gelaufen. Eigener Eintrag unten, dazu `tools/check-rollout.sh`.
+2. **`up{stack="timseil"}` kann nie etwas liefern** — `external_labels` hängen
+   nur an Daten, die den Server verlassen.
+3. **Der Config-Beleg widersprach seinem eigenen Fließtext** (zwei `sha256sum`).
+4. **Die Abnahme hätte die eigenen Rollout-Zwillinge als fremd gemeldet.**
+
+Die Gemeinsamkeit ist benennbar: **jede dieser Zeilen war geschrieben und nie
+ausgeführt worden.** Der 5-GB-Lauf war gemessen, die Grenzen waren gemessen —
+aber der Weg von „gemergt" zu „läuft und wird gelesen" bestand aus Sätzen. Das
+ist die Lehre dieser Stufe, und sie gehört in den Beitrag zu F2.
+
+---
+
+## Vorher — 23.08.2026, F2 gebaut
 
 **Seit heute hebt etwas die Zeilen auf, und die Grenze darauf ist gemessen.**
 Drei Container mehr: `prometheus`, `loki`, `alloy` — keiner davon mit einem
@@ -882,6 +927,7 @@ Vorherige Triage: nach E5c, 22.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-24 | F2 | **Loki legt neben unserem `service` ein eigenes `service_name` an.** In der Produktions-Abnahme sichtbar: `service=api` **und** `service_name=api` als gemeinsame Labels desselben Streams. `ops/alloy/config.alloy` setzt nur `service` (Zeile 80) — `service_name` ist Lokis automatische Erkennung, die es ergänzt, wenn ein Stream keins mitbringt. Harmlos in der Wirkung, aber ein zweites Indexlabel je Stream **auf der Platte, die diese Phase schützen soll**, und keins, das jemand von uns bestellt hat. Der Hebel wäre `discover_service_name: []` in `limits_config`. Nicht in F2 entschieden: die Abnahme lief bereits, und eine Konfigurationsänderung nach der Abnahme ist eine unbelegte Änderung. | offen, fällig mit F3 — dort werden die Loki-Labels ohnehin geschnitten |
 | 2026-08-24 | F2 | **Die Abnahme-Abfrage des Runbooks konnte nie funktionieren.** `up{stack="timseil"}` liefert gegen eine Grafana-Datasource **immer** leer: `external_labels` hängt Prometheus nur an Daten, die den Server *verlassen* — Föderation, `remote_write`, Alarme. Lokal gefragt gibt es das Label nicht. Nachgemessen am 24.08.: `up` liefert `__name__`, `instance`, `job`, die gefilterte Variante ein leeres Ergebnis. **Aufgefallen ist es erst, weil jemand die Zeile wirklich ausgeführt hat** — `check-observability` prüft die Ziele über `/api/v1/targets` und ist an dieser Behauptung nie vorbeigekommen. Ersetzt durch schlicht `up`, was die bessere Probe ist: zeigt es `job="crowdsec"`, hängt die Datasource am Nachbar-Prometheus, und genau dieser Fehler wird damit sichtbar statt still. | **erledigt hier** |
 | 2026-08-24 | F2 | **Die Abnahme hätte die eigenen Rollout-Zwillinge als fremd gemeldet.** `api2` und `web2` stehen in Lokis `service`-Werten — sie loggen, während sie während eines Deploys bedienen, und ihre Zeilen bleiben die Retention über. `check-observability` kannte sie nicht und hätte „foreign services in our loki" gesagt, also **auf den Nachbar-Stack gezeigt für etwas, das dieses Repository absichtlich tut**. Die Zeilen sind obendrein genau das, was man lesen will, wenn ein Rollout schiefgeht. | **erledigt hier** — beide in die Erlaubnisliste, mit Begründung an der Zeile |
 | 2026-08-24 | F2 | **Ein gesunder Loki taucht in seinen eigenen Labels nicht auf, und das ist Absicht.** `ops/loki/loki.yaml` setzt `log_level: warn`, damit Alloy nicht Lokis Bericht über das Speichern von Alloys Zeilen einsammelt — der Kommentar dort nennt die Schleife. Auf dem Host war Lokis letzte Zeile ein Start-`error` von vor 23 Stunden; das Label-Endpoint schaut sechs zurück. Eine Abnahme, die `loki` verlangt, geht also **rot, weil der Dienst sich benimmt**. `need` hat ihn nie verlangt — der Kommentar sagt jetzt, warum nicht. | **erledigt hier**, als Klarstellung |
