@@ -66,9 +66,27 @@ Grafana-App muss von ihrer Seite hineingehängt werden. **Nicht** mit
 5. In Grafana **Connections → Data sources → Add data source → Prometheus**,
    URL `http://timseil-prometheus:9090`, speichern und testen.
 6. Dasselbe für **Loki**, URL `http://timseil-loki:3100`.
-7. Gegenprobe, und sie gehört dazu: ein Panel je Quelle. Metrik
-   `up{stack="timseil"}`, Logzeile `{service="api"}`. Zeigt eins von beiden „no
-   data", während beide Container laufen, fehlt Schritt 4.
+7. Gegenprobe, und sie gehört dazu: eine Abfrage je Quelle, am schnellsten in
+   **Explore**.
+
+   Metrik: **`up`** — schlicht, und das ist Absicht. Erwartet werden drei
+   Reihen, `job="prometheus"`, `job="alloy"`, `job="loki"`.
+
+   **Nicht `up{stack="timseil"}`.** Das stand hier zuerst und ist falsch:
+   `external_labels` hängt Prometheus nur an Daten, die den Server *verlassen*
+   — Föderation, `remote_write`, Alarme. Eine Grafana-Datasource fragt lokal,
+   und lokal gibt es das Label nicht. Am 24.08.2026 nachgemessen: `up` liefert
+   `__name__`, `instance`, `job` und sonst nichts, `up{stack="timseil"}` liefert
+   ein leeres Ergebnis. F5 sieht das Label, weil sie über den Tunnel fragt.
+
+   `up` ist ohnehin die bessere Gegenprobe: zeigt es `job="crowdsec"`, hängt die
+   Datasource am **Nachbar-Prometheus** — der Fehler, gegen den die Aliase oben
+   stehen, wird damit sichtbar statt still.
+
+   Logzeile: **`{service="api"}`**, und **den Zeitraum auf 24 h stellen**.
+   Explore steht auf einer Stunde; auf einer unbesuchten Seite schreibt `api`
+   in einer Stunde nichts, und „no data" hieße dann „niemand war da", nicht
+   „nichts kommt an".
 
 **Nimm die Aliase, nicht `prometheus:9090`.** Das ist keine Kosmetik: jene
 Grafana hängt an mehreren Netzen, und der Name `prometheus` existiert in mehr
