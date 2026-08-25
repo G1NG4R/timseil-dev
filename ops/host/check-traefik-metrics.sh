@@ -12,8 +12,22 @@
 #      nothing else (CLAUDE.md, handbook ch. 29). An open metrics port hands a
 #      stranger the routing table and the request rates.
 #
-# The host reaches container IPs on a bridge network directly, so this needs no
-# throwaway container and no image that is not already here.
+# THE HOST CANNOT REACH THIS NETWORK, and the first version of this script
+# assumed it could. dokploy-network is an OVERLAY (Dokploy runs swarm; measured
+# 2026-08-25, driver=overlay), and overlay addresses do not exist in the host's
+# network namespace. A curl from here answers nothing no matter how healthy the
+# proxy is.
+#
+# That defect hid behind a true result for two stages: the metrics were off, so
+# the line failed for the reason it named, and nobody looked past it. It came
+# out the moment the setting was finally switched on and the check went on
+# saying no -- while the same request from inside the network returned 142
+# series.
+#
+# So the probe runs in a throwaway container ON the network, and it borrows the
+# image our own Prometheus runs: already present on this host, and carrying
+# wget, which is why docs/runbooks/observability.md uses it as the client
+# everywhere else.
 #
 # TRAEFIK_METRICS_PORT overrides the port if Dokploy's static configuration uses
 # a different one — read it there rather than trusting this default.
@@ -38,7 +52,10 @@ ip=$(docker inspect "$name" \
 ok "reachable on $net at $ip"
 
 # 1. The endpoint answers, and it answers with our proxy's series.
-body=$(curl -fsS --max-time 5 "http://$ip:$port/metrics" 2>/dev/null || true)
+probe=$(docker ps --format '{{.Image}}' | grep -m1 'prom/prometheus' || true)
+[ -n "$probe" ] || probe=alpine:3
+body=$(docker run --rm --network "$net" --entrypoint wget "$probe" \
+  -qO- --timeout=5 "http://$ip:$port/metrics" 2>/dev/null || true)
 if [ -z "$body" ]; then
   no "no answer from http://$ip:$port/metrics — is metrics.prometheus on in the static config?"
 else
