@@ -176,6 +176,20 @@ services:
       # when you want the api to stay off the network entirely.
       UPTIME_TRANSPORT: ${UPTIME_TRANSPORT:-}
 
+      # The off switch for the PromQL snapshot loop (F5), and the second value
+      # in this block the file chooses rather than passes through. `prometheus`
+      # is the default in api/internal/config and it is the right default THERE:
+      # a production deployment that quietly takes no snapshots shows `— NO
+      # DATA` while Prometheus measures perfectly well next door.
+      #
+      # This file runs five services and none of them is a Prometheus. Left on,
+      # the loop would log a refused connection every five minutes, and a
+      # failure line that is always there is a failure line nobody reads — which
+      # is exactly the state that has to stay legible when it means something.
+      # `make prod` and `make rolling-lab` run the real stack and get the real
+      # default.
+      SNAPSHOTS_TRANSPORT: ${SNAPSHOTS_TRANSPORT:-off}
+
       # The contact form. `log` rather than `smtp`, and that is the one value in
       # this block chosen by the file rather than passed through. At C6 the
       # reason was that the OVH mailbox and the DNS records did not exist yet;

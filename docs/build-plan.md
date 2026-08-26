@@ -1379,7 +1379,18 @@ Dazu die Konto-Ebene, die technisch nichts kostet und alles rettet: **2FA auf OV
 
 ## Anhang A — SLO-Definition
 
-In **F9** festlegen und auf der Fallstudie zeigen:
+*Korrigiert in F5, zwei Angaben, und die zweite ist die interessantere.*
+**Festgelegt wurde in F5, nicht in F9** — Teil II sagt es bei F5 („SLIs und SLOs
+aus Anhang A **schriftlich festlegen**"), und Teil II gewinnt. Die verbindliche
+Fassung mit Messquelle, Fenster und den Lücken je SLI steht seit dann in
+[`docs/slo.md`](slo.md); F9 zeigt sie auf der Fallstudie.
+
+Und **das Fehlerbudget unten steht unter der falschen Überschrift.** 0,5 % von
+genau dreißig Tagen sind 3 h 36 min; die 3 h 39 min sind 0,5 % eines
+Durchschnittsmonats (30,4375 d). Beide Zahlen sind für ihre Frage richtig, die
+Spalte sagt „30 d". Verbindlich sind die dreißig Tage und damit **3 h 36 min**.
+`docs/slo.md` rechnet es nach, samt der dritten Zahl, die dabei auffällt: über
+das 91-Tage-Fenster der Seite wären es 10 h 55 min.
 
 | SLI | Messung | SLO | Fehlerbudget/30 d |
 |---|---|---|---|

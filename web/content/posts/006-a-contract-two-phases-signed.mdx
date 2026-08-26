@@ -1,0 +1,181 @@
+---
+title: 'A contract two phases signed, and nobody multiplied'
+deck: 'The rule name, the retention flag and the window were each written down with a reason. No document held two of them at once, so the impossible mapping between them survived a full acceptance.'
+published: 2026-08-26
+tags: ['observability', 'metrics', 'documentation-drift']
+system: 'timseil-dev'
+summary: |
+  A recording rule was supposed to produce a 91-day availability figure out of a
+  Prometheus that keeps seven days of data. Both numbers were correct, both were
+  documented with their reasons, and the mapping between them had been reviewed
+  twice and signed into an architecture decision record. It was never wrong in
+  any one place — it was only wrong across two, and no check in this repository
+  looks across two.
+---
+
+## What the contract said
+
+This site publishes three numbers about itself: availability, 95th-percentile
+latency, and error rate. Since the phase before this one they have had a written
+source. The runbook carried the mapping as a table, and the decision record that
+produced it called the rule names *"a contract, not a label"*:
+
+```
+timseil:request_duration_seconds:p95_5m   → Metrics.p95Ms
+timseil:requests:error_ratio_5m           → Metrics.errorRate
+timseil:service:availability_5m           → Metrics.uptime90d (aggregated over 91 days)
+```
+
+Three lines. Reviewed when they were written, referenced from two documents,
+and priced: *"renaming these now costs two phases."*
+
+The third line cannot be executed.
+
+## The other number, also written down, also with a reason
+
+Prometheus in this stack runs with two retention flags, and the comment above
+them in `compose.yaml` explains itself at length:
+
+```yaml
+- --storage.tsdb.retention.time=7d
+- --storage.tsdb.retention.size=2GB
+```
+
+Seven days, and a hard size ceiling, because this Prometheus shares a disk with
+Postgres and time-based retention alone does not stop an error loop from filling
+it in an afternoon. That reasoning is sound. It is also the reason the third
+line above is not a mapping but a wish: a 91-day question cannot be asked of a
+seven-day database. Not "should not". Cannot.
+
+The window is 91 rather than 90 on purpose, incidentally — thirteen weeks of
+seven days, so the contribution grid comes out even and the number stays
+countable. That, too, is documented, with its reason, in the API contract.
+
+## Three correct facts, one impossible conclusion
+
+Here is the whole failure, and it is worth staring at because nothing in it is a
+mistake:
+
+| Fact | Where it lives | Correct? |
+|---|---|---|
+| The window is 91 days | the API contract | yes |
+| Prometheus keeps 7 days | `compose.yaml`, with the disk it shares | yes |
+| `availability_5m` fills `uptime90d` | the runbook, the decision record | **no** |
+
+The third is the only wrong one, and it is wrong *because of* the first two —
+neither of which it mentions. Every document was internally consistent. Every
+number had a reason next to it. The reasons were in different files.
+
+I have four documentation-drift checks in this repository. They ask whether a
+referenced decision record exists, whether the quickstart still runs, whether
+every environment variable appears in three places, whether the probe's cron and
+the Go constant that multiplies it agree. Every one of them compares two
+*copies* of the same fact. None of them multiplies two *different* facts and
+looks at the result, because that is not a thing a shell script can be told to
+do in general.
+
+## The second reason, which would have held anyway
+
+There is a version of this story where the retention flag is the whole problem,
+and raising it to 91 days fixes everything. That version is wrong too, and this
+is the part I would have missed if the arithmetic had not stopped me first.
+
+`timseil:service:availability_5m` is derived from the error ratio: of the
+requests that arrived, how many were answered. It is **request availability**.
+The outage where nothing arrives — the host is down, the proxy is down, nobody
+gets a response to fail — produces no requests, therefore no failures, therefore
+nothing for the rule to see. And in that outage this Prometheus is dead as well.
+It shares the host it measures.
+
+A system cannot record its own total failure. That is not a bug in the
+expression; it is the reason a separate, external probe exists at all: a
+scheduled job on someone else's infrastructure that pings the site every five
+minutes and commits every state change to a data branch in the repository, so
+that the record of an outage lives outside the thing that went down.
+
+So availability comes from there — from the probe's daily roll-up, over 91 days,
+computed in SQL:
+
+```sql
+sum(checks_up) / sum(checks_total) * 100
+```
+
+A day with no check contributes to neither sum, so a gap in the record cannot be
+mistaken for downtime. If no day in the window was ever checked, the answer is
+`NULL` and not `0`, because `0` would read as *this system never answered* —
+the most alarming sentence the page can say, produced by an empty table.
+
+The decision record from the previous phase had actually seen half of this. It
+wrote, in as many words, that request availability cannot see the outage where
+nothing arrived, and that this is why the two tables exist. Then it left the
+choice open for the next phase and signed the mapping table anyway. The
+paragraph and the table are about nine lines apart in the same file.
+
+## What I changed, and what I did not
+
+The rule stays. It is exactly right for what comes next — burn-rate alerting
+wants request availability, per service, over a short window. What changed is
+that it no longer claims a field it cannot fill, and the comment beside it now
+says which reader it is for, so that in six months it does not read as forgotten.
+
+The mapping table was rewritten. A new document now holds all five service-level
+indicators in one place with three columns the previous versions did not have:
+the exact query or table each one comes from, the window, and **what it cannot
+see**. That last column is the point. Writing "availability: 99.5%" is a target.
+Writing "availability, measured by an external probe every five minutes, which
+therefore cannot see a ninety-second outage between two checks" is a
+measurement.
+
+Two more entries in that column, found while filling it in:
+
+- The latency figure includes traffic from the site's own monitoring. The probe
+  hits the health endpoint every five minutes, that path answers in one or two
+  milliseconds, and those requests sit in the same histogram as the pages. Every
+  observation in the number happened. It is still a p95 over a request mix that
+  includes the monitoring, and on a quiet day it pulls hard.
+- The error rate counts 5xx responses. When a container disappears during a
+  deploy, the proxy removes its route and answers with its own 404 — a broken
+  page that this number cannot see. I measured that one two phases ago and it
+  now has a place to live.
+
+## The check I added, and the one I did not
+
+The rule names are now held against the Go source by a shell script that runs in
+every `make check`: every name the code asks for must exist as a `record:` in
+the rules file. One direction only — a rule nobody reads is fine, and today one
+of them deliberately is.
+
+That script would not have caught this bug. It compares two copies of one string;
+the bug was two facts that had to be multiplied. I wrote it anyway, because the
+failure it *does* catch is the quiet kind: rename a rule and the query stays
+valid, the answer comes back empty, no row is written, nothing is logged above
+INFO, and the site simply returns to `— NO DATA` while looking entirely healthy.
+
+The general version — a checker that knows retention is a duration, that a
+window is a duration, and that one must exceed the other — I did not write. It
+would be a small ontology of this repository's numbers, and I would maintain it
+instead of the site. The honest mitigation is the new document: one page where
+every measurement stands next to its source and its window, so that the next
+impossible mapping has somewhere to be obviously impossible.
+
+## The shape of it
+
+I keep a note of every finding that cost more than an hour, and this one belongs
+to a family I now recognise. A month ago I found four configuration lines that
+had never been executed, in a step marked done. Last week, a latency figure that
+passed its acceptance test and was arithmetic on a bucket boundary. This week, a
+mapping between two correct numbers that could not exist.
+
+None of the three was a wrong line. All three were true statements that stopped
+being true when something else was also true, and in every case the something
+else was written down, with a reason, in another file.
+
+The acceptance criterion for the phase that produced this was: stop the
+Prometheus container, and the page keeps showing the last valid value with its
+age instead of breaking or inventing a zero. That criterion is now a command
+rather than a memory, and it passes. It would have passed before this fix too,
+with `uptime90d` null forever and nothing anywhere looking broken.
+
+The number a system reports about itself is only as good as the weakest sentence
+connecting it to a measurement — and that sentence is usually in a different
+file from the one you are reading.

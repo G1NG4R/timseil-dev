@@ -42,6 +42,7 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/mail"
 	"github.com/G1NG4R/timseil-dev/api/internal/ops"
 	"github.com/G1NG4R/timseil-dev/api/internal/server"
+	"github.com/G1NG4R/timseil-dev/api/internal/snapshots"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 	"github.com/G1NG4R/timseil-dev/api/internal/uptime"
 )
@@ -147,6 +148,16 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	// of one arithmetic — see ADR 0019 §6.
 	backfiller := uptime.New(store.New(pool), cfg.Uptime, cfg.SiteSystemSlug, ops.ProbeInterval, log)
 
+	// The fourth background user of the pool, and the second thing in this
+	// binary that talks to something outside it — though "outside" here is a
+	// container on the same docker network rather than the internet.
+	//
+	// It is what finally fills metric_snapshots, which B2 created and nothing
+	// has written to since. Prometheus measures and Postgres serves (ADR 0007),
+	// so no page load ever waits on a query and a Prometheus that is down costs
+	// the site the age of its numbers and nothing else.
+	snapshotter := snapshots.New(store.New(pool), cfg.Snapshots, cfg.SiteSystemSlug, log)
+
 	// The mail transport, and the hourly ceiling both users of it share.
 	//
 	// One Budget for the handler and the dispatcher together, because it stands
@@ -157,7 +168,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	sender := newSender(cfg.Mail, log)
 	budget := contact.NewBudget(time.Now())
 
-	// The fourth background user of the pool. It carries out what the handler
+	// The fifth background user of the pool. It carries out what the handler
 	// could not: a visitor gets one attempt because they are waiting on the
 	// answer, and everything after that is this loop's.
 	dispatcher := contact.NewDispatcher(store.New(pool), sender, cfg.Mail.To, budget, log)
@@ -204,6 +215,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		aggregator.Stop()
 		refresher.Stop()
 		backfiller.Stop()
+		snapshotter.Stop()
 		dispatcher.Stop()
 		stopLimiters()
 		pool.Close()
@@ -212,18 +224,19 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 
 	log.Info("api listening", "addr", ln.Addr().String())
 
-	// All five released after the drain, and in this order: the three background
+	// All seven released after the drain, and in this order: the five background
 	// users of the pool first, because work in flight would otherwise meet a
 	// closed one, the limiters' janitors next because nothing is waiting on
 	// them, the pool last because a handler still writing its response may still
-	// need it. Every Stop cancels rather than waits — a roll-up or a fetch cut
-	// halfway loses nothing that the next tick does not redo, and a delivery cut
-	// halfway costs at worst one duplicate mail to our own inbox, which is
-	// cheaper than holding the drain open for an SMTP conversation.
+	// need it. Every Stop cancels rather than waits — a roll-up, a fetch or a
+	// snapshot cut halfway loses nothing that the next tick does not redo, and a
+	// delivery cut halfway costs at worst one duplicate mail to our own inbox,
+	// which is cheaper than holding the drain open for an SMTP conversation.
 	return serve(ctx, srv, ln, cfg.ShutdownDelay, cfg.ShutdownGrace, &accepting, func() {
 		aggregator.Stop()
 		refresher.Stop()
 		backfiller.Stop()
+		snapshotter.Stop()
 		dispatcher.Stop()
 		stopLimiters()
 		pool.Close()

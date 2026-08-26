@@ -1,15 +1,37 @@
-# The three numbers the site shows, as recording rules.
+# The numbers the site shows, as recording rules.
 #
 # WHAT HANGS ON THIS FILE. `Metrics` in contract/openapi.yaml has three fields,
-# every one of them nullable, and today every one of them is null:
+# every one of them nullable. Two of them are answered here; the third is not,
+# and F5 decided that on purpose:
 #
-#     Metrics.p95Ms       <- timseil:request_duration_seconds:p95_5m
-#     Metrics.errorRate   <- timseil:requests:error_ratio_5m
-#     Metrics.uptime90d   <- timseil:service:availability_5m, aggregated by F5
+#     Metrics.p95Ms       <- timseil:site:request_duration_seconds:p95_5m
+#     Metrics.errorRate   <- timseil:site:requests:error_ratio_5m
+#     Metrics.uptime90d   <- ops_days, NOT this file. See below.
 #
-# F5 queries these BY NAME over the tunnel and writes the answers into
+# F5 queries those two BY NAME from inside the stack and writes the answers into
 # metric_snapshots. A rename here is a rename in F5's PromQL and in whatever
-# read it since -- so the names are a contract, not a label. ADR 0040 4.
+# read it since -- so the names are a contract, not a label. ADR 0040 4,
+# ADR 0041 2. tools/check-rule-names.sh holds the two halves together.
+#
+# THERE IS NO TUNNEL. The build plan says F5 asks "over the tunnel"; that
+# sentence was written for the two-host topology ADR 0008 abandoned. The api and
+# this Prometheus share the compose default network, and the api asks
+# timseil-prometheus:9090 directly -- the alias rather than the service name,
+# because dokploy-network sorts ahead of the default one and Docker answers a
+# collision from the network whose name sorts first (ADR 0039 2, ADR 0041 4).
+#
+# WHY uptime90d IS NOT HERE. Two reasons, and the first one ends the argument:
+# this TSDB keeps 7 days (--storage.tsdb.retention.time=7d) and the contract's
+# window is 91. A 91-day question cannot be asked of a 7-day database, however
+# the rule is written. The second reason is the one that would matter even with
+# infinite retention, and it is spelled out at timseil:service:availability_5m
+# below. ADR 0041 1.
+#
+# PER-SERVICE AND SITE-WIDE, and both are kept. The three per-service rules
+# carry a `service` label and are what F9's dashboards and F10's burn-rate
+# alerts slice by. The two `timseil:site:*` rules answer a different question --
+# the one the contract asks, which has room for exactly one number per field --
+# and they answer it over the requests rather than over the services. ADR 0041 2.
 #
 # WHY TRAEFIK AND NOTHING ELSE. The contract says it in as many words: p95Ms is
 # "95th percentile latency, measured at the reverse proxy". It is also the only
@@ -37,7 +59,10 @@
 # The `@docker` suffix is left on. It is Traefik's provider suffix and stripping
 # it here would make the recorded series prettier and less honest -- the day the
 # provider changes, a stripped label changes silently and a kept one does not.
-# Mapping a service to a system slug is F5's job.
+# Mapping a service to a system slug WAS F5's job, and F5 answered it here
+# rather than in Go: the two `timseil:site:*` rules below aggregate the same
+# `service=~"timseil-.*"` set away, so the regex IS the mapping and the Go
+# side never sees a service label at all. ADR 0041 3.
 #
 # NOT FILTERED AT SCRAPE TIME, and that is a deferral rather than an oversight.
 # The neighbours' series are cardinality on a 2 GB budget, which is the same
@@ -123,6 +148,82 @@ groups:
       # arrived, because in that outage this Prometheus is down too -- it shares
       # the host. That gap is exactly what F4's external probe exists for, and
       # why ops_checks and metric_snapshots are two tables and not one.
-      # F5 decides which of the two fills uptime90d; this rule does not claim it.
+      # F5 decided, and it decided against this rule: uptime90d comes from
+      # ops_days. Retention settles it before the semantics do -- 7 days of
+      # TSDB cannot answer a 91-day question -- and the paragraph above is
+      # why the answer would still be ops_days with infinite retention.
+      # This rule stays for F10: a burn-rate alert is exactly the reader
+      # that wants request availability per service over a short window.
+      # ADR 0041 1.
       - record: timseil:service:availability_5m
         expr: 1 - timseil:requests:error_ratio_5m
+
+      # ---------------------------------------------------------------------
+      # THE TWO THE SITE READS. Everything above is per service; these two are
+      # per SITE, and the difference is the contract's, not a preference.
+      #
+      # `Metrics` has one p95Ms and one errorRate. Traefik has two services.
+      # Something has to turn two numbers into one, and where that happens
+      # decides what the number means:
+      #
+      #   in Go, by taking the worse of the two -> an upper bound, and for a
+      #     ratio not "the share of 5xx responses" that the contract declares
+      #   in Go, by taking web and dropping api -> a 500 out of /api/systems
+      #     would never reach errorRate; the page would hide its own failure
+      #   here, over the requests -> request-weighted, which is the sentence
+      #     the contract already writes
+      #
+      # So: here. ADR 0041 2.
+      #
+      # WHAT THIS COSTS, and it belongs next to the rules rather than in a
+      # changelog. F4's probe hits /api/health every five minutes and that path
+      # answers in one or two milliseconds. Those requests are real traffic and
+      # they sit in the same histogram as the pages, so on a quiet day the site
+      # p95 is pulled toward the probe. The number is not invented -- every
+      # observation in it happened -- but it is a p95 over a request mix that
+      # includes our own monitoring, and docs/slo.md says so out loud.
+      #
+      # No `by` clause anywhere below. That is the whole mechanism: dropping
+      # `service` is what makes these one series instead of two, and it is also
+      # what makes the Go side free of any label handling.
+
+      # The site's p95, in seconds. Same conversion debt as the per-service
+      # rule: the contract wants milliseconds and F5 multiplies, because a unit
+      # baked into a series name that does not say `seconds` is a trap.
+      #
+      # Summing the buckets before the quantile is the only correct order --
+      # averaging two services' p95s would be a quantile of quantiles, which is
+      # not a quantile of anything. The bucket edges from F3 still bound what
+      # this can say: "accurate to one bucket", not "accurate to a millisecond".
+      - record: timseil:site:request_duration_seconds:p95_5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(traefik_service_request_duration_seconds_bucket{service=~"timseil-.*"}[5m])
+            )
+          )
+
+      # The site's 5xx share. The `or ... * 0` branch is carried over unchanged
+      # and for the unchanged reason: with only the numerator, a site that
+      # served traffic and failed none of it matches nothing, and F5 would store
+      # a measured zero as null. Invariant 1 has two directions and this is the
+      # one that is easy to forget.
+      #
+      # No traffic at all is still 0/0 -> NaN, and that one really is "not
+      # measured". F5 writes null for it and no row at all if both rules say it.
+      - record: timseil:site:requests:error_ratio_5m
+        expr: |
+          (
+            sum(
+              rate(traefik_service_requests_total{service=~"timseil-.*",code=~"5.."}[5m])
+            )
+            or
+            sum(
+              rate(traefik_service_requests_total{service=~"timseil-.*"}[5m])
+            ) * 0
+          )
+          /
+          sum(
+            rate(traefik_service_requests_total{service=~"timseil-.*"}[5m])
+          )

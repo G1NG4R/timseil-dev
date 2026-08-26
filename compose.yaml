@@ -384,6 +384,13 @@ services:
       # public and the reader is unauthenticated on purpose.
       UPTIME_TRANSPORT: ${UPTIME_TRANSPORT:-}
 
+      # The PromQL snapshot loop (F5). Passed through; `prometheus` is the
+      # default and lives in api/internal/config. No URL beside it, and that is
+      # the SSRF rule rather than an omission: the address is compiled into
+      # api/internal/snapshots, and it is the ALIAS below rather than the
+      # service name.
+      SNAPSHOTS_TRANSPORT: ${SNAPSHOTS_TRANSPORT:-}
+
       # Empty in development because nothing forwards anything there. Here
       # Traefik does forward, and Dokploy sets this to the network it reaches the
       # api on. Believing X-Forwarded-For from anyone else would let a client
@@ -659,7 +666,20 @@ services:
     # as "our scrape is dead" instead of "wrong host". And the alias does not
     # depend on how names happen to sort, which the fix would otherwise inherit.
     networks:
+      # The alias is on BOTH networks, and the second one is for a reader inside
+      # this stack rather than outside it. The api sits on the default network
+      # and on dokploy-network; Docker answers a name that exists on several of
+      # a reader's networks from the network whose NAME SORTS FIRST, and
+      # `dokploy-network` sorts ahead of `<project>_default`. That network is
+      # shared with every other app on this host, so the day one of them
+      # publishes a container called `prometheus`, `http://prometheus:9090`
+      # would answer from THEIRS — and internal/snapshots would write a
+      # stranger's latency into a page that says it measured itself. Green,
+      # plausible, about the wrong system. `timseil-prometheus` collides with
+      # nobody, and the Go side asks for it by name. ADR 0041 §4.
       default:
+        aliases:
+          - timseil-prometheus
       observability-network:
         aliases:
           - timseil-prometheus

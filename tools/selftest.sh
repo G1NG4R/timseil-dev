@@ -50,7 +50,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-lint.sh" "$root/tools/check-versions.sh" \
    "$root/tools/check-tidy.sh" "$root/tools/check-env.sh" \
    "$root/tools/check-adrs.sh" "$root/tools/check-readme.sh" \
-   "$root/tools/check-probe-cadence.sh" \
+   "$root/tools/check-probe-cadence.sh" "$root/tools/check-rule-names.sh" \
    "$root/tools/version.sh" \
    "$root/tools/check-dockerfiles.sh" "$root/tools/verify-supply-chain.sh" \
    "$root/tools/check-pins.sh" "$root/tools/check-secrets.sh" "$root/tools/sbom.sh" \
@@ -2181,6 +2181,54 @@ rejects "a cron that skips days rejected"    cadence_check '*/5 * * * 1'    '5 *
 rejects "a cron without a step rejected"     cadence_check '17 * * * *'     '5 * time.Minute'
 rejects "an unreadable constant rejected"    cadence_check '*/5 * * * *'    'probeEvery'
 rm -rf .github api/internal/ops
+
+printf 'rule names\n'
+# The second gate of the same shape, and the same reason it exists before the
+# failure does: ADR 0040 §4 priced a rename of these names ("zwei Phasen") and
+# slis.yml repeats it. What it catches is a query that stays valid and starts
+# answering nothing — no error, no WARN, and both numbers back on `— NO DATA`.
+mkdir -p ops/prometheus/rules api/internal/snapshots
+
+write_rules() { # write_rules <declared...>
+  printf 'groups:\n  - name: timseil-slis\n    rules:\n' > ops/prometheus/rules/slis.yml
+  for r in "$@"; do
+    printf '      - record: %s\n        expr: vector(1)\n' "$r" >> ops/prometheus/rules/slis.yml
+  done
+}
+
+write_asks() { # write_asks <asked...>
+  printf 'package snapshots\n\nconst (\n' > api/internal/snapshots/promql.go
+  i=0
+  for r in "$@"; do
+    i=$((i + 1))
+    printf '\truleName%s = "%s"\n' "$i" "$r" >> api/internal/snapshots/promql.go
+  done
+  printf ')\n' >> api/internal/snapshots/promql.go
+}
+
+names_check() { tools/check-rule-names.sh "$tmp"; }
+
+write_rules 'timseil:site:p95' 'timseil:site:ratio' 'timseil:service:availability_5m'
+write_asks  'timseil:site:p95' 'timseil:site:ratio'
+accepts "every asked rule declared accepted" names_check
+
+# One direction only: a rule nobody reads is correct today, because
+# availability_5m waits for F10 and the per-service three feed F9.
+write_asks 'timseil:site:p95'
+accepts "a declared rule nobody reads accepted" names_check
+
+write_asks 'timseil:site:p95' 'timseil:site:ratio_5m'
+refuses "a renamed rule rejected" "does not declare it" names_check
+
+write_rules
+write_asks 'timseil:site:p95'
+refuses "a rules file with no records rejected" "declares no recording rule" names_check
+
+write_rules 'timseil:site:p95'
+printf 'package snapshots\n' > api/internal/snapshots/promql.go
+refuses "a go file naming no rule rejected" "names no recording rule" names_check
+
+rm -rf ops api/internal/snapshots
 
 printf 'pre-commit hook\n'
 printf 'bad \n' > hookws.txt

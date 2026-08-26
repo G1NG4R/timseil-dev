@@ -65,9 +65,15 @@ const (
 	EnvProbeToken      = "INTERNAL_PROBE_TOKEN"
 	EnvDeployToken     = "INTERNAL_DEPLOY_TOKEN"
 	EnvUptimeTransport = "UPTIME_TRANSPORT"
+	// Not METRICS_TRANSPORT. METRICS_DB_PASSWORD and METRICS_DATABASE_URL
+	// already belong to the postgres-exporter, and a third METRICS_* meaning
+	// something else entirely is a trap laid for the person reading .env at
+	// three in the morning.
+	EnvSnapshotsTransport = "SNAPSHOTS_TRANSPORT"
 )
 
-// The two answers CONTRIBUTIONS_TRANSPORT and UPTIME_TRANSPORT accept.
+// The answers CONTRIBUTIONS_TRANSPORT, UPTIME_TRANSPORT and
+// SNAPSHOTS_TRANSPORT accept.
 //
 // Here and not in internal/contributions, which is where the matching pair for
 // mail lives one package over. internal/mail is a leaf and can hold its own
@@ -77,6 +83,12 @@ const (
 const (
 	TransportGitHub = "github"
 	TransportOff    = "off"
+
+	// SNAPSHOTS_TRANSPORT's own answer, and it names the upstream the way the
+	// other two do rather than saying "on". A transport value that says which
+	// system is being talked to survives a second source; a value that says
+	// "on" has to be renamed the day there is one.
+	TransportPrometheus = "prometheus"
 )
 
 // The role the api is allowed to connect as. ADR 0011 splits the schema owner
@@ -156,6 +168,17 @@ const (
 	// point the reader at an httptest server instead.
 	defaultUptimeTransport = "github"
 
+	// The same direction again, and the reason is the acceptance criterion of
+	// F5 rather than a preference. A deployment that quietly takes no snapshots
+	// leaves every number on the page at `— NO DATA` while Prometheus is
+	// measuring perfectly well next door — the site would understate itself,
+	// and nothing anywhere would look broken.
+	//
+	// off is for a deployment that has no Prometheus to ask: compose.dev.yaml
+	// runs five services and none of them is one, and a loop logging a failure
+	// every five minutes there teaches the reader to skip failures.
+	defaultSnapshotsTransport = "prometheus"
+
 	// The pepper has no default at all, for the same reason GITHUB_TOKEN has
 	// none: a shipped value is a value every deployment shares, and a shared
 	// pepper is no pepper. minPepperLength is the floor rather than a
@@ -206,6 +229,7 @@ type Config struct {
 	Contact   Contact
 	Internal  Internal
 	Uptime    Uptime
+	Snapshots Snapshots
 
 	// TrustedProxies decides whether X-Forwarded-For is believed at all. Empty
 	// is the default and means "believe nobody" — then the peer address is the
@@ -368,6 +392,28 @@ type Uptime struct {
 // like GitHub.Fetches and Mail.Sends, and read in the same two places.
 func (u Uptime) Replays() bool { return u.Transport == TransportGitHub }
 
+// Snapshots is what the PromQL loop from F5 needs, and it is one field for the
+// same reason Uptime is: the address it asks is compiled in, not configured.
+//
+// No URL here either, and this is the case that makes the rule concrete. This
+// process asks Prometheus for numbers it then publishes as its own
+// measurements. A PROMETHEUS_URL in the environment would be one edit away from
+// a page that honestly reports somebody else's latency — the failure is not a
+// crash, it is a plausible number about the wrong system. The address, and the
+// reason it is an alias rather than a service name, live in
+// internal/snapshots/promql.go.
+type Snapshots struct {
+	// Transport is TransportPrometheus or TransportOff. Off means the loop is
+	// never started: nothing is asked and nothing is written, and the read path
+	// keeps answering null the way it has since B2.
+	Transport string
+}
+
+// Takes reports whether this deployment records snapshots at all. Shaped like
+// GitHub.Fetches, Mail.Sends and Uptime.Replays, and read in the same two
+// places.
+func (s Snapshots) Takes() bool { return s.Transport == TransportPrometheus }
+
 // Load reads and validates the environment.
 //
 // The error it returns names every problem it found, one per line, so a cold
@@ -427,6 +473,11 @@ func Load() (Config, error) {
 		Uptime: Uptime{
 			Transport: l.oneOf(EnvUptimeTransport, defaultUptimeTransport,
 				TransportGitHub, TransportOff),
+		},
+
+		Snapshots: Snapshots{
+			Transport: l.oneOf(EnvSnapshotsTransport, defaultSnapshotsTransport,
+				TransportPrometheus, TransportOff),
 		},
 
 		Internal: Internal{
