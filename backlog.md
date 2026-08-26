@@ -108,7 +108,46 @@ Stunden echtem Verkehr.
 einer frischen `StartedAt`. Betriebsfest, nicht upgradefest — der Relay-Fallback
 aus ADR 0040 bleibt ungebaut.
 
-**Als Nächstes: Command-Feld nach dem Merge, Deploy, dann F5.**
+### Abgenommen gegen Produktion, 26.08.2026, 19:56 UTC
+
+**Sechs Jobs, alle `1`** — `prometheus alloy loki traefik node postgres`. Acht
+Container laufen, die zwei neuen Exporter inklusive.
+
+Und die Abnahme selbst, beide Richtungen der Invariante in einer Abfrage:
+
+```
+timseil-web@docker    p95 0.0246   error_ratio 0     availability 1
+timseil-api@docker    p95 NaN      error_ratio NaN   availability NaN
+```
+
+**`web` ist gemessen und liefert eine echte Null** — der `or … * 0`-Zweig
+greift. **`api` ist nicht gemessen und liefert `NaN`**, weil die Anfragen nur
+auf `/` gingen; die Regel erfindet dafür keine Null. Genau der Unterschied, den
+Invariante 1 verlangt, gegen Produktion statt gegen das Labor.
+
+Davor stand dieselbe Abfrage dreimal auf `NaN` — der letzte Verkehr war der
+Deploy-Verify, das 5-Minuten-Fenster war leer. Auch das ist die richtige
+Antwort, und der Übergang `NaN → 0` ist der eigentliche Beweis.
+
+### Zwei Dinge, die der Deploy nebenbei gelehrt hat
+
+**Der Merge löst die Pipeline sofort aus.** „Command-Feld nach dem Merge" war
+die falsche Reihenfolge — das Feld gehört zwischen den grünen PR-Lauf und den
+Merge. Der `deploy`-Job scheiterte deshalb einmal mit *„the panel does not run
+the rollout this repository defines"*, und das ist die Sperre bei der Arbeit:
+sie hielt an, **bevor** irgendetwas lief, die Seite blieb auf dem alten Build.
+Kostet einen Wiederholungslauf.
+
+**„Deploy grün" und „die Dienste laufen" sind zwei Aussagen**, und die erste
+Messung danach zeigte `node-exporter` und `postgres-exporter` als fehlend, dazu
+die Zwillinge noch am Leben. Kein Fehler — die Abfrage fiel mitten in den
+Rollout, `deploy.sh` verifiziert nur api und web, Schritt 4 und 5 laufen danach
+weiter. Eine Minute später war alles da. **Der Reflex, den ersten Blick zu
+melden, wäre der F2-Fehler mit umgekehrtem Vorzeichen gewesen.**
+
+**Als Nächstes: F5** — SLO-Definition und die PromQL-Snapshots nach Postgres.
+Erst dort verlassen die drei Zahlen Prometheus und erreichen die Seite;
+`Metrics.*` steht bis dahin weiter auf `null`, und das ist so geplant.
 
 ---
 
