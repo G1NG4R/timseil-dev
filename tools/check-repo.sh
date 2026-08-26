@@ -1,5 +1,6 @@
 #!/bin/sh
-# Repository hygiene: line endings, trailing whitespace, final newline, hooks.
+# Repository hygiene: line endings, trailing whitespace, final newline, hooks,
+# and since F3 one more: a shell script has to parse.
 # Runs on tracked files only — never on untracked scratch or ignored output.
 #
 #   check-repo.sh            all tracked files
@@ -34,6 +35,26 @@ skip() {
 for f in $files; do
   skip "$f" && continue
   [ -f "$f" ] || continue
+
+  # A SHELL SCRIPT HAS TO PARSE, and this rule has an incident behind it rather
+  # than a good intention — twice in one session, F3, 2026-08-25.
+  #
+  # Several checks in tools/ embed an awk or python program inside a
+  # single-quoted shell string. Put an apostrophe in a COMMENT inside such a
+  # program and it closes the string: the rest of the program becomes shell,
+  # and the file stops parsing. Both times the offending word was an English
+  # possessive in a comment nobody would read twice.
+  #
+  # Why the existing gates do not catch it: tools/selftest.sh RUNS most of these
+  # scripts, so a syntax error there is loud. It cannot run the ones that need
+  # Docker and a live stack — check-observability.sh above all — and that is
+  # exactly where the second one happened. `sh -n` costs nothing and covers the
+  # gap.
+  case "$f" in
+    *.sh)
+      sh -n "$f" 2>/dev/null || bad "$f" "does not parse — sh -n rejects it"
+      ;;
+  esac
 
   if LC_ALL=C grep -q "$(printf '\r')" "$f" 2>/dev/null; then
     bad "$f" "CRLF line endings (.editorconfig says lf)"

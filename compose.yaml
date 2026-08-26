@@ -87,6 +87,9 @@ services:
       # `: "${VAR:?}"` in 10-roles.sh and abort initdb loudly, so no `:?` here.
       MIGRATE_DB_PASSWORD: ${MIGRATE_DB_PASSWORD:-}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
+      # F3, and it reaches a cluster that already exists only through the psql
+      # session in docs/runbooks/migrations.md — initdb does not run twice.
+      METRICS_DB_PASSWORD: ${METRICS_DB_PASSWORD:-}
       # POSTGRES_CREATE_TEST_DB is deliberately absent. 10-roles.sh creates
       # ${POSTGRES_DB}_test only when it is set, and only `make check-db` needs
       # that database. compose.dev.yaml sets it; this file must not.
@@ -664,6 +667,10 @@ services:
       - "9090"
     volumes:
       - ./ops/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # F3. A directory rather than a file, because rule_files takes a glob and
+      # a second group later should not need a second line here. Read-only like
+      # its neighbour: this container may evaluate the rules, never rewrite them.
+      - ./ops/prometheus/rules:/etc/prometheus/rules:ro
       - prom-data:/prometheus
     environment:
       # 80 % of the 512M limit, the same arithmetic as the api's — Go's GC sizes
@@ -806,6 +813,105 @@ services:
           memory: 256M
         reservations:
           memory: 96M
+
+  # ------------------------------------------------------------- F3 exporters
+  #
+  # Two more services on the measuring side, and the same three properties as
+  # the three above: no ports, no Traefik label, no depends_on. The last one is
+  # deliberate for postgres-exporter in particular — it reads the database, so
+  # the tempting line is `depends_on: db`. But then a database that is slow to
+  # come up delays a container whose whole job is to REPORT that, and ADR 0007
+  # keeps the measuring side out of the serving side's critical path. Without
+  # the dependency the failure is legible instead: up{job="postgres"} goes to 0.
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.12.1-distroless@sha256:8c9bac11973b94b59be88d6e11fee4429aa743c8846cdc75d65b18db33f6a106
+    restart: unless-stopped
+    # distroless, and it is not a preference. This container reads the host's
+    # root filesystem; the variant without a shell is the one where a way in
+    # buys the least. Our own images have been shell-free since D1 for the same
+    # sentence (make check-images), and a borrowed image gets the same standard.
+    command:
+      # The three paths below are where the mounts land. Without them the
+      # collectors read the CONTAINER's /proc and /sys and report a machine that
+      # does not exist — a green job, plausible numbers, and none of them the
+      # host's. That is the failure this service exists to avoid, so the flags
+      # and the mounts are written next to each other on purpose.
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host/root
+      # Everything Docker itself mounts is noise on a one-host stack: overlay
+      # layers come and go with every deploy and each one is a filesystem series.
+      # What is left is the real disk, which is the one F10's 70 % alert reads.
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+|var/lib/kubelet/.+)($$|/)
+      - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|securityfs|sysfs|tracefs)$$
+      - --web.listen-address=0.0.0.0:9100
+    expose:
+      - "9100"
+    volumes:
+      # THE SECOND EXCEPTION IN THIS FILE, and it is as narrow as the first.
+      # tools/check-compose.sh rule 3 allows only read-only paths under ./ops,
+      # plus the docker socket on alloy (ADR 0039 §3). These three are the other
+      # allowance: three literal paths, read-only, on this one service, and
+      # tools/selftest.sh proves that a fourth path or the same path on another
+      # service is still refused.
+      #
+      # Why there is no narrower version: the numbers F10's disk alert needs are
+      # the host's, and /proc and /sys are how the kernel publishes them. A
+      # node-exporter without them is a node-exporter describing its own
+      # container. ADR 0040 §2.
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        # The smallest budget in the file, and it is still generous: this
+        # process holds no series, it renders them on request. The ceiling is
+        # there so that a runaway collector is a restart rather than a host
+        # under memory pressure — the same reasoning ADR 0027 §2 applies to
+        # every other service here.
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          memory: 32M
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+    restart: unless-stopped
+    command:
+      - --web.listen-address=0.0.0.0:9187
+    expose:
+      - "9187"
+    environment:
+      # A THIRD ROLE, and the split is the same one ADR 0011 made for the first
+      # two. timseil_migrate owns the schema and does DDL; timseil_app may only
+      # read and write rows. Reading pg_stat_* is neither, and pg_stat_activity
+      # in particular shows a non-privileged role its own queries and nobody
+      # else's — so an exporter running as timseil_app would report a database
+      # with almost nothing happening in it. timseil_metrics carries pg_monitor
+      # and nothing besides. ADR 0040 §3.
+      #
+      # No `:?`. The exporter names a missing DSN in one line on startup and the
+      # job goes to 0 — restating that here would be a second place for the
+      # message to drift. The variable is set in Dokploy, like every other one.
+      DATA_SOURCE_NAME: ${METRICS_DATABASE_URL:-}
+      GOMEMLIMIT: 100MiB
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          memory: 48M
 
 
 volumes:

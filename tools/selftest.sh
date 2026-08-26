@@ -92,6 +92,25 @@ git add eof.txt
 rejects "missing final newline rejected" tools/check-repo.sh --staged
 git rm -q --cached eof.txt && rm eof.txt
 
+# F3, and the fixture is the real shape of the incident rather than a generic
+# syntax error: an apostrophe inside a comment in an awk program that is itself
+# inside a single-quoted shell string. It reads perfectly and does not parse.
+cat > broken.sh <<'BROKEN'
+#!/bin/sh
+awk '
+  # the host's own numbers
+  { print }
+'
+BROKEN
+git add broken.sh
+rejects "a shell script that does not parse rejected" tools/check-repo.sh --staged
+git rm -q --cached broken.sh && rm broken.sh
+
+printf '#!/bin/sh\nprintf "fine\\n"\n' > good.sh
+git add good.sh
+accepts "a shell script that parses accepted" tools/check-repo.sh --staged
+git rm -q --cached good.sh && rm good.sh
+
 # Markdown keeps trailing spaces on purpose (hard line break).
 printf 'line with break  \n' > doc.md
 git add doc.md
@@ -330,6 +349,47 @@ write_prod "services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 $limited"
 rejects "read-only docker socket on another service rejected" tools/check-compose.sh
+
+# The F3 exception, and the same treatment for the same reason. Rule 3 lets
+# node-exporter read /proc, /sys and / because that is where the kernel
+# publishes the numbers F10's disk alert needs, and an exporter without them
+# reports its own container instead of the machine (ADR 0040 §2). Three ways to
+# widen it by accident are tested here: a fourth path on the exporter, one of
+# the three on another service, and a writable one.
+write_prod "services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+$limited"
+accepts "the three read-only host paths on node-exporter accepted" tools/check-compose.sh
+
+write_prod "services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    volumes:
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+$limited"
+rejects "a fourth host path on node-exporter rejected" tools/check-compose.sh
+
+write_prod "services:
+  prometheus:
+    image: prom/prometheus:v3@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    volumes:
+      - /proc:/host/proc:ro
+$limited"
+rejects "a host path from the node-exporter set on another service rejected" tools/check-compose.sh
+
+write_prod "services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1@sha256:1111111111111111111111111111111111111111111111111111111111111111
+    volumes:
+      - /proc:/host/proc
+$limited"
+rejects "a writable host path on node-exporter rejected" tools/check-compose.sh
 
 write_prod "services:
   db:

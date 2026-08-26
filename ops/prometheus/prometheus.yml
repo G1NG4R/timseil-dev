@@ -7,11 +7,21 @@
 # break. ADR 0027 §2 states the same rule for memory limits — a limit we assert
 # has to be enforced by us. ADR 0039 §1.
 #
-# WHAT IS NOT HERE YET, so that a gap reads as a deferral rather than as an
-# oversight. Traefik's metrics endpoint (switched on in D3 and unscraped since),
-# node-exporter and postgres-exporter are F3, together with the recording rules
-# for p95, error rate and availability. F2 lays the pipe; F3 connects what flows
-# through it. The three jobs below are the pipe proving it carries something.
+# WHAT F3 CONNECTED. The paragraph that stood here listed Traefik, node-exporter
+# and postgres-exporter as deferrals; all three are below now, and so is
+# rule_files. F2 laid the pipe, the first three jobs proved it carried
+# something, and the next three are what the site's numbers are actually made
+# of: Metrics.p95Ms, Metrics.errorRate and Metrics.uptime90d in the contract all
+# resolve, through F5's snapshots, to a recording rule over traefik_service_*.
+#
+# WHY TRAEFIK IS REACHABLE AT ALL, because the obvious reading of the job below
+# is wrong. Traefik does not live on a network of ours; it lives in
+# dokploy-network, shared with every app on this host, and check-compose rule 1
+# and 11 keep prometheus, loki, alloy and db out of there on purpose (ADR 0039
+# §2). Nothing here joined that network. Traefik joined OURS -- the same
+# direction the neighbouring Grafana was wired in, reversed -- and it answers to
+# an alias we own rather than to `traefik`, which on a shared network is a name
+# anybody may already hold. ADR 0040 §1.
 #
 # NO --web.enable-lifecycle IN THE COMMAND either: this service carries no
 # authentication — its protection is the network boundary and nothing else
@@ -23,10 +33,22 @@
 # limit they belong with. That is the one place where Prometheus can do what
 # Loki cannot: bound its own disk by size. ADR 0039 §4.
 
+# THE RULES ARE A FILE AND NOT A LINE, and the directory is mounted read-only
+# like this one. Their names are a contract with F5: it queries them by name over
+# the tunnel and writes the answers into metric_snapshots, so renaming one later
+# costs two phases. ops/prometheus/rules/slis.yml says which contract field hangs
+# on which rule. ADR 0040 §4.
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
 global:
   # 15s is Prometheus's own default and the interval every histogram_quantile
-  # example assumes. It is also cheap here: three targets, seven days, and a
+  # example assumes. It is also cheap here: six targets, seven days, and a
   # 2 GB ceiling that this volume will not come close to.
+  #
+  # It is the SAME 15s that makes the [5m] windows in ops/prometheus/rules/
+  # honest: twenty samples per window, so a p95 there is a quantile over
+  # measurements rather than over two points and a hope.
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
@@ -59,3 +81,42 @@ scrape_configs:
   - job_name: loki
     static_configs:
       - targets: ["loki:3100"]
+
+  # ------------------------------------------------------------------- F3
+  #
+  # The proxy, and it is the only source on this list the site quotes directly.
+  # Every request to timseil.dev passes through it, so it is the one place that
+  # can answer "how long did a visitor wait" for api and web with one clock.
+  # The contract says so in as many words: Metrics.p95Ms is "95th percentile
+  # latency, measured at the reverse proxy".
+  #
+  # timseil-traefik, not traefik. The alias is set where Traefik is attached to
+  # observability-network -- compose.lab.yaml does it for the lab, Dokploy does
+  # it for the host (runbook dokploy.md 3.2). A bare `traefik` would be a name
+  # on a shared network that resolves to whoever holds it, and the failure mode
+  # is not an empty job: it is a full one describing somebody else's proxy.
+  # The same trap ADR 0039 2 caught for `prometheus`.
+  #
+  # 8082 is Traefik's own metrics entrypoint, never `web` or `websecure`: on a
+  # request entrypoint the path is public as soon as a router matches it.
+  # ADR 0028 6.
+  - job_name: traefik
+    static_configs:
+      - targets: ["timseil-traefik:8082"]
+
+  # The host. node_filesystem_avail_bytes on / is the series F10 hangs the
+  # 70 % disk alert on, and that alert is the honest guard ops/loki/loki.yaml
+  # names for the threat no Loki setting closes -- Loki and Postgres share this
+  # NVMe. Scraping it in F3 rather than in F10 means the alert arrives with
+  # history behind it instead of with an empty graph.
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # The database. Connections against the pool ceiling, transaction age, dead
+  # tuples -- the questions "is the site slow" resolves to once the proxy has
+  # said yes. It reads pg_stat_* as timseil_metrics, a third role that is
+  # neither the DDL one nor the DML one. ADR 0040 3.
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]

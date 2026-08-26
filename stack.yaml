@@ -18,9 +18,20 @@
 #
 # Traefik is the exception that proves the rule: D3 landed it and appended
 # nothing, because its version is Dokploy's and no file here can be read for it.
-# Typing one would be a number no running system produced. The honest source is
-# `traefik_build_info` from the metrics endpoint, and it arrives with F3, when
-# something scrapes it. ADR 0028 §10.
+# Typing one would be a number no running system produced.
+#
+# THE SENTENCE THAT STOOD HERE WAS WRONG, and F3 is where it was executed for
+# the first time. It said the honest source was `traefik_build_info` from the
+# metrics endpoint, arriving "with F3, when something scrapes it". F3 scraped
+# it. THAT SERIES DOES NOT EXIST — measured against the running proxy (v3.6.7)
+# and reproduced locally against v3.7.11: Traefik exports no build, version or
+# info metric of any kind. ADR 0028 §10 carries the same wrong claim and ADR
+# 0040 §5 corrects it there.
+#
+# Traefik therefore has no line here and no prospect of one. That is a better
+# reason than the old one: not "not yet measured" but "there is nothing to
+# measure". A version for this entry would have to be typed, and typing it is
+# what this file exists to refuse.
 
 systems:
   # 02 · timseil.dev — the whole stack lives in this repo, so every version is read.

@@ -3,10 +3,17 @@
 #
 # Two of them predate D2 and apply to both files:
 #
-#   1. No `ports:` and no Traefik label for db, prometheus, loki or alloy.
-#      From outside the host, 22, 80 and 443 answer — nothing else. Those four
+#   1. No `ports:` and no Traefik label for db, prometheus, loki, alloy,
+#      node-exporter or postgres-exporter.
+#      From outside the host, 22, 80 and 443 answer — nothing else. Those six
 #      talk inside the docker network or not at all. The rule holds in the dev
 #      file too: a habit that only applies in production is not a habit.
+#
+#      F3 added the last two, and they are the members with the most to lose by
+#      being reachable: node-exporter publishes the host's filesystems, load and
+#      network counters, and postgres-exporter publishes the shape of the
+#      database. Neither carries authentication — the network boundary is the
+#      whole protection, as it is for the other four.
 #
 #   2. No `build:` in the production compose. Building on the VPS means the
 #      artefact you tested is not the artefact that runs — and then the contract
@@ -21,8 +28,9 @@
 #      backups to S3 see named volumes and nothing else, so any other host path
 #      is data you find out you cannot restore on the day you need it.
 #
-#      ONE EXCEPTION, and F2 added it rather than loosening the pattern: the
-#      docker socket, `:ro`, on the service `alloy` and on no other. The daemon
+#      TWO EXCEPTIONS, and each was added by naming it rather than by loosening
+#      the pattern. The first, from F2: the docker socket, `:ro`, on `alloy`
+#      and on no other. The daemon
 #      owns the stdout streams a log collector exists to read, and there is no
 #      second way to reach them — the alternatives (a logging driver per
 #      service, OTLP from the application only) are weighed and rejected in
@@ -30,6 +38,15 @@
 #      the exception is one service and one literal path. A socket anywhere
 #      else, or a writable one here, is still refused, and selftest.sh proves
 #      all three answers.
+#
+#      The second, from F3: `/proc`, `/sys` and `/`, read-only, on
+#      `node-exporter` and on no other. The kernel publishes the host's numbers
+#      through those two filesystems and there is no second way to read them —
+#      an exporter without them describes its own container, which is a green
+#      job reporting a machine that does not exist. The allowance is three
+#      literal whole lines on one named service, the same shape as the socket
+#      above, and selftest.sh proves the refusals: a fourth path, and one of
+#      these three on a different service. ADR 0040 §2.
 #   4. Every service carries a memory limit. "Ressourcen-Limits pro Service" is
 #      the phase requirement; without this it is an intention.
 #   5. No `env_file:`. Production values come from the Dokploy UI. A file on the
@@ -68,8 +85,8 @@
 #      reach. The symptom is a timeout, not an error.
 #  10. That loadbalancer.server.port is one the service actually exposes. When a
 #      container offers more than one port Traefik guesses, and guesses wrong.
-#  11. api and web list BOTH dokploy-network and default; db, prometheus, loki
-#      and alloy list neither. A service that names `networks:` joins ONLY those,
+#  11. api and web list BOTH dokploy-network and default; db, prometheus, loki,
+#      alloy, node-exporter and postgres-exporter list neither. A service that names `networks:` joins ONLY those,
 #      so dropping default here takes the database away from the api — and the
 #      failure reads as a database outage. The other half of the rule keeps the
 #      closed services off a network shared with every other app on that host.
@@ -98,7 +115,10 @@ set -eu
 fail=0
 
 # Services that must never be reachable from outside the docker network.
-closed='^(db|prometheus|loki|alloy)$'
+# The last two arrived with F3; the names sat in nothing until then, unlike the
+# first four, which check-compose has carried since D2 with nothing answering
+# to them for eight phases.
+closed='^(db|prometheus|loki|alloy|node-exporter|postgres-exporter)$'
 
 # Services whose healthcheck belongs to their image and nowhere else.
 image_probed='^(api|web)$'
@@ -265,17 +285,25 @@ scan() {
       }
 
       # Rule 3. List items under volumes: only, and only in the production file.
-      # The socket exception is matched as a WHOLE line on a NAMED service, so
-      # loosening it takes an edit that a reviewer can see rather than a widened
-      # character class that nobody notices.
+      # Both exceptions are matched as WHOLE lines on a NAMED service, so
+      # loosening either takes an edit that a reviewer can see rather than a
+      # widened character class that nobody notices.
       if (key == "volumes" && $0 ~ /^      -[[:space:]]/) {
         src = $0
         sub(/^      -[[:space:]]*/, "", src)
         sub(/:.*$/, "", src)
         socket = (svc == "alloy" && \
                   $0 ~ /^      -[[:space:]]*\/var\/run\/docker\.sock:\/var\/run\/docker\.sock:ro[[:space:]]*$/)
-        if (src ~ /^[.\/~]/ && !socket && $0 !~ /^      -[[:space:]]*\.\/ops\/[^:]+:[^:]+:ro[[:space:]]*$/)
-          printf "line %d: %s bind-mounts %s — only ./ops/...:ro, or the docker socket :ro on alloy, may be a host path\n", NR, svc, src
+        # The numbers that belong to the host, F3. Three lines, spelled out
+        # one by one for the same reason the socket is: an alternation over a
+        # character class would also admit /host/anything, and the point of an
+        # exception is that it admits exactly what was argued for.
+        hostfs = (svc == "node-exporter" && \
+                  ($0 ~ /^      -[[:space:]]*\/proc:\/host\/proc:ro[[:space:]]*$/ || \
+                   $0 ~ /^      -[[:space:]]*\/sys:\/host\/sys:ro[[:space:]]*$/  || \
+                   $0 ~ /^      -[[:space:]]*\/:\/host\/root:ro[[:space:]]*$/))
+        if (src ~ /^[.\/~]/ && !socket && !hostfs && $0 !~ /^      -[[:space:]]*\.\/ops\/[^:]+:[^:]+:ro[[:space:]]*$/)
+          printf "line %d: %s bind-mounts %s — only ./ops/...:ro, the docker socket :ro on alloy, or /proc /sys / :ro on node-exporter, may be a host path\n", NR, svc, src
       }
     }
 

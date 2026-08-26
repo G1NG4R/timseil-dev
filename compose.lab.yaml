@@ -13,14 +13,28 @@
 # it and Traefik answers its own default. Issue #143. The repair is E5b's job,
 # and repairing it against production means one public outage per attempt.
 #
-# WHAT IT REPRODUCES FAITHFULLY — and it is exactly one thing:
+# WHAT IT REPRODUCES FAITHFULLY — and since F3 it is two things:
 #
-#   Traefik's docker provider watches container labels, and a router that lives
-#   on a container disappears while that container is being recreated.
+#   1. Traefik's docker provider watches container labels, and a router that
+#      lives on a container disappears while that container is being recreated.
 #
-# The lab routers below are container labels on the same containers, resolved by
-# the same provider, so they come and go the same way. That is the property
-# under test, and it is measured here rather than assumed.
+#      The lab routers below are container labels on the same containers,
+#      resolved by the same provider, so they come and go the same way. That is
+#      the property under test, and it is measured here rather than assumed.
+#
+#   2. Prometheus scraping Traefik across a network the proxy joined rather
+#      than one our stores joined. F3's precondition: on the host, Traefik sits
+#      in dokploy-network and check-compose rule 1 and 11 keep prometheus, loki,
+#      alloy and db out of it. The answer is to reverse the direction — and the
+#      only part of that answer this repository can hold is the shape. The lab
+#      Traefik carries the metrics entrypoint, publishes no port for it, and
+#      answers to `timseil-traefik` on observability-network; ops/prometheus/
+#      prometheus.yml scrapes that name in both places.
+#
+#      What the lab cannot answer is whether Dokploy's own Traefik can be given
+#      the same attachment PERSISTENTLY. That is a host measurement, it is the
+#      first step of F3, and its result is host state — it lives in
+#      backlog.local.md, not here.
 #
 # WHAT IT DOES NOT REPRODUCE, said out loud so no result is read too widely:
 #
@@ -30,6 +44,11 @@
 #     (runbook step 1.1) and which a Dokploy upgrade rewrites.
 #   · The host's Traefik version. The pin below is the lab's own; whether it
 #     matches the host is a question the runbook answers on the host.
+#   · Whether Traefik's attachment to observability-network survives a restart
+#     of a container Dokploy owns. Here it is a line in a file we control; there
+#     it is Dokploy's mechanism, and `docker network connect` is already known
+#     not to survive (24.08.2026). ops/host/check-traefik-metrics.sh asks it on
+#     the host, which is the only place the question exists.
 #
 # A number measured here is a number about compose and the docker provider. It
 # is not a number about production, and E5b's acceptance is still a real deploy.
@@ -41,8 +60,26 @@
 # separate file rather than a service in compose.yaml.
 
 services:
-  # The stand-in. Read-only socket, no dashboard, no API, no metrics: none of
-  # them is what is being measured, and every one of them would be a port.
+  # The stand-in. Read-only socket, no dashboard, no API.
+  #
+  # METRICS ARE ON HERE SINCE F3, and that sentence replaces the one this
+  # comment used to carry ("no metrics: none of them is what is being
+  # measured"). It was true while the lab measured routing. F3 measures a
+  # number that comes OUT of the proxy, so the proxy has to speak.
+  #
+  # This service is now the rehearsal for the one thing F3 cannot try out on
+  # the host cheaply: Prometheus reaching Traefik. On the VPS Traefik lives in
+  # dokploy-network, which check-compose rule 1 and 11 keep our stores out of
+  # (ADR 0039 2) -- so the direction is reversed there: Traefik joins
+  # observability-network instead of us joining its. That is a change to a
+  # container Dokploy owns, and `docker network connect` does not survive its
+  # restart (measured 24.08.2026).
+  #
+  # The lab Traefik is ours, so the same shape costs one block here: the
+  # metrics entrypoint below, no published port for it, and the alias
+  # `timseil-traefik` on observability-network. If it works here and not
+  # there, the difference is Dokploy's mechanism and nothing else -- which is
+  # exactly the question worth carrying to the host.
   traefik:
     # traefik v3.7.11
     image: traefik@sha256:5203c3f39ca70de6790d964624e042463ffbd57715bc82be155cf224c0dd5144
@@ -60,15 +97,76 @@ services:
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=dokploy-network
       - --entrypoints.web.address=:8080
+      # THE METRICS ENTRYPOINT, and it is its own, not `web`. On the request
+      # entrypoint the metrics path becomes public the moment a router matches
+      # it, and Prometheus, Loki and Alloy carry no authentication -- their
+      # protection is the network boundary and nothing else. The host's static
+      # configuration says the same thing in Dokploy's syntax; runbook 3.2 and
+      # ADR 0028 6 carry it.
+      - --entrypoints.metrics.address=:8082
+      - --metrics.prometheus=true
+      - --metrics.prometheus.entrypoint=metrics
+      - --metrics.prometheus.addentrypointslabels=true
+      # Off by default, and it is what makes traefik_router_* exist at all.
+      # Two routers here, so the cardinality is inconsequential -- the same
+      # arithmetic ADR 0028 6 did for the host.
+      - --metrics.prometheus.addrouterslabels=true
+      - --metrics.prometheus.addserviceslabels=true
+      # THE BUCKETS, AND THE DEFAULT ONES ARE A TRAP THIS LAB CAUGHT.
+      #
+      # Traefik ships 0.1, 0.3, 1.2, 5.0 seconds. Measured here on 2026-08-25
+      # under 90s of k6: 7582 of 7896 requests to timseil-web landed in the
+      # FIRST bucket. histogram_quantile then has nothing to interpolate
+      # between except 0 and 0.1, so the p95 it returns is a linear guess
+      # across that span — it read 98.35 ms while k6, sampling every request,
+      # measured 74.98 ms.
+      #
+      # That number is produced by a running system, looks measured, and is
+      # arithmetic on a bucket boundary. It is exactly what invariant 1 exists
+      # to refuse, in the one costume the invariant does not recognise: not a
+      # missing value rendered as 0, but a present value that no observation
+      # supports.
+      #
+      # These are Prometheus's own default histogram buckets. They give real
+      # resolution between 5 ms and 100 ms, which is the range this site
+      # answers in, and keep the tail for the day it does not. Twelve buckets
+      # across two services is cardinality nobody will notice.
+      #
+      # The host needs the same list in Dokploy's static configuration —
+      # docs/runbooks/dokploy.md 3.2. A lab with better buckets than production
+      # would make the acceptance a measurement of the lab.
+      - --metrics.prometheus.buckets=0.005,0.01,0.025,0.05,0.075,0.1,0.25,0.5,1,2.5,5,10
     ports:
       # Bound to loopback on purpose. This is a laboratory on a developer
       # machine, not a service, and :8080 without an address would put it on
       # every interface the machine has.
+      #
+      # 8082 IS DELIBERATELY NOT HERE. On the host that port is not published
+      # either -- from outside, 22, 80 and 443 answer and nothing else -- and a
+      # lab that reached the metrics differently from production would be
+      # rehearsing the wrong path. Prometheus reads it over the network below,
+      # the same way it will there.
       - "127.0.0.1:8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
-      - dokploy-network
+      dokploy-network:
+      observability-network:
+        aliases:
+          # The name prometheus.yml scrapes, and it is a name we own rather
+          # than one we hope for. `traefik` is not ours to claim on a shared
+          # network -- this host already runs one, and when a name exists on
+          # several of a reader's networks Docker answers from the network
+          # whose NAME sorts first (measured 2026-08-23, ADR 0039 2).
+          # `dokploy-network` sorts before `observability-network`.
+          #
+          # So the same treatment `timseil-prometheus` and `timseil-loki` got
+          # in F2: one alias, colliding with nobody, and the scrape config
+          # names it instead of guessing. On the host this alias is the
+          # REQUIREMENT F3a carries to Dokploy -- if its attach mechanism
+          # cannot set one, that is a measured limitation and the fallback
+          # relay is what answers it.
+          - timseil-traefik
 
   # The lab routers. They are ADDED, not substituted: compose merges labels by
   # key, so the production routers above stay exactly as they are and are simply

@@ -102,6 +102,19 @@
 # today, and the flag says that on purpose rather than by luck. --wait works
 # here even though loki and alloy carry no healthcheck: it settles for running
 # when there is nothing to be healthy about, and prometheus does have one.
+#
+# F3 APPENDED TWO NAMES TO THAT LINE, and appending them is the whole lesson of
+# the paragraph above being read once more instead of once. node-exporter and
+# postgres-exporter have no sponsor either — nothing depends on them, by
+# design — so a rollout that does not name them is a rollout that leaves them
+# stopped, and the stack looks healthy while two of its six scrape targets are
+# down. tools/check-rollout.sh is what holds this line against compose.yaml.
+#
+# THE PANEL FIELD HAS TO FOLLOW. tools/deploy.sh compares these steps to
+# Dokploy's Command field before every deploy, so this edit is red on the host
+# until that field is updated too. That is the intended order — the file is the
+# source, the panel is the copy — and docs/runbooks/dokploy.md carries the
+# click path.
 set -eu
 
 # THE FOUR STEPS. Everything else in this file is transport.
@@ -121,7 +134,7 @@ up -d --remove-orphans --wait api2
 up -d --no-deps --wait web2
 up -d --no-deps --wait api web
 rm -s -f api2 web2
-up -d --no-deps --wait prometheus loki alloy
+up -d --no-deps --wait prometheus loki alloy node-exporter postgres-exporter
 STEPS
 }
 

@@ -19,9 +19,13 @@ Was hier steht, ist der Betrieb.
 ## Der Alltag
 
 ```bash
-make prod                        # alle acht Dienste, lokal
+make prod                        # alle zehn Dienste, lokal
 make check-observability         # kommt an, was ankommen soll
 make check-observability FLOOD=1 # 5 GB, und ob die Grenze hält
+
+make rolling-lab                 # dasselbe, mit einem Traefik davor
+make load                        # k6 durch den Proxy
+make check-metrics               # die drei Zahlen der Seite            (F3)
 ```
 
 `check-observability` prüft sieben Dinge in einem Lauf: Grenzen angewandt, keine
@@ -215,11 +219,123 @@ dieselbe".
 
 ---
 
+## Die drei Zahlen der Seite — F3
+
+`Metrics` im Contract hat drei Felder, und alle drei kommen aus einer Recording
+Rule über `traefik_service_*`. Die Namen sind ein Vertrag mit F5, kein Etikett:
+
+| Regel | Contract-Feld |
+|---|---|
+| `timseil:request_duration_seconds:p95_5m` | `Metrics.p95Ms` (in Sekunden — F5 rechnet um) |
+| `timseil:requests:error_ratio_5m` | `Metrics.errorRate` |
+| `timseil:service:availability_5m` | `Metrics.uptime90d`, von F5 über 91 Tage aggregiert |
+
+Die Herleitung steht in `ops/prometheus/rules/slis.yml` neben jeder Regel,
+die Entscheidungen in ADR 0040.
+
+### Was der p95 ist und was er nicht ist
+
+**Die Abnahme, gemessen im Labor am 25.08.2026** — 10 VUs, 6 Minuten, damit das
+5-Minuten-Fenster wirklich voll ist, 14 156 Anfragen, 0 % Fehler:
+
+```
+k6    http_req_duration p(95)                    72,54 ms
+Regel timseil:request_duration_seconds:p95_5m    74,62 ms   (web)
+```
+
+**Zwei Millisekunden auseinander, und die Richtung ist erklärbar:** Traefik misst
+weniger als k6 (kein Verbindungsaufbau) und liegt trotzdem darüber, weil
+`histogram_quantile` innerhalb eines Buckets linear interpoliert. Der Fehler
+wohnt an den Bucket-Kanten — 2 ms in einem 25-ms-Bucket.
+
+**Die belastbare Aussage über diesen p95 lautet deshalb nicht „72 ms", sondern
+„auf einen Bucket genau, und hier ist welcher".**
+
+**Ein zu kurzer Lauf verschmiert zusätzlich.** Dieselbe Anlage mit 90 s statt
+360 s las 98 ms gegen k6s 83 ms — nicht falsch gerechnet, sondern ein Fenster,
+das zu vier Fünfteln leer war. Im Dauerbetrieb tritt das nicht auf; bei einer
+Messung von Hand schon, und dann ist es der erste Verdacht.
+
+**`api` zeigt denselben Fehler eine Etage tiefer**, und das ist die
+Verallgemeinerung dieser Sache: `/api/health` antwortet in ein bis zwei
+Millisekunden, also liegt alles im untersten Bucket, und die Regel liefert
+`0,00475` — wieder eine Interpolation, wieder plausibel, wieder von keiner
+Beobachtung gestützt. **Bucket-Wahl ist relativ zu dem, was gemessen wird**, und
+für einen Dienst, der zehnmal schneller antwortet als der andere, ist dieselbe
+Liste zu grob. Bewusst nicht repariert: eine zweite Bucket-Liste je Dienst gibt
+es in Traefik nicht, und die Zahl, die die Seite zeigt, ist die des Proxys über
+die Seite — nicht die über `/api/health`.
+
+**Traefiks Standard-Buckets machen daraus etwas Schlimmeres als Ungenauigkeit.**
+Mit `0.1, 0.3, 1.2, 5.0` liegt alles, was diese Seite tut, im ersten Bucket, und
+`histogram_quantile` interpoliert linear zwischen 0 und 100 ms. Das Ergebnis ist
+eine Zahl, die ein laufendes System erzeugt hat und die **keine Beobachtung
+stützt** — Invariante 1 im einzigen Kostüm, das die Invariante nicht erkennt.
+Die Bucket-Liste steht in `compose.lab.yaml` und in Runbook `dokploy.md` §3.2,
+und sie muss auf beiden Seiten dieselbe sein.
+
+### Gegen Produktion, 26.08.2026
+
+Dieselbe Liste, derselbe Effekt. Vorher trug der Host die Voreinstellung, und
+**177 von 181** `timseil-web`-Beobachtungen lagen im ersten Bucket. Nach dem
+Eintrag und **einem** `docker restart dokploy-traefik`:
+
+```
+le=0.005  0     le=0.05   21     ← 19 Beobachtungen in (0.01, 0.025]
+le=0.01   0     le=0.075  22     ←  2 in (0.025, 0.05]
+le=0.025  19    le=0.1    22     ←  1 in (0.05, 0.075]
+```
+
+p95 48,4 ms, interpoliert zwischen 0.025 und 0.05. Die beiden untersten Grenzen
+stehen auf 0 — die Verteilung klebt weder am Boden noch an der Decke.
+
+**Diese Zahl ist „Auflösung bestätigt", keine Latenz-Baseline.** n = 22, alles
+`code=200 GET`, in Sekunden erzeugt. Die Baseline ergibt sich aus Stunden echtem
+Verkehr, nicht hieraus — wer sie als Latenz zitiert, zitiert die Stichprobe.
+
+**`docker restart`, nie der Reload-Knopf im Panel.** Der Shell-Befehl behält
+Traefiks Anbindung an `observability-network`, ein Neuerzeugen des Containers
+wirft sie weg. Genau deshalb steht die Bucket-Änderung und die Netz-Anbindung in
+derselben Wartung: erst anhängen, dann Buckets samt Neustart — und der Neustart
+belegt beides auf einmal.
+
+### Der Traefik-Job
+
+Prometheus scrapt `timseil-traefik:8082`. **Der Alias ist die ganze Sicherheit
+an dieser Zeile** — `observability-network` ist geteilt, und ein blankes
+`traefik` würde nicht ins Leere zeigen, sondern auf einen fremden Proxy
+antworten. Wie Traefik überhaupt in unser Netz kommt, steht in `dokploy.md`
+§3.2a; hier steht nur, woran man merkt, dass es weg ist:
+
+```bash
+sh ops/host/check-traefik-metrics.sh     # auf dem Host
+```
+
+**Ein weiterer Filter, und er ist Korrektheit statt Kosmetik:** die Regeln
+filtern auf `service=~"timseil-.*"`. Unser Prometheus scrapt den Traefik des
+Hosts, und der routet **jede** App dieser Maschine. Ohne den Filter rechnete die
+Seite einen p95 über fremden Verkehr.
+
+### Was F3 offen lässt
+
+- **Traefiks Version erreicht die Seite nicht — und wird es nicht.**
+  `stack.yaml` und ADR 0028 §10 nennen beide `traefik_build_info` als „die
+  ehrliche Quelle", die „mit F3 ankommt, wenn etwas sie scrapt". F3 hat sie
+  gescrapt: **die Serie existiert nicht.** Gegen den laufenden Proxy gemessen
+  (v3.6.7) und lokal gegen v3.7.11 nachgestellt — Traefik exportiert überhaupt
+  keine Build-, Versions- oder Info-Metrik. Korrigiert in ADR 0040 §5. Der
+  Eintrag in `stack.yaml` bleibt damit leer, aus einem besseren Grund als
+  vorher: nicht „noch nicht gemessen", sondern „es gibt nichts zu messen".
+- **Fremde Kardinalität liegt auf unserer Platte.** Traefik liefert die Serien
+  aller Apps dieses Hosts. Gefiltert wird in den Regeln, nicht beim Scrape —
+  Letzteres erst, wenn eine Messung sagt, dass es sich am 2-GB-Budget lohnt.
+
+---
+
 ## Was hier nicht steht
 
 | Fehlt | Phase |
 |---|---|
-| Traefik-Metriken scrapen, node- und postgres-exporter, Recording Rules | **F3** |
 | PromQL-Snapshots nach Postgres, SLO-Definition | **F5** |
 | Dashboards als Code, provisionierte Datasources | **F9** |
 | Burn-Rate-Alerts, **Disk-Alarm bei 70 %**, Dead Man's Switch | **F10** |

@@ -27,6 +27,7 @@ services:
       # only shell files in that directory see these.
       MIGRATE_DB_PASSWORD: ${MIGRATE_DB_PASSWORD:?set it in .env — copy .env.example}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set it in .env — copy .env.example}
+      METRICS_DB_PASSWORD: ${METRICS_DB_PASSWORD:?set it in .env — copy .env.example}
       # The throwaway database `make check-db` cycles against. Opt-in, and this
       # is the file that opts in: production must not carry a second database
       # nobody uses, and a default that creates one would put it there the day

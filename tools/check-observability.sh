@@ -3,6 +3,8 @@
 #
 #   tools/check-observability.sh            metrics and logs arrive
 #   tools/check-observability.sh --flood    ...and the limit trips first
+#   tools/check-observability.sh --metrics  ...and they add up to the three
+#                                              numbers the site shows        (F3)
 #
 # The build plan asks for "Metriken und Logs laufen ein; ein künstlich erzeugtes
 # 5-GB-Log löst das Limit aus, statt die Platte zu füllen". The second half is
@@ -17,23 +19,117 @@
 # A flood sustained for days is a different threat and belongs to F10's disk
 # alert. This run measures the first and says nothing about the second.
 #
+# WHAT --metrics ADDS, and it is one level up rather than one more item. The
+# first two modes ask whether the pipe carries anything. F3's question is
+# whether what it carries adds up to Metrics.p95Ms, Metrics.errorRate and
+# Metrics.uptime90d — six jobs up is necessary and not sufficient, because a job
+# can be up and deliver nothing, and a recording rule can evaluate and cover the
+# wrong services. Both of those look healthy from every angle except this one.
+#
+# It runs against the LAB, not against `make prod`: the traefik job needs a
+# Traefik, and the only one this repository owns is compose.lab.yaml's. Hence
+# OBS_FILES — `make check-metrics` passes the lab's three files.
+#
 # NOT part of `make check`: it needs Docker and a running stack, like
 # check-topology and check-db. `make check-compose` checks the recipe.
 set -eu
 
 flood=0
+metrics=0
 case ${1-} in
   --flood) flood=1 ;;
+  --metrics) metrics=1 ;;
   "") ;;
-  *) printf 'usage: %s [--flood]\n' "$0" >&2; exit 2 ;;
+  *) printf 'usage: %s [--flood|--metrics]\n' "$0" >&2; exit 2 ;;
 esac
 
-COMPOSE="docker compose -f compose.yaml"
+COMPOSE="docker compose ${OBS_FILES:--f compose.yaml}"
 fail=0
 ok() { printf '  ✓ %s\n' "$1"; }
 no() { printf '  ✗ %s\n' "$1"; fail=1; }
 
 printf 'observability\n'
+
+# An HTTP client that lives INSIDE the docker network, because that is the only
+# place these services answer from. Using curl from the host would need a
+# published port, which is the one thing this stack must never have. Defined
+# before the branch below because both halves need it.
+inside() { $COMPOSE exec -T prometheus wget -q -O - --timeout=10 "$1"; }
+
+# --------------------------------------------------------------- F3, --metrics
+#
+# Its own path rather than three more lines at the end. The questions below are
+# about Prometheus alone: loki and alloy need not be running for them, and the
+# lab does not start them.
+if [ "$metrics" = 1 ]; then
+  cid=$($COMPOSE ps -q prometheus 2>/dev/null || true)
+  [ -n "$cid" ] || { no "prometheus is not running — start it with: make rolling-lab"; exit 1; }
+
+  # 1. EVERY job up. Not "the ones I remember": the list is read from the
+  #    config, so a job added to prometheus.yml and forgotten here cannot pass
+  #    by being unmentioned.
+  inside 'http://localhost:9090/api/v1/targets?state=active' | python3 -c '
+import json, sys
+d = json.load(sys.stdin)["data"]["activeTargets"]
+have = {}
+for t in d:
+    have.setdefault(t["labels"]["job"], t["health"])
+if not have:
+    print("no active targets at all"); sys.exit(1)
+down = {j: h for j, h in have.items() if h != "up"}
+if down:
+    print("not up: " + ", ".join(f"{j}={h}" for j, h in sorted(down.items()))); sys.exit(1)
+print(str(len(have)) + " jobs: " + " ".join(sorted(have)))
+' >/tmp/obs.$$ 2>&1 && ok "all scrape jobs up — $(cat /tmp/obs.$$)" \
+    || no "scrape targets: $(cat /tmp/obs.$$)"
+  rm -f /tmp/obs.$$
+
+  # 2. UP IS NOT DATA. A target answers 200 with an empty body and Prometheus
+  #    calls that healthy. This asks each job for a series count instead, which
+  #    is the difference between "the endpoint exists" and "the endpoint has
+  #    something to say".
+  for job in prometheus alloy loki traefik node postgres; do
+    n=$(inside "http://localhost:9090/api/v1/query?query=count(%7Bjob%3D%22$job%22%7D)" \
+        | python3 -c 'import json,sys
+r=json.load(sys.stdin)["data"]["result"]
+print(int(float(r[0]["value"][1])) if r else 0)' 2>/dev/null || echo 0)
+    [ "$n" -gt 0 ] && ok "job=$job carries $n series" || no "job=$job is up and carries no series"
+  done
+
+  # 3. THE THREE NAMES F5 WILL ASK FOR. Queried exactly as F5 will query them,
+  #    because a rule that evaluates is not the same claim as a rule that
+  #    evaluates to something. An empty result here means the site is measured
+  #    by nothing while every job is green.
+  for rule in timseil:request_duration_seconds:p95_5m \
+              timseil:requests:error_ratio_5m \
+              timseil:service:availability_5m; do
+    enc=$(printf '%s' "$rule" | sed 's/:/%3A/g')
+    inside "http://localhost:9090/api/v1/query?query=$enc" | python3 -c '
+import json, sys, math
+res = json.load(sys.stdin)["data"]["result"]
+if not res:
+    print("no series — has the proxy seen a request in the last 5 minutes?"); sys.exit(1)
+# 4. THE FILTER, FROM THE OTHER END. Our Prometheus scrapes the HOST proxy,
+#    which routes every app on this machine. A rule series naming somebody
+#    else`s service means the filter in ops/prometheus/rules/ did not hold, and
+#    F5 would write a stranger`s latency onto a page claiming self-measurement.
+foreign = [r["metric"].get("service", "?") for r in res
+           if not r["metric"].get("service", "").startswith("timseil-")]
+if foreign:
+    print("foreign services in the rule: " + ", ".join(sorted(set(foreign)))); sys.exit(1)
+out = []
+for r in res:
+    v = float(r["value"][1])
+    out.append(r["metric"].get("service", "?") + "=" + ("NaN" if math.isnan(v) else format(v, ".4g")))
+print(" ".join(sorted(out)))
+' >/tmp/obs.$$ 2>&1 && ok "$rule → $(cat /tmp/obs.$$)" \
+      || no "$rule: $(cat /tmp/obs.$$)"
+    rm -f /tmp/obs.$$
+  done
+
+  [ "$fail" = 0 ] && printf '  ✓ tools/check-observability.sh --metrics\n'
+  exit "$fail"
+fi
 
 # The three containers. Named here rather than derived, because the point of the
 # list is that it is the one this phase promised.
@@ -41,11 +137,6 @@ for s in prometheus loki alloy; do
   cid=$($COMPOSE ps -q "$s" 2>/dev/null || true)
   [ -n "$cid" ] || { no "$s is not running — start it with: make prod"; exit 1; }
 done
-
-# An HTTP client that lives INSIDE the docker network, because that is the only
-# place these three answer from. Using curl from the host would need a published
-# port, which is the one thing this stack must never have.
-inside() { $COMPOSE exec -T prometheus wget -q -O - --timeout=10 "$1"; }
 
 # ------------------------------------------------------------------ the shape
 #
@@ -116,7 +207,16 @@ labels=$(inside 'http://loki:3100/loki/api/v1/label/service/values')
 printf '%s' "$labels" | python3 -c '
 import json, sys
 vals = set(json.load(sys.stdin).get("data") or [])
-ours = {"db", "migrate", "seed", "api", "web", "prometheus", "loki", "alloy", "flood", "api2", "web2"}
+ours = {"db", "migrate", "seed", "api", "web", "prometheus", "loki", "alloy", "flood", "api2", "web2",
+        # F3. Two more services this project defines, so two more producers.
+        "node-exporter", "postgres-exporter",
+        # LAB ONLY, and it cannot appear in production. compose.lab.yaml defines
+        # a traefik; the one on the VPS belongs to Dokploy, which is a different
+        # compose project, and ops/alloy/config.alloy filters on that. So a
+        # `traefik` here means the lab. A production run that showed one would
+        # mean the project filter had stopped working, and the label it arrived
+        # under would be the least of it.
+        "traefik"}
 need = {"api", "web", "db"}
 if not vals: print("no service labels at all — alloy discovered nothing"); sys.exit(1)
 if need - vals: print("no lines from:", ", ".join(sorted(need - vals))); sys.exit(1)
@@ -124,6 +224,27 @@ if vals - ours: print("foreign services in our loki:", ", ".join(sorted(vals - o
 print(" ".join(sorted(vals)))
 ' >/tmp/obs.$$ 2>&1 && ok "loki holds $(cat /tmp/obs.$$)" \
   || no "loki labels: $(cat /tmp/obs.$$)"
+rm -f /tmp/obs.$$
+
+# HOW MANY STREAMS THAT IS, which is the other half of the same question and the
+# one the build plan names for F3: "Loki-Labels sparsam". Cardinality is how a
+# log store eats a disk that Postgres shares, and every distinct label
+# combination is a stream with its own chunks. ops/alloy/config.alloy keeps the
+# set at two labels on purpose; this is the number that says whether it held.
+#
+# Read from Loki's own gauge rather than counted here: it is the same number
+# ops/loki/loki.yaml bounds with max_global_streams_per_user, so a threshold
+# invented here would be a second opinion about a limit that already exists.
+# Reported, not enforced — the limit does the enforcing, and a check that
+# duplicates it would be a rule without an incident behind it.
+inside 'http://localhost:9090/api/v1/query?query=loki_ingester_memory_streams' \
+  | python3 -c '
+import json, sys
+r = json.load(sys.stdin)["data"]["result"]
+if not r: print("no reading yet"); sys.exit(0)
+print(int(float(r[0]["value"][1])))
+' >/tmp/obs.$$ 2>&1 && ok "loki holds $(cat /tmp/obs.$$) streams — the ceiling in loki.yaml is 100" \
+  || ok "stream count unavailable: $(cat /tmp/obs.$$)"
 rm -f /tmp/obs.$$
 
 # -------------------------------------------------- and the timestamp, twice
