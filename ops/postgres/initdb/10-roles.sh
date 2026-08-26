@@ -1,5 +1,13 @@
 #!/bin/sh
-# The two database roles, created once when initdb builds the cluster.
+# The three database roles, created once when initdb builds the cluster.
+#
+# F3 ADDED THE THIRD, AND THE HEADER BELOW IS WHY THAT IS NOT ENOUGH. This file
+# runs only on a fresh data directory. Production has had one since D2, so
+# adding timseil_metrics here creates it on every NEW cluster and on the running
+# one never. The step for the existing cluster is a psql session in
+# docs/runbooks/migrations.md, and it is not optional: without it
+# postgres-exporter starts, fails to authenticate, and up{job="postgres"} stays
+# 0 while everything else is green. ADR 0040 3.
 #
 # Why here and not in a migration: roles are cluster-wide objects, not schema
 # objects. A migration that created them would have to drop them again on the
@@ -14,7 +22,7 @@
 # This runs ONLY on the very first start of a fresh data directory. On an
 # existing db-data volume nothing here happens — `make dev-reset` first.
 #
-# The two roles are created everywhere. The throwaway test database is created
+# All three roles are created everywhere. The throwaway test database is created
 # only when POSTGRES_CREATE_TEST_DB is set, which compose.dev.yaml does and
 # compose.yaml does not: production has no `make check-db` to run and no use for
 # a second database, and a reviewer with psql should not have to ask what
@@ -25,6 +33,7 @@ set -eu
 : "${POSTGRES_DB:?POSTGRES_DB is not set}"
 : "${MIGRATE_DB_PASSWORD:?MIGRATE_DB_PASSWORD is not set — copy .env.example to .env}"
 : "${APP_DB_PASSWORD:?APP_DB_PASSWORD is not set — copy .env.example to .env}"
+: "${METRICS_DB_PASSWORD:?METRICS_DB_PASSWORD is not set — copy .env.example to .env}"
 
 # The test database gets the same schema treatment as the real one. It exists so
 # that `make check-db` can cycle up/down/up without wiping what you were looking
@@ -38,6 +47,7 @@ CREATE_TEST_DB="${POSTGRES_CREATE_TEST_DB:-}"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
      --set=migrate_pw="$MIGRATE_DB_PASSWORD" \
      --set=app_pw="$APP_DB_PASSWORD" \
+     --set=metrics_pw="$METRICS_DB_PASSWORD" \
      --set=maindb="$POSTGRES_DB" <<'SQL'
 
 -- Idempotent so the script can also be applied to a CI cluster (E1), where the
@@ -50,6 +60,13 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'timseil_app') THEN
         CREATE ROLE timseil_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
     END IF;
+    -- F3. Reads pg_stat_*, writes nothing, owns nothing. INHERIT and not
+    -- NOINHERIT, unlike the two above: its whole privilege set arrives through
+    -- membership in pg_monitor, and NOINHERIT would mean an exporter that has
+    -- the grant and cannot use it without SET ROLE.
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'timseil_metrics') THEN
+        CREATE ROLE timseil_metrics LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT;
+    END IF;
 END
 $$;
 
@@ -59,14 +76,22 @@ $$;
 -- rather than assuming it — an assumption about a default is not a guarantee.
 ALTER ROLE timseil_migrate PASSWORD :'migrate_pw';
 ALTER ROLE timseil_app     PASSWORD :'app_pw';
+ALTER ROLE timseil_metrics PASSWORD :'metrics_pw';
+
+-- The only privilege this role gets, and it is a built-in one rather than a
+-- list we maintain. pg_monitor reads the statistics views and the functions
+-- behind them; it grants no access to table DATA, which is the property that
+-- makes it the right answer here. Granting SELECT on the schema instead would
+-- have put the site's rows in reach of a process that only ever needed counters.
+GRANT pg_monitor TO timseil_metrics;
 
 -- timseil_migrate owns the schema and does all DDL.
 ALTER DATABASE :"maindb" OWNER TO timseil_migrate;
 ALTER SCHEMA public OWNER TO timseil_migrate;
 
--- Nobody connects to this database except the two named roles.
+-- Nobody connects to this database except the three named roles.
 REVOKE ALL ON DATABASE :"maindb" FROM PUBLIC;
-GRANT CONNECT ON DATABASE :"maindb" TO timseil_migrate, timseil_app;
+GRANT CONNECT ON DATABASE :"maindb" TO timseil_migrate, timseil_app, timseil_metrics;
 
 SQL
 

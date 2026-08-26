@@ -791,8 +791,20 @@ COMPOSE_LAB := docker compose $(LAB_FILES)
 LAB_URL := http://127.0.0.1:8080
 
 .PHONY: rolling-lab
-rolling-lab: require-images require-network ## Production compose behind a local Traefik — the E5 measuring rig
-	@$(TOPOLOGY_ENV) $(COMPOSE_LAB) up -d --wait api web traefik
+rolling-lab: require-images require-network ## Production compose behind a local Traefik — the E5 and F3 measuring rig
+# The whole measuring side joined this line in F3, for the reason `prod` gives
+# one screen up: a lab that starts fewer services than the file describes agrees
+# with that file about everything except the part the current phase added.
+#
+# It was worth measuring rather than assuming. The first version of this line
+# named only prometheus and the two exporters, and `--metrics` then reported
+# job=alloy and job=loki DOWN — correctly, and for a reason that had nothing to
+# do with the code: they were not started. A lab that reads as broken while it
+# is merely incomplete is a lab that teaches you to ignore its red.
+#
+# It is also the instrument now: F3's acceptance reads a recording rule while k6
+# pushes load through the proxy, and both halves have to be running at once.
+	@$(TOPOLOGY_ENV) $(COMPOSE_LAB) up -d --wait api web traefik prometheus loki alloy node-exporter postgres-exporter
 	@printf '  ✓ lab up — %s\n' '$(LAB_URL)'
 	@printf '    witness it:  make witness WITNESS_UNTIL="--seconds 60" WITNESS_BASE=%s\n' '$(LAB_URL)'
 	@printf '    roll it:     make rollout\n'
@@ -928,6 +940,47 @@ check-topology: require-images require-network ## The D2 acceptance: from zero, 
 .PHONY: check-observability
 check-observability: ## Metrics and logs arrive — add FLOOD=1 for the 5 GB limit run
 	@tools/check-observability.sh $(if $(FLOOD),--flood,)
+
+# F3, and it runs against the LAB rather than against `make prod`, because the
+# traefik job needs a Traefik and the only one this repository owns is
+# compose.lab.yaml's. Same script, third mode: six jobs up, every job carrying
+# series, and the three recording rules answering with our services and nobody
+# else's.
+#
+#     make rolling-lab && make load && make check-metrics
+#
+.PHONY: check-metrics
+check-metrics: ## The F3 acceptance: six jobs, six with data, three rules — needs `make rolling-lab`
+	@OBS_FILES='$(LAB_FILES)' tools/check-observability.sh --metrics
+
+# The load that gives the rules something to be a quantile OF. k6 as a throwaway
+# container on the lab network, digest-pinned like every other foreign image
+# here — the build plan puts k6 in L8 for the performance budget, and this is
+# the same tool asked a much smaller question.
+#
+# WHY THIS IS A TARGET AND NOT A PARAGRAPH IN THE RUNBOOK. F3's acceptance is
+# "a p95 that matches a k6 run", and the two numbers have to come from one
+# command or the comparison is two people's memories. k6 prints its own
+# http_req_duration p(95) at the end; `make check-metrics` prints Traefik's.
+# They are not expected to be equal — see docs/runbooks/observability.md for
+# what the difference is made of — and the run is honest about that rather than
+# rounding it away.
+K6_IMAGE := grafana/k6:1.8.1@sha256:23f2279054c3e01535455c4d92914a625df12aeb631ea0e3ea7a43f96bcbc843
+K6_VUS   ?= 10
+K6_DUR   ?= 60s
+
+# THE TARGET IS THE NETWORK NAME, NOT $(LAB_URL). k6 runs in a container, so
+# 127.0.0.1:8080 would be its own loopback. Going over dokploy-network to the
+# proxy also happens to be the closer analogue of production, where the client
+# is never on the same host as the socket — and it takes the published-port hop
+# out of a number that is about to be compared with Traefik's own.
+.PHONY: load
+load: ## Push k6 load through the lab proxy — needs `make rolling-lab`
+	@printf 'load  %s VUs for %s through the lab proxy\n' '$(K6_VUS)' '$(K6_DUR)'
+	@docker run --rm -i --network $(DOKPLOY_NETWORK) \
+		-e K6_VUS='$(K6_VUS)' -e K6_DURATION='$(K6_DUR)' \
+		-e K6_BASE='http://traefik:8080' \
+		$(K6_IMAGE) run - < tools/load.js
 
 # ---------------------------------------------------------------- placeholders
 

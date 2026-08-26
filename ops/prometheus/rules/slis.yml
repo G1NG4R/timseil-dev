@@ -1,0 +1,128 @@
+# The three numbers the site shows, as recording rules.
+#
+# WHAT HANGS ON THIS FILE. `Metrics` in contract/openapi.yaml has three fields,
+# every one of them nullable, and today every one of them is null:
+#
+#     Metrics.p95Ms       <- timseil:request_duration_seconds:p95_5m
+#     Metrics.errorRate   <- timseil:requests:error_ratio_5m
+#     Metrics.uptime90d   <- timseil:service:availability_5m, aggregated by F5
+#
+# F5 queries these BY NAME over the tunnel and writes the answers into
+# metric_snapshots. A rename here is a rename in F5's PromQL and in whatever
+# read it since -- so the names are a contract, not a label. ADR 0040 4.
+#
+# WHY TRAEFIK AND NOTHING ELSE. The contract says it in as many words: p95Ms is
+# "95th percentile latency, measured at the reverse proxy". It is also the only
+# clock that sees api and web the way a visitor does, including the hop the
+# application cannot time -- its own queueing. An extra /metrics in the Go
+# service would be a second answer to the same question, and then the page would
+# have to say which one it means.
+#
+# ---------------------------------------------------------------------------
+# THE FILTER IS NOT DECORATION, and it is the finding this file exists to carry.
+#
+# Our Prometheus scrapes the HOST's Traefik, and that proxy routes every app on
+# this machine. traefik_service_* therefore arrives carrying the neighbours'
+# services alongside ours. Without `service=~"timseil-.*"` these rules would
+# compute a p95 over somebody else's traffic and F5 would write it to a page
+# that claims it measured itself -- green, plausible, and about the wrong
+# system. The same shape as F2's datasource, which answered from the
+# neighbouring Prometheus until an alias was pinned (ADR 0039 2).
+#
+# `timseil-api@docker` and `timseil-web@docker` are the values, and the prefix
+# is not a coincidence: compose.yaml names every router and service with it
+# (ADR 0028, "Router-Namen tragen den Projekt-Präfix"). compose.lab.yaml uses
+# the same two names, so the lab measures what production measures.
+#
+# The `@docker` suffix is left on. It is Traefik's provider suffix and stripping
+# it here would make the recorded series prettier and less honest -- the day the
+# provider changes, a stripped label changes silently and a kept one does not.
+# Mapping a service to a system slug is F5's job.
+#
+# NOT FILTERED AT SCRAPE TIME, and that is a deferral rather than an oversight.
+# The neighbours' series are cardinality on a 2 GB budget, which is the same
+# objection ops/alloy/config.alloy makes about their log lines. The difference
+# is that there the filter was free and here it costs a metric_relabel_configs
+# with no negative lookahead in RE2 to write it cleanly. So: measured first.
+# F3's host run counts the series; if it is a real share of the budget, the
+# relabel lands with a number behind it. A guard invented before the
+# measurement is what cost F2 its first green run.
+#
+# ---------------------------------------------------------------------------
+# NO RULE HERE MAY RETURN 0 FOR "NOBODY MEASURED".
+#
+# Invariant 1 of this repository, in PromQL. Each rule below is written so that
+# the absence of data is empty or NaN and never a zero, because a zero is a
+# measurement: 0 % errors is a claim, and F5 must be able to tell it apart from
+# "the proxy was not scraped". Where a real zero IS the answer -- traffic
+# happened and none of it failed -- the rule says zero on purpose, and the
+# `or ... * 0` below is what makes that difference explicit rather than lucky.
+#
+# The window is 5m against a 15s scrape: twenty samples, so a quantile over
+# measurements rather than over two points and a hope.
+
+groups:
+  - name: timseil-slis
+    # No `interval:` -- the global evaluation_interval (15s) governs, and one
+    # number in one place is the whole reason that global exists.
+    rules:
+
+      # p95 latency per service, in seconds. Traefik's histogram is native
+      # seconds; the contract wants milliseconds and F5 multiplies. Doing it
+      # here would put a unit conversion in a series name that does not say so.
+      #
+      # histogram_quantile over an all-zero rate returns NaN, and over missing
+      # series returns nothing. Both are the honest answer to "no requests in
+      # the last five minutes" and neither is a zero.
+      - record: timseil:request_duration_seconds:p95_5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (service, le) (
+              rate(traefik_service_request_duration_seconds_bucket{service=~"timseil-.*"}[5m])
+            )
+          )
+
+      # The share of responses that were 5xx, as a fraction between 0 and 1 --
+      # the shape Metrics.errorRate declares.
+      #
+      # THE `or ... * 0` IS THE POINT OF THIS RULE. With only the numerator, a
+      # service that served traffic and failed none of it matches no series at
+      # all, and the result is empty -- which F5 would store as null, i.e. as
+      # "not measured". That is the invariant inverted: a measured zero turned
+      # into a missing one. The `or` supplies an explicit 0 for exactly those
+      # services, taking its label set from the denominator.
+      #
+      # With no traffic at all both sides are 0, and 0/0 is NaN. That one IS
+      # "not measured", and it stays NaN.
+      - record: timseil:requests:error_ratio_5m
+        expr: |
+          (
+            sum by (service) (
+              rate(traefik_service_requests_total{service=~"timseil-.*",code=~"5.."}[5m])
+            )
+            or
+            sum by (service) (
+              rate(traefik_service_requests_total{service=~"timseil-.*"}[5m])
+            ) * 0
+          )
+          /
+          sum by (service) (
+            rate(traefik_service_requests_total{service=~"timseil-.*"}[5m])
+          )
+
+      # Availability as the share of requests that did NOT fail. Derived from
+      # the rule above rather than computed a second time: two expressions for
+      # one quantity are one expression and a future disagreement. Rules in a
+      # group evaluate in order, so the reference is to this run's value.
+      # NaN propagates, which is the behaviour we want.
+      #
+      # WHAT THIS NUMBER IS NOT, and the distinction belongs on the page rather
+      # than in a footnote. This is REQUEST availability: of the requests that
+      # arrived, how many were answered. It cannot see the outage where nothing
+      # arrived, because in that outage this Prometheus is down too -- it shares
+      # the host. That gap is exactly what F4's external probe exists for, and
+      # why ops_checks and metric_snapshots are two tables and not one.
+      # F5 decides which of the two fills uptime90d; this rule does not claim it.
+      - record: timseil:service:availability_5m
+        expr: 1 - timseil:requests:error_ratio_5m
