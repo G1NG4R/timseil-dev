@@ -318,12 +318,17 @@ jobs:
       #
       # exit-code 1 rather than a SARIF upload: blocking here keeps this job at
       # contents: read.
+      # `trivyignores` is passed rather than left to discovery. Trivy would find
+      # .trivyignore in the working directory anyway; naming it means a reader of
+      # this file learns that accepted findings exist and where they are argued.
+      # Every entry there carries an `exp:` date and goes red again on its own.
       - name: Trivy — api image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: timseil-api:${{ steps.tag.outputs.value }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          trivyignores: .trivyignore
           exit-code: "1"
           format: table
 
@@ -333,6 +338,7 @@ jobs:
           image-ref: timseil-web:${{ steps.tag.outputs.value }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          trivyignores: .trivyignore
           exit-code: "1"
           format: table
 
@@ -427,12 +433,17 @@ jobs:
 
       # Nothing is pushed before the scanners have seen it. The order in this
       # job is the whole argument: build, check, scan, and only then publish.
+      # `trivyignores` is passed rather than left to discovery. Trivy would find
+      # .trivyignore in the working directory anyway; naming it means a reader of
+      # this file learns that accepted findings exist and where they are argued.
+      # Every entry there carries an `exp:` date and goes red again on its own.
       - name: Trivy — api image
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: timseil-api:${{ steps.tag.outputs.value }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          trivyignores: .trivyignore
           exit-code: "1"
           format: table
 
@@ -442,6 +453,7 @@ jobs:
           image-ref: timseil-web:${{ steps.tag.outputs.value }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          trivyignores: .trivyignore
           exit-code: "1"
           format: table
 

@@ -1,0 +1,48 @@
+# Findings this repository has looked at and decided not to block on, with the
+# reason and a date on which the decision expires.
+#
+# THE RULE FOR THIS FILE. An entry is allowed only when the vulnerable code is
+# present and NOT REACHABLE in the way the advisory requires — never because a
+# fix is inconvenient, and never without an `exp:` date. The date is the point:
+# an accepted finding that cannot go red again is an accepted finding nobody
+# will look at twice. When it expires the build fails, and that is the intended
+# behaviour.
+#
+# Trivy already runs with `ignore-unfixed: true` (.github/workflows/ci.yml), so
+# anything listed here is a finding upstream HAS fixed and we are carrying on
+# purpose. That is a higher bar than "no patch exists yet" and this file must
+# stay short.
+
+# CVE-2026-14456 — openssl (libcrypto3, libssl3) 3.5.7-r0 in node:24-alpine.
+#
+# WHY IT IS NOT REACHABLE HERE. The advisory is specific about the code path:
+#
+#   "When an OpenSSL QUIC server (Listener SSL object) processes valid QUIC
+#    Initial packets for unknown destination connection IDs, it can allocate
+#    and queue new incoming channels without enforcing any limit."
+#   "The issue is present since OpenSSL 3.5 when the QUIC server
+#    implementation was added."
+#   -- https://openssl-library.org/news/secadv/20260813.txt
+#
+# It needs a process that instantiates an OpenSSL QUIC listener and serves it
+# with SSL_accept(). The web image runs Next.js standalone on plain HTTP on
+# :3000 inside the docker network: it opens no QUIC listener, Node's QUIC
+# support is experimental and not enabled, and the container publishes no port
+# — Traefik is the only thing that reaches it, over HTTP, and HTTP/3 terminates
+# at Traefik rather than here.
+#
+# WHY WE DO NOT SIMPLY UPGRADE. Measured 2026-08-26: node:24-alpine (the tag
+# our digest pins), node:lts-alpine and node:24-alpine3.22 all carry openssl
+# 3.5.7-r0 or older. The fix is 3.5.8-r0 and no upstream node image has been
+# rebuilt with it. There is nothing to bump to.
+#
+# The alternative considered and rejected was `apk upgrade libcrypto3 libssl3`
+# in the runner stage. It would fix the finding for real rather than explain
+# it — at the cost of a build that reaches into the alpine repository at build
+# time, so the digest pin would no longer describe the result. ADR 0026 rests
+# on that pin.
+#
+# THE EXPIRY IS SHORT ON PURPOSE. Node alpine images are rebuilt often; four
+# weeks is longer than that usually takes. When this goes red, the first thing
+# to try is bumping the digest, not extending the date.
+CVE-2026-14456 exp:2026-09-23
