@@ -12,7 +12,107 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 24.08.2026, F2 gegen Produktion abgenommen
+## Wo wir stehen — 26.08.2026, F3 abgenommen: Labor und Host
+
+**Seit heute hat die Seite ihre drei Zahlen — als Regel, noch nicht auf der
+Seite.** `Metrics.p95Ms`, `Metrics.errorRate` und `Metrics.uptime90d` haben ab
+jetzt je eine Recording Rule über `traefik_service_*`, und die Namen sind ein
+Vertrag mit F5. Sechs Scrape-Jobs statt drei, alle mit Daten:
+
+```
+✓ all scrape jobs up — 6 jobs: alloy loki node postgres prometheus traefik
+✓ timseil:request_duration_seconds:p95_5m → api=0.0975  web=0.0983
+✓ timseil:requests:error_ratio_5m         → api=0       web=0
+✓ timseil:service:availability_5m         → api=1       web=1
+```
+
+Die Null in der zweiten Zeile ist der Punkt: sie ist **gemessen**, nicht leer.
+Der `or … * 0`-Zweig ist genau dafür da, und ohne ihn wäre „keine Fehler" als
+„nicht gemessen" auf der Seite gelandet.
+
+**Die Vorbedingung ist gelöst, auf beiden Seiten.** Nicht wir gehen ins
+`dokploy-network`, Traefik kommt zu uns ins `observability-network` — unter dem
+Alias `timseil-traefik`, den `prometheus.yml` scrapt. Im Labor bewiesen
+(`job=traefik` up, 135 Serien) und auf dem Host angehängt.
+
+**Die offene Haltbarkeitsfrage ist beantwortet, und die Antwort ist genauer als
+die Befürchtung.** Der Proxy ist ein einfacher Container, kein Swarm-Dienst. Die
+Anbindung **übersteht einen `docker restart`** — sie steht in der Container-Config
+des Daemons, nicht im Startbefehl. Was sie nicht übersteht, ist ein Neuerzeugen
+des Containers, also ein Dokploy-Upgrade. Die Lektion vom 24.08. war ein
+*Redeploy*, kein Neustart; die Unterscheidung ist der ganze Unterschied.
+Betriebsfest, nicht upgradefest — **der Relay-Fallback aus ADR 0040 bleibt
+ungebaut.**
+
+### Der stärkste Fund — und er hat die Abnahme bestanden
+
+**Das Abnahmekriterium war erfüllt und die Zahl trotzdem keine Messung.**
+Verlangt war „ein p95, der zu einem k6-Lauf passt": Regel 98 ms, k6 75 ms,
+gleiche Größenordnung. Was stutzig machte, war die Richtung — Traefik misst
+*weniger* als k6 und lag trotzdem höher.
+
+Traefiks Standard-Buckets sind `0.1, 0.3, 1.2, 5.0` Sekunden. **7582 von 7896
+Anfragen lagen im ersten Bucket.** `histogram_quantile` interpoliert dann linear
+zwischen 0 und 100 ms — die Zahl ist Arithmetik auf einer Bucket-Kante, und
+keine einzelne Anfrage wurde je mit irgendeiner Dauer beobachtet, nur mit
+„unter 100".
+
+Das ist Invariante 1 in dem einen Kostüm, das sie nicht erkennt: **kein
+fehlender Wert, der sich als vorhanden ausgibt, sondern ein vorhandener, den
+keine Beobachtung stützt.** Jeder Wächter im Repo sucht nach dem ersten Fall.
+
+Repariert mit Prometheus' eigenen Default-Buckets, in `compose.lab.yaml` und im
+Runbook für die statische Konfiguration des Hosts. Die Abnahme danach, 6 Minuten
+Last damit das 5-Minuten-Fenster voll ist, 14 156 Anfragen, 0 % Fehler:
+
+```
+k6    http_req_duration p(95)                    72,54 ms
+Regel timseil:request_duration_seconds:p95_5m    74,62 ms
+```
+
+**Zwei Millisekunden, und die Richtung ist erklärbar** — Traefik misst weniger
+als k6 und liegt trotzdem darüber, weil innerhalb des Buckets interpoliert wird.
+Der Fehler wohnt an den Bucket-Kanten, und die belastbare Aussage lautet „auf
+einen Bucket genau", nicht „72 ms".
+
+**Derselbe Fehler steht eine Etage tiefer noch da, bewusst:** `/api/health`
+antwortet in ein bis zwei Millisekunden, liegt damit im untersten Bucket, und
+die Regel liefert `0,00475` — wieder eine Interpolation. Traefik nimmt eine
+Bucket-Liste, nicht eine je Dienst; die Zahl der Seite ist die des Proxys über
+die Seite. Aufgeschrieben statt repariert. Ausgeschrieben in Beitrag 005.
+
+### Und gegen Produktion, am 26.08.
+
+**Der Fund gilt auch dort — und ist dort inzwischen repariert.** Traefik hängt
+im `observability-network`, Alias `timseil-traefik`, angehängt ohne Neustart.
+Vorher: Voreinstellung `0.1, 0.3, 1.2, 5.0` und **177 von 181** Beobachtungen im
+ersten Bucket. Nachher, mit derselben Liste wie im Labor:
+
+```
+le=0.005  0     le=0.05   21     ← 19 Beobachtungen in (0.01, 0.025]
+le=0.01   0     le=0.075  22     ←  2 in (0.025, 0.05]
+le=0.025  19    le=0.1    22     ←  1 in (0.05, 0.075]
+```
+
+p95 jetzt 48,4 ms, interpoliert zwischen 0.025 und 0.05 — **immer noch eine
+Interpolation**, aber über ein 25-ms-Band mit Beobachtungen auf beiden Seiten
+statt über ein 100-ms-Band mit einer Untergrenze von 0. Vorher war das Ergebnis
+eine Funktion der Bucket-Wahl, jetzt bewegt es sich mit der Latenz.
+
+**Was diese Zahl nicht ist:** n = 22, alles `code=200 GET`, in Sekunden erzeugt.
+Das ist „Auflösung bestätigt", keine Latenz-Baseline — die ergibt sich erst aus
+Stunden echtem Verkehr.
+
+**Die Haltbarkeitsfrage ist beantwortet.** `docker restart dokploy-traefik`, und
+`observability-network` steht danach unverändert in der Netzliste, belegt an
+einer frischen `StartedAt`. Betriebsfest, nicht upgradefest — der Relay-Fallback
+aus ADR 0040 bleibt ungebaut.
+
+**Als Nächstes: Command-Feld nach dem Merge, Deploy, dann F5.**
+
+---
+
+## Vorher — 24.08.2026, F2 gegen Produktion abgenommen
 
 **Der Stack läuft auf dem Host, und die Abnahme lief in Grafana statt in einem
 Skript.** Beide Hälften:
@@ -958,11 +1058,18 @@ Vorherige Triage: nach F2, 24.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-25 | F3 | **Traefiks Standard-Buckets machen aus dem p95 eine Interpolation.** `0.1, 0.3, 1.2, 5.0` Sekunden — 7582 von 7896 Anfragen im ersten Bucket. Der Wert, den `histogram_quantile` liefert, ist eine Gerade zwischen 0 und 100 ms und stützt sich auf keine Beobachtung. **Das Abnahmekriterium war damit erfüllt.** | **erledigt** — Bucket-Liste in `compose.lab.yaml` und Runbook `dokploy.md` §3.2; auf dem Host noch zu setzen |
+| 2026-08-25 | F3 | **Ein Lasttest aus einem Container misst den Rate-Limiter, nicht die Seite.** Erster k6-Lauf: 47 % „Fehler", und der Proxy sagte, was sie waren — 4190 × `429` gegen 324 × `200` auf `/api`. Ein Client ist ein Eimer (ADR 0015). Nebenbei belegt: die 429er ließen `error_ratio` bei 0, denn der Contract definiert `errorRate` als 5xx-Anteil — die Regel war dafür geschrieben und ist es jetzt gemessen. | **erledigt** — `tools/load.js` taktet `/api` unter das Limit, Volumen läuft über `/` |
+| 2026-08-25 | F3 | **Das Labor startete weniger Dienste, als die Datei beschreibt**, und `--metrics` meldete `job=alloy` und `job=loki` als down — korrekt, und aus einem Grund, der nichts mit dem Code zu tun hatte. Ein Labor, das rot liest, während es bloß unvollständig ist, erzieht dazu, sein Rot zu ignorieren. | **erledigt** — `make rolling-lab` startet die ganze messende Seite |
+| 2026-08-26 | F3 | **`traefik_build_info` gibt es nicht — und der Satz stand seit D3 in zwei Dokumenten.** `stack.yaml` und ADR 0028 §10 nennen die Serie als „die ehrliche Quelle" für die Traefik-Version, die „mit F3 ankommt, wenn etwas sie scrapt". F3 hat sie gescrapt: Traefik exportiert **keine** Build-, Versions- oder Info-Metrik — gegen den laufenden Proxy (v3.6.7) gemessen und lokal gegen v3.7.11 nachgestellt. **In dieser Phase ein drittes Mal abgeschrieben**, in `ops/host/check-traefik-metrics.sh`, wo ein `grep` darauf stand, der für immer nichts gefunden hätte. Dieselbe Klasse wie die vier Zeilen aus Beitrag 004, diesmal selbst produziert. | **erledigt** — korrigiert in `stack.yaml`, im Skript und im Runbook; ADR 0040 §6 trägt die Korrektur zu ADR 0028 §10. Der Traefik-Eintrag bleibt leer, aus einem besseren Grund: nicht „noch nicht gemessen", sondern „es gibt nichts zu messen" |
+| 2026-08-26 | F3 | **Der Bucket-Fund gilt aggregiert, nicht je Serie — und die Unterscheidung gehört in jeden Text darüber.** Gegen Produktion: 177 von 181 `timseil-web`-Beobachtungen im ersten Bucket. Für `code=200` allein sind es 70 von 74, und 0,95 · 74 = 70,3 fällt knapp ins **zweite** Bucket — ebenso wertlos, aber nicht „zwischen 0 und 100 ms". Unsere Regel aggregiert `sum by (service, le)` ohne `code`, liegt also im aggregierten Fall. | **erledigt** — ADR 0040 §5 stellt den Randfall daneben, statt ihn zu glätten |
+| 2026-08-25 | F3 | **Ein Apostroph in einem Kommentar beendet das eingebettete awk- bzw. Python-Programm — zweimal in einer Session.** Die Programme stehen in einfachen Anführungszeichen; „host's" schließt sie, der Rest wird Shell, die Datei parst nicht mehr. Beide Male war das Wort ein englischer Genitiv in einem Kommentar, den niemand zweimal liest. `selftest` **führt** die meisten Skripte aus und fängt so etwas — aber nicht die, die Docker brauchen, und genau dort passierte der zweite. | **erledigt** — umformuliert, und der Auslöser trägt eine Regel: `check-repo` prüft jede `*.sh` mit `sh -n`, `selftest` beweist die Abweisung an genau dieser Form |
 | 2026-08-25 | F3-Vorbereitung | **`check-traefik-metrics.sh` konnte nie grün werden.** Es holt Traefiks IP im `dokploy-network` und fragt sie **vom Host aus** — das Netz ist aber ein **Overlay** (gemessen: `driver=overlay`), und Overlay-Adressen existieren im Netzwerk-Namensraum des Hosts nicht. Der Defekt hat sich zwei Stufen lang hinter einem wahren Ergebnis versteckt: die Metriken waren aus, die Zeile scheiterte aus dem Grund, den sie nannte, und niemand hat weitergeschaut. Sichtbar wurde er erst, als die Einstellung endlich an war und die Prüfung weiter nein sagte — während dieselbe Anfrage **aus dem Netz heraus 142 `traefik_*`-Serien** lieferte. | **erledigt hier** — die Sonde läuft jetzt in einem Wegwerf-Container im Netz und borgt das Prometheus-Image, das ohnehin auf dem Host liegt |
 | 2026-08-25 | F3-Vorbereitung | **Traefiks Metriken waren nie eingeschaltet — D3s Abnahmekriterium ist bis heute nicht erfüllt gewesen.** Kein `metrics:`-Block in Dokploys statischer Konfiguration, kein Overschreiben durch ein Upgrade, sondern nie ausgeführt. Der Runbook trug den Schritt seit D3. **Dieselbe Klasse wie die vier aus Beitrag 004**, nur zwei Stufen älter — und diesmal war es ein Abnahmekriterium, das ein Skript sogar prüfen wollte. | **erledigt** — eingeschaltet am 25.08., 142 Serien belegt |
-| 2026-08-25 | F3-Vorbereitung | **Offene Entwurfsfrage, und sie gehört an den Anfang von F3: unser Prometheus darf Traefik gar nicht erreichen.** Traefik lauscht im `dokploy-network`; `check-compose` Regel 1 verbietet `db`, `prometheus`, `loki` und `alloy` genau dort den Zutritt, und ADR 0039 §2 nennt den Grund — das Netz teilt sich mit jeder App dieses Hosts. F3 soll Traefik scrapen. Das Muster, das bei der fremden Grafana funktioniert hat, wäre umgekehrt: nicht wir gehen hinein, Traefik kommt zu uns ins `observability-network`. Nur ist Traefik Dokploys eigener Container, und `docker network connect` überlebt seinen Neustart nicht — die Lektion vom 24.08. | **offen, Vorbedingung für F3** |
+| 2026-08-25 | F3-Vorbereitung | **Entwurf entschieden, Labor-Hälfte belegt, Host-Hälfte offen.** Ursprünglich: unser Prometheus darf Traefik gar nicht erreichen. Traefik lauscht im `dokploy-network`; `check-compose` Regel 1 verbietet `db`, `prometheus`, `loki` und `alloy` genau dort den Zutritt, und ADR 0039 §2 nennt den Grund — das Netz teilt sich mit jeder App dieses Hosts. F3 soll Traefik scrapen. Das Muster, das bei der fremden Grafana funktioniert hat, wäre umgekehrt: nicht wir gehen hinein, Traefik kommt zu uns ins `observability-network`. Nur ist Traefik Dokploys eigener Container, und `docker network connect` überlebt seinen Neustart nicht — die Lektion vom 24.08. **Entschieden: Traefik kommt zu uns, unter dem Alias `timseil-traefik`** (ADR 0040 §1). Im Labor gebaut und gemessen. | **teilweise** — Labor belegt, der haltbare Mechanismus auf dem Host ist die Restaufgabe; Ergebnis nicht hier |
 
 ## Idee — noch nicht entschieden
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-25 | F3 | **`selftest` hat einmal an einer Stelle rot gemeldet, die nichts mit dem Diff zu tun hat** — „registry.sh refuses an unknown subcommand (rejected, but not for 'usage')". Das Skript selbst ist deterministisch: dreimal direkt aufgerufen, dreimal dieselbe Zeile mit `usage`. In drei vollständigen `selftest`-Läufen danach nicht reproduziert. Aufgeschrieben statt weggeklickt; bei einem zweiten Auftreten ist die Kopiererei ins Temp-Verzeichnis der erste Verdacht. | **beobachtet, nicht reproduziert** |

@@ -1,0 +1,237 @@
+---
+title: 'The p95 that no observation supports'
+deck: 'My latency number came from a running system, matched a load test, and was arithmetic on a bucket boundary. The rule I wrote to keep zeros honest could not see it.'
+published: 2026-08-26
+tags: ['observability', 'metrics', 'measurement']
+system: 'timseil-dev'
+summary: |
+  This site has one rule: every claim is bound to evidence, and the evidence is
+  a running system. The phase that finally produced a p95 latency figure passed
+  its acceptance criterion — the number matched a k6 run — and the number was
+  still not a measurement. Traefik's default histogram buckets put every request
+  this site serves into the first one, so the quantile was a linear guess across
+  a span nothing had been observed inside.
+---
+
+## The invariant, and the costume it does not recognise
+
+The first invariant of this project is: no invented numbers. Missing data is
+`null` and renders as `— NO DATA`; a `0` is a measurement and must never stand
+in for the absence of one.
+
+I have written that rule into SQL, into TypeScript types, and this week into
+PromQL. Here is the expression that computes the share of failed requests:
+
+```promql
+(
+  sum by (service) (rate(traefik_service_requests_total{code=~"5.."}[5m]))
+  or
+  sum by (service) (rate(traefik_service_requests_total[5m])) * 0
+)
+/
+sum by (service) (rate(traefik_service_requests_total[5m]))
+```
+
+The `or … * 0` is the interesting half. Without it, a service that served
+traffic and failed none of it matches no series at all — the numerator selects
+nothing — and the result is empty. Empty becomes `null` becomes `— NO DATA`,
+which would be a lie in the other direction: a measured zero turned into a
+missing one. The `or` supplies an explicit zero for exactly those services.
+
+I was pleased with that. It took two readings to get right, it handles both
+directions, and it is the invariant expressed in the language the number is
+computed in.
+
+It also completely failed to protect me from the actual problem, because the
+number that was wrong was not a zero.
+
+## The acceptance criterion, met
+
+The phase's criterion was written months ago: *`histogram_quantile(0.95, …)`
+returns a p95 that matches a k6 run.*
+
+So: a Traefik in front of the stack, a recording rule over
+`traefik_service_request_duration_seconds_bucket`, and k6 pushing ten virtual
+users through the proxy for ninety seconds.
+
+```
+k6    http_req_duration  p(95) = 74.98ms
+rule  timseil:request_duration_seconds:p95_5m = 0.09835
+```
+
+Ninety-eight milliseconds against seventy-five. Same order, proxy slightly
+above the client, both from running systems. I could have written that down as
+"matches" and moved on. The criterion, read literally, was met.
+
+What made me look again was the direction. Traefik measures a *subset* of what
+k6 measures — k6 times connection setup and the full read, Traefik starts when
+it has the request. The proxy's number should have been the *lower* one. It was
+higher, by a third.
+
+## Where the number actually came from
+
+```
+$ … | grep traefik_service_request_duration_seconds_bucket | grep timseil-web
+
+le=0.1    count=7582
+le=0.3    count=7886
+le=1.2    count=7896
+le=5      count=7896
+le=+Inf   count=7896
+```
+
+Those are Traefik's default buckets: 100 ms, 300 ms, 1.2 s, 5 s. This site
+answers in tens of milliseconds. **7582 of 7896 requests landed in the first
+bucket.**
+
+`histogram_quantile` interpolates linearly between bucket boundaries. With 96%
+of the mass below the lowest boundary, there is nothing to interpolate
+*between* — the function draws a straight line from zero to one hundred
+milliseconds and reports where 95% would fall on it. The answer is arithmetic
+on a bucket edge. No request was ever observed to take 98 ms; no request was
+ever observed to take any particular time at all, only "under 100".
+
+This is the part worth keeping. The number was:
+
+- produced by a running system, not typed by me;
+- derived by a standard function used the standard way;
+- within a third of an independent client-side measurement;
+- and supported by no observation whatsoever.
+
+Every guard I had built looks for a value that is absent pretending to be
+present. This was a value that was *present* — computed, plausible, corroborated
+— and still not evidence of anything. My invariant has a blind spot, and it is
+shaped exactly like a histogram with the wrong buckets.
+
+## The repair, and what it leaves
+
+Traefik takes a bucket list. I gave it Prometheus's own defaults, which have
+real resolution between 5 ms and 100 ms:
+
+```
+--metrics.prometheus.buckets=0.005,0.01,0.025,0.05,0.075,0.1,0.25,0.5,1,2.5,5,10
+```
+
+The same run again:
+
+```
+le=0.05   count=5
+le=0.075  count=3034
+le=0.1    count=3311
+le=+Inf   count=3381
+```
+
+Now the p95 sits between 75 ms and 100 ms, with 3034 observations below the
+lower edge and 3311 below the upper. That is a distribution. The quantile comes
+out at 91 ms against k6's 83 ms — still above, still interpolating, but now
+interpolating across a span requests were actually observed inside, and the
+remaining gap has a name: within a bucket the distribution is not uniform, and
+here it clusters near the bottom.
+
+One more thing was wrong with my measurement, and it was mine rather than
+Traefik's: a ninety-second run inside a five-minute rate window is a window that
+is four-fifths empty. Running it for six minutes instead:
+
+```
+14156 requests, 0.00% failed
+
+k6    http_req_duration p(95)                    72.54 ms
+rule  timseil:request_duration_seconds:p95_5m    74.62 ms
+```
+
+Two milliseconds apart, and the remaining gap is the interpolation: Traefik
+measures strictly less than k6 and still reads slightly higher, because the
+quantile is drawn across a 25-millisecond bucket. Two milliseconds of error in a
+twenty-five millisecond bucket is what "accurate to a bucket" looks like when
+the buckets are right.
+
+The honest statement about this site's p95 is therefore not "72 milliseconds".
+It is **accurate to a bucket, and the error lives at the bucket edges** — which
+is a smaller claim, and one I can defend.
+
+## The same mistake, one floor down
+
+The API's number in that run was `0.00475`.
+
+`/api/health` answers in one or two milliseconds, so every request lands in the
+lowest bucket of my new list, and the quantile is once again a straight line
+drawn across a span nothing was observed inside. I fixed the instrument for the
+thing I was looking at and left it wrong for the thing beside it.
+
+That is the generalisation worth carrying out of this: **bucket choice is
+relative to what is being measured**, and a proxy in front of two services that
+differ by an order of magnitude in latency cannot have one right answer —
+Traefik takes one bucket list, not one per service.
+
+I am not fixing it. The number this site shows is the proxy's account of the
+site, not its account of a health endpoint, and inventing a second histogram to
+make an internal probe look precise would be instrument-building in place of
+work. But it is written down here, because the version of this that goes wrong
+is the one where somebody later reads `0.00475` off a dashboard and believes the
+last three digits.
+
+## A second thing the first run proved, for free
+
+The very first load run reported 47% of requests failing. The proxy said what
+they were:
+
+```
+traefik_service_requests_total{code="200", service="timseil-api@docker"}   324
+traefik_service_requests_total{code="429", service="timseil-api@docker"}  4190
+```
+
+Not a defect — the API's rate limiter, doing its job. One load generator in one
+container is one client and one token bucket. A single-IP load test does not
+measure the API; it measures the rate limiter and reports it as latency.
+
+And those 4190 refusals left the error-rate rule at zero, which is correct: the
+contract defines the error rate as the share of `5xx`, and a service refusing
+traffic on purpose is not a service failing. That behaviour had been argued for
+in a comment. Now it has been observed.
+
+## And then the same phase produced a second one
+
+While confirming all this against the live proxy, I scraped it for a series two
+of my own documents call "the honest source" for the reverse proxy's version:
+
+```
+grep '^traefik_build_info'   →   nothing
+```
+
+Not empty. Absent. Traefik exports no build, version or info metric at all —
+measured against the running proxy at v3.6.7, and reproduced locally against
+v3.7.11 to be sure it was not a version quirk.
+
+That sentence has been sitting in two files since the phase that set up the
+proxy, in the form "the honest source is `traefik_build_info` from the metrics
+endpoint, and it arrives when something scrapes it". Something finally scraped
+it. And in this very phase I had copied the claim into a third place — a `grep`
+in the host check script that would have found nothing, forever, while the check
+around it reported success.
+
+I have written before about four instructions that were composed carefully and
+never executed. This is the fifth, and I wrote it myself, in the phase whose
+subject is numbers nobody verified.
+
+The repair is smaller than it sounds: that entry in the stack list stays empty,
+now for a better reason. Not "not measured yet" but "there is nothing to
+measure".
+
+## What I take from it
+
+The rule I have been repeating to myself is "every claim is bound to evidence,
+and the evidence is a running system". This phase taught me that a running
+system is necessary and not sufficient. The pipeline that produces a number can
+be entirely healthy — correct config, live target, standard function, sensible
+result — and still be reporting the shape of its own instrument rather than the
+thing it points at.
+
+The acceptance criterion said "a p95 that matches a k6 run". It matched. Reading
+that as done would have put a number on this page that I could not have
+explained if anybody asked how it was arrived at.
+
+The better criterion, which I am keeping: **can I name what every digit rests
+on?** For the p95, the answer is now "a bucket edge, and here is which one". For
+the proxy version, the answer turned out to be "nothing", which is also an
+answer — and a shorter one to write down than the paragraph that had been
+standing in its place.

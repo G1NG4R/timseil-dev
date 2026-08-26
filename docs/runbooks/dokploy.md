@@ -534,9 +534,29 @@ metrics:
     addEntryPointsLabels: true
     addRoutersLabels: true
     addServicesLabels: true
+    # F3, und diese Zeile ist keine Feinjustierung, sondern eine Korrektur.
+    # Traefiks Voreinstellung ist 0.1, 0.3, 1.2, 5.0 Sekunden. Im Labor am
+    # 25.08.2026 gemessen: 7582 von 7896 Anfragen lagen im ERSTEN Bucket, und
+    # `histogram_quantile` hat dann nichts, wozwischen es interpolieren könnte,
+    # außer 0 und 0.1. Der p95 war eine lineare Schätzung über diese Spanne.
+    # Dieselbe Liste wie in `compose.lab.yaml` — ein Labor mit besseren Buckets
+    # als die Produktion misst das Labor.
+    buckets:
+      - 0.005
+      - 0.01
+      - 0.025
+      - 0.05
+      - 0.075
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1
+      - 2.5
+      - 5
+      - 10
 ```
 
-Traefik neu starten. Drei Dinge dazu:
+Traefik neu starten. Vier Dinge dazu:
 
 - **Ein eigener Entrypoint, nicht `websecure`.** Auf 80/443 wäre der Metrikpfad
   öffentlich, sobald ein Router ihn trifft. Prometheus, Loki und Alloy tragen
@@ -546,16 +566,81 @@ Traefik neu starten. Drei Dinge dazu:
 - **`addRoutersLabels` ist per Default aus**, und ohne sie gibt es keine
   `traefik_router_*`-Serien — F3 hätte für seine Routen-Panels nichts zu
   zeichnen. Bei zwei Routern ist die Kardinalität folgenlos.
+- **`buckets` ist der Unterschied zwischen einer Messung und einer
+  Interpolation.** Siehe der Kommentar oben; ohne die Liste zeigt die Seite eine
+  Zahl, die ein laufendes System erzeugt hat und die keine Beobachtung stützt.
 
-Prüfen:
+### 3.2a Traefik an `observability-network` hängen — F3
 
-```bash
-cd ~/timseil-dev && sh ops/host/check-traefik-metrics.sh
+**Das ist die Vorbedingung von F3, und sie geht in die andere Richtung als man
+denkt.** Unser Prometheus darf nicht ins `dokploy-network` — das teilt sich mit
+jeder App dieses Hosts, und `check-compose` Regel 1 und 11 verbieten es. Also
+kommt Traefik zu uns.
+
+**Der Alias ist Pflicht.** Auf einem geteilten Netz ist `traefik` ein Name, den
+jeder halten kann, und die Fehlerwirkung wäre kein leerer Job, sondern ein
+voller über einen fremden Proxy. `ops/prometheus/prometheus.yml` scrapt
+`timseil-traefik:8082`, sonst nichts. ADR 0040 §1.
+
+1. Das Netz muss existieren (einmalig, siehe `observability.md`):
+   ```bash
+   docker network inspect observability-network >/dev/null ||      docker network create observability-network
+   ```
+2. Traefik dort hineinhängen — **so, dass es einen Neustart überlebt.**
+   `docker network connect --alias timseil-traefik observability-network <container>`
+   funktioniert sofort und **überlebt den nächsten Neustart des Containers
+   nicht** — am 24.08.2026 an der fremden Grafana gemessen. Der haltbare Weg ist
+   Dokploys eigene Definition des Traefik-Dienstes; welcher das auf diesem Host
+   ist, steht in `backlog.local.md`, weil es Ist-Zustand dieser Maschine ist.
+3. Prüfen — und zwar den Weg, den Prometheus wirklich geht:
+   ```bash
+   cd ~/timseil-dev && sh ops/host/check-traefik-metrics.sh
+   ```
+   Das Skript fragt `http://timseil-traefik:8082/metrics` **aus dem Netz
+   heraus**, nicht vom Host: `dokploy-network` ist ein Overlay, und
+   Overlay-Adressen existieren im Namensraum des Hosts nicht.
+4. **Danach den Proxy einmal neu starten und Schritt 3 wiederholen.** Das ist
+   die eigentliche Frage dieser Anleitung. Ist die Anbindung dann weg, ist der
+   gewählte Mechanismus der falsche, und der Fallback aus ADR 0040 ist dran.
+
+### 3.2b Das Command-Feld nachziehen — F3
+
+`tools/rollout.sh` startet seit F3 zwei Dienste mehr:
+
+```
+up -d --no-deps --wait prometheus loki alloy node-exporter postgres-exporter
 ```
 
-**Nach jedem Dokploy-Upgrade wiederholen.** Ob Dokploy `traefik.yml`
-regeneriert, ist ungeprüft — wenn ja, verschwindet diese Einstellung still, und
-dieses Skript ist das, was es merkt.
+`tools/deploy.sh` vergleicht diese Schritte vor **jedem** Deploy mit Dokploys
+Command-Feld. Wird das Feld nicht nachgezogen, ist der Deploy rot, bevor er
+beginnt — was die richtige Reihenfolge ist: die Datei ist die Quelle, das Panel
+die Kopie.
+
+### 3.2c Die dritte Datenbankrolle — F3
+
+`postgres-exporter` verbindet sich als `timseil_metrics`. Die Rolle entsteht in
+`ops/postgres/initdb/10-roles.sh` — **und das läuft nur beim Anlegen eines
+Clusters.** Der Produktions-Cluster existiert seit D2, also entsteht sie dort
+nie von selbst. Einmalig, als Bootstrap-Rolle:
+
+```sql
+CREATE ROLE timseil_metrics LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT
+  PASSWORD '<METRICS_DB_PASSWORD aus dem Dokploy-Panel>';
+GRANT pg_monitor TO timseil_metrics;
+GRANT CONNECT ON DATABASE timseil TO timseil_metrics;
+```
+
+`INHERIT`, anders als die beiden anderen Rollen: das gesamte Rechtepaket kommt
+über die Mitgliedschaft in `pg_monitor`, und `NOINHERIT` hieße ein Exporter, der
+das Recht hat und es ohne `SET ROLE` nicht benutzen kann.
+
+Bleibt der Schritt aus, startet der Exporter, scheitert an der Anmeldung, und
+`up{job="postgres"}` steht auf 0, während alles andere grün ist.
+
+**Nach jedem Dokploy-Upgrade wiederholen:** 3.2 und 3.2a. Ob Dokploy
+`traefik.yml` regeneriert, ist ungeprüft — wenn ja, verschwindet die Einstellung
+still, und `check-traefik-metrics.sh` ist das, was es merkt. Ob ein Upgrade die
+Netz-Anbindung mitnimmt, ist dieselbe Frage mit derselben Antwort.
 
 ### 3.3 Die Platte
 
