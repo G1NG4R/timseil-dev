@@ -110,6 +110,12 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - **Am Anfang jeder Session lesen, am Ende aktualisieren.** Alles, was wir
   verschieben, finden oder als Idee notieren, kommt dort rein — mit Datum und
   Ursprungsphase.
+- **Und die offenen Issues mitlesen** — `gh issue list --state open`. Der
+  Notizblock ist die eine Hälfte des Gedächtnisses, der Tracker die andere, und
+  die Triage räumt von der einen in die andere. Wer nur den Notizblock liest,
+  findet Dinge ein zweites Mal und meldet sie als neu. Passiert bei der
+  F5-Abnahme: die Sondenkadenz und der `-race`-Fund standen seit drei Tagen als
+  #180 und #181 da, und der Backlog behauptete „gemessen hatte es niemand".
 - **Zwei Backlogs, und jeder Eintrag wird zugeordnet, bevor er geschrieben
   wird.** Kein Eintrag entsteht, ohne dass diese Frage beantwortet ist:
 

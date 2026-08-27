@@ -93,8 +93,20 @@ Abstände unter 6 min     0 von 99
 
 **Der konfigurierte Fünf-Minuten-Takt ist kein einziges Mal erreicht worden.**
 GitHub verwirft geplante Läufe unter Last; der Workflow-Kommentar ahnt es
-(„GitHub's cron queue"), gemessen hatte es niemand. Das ist F4s Zahl, nicht F5s,
-und es hat drei Folgen — unten unter „Gefunden".
+(„GitHub's cron queue").
+
+**Korrigiert bei der Triage am selben Tag:** hier stand „gemessen hatte es
+niemand", und das war falsch. Am 24.08. war es schon gemessen und als
+[#180](https://github.com/G1NG4R/timseil-dev/issues/180) eingetragen — 41 Läufe
+in 23,66 h, 14 %, echtes Intervall 35 Minuten, mitsamt derselben
+`down_sec`-Folge und demselben Faktor. Ich hatte `backlog.md` gelesen, wie
+CLAUDE.md es verlangt, und **nie in den Issue-Tracker gesehen** — die andere
+Hälfte desselben Gedächtnisses, und genau die, in die eine Triage einräumt.
+
+Was von der heutigen Messung bleibt, ist eine **zweite, größere Stichprobe, die
+zeigt, dass es schlechter geworden ist**: 10 statt 14 %, dazu ein Extremwert von
+elf Stunden und die Zeile, die es am schärfsten sagt — 0 von 99 Abständen unter
+sechs Minuten. Als Kommentar an #180 angehängt, nicht als zweites Issue.
 
 **Als Nächstes:** Stufe F triagieren (F6–F11 liegen hinter dem Launch) und die
 Sondenkadenz entscheiden.
@@ -1366,6 +1378,71 @@ damit rund siebenmal zu klein — Invariante 1 in Betriebskleidung.
 
 ---
 
+## Triage — Stufe F (Launch-Pfad), 27.08.2026
+
+F1–F5 sind gebaut und gegen Produktion abgenommen; F6–F11 liegen hinter dem
+Launch. Damit ist der Auslöser erreicht, den CLAUDE.md nennt: **Issue, bewusst
+verworfen mit Begründung, oder erledigt — und der Notizblock wird geleert.**
+
+Zwanzig Zeilen unter „Gefunden", vier unter „Idee". Fünfzehn waren erledigt und
+sind in ADRs, Beiträgen und Commits belegt; sie brauchen hier keine Zeile mehr.
+Die übrigen neun:
+
+### Zu Issues geworden
+
+| Fund | Wohin |
+|---|---|
+| Sondenkadenz bei 10 %, `down_sec` untertreibt um Faktor 7 | **[#180](https://github.com/G1NG4R/timseil-dev/issues/180)** — existierte seit 24.08.; die größere Stichprobe hängt als Kommentar dran |
+| Wettlauf in `internal/contact/dispatch_test.go`, kein `-race` in der Pipeline | **[#181](https://github.com/G1NG4R/timseil-dev/issues/181)** — existierte seit 24.08.; F5 hat ihn unabhängig wiedergefunden |
+| README-Entscheidungstabelle endet bei ADR 0029 | **[#205](https://github.com/G1NG4R/timseil-dev/issues/205)** |
+| Zustellbarkeit ist der einzige SLI ohne Messung, es fehlt ein Contract-Feld | **[#206](https://github.com/G1NG4R/timseil-dev/issues/206)** — fällig mit H8 |
+| Traefik-Anbindung übersteht kein Neuerzeugen des Containers | **[#207](https://github.com/G1NG4R/timseil-dev/issues/207)** |
+| `uptime90d` sagt nicht, über wie viel gemessenes Fenster es spricht | **[#208](https://github.com/G1NG4R/timseil-dev/issues/208)** — fällig mit H1 |
+
+### Bewusst verworfen, mit Begründung
+
+**Der Seiten-p95 enthält den Verkehr der eigenen Sonde.** Ausschließen ginge nur
+über eine zweite Bucket-Liste je Dienst, und Traefik nimmt eine Liste, nicht eine
+je Dienst. Die Verzerrung steht in `docs/slo.md` und in ADR 0041 unter „Was das
+kostet". **Aufschreiben ist hier die vollständige Antwort**, nicht der billige
+Ausweg: die Zahl ist nicht falsch, sie ist ein p95 über einen Anfragemix, und der
+Mix gehört danebengeschrieben.
+
+**`Stop()` ist bei vier Schleifen sequenziell idempotent, nebenläufig nicht.**
+Kann nicht auslösen: `cmd/api` erreicht die Methode auf zwei Wegen, die einander
+ausschließen — scheitert der Listener, wird `serve()` nie erreicht. Vier
+Geschwisterpakete für einen unmöglichen Fall anzufassen ist genau das, wovor
+„Maß halten" warnt, und der Diff sähe ohne Anlass aus. **Was stattdessen
+passiert ist:** der Kommentar an `snapshots.Stop()` behauptete mit „idempotent"
+mehr, als der Code hält, und sagt jetzt, *warum* es sicher ist — damit ein
+künftiger dritter Aufrufer die Bedingung liest, statt sie zu erben.
+
+**Das `selftest`-Flackern an `registry.sh`** („rejected, but not for 'usage'",
+25.08.). In allen Läufen seit dem 25.08. nicht wiedergekehrt, das Skript direkt
+aufgerufen dreimal deterministisch. Verworfen als nicht reproduzierbar; taucht es
+wieder auf, ist die Kopiererei ins Temp-Verzeichnis der erste Verdacht — und
+dann mit zwei Vorkommen statt einem.
+
+### Dabei aufgefallen: zwei überfällige Issues
+
+`#183` („decide it in F3") und `#184` („due with F3") warten auf eine Phase, die
+am 26.08. abgenommen wurde. **#184 nennt drei Hintergrundschleifen; es sind
+inzwischen fünf** — F4 und F5 haben je eine dazugelegt, und F5 hat dem Label
+einen konkreten Leser gegeben: `docs/runbooks/api.md` schickt einen Operator zum
+`grep` nach `"msg":"metric snapshot"`. Das ist ein Label-Selektor, der als
+Textsuche in einem Runbook steht. Als Kommentar an #184 vermerkt.
+
+### Die Lehre dieser Triage
+
+**Ich habe zwei Funde als neu gemeldet, die seit drei Tagen als #180 und #181
+dastanden.** `backlog.md` hatte ich gelesen, wie es die Regel verlangt; den
+Issue-Tracker nicht. Der Notizblock ist die eine Hälfte des Gedächtnisses, der
+Tracker die andere — und die Triage räumt genau von der einen in die andere.
+Wer nur den Notizblock liest, findet zuverlässig Dinge ein zweites Mal und nennt
+sie neu. CLAUDE.md hat dafür jetzt eine Zeile, mit diesem Vorfall als Auslöser.
+
+---
+
 ## Verschoben — bewusste Entscheidung
 
 | Datum | Aus Phase | Was | Status |
@@ -1373,36 +1450,12 @@ damit rund siebenmal zu klein — Invariante 1 in Betriebskleidung.
 
 ## Gefunden — Bug oder Unklarheit
 
-Vorherige Triage: nach F2, 24.08.2026 — siehe oben.
+Vorherige Triage: Stufe F (Launch-Pfad), 27.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
-| 2026-08-27 | F5-Abnahme (trifft **F4**) | **Die externe Sonde läuft mit 10 % ihres Takts, und der Fünf-Minuten-Takt wurde nie erreicht.** Gemessen über 100 Läufe / 81,4 h: 1,23 statt 12 Läufe/h, Abstände min 13 · median 36 · max **660** Minuten, **0 von 99 Abständen unter 6 Minuten**. GitHub verwirft geplante Läufe unter Last. Drei Folgen: **(1)** `down_sec` in `queries/ops.sql` ist *fehlgeschlagene Prüfungen × `ops.ProbeInterval`* = × 5 min — bei 36 min echtem Abstand untertreibt das Raster jede Ausfalldauer grob um **Faktor 7**. **(2)** `docs/slo.md` behauptete „der Takt sind fünf Minuten". **(3)** `check-probe-cadence.sh` hält den Cron gegen die Go-Konstante — beide sagen 5, beide stimmen, und die Wirklichkeit sagt 36. Das Gate bewacht die **Deklaration**, nicht die Einhaltung. | **offen** — hier nur gemessen und den falschen Sätzen entzogen. Die Reparatur ist eine Entscheidung (eigener Cron auf dem Host? zweiter Auslöser? bewusst hinnehmen und `ProbeInterval` ehrlich machen?) und gehört zu F4/F10; F10s Dead Man's Switch ist die Stelle, an der so etwas auffallen soll |
-| 2026-08-27 | F5-Abnahme | **`uptime90d: 100` ruht auf 5 gemessenen Tagen von 91.** 86 Zellen sind `nodata`. Arithmetisch richtig — `nodata` trägt zu keiner Summe bei, Invariante 6, und ein `nodata` als Ausfall zu zählen wäre die schlimmere Lüge. Rhetorisch zu stark: der Badge sagt „100.00 %" über ein Fenster, von dem 5 % gemessen sind. Dieselbe Klasse wie der Bucket-Fund aus F3. | **aufgeschrieben statt weggerechnet** — `docs/slo.md` nennt es jetzt unter „Was diese Zahl nicht sieht": eine Prozentzahl über 91 Tage sagt nichts darüber, wie viele davon gemessen wurden, und das Raster ist die zweite Angabe, die dazugehört |
-| 2026-08-27 | F5-Abnahme | **Jeder Deploy erzeugt eine `not measured`-WARN-Zeile.** Der Start-Lauf der Schleife trifft den Alias `timseil-prometheus`, während dessen Container neu erzeugt wird — DNS antwortet „server misbehaving". Selbstheilend beim nächsten Tick, und genau das Verhalten, das ADR 0041 §5 zusichert. | **erledigt als Doku** — `docs/runbooks/api.md` sagt bei `not measured`, dass die Zeile direkt nach einem Deploy der Normalfall ist und erst über mehrere Ticks hinweg eine Diagnose wird. Für F10 notiert: kein Pager darauf |
-| 2026-08-27 | F5-Abnahme | **Die Host-Diagnose läuft über Containernamen, nicht über Compose.** `docker compose -f compose.yaml …` meldet dort „no such service", obwohl alles läuft — Dokploy setzt einen eigenen Projektnamen über `-p`. `docs/runbooks/dokploy.md` warnt davor; die konkrete Ausprägung samt der vier Befehle liegt in `backlog.local.md`, nicht hier. | **erledigt** — Weg notiert, Zustand nicht hier |
-| 2026-08-27 | F5 | **Ein Vertrag aus einer Phase und zwei Dokumenten war arithmetisch unmöglich.** `timseil:service:availability_5m → Metrics.uptime90d, über 91 Tage aggregiert` stand seit F3 im Runbook und in ADR 0040 §4. Prometheus hält sieben Tage. Beide Zahlen waren einzeln richtig, beide waren begründet aufgeschrieben, und es gab keinen Ort, an dem sie nebeneinander standen. | **erledigt** — `uptime90d` kommt aus `ops_days` (ADR 0041 §1); Mapping-Tabelle im Runbook korrigiert, `docs/slo.md` hält alle fünf SLIs mit Quelle und Fenster an einer Stelle |
-| 2026-08-27 | F5 | **„F5 sieht das Label, weil sie über den Tunnel fragt" — beide Hälften falsch.** Es gibt keinen Tunnel (Zwei-Host-Topologie, in ADR 0008 verworfen; die api erreicht Prometheus im `default`-Netz), und weil sie damit ebenso lokal fragt wie die Grafana-Datasource daneben, sieht sie `external_labels` genauso wenig. Der Absatz **direkt darüber** erklärt korrekt, warum. | **erledigt** — nachgemessen gegen die Regel, die F5 wirklich liest: `{"__name__":"timseil:site:…"}`, kein `stack`. Ein Filter darauf hätte nichts getroffen und gelesen wie ein Ausfall |
-| 2026-08-27 | F5 | **Das Fehlerbudget stand unter der falschen Überschrift.** „3 h 39 min" in der Spalte „Fehlerbudget/30 d" — 0,5 % von genau 30 Tagen sind 3 h 36 min; 3 h 39 min sind 0,5 % eines Durchschnittsmonats (30,4375 d). Beide richtig für ihre Frage, eine unter dem falschen Kopf. Dieselbe Klasse wie 90 gegen 91 Tage: eine Zahl, die man nachzählen können muss. | **erledigt** — verbindlich sind 30 Tage und **3 h 36 min**; `docs/slo.md` rechnet alle drei Bezugsräume vor, Anhang A und Handbuch tragen die Korrektur |
-| 2026-08-27 | F5 | **Der Seiten-p95 enthält den Verkehr unserer eigenen Sonde.** F4 trifft `/api/health` alle fünf Minuten, dieser Pfad antwortet in ein bis zwei Millisekunden, und die Anfragen liegen in derselben Histogramm-Reihe wie die Seiten. Nichts daran ist erfunden — jede Beobachtung hat stattgefunden — aber es ist ein p95 über einen Anfragemix, der das Monitoring einschließt, und bei wenig Verkehr zieht er stark. | **aufgeschrieben statt repariert** — `docs/slo.md` sagt es laut, ADR 0041 nennt es unter „Was das kostet". Ein Ausschluss ginge nur über ein zweites Bucket-Set je Dienst, das Traefik nicht kennt |
-| 2026-08-27 | F5 | **`dokploy-network` sortiert vor `<projekt>_default`.** Die api hängt in beiden, und Docker beantwortet einen Namen aus dem Netz, dessen Name alphabetisch zuerst steht (gemessen am 23.08., ADR 0039 §2). Der schlichte Name `prometheus` wäre damit auf einem Host, auf dem eine Nachbar-App je einen so benannten Container veröffentlicht, die Latenz eines Fremden — grün, plausibel, über das falsche System. | **erledigt** — unser Prometheus trägt den Alias `timseil-prometheus` jetzt auch im `default`-Netz, und `internal/snapshots` fragt ihn. Dieselbe Reparatur wie bei der Grafana-Datasource in F2, eine Leserichtung weiter |
-| 2026-08-27 | F5 | **Die Entscheidungstabelle im README endet bei ADR 0029.** Zwölf ADRs fehlen (0030–0041). Kein Gate prüft es — `check-adrs` prüft Referenzen und Lücken in `docs/adr/`, nicht die Auswahl im README. | **offen** — nicht in dieser Phase repariert, weil die Tabelle eine kuratierte Auswahl ist und die Frage „welche gehören hinein" eine eigene ist. Triage am Ende von Stufe F |
-| 2026-08-25 | F3 | **Traefiks Standard-Buckets machen aus dem p95 eine Interpolation.** `0.1, 0.3, 1.2, 5.0` Sekunden — 7582 von 7896 Anfragen im ersten Bucket. Der Wert, den `histogram_quantile` liefert, ist eine Gerade zwischen 0 und 100 ms und stützt sich auf keine Beobachtung. **Das Abnahmekriterium war damit erfüllt.** | **erledigt** — Bucket-Liste in `compose.lab.yaml` und Runbook `dokploy.md` §3.2; auf dem Host noch zu setzen |
-| 2026-08-25 | F3 | **Ein Lasttest aus einem Container misst den Rate-Limiter, nicht die Seite.** Erster k6-Lauf: 47 % „Fehler", und der Proxy sagte, was sie waren — 4190 × `429` gegen 324 × `200` auf `/api`. Ein Client ist ein Eimer (ADR 0015). Nebenbei belegt: die 429er ließen `error_ratio` bei 0, denn der Contract definiert `errorRate` als 5xx-Anteil — die Regel war dafür geschrieben und ist es jetzt gemessen. | **erledigt** — `tools/load.js` taktet `/api` unter das Limit, Volumen läuft über `/` |
-| 2026-08-25 | F3 | **Das Labor startete weniger Dienste, als die Datei beschreibt**, und `--metrics` meldete `job=alloy` und `job=loki` als down — korrekt, und aus einem Grund, der nichts mit dem Code zu tun hatte. Ein Labor, das rot liest, während es bloß unvollständig ist, erzieht dazu, sein Rot zu ignorieren. | **erledigt** — `make rolling-lab` startet die ganze messende Seite |
-| 2026-08-26 | F3 (Merge) | **Trivy blockiert jeden Image-Build, und es liegt nicht am Diff.** CVE-2026-14456, openssl `3.5.7-r0` in `node:24-alpine`, HIGH — und *fixed* upstream, also greift `ignore-unfixed` nicht. Kein repariertes Basis-Image vorhanden: `node:24-alpine`, `node:lts-alpine` und `node:24-alpine3.22` tragen alle 3.5.7-r0 oder älter, der Fix ist 3.5.8-r0. Der verwundbare Pfad braucht laut Advisory einen OpenSSL-**QUIC-Listener** mit `SSL_accept()`; der web-Container fährt Next.js auf einfachem HTTP im Docker-Netz, ohne veröffentlichten Port, HTTP/3 terminiert an Traefik. | **erledigt** — `.trivyignore` mit Begründung und `exp:2026-09-23`, eigener PR. Verworfen: `apk upgrade` im Runner-Stage, weil der Digest-Pin dann das Ergebnis nicht mehr beschreibt (ADR 0026). Gegengeprobt: ohne Datei rot, mit abgelaufenem Datum rot |
-| 2026-08-26 | F3 | **`traefik_build_info` gibt es nicht — und der Satz stand seit D3 in zwei Dokumenten.** `stack.yaml` und ADR 0028 §10 nennen die Serie als „die ehrliche Quelle" für die Traefik-Version, die „mit F3 ankommt, wenn etwas sie scrapt". F3 hat sie gescrapt: Traefik exportiert **keine** Build-, Versions- oder Info-Metrik — gegen den laufenden Proxy (v3.6.7) gemessen und lokal gegen v3.7.11 nachgestellt. **In dieser Phase ein drittes Mal abgeschrieben**, in `ops/host/check-traefik-metrics.sh`, wo ein `grep` darauf stand, der für immer nichts gefunden hätte. Dieselbe Klasse wie die vier Zeilen aus Beitrag 004, diesmal selbst produziert. | **erledigt** — korrigiert in `stack.yaml`, im Skript und im Runbook; ADR 0040 §6 trägt die Korrektur zu ADR 0028 §10. Der Traefik-Eintrag bleibt leer, aus einem besseren Grund: nicht „noch nicht gemessen", sondern „es gibt nichts zu messen" |
-| 2026-08-26 | F3 | **Der Bucket-Fund gilt aggregiert, nicht je Serie — und die Unterscheidung gehört in jeden Text darüber.** Gegen Produktion: 177 von 181 `timseil-web`-Beobachtungen im ersten Bucket. Für `code=200` allein sind es 70 von 74, und 0,95 · 74 = 70,3 fällt knapp ins **zweite** Bucket — ebenso wertlos, aber nicht „zwischen 0 und 100 ms". Unsere Regel aggregiert `sum by (service, le)` ohne `code`, liegt also im aggregierten Fall. | **erledigt** — ADR 0040 §5 stellt den Randfall daneben, statt ihn zu glätten |
-| 2026-08-25 | F3 | **Ein Apostroph in einem Kommentar beendet das eingebettete awk- bzw. Python-Programm — zweimal in einer Session.** Die Programme stehen in einfachen Anführungszeichen; „host's" schließt sie, der Rest wird Shell, die Datei parst nicht mehr. Beide Male war das Wort ein englischer Genitiv in einem Kommentar, den niemand zweimal liest. `selftest` **führt** die meisten Skripte aus und fängt so etwas — aber nicht die, die Docker brauchen, und genau dort passierte der zweite. | **erledigt** — umformuliert, und der Auslöser trägt eine Regel: `check-repo` prüft jede `*.sh` mit `sh -n`, `selftest` beweist die Abweisung an genau dieser Form |
-| 2026-08-25 | F3-Vorbereitung | **`check-traefik-metrics.sh` konnte nie grün werden.** Es holt Traefiks IP im `dokploy-network` und fragt sie **vom Host aus** — das Netz ist aber ein **Overlay** (gemessen: `driver=overlay`), und Overlay-Adressen existieren im Netzwerk-Namensraum des Hosts nicht. Der Defekt hat sich zwei Stufen lang hinter einem wahren Ergebnis versteckt: die Metriken waren aus, die Zeile scheiterte aus dem Grund, den sie nannte, und niemand hat weitergeschaut. Sichtbar wurde er erst, als die Einstellung endlich an war und die Prüfung weiter nein sagte — während dieselbe Anfrage **aus dem Netz heraus 142 `traefik_*`-Serien** lieferte. | **erledigt hier** — die Sonde läuft jetzt in einem Wegwerf-Container im Netz und borgt das Prometheus-Image, das ohnehin auf dem Host liegt |
-| 2026-08-25 | F3-Vorbereitung | **Traefiks Metriken waren nie eingeschaltet — D3s Abnahmekriterium ist bis heute nicht erfüllt gewesen.** Kein `metrics:`-Block in Dokploys statischer Konfiguration, kein Overschreiben durch ein Upgrade, sondern nie ausgeführt. Der Runbook trug den Schritt seit D3. **Dieselbe Klasse wie die vier aus Beitrag 004**, nur zwei Stufen älter — und diesmal war es ein Abnahmekriterium, das ein Skript sogar prüfen wollte. | **erledigt** — eingeschaltet am 25.08., 142 Serien belegt |
-| 2026-08-25 | F3-Vorbereitung | **Entwurf entschieden, Labor-Hälfte belegt, Host-Hälfte offen.** Ursprünglich: unser Prometheus darf Traefik gar nicht erreichen. Traefik lauscht im `dokploy-network`; `check-compose` Regel 1 verbietet `db`, `prometheus`, `loki` und `alloy` genau dort den Zutritt, und ADR 0039 §2 nennt den Grund — das Netz teilt sich mit jeder App dieses Hosts. F3 soll Traefik scrapen. Das Muster, das bei der fremden Grafana funktioniert hat, wäre umgekehrt: nicht wir gehen hinein, Traefik kommt zu uns ins `observability-network`. Nur ist Traefik Dokploys eigener Container, und `docker network connect` überlebt seinen Neustart nicht — die Lektion vom 24.08. **Entschieden: Traefik kommt zu uns, unter dem Alias `timseil-traefik`** (ADR 0040 §1). Im Labor gebaut und gemessen. | **teilweise** — Labor belegt, der haltbare Mechanismus auf dem Host ist die Restaufgabe; Ergebnis nicht hier |
 
 ## Idee — noch nicht entschieden
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
-| 2026-08-27 | F5 (CI) | **`go test -race` meldet einen Wettlauf in `internal/contact/dispatch_test.go:43`.** `stubDispatchQueries.ListDeliverableContactMessages` schreibt ohne Mutex, während `Dispatcher.runOnce` liest. Vorbestehend, mit gestashtem Branch nachgestellt — also aus C6 und nicht aus F5. CI fährt `go test` **ohne** `-race`, deshalb ist es nie aufgefallen. Die Stubs in `internal/snapshots` und `internal/contributions` nehmen den Mutex, `contact` nicht. | **offen** — ein Mutex im Stub ist die Reparatur; die größere Frage ist, ob `-race` in die Pipeline gehört und was das an Laufzeit kostet. Triage am Ende von Stufe F |
-| 2026-08-27 | F5 (Kontrolle) | **`Stop()` ist bei vier Schleifen sequenziell idempotent, nebenläufig nicht.** `ops`, `contributions`, `uptime` und `snapshots` prüfen alle mit `select` auf `s.stop` und schließen den Kanal danach — zwei gleichzeitige Aufrufe fielen beide durch und der zweite paniert mit `close of closed channel`. **Kann heute nicht auslösen:** `cmd/api` erreicht `Stop()` auf zwei Wegen, die einander ausschließen und nacheinander laufen. Nur in F5 zu reparieren hieße, ein Muster von vier Stellen an einer aufzubrechen. | **offen** — `sync.Once` ist eine Zeile, aber es sind vier Dateien und keine hat den Fehler je gezeigt. Triage am Ende von Stufe F |
-| 2026-08-27 | F5 | **Die Zustellbarkeit ist der einzige SLI ohne Messung, und ihm fehlt ein Contract-Feld.** `contact_messages.delivery_status` liegt seit B2 (`queued` · `sent` · `failed`), der Dispatcher aus C6 schreibt ihn — was fehlt, ist die Abfrage, die daraus eine Quote macht, und ein Ort auf der Seite. Die Definition steht in `docs/slo.md`, damit sie nicht neu erfunden wird: zugestellt geteilt durch angenommen, über dreißig Tage. Es ist der einzige Konversionspunkt dieser Seite. | **offen** — vermutlich H8 oder eine eigene kleine Phase; braucht ein Contract-Feld, also eine Entscheidung |
-| 2026-08-25 | F3 | **`selftest` hat einmal an einer Stelle rot gemeldet, die nichts mit dem Diff zu tun hat** — „registry.sh refuses an unknown subcommand (rejected, but not for 'usage')". Das Skript selbst ist deterministisch: dreimal direkt aufgerufen, dreimal dieselbe Zeile mit `usage`. In drei vollständigen `selftest`-Läufen danach nicht reproduziert. Aufgeschrieben statt weggeklickt; bei einem zweiten Auftreten ist die Kopiererei ins Temp-Verzeichnis der erste Verdacht. | **beobachtet, nicht reproduziert** |
