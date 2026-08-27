@@ -20,7 +20,7 @@ Der Bauplan legt sie nach `web/styles/`, importiert sie in fester Reihenfolge
 und nennt als Abnahme zwei Sätze: **`bg-blue-500` funktioniert nicht mehr, und
 Lint verbietet Hex außerhalb `tokens.css`.**
 
-Tailwind 4 liefert im Auslieferungszustand 264 Farben, eine erzeugende
+Tailwind 4 liefert im Auslieferungszustand 288 Farbwerte, eine erzeugende
 Abstandsskala und fünf Breakpoints — alles Werte, die niemand für diese Seite
 entschieden hat, alle in einer Zeile Klassenname erreichbar. Das ist der Zwang,
 um den es hier geht: nicht ob Tailwind eingesetzt wird (Stack-Kapitel und

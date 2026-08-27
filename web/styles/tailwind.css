@@ -11,7 +11,7 @@
    2. `--*: initial` clears every default the framework ships — the whole colour
       palette, the spacing scale, the breakpoints, the shadows. Invariant 8 says
       no colour, no radius and no duration outside tokens.css; a palette that
-      ships 264 colours nobody chose is exactly that, and `bg-blue-500` working
+      ships 288 colour values nobody chose is exactly that, and `bg-blue-500` working
       by accident is how the first one gets used. What follows is the whitelist.
 
    3. `@theme inline`, not `@theme`. `inline` hands the utility `var(--bg)`
