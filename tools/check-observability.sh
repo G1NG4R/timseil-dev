@@ -101,21 +101,41 @@ print(json.dumps([o["uptime90d"], o["p95Ms"], o["errorRate"], o["measuredAt"]]))
 '
   }
 
+  # Every line the loop has ever written, and every failure among them. Counted
+  # rather than grepped for, because this check restarts the api and
+  # `docker compose restart` keeps the container and therefore its log: a line
+  # from an earlier run is still there, and a check satisfied by history proves
+  # nothing about this run.
+  runs() { $COMPOSE logs api 2>/dev/null | grep -c '"msg":"metric snapshot"' || true; }
+  failures() { $COMPOSE logs api 2>/dev/null | grep -c '"state":"not measured"' || true; }
+
   # A run is forced by restarting the api rather than by waiting out a tick:
   # internal/snapshots runs once at startup, and five minutes is not a unit a
   # check can be written in.
+  #
+  # WAITING FOR /api/health IS NOT WAITING FOR THE RUN. The loop is a goroutine
+  # started before the listener exists, so the endpoint can answer while the
+  # first query is still in flight. Reading the numbers in that window gives two
+  # false answers, and the second is the worse one: the INSERT can land between
+  # the before and after reads, the two differ, and this script accuses the
+  # build of the exact bug the phase exists to prevent. So the wait is on the
+  # loop's own line, which it writes on every run whatever the outcome.
   force_run() {
+    before_runs=$(runs)
     $COMPOSE restart api >/dev/null 2>&1 || return 1
     n=0
     while [ "$n" -lt 60 ]; do
-      curl -sf --max-time 2 "$base/api/health" >/dev/null 2>&1 && return 0
+      if curl -sf --max-time 2 "$base/api/health" >/dev/null 2>&1 \
+        && [ "$(runs)" -gt "$before_runs" ]; then
+        return 0
+      fi
       n=$((n + 1))
       sleep 1
     done
     return 1
   }
 
-  force_run || { no "the api did not come back after a restart"; exit 1; }
+  force_run || { no "the api did not come back and take a snapshot after a restart"; exit 1; }
 
   before=$(ops 2>/dev/null || true)
   printf '%s' "$before" | python3 -c '
@@ -146,6 +166,10 @@ print("uptime90d=%s p95Ms=%s errorRate=%s at %s%s"
     || { no "no snapshot to age: $(cat /tmp/obs.$$)"; rm -f /tmp/obs.$$; exit 1; }
   rm -f /tmp/obs.$$
 
+  # Counted before, compared after: a count that has to GROW cannot be satisfied
+  # by a line an earlier run of this check left behind.
+  before_failures=$(failures)
+
   # THE BROKEN CASE. Stop the container the numbers come from, then force
   # another run against it.
   $COMPOSE stop prometheus >/dev/null 2>&1 \
@@ -170,17 +194,24 @@ print("uptime90d=%s p95Ms=%s errorRate=%s at %s%s"
     ok "the same values, the same measuredAt — the page ages instead of going blank"
   fi
 
-  # And the run said so, at WARN, once. The absence of this line would mean the
-  # values survived because nothing ran at all.
-  if $COMPOSE logs --tail 200 api 2>/dev/null | grep -q '"state":"not measured"'; then
-    ok "the failed run is in the log"
+  # And the run said so, at WARN. A NEW line, not any line: the values must have
+  # survived because a run failed, not because no run happened.
+  after_failures=$(failures)
+  if [ "$after_failures" -gt "$before_failures" ]; then
+    ok "the failed run is in the log ($before_failures → $after_failures)"
   else
-    no "no line reports the failed run — did the loop run at all?"
+    no "no NEW line reports a failed run ($before_failures → $after_failures) — did the loop run at all?"
   fi
 
-  $COMPOSE start prometheus >/dev/null 2>&1 || no "prometheus would not start again"
-  trap - EXIT INT TERM
-  ok "prometheus back up"
+  # The trap is cleared only if the restart actually worked. Dropping the safety
+  # net on the one path that established Prometheus is NOT back would break the
+  # promise the Makefile target makes about this run.
+  if $COMPOSE start prometheus >/dev/null 2>&1; then
+    trap - EXIT INT TERM
+    ok "prometheus back up"
+  else
+    no "prometheus would not start again — the exit trap will try once more"
+  fi
 
   [ "$fail" = 0 ] && printf '  ✓ tools/check-observability.sh --snapshots\n'
   exit "$fail"

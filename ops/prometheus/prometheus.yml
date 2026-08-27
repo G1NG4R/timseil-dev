@@ -52,10 +52,23 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    # Named, because F5 asks this instance for snapshots over the tunnel and a
-    # snapshot that cannot say which Prometheus produced it is a number without
-    # a source. It also keeps our series apart from the neighbouring stack's if
-    # the two are ever read in one Grafana query.
+    # WHO ACTUALLY SEES THIS, because the two readers named here first were both
+    # wrong and both were measured wrong.
+    #
+    # external_labels are attached only to data that LEAVES this server --
+    # federation, remote_write, and the alerts Alertmanager sends. A query
+    # answered locally never carries them. Measured twice: a Grafana datasource
+    # asking `up{stack="timseil"}` gets an empty result (2026-08-24), and so
+    # does the F5 snapshot loop, which reaches this instance over the compose
+    # network and is just as local (2026-08-26). Neither the datasource nor the
+    # snapshot can tell which Prometheus answered it from this label, and the
+    # earlier version of this comment claimed both.
+    #
+    # It stays because it has a real reader, just a later one: F10's alerts
+    # carry it out of this process, and an alert that cannot say which stack it
+    # is about is a page nobody can act on. docs/runbooks/observability.md has
+    # the two measurements; the alias on the service is what actually keeps the
+    # neighbouring Prometheus apart from ours.
     stack: timseil
 
 scrape_configs:

@@ -433,6 +433,17 @@ func TestAnInfiniteValueIsRefusedAndLogged(t *testing.T) {
 	if !strings.Contains(out.String(), `"state":"value refused"`) {
 		t.Errorf("an infinity was refused silently:\n%s", out.String())
 	}
+	// THE VALUE HAS TO BE IN THE LINE, and asserting only on the state is how
+	// the first version of this test passed over a real bug: slog marshals a
+	// float64 through encoding/json, which refuses ±Inf, so the field read
+	// `"value":"!ERROR:json: unsupported value: +Inf"` — the one number the
+	// line exists to report was the one it could not carry.
+	if !strings.Contains(out.String(), `"value":"+Inf"`) {
+		t.Errorf("the refused value is not in the line:\n%s", out.String())
+	}
+	if strings.Contains(out.String(), "!ERROR") {
+		t.Errorf("slog could not encode the refused value:\n%s", out.String())
+	}
 }
 
 // ------------------------------------------------------------------ the store

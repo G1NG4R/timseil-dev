@@ -37,11 +37,21 @@
 -- stays the one place 91 is written. Invariant 7 says the number has to remain
 -- countable; two copies of it is how it stops being.
 --
--- ON CONFLICT DO NOTHING against metric_snapshots_unique_instant: the loop ticks
--- every five minutes and Prometheus evaluates every fifteen seconds, so two
--- ticks can in principle land on one evaluation instant. The second one is not
--- an error and not news -- :execrows lets the caller log that it discarded one
--- rather than pretend it wrote it.
+-- ON CONFLICT DO NOTHING against metric_snapshots_unique_instant, and the
+-- constraint is B2's rather than this query's: it says a system cannot hold two
+-- measurements of one instant. DO NOTHING says that running into it is not an
+-- error, and :execrows lets the caller log that it discarded a row rather than
+-- pretend it wrote one.
+--
+-- HOW OFTEN THAT HAPPENS IS A DIFFERENT QUESTION, and the honest answer is
+-- almost never. measured_at is the timestamp of the instant query, which
+-- Prometheus stamps at millisecond resolution from its own clock, so two ticks
+-- five minutes apart cannot land on it. The one case with two writers is a
+-- rollout: compose.rollout.yaml's twin extends api and therefore runs the same
+-- loop, and two instances querying within the same millisecond is the only way
+-- to reach this branch. They will normally write two rows a few milliseconds
+-- apart instead, which the read path handles by taking the newest -- and which
+-- is a property of every background loop in this binary, not of this one.
 --
 -- name: InsertMetricSnapshot :execrows
 WITH window_days AS (

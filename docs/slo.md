@@ -94,7 +94,9 @@ die man nachzählen kann.
 **Achtung, zwei Fenster.** Die Seite zeigt Verfügbarkeit über **91 Tage**, das
 Budget läuft über **30**. Das ist kein Fehler und es ist leicht zu verwechseln:
 ein Vorfall, der das Monatsbudget vollständig verbrennt, bewegt die Zahl auf der
-Seite um rund 0,17 Prozentpunkte. Die Seite erzählt einen Verlauf, das Budget
+Seite um rund **0,16** Prozentpunkte (216 min auf 131 040 min). Mit der
+Durchschnittsmonats-Zahl wären es 0,17 — sie gilt hier nicht, und die
+Abweichung ist genau der Grund, warum oben eine der beiden verbindlich ist. Die Seite erzählt einen Verlauf, das Budget
 verwaltet einen Monat.
 
 ---

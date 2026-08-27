@@ -200,6 +200,7 @@ type promAnswer struct {
 // distinguishable (invariant 1).
 func decode(answer promAnswer) ([]sample, error) {
 	samples := make([]sample, 0, len(answer.Data.Result))
+	seen := make(map[string]bool, 2)
 
 	for _, series := range answer.Data.Result {
 		name := series.Metric["__name__"]
@@ -209,6 +210,19 @@ func decode(answer promAnswer) ([]sample, error) {
 			// it belongs to is the one thing worse than failing.
 			return nil, fmt.Errorf("%w: unexpected series %q", errUpstreamRefused, name)
 		}
+
+		// A SECOND SERIES UNDER ONE NAME IS THE SAME AMBIGUITY, and refusing the
+		// unknown name while accepting the duplicate would be an odd place to
+		// stop. Both site rules aggregate every label away, so each can produce
+		// at most one series and this cannot fire today; the day a `by` clause
+		// is added to one of them it fires instead of silently letting the last
+		// series win. Last-writer-wins is the failure that matters here: if the
+		// second copy were NaN, a genuinely measured value would become null,
+		// which is invariant 1 inverted and would not log a thing.
+		if seen[name] {
+			return nil, fmt.Errorf("%w: %s returned more than one series", errUpstreamRefused, name)
+		}
+		seen[name] = true
 
 		if len(series.Value) != 2 {
 			return nil, fmt.Errorf("%w: %s has %d value elements", errUpstreamRefused, name, len(series.Value))

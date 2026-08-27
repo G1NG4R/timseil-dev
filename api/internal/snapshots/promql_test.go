@@ -207,6 +207,20 @@ func TestAnUnexpectedSeriesIsRefused(t *testing.T) {
 	}
 }
 
+// Two series under one name is the same ambiguity as an unknown name, and the
+// asymmetry would have been the bug: last-writer-wins, and if the second copy
+// were NaN a measured value would silently become null.
+func TestTwoSeriesUnderOneNameAreRefused(t *testing.T) {
+	f, _ := serveJSON(t, http.StatusOK, vector(
+		`{"metric":{"__name__":"`+rulePercentile+`"},"value":[1756238175.123,"0.05"]}`,
+		`{"metric":{"__name__":"`+rulePercentile+`"},"value":[1756238175.123,"NaN"]}`,
+	))
+
+	if _, err := f.fetch(context.Background()); !errors.Is(err, errUpstreamRefused) {
+		t.Fatalf("err = %v, want a refusal", err)
+	}
+}
+
 // A malformed element fails the whole answer rather than being skipped. Carrying
 // on with what parsed would turn a broken upstream into a partial snapshot that
 // looks exactly like a quiet five minutes.

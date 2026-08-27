@@ -2196,12 +2196,16 @@ write_rules() { # write_rules <declared...>
   done
 }
 
+# The identifier is deliberately NOT `rule<N>` here. An earlier version of the
+# gate matched constants named `rule*`, so a fixture that always spelled them
+# that way could never have caught the hole: rename the identifier and the name
+# silently stops being checked while the run still prints a tick.
 write_asks() { # write_asks <asked...>
   printf 'package snapshots\n\nconst (\n' > api/internal/snapshots/promql.go
   i=0
   for r in "$@"; do
     i=$((i + 1))
-    printf '\truleName%s = "%s"\n' "$i" "$r" >> api/internal/snapshots/promql.go
+    printf '\twhateverTheyCallIt%s = "%s"\n' "$i" "$r" >> api/internal/snapshots/promql.go
   done
   printf ')\n' >> api/internal/snapshots/promql.go
 }
@@ -2212,10 +2216,19 @@ write_rules 'timseil:site:p95' 'timseil:site:ratio' 'timseil:service:availabilit
 write_asks  'timseil:site:p95' 'timseil:site:ratio'
 accepts "every asked rule declared accepted" names_check
 
-# One direction only: a rule nobody reads is correct today, because
-# availability_5m waits for F10 and the per-service three feed F9.
-write_asks 'timseil:site:p95'
-accepts "a declared rule nobody reads accepted" names_check
+# Direction 2 is scoped to site rules: a PER-SERVICE rule nobody reads is
+# correct today, because availability_5m waits for F10 and all three feed F9.
+write_rules 'timseil:site:p95' 'timseil:service:availability_5m'
+write_asks  'timseil:site:p95'
+accepts "a per-service rule nobody reads accepted" names_check
+
+# ...but a SITE rule nobody reads is the gate shrinking without saying so. This
+# is the case the first version of the check could not see: the name simply
+# dropped out of the Go side and the run stayed green over one name instead of
+# two.
+write_rules 'timseil:site:p95' 'timseil:site:ratio'
+write_asks  'timseil:site:p95'
+refuses "a site rule nobody reads rejected" "asks for nothing of that name" names_check
 
 write_asks 'timseil:site:p95' 'timseil:site:ratio_5m'
 refuses "a renamed rule rejected" "does not declare it" names_check
@@ -2223,6 +2236,10 @@ refuses "a renamed rule rejected" "does not declare it" names_check
 write_rules
 write_asks 'timseil:site:p95'
 refuses "a rules file with no records rejected" "declares no recording rule" names_check
+
+write_rules 'timseil:site:p95' 'timseil:site:ratio'
+write_asks  'timseil:site:p95' 'timseil:site:ratio'
+accepts "the identifier may be called anything" names_check
 
 write_rules 'timseil:site:p95'
 printf 'package snapshots\n' > api/internal/snapshots/promql.go

@@ -18,11 +18,23 @@
 # asks for: the failure has not happened, the way it would happen is written
 # down in two places, and it is invisible from the outside.
 #
-# ONE DIRECTION ONLY. Every name Go asks for must exist; not every rule must be
-# read. timseil:service:availability_5m is deliberately read by nobody until
-# F10's burn-rate alerts, and the three per-service rules feed F9's dashboards.
-# A check that demanded both directions would fail today for a reason that is
-# correct.
+# TWO DIRECTIONS, AND THE SECOND ONE IS NARROWER THAN THE FIRST.
+#
+#   1. Every name Go asks for exists in slis.yml. The obvious direction.
+#   2. Every `timseil:site:*` rule in slis.yml is asked for by Go.
+#
+# The second exists because the first can shrink without noticing. `wanted` is
+# read out of the Go source, so a name that stops being found there stops being
+# checked — and the run still prints a tick, for one name instead of two. Any
+# guard against that inside direction 1 would have to know how many names to
+# expect, which is a third copy of the answer. Direction 2 knows it from
+# slis.yml instead: a site rule nobody reads is the same defect seen from the
+# other end.
+#
+# It is scoped to `site:` on purpose. The three per-service rules are read by
+# nobody in Go and that is correct — timseil:service:availability_5m waits for
+# F10's burn-rate alerts, and all three feed F9's dashboards. A check demanding
+# a Go reader for those would fail today for a reason that is right.
 #
 # It reads both files as text. The Go constant is not reachable from a shell
 # without a compiler, and a check that needed a toolchain to compare two strings
@@ -39,11 +51,16 @@ done
 
 # --------------------------------------------------------------- what Go asks
 
-# The two `const` lines, e.g.
+# Every quoted string in the file that has the shape of one of our rule names,
+# e.g.
 #     rulePercentile = "timseil:site:request_duration_seconds:p95_5m"
-# Matched on the quoted value rather than on the constant name, so that renaming
-# the Go identifier does not quietly empty this list.
-wanted=$(sed -n 's/^[[:space:]]*rule[A-Za-z0-9_]*[[:space:]]*=[[:space:]]*"\([^"]*\)".*$/\1/p' "$asks")
+#
+# The shape and not the identifier. An earlier version matched constants named
+# `rule*` and claimed in this very comment that renaming the identifier could
+# not empty the list — it could, silently, and the run would have gone green
+# over one name instead of two. Nothing in the Go file is allowed to decide how
+# much this gate checks.
+wanted=$(sed -n 's/.*"\(timseil:[A-Za-z0-9_:]*\)".*/\1/p' "$asks" | sort -u)
 
 [ -n "$wanted" ] || {
   printf '  ✗ %s names no recording rule\n' "$asks"
@@ -82,4 +99,28 @@ if [ "$missing" -gt 0 ]; then
   exit 1
 fi
 
-printf '  ✓ %s recording rules asked for, all of them declared\n' "$count"
+# ------------------------------------------------- direction 2, site rules only
+
+unread=0
+site=0
+
+for have in $declared; do
+  case $have in timseil:site:*) ;; *) continue ;; esac
+  site=$((site + 1))
+
+  found=0
+  for name in $wanted; do
+    [ "$name" = "$have" ] && { found=1; break; }
+  done
+  [ "$found" -eq 1 ] && continue
+
+  unread=$((unread + 1))
+  printf '  ✗ %s declares %s and %s asks for nothing of that name\n' "$rules" "$have" "$asks"
+done
+
+if [ "$unread" -gt 0 ]; then
+  printf '    a site rule exists to be read; one nobody reads is a page field left null\n'
+  exit 1
+fi
+
+printf '  ✓ %s recording rules asked for, all declared; %s site rules, all read\n' "$count" "$site"

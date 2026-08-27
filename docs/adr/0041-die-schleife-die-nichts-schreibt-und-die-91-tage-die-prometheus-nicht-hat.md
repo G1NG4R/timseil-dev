@@ -1,8 +1,8 @@
 # ADR 0041 — Die Schleife, die nichts schreibt, und die 91 Tage, die Prometheus nicht hat
 
 **Status:** Angenommen
-**Datum:** 2026-08-26
-**Betrifft:** F5, F9, F10, H2, H3
+**Datum:** 2026-08-27
+**Betrifft:** F5, F9, F10, H1, H2, H3
 **Invarianten:** 1 (keine erfundenen Zahlen), 6 (ein Tag ohne Messung ist `nodata`),
 7 (das Fenster ist 91 Tage)
 
@@ -198,7 +198,10 @@ den Messteil zu töten.
 
 - **Die Seite hat ihre drei Zahlen.** Zum ersten Mal seit B2 trägt
   `metric_snapshots` Zeilen, und `/api/health`, `/api/systems` und der
-  Uptime-Badge lesen sie ohne eine einzige Änderung am Lesepfad.
+  Uptime-Badge lesen sie, ohne dass an ihrem Verhalten etwas geändert wurde. Am
+  Lesepfad steht genau eine Änderung, und sie ist keine Verhaltensänderung:
+  `systems.defaultWindow` heißt jetzt `DefaultWindow`, damit das Fenster eine
+  Definition behält (siehe unten).
 - **`docs/slo.md` ist ab jetzt die normative Fassung der SLOs.** Anhang A des
   Bauplans und Kapitel 28 des Handbuchs verweisen darauf; der Widerspruch in
   Anhang A („in F9 festlegen") ist dort aufgelöst.
@@ -236,9 +239,11 @@ den Messteil zu töten.
 ## Verworfene Alternativen
 
 **`uptime90d` aus `timseil:service:availability_5m` über 91 Tage.** Nicht
-abgewogen, sondern unmöglich: sieben Tage Aufbewahrung. Hätte man die
-Aufbewahrung erhöht, läge Loki auf derselben Platte wie Postgres, und §1 nennt
-den zweiten Grund, der auch dann noch gälte.
+abgewogen, sondern unmöglich: sieben Tage Aufbewahrung. Die Aufbewahrung zu
+erhöhen ist kein Ausweg — dreizehnmal so viel TSDB liegt auf derselben Platte
+wie Postgres, und das ist die Grenze, die F2 mit `retention.size=2GB` gezogen
+hat. Und §1 nennt den zweiten Grund, der auch mit unendlicher Aufbewahrung
+gälte.
 
 **Den Lesepfad ändern, statt `uptime_90d` zu kopieren** — also die Verfügbarkeit
 in `LatestMetrics` direkt aus `ops_days` rechnen. Sauberer im Sinne von „keine

@@ -193,9 +193,13 @@ func TestTheWindowIsNinetyOneDaysAndNotNinetyTwo(t *testing.T) {
 	}
 }
 
-// The idempotency key. Two ticks can land on one Prometheus evaluation instant;
-// the second writes nothing and says so, rather than raising a constraint
-// violation the loop would have to translate.
+// The idempotency key. A second write of one instant writes nothing and says so,
+// rather than raising a constraint violation the loop would have to translate.
+//
+// Reaching it in production takes two writers inside one millisecond, which is a
+// rollout and not a tick — queries/metrics.sql carries that arithmetic. The
+// behaviour is worth pinning here anyway: it is what makes the loop safe to run
+// twice, and a rollout runs it twice by design.
 func TestTheSameInstantIsWrittenOnce(t *testing.T) {
 	q := seeded(t)
 	id := selfID(t, q)

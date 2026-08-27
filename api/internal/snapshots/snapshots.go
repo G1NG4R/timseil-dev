@@ -39,6 +39,7 @@ import (
 	"errors"
 	"log/slog"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -123,10 +124,10 @@ func stopped() *Snapshotter {
 // drive the loop instead of sleeping through it.
 //
 // No injected clock, and that is a departure from internal/contributions on
-// purpose. This package puts no time anywhere of its own: measured_at is
-// Prometheus's evaluation instant and recorded_at is Postgres's now(). A Go
-// clock here would be a third definition of "when", and the one nobody looks at
-// when the three disagree.
+// purpose. This package puts no time anywhere of its own: measured_at is the
+// instant Prometheus answered, stamped by Prometheus, and recorded_at is
+// Postgres's now(). A Go clock here would be a third definition of "when", and
+// the one nobody looks at when the three disagree.
 func start(
 	q Queries,
 	slug string,
@@ -292,9 +293,10 @@ func (s *Snapshotter) runOnce(ctx context.Context) {
 	}
 
 	if written == 0 {
-		// Two ticks landed on one evaluation instant. Not an error and not
+		// Something had already recorded this instant. Not an error and not
 		// news, but saying "written" here would be a small untruth in the one
-		// line that is supposed to prove the loop is alive.
+		// line that is supposed to prove the loop is alive. queries/metrics.sql
+		// says how rare this is and which case actually reaches it.
 		s.log.InfoContext(ctx, "metric snapshot",
 			"state", "discarded", "reason", "same instant already recorded",
 			"measured_at", measurement.at)
@@ -388,8 +390,14 @@ func (s *Snapshotter) keep(ctx context.Context, rule string, value, low, high fl
 	case math.IsNaN(value):
 		return nil
 	case math.IsInf(value, 0), value < low, value > high:
+		// FormatFloat and not the float64 itself, and the reason is measured
+		// rather than stylistic: slog's JSONHandler marshals a float64 through
+		// encoding/json, which refuses ±Inf, so the field comes out as
+		// "!ERROR:json: unsupported value: +Inf". The one value this line exists
+		// to name would have been the one value it could not carry.
 		s.log.WarnContext(ctx, "metric snapshot",
-			"state", "value refused", "rule", rule, "value", value)
+			"state", "value refused", "rule", rule,
+			"value", strconv.FormatFloat(value, 'g', -1, 64))
 		return nil
 	}
 

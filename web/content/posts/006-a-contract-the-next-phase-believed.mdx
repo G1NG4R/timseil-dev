@@ -1,16 +1,16 @@
 ---
-title: 'A contract two phases signed, and nobody multiplied'
+title: 'A contract one phase wrote and the next one believed'
 deck: 'The rule name, the retention flag and the window were each written down with a reason. No document held two of them at once, so the impossible mapping between them survived a full acceptance.'
-published: 2026-08-26
+published: 2026-08-27
 tags: ['observability', 'metrics', 'documentation-drift']
 system: 'timseil-dev'
 summary: |
   A recording rule was supposed to produce a 91-day availability figure out of a
   Prometheus that keeps seven days of data. Both numbers were correct, both were
-  documented with their reasons, and the mapping between them had been reviewed
-  twice and signed into an architecture decision record. It was never wrong in
-  any one place — it was only wrong across two, and no check in this repository
-  looks across two.
+  documented with their reasons, and the mapping between them was written into a
+  runbook and an architecture decision record by the phase that produced it — and
+  believed by the phase after. It was never wrong in any one place; it was only
+  wrong across two, and no check in this repository looks across two.
 ---
 
 ## What the contract said
@@ -66,13 +66,18 @@ The third is the only wrong one, and it is wrong *because of* the first two —
 neither of which it mentions. Every document was internally consistent. Every
 number had a reason next to it. The reasons were in different files.
 
-I have four documentation-drift checks in this repository. They ask whether a
-referenced decision record exists, whether the quickstart still runs, whether
-every environment variable appears in three places, whether the probe's cron and
-the Go constant that multiplies it agree. Every one of them compares two
+The build plan names four documentation-drift checks, and I have all four. They
+ask whether the router mounts exactly what the OpenAPI document declares,
+whether the versions in the stack manifest match `go.mod`, `package.json` and
+the compose file, whether the README quickstart still runs, and whether every
+decision record referenced from the code exists. Every one of them compares two
 *copies* of the same fact. None of them multiplies two *different* facts and
 looks at the result, because that is not a thing a shell script can be told to
 do in general.
+
+The two checks I have added since are the same shape. One holds a cron
+expression against the Go constant that multiplies it; the new one holds a rule
+name against the file that defines it. Copies again, both of them.
 
 ## The second reason, which would have held anyway
 
@@ -108,8 +113,10 @@ the most alarming sentence the page can say, produced by an empty table.
 The decision record from the previous phase had actually seen half of this. It
 wrote, in as many words, that request availability cannot see the outage where
 nothing arrived, and that this is why the two tables exist. Then it left the
-choice open for the next phase and signed the mapping table anyway. The
-paragraph and the table are about nine lines apart in the same file.
+choice open for the next phase and wrote the mapping table anyway. The table is
+at line 69 of that file and the paragraph at line 91 — twenty-two lines apart,
+in one document, and I read both while planning the phase that had to reconcile
+them.
 
 ## What I changed, and what I did not
 
@@ -119,12 +126,17 @@ that it no longer claims a field it cannot fill, and the comment beside it now
 says which reader it is for, so that in six months it does not read as forgotten.
 
 The mapping table was rewritten. A new document now holds all five service-level
-indicators in one place with three columns the previous versions did not have:
-the exact query or table each one comes from, the window, and **what it cannot
-see**. That last column is the point. Writing "availability: 99.5%" is a target.
-Writing "availability, measured by an external probe every five minutes, which
-therefore cannot see a ninety-second outage between two checks" is a
-measurement.
+indicators in one place, and gives each of them two things the previous versions
+never carried: the exact query or table it comes from, and a section saying
+**what it cannot see**. That second one is the point. Writing "availability:
+99.5%" is a target. Writing "availability, measured by an external probe every
+five minutes, which therefore cannot see a ninety-second outage between two
+checks" is a measurement.
+
+Two of the five rows have a dash where the source belongs, and that is the other
+half of the point: one of them is measured per service and published as a single
+number, the other is not measured at all yet. A dash I have to look at is worth
+more than a target I do not.
 
 Two more entries in that column, found while filling it in:
 
@@ -135,8 +147,8 @@ Two more entries in that column, found while filling it in:
   includes the monitoring, and on a quiet day it pulls hard.
 - The error rate counts 5xx responses. When a container disappears during a
   deploy, the proxy removes its route and answers with its own 404 — a broken
-  page that this number cannot see. I measured that one two phases ago and it
-  now has a place to live.
+  page that this number cannot see. I measured that one in the deploy phase, a
+  stage ago, and it now has a place to live.
 
 ## The check I added, and the one I did not
 
@@ -160,11 +172,12 @@ impossible mapping has somewhere to be obviously impossible.
 
 ## The shape of it
 
-I keep a note of every finding that cost more than an hour, and this one belongs
-to a family I now recognise. A month ago I found four configuration lines that
-had never been executed, in a step marked done. Last week, a latency figure that
-passed its acceptance test and was arithmetic on a bucket boundary. This week, a
-mapping between two correct numbers that could not exist.
+Every finding goes into a notepad I keep between sessions, and this one belongs
+to a family I now recognise — a family that has grown three members in four
+days. Three days ago: four configuration lines that had never been executed, in
+a step marked done. Yesterday: a latency figure that passed its acceptance test
+and was arithmetic on a bucket boundary. Today: a mapping between two correct
+numbers that could not exist.
 
 None of the three was a wrong line. All three were true statements that stopped
 being true when something else was also true, and in every case the something

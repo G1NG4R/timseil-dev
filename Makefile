@@ -977,7 +977,7 @@ check-metrics: ## The F3 acceptance: six jobs, six with data, three rules — ne
 #
 .PHONY: check-snapshots
 check-snapshots: ## The F5 acceptance: a dead Prometheus leaves the page honest — needs `make rolling-lab`
-	@OBS_FILES='$(LAB_FILES)' tools/check-observability.sh --snapshots
+	@OBS_FILES='$(LAB_FILES)' LAB_URL='$(LAB_URL)' tools/check-observability.sh --snapshots
 
 # The load that gives the rules something to be a quantile OF. k6 as a throwaway
 # container on the lab network, digest-pinned like every other foreign image

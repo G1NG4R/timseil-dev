@@ -54,11 +54,13 @@ const cacheControl = httpx.CacheControlMedium
 // looks like a bug (invariant 7).
 //
 // Exported since F5, and for the reason ops.ProbeInterval is: a second package
-// needs the same number. internal/snapshots aggregates uptime90d over this many
-// days of ops_days, and the contract's own description of that field says "the
-// window is 91 days (13 × 7) everywhere else in this contract and on the site".
-// A private copy over there would be one number with two truths, and the one
-// that drifted would be the one nobody renders.
+// needs the same number. internal/snapshots hands it to queries/metrics.sql,
+// which is where uptime90d is aggregated over that many days of ops_days —
+// in SQL and not in Go, and ADR 0041 §1 spends a paragraph on why. What travels
+// through Go is the window, never the average. The contract's own description
+// of the field says "the window is 91 days (13 × 7) everywhere else in this
+// contract and on the site"; a private copy over there would be one number with
+// two truths, and the one that drifted would be the one nobody renders.
 const DefaultWindow = 91
 
 // slugPattern is the contract's Slug parameter, character for character — and

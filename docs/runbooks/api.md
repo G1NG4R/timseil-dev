@@ -221,8 +221,8 @@ niemals Messungen.** Erfundene Betriebsdaten in der Datenbank sind genau das,
 wogegen diese Seite gebaut ist — `docs/runbooks/seed.md`.
 
 **Seit F5 füllt diese Tabelle jemand**, also lohnt bei `0` eine zweite Frage.
-Die Schleife schreibt bei **jedem** Lauf eine Zeile ins Log, und ihr Zustand
-sagt, wo es hakt:
+Die Schleife schreibt bei jedem Lauf **eine Zeile mit genau einem Zustand** ins
+Log, und der sagt, wo es hakt:
 
 ```bash
 docker compose -f compose.yaml logs --tail 200 api | grep '"msg":"metric snapshot"'
@@ -233,14 +233,15 @@ docker compose -f compose.yaml logs --tail 200 api | grep '"msg":"metric snapsho
 | `written` | geschrieben. Der Normalfall, alle fünf Minuten. |
 | `nothing measured` | Prometheus hat geantwortet und hatte nichts: in fünf Minuten kam keine Anfrage am Proxy an. **Kein Fehler**, und es wird bewusst keine Zeile geschrieben. |
 | `not measured` | Prometheus war nicht erreichbar. `err` nennt den Grund. **Der letzte gültige Wert bleibt stehen und altert** — genau so ist es gemeint. |
-| `discarded` | zwei Ticks auf demselben Auswertungsinstant. Nichts geschrieben, nichts verloren. |
+| `discarded` | dieser Augenblick war schon aufgezeichnet. Nichts geschrieben, nichts verloren. Praktisch nur bei einem Rollout erreichbar, weil der Zwilling dieselbe Schleife fährt — `measured_at` ist Prometheus' Uhr auf die Millisekunde. |
 | `no such system` | `SITE_SYSTEM_SLUG` benennt keine Zeile in `systems`. **Das repariert kein Warten.** |
 | `value refused` | eine Zahl außerhalb dessen, was die Spalte annimmt (`±Inf`, negativ, Quote über 1). Das Feld wird `null`, die andere Zahl überlebt. |
 | `system unreadable` / `not stored` | Postgres, nicht Prometheus. Unsere Seite. |
 
-**Gar keine Zeile** heißt, dass die Schleife nicht läuft — entweder ist der
-Prozess gerade erst gestartet (die erste Zeile kommt sofort, nicht nach fünf
-Minuten), oder `SNAPSHOTS_TRANSPORT=off`. Der zweite Fall sagt es beim Start:
+**Gar keine Zeile** heißt fast immer, dass die Schleife nicht läuft — entweder
+ist der Prozess gerade erst gestartet (die erste Zeile kommt sofort, nicht nach
+fünf Minuten), oder `SNAPSHOTS_TRANSPORT=off`. Der zweite Fall sagt es beim
+Start:
 
 ```
 {"level":"WARN","msg":"metric snapshots are NOT being taken — SNAPSHOTS_TRANSPORT is off", ...}
@@ -249,6 +250,13 @@ Minuten), oder `SNAPSHOTS_TRANSPORT=off`. Der zweite Fall sagt es beim Start:
 `compose.dev.yaml` setzt ihn auf `off`, weil dort kein Prometheus läuft. **In
 Produktion steht er auf `prometheus`, und der Default sorgt dafür, dass eine
 vergessene Variable das nicht ändert.**
+
+**Die eine Ausnahme zu „jeder Lauf schreibt eine Zeile": der Shutdown.** Wird
+eine laufende Abfrage vom Herunterfahren abgebrochen, kehrt der Lauf still
+zurück — `context.Canceled` ist dieses Paket beim Beendetwerden, nicht beim
+Scheitern, und eine ERROR-Zeile dafür riefe bei jedem Deploy Wolf. Fehlt die
+Zeile also genau im Fenster eines Neustarts, ist das der Normalfall und keine
+Diagnose.
 
 **Und wenn `uptime90d` allein `null` ist**, während die anderen beiden Zahlen
 stehen: die Verfügbarkeit kommt nicht aus Prometheus, sondern aus `ops_days` —
