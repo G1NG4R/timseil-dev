@@ -44,3 +44,6 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# Written by `make dev` — the checksum of the lockfile it last started with.
+.make/

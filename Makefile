@@ -241,6 +241,25 @@ env-dev: ## Fill .env with what a local run needs and .env.example cannot carry
 
 COMPOSE_DEV := docker compose -f compose.dev.yaml
 
+# What the dev stack remembers between starts, and why it needs a guard.
+#
+# node_modules is an anonymous volume and .next a named one, both so the bind
+# mount cannot hide them (compose.dev.yaml says why). Neither is touched by
+# `up --build`: compose carries anonymous volumes over to the new container and
+# keeps named ones by definition. So a dependency added to package.json reaches
+# the IMAGE and never the CONTAINER.
+#
+# Measured in G1, and it cost an hour: `Cannot find module
+# '@tailwindcss/postcss'` on every request, every page a 500, while
+# `docker exec` showed the package sitting in node_modules. Two layers, and the
+# second is the reason `--renew-anon-volumes` alone reads as "did not help":
+# the first failed start compiles itself into .next, and that cache keeps
+# throwing after node_modules is correct.
+#
+# The stamp is the lockfile's checksum at the last start. When it moves, this
+# stops and names the one command that clears both.
+DEV_STAMP := .make/dev-lockfile.sha256
+
 .PHONY: dev
 dev: ## Start Postgres, API and web with hot reload
 	@[ -f .env ] || { \
@@ -248,6 +267,15 @@ dev: ## Start Postgres, API and web with hot reload
 		printf '    run: cp .env.example .env\n'; \
 		exit 1; \
 	}
+	@want=$$(sha256sum web/package-lock.json | cut -d' ' -f1); \
+	if [ -f $(DEV_STAMP) ] && [ "$$(cat $(DEV_STAMP))" != "$$want" ]; then \
+		printf '  ✗ web/package-lock.json has moved since the last start.\n'; \
+		printf '    node_modules and .next live in volumes that survive `up --build`,\n'; \
+		printf '    so the new dependency would reach the image and not the container.\n'; \
+		printf '    run: make dev-reset && make dev\n'; \
+		exit 1; \
+	fi; \
+	mkdir -p $(dir $(DEV_STAMP)) && printf '%s\n' "$$want" > $(DEV_STAMP)
 	$(COMPOSE_DEV) up --build
 
 .PHONY: dev-down
@@ -255,8 +283,11 @@ dev-down: ## Stop the dev stack, keep the database
 	$(COMPOSE_DEV) down
 
 .PHONY: dev-reset
-dev-reset: ## Stop the dev stack and drop the database volume
+dev-reset: ## Stop the dev stack and drop every volume it owns
 	$(COMPOSE_DEV) down --volumes
+# The stamp goes with them. Left behind, the guard above would refuse the very
+# start that this target just made correct.
+	@rm -f $(DEV_STAMP)
 
 # ------------------------------------------------------------------- gen
 

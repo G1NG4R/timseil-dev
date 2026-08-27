@@ -119,6 +119,44 @@ nie — die Antwort der Seite ist in beiden Fällen dieselbe, und ein Wurf hieß
 dass jeder Aufrufer denselben `try`/`catch` schreiben muss, um zum selben `— NO
 DATA` zu kommen.
 
+## `Cannot find module` — jede Seite 500, das Paket ist aber da
+
+Gemessen in G1, beim ersten neuen Web-Paket seit es den Dev-Stack gibt.
+
+```
+web-1 | Error: Cannot find module '@tailwindcss/postcss'
+web-1 |  GET / 500 in 41ms
+```
+
+```sh
+docker compose -f compose.dev.yaml exec web npm ls @tailwindcss/postcss
+# web@0.1.0 /app
+# `-- @tailwindcss/postcss@4.3.3        ← liegt da. Trotzdem 500.
+```
+
+**Zwei Schichten, und die zweite ist der Grund, warum die naheliegende Reparatur
+wie ein Fehlschlag aussieht.**
+
+1. `node_modules` ist ein anonymes Volume (damit der Bind-Mount es nicht
+   verdeckt), `.next` ein benanntes. `docker compose up --build` fasst keines
+   von beiden an — anonyme Volumes übernimmt Compose in den neuen Container,
+   benannte bleiben ohnehin. Die neue Abhängigkeit erreicht also das **Image**
+   und nie den **Container**.
+2. Der erste gescheiterte Start kompiliert sich in `.next` hinein. Danach wirft
+   der Cache weiter, auch wenn `node_modules` längst stimmt — deshalb ändert
+   `--renew-anon-volumes` **allein** nichts, und man sucht an der falschen
+   Stelle weiter.
+
+```sh
+make dev-reset && make dev      # räumt beide Schichten, die DB wird neu geseedet
+```
+
+**`make dev` weist den Fall seit G1 vorher ab.** Es merkt sich die Prüfsumme von
+`web/package-lock.json` in `.make/dev-lockfile.sha256` und hält an, wenn sie sich
+seit dem letzten Start bewegt hat. Der Stempel liegt im Arbeitsverzeichnis, nicht
+im Volume: **ein frischer Klon neben einem alten Volume ist damit nicht gedeckt**
+— dieselbe Meldung, dieselbe Reparatur.
+
 ## Die zwei Healthchecks
 
 | | Pfad | Intervall | Frage |
