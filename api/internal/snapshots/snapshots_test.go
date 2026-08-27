@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -25,11 +26,19 @@ import (
 var errUnreachable = errors.New("failed to connect to `host=db user=timseil_app database=timseil`: " +
 	"dial tcp 172.18.0.2:5432: connect: connection refused")
 
-// errPrometheusDown is the simulated outage this phase is accepted on. It is
-// what the fetcher returns when the container is stopped, verbatim.
-var errPrometheusDown = errors.New("Get \"http://timseil-prometheus:9090/api/v1/query?query=%7B__name__%3D~%22timseil%3Asite%3A" +
-	"request_duration_seconds%3Ap95_5m%7Ctimseil%3Asite%3Arequests%3Aerror_ratio_5m%22%7D\": " +
-	"dial tcp: lookup timseil-prometheus: no such host")
+// errPrometheusDown is the simulated outage this phase is accepted on: what the
+// fetcher returns when the container is stopped.
+//
+// A real *url.Error and not errors.New of its rendered text. The type is what
+// http.Client actually returns, so errors.Is and errors.As behave here the way
+// they behave in production — and the string it renders is the same one. (A
+// literal was the first version and staticcheck was right to refuse it: ST1005
+// is about error strings we write, and "Get ..." is one Go writes.)
+var errPrometheusDown = &url.Error{
+	Op:  "Get",
+	URL: promBase + "/api/v1/query",
+	Err: errors.New("dial tcp: lookup timseil-prometheus: no such host"),
+}
 
 // The instant every test in this file measures at, so that a stored measured_at
 // can be compared against something rather than merely inspected.
@@ -179,13 +188,25 @@ func tick(t *testing.T, ticks chan time.Time) {
 	}
 }
 
-// settle gives the loop a chance to do the thing this test says it must NOT do.
-// A negative assertion that runs immediately proves only that the goroutine had
-// not been scheduled yet.
-func settle(t *testing.T, f *stubFetch, runs int) {
+// settled waits for the run to END, by waiting for the line it ends with.
+//
+// EVERY WAIT IN THIS FILE GOES THROUGH HERE, and the first version did not —
+// it waited for the store to have a row and then read the log, which is a race
+// the loop loses on a busy machine: runOnce writes the row first and logs
+// afterwards. It passed on a laptop for a day and failed in CI on the run that
+// mattered. The log line is the last thing a run does, so waiting for it is
+// waiting for the whole run, and it needs no sleep to be sure.
+//
+// It doubles as the negative-assertion tool: a test that says "nothing was
+// written" has to let the loop finish first, or it proves only that the
+// goroutine had not been scheduled yet.
+func settled(t *testing.T, out *safeBuffer, state string) {
 	t.Helper()
-	waitFor(t, "the run to finish", func() bool { return f.count() >= runs })
-	time.Sleep(20 * time.Millisecond)
+
+	want := `"state":"` + state + `"`
+	waitFor(t, "the run to end with "+state, func() bool {
+		return strings.Contains(out.String(), want)
+	})
 }
 
 // ------------------------------------------------------------------- the loop
@@ -199,7 +220,7 @@ func TestTheFirstRunHappensBeforeTheFirstTick(t *testing.T) {
 	var out safeBuffer
 	newSnapshotter(t, s, f, &out)
 
-	waitFor(t, "the first run", func() bool { return len(s.writes()) == 1 })
+	settled(t, &out, "written")
 
 	written := s.writes()[0]
 	if written.SystemID != 2 {
@@ -239,7 +260,7 @@ func TestNothingIsWrittenWhenPrometheusIsUnreachable(t *testing.T) {
 	var out safeBuffer
 	newSnapshotter(t, s, f, &out)
 
-	settle(t, f, 1)
+	settled(t, &out, "not measured")
 
 	if got := len(s.writes()); got != 0 {
 		t.Fatalf("wrote %d rows over a dead Prometheus, want none", got)
@@ -267,7 +288,7 @@ func TestNothingIsWrittenWhenBothRulesAreEmpty(t *testing.T) {
 	var out safeBuffer
 	newSnapshotter(t, s, f, &out)
 
-	settle(t, f, 1)
+	settled(t, &out, "nothing measured")
 
 	if got := len(s.writes()); got != 0 {
 		t.Fatalf("wrote %d rows with nothing measured, want none", got)
@@ -289,9 +310,10 @@ func TestNothingIsWrittenWhenBothRulesAreEmpty(t *testing.T) {
 func TestAFailedRunDoesNotStopTheLoop(t *testing.T) {
 	s := newStore()
 	f := &stubFetch{err: errPrometheusDown}
-	_, ticks := newSnapshotter(t, s, f, io.Discard)
+	var out safeBuffer
+	_, ticks := newSnapshotter(t, s, f, &out)
 
-	settle(t, f, 1)
+	settled(t, &out, "not measured")
 
 	f.mu.Lock()
 	f.err = nil
@@ -404,9 +426,10 @@ func TestARatioAboveOneIsRefusedAndTheOtherNumberSurvives(t *testing.T) {
 func TestANegativeLatencyIsRefused(t *testing.T) {
 	s := newStore()
 	f := &stubFetch{samples: []sample{{name: rulePercentile, value: -0.05, at: instant}}}
-	newSnapshotter(t, s, f, io.Discard)
+	var out safeBuffer
+	newSnapshotter(t, s, f, &out)
 
-	settle(t, f, 1)
+	settled(t, &out, "nothing measured")
 
 	// Nothing else measured, so the row is not written at all.
 	if got := len(s.writes()); got != 0 {
@@ -456,7 +479,7 @@ func TestAMissingSystemIsAnErrorAndNotASilentSkip(t *testing.T) {
 	var out safeBuffer
 	newSnapshotter(t, s, f, &out)
 
-	settle(t, f, 1)
+	settled(t, &out, "no such system")
 
 	if got := len(s.writes()); got != 0 {
 		t.Fatalf("wrote %d rows against a system that does not exist", got)
@@ -476,7 +499,7 @@ func TestAnUnreachableDatabaseIsLoggedAndNotFatal(t *testing.T) {
 	var out safeBuffer
 	newSnapshotter(t, s, f, &out)
 
-	settle(t, f, 1)
+	settled(t, &out, "not stored")
 
 	if !strings.Contains(out.String(), `"state":"not stored"`) {
 		t.Errorf("a failed write was not reported:\n%s", out.String())
@@ -492,7 +515,7 @@ func TestADiscardedInstantIsNotReportedAsWritten(t *testing.T) {
 	var out safeBuffer
 	newSnapshotter(t, s, f, &out)
 
-	settle(t, f, 1)
+	settled(t, &out, "discarded")
 
 	if !strings.Contains(out.String(), `"state":"discarded"`) {
 		t.Errorf("a discarded row was not reported as one:\n%s", out.String())

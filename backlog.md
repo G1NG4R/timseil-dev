@@ -176,6 +176,28 @@ dessen **Dateiname `neunzig` sagte**.
 eine Messung driftet leichter als die Messung. Und niemand prüft ihn — es gibt
 kein `make check` für einen Absatz.
 
+### Und CI fand zwei weitere, die beide Durchgänge nicht sehen konnten
+
+**Der lokale Linter kann hier seit Go 1.26 nicht mehr urteilen** — v2.12.2
+stürzt beim Laden ab, gepinnt ist v2.13.1. Drei Runden lang hieß „`make check`
+grün außer `check-lint`" deshalb *ungeprüft*, nicht *in Ordnung*. CI hat den
+Unterschied bezahlt:
+
+1. **ST1005**, an einem Fehlertext, der mit `Get "http://…` beginnt — die
+   wörtliche Ausgabe von `http.Client`. Repariert nicht mit `//nolint`, sondern
+   mit dem echten Typ: `&url.Error{Op: "Get", …}`. Das ist ohnehin genauer, weil
+   `errors.Is` und `errors.As` sich dann verhalten wie in Produktion.
+2. **Ein Wettlauf in meinem eigenen Test.** `TestTheFirstRunHappensBeforeTheFirstTick`
+   wartete darauf, dass die Zeile in der Datenbank steht, und las dann das Log —
+   `runOnce` schreibt aber erst die Zeile und protokolliert danach. Auf dem
+   Laptop einen Tag lang grün, in CI rot. Jetzt wartet **jeder** Test dieser
+   Datei auf die Logzeile, mit der ein Lauf endet, statt auf einen Zwischenstand
+   plus 20 ms Schlaf. 200 Durchläufe und `-race` grün.
+
+Der zweite ist der unangenehmere: **ein Test, der auf das falsche Ereignis
+wartet, ist kein Test, sondern eine Wette** — und er hat genau die Phase
+beschädigt, die davon handelt, dass eine Zahl an einen Beleg gebunden sein muss.
+
 **Als Nächstes:** F5 gegen Produktion abnehmen, dann Stufe F triagieren — F6–F11
 liegen hinter dem Launch.
 
@@ -1287,6 +1309,7 @@ Vorherige Triage: nach F2, 24.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-27 | F5 (CI) | **`go test -race` meldet einen Wettlauf in `internal/contact/dispatch_test.go:43`.** `stubDispatchQueries.ListDeliverableContactMessages` schreibt ohne Mutex, während `Dispatcher.runOnce` liest. Vorbestehend, mit gestashtem Branch nachgestellt — also aus C6 und nicht aus F5. CI fährt `go test` **ohne** `-race`, deshalb ist es nie aufgefallen. Die Stubs in `internal/snapshots` und `internal/contributions` nehmen den Mutex, `contact` nicht. | **offen** — ein Mutex im Stub ist die Reparatur; die größere Frage ist, ob `-race` in die Pipeline gehört und was das an Laufzeit kostet. Triage am Ende von Stufe F |
 | 2026-08-27 | F5 (Kontrolle) | **`Stop()` ist bei vier Schleifen sequenziell idempotent, nebenläufig nicht.** `ops`, `contributions`, `uptime` und `snapshots` prüfen alle mit `select` auf `s.stop` und schließen den Kanal danach — zwei gleichzeitige Aufrufe fielen beide durch und der zweite paniert mit `close of closed channel`. **Kann heute nicht auslösen:** `cmd/api` erreicht `Stop()` auf zwei Wegen, die einander ausschließen und nacheinander laufen. Nur in F5 zu reparieren hieße, ein Muster von vier Stellen an einer aufzubrechen. | **offen** — `sync.Once` ist eine Zeile, aber es sind vier Dateien und keine hat den Fehler je gezeigt. Triage am Ende von Stufe F |
 | 2026-08-27 | F5 | **Die Zustellbarkeit ist der einzige SLI ohne Messung, und ihm fehlt ein Contract-Feld.** `contact_messages.delivery_status` liegt seit B2 (`queued` · `sent` · `failed`), der Dispatcher aus C6 schreibt ihn — was fehlt, ist die Abfrage, die daraus eine Quote macht, und ein Ort auf der Seite. Die Definition steht in `docs/slo.md`, damit sie nicht neu erfunden wird: zugestellt geteilt durch angenommen, über dreißig Tage. Es ist der einzige Konversionspunkt dieser Seite. | **offen** — vermutlich H8 oder eine eigene kleine Phase; braucht ein Contract-Feld, also eine Entscheidung |
 | 2026-08-25 | F3 | **`selftest` hat einmal an einer Stelle rot gemeldet, die nichts mit dem Diff zu tun hat** — „registry.sh refuses an unknown subcommand (rejected, but not for 'usage')". Das Skript selbst ist deterministisch: dreimal direkt aufgerufen, dreimal dieselbe Zeile mit `usage`. In drei vollständigen `selftest`-Läufen danach nicht reproduziert. Aufgeschrieben statt weggeklickt; bei einem zweiten Auftreten ist die Kopiererei ins Temp-Verzeichnis der erste Verdacht. | **beobachtet, nicht reproduziert** |
