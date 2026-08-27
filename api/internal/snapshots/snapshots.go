@@ -23,7 +23,20 @@
 // would be the newest measurement and would push the last good numbers off the
 // page: the site would show `— NO DATA` at the exact moment it could have shown
 // a real value with an honest age. So a run that measured nothing writes
-// nothing, and the page keeps ageing instead of going blank. ADR 0041 3.
+// nothing, and the page keeps ageing instead of going blank. ADR 0041 5.
+//
+// THE GUARANTEE IS ABOUT THE ROW, NOT ABOUT EACH FIELD, and stating it loosely
+// would be a promise this package does not keep. A run that measured ONE of the
+// two writes the row, and the field it could not measure is null in it -- so
+// that field does show `— NO DATA` while the other one moves, until the next
+// run measures it again. That is not the empty-row failure above; it is what a
+// snapshot IS. Every column says what was true at measured_at, and measured_at
+// is one instant for the row rather than three ages for three numbers.
+//
+// The alternative -- write only when both are present -- reads tidier and is
+// worse. A p95 over a histogram that saw one bucket comes back NaN as its
+// ordinary answer, and letting that suppress a measured error ratio would throw
+// away real measurements on quiet nights to keep a rule symmetrical.
 //
 // NO BREAKER AND NO RETRY, unlike internal/contributions and internal/uptime.
 // Both of those call a foreign host over the internet with a credential, and a
@@ -332,6 +345,13 @@ type reading struct {
 // error ratio of exactly 0 records fine while a p95 over a histogram that only
 // saw the lowest bucket can still come back NaN. Refusing the row in that case
 // would throw away a real measurement to keep a rule tidy.
+//
+// The cost is stated at the top of this file rather than hidden here: the row
+// this returns true for can carry a null beside a number, and that null is what
+// the page shows for the field until the next run. keep() refusing an
+// impossible value has the same effect as the upstream never producing one, and
+// deliberately so -- from the page's side "not measured" is one answer, not
+// two.
 func (r reading) measured() bool { return r.p95Ms != nil || r.errorRate != nil }
 
 // read turns the answer into the contract's units and refuses what it cannot

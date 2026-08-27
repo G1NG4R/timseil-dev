@@ -221,8 +221,8 @@ niemals Messungen.** Erfundene Betriebsdaten in der Datenbank sind genau das,
 wogegen diese Seite gebaut ist — `docs/runbooks/seed.md`.
 
 **Seit F5 füllt diese Tabelle jemand**, also lohnt bei `0` eine zweite Frage.
-Die Schleife schreibt bei jedem Lauf **eine Zeile mit genau einem Zustand** ins
-Log, und der sagt, wo es hakt:
+Die Schleife schließt jeden Lauf mit **einer** Zeile ab, und deren Zustand sagt,
+wo es hakt:
 
 ```bash
 docker compose -f compose.yaml logs --tail 200 api | grep '"msg":"metric snapshot"'
@@ -230,12 +230,12 @@ docker compose -f compose.yaml logs --tail 200 api | grep '"msg":"metric snapsho
 
 | `state` | heißt |
 |---|---|
-| `written` | geschrieben. Der Normalfall, alle fünf Minuten. |
+| `written` | geschrieben. Der Normalfall, alle fünf Minuten. Steht eine `value refused`-Zeile davor, trägt die Zeile in einer Spalte `null`. |
 | `nothing measured` | Prometheus hat geantwortet und hatte nichts: in fünf Minuten kam keine Anfrage am Proxy an. **Kein Fehler**, und es wird bewusst keine Zeile geschrieben. |
 | `not measured` | Prometheus war nicht erreichbar. `err` nennt den Grund. **Der letzte gültige Wert bleibt stehen und altert** — genau so ist es gemeint. |
 | `discarded` | dieser Augenblick war schon aufgezeichnet. Nichts geschrieben, nichts verloren. Praktisch nur bei einem Rollout erreichbar, weil der Zwilling dieselbe Schleife fährt — `measured_at` ist Prometheus' Uhr auf die Millisekunde. |
 | `no such system` | `SITE_SYSTEM_SLUG` benennt keine Zeile in `systems`. **Das repariert kein Warten.** |
-| `value refused` | eine Zahl außerhalb dessen, was die Spalte annimmt (`±Inf`, negativ, Quote über 1). Das Feld wird `null`, die andere Zahl überlebt. |
+| `value refused` | eine Zahl außerhalb dessen, was die Spalte annimmt (`±Inf`, negativ, Quote über 1). **Kein Abschluss** — der Lauf geht weiter und endet mit `written` oder `nothing measured`. Das Feld wird `null`, die andere Zahl überlebt, und **`null` ist ab dann das, was die Seite für dieses Feld zeigt**, bis der nächste Lauf es misst. |
 | `system unreadable` / `not stored` | Postgres, nicht Prometheus. Unsere Seite. |
 
 **Gar keine Zeile** heißt fast immer, dass die Schleife nicht läuft — entweder

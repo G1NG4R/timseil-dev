@@ -147,6 +147,19 @@ liefern beide Site-Regeln nichts, wird **gar nichts** geschrieben — auch nicht
 die aus `ops_days` abgeleitete Verfügbarkeit, die ja vorläge. Eine Zeile ist ein
 Augenblick mit drei Zahlen; eine halbe Zeile löschte die zwei Proxy-Zahlen still.
 
+**Die Zusage gilt der Zeile, nicht dem einzelnen Feld** — lose formuliert wäre
+sie ein Versprechen, das dieser Code nicht hält. Misst ein Lauf genau **einen**
+der beiden Werte, entsteht die Zeile, und das andere Feld steht darin auf
+`NULL`. Auf der Seite heißt das: dieses eine Feld zeigt `— NO DATA`, während das
+andere sich bewegt, bis der nächste Lauf es wieder misst. Das ist nicht der
+Leerzeilen-Fall von oben, sondern das, was eine Momentaufnahme ist — jede Spalte
+sagt, was im Augenblick `measured_at` galt, und `measured_at` ist **ein**
+Zeitpunkt für die Zeile statt drei Alter für drei Zahlen. Nur schreiben, wenn
+beide da sind, liest sich ordentlicher und ist schlechter: ein p95 über ein
+Histogramm mit einem einzigen Bucket kommt als `NaN` zurück, und das ist seine
+gewöhnliche Antwort — sie eine gemessene Fehlerquote unterdrücken zu lassen
+würfe in ruhigen Nächten echte Messungen weg, um eine Regel symmetrisch zu halten.
+
 Innerhalb einer geglückten Abfrage gilt Invariante 1 in beide Richtungen, und
 die drei Fälle bleiben getrennt:
 
@@ -221,6 +234,13 @@ den Messteil zu töten.
   Container-Neustart, und F3s Abnahme musste erneut laufen. Sie lief erneut und
   war grün; der Preis ist trotzdem, dass „abgenommen" jetzt einmal weniger
   „unberührt" heißt.
+- **Ein abgewiesener Wert kostet sein Feld für fünf Minuten.** Weist `keep`
+  eine unmögliche Zahl ab, während die andere gültig ist, entsteht die Zeile
+  trotzdem — und das abgewiesene Feld steht bis zum nächsten Lauf auf
+  `— NO DATA`, obwohl fünf Minuten vorher ein gültiger Wert dastand. Von der
+  Seite aus ist „abgewiesen" dasselbe wie „nie gemessen", und das ist Absicht:
+  zwei Sorten von `null` zu unterscheiden hieße, der Seite eine Erklärung
+  beizulegen, die niemand liest.
 - **`uptime90d` altert mit, wenn Prometheus ausfällt.** Die Verfügbarkeit käme
   aus `ops_days` und wäre verfügbar, aber §5 schreibt keine halbe Zeile. Ein
   Tag Prometheus-Ausfall heißt also ein Tag alte Verfügbarkeit — sichtbar
