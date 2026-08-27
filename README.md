@@ -424,6 +424,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `api/Dockerfile` · `web/Dockerfile` | the two images that ship — `.dev` next to each builds the local one |
 | `api/` | Go: handlers thin, logic in `internal/`, SQL in `internal/store/` |
 | `web/` | Next.js App Router, Server Components by default |
+| `web/styles/` | every colour, size and duration the site has — `tokens.css` is the only file allowed to hold a value, and `make check-tokens` says so |
 | `docs/build-plan.md` | the author, every session (German) |
 | `docs/adr/` | the author in six months, asking "why did I do that?" |
 | `docs/architecture/` | anyone who wants the shape before the code |
