@@ -176,8 +176,17 @@ func start(
 // interrupted halfway loses nothing -- it either wrote the row or it did not,
 // and Prometheus still holds the same numbers when the next process starts.
 //
-// Idempotent, because the shutdown path reaches it on two different routes and
-// should not have to reason about which one ran.
+// Idempotent for SEQUENTIAL callers, which is the only kind there are, and the
+// distinction is worth the extra sentence. cmd/api reaches this on two routes —
+// the listener error path and serve's onDrained — and they are mutually
+// exclusive: if the listener fails, serve is never called. So Stop runs at most
+// once per process, and a second call finds the closed channel and returns.
+//
+// Two CONCURRENT calls would both fall through the select and the second would
+// panic on a closed channel. That cannot happen today and it is not guarded,
+// because sync.Once here alone would leave three sibling loops with the older
+// shape for a fault none of them can reach either. If a third route to Stop ever
+// appears, this is the sentence that has to be read before it is added.
 func (s *Snapshotter) Stop() {
 	select {
 	case <-s.stop:
