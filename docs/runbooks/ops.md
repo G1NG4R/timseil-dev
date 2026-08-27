@@ -149,10 +149,25 @@ github.com/G1NG4R/timseil-dev/actions  →  probe
 
 | Befund | Heißt |
 |---|---|
-| Läufe kommen, alle grün | Die Zeilen sind unterwegs. Weiter unten in dieser Datei suchen. |
+| Läufe kommen, alle grün | Die Zeilen sind unterwegs — **aber nicht unbedingt oft genug**, siehe die Zeile darunter. Dann weiter unten in dieser Datei suchen. |
+| Läufe kommen, alle grün, **aber viel zu wenige** | GitHub verwirft geplante Läufe unter Last. Am 27.08.2026 gemessen: **1,23 statt 12 Läufe je Stunde**, Abstände median 36 und maximal 660 Minuten, kein einziger unter sechs. Das Raster füllt sich dann langsamer als gedacht, und **`down_sec` untertreibt**, weil es fehlgeschlagene Prüfungen mit fünf Minuten multipliziert. Kein Ausfall, aber auch nicht der Takt, auf dem die Arithmetik steht. |
 | Läufe fehlen ganz | GitHub hat den Zeitplan abgeschaltet. Siehe unten. |
 | Läufe sind rot mit `401` | `INTERNAL_PROBE_TOKEN` im Repository stimmt nicht mit dem im Container überein. **Kein Ausfall** — die Sonde schreibt in diesem Fall bewusst nichts. |
 | Läufe sind rot mit „stopped answering" | Der Host antwortet wirklich nicht. Das ist der Alarm, nicht der Fehler. |
+
+**Nachmessen statt schätzen**, denn „es kommen ja Läufe" ist die Antwort, die
+in die Irre führt:
+
+```bash
+gh run list --workflow probe.yml --limit 100 --json createdAt --jq '.[].createdAt' \
+  | sort | awk 'NR>1{ "date -d\""$0"\" +%s" | getline n; if(p) print (n-p)/60; p=n; next }
+                { "date -d\""$0"\" +%s" | getline p }' \
+  | sort -n | awk '{a[NR]=$1} END{ printf "min %.0f · median %.0f · max %.0f min über %d Abstände\n", a[1], a[int((NR+1)/2)], a[NR], NR }'
+```
+
+Erwartet wären Abstände um fünf Minuten. Am 27.08.2026 kam heraus:
+`min 13 · median 36 · max 660 min über 99 Abstände` — dieselben Zahlen wie in
+der Tabelle oben, weil sie aus genau diesem Lauf stammen.
 
 **GitHub schaltet geplante Workflows nach 60 Tagen ohne Repository-Aktivität
 ab.** Sie verschwinden dann leise; es kommt keine Mail, und das Raster füllt sich

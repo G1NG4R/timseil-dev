@@ -58,13 +58,33 @@ ADR 0041 §1.
 
 ### Was diese Zahl nicht sieht
 
-- **Was zwischen zwei Sondenläufen geschah.** Der Takt sind fünf Minuten. Ein
-  Ausfall von neunzig Sekunden zwischen zwei Prüfungen hinterlässt keine Spur.
+- **Was zwischen zwei Sondenläufen geschah — und das ist mehr, als der Takt
+  verspricht.** Hier stand zuerst „der Takt sind fünf Minuten"; das ist die
+  *Konfiguration*, nicht die Wirklichkeit. Am 27.08.2026 über 100 Läufe / 81,4 h
+  nachgemessen: **1,23 statt 12 Läufe je Stunde, Abstände median 36 und maximal
+  660 Minuten, kein einziger unter sechs.** GitHub verwirft geplante Läufe unter
+  Last. Das blinde Fenster dieses SLI ist also im Regelfall gut eine halbe
+  Stunde, nicht neunzig Sekunden.
+
+  Die Zahl altert, also hier der Weg, sie nachzurechnen, statt sie zu glauben:
+
+  ```bash
+  gh run list --workflow probe.yml --limit 100 --json createdAt \
+    --jq '.[].createdAt'
+  ```
+
+  Dieselbe Lücke trifft `down_sec` im Betriebsraster, das *fehlgeschlagene
+  Prüfungen × fünf Minuten* rechnet — siehe `backlog.md`, offen für F4/F10.
+- **Wie viel des Fensters überhaupt gemessen wurde.** Ein Tag ohne Messung ist
+  `nodata` und trägt zu keiner der beiden Summen bei — er verdünnt nichts und
+  füllt nichts (Invariante 6). Die Kehrseite: **eine Prozentzahl über 91 Tage
+  sagt nichts darüber, wie viele dieser Tage gemessen sind.** 100 % können auf
+  fünf Tagen ruhen und auf einundneunzig, und die Zahl sieht gleich aus. Das
+  Betriebsraster ist die zweite Angabe, die dazugehört, und es zeigt die Lücken
+  einzeln. Wurde im ganzen Fenster nie geprüft, ist das Ergebnis `NULL` und
+  nicht `0`.
 - **Teilausfälle.** Die Sonde fragt `/api/health`. Antwortet die API und ist die
   Kontaktstrecke tot, zählt der Tag als `ok`.
-- **Einen Tag ohne Messung.** Der ist `nodata` und trägt zu keiner der beiden
-  Summen bei — er verdünnt nichts und er füllt nichts (Invariante 6). Wurde im
-  ganzen Fenster nie geprüft, ist das Ergebnis `NULL` und nicht `0`.
 
 ### Warum 99,5 % und nicht 99,9
 

@@ -232,7 +232,7 @@ docker compose -f compose.yaml logs --tail 200 api | grep '"msg":"metric snapsho
 |---|---|
 | `written` | geschrieben. Der Normalfall, alle fünf Minuten. Steht eine `value refused`-Zeile davor, trägt die Zeile in einer Spalte `null`. |
 | `nothing measured` | Prometheus hat geantwortet und hatte nichts: in fünf Minuten kam keine Anfrage am Proxy an. **Kein Fehler**, und es wird bewusst keine Zeile geschrieben. |
-| `not measured` | Prometheus war nicht erreichbar. `err` nennt den Grund. **Der letzte gültige Wert bleibt stehen und altert** — genau so ist es gemeint. |
+| `not measured` | Prometheus war nicht erreichbar. `err` nennt den Grund. **Der letzte gültige Wert bleibt stehen und altert** — genau so ist es gemeint.  **Direkt nach einem Deploy ist diese Zeile der Normalfall**, keine Diagnose: die Schleife läuft sofort beim Start und trifft den Alias `timseil-prometheus`, während dessen Container gerade neu erzeugt wird — DNS antwortet dann `server misbehaving`. Der nächste Tick heilt es. Steht sie über mehrere Ticks, ist sie echt. |
 | `discarded` | dieser Augenblick war schon aufgezeichnet. Nichts geschrieben, nichts verloren. Praktisch nur bei einem Rollout erreichbar, weil der Zwilling dieselbe Schleife fährt — `measured_at` ist Prometheus' Uhr auf die Millisekunde. |
 | `no such system` | `SITE_SYSTEM_SLUG` benennt keine Zeile in `systems`. **Das repariert kein Warten.** |
 | `value refused` | eine Zahl außerhalb dessen, was die Spalte annimmt (`±Inf`, negativ, Quote über 1). **Kein Abschluss** — der Lauf geht weiter und endet mit `written` oder `nothing measured`. Das Feld wird `null`, die andere Zahl überlebt, und **`null` ist ab dann das, was die Seite für dieses Feld zeigt**, bis der nächste Lauf es misst. |

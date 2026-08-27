@@ -12,7 +12,96 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 27.08.2026, F5 gebaut und im Labor abgenommen
+## Wo wir stehen — 27.08.2026, F5 gegen Produktion abgenommen
+
+**Die Seite misst sich selbst.** `metric_snapshots` trägt seit heute Zeilen, die
+kein Mensch eingesetzt hat, und der Uptime-Badge bewegt sich zum ersten Mal.
+`sha-0f41f81`, gemessen um 18:51:53 UTC:
+
+```
+uptime90d   100          p95Ms       24.25
+errorRate   0            measuredAt  2026-08-27T18:51:53.505Z
+badge       "100.00%"    brightgreen
+```
+
+Die `0` bei `errorRate` ist der `or … * 0`-Zweig aus F3, in Produktion bis in
+die Spalte durchgezogen: **gemessen, nicht leer.** Gegenprobe um 19:00 UTC, ein
+Tick weiter, `measuredAt 18:56:53.499Z` — die Schleife tickt.
+
+### Das Abnahmekriterium hat sich selbst vorgeführt, und niemand hat es gestellt
+
+Die vier Logzeilen der ersten zwanzig Minuten, **gekürzt auf Zeitstempel,
+Zustand und Werte** — die Zeilen selbst sind JSON, und aus der ersten ist die
+Adresse des DNS-Servers entfernt, weil sie Host-Zustand ist:
+
+```
+18:36:53  not measured      dial tcp: lookup timseil-prometheus on <…>: server misbehaving
+18:41:53  nothing measured
+18:46:53  written           p95_ms 197.5   error_rate 0
+18:51:53  written           p95_ms  24.25  error_rate 0
+```
+
+*(Dass hier „gekürzt" steht, ist die Lehre aus dieser Phase: im ersten Anlauf
+stand in dieser Datei ein Ausschnitt, den so kein Lauf produziert hatte, als
+„mechanisch nachgeprüft" ausgegeben. Ein zurechtgeschnittener Beleg ist in
+Ordnung, solange der Schnitt dabeisteht.)*
+
+**Der erste Lauf ist im DNS gescheitert.** Die Schleife läuft absichtlich sofort
+beim Start (ADR 0019 §8: ein Prozess, der öfter neu startet als der Tick, misst
+sonst nie) — und traf den Alias `timseil-prometheus`, während der
+Prometheus-Container gerade neu erzeugt wurde. Beide waren dreizehn Minuten alt,
+als wir nachsahen; sie sind gemeinsam hochgekommen.
+
+Was daraufhin passierte, ist wörtlich das Abnahmekriterium aus Bauplan Zeile
+1174: kein Absturz, keine erfundene Null, **keine Zeile geschrieben**, eine
+WARN-Zeile, geheilt beim nächsten Tick. Der zweite Lauf sagt ehrlich `nothing
+measured` — das Fünf-Minuten-Fenster war wirklich leer, der Deploy-Verkehr von
+18:36:24 lag knapp davor. Erst der dritte hatte Verkehr.
+
+**Das Labor konnte diesen Fall nicht erzeugen.** `make check-snapshots` stoppt
+Prometheus absichtlich; hier ist er von selbst kurz nicht auflösbar gewesen, an
+einer Stelle, an die niemand gedacht hatte. Eine Abnahme, die den Fehlerfall
+provoziert, prüft die Reaktion. Diese hier hat sie *beobachtet*.
+
+**Für F10 ist das eine Vorgabe:** jeder Deploy erzeugt diese WARN-Zeile. Ein
+Alarm auf `not measured` würde bei jedem Deploy feuern — er gehört an die
+Burn-Rate, nicht an einen Pager.
+
+### Die Zahl, die stimmt und zu stark klingt
+
+`uptime90d` steht auf **100**, und das Raster daneben sagt: **5 × `ok`, 86 ×
+`nodata`** von 91 Zellen.
+
+Arithmetisch ist die 100 richtig — ein Tag ohne Messung trägt zu keiner der
+beiden Summen bei, das ist Invariante 6, und die Alternative (ihn als Ausfall
+zählen) wäre die schlimmere Lüge. Rhetorisch trägt sie zu dick auf: der Badge
+sagt „100.00 %" über 91 Tage, und gemessen wurden fünf. **Dieselbe Form wie der
+Bucket-Fund aus F3** — die Zahl stimmt und behauptet mehr, als sie weiß.
+Aufgeschrieben in `docs/slo.md`, nicht weggerechnet.
+
+### Und der Grund dafür ist gemessen worden
+
+Die externe Sonde läuft mit **einem Zehntel ihres Takts**. Über die letzten 100
+Läufe, 81,4 Stunden, 24.08. bis 27.08.:
+
+```
+konfiguriert (3-58/5)   12 Läufe/h
+tatsächlich              1,23 Läufe/h   =  10 %
+Abstände                 min 13 · median 36 · max 660 Minuten
+Abstände unter 6 min     0 von 99
+```
+
+**Der konfigurierte Fünf-Minuten-Takt ist kein einziges Mal erreicht worden.**
+GitHub verwirft geplante Läufe unter Last; der Workflow-Kommentar ahnt es
+(„GitHub's cron queue"), gemessen hatte es niemand. Das ist F4s Zahl, nicht F5s,
+und es hat drei Folgen — unten unter „Gefunden".
+
+**Als Nächstes:** Stufe F triagieren (F6–F11 liegen hinter dem Launch) und die
+Sondenkadenz entscheiden.
+
+---
+
+## Vorher — 27.08.2026, F5 gebaut und im Labor abgenommen
 
 **Die Seite hat ihre drei Zahlen — jetzt wirklich auf der Seite.** Seit B2 gibt
 es `metric_snapshots`, seit F3 rechnen die Regeln, und dazwischen lag nichts.
@@ -1288,6 +1377,10 @@ Vorherige Triage: nach F2, 24.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-27 | F5-Abnahme (trifft **F4**) | **Die externe Sonde läuft mit 10 % ihres Takts, und der Fünf-Minuten-Takt wurde nie erreicht.** Gemessen über 100 Läufe / 81,4 h: 1,23 statt 12 Läufe/h, Abstände min 13 · median 36 · max **660** Minuten, **0 von 99 Abständen unter 6 Minuten**. GitHub verwirft geplante Läufe unter Last. Drei Folgen: **(1)** `down_sec` in `queries/ops.sql` ist *fehlgeschlagene Prüfungen × `ops.ProbeInterval`* = × 5 min — bei 36 min echtem Abstand untertreibt das Raster jede Ausfalldauer grob um **Faktor 7**. **(2)** `docs/slo.md` behauptete „der Takt sind fünf Minuten". **(3)** `check-probe-cadence.sh` hält den Cron gegen die Go-Konstante — beide sagen 5, beide stimmen, und die Wirklichkeit sagt 36. Das Gate bewacht die **Deklaration**, nicht die Einhaltung. | **offen** — hier nur gemessen und den falschen Sätzen entzogen. Die Reparatur ist eine Entscheidung (eigener Cron auf dem Host? zweiter Auslöser? bewusst hinnehmen und `ProbeInterval` ehrlich machen?) und gehört zu F4/F10; F10s Dead Man's Switch ist die Stelle, an der so etwas auffallen soll |
+| 2026-08-27 | F5-Abnahme | **`uptime90d: 100` ruht auf 5 gemessenen Tagen von 91.** 86 Zellen sind `nodata`. Arithmetisch richtig — `nodata` trägt zu keiner Summe bei, Invariante 6, und ein `nodata` als Ausfall zu zählen wäre die schlimmere Lüge. Rhetorisch zu stark: der Badge sagt „100.00 %" über ein Fenster, von dem 5 % gemessen sind. Dieselbe Klasse wie der Bucket-Fund aus F3. | **aufgeschrieben statt weggerechnet** — `docs/slo.md` nennt es jetzt unter „Was diese Zahl nicht sieht": eine Prozentzahl über 91 Tage sagt nichts darüber, wie viele davon gemessen wurden, und das Raster ist die zweite Angabe, die dazugehört |
+| 2026-08-27 | F5-Abnahme | **Jeder Deploy erzeugt eine `not measured`-WARN-Zeile.** Der Start-Lauf der Schleife trifft den Alias `timseil-prometheus`, während dessen Container neu erzeugt wird — DNS antwortet „server misbehaving". Selbstheilend beim nächsten Tick, und genau das Verhalten, das ADR 0041 §5 zusichert. | **erledigt als Doku** — `docs/runbooks/api.md` sagt bei `not measured`, dass die Zeile direkt nach einem Deploy der Normalfall ist und erst über mehrere Ticks hinweg eine Diagnose wird. Für F10 notiert: kein Pager darauf |
+| 2026-08-27 | F5-Abnahme | **Die Host-Diagnose läuft über Containernamen, nicht über Compose.** `docker compose -f compose.yaml …` meldet dort „no such service", obwohl alles läuft — Dokploy setzt einen eigenen Projektnamen über `-p`. `docs/runbooks/dokploy.md` warnt davor; die konkrete Ausprägung samt der vier Befehle liegt in `backlog.local.md`, nicht hier. | **erledigt** — Weg notiert, Zustand nicht hier |
 | 2026-08-27 | F5 | **Ein Vertrag aus einer Phase und zwei Dokumenten war arithmetisch unmöglich.** `timseil:service:availability_5m → Metrics.uptime90d, über 91 Tage aggregiert` stand seit F3 im Runbook und in ADR 0040 §4. Prometheus hält sieben Tage. Beide Zahlen waren einzeln richtig, beide waren begründet aufgeschrieben, und es gab keinen Ort, an dem sie nebeneinander standen. | **erledigt** — `uptime90d` kommt aus `ops_days` (ADR 0041 §1); Mapping-Tabelle im Runbook korrigiert, `docs/slo.md` hält alle fünf SLIs mit Quelle und Fenster an einer Stelle |
 | 2026-08-27 | F5 | **„F5 sieht das Label, weil sie über den Tunnel fragt" — beide Hälften falsch.** Es gibt keinen Tunnel (Zwei-Host-Topologie, in ADR 0008 verworfen; die api erreicht Prometheus im `default`-Netz), und weil sie damit ebenso lokal fragt wie die Grafana-Datasource daneben, sieht sie `external_labels` genauso wenig. Der Absatz **direkt darüber** erklärt korrekt, warum. | **erledigt** — nachgemessen gegen die Regel, die F5 wirklich liest: `{"__name__":"timseil:site:…"}`, kein `stack`. Ein Filter darauf hätte nichts getroffen und gelesen wie ein Ausfall |
 | 2026-08-27 | F5 | **Das Fehlerbudget stand unter der falschen Überschrift.** „3 h 39 min" in der Spalte „Fehlerbudget/30 d" — 0,5 % von genau 30 Tagen sind 3 h 36 min; 3 h 39 min sind 0,5 % eines Durchschnittsmonats (30,4375 d). Beide richtig für ihre Frage, eine unter dem falschen Kopf. Dieselbe Klasse wie 90 gegen 91 Tage: eine Zahl, die man nachzählen können muss. | **erledigt** — verbindlich sind 30 Tage und **3 h 36 min**; `docs/slo.md` rechnet alle drei Bezugsräume vor, Anhang A und Handbuch tragen die Korrektur |
