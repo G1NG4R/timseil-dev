@@ -279,8 +279,8 @@ func TestTheWindowEnumAndDefaultAreTheContractsOwn(t *testing.T) {
 	if len(declared) == 0 {
 		t.Fatal("the contract declares no window enum")
 	}
-	if fallback != defaultWindow {
-		t.Errorf("the handler defaults to %d, the contract declares %d", defaultWindow, fallback)
+	if fallback != DefaultWindow {
+		t.Errorf("the handler defaults to %d, the contract declares %d", DefaultWindow, fallback)
 	}
 
 	h := newHandler(t, dayOne())

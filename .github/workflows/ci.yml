@@ -174,11 +174,13 @@ jobs:
           install-only: true
           version-file: .golangci-lint-version
 
-      # check-tools check-node check-repo check-todo check-compose
-      # check-dockerfiles check-migrations check-stack check-go check-lint
-      # check-web check-contract — the same list, in the same order, as on a
-      # laptop. check-lint refuses to skip when CI is set, so a job that lost
-      # the step above goes red instead of green.
+      # The same command as on a laptop, and deliberately not the same list
+      # written out: this comment used to enumerate the targets and had fallen
+      # seven behind by the time anybody noticed. A copy of a list drifts, which
+      # is the failure chapter 12.2 exists to prevent — so the Makefile's
+      # `check:` line is the list, and this is the command that runs it.
+      # check-lint refuses to skip when CI is set, so a job that lost the step
+      # above goes red instead of green.
       - name: make check
         run: make check
 

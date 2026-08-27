@@ -1079,6 +1079,14 @@ Self-hosted Sentry braucht 40+ Container und 8–16 GB RAM. Es ist außerdem BSL
 
 ## 28. SLOs und Fehlerbudget
 
+**Die verbindliche Fassung steht seit F5 in `docs/slo.md`** — dort mit der
+Abfrage hinter jedem SLI, dem Fenster, und dem, was jeder von ihnen *nicht*
+sehen kann. Was hier steht, ist die Erzählung dazu, und bei Widerspruch gilt die
+andere Datei. Zwei Dinge hat sie korrigiert: `uptime90d` kommt aus `ops_days`
+und nicht aus Prometheus (dessen sieben Tage können eine 91-Tage-Frage nicht
+beantworten, ADR 0041 §1), und die 3 h 39 min unten sind das Budget eines
+Durchschnittsmonats — für genau dreißig Tage sind es **3 h 36 min**.
+
 | SLI | Messung | SLO | Budget / 30 d |
 |---|---|---|---|
 | Verfügbarkeit | externer Probe, 5-min-Takt | 99,5 % | 3 h 39 min |

@@ -124,6 +124,12 @@ func TestDefaultsAreApplied(t *testing.T) {
 	if cfg.GitHub.Token != goodToken {
 		t.Errorf("GitHub.Token was not read")
 	}
+	// F5. The default direction is the same as the three transports before it:
+	// a deployment nobody configured measures itself rather than showing
+	// `— NO DATA` next to a Prometheus that is working.
+	if !cfg.Snapshots.Takes() {
+		t.Errorf("Snapshots.Transport = %q, want %s", cfg.Snapshots.Transport, TransportPrometheus)
+	}
 }
 
 // The one variable with no default. The message has to name the file that fixes
@@ -212,6 +218,25 @@ func TestTheOffTransportStartsWithoutAToken(t *testing.T) {
 	if cfg.GitHub.Fetches() {
 		t.Error("the off transport reports that it fetches")
 	}
+}
+
+// The off switch for the snapshot loop, and it is the one compose.dev.yaml
+// actually uses: that stack has no Prometheus in it at all.
+func TestTheOffTransportTakesNoSnapshots(t *testing.T) {
+	setEnv(t, map[string]string{EnvSnapshotsTransport: TransportOff})
+	cfg := mustLoad(t)
+
+	if cfg.Snapshots.Takes() {
+		t.Error("the off transport reports that it takes snapshots")
+	}
+}
+
+// The same refusal the other three transports get, and it matters more here
+// than a typo usually does: a misspelling would leave every number on the page
+// at `— NO DATA` while nothing anywhere looked broken.
+func TestAnUnknownSnapshotsTransportIsRefused(t *testing.T) {
+	setEnv(t, map[string]string{EnvSnapshotsTransport: "promethius"})
+	wantFailure(t, EnvSnapshotsTransport, TransportPrometheus, TransportOff)
 }
 
 // A typo must not read as "not github" and silently switch the calendar off —

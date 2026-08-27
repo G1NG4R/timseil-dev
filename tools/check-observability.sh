@@ -5,6 +5,8 @@
 #   tools/check-observability.sh --flood    ...and the limit trips first
 #   tools/check-observability.sh --metrics  ...and they add up to the three
 #                                              numbers the site shows        (F3)
+#   tools/check-observability.sh --snapshots ...and a dead Prometheus leaves
+#                                              the page honest              (F5)
 #
 # The build plan asks for "Metriken und Logs laufen ein; ein künstlich erzeugtes
 # 5-GB-Log löst das Limit aus, statt die Platte zu füllen". The second half is
@@ -30,17 +32,31 @@
 # Traefik, and the only one this repository owns is compose.lab.yaml's. Hence
 # OBS_FILES — `make check-metrics` passes the lab's three files.
 #
+# WHAT --snapshots ADDS, and it is the acceptance criterion of F5 rather than
+# another measurement. --metrics asks whether Prometheus can answer; this asks
+# what the SITE does when it cannot. The build plan states it as a sentence:
+# "Prometheus-Container stoppen → die Seite zeigt weiter den letzten gültigen
+# Wert mit Alter, statt zu brechen oder eine Null zu erfinden." Every word of
+# that is a separate way to fail — break, invent a zero, or go blank — and only
+# the first one would show up in any other check.
+#
+# It asks over the published port rather than from inside the network, on
+# purpose and twice over: it is the path a visitor takes, and the container it
+# would otherwise ask from is the one this run stops.
+#
 # NOT part of `make check`: it needs Docker and a running stack, like
 # check-topology and check-db. `make check-compose` checks the recipe.
 set -eu
 
 flood=0
 metrics=0
+snapshots=0
 case ${1-} in
   --flood) flood=1 ;;
   --metrics) metrics=1 ;;
+  --snapshots) snapshots=1 ;;
   "") ;;
-  *) printf 'usage: %s [--flood|--metrics]\n' "$0" >&2; exit 2 ;;
+  *) printf 'usage: %s [--flood|--metrics|--snapshots]\n' "$0" >&2; exit 2 ;;
 esac
 
 COMPOSE="docker compose ${OBS_FILES:--f compose.yaml}"
@@ -55,6 +71,151 @@ printf 'observability\n'
 # published port, which is the one thing this stack must never have. Defined
 # before the branch below because both halves need it.
 inside() { $COMPOSE exec -T prometheus wget -q -O - --timeout=10 "$1"; }
+
+# ------------------------------------------------------------- F5, --snapshots
+#
+# Its own path, before --metrics, because it is the only mode that CHANGES the
+# stack: it stops Prometheus on purpose and puts it back. Everything it needs is
+# api, prometheus and the lab proxy.
+if [ "$snapshots" = 1 ]; then
+  base=${LAB_URL:-http://127.0.0.1:8080}
+
+  for s in prometheus api; do
+    cid=$($COMPOSE ps -q "$s" 2>/dev/null || true)
+    [ -n "$cid" ] || { no "$s is not running — start it with: make rolling-lab"; exit 1; }
+  done
+
+  # Prometheus goes back up whatever happens below, including a Ctrl-C. A check
+  # that can leave the stack half-stopped is a check nobody runs twice.
+  restore() { $COMPOSE start prometheus >/dev/null 2>&1 || true; }
+  trap restore EXIT INT TERM
+
+  # The site's own numbers, over the published port. `ops` in the health
+  # response is OpsSummary, which is Metrics flattened — so the four fields are
+  # at the top level of it rather than nested.
+  ops() {
+    curl -sS --max-time 10 "$base/api/health" | python3 -c '
+import json, sys
+o = json.load(sys.stdin)["ops"]
+print(json.dumps([o["uptime90d"], o["p95Ms"], o["errorRate"], o["measuredAt"]]))
+'
+  }
+
+  # Every line the loop has ever written, and every failure among them. Counted
+  # rather than grepped for, because this check restarts the api and
+  # `docker compose restart` keeps the container and therefore its log: a line
+  # from an earlier run is still there, and a check satisfied by history proves
+  # nothing about this run.
+  runs() { $COMPOSE logs api 2>/dev/null | grep -c '"msg":"metric snapshot"' || true; }
+  failures() { $COMPOSE logs api 2>/dev/null | grep -c '"state":"not measured"' || true; }
+
+  # A run is forced by restarting the api rather than by waiting out a tick:
+  # internal/snapshots runs once at startup, and five minutes is not a unit a
+  # check can be written in.
+  #
+  # WAITING FOR /api/health IS NOT WAITING FOR THE RUN. The loop is a goroutine
+  # started before the listener exists, so the endpoint can answer while the
+  # first query is still in flight. Reading the numbers in that window gives two
+  # false answers, and the second is the worse one: the INSERT can land between
+  # the before and after reads, the two differ, and this script accuses the
+  # build of the exact bug the phase exists to prevent. So the wait is on the
+  # loop's own line, which it writes on every run whatever the outcome.
+  force_run() {
+    before_runs=$(runs)
+    $COMPOSE restart api >/dev/null 2>&1 || return 1
+    n=0
+    while [ "$n" -lt 60 ]; do
+      if curl -sf --max-time 2 "$base/api/health" >/dev/null 2>&1 \
+        && [ "$(runs)" -gt "$before_runs" ]; then
+        return 0
+      fi
+      n=$((n + 1))
+      sleep 1
+    done
+    return 1
+  }
+
+  force_run || { no "the api did not come back and take a snapshot after a restart"; exit 1; }
+
+  before=$(ops 2>/dev/null || true)
+  printf '%s' "$before" | python3 -c '
+import json, sys
+raw = sys.stdin.read().strip()
+if not raw:
+    print("the health endpoint answered nothing"); sys.exit(1)
+uptime, p95, rate, at = json.loads(raw)
+if at is None:
+    print("measuredAt is null — nothing has been snapshotted. Run: make load"); sys.exit(1)
+# Either number is enough to prove the copy happened; a snapshot is written
+# when at least one of the two rules measured something.
+if p95 is None and rate is None:
+    print("both proxy numbers are null at " + at); sys.exit(1)
+def show(v):
+    return "null" if v is None else v
+note = ""
+# NOT a failure here, and saying so beats a green tick the reader has to
+# interpret. uptime90d is derived from ops_days, which the external probe in F4
+# fills from GitHub Actions -- a laboratory has never been probed, so the
+# honest answer is null. Against production it carries a number, and the
+# acceptance there is the one that proves it.
+if uptime is None:
+    note = "   (uptime90d comes from ops_days; a lab has no external probe)"
+print("uptime90d=%s p95Ms=%s errorRate=%s at %s%s"
+      % (show(uptime), show(p95), show(rate), at, note))
+' >/tmp/obs.$$ 2>&1 && ok "the site serves its own measurement — $(cat /tmp/obs.$$)" \
+    || { no "no snapshot to age: $(cat /tmp/obs.$$)"; rm -f /tmp/obs.$$; exit 1; }
+  rm -f /tmp/obs.$$
+
+  # Counted before, compared after: a count that has to GROW cannot be satisfied
+  # by a line an earlier run of this check left behind.
+  before_failures=$(failures)
+
+  # THE BROKEN CASE. Stop the container the numbers come from, then force
+  # another run against it.
+  $COMPOSE stop prometheus >/dev/null 2>&1 \
+    || { no "prometheus would not stop"; exit 1; }
+  ok "prometheus stopped"
+
+  force_run || { no "the api did not come back with prometheus down"; exit 1; }
+  ok "the api starts and answers without prometheus"
+
+  after=$(ops 2>/dev/null || true)
+  if [ -z "$after" ]; then
+    no "the health endpoint broke when prometheus went away"
+  elif [ "$after" != "$before" ]; then
+    no "the numbers changed with prometheus down"
+    printf '    before %s\n' "$before"
+    printf '    after  %s\n' "$after"
+    printf '    a failed run wrote a row and pushed the last good measurement off the page\n'
+  else
+    # measuredAt is unchanged and the wall clock is not, so the age the page
+    # renders has grown. That is the whole sentence: the last valid value, with
+    # its age, instead of a break or an invented zero.
+    ok "the same values, the same measuredAt — the page ages instead of going blank"
+  fi
+
+  # And the run said so, at WARN. A NEW line, not any line: the values must have
+  # survived because a run failed, not because no run happened.
+  after_failures=$(failures)
+  if [ "$after_failures" -gt "$before_failures" ]; then
+    ok "the failed run is in the log ($before_failures → $after_failures)"
+  else
+    no "no NEW line reports a failed run ($before_failures → $after_failures) — did the loop run at all?"
+  fi
+
+  # The trap is cleared only if the restart actually worked. Dropping the safety
+  # net on the one path that established Prometheus is NOT back would break the
+  # promise the Makefile target makes about this run.
+  if $COMPOSE start prometheus >/dev/null 2>&1; then
+    trap - EXIT INT TERM
+    ok "prometheus back up"
+  else
+    no "prometheus would not start again — the exit trap will try once more"
+  fi
+
+  [ "$fail" = 0 ] && printf '  ✓ tools/check-observability.sh --snapshots\n'
+  exit "$fail"
+fi
 
 # --------------------------------------------------------------- F3, --metrics
 #

@@ -26,6 +26,7 @@ make check-observability FLOOD=1 # 5 GB, und ob die Grenze hält
 make rolling-lab                 # dasselbe, mit einem Traefik davor
 make load                        # k6 durch den Proxy
 make check-metrics               # die drei Zahlen der Seite            (F3)
+make check-snapshots             # und was die Seite tut, wenn er stirbt  (F5)
 ```
 
 `check-observability` prüft sieben Dinge in einem Lauf: Grenzen angewandt, keine
@@ -81,7 +82,22 @@ Grafana-App muss von ihrer Seite hineingehängt werden. **Nicht** mit
    — Föderation, `remote_write`, Alarme. Eine Grafana-Datasource fragt lokal,
    und lokal gibt es das Label nicht. Am 24.08.2026 nachgemessen: `up` liefert
    `__name__`, `instance`, `job` und sonst nichts, `up{stack="timseil"}` liefert
-   ein leeres Ergebnis. F5 sieht das Label, weil sie über den Tunnel fragt.
+   ein leeres Ergebnis.
+
+   **Und F5 sieht es auch nicht.** Hier stand „F5 sieht das Label, weil sie über
+   den Tunnel fragt", und beide Hälften des Satzes sind falsch. Es gibt keinen
+   Tunnel — der stammt aus der Zwei-Host-Topologie, die ADR 0008 verworfen hat;
+   die api erreicht Prometheus im `default`-Netz. Und weil sie damit ebenso
+   lokal fragt wie diese Datasource, gilt für sie derselbe Befund. Am 26.08.2026
+   gegen das Labor nachgemessen, die Antwort der Regel, die F5 wirklich liest:
+
+   ```
+   {"metric":{"__name__":"timseil:site:request_duration_seconds:p95_5m"},
+    "value":[1787785328.940,"0.04871214036966876"]}
+   ```
+
+   Kein `stack`. Ein Filter darauf in F5s PromQL hätte nichts getroffen und
+   gelesen wie ein Ausfall. ADR 0041 §4.
 
    `up` ist ohnehin die bessere Gegenprobe: zeigt es `job="crowdsec"`, hängt die
    Datasource am **Nachbar-Prometheus** — der Fehler, gegen den die Aliase oben
@@ -219,19 +235,38 @@ dieselbe".
 
 ---
 
-## Die drei Zahlen der Seite — F3
+## Die drei Zahlen der Seite — F3, korrigiert in F5
 
-`Metrics` im Contract hat drei Felder, und alle drei kommen aus einer Recording
-Rule über `traefik_service_*`. Die Namen sind ein Vertrag mit F5, kein Etikett:
+`Metrics` im Contract hat drei Felder. **Zwei** kommen aus einer Recording Rule,
+das dritte nicht — und dass hier zuerst etwas anderes stand, ist der Fund von
+F5. Die Namen sind ein Vertrag, kein Etikett; `tools/check-rule-names.sh` hält
+ihn seit F5 maschinell.
 
 | Regel | Contract-Feld |
 |---|---|
-| `timseil:request_duration_seconds:p95_5m` | `Metrics.p95Ms` (in Sekunden — F5 rechnet um) |
-| `timseil:requests:error_ratio_5m` | `Metrics.errorRate` |
-| `timseil:service:availability_5m` | `Metrics.uptime90d`, von F5 über 91 Tage aggregiert |
+| `timseil:site:request_duration_seconds:p95_5m` | `Metrics.p95Ms` (in Sekunden — F5 rechnet ×1000) |
+| `timseil:site:requests:error_ratio_5m` | `Metrics.errorRate` |
+| `timseil:request_duration_seconds:p95_5m` | — je Dienst, für F9s Dashboards |
+| `timseil:requests:error_ratio_5m` | — je Dienst, für F9 |
+| `timseil:service:availability_5m` | — je Dienst, Eingang für F10s Burn-Rate |
+| **keine** | `Metrics.uptime90d` ← `ops_days`, aus der externen Sonde |
 
-Die Herleitung steht in `ops/prometheus/rules/slis.yml` neben jeder Regel,
-die Entscheidungen in ADR 0040.
+**Hier stand: `timseil:service:availability_5m` → `Metrics.uptime90d`, von F5
+über 91 Tage aggregiert.** Diese Abfrage kann es nicht geben. Dieser Prometheus
+hält **sieben Tage** (`--storage.tsdb.retention.time=7d`), das Fenster des
+Contracts sind **91**. Der zweite Grund gälte auch mit unendlicher Aufbewahrung:
+`availability_5m` ist Request-Verfügbarkeit und blind für den Ausfall, in dem
+gar nichts ankam — in dem ist dieser Prometheus selbst tot. `uptime90d` kommt
+deshalb aus `ops_days`, gerechnet in `queries/metrics.sql`. ADR 0041 §1.
+
+**Warum es zwei Regelsätze gibt.** Der Contract hat je ein Feld, Traefik liefert
+zwei Dienste. Die `timseil:site:*`-Regeln summieren über die Anfragen statt über
+die Dienste — request-gewichtet, also genau das, was `Metrics.errorRate` mit
+„share of 5xx responses" behauptet. Die drei per Dienst bleiben, weil ein
+Dashboard und ein Alarm nach `service` schneiden wollen. ADR 0041 §2.
+
+Die Herleitung steht in `ops/prometheus/rules/slis.yml` neben jeder Regel, die
+Entscheidungen in ADR 0040 und ADR 0041, die SLOs in `docs/slo.md`.
 
 ### Was der p95 ist und was er nicht ist
 
@@ -336,7 +371,6 @@ Seite einen p95 über fremden Verkehr.
 
 | Fehlt | Phase |
 |---|---|
-| PromQL-Snapshots nach Postgres, SLO-Definition | **F5** |
 | Dashboards als Code, provisionierte Datasources | **F9** |
 | Burn-Rate-Alerts, **Disk-Alarm bei 70 %**, Dead Man's Switch | **F10** |
 | `faro.receiver` und Frontend-Telemetrie | **F11** |

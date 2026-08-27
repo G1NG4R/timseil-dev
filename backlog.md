@@ -12,7 +12,198 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 26.08.2026, F3 abgenommen: Labor und Host
+## Wo wir stehen — 27.08.2026, F5 gebaut und im Labor abgenommen
+
+**Die Seite hat ihre drei Zahlen — jetzt wirklich auf der Seite.** Seit B2 gibt
+es `metric_snapshots`, seit F3 rechnen die Regeln, und dazwischen lag nichts.
+`internal/snapshots` schließt die Lücke: alle fünf Minuten eine Instant-Query,
+eine Zeile nach Postgres, und am Verhalten des Lesepfads änderte sich nichts.
+Im Labor über den Proxy abgefragt, den Weg eines Besuchers:
+
+```
+"ops": { "uptime90d": 99.65277777777779,
+         "p95Ms": 63.88418079096048,
+         "errorRate": 0,
+         "measuredAt": "2026-08-27T17:48:38.452Z" }
+```
+
+**Zwei der drei Zahlen sind gemessen, die dritte nicht — und das gehört hierhin
+und nicht achtzig Zeilen weiter unten.** `p95Ms` und `errorRate` stammen aus
+Prometheus, das k6-Last durch denselben Proxy gesehen hat. `uptime90d` **kann**
+im Labor nicht gemessen sein: es kommt aus `ops_days`, dort füllt die externe
+Sonde, und die hat ein Labor nie geprüft. Für diese eine Abfrage habe ich zwei
+`ops_days`-Zeilen von Hand eingesetzt (574 von 576 Prüfungen), nachgerechnet
+(`574/576·100 = 99.65277777777779`, auf die letzte Stelle) und danach wieder
+gelöscht. Der Weg ist damit belegt, der Wert nicht — den belegt erst Produktion.
+
+Die `0` in der dritten Zeile ist dagegen gemessen und nicht leer — der
+`or … * 0`-Zweig aus F3, jetzt bis in die Spalte durchgezogen.
+
+### Der stärkste Fund — und er stand seit F3 als Vertrag im Runbook
+
+**`uptime90d` kann nicht aus Prometheus kommen. Nicht „sollte nicht" — kann
+nicht.** Das Mapping, das F3 aufgeschrieben und ADR 0040 §4 unterschrieben hat,
+lautete `timseil:service:availability_5m → Metrics.uptime90d, von F5 über 91
+Tage aggregiert`. Dieser Prometheus hält **sieben Tage**
+(`--storage.tsdb.retention.time=7d`, seit F2, aus gutem Grund: dieselbe Platte
+wie Postgres). Eine 91-Tage-Frage ist an eine 7-Tage-Datenbank nicht zu stellen.
+
+Das Unangenehme daran ist nicht der Fehler, sondern seine Form. **Beide Zahlen
+waren einzeln richtig und beide standen aufgeschrieben** — die Retention in
+`compose.yaml` mit Begründung, das Fenster im Contract mit Begründung. Es gab
+keinen Ort, an dem sie nebeneinander standen. Geschrieben hat ihn **eine** Phase,
+in zwei Dokumenten — und die nächste hat ihn geglaubt: der Plan für F5 trug das
+Mapping als Tatsache, bis die Retention nachgerechnet war. Ein Vertrag, den zwei
+Dokumente tragen und eine zweite Phase übernimmt, ist keine Prüfung.
+
+Und die Antwort wäre mit unendlicher Aufbewahrung dieselbe: `availability_5m`
+ist **Request**-Verfügbarkeit und blind für den Ausfall, in dem gar nichts
+ankam — in dem ist dieser Prometheus selbst tot, er teilt sich den Host.
+ADR 0040 §4 hat genau das schon geschrieben und die Entscheidung offen an F5
+gegeben. `uptime90d` kommt jetzt aus `ops_days`, also aus der externen Sonde aus
+F4, gerechnet in SQL. ADR 0041 §1.
+
+### Die Zeile, die nicht geschrieben wird
+
+Das Abnahmekriterium der Phase ist ein Satz über einen toten Messteil: *„die
+Seite zeigt weiter den letzten gültigen Wert mit Alter, statt zu brechen oder
+eine Null zu erfinden"*. Er hängt an einer einzigen Entscheidung.
+
+`00005_metrics.sql` **erlaubt** eine Zeile mit drei `NULL` und erklärt sogar,
+was sie bedeutete. `LatestMetrics` liest aber `ORDER BY measured_at DESC LIMIT
+1` — eine frische Leerzeile wäre die jüngste Messung und verdrängte die letzte
+gültige Zahl von der Seite. Die Abnahme wäre grün gewesen (nichts bricht, keine
+Null erfunden) und die Seite hätte trotzdem `— NO DATA` gezeigt, während ein
+echter Wert danebenlag.
+
+Also: **eine Zeile entsteht nur, wenn mindestens einer der beiden
+Prometheus-Werte gemessen wurde.** Fällt Prometheus aus, wird gar nichts
+geschrieben — auch nicht die Verfügbarkeit, die aus `ops_days` vorläge. ADR 0041
+§5. Mechanisch nachgeprüft, `make check-snapshots`:
+
+```
+observability
+  ✓ the site serves its own measurement — uptime90d=null p95Ms=63.25757575757572 errorRate=0 at 2026-08-27T17:47:43.318Z   (uptime90d comes from ops_days; a lab has no external probe)
+  ✓ prometheus stopped
+  ✓ the api starts and answers without prometheus
+  ✓ the same values, the same measuredAt — the page ages instead of going blank
+  ✓ the failed run is in the log (0 → 1)
+  ✓ prometheus back up
+  ✓ tools/check-observability.sh --snapshots
+```
+
+`uptime90d=null` ist hier richtig und nicht dasselbe wie oben: dieser Lauf hat
+keine Zeilen von Hand bekommen. Das Skript sagt den Grund selbst dazu, statt
+einen Haken zu setzen, den jemand deuten muss.
+
+### Zwei Regelsätze statt einer Wahl in Go
+
+Der Contract hat je ein `p95Ms` und ein `errorRate`, Traefik liefert zwei
+Dienste. Wo aus zwei Zahlen eine wird, entscheidet, was die Zahl **bedeutet**:
+das Maximum in Go wäre eine obere Schranke und für eine Quote nicht „Anteil der
+5xx an allen Anfragen", was der Contract wörtlich sagt; nur `web` zu lesen
+verschwiege einen 500 aus der eigenen API. `slis.yml` bekommt deshalb zwei
+`timseil:site:*`-Regeln, die über die **Anfragen** summieren statt über die
+Dienste. Die drei aus F3 bleiben unverändert — sie tragen das `service`-Label,
+nach dem F9 schneidet und F10 alarmiert. ADR 0041 §2.
+
+Nebeneffekt, und er war die zweite offene Stelle aus ADR 0040: **die Zuordnung
+Service → System-Slug ist damit der Regex in der Regel.** In Go steht keine
+Tabelle, die zwei Traefik-Namen auf einen Slug abbildet.
+
+### Was das Labor nicht beweisen konnte
+
+`uptime90d` ist im Labor `null`, und das ist richtig: dort hat nie eine externe
+Sonde gemessen. Bewiesen ist deshalb der **Weg**, nicht der Wert — die
+Arithmetik gegen echtes Postgres (acht `//go:build db`-Tests, darunter der
+Zaunpfahl bei Tag 90 gegen Tag 91 und die gemessene Null gegen die fehlende),
+und die Strecke bis auf die Seite mit den beiden Zeilen von oben.
+
+**Offen: die Abnahme gegen Produktion.** Dort trägt `ops_days` echte
+Sondenmessungen, und erst dort bewegt sich der Uptime-Badge zum ersten Mal.
+
+### Was sonst noch dabei herausfiel
+
+- **`docs/slo.md`** ist ab jetzt die verbindliche Fassung der SLOs — mit der
+  Abfrage hinter jedem SLI, dem Fenster, und dem, was jeder *nicht* sehen kann.
+  Anhang A und Handbuch-Kapitel 28 verweisen darauf.
+- **Zwei Sätze im Runbook waren falsch**, beide seit F3, beide unten in
+  „Gefunden".
+- **`tools/check-rule-names.sh`** hält die **zwei** Namen, die der Go-Code
+  abfragt, gegen `slis.yml` — und seit der Kontrolle auch die Gegenrichtung, auf
+  `timseil:site:*` beschränkt: eine Site-Regel, die niemand liest, ist derselbe
+  Defekt von hinten. Die drei per-Dienst-Regeln bleiben ausgenommen, sie warten
+  auf F9 und F10. Zweites Gate dieser Form nach `check-probe-cadence.sh`, und
+  der Auslöser stand auch hier vorher fest: ADR 0040 §4 hat einen Preis auf ein
+  Umbenennen gesetzt, bevor jemand umbenannt hat.
+
+### Und der zweitstärkste Fund war die Kontrolle selbst
+
+**Vor dem Push lief ein zweiter Durchgang über den fertigen Diff, und er hat
+einundzwanzig Sachen gefunden** — kein einziger Laufzeitfehler, aber zwei echte
+Codefehler und, unangenehmer, mehrere falsche Sätze *über* richtigen Code. Die
+drei, die weh tun:
+
+1. **Im Backlog stand ein `check-snapshots`-Ausschnitt, den es so nie gab.**
+   Gerundet (`p95Ms=48.70`), zwei Zeilen weggelassen, die Fußnote des Skripts
+   entfernt — als „mechanisch nachgeprüft" ausgegeben. Ein von Hand geglätteter
+   Beleg in einer Datei, deren erster Absatz sagt, dass jede Behauptung an einen
+   Beleg gebunden ist. Ersetzt durch die wörtliche Ausgabe zweier Läufe.
+2. **Die WARN-Zeile für einen unmöglichen Wert konnte den Wert nicht drucken.**
+   `slog` marshalliert `float64` über `encoding/json`, und das lehnt `±Inf` ab —
+   herausgekommen wäre `"value":"!ERROR:json: unsupported value: +Inf"`. Genau
+   die eine Zahl, für die die Zeile existiert. Der Test daneben prüfte nur den
+   Zustand und lief grün darüber hinweg. Beides repariert; der neue Test fällt
+   gegen den alten Code, nachgestellt.
+3. **`--snapshots` konnte beim zweiten Lauf hintereinander leer grün werden.**
+   `docker compose restart` behält das Log, also erfüllte die Zeile des ersten
+   Laufs die Prüfung des zweiten. Jetzt wird gezählt statt gesucht — die Ausgabe
+   oben zeigt `(0 → 1)`, der Lauf direkt danach `(1 → 2)`.
+
+Dazu ein Wettlauf im selben Skript, der im schlimmsten Fall **den Fehler
+gemeldet hätte, den diese Phase verhindert**: `force_run` wartete darauf, dass
+`/api/health` antwortet, nicht darauf, dass der Lauf fertig ist. Fiel das INSERT
+zwischen die beiden Messungen, meldete das Skript „a failed run wrote a row and
+pushed the last good measurement off the page". Jetzt wartet es auf die Logzeile
+der Schleife.
+
+Der Rest waren Zahlen und Verweise: „a month ago" für drei Tage, „zwei Phasen"
+für zwei Dokumente aus einer, „neun Zeilen auseinander" für zweiundzwanzig,
+0,17 Prozentpunkte statt 0,16, `Loki` statt der TSDB, und ein ADR über 91 Tage,
+dessen **Dateiname `neunzig` sagte**.
+
+**Die Lehre ist dieselbe wie der Hauptfund, eine Etage höher:** Der Text über
+eine Messung driftet leichter als die Messung. Und niemand prüft ihn — es gibt
+kein `make check` für einen Absatz.
+
+### Und CI fand zwei weitere, die beide Durchgänge nicht sehen konnten
+
+**Der lokale Linter kann hier seit Go 1.26 nicht mehr urteilen** — v2.12.2
+stürzt beim Laden ab, gepinnt ist v2.13.1. Drei Runden lang hieß „`make check`
+grün außer `check-lint`" deshalb *ungeprüft*, nicht *in Ordnung*. CI hat den
+Unterschied bezahlt:
+
+1. **ST1005**, an einem Fehlertext, der mit `Get "http://…` beginnt — die
+   wörtliche Ausgabe von `http.Client`. Repariert nicht mit `//nolint`, sondern
+   mit dem echten Typ: `&url.Error{Op: "Get", …}`. Das ist ohnehin genauer, weil
+   `errors.Is` und `errors.As` sich dann verhalten wie in Produktion.
+2. **Ein Wettlauf in meinem eigenen Test.** `TestTheFirstRunHappensBeforeTheFirstTick`
+   wartete darauf, dass die Zeile in der Datenbank steht, und las dann das Log —
+   `runOnce` schreibt aber erst die Zeile und protokolliert danach. Auf dem
+   Laptop einen Tag lang grün, in CI rot. Jetzt wartet **jeder** Test dieser
+   Datei auf die Logzeile, mit der ein Lauf endet, statt auf einen Zwischenstand
+   plus 20 ms Schlaf. 200 Durchläufe und `-race` grün.
+
+Der zweite ist der unangenehmere: **ein Test, der auf das falsche Ereignis
+wartet, ist kein Test, sondern eine Wette** — und er hat genau die Phase
+beschädigt, die davon handelt, dass eine Zahl an einen Beleg gebunden sein muss.
+
+**Als Nächstes:** F5 gegen Produktion abnehmen, dann Stufe F triagieren — F6–F11
+liegen hinter dem Launch.
+
+---
+
+## Vorher — 26.08.2026, F3 abgenommen: Labor und Host
 
 **Seit heute hat die Seite ihre drei Zahlen — als Regel, noch nicht auf der
 Seite.** `Metrics.p95Ms`, `Metrics.errorRate` und `Metrics.uptime90d` haben ab
@@ -1097,6 +1288,12 @@ Vorherige Triage: nach F2, 24.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-27 | F5 | **Ein Vertrag aus einer Phase und zwei Dokumenten war arithmetisch unmöglich.** `timseil:service:availability_5m → Metrics.uptime90d, über 91 Tage aggregiert` stand seit F3 im Runbook und in ADR 0040 §4. Prometheus hält sieben Tage. Beide Zahlen waren einzeln richtig, beide waren begründet aufgeschrieben, und es gab keinen Ort, an dem sie nebeneinander standen. | **erledigt** — `uptime90d` kommt aus `ops_days` (ADR 0041 §1); Mapping-Tabelle im Runbook korrigiert, `docs/slo.md` hält alle fünf SLIs mit Quelle und Fenster an einer Stelle |
+| 2026-08-27 | F5 | **„F5 sieht das Label, weil sie über den Tunnel fragt" — beide Hälften falsch.** Es gibt keinen Tunnel (Zwei-Host-Topologie, in ADR 0008 verworfen; die api erreicht Prometheus im `default`-Netz), und weil sie damit ebenso lokal fragt wie die Grafana-Datasource daneben, sieht sie `external_labels` genauso wenig. Der Absatz **direkt darüber** erklärt korrekt, warum. | **erledigt** — nachgemessen gegen die Regel, die F5 wirklich liest: `{"__name__":"timseil:site:…"}`, kein `stack`. Ein Filter darauf hätte nichts getroffen und gelesen wie ein Ausfall |
+| 2026-08-27 | F5 | **Das Fehlerbudget stand unter der falschen Überschrift.** „3 h 39 min" in der Spalte „Fehlerbudget/30 d" — 0,5 % von genau 30 Tagen sind 3 h 36 min; 3 h 39 min sind 0,5 % eines Durchschnittsmonats (30,4375 d). Beide richtig für ihre Frage, eine unter dem falschen Kopf. Dieselbe Klasse wie 90 gegen 91 Tage: eine Zahl, die man nachzählen können muss. | **erledigt** — verbindlich sind 30 Tage und **3 h 36 min**; `docs/slo.md` rechnet alle drei Bezugsräume vor, Anhang A und Handbuch tragen die Korrektur |
+| 2026-08-27 | F5 | **Der Seiten-p95 enthält den Verkehr unserer eigenen Sonde.** F4 trifft `/api/health` alle fünf Minuten, dieser Pfad antwortet in ein bis zwei Millisekunden, und die Anfragen liegen in derselben Histogramm-Reihe wie die Seiten. Nichts daran ist erfunden — jede Beobachtung hat stattgefunden — aber es ist ein p95 über einen Anfragemix, der das Monitoring einschließt, und bei wenig Verkehr zieht er stark. | **aufgeschrieben statt repariert** — `docs/slo.md` sagt es laut, ADR 0041 nennt es unter „Was das kostet". Ein Ausschluss ginge nur über ein zweites Bucket-Set je Dienst, das Traefik nicht kennt |
+| 2026-08-27 | F5 | **`dokploy-network` sortiert vor `<projekt>_default`.** Die api hängt in beiden, und Docker beantwortet einen Namen aus dem Netz, dessen Name alphabetisch zuerst steht (gemessen am 23.08., ADR 0039 §2). Der schlichte Name `prometheus` wäre damit auf einem Host, auf dem eine Nachbar-App je einen so benannten Container veröffentlicht, die Latenz eines Fremden — grün, plausibel, über das falsche System. | **erledigt** — unser Prometheus trägt den Alias `timseil-prometheus` jetzt auch im `default`-Netz, und `internal/snapshots` fragt ihn. Dieselbe Reparatur wie bei der Grafana-Datasource in F2, eine Leserichtung weiter |
+| 2026-08-27 | F5 | **Die Entscheidungstabelle im README endet bei ADR 0029.** Zwölf ADRs fehlen (0030–0041). Kein Gate prüft es — `check-adrs` prüft Referenzen und Lücken in `docs/adr/`, nicht die Auswahl im README. | **offen** — nicht in dieser Phase repariert, weil die Tabelle eine kuratierte Auswahl ist und die Frage „welche gehören hinein" eine eigene ist. Triage am Ende von Stufe F |
 | 2026-08-25 | F3 | **Traefiks Standard-Buckets machen aus dem p95 eine Interpolation.** `0.1, 0.3, 1.2, 5.0` Sekunden — 7582 von 7896 Anfragen im ersten Bucket. Der Wert, den `histogram_quantile` liefert, ist eine Gerade zwischen 0 und 100 ms und stützt sich auf keine Beobachtung. **Das Abnahmekriterium war damit erfüllt.** | **erledigt** — Bucket-Liste in `compose.lab.yaml` und Runbook `dokploy.md` §3.2; auf dem Host noch zu setzen |
 | 2026-08-25 | F3 | **Ein Lasttest aus einem Container misst den Rate-Limiter, nicht die Seite.** Erster k6-Lauf: 47 % „Fehler", und der Proxy sagte, was sie waren — 4190 × `429` gegen 324 × `200` auf `/api`. Ein Client ist ein Eimer (ADR 0015). Nebenbei belegt: die 429er ließen `error_ratio` bei 0, denn der Contract definiert `errorRate` als 5xx-Anteil — die Regel war dafür geschrieben und ist es jetzt gemessen. | **erledigt** — `tools/load.js` taktet `/api` unter das Limit, Volumen läuft über `/` |
 | 2026-08-25 | F3 | **Das Labor startete weniger Dienste, als die Datei beschreibt**, und `--metrics` meldete `job=alloy` und `job=loki` als down — korrekt, und aus einem Grund, der nichts mit dem Code zu tun hatte. Ein Labor, das rot liest, während es bloß unvollständig ist, erzieht dazu, sein Rot zu ignorieren. | **erledigt** — `make rolling-lab` startet die ganze messende Seite |
@@ -1112,4 +1309,7 @@ Vorherige Triage: nach F2, 24.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 2026-08-27 | F5 (CI) | **`go test -race` meldet einen Wettlauf in `internal/contact/dispatch_test.go:43`.** `stubDispatchQueries.ListDeliverableContactMessages` schreibt ohne Mutex, während `Dispatcher.runOnce` liest. Vorbestehend, mit gestashtem Branch nachgestellt — also aus C6 und nicht aus F5. CI fährt `go test` **ohne** `-race`, deshalb ist es nie aufgefallen. Die Stubs in `internal/snapshots` und `internal/contributions` nehmen den Mutex, `contact` nicht. | **offen** — ein Mutex im Stub ist die Reparatur; die größere Frage ist, ob `-race` in die Pipeline gehört und was das an Laufzeit kostet. Triage am Ende von Stufe F |
+| 2026-08-27 | F5 (Kontrolle) | **`Stop()` ist bei vier Schleifen sequenziell idempotent, nebenläufig nicht.** `ops`, `contributions`, `uptime` und `snapshots` prüfen alle mit `select` auf `s.stop` und schließen den Kanal danach — zwei gleichzeitige Aufrufe fielen beide durch und der zweite paniert mit `close of closed channel`. **Kann heute nicht auslösen:** `cmd/api` erreicht `Stop()` auf zwei Wegen, die einander ausschließen und nacheinander laufen. Nur in F5 zu reparieren hieße, ein Muster von vier Stellen an einer aufzubrechen. | **offen** — `sync.Once` ist eine Zeile, aber es sind vier Dateien und keine hat den Fehler je gezeigt. Triage am Ende von Stufe F |
+| 2026-08-27 | F5 | **Die Zustellbarkeit ist der einzige SLI ohne Messung, und ihm fehlt ein Contract-Feld.** `contact_messages.delivery_status` liegt seit B2 (`queued` · `sent` · `failed`), der Dispatcher aus C6 schreibt ihn — was fehlt, ist die Abfrage, die daraus eine Quote macht, und ein Ort auf der Seite. Die Definition steht in `docs/slo.md`, damit sie nicht neu erfunden wird: zugestellt geteilt durch angenommen, über dreißig Tage. Es ist der einzige Konversionspunkt dieser Seite. | **offen** — vermutlich H8 oder eine eigene kleine Phase; braucht ein Contract-Feld, also eine Entscheidung |
 | 2026-08-25 | F3 | **`selftest` hat einmal an einer Stelle rot gemeldet, die nichts mit dem Diff zu tun hat** — „registry.sh refuses an unknown subcommand (rejected, but not for 'usage')". Das Skript selbst ist deterministisch: dreimal direkt aufgerufen, dreimal dieselbe Zeile mit `usage`. In drei vollständigen `selftest`-Läufen danach nicht reproduziert. Aufgeschrieben statt weggeklickt; bei einem zweiten Auftreten ist die Kopiererei ins Temp-Verzeichnis der erste Verdacht. | **beobachtet, nicht reproduziert** |

@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-rollout check-dockerfiles check-migrations check-stack check-probe-cadence check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-rollout check-dockerfiles check-migrations check-stack check-probe-cadence check-rule-names check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -105,6 +105,15 @@ check-stack: ## Every stack.yaml entry resolves, and none of them types a versio
 check-probe-cadence: ## The probe's cron and ops.ProbeInterval are the same number
 	@printf 'probe cadence\n'
 	@tools/check-probe-cadence.sh .
+
+# The second gate of the same kind as check-probe-cadence, and ordered the same
+# way: ADR 0040 §4 wrote down what a rename of these names would cost before
+# anybody renamed one. The failure it catches is silent — an empty vector, no
+# row, and the page back on `— NO DATA` with nothing logged above INFO.
+.PHONY: check-rule-names
+check-rule-names: ## Every recording rule internal/snapshots asks for exists in slis.yml
+	@printf 'rule names\n'
+	@tools/check-rule-names.sh .
 
 .PHONY: check-go
 check-go: ## gofmt, go vet, go test
@@ -952,6 +961,23 @@ check-observability: ## Metrics and logs arrive — add FLOOD=1 for the 5 GB lim
 .PHONY: check-metrics
 check-metrics: ## The F3 acceptance: six jobs, six with data, three rules — needs `make rolling-lab`
 	@OBS_FILES='$(LAB_FILES)' tools/check-observability.sh --metrics
+
+# F5, and it runs against the lab for the same reason check-metrics does — plus
+# one of its own: it stops the Prometheus container mid-run, which is a thing to
+# do to a laboratory and not to a host.
+#
+# WHY IT IS A TARGET AND NOT A PARAGRAPH IN THE RUNBOOK. The acceptance
+# criterion of this phase is a sentence about what the site does when its
+# measuring half is dead, and the only way to answer it is to kill the measuring
+# half. Written down as steps, that is a thing somebody performs from memory at
+# the end of a long evening; as a command it is a thing that either passes or
+# does not. The run puts Prometheus back, including after a Ctrl-C.
+#
+#     make rolling-lab && make load && make check-snapshots
+#
+.PHONY: check-snapshots
+check-snapshots: ## The F5 acceptance: a dead Prometheus leaves the page honest — needs `make rolling-lab`
+	@OBS_FILES='$(LAB_FILES)' LAB_URL='$(LAB_URL)' tools/check-observability.sh --snapshots
 
 # The load that gives the rules something to be a quantile OF. k6 as a throwaway
 # container on the lab network, digest-pinned like every other foreign image

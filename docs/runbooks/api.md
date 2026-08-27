@@ -216,9 +216,52 @@ docker compose -f compose.dev.yaml exec db psql -U timseil_boot -d timseil -c \
      FROM systems s LEFT JOIN metric_snapshots m ON m.system_id = s.id GROUP BY 1"
 ```
 
-`0` ist der Normalzustand vor der ersten Sonde: **der Seed schreibt Inhalt,
+`0` ist der Normalzustand vor dem ersten Lauf: **der Seed schreibt Inhalt,
 niemals Messungen.** Erfundene Betriebsdaten in der Datenbank sind genau das,
 wogegen diese Seite gebaut ist — `docs/runbooks/seed.md`.
+
+**Seit F5 füllt diese Tabelle jemand**, also lohnt bei `0` eine zweite Frage.
+Die Schleife schließt jeden Lauf mit **einer** Zeile ab, und deren Zustand sagt,
+wo es hakt:
+
+```bash
+docker compose -f compose.yaml logs --tail 200 api | grep '"msg":"metric snapshot"'
+```
+
+| `state` | heißt |
+|---|---|
+| `written` | geschrieben. Der Normalfall, alle fünf Minuten. Steht eine `value refused`-Zeile davor, trägt die Zeile in einer Spalte `null`. |
+| `nothing measured` | Prometheus hat geantwortet und hatte nichts: in fünf Minuten kam keine Anfrage am Proxy an. **Kein Fehler**, und es wird bewusst keine Zeile geschrieben. |
+| `not measured` | Prometheus war nicht erreichbar. `err` nennt den Grund. **Der letzte gültige Wert bleibt stehen und altert** — genau so ist es gemeint. |
+| `discarded` | dieser Augenblick war schon aufgezeichnet. Nichts geschrieben, nichts verloren. Praktisch nur bei einem Rollout erreichbar, weil der Zwilling dieselbe Schleife fährt — `measured_at` ist Prometheus' Uhr auf die Millisekunde. |
+| `no such system` | `SITE_SYSTEM_SLUG` benennt keine Zeile in `systems`. **Das repariert kein Warten.** |
+| `value refused` | eine Zahl außerhalb dessen, was die Spalte annimmt (`±Inf`, negativ, Quote über 1). **Kein Abschluss** — der Lauf geht weiter und endet mit `written` oder `nothing measured`. Das Feld wird `null`, die andere Zahl überlebt, und **`null` ist ab dann das, was die Seite für dieses Feld zeigt**, bis der nächste Lauf es misst. |
+| `system unreadable` / `not stored` | Postgres, nicht Prometheus. Unsere Seite. |
+
+**Gar keine Zeile** heißt fast immer, dass die Schleife nicht läuft — entweder
+ist der Prozess gerade erst gestartet (die erste Zeile kommt sofort, nicht nach
+fünf Minuten), oder `SNAPSHOTS_TRANSPORT=off`. Der zweite Fall sagt es beim
+Start:
+
+```
+{"level":"WARN","msg":"metric snapshots are NOT being taken — SNAPSHOTS_TRANSPORT is off", ...}
+```
+
+`compose.dev.yaml` setzt ihn auf `off`, weil dort kein Prometheus läuft. **In
+Produktion steht er auf `prometheus`, und der Default sorgt dafür, dass eine
+vergessene Variable das nicht ändert.**
+
+**Die eine Ausnahme zu „jeder Lauf schreibt eine Zeile": der Shutdown.** Wird
+eine laufende Abfrage vom Herunterfahren abgebrochen, kehrt der Lauf still
+zurück — `context.Canceled` ist dieses Paket beim Beendetwerden, nicht beim
+Scheitern, und eine ERROR-Zeile dafür riefe bei jedem Deploy Wolf. Fehlt die
+Zeile also genau im Fenster eines Neustarts, ist das der Normalfall und keine
+Diagnose.
+
+**Und wenn `uptime90d` allein `null` ist**, während die anderen beiden Zahlen
+stehen: die Verfügbarkeit kommt nicht aus Prometheus, sondern aus `ops_days` —
+also aus der externen Sonde. Dann ist Schritt 3 die Frage, nicht diese hier.
+ADR 0041 §1, `docs/slo.md`.
 
 **3 · Wie viele Rasterzellen sind gemessen?**
 
@@ -651,8 +694,9 @@ hinausgeht und streng geparst wird; eine eingehende `X-Request-Id` nur vom
 vertrauenswürdigen Proxy, weil sie in jeder Antwort steht. ADR 0037.
 
 Zeilen ohne Anfrage tragen **kein** leeres `request_id`, sondern gar keins. Die
-Hintergrundschleifen (`ops roll-up`, `contact dispatch`, `contributions refresh`)
-bekommen stattdessen einen eigenen Trace pro Durchlauf — alle Zeilen eines Laufs
+Hintergrundschleifen (`ops roll-up`, `contact dispatch`, `contributions refresh`,
+`uptime backfill`, `metric snapshot`) bekommen stattdessen einen eigenen Trace
+pro Durchlauf — alle Zeilen eines Laufs
 unter einer `trace_id`, und der Lauf davor unter einer anderen.
 
 **`upstream_request_id` in einer Web-Zeile ist die `request_id` einer
@@ -710,6 +754,7 @@ Default", damit die Zahlen nur an einer Stelle existieren — in
 | `INTERNAL_PROBE_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/probe` |
 | `INTERNAL_DEPLOY_TOKEN` | — | Pflicht, ≥ 32 Zeichen. Nur `POST /api/internal/deploy` |
 | `UPTIME_TRANSPORT` | `github` | `github` \| `off`. `off` startet die Wiedereinspielung des Ausfallprotokolls nie — **kein Token dazu**, der Branch ist öffentlich |
+| `SNAPSHOTS_TRANSPORT` | `prometheus` | `prometheus` \| `off`. `off` startet die Snapshot-Schleife nie — **keine URL dazu**, die Adresse ist einkompiliert (F5) |
 
 **Zwei interne Tokens und nicht eines.** Sie sind nicht austauschbar: das
 Sonden-Token wird an `/api/internal/deploy` mit einer 401 abgewiesen und

@@ -49,10 +49,19 @@ import (
 // one (ADR 0009).
 const cacheControl = httpx.CacheControlMedium
 
-// defaultWindow is the contract's default and the site's own number: 91 is 13×7,
+// DefaultWindow is the contract's default and the site's own number: 91 is 13×7,
 // so seven rows come out even. At 90 the last column would have a hole that
 // looks like a bug (invariant 7).
-const defaultWindow = 91
+//
+// Exported since F5, and for the reason ops.ProbeInterval is: a second package
+// needs the same number. internal/snapshots hands it to queries/metrics.sql,
+// which is where uptime90d is aggregated over that many days of ops_days —
+// in SQL and not in Go, and ADR 0041 §1 spends a paragraph on why. What travels
+// through Go is the window, never the average. The contract's own description
+// of the field says "the window is 91 days (13 × 7) everywhere else in this
+// contract and on the site"; a private copy over there would be one number with
+// two truths, and the one that drifted would be the one nobody renders.
+const DefaultWindow = 91
 
 // slugPattern is the contract's Slug parameter, character for character — and
 // the same expression as systems_slug_shape_ck in 00002_systems.sql. Checking it
@@ -421,7 +430,7 @@ func sourceOf(access string, url, reason *string) (httpx.Source, error) {
 // a fair one; the answer belongs next to the check that produces it.
 func resolveWindow(w *httpx.GetSystemParamsWindow) (int32, error) {
 	if w == nil {
-		return defaultWindow, nil
+		return DefaultWindow, nil
 	}
 	if !w.Valid() {
 		return 0, ErrBadWindow
