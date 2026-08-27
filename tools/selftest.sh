@@ -59,7 +59,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-deployed.sh" "$root/tools/registry.sh" \
    "$root/tools/prune-registry.sh" "$root/tools/witness.sh" \
    "$root/tools/rollout.sh" "$root/tools/release.sh" \
-   "$root/tools/check-rollout.sh" "$tmp/tools/"
+   "$root/tools/check-rollout.sh" "$root/tools/check-tokens.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -160,6 +160,63 @@ printf 'the rule says no %ss without an issue\n' "TO""DO" > prose.txt
 git add prose.txt
 accepts "prose naming the rule accepted" tools/check-todo.sh
 git rm -q --cached prose.txt && rm prose.txt
+
+printf 'tokens\n'
+# Invariant 8, G1. The check reads the source; styles/tailwind.test.ts reads the
+# compiled CSS. Both halves are needed and neither is the other's test.
+mkdir -p web/styles
+
+printf ':root { --acc: #00E5FF; }\n' > web/styles/tokens.css
+printf '.a { color: var(--acc); }\n' > web/styles/ok.css
+git add web/styles
+accepts "a stylesheet built from tokens accepted" tools/check-tokens.sh
+
+printf '.a { color: #ff0000; }\n' > web/styles/bad.css
+git add web/styles/bad.css
+rejects "a hex outside tokens.css rejected" tools/check-tokens.sh
+git rm -q --cached web/styles/bad.css && rm web/styles/bad.css
+
+printf '.a { background: rgba(0,0,0,.5); }\n' > web/styles/bad.css
+git add web/styles/bad.css
+rejects "an rgba outside tokens.css rejected" tools/check-tokens.sh
+git rm -q --cached web/styles/bad.css && rm web/styles/bad.css
+
+printf '.a { border-radius: 4px; }\n' > web/styles/bad.css
+git add web/styles/bad.css
+rejects "a hard-coded radius rejected" tools/check-tokens.sh
+git rm -q --cached web/styles/bad.css && rm web/styles/bad.css
+
+printf '.a { transition: opacity 200ms ease; }\n' > web/styles/bad.css
+git add web/styles/bad.css
+rejects "a hard-coded duration rejected" tools/check-tokens.sh
+git rm -q --cached web/styles/bad.css && rm web/styles/bad.css
+
+# Tailwind's theme cannot stop an arbitrary value. This can, and it is the only
+# thing that can.
+printf 'export const A = () => <div className="bg-[#ff0000]" />;\n' > web/styles/bad.tsx
+git add web/styles/bad.tsx
+rejects "an arbitrary colour in a component rejected" tools/check-tokens.sh
+git rm -q --cached web/styles/bad.tsx && rm web/styles/bad.tsx
+
+# A rule that cannot be written down in the file it governs gets deleted, so
+# comments are stripped before anything is matched — in both languages.
+printf '/* the accent is #00E5FF and lives in tokens.css */\n.a { color: var(--acc); }\n' > web/styles/comment.css
+git add web/styles/comment.css
+accepts "a colour named in a CSS comment accepted" tools/check-tokens.sh
+git rm -q --cached web/styles/comment.css && rm web/styles/comment.css
+
+printf '// the accent is #00E5FF\nexport const A = 1;\n' > web/styles/comment.ts
+git add web/styles/comment.ts
+accepts "a colour named in a TS comment accepted" tools/check-tokens.sh
+git rm -q --cached web/styles/comment.ts && rm web/styles/comment.ts
+
+# A test that proves a colour is absent has to name the colour.
+printf 'const want = "#0a0e14";\n' > web/styles/colour.test.ts
+git add web/styles/colour.test.ts
+accepts "a test naming a colour accepted" tools/check-tokens.sh
+git rm -q --cached web/styles/colour.test.ts && rm web/styles/colour.test.ts
+
+git rm -q -r --cached web/styles && rm -rf web
 
 printf 'compose\n'
 # The security rule is one line in CLAUDE.md and one forgotten line in a YAML

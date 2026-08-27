@@ -1454,6 +1454,8 @@ Vorherige Triage: Stufe F (Launch-Pfad), 27.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 27.08.2026 | G1 | **`globals.css` malt drei Dinge im Akzent von Terminal Noir statt im Akzent des Themes.** Link-Unterstrich, `::selection` und der Puls-Schein von `ts-pulse` stehen als `rgba(0,229,255,…)` da — vier Zeilen, wörtlich aus dem Handoff übernommen. In den sechs anderen Paletten bleiben sie cyan; sichtbar wird es, sobald G2 den Umschalter baut. Reparatur heißt neue Tokens in `tokens.css` (drei Deckkraften × sieben Paletten oder ein `color-mix`), und das ist keine Entscheidung von G1. `check-tokens.sh` führt die vier als benannte Ausnahme und druckt sie bei jedem Lauf. **Gemessen im Browser, 27.08.2026:** Linkfarbe folgt (`#00E5FF` → Latte `#7C2FD4` → Phosphor `#2EE6A6`), Unterstrich bleibt in allen dreien `rgba(0,229,255,.35)`. | offen |
+| 27.08.2026 | G1 | **Eine neue Web-Abhängigkeit kommt im Dev-Stack nicht an.** `compose.dev.yaml` legt `node_modules` als anonymes Volume an (damit der Bind-Mount es nicht verdeckt), und `docker compose up --build` übernimmt das alte Volume in den neuen Container: das Image hatte Tailwind, der laufende Container nicht — `Cannot find module '@tailwindcss/postcss'`, jede Seite 500. `--renew-anon-volumes` heilt es. Gehört als Zeile in den Runbook oder in `make dev`; welches von beidem, ist offen. | offen |
 
 ## Idee — noch nicht entschieden
 

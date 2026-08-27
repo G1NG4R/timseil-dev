@@ -14,7 +14,7 @@ help: ## Show this list
 # ---------------------------------------------------------------- check
 
 .PHONY: check
-check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-rollout check-dockerfiles check-migrations check-stack check-probe-cadence check-rule-names check-go check-lint check-web check-contract ## Run every check that applies today
+check: check-tools check-node check-versions check-pins check-env check-adrs check-readme check-repo check-todo check-compose check-rollout check-dockerfiles check-migrations check-stack check-probe-cadence check-rule-names check-tokens check-go check-lint check-web check-contract ## Run every check that applies today
 	@printf '\n✓ make check\n'
 
 .PHONY: check-fast
@@ -132,6 +132,11 @@ check-go: ## gofmt, go vet, go test
 check-lint: ## golangci-lint over api/ — ruleset and exclusions in .golangci.yml
 	@printf 'lint\n'
 	@tools/check-lint.sh
+
+.PHONY: check-tokens
+check-tokens: ## Invariant 8 — no colour, radius or duration outside tokens.css
+	@printf 'tokens\n'
+	@tools/check-tokens.sh
 
 .PHONY: check-web
 check-web: ## Typecheck, lint, unit tests

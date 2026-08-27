@@ -1,0 +1,136 @@
+/* Tailwind, drawing from tokens.css and from nothing else.
+   Build plan G1, ADR 0042.
+
+   Three deliberate departures from `@import "tailwindcss"`, each with a reason:
+
+   1. No preflight. globals.css carries a small, deliberate reset (box-sizing,
+      margins, typography defaults, :focus-visible, the skip link). Preflight
+      beside it is a second reset nobody read, and the two would have to be kept
+      in agreement forever. So the base layer stays empty and globals.css is it.
+
+   2. `--*: initial` clears every default the framework ships — the whole colour
+      palette, the spacing scale, the breakpoints, the shadows. Invariant 8 says
+      no colour, no radius and no duration outside tokens.css; a palette that
+      ships 264 colours nobody chose is exactly that, and `bg-blue-500` working
+      by accident is how the first one gets used. What follows is the whitelist.
+
+   3. `@theme inline`, not `@theme`. `inline` hands the utility `var(--bg)`
+      instead of the resolved `#0A0E14`, which is what keeps the seven
+      [data-theme] palettes working: switching the attribute has to change what
+      `bg-bg` paints. With a plain `@theme` the utilities would freeze on
+      Terminal Noir and only hand-written CSS would follow the theme.
+
+   What this does NOT catch: `bg-[#ff0000]` — arbitrary values are part of the
+   utility syntax and no theme setting removes them. That half is
+   tools/check-tokens.sh, which reads the source rather than the CSS. */
+
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Source detection would start from this file's directory; the markup is one
+   level up. Named rather than inferred, so moving this file breaks nothing. */
+@source "../app";
+@source "../components";
+
+@theme {
+  --*: initial;
+}
+
+@theme inline {
+  /* Surfaces, text, signals, lines, graph steps — the names are tokens.css's,
+     minus the prefix Tailwind adds. `--color-line: var(--line)` is what makes
+     `border-line` exist. */
+  --color-bg:           var(--bg);
+  --color-panel:        var(--panel);
+  --color-panel-active: var(--panel-active);
+  --color-on-cyan:      var(--on-cyan);
+
+  --color-ink:   var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-steel: var(--steel);
+  --color-dim:   var(--dim);
+
+  --color-acc:    var(--acc);
+  --color-acc-hi: var(--acc-hi);
+  --color-alert:  var(--alert);
+  --color-amber:  var(--amber);
+
+  --color-line-strong: var(--line-strong);
+  --color-line:        var(--line);
+  --color-line-soft:   var(--line-soft);
+  --color-line-faint:  var(--line-faint);
+  --color-grid:        var(--grid);
+
+  --color-l0: var(--l0);
+  --color-l1: var(--l1);
+  --color-l2: var(--l2);
+  --color-l3: var(--l3);
+  --color-l4: var(--l4);
+
+  /* Families. The faces themselves arrive in G2 over next/font/google; until
+     then these resolve to the fallbacks tokens.css names. */
+  --font-display: var(--display);
+  --font-body:    var(--body);
+  --font-mono:    var(--mono);
+
+  /* The 13 sizes, no fourteenth. */
+  --text-mono-9:  var(--t-mono-9);
+  --text-mono-10: var(--t-mono-10);
+  --text-mono-11: var(--t-mono-11);
+  --text-mono-12: var(--t-mono-12);
+  --text-mono-13: var(--t-mono-13);
+  --text-body-13: var(--t-body-13);
+  --text-body-15: var(--t-body-15);
+  --text-body-17: var(--t-body-17);
+  --text-disp-26: var(--t-disp-26);
+  --text-disp-34: var(--t-disp-34);
+  --text-disp-52: var(--t-disp-52);
+  --text-disp-62: var(--t-disp-62);
+  --text-disp-108: var(--t-disp-108);
+
+  --leading-mono: var(--lh-mono);
+  --leading-body: var(--lh-body);
+  --leading-disp: var(--lh-disp);
+
+  --tracking-label: var(--ls-label);
+  --tracking-head:  var(--ls-head);
+  --tracking-disp:  var(--ls-disp);
+
+  /* The 4px grid, as the 14 steps it actually has. Tailwind's dynamic scale
+     stays off: with it, `p-5` would silently invent a 20px nobody drew. Here
+     the number in the class is the number of pixels — `p-26` is 26px. */
+  --spacing-4:  var(--s-4);
+  --spacing-6:  var(--s-6);
+  --spacing-8:  var(--s-8);
+  --spacing-10: var(--s-10);
+  --spacing-12: var(--s-12);
+  --spacing-14: var(--s-14);
+  --spacing-16: var(--s-16);
+  --spacing-20: var(--s-20);
+  --spacing-26: var(--s-26);
+  --spacing-34: var(--s-34);
+  --spacing-44: var(--s-44);
+  --spacing-56: var(--s-56);
+  --spacing-72: var(--s-72);
+  --spacing-96: var(--s-96);
+
+  --ease-snap: var(--e-snap);
+  --ease-wipe: var(--e-wipe);
+}
+
+/* Two namespaces stay empty on purpose, and both are decisions rather than
+   omissions:
+
+   --radius-*  The design has one radius and it is 0; the only exception is the
+               status dot at 50%, which is one declaration in one component and
+               reads better as `border-radius: var(--radius-dot)` than as a
+               utility. `rounded-lg` should not exist.
+
+   --breakpoint-*  All four switches (1080 · 900 · 720 · 560) live in
+               layout.css, as max-width queries, with the derivation in the
+               "Intermediate Widths" sheet. A second set of min-width numbers
+               reachable as `md:` would be a second source, and the first one to
+               drift. Responsive belongs in layout.css. */
