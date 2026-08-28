@@ -105,8 +105,19 @@ export function ThemeSwitch() {
               cursor: "pointer",
               background: theme.swatch,
               // The selection is never colour alone: full opacity AND a border
-              // in the swatch's own colour, against the line token otherwise.
-              border: `1px solid ${on ? theme.swatch : "var(--line-strong)"}`,
+              // in the ACCENT, against the line token otherwise.
+              //
+              // The accent, not the swatch, and the difference is the whole of
+              // this file's history. The handoff's code sample draws the active
+              // border in `t.swatch`; on Latte that is #EFF1F5 sitting on a
+              // #EFF1F5 page, so the one button that must be legible is the one
+              // that disappears — contrast 1.00, measured. Both prose sources
+              // say otherwise (build plan Anhang B: "aktiv = volle Deckkraft
+              // und Akzentrahmen"; docs/design/README.md: "den Rahmen in
+              // Akzentfarbe"), and docs/design/INDEX.md settles the tie: form
+              // holds, the build plan's facts win. --acc restores 5.78 on Latte
+              // and 5.82 on Gruvbox Light.
+              border: `1px solid ${on ? "var(--acc)" : "var(--line-strong)"}`,
               borderRadius: "var(--radius)",
               opacity: on ? 1 : 0.55,
               transition: "opacity var(--d-color) linear",
