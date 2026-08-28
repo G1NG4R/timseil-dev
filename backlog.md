@@ -12,7 +12,109 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 28.08.2026, G1 in Produktion
+## Wo wir stehen — 28.08.2026, G2 in Produktion
+
+**Die Seite hat ihre Schrift und ihre sieben Paletten.** Chakra Petch, Geist und
+JetBrains Mono liegen self-hosted im Image, das Theme steht vor dem ersten Paint,
+und ein Klick färbt die Seite um. `sha-aefa8fe`, Merge 12:18:47 UTC, Deploy
+12:22:52 UTC, 268 s, `ok`, vorher `sha-3d55bb2`. Gemessen an
+`https://timseil.dev`, im Browser:
+
+```
+status ok · sha aefa8fe · v0.9.0
+Fremd-Origins im Anfrageweg          []        keine, nicht nur keine von Google
+Requests an gstatic/googleapis        0
+woff2                                 5 Dateien, 99 480 B, alle same-origin
+h1                                    Chakra Petch 62px
+ohne gespeicherte Wahl                kein data-theme · rgb(10,14,20) · dark
+prefers-color-scheme im Stylesheet    0 Regeln
+Konsole                               leer
+```
+
+### `0 Regeln` ist der bessere Beleg als ein Blick auf einen Bildschirm
+
+Die Entscheidung vom 28.08. — ohne gespeicherte Wahl immer Terminal Noir — hätte
+man auch bestätigen können, indem man auf einen dunklen Laptop schaut und nickt.
+Der Zweig, der Gruvbox Light lieferte, ist stattdessen **aus dem Stylesheet
+verschwunden**: null Vorkommen von `prefers-color-scheme` in den ausgelieferten
+17 513 Byte. Die Voreinstellung hängt damit nachweisbar nicht mehr am System,
+statt auf einem Rechner nur zufällig richtig auszusehen.
+
+Derselbe Griff hat eine Falle des Entwurfs mitgenommen. Terminal Noir hat keine
+ID — es *ist* die Abwesenheit von `data-theme` —, und der Umschalter löscht das
+Attribut für ihn. Solange der Media-Zweig existierte, landete ein Klick auf
+„Terminal Noir" auf einem hellen Rechner in Gruvbox Light: **der Knopf tat das
+Gegenteil seiner Beschriftung.** Die Entscheidung und der Entwurfsfehler hatten
+dieselbe Reparatur.
+
+### Der offene Fund aus G1 ist zu, und er hatte einen Zwilling
+
+Link-Unterstrich, `::selection` und die zwei Puls-Schatten standen als
+`rgba(0,229,255,…)` da und blieben in sechs von sieben Paletten cyan. Sie sind
+jetzt vier abgeleitete Tokens, `color-mix(in srgb, var(--acc) N%, transparent)`
+— eine Definition statt vier Werte × sieben Paletten. **Nachgemessen an der
+laufenden Seite** mit `ts.theme=amber`: `rgb(12,10,7)` als Fläche, und der
+Unterstrich trägt `srgb 1 .718 .29 / .35`, also den Amber-Akzent.
+
+Der Zwilling saß eine Ebene tiefer und wäre ohne den Umschalter nie aufgefallen:
+`--glow` stand nur in `:root`, und **nur die zwei hellen Paletten überschrieben
+es**. In Mocha, Amber, Phosphor und Tokyo leuchtete also weiter Cyan neben einem
+violetten, orangen oder grünen Akzent. `check-tokens.sh` konnte das nie sehen —
+`tokens.css` ist die eine Datei, die es nicht liest. Danach ist die benannte
+Ausnahme `ACCENT_LITERAL` aus dem Prüfskript gelöscht: eine Ausnahme für etwas,
+das es nicht mehr gibt, erlaubt genau das Literal wieder, das gerade beseitigt
+wurde.
+
+### Was die Abnahme nicht behauptet
+
+**Die dritte Abnahme des Bauplans, „CSP blockt das Snippet nicht", ist bis L4
+trivial erfüllt und wird hier nicht als Häkchen geführt.** `web` setzt heute
+keinen der L4-Header. G2 hat das Snippet nonce-*fähig* geschrieben —
+`ThemeScript` nimmt die Prop, niemand übergibt sie —, und der Beleg entsteht in
+L4. Eine trivial erfüllte Abnahme grün zu melden ist dieselbe Sorte Zahl, gegen
+die Invariante 1 steht.
+
+Der Grund für die Reihenfolge steht in ADR 0043 und ist ein Satz, den L4 und G4
+beide brauchen: **ein Anti-Flash-Skript und eine vollständig vorgerenderte
+HTML-Hülle schließen sich aus, sobald die CSP nonce-basiert ist.** Ein Nonce
+heißt `headers()` im Root-Layout, und das nimmt jede Seite aus dem statischen
+Pass — genau die Hülle, die G4 vorrendern will.
+
+### Zwei Dinge, die erst CI beweisen konnte
+
+`check-lint` war lokal rot und ist es immer noch: die Installation hier ist
+v2.12.2, der Pin sagt v2.13.1. In CI steht `✓ golangci-lint v2.13.1`. **Eine rote
+Lampe, die von der eigenen Umgebung kommt, ist keine rote Lampe** — aber sie
+kostet jedes Mal die Minute, in der man das nachprüft.
+
+Und die Standalone-Falle ist zum ersten Mal mit echten Font-Dateien geprüft
+worden: `✓ .next/static and public are in the web image`. Im Image liegen 23
+`.woff2` (252 192 B, alle `unicode-range`-Schnitte); ein lateinischer Text holt
+fünf davon. Die anderen achtzehn kosten Plattenplatz und keine Bandbreite.
+
+### Was die Abnahme gefunden hat
+
+**Der aktive Schwatch des Umschalters ist in den zwei hellen Paletten
+unsichtbar** — und zwar genau der aktive. Gemessen: Fläche, Rahmen und
+Seitenhintergrund alle `rgb(239,241,245)`, Kontrast **1.00**. Ich hatte das als
+offene Entwurfsfrage notiert; das war falsch. Der Bauplan sagt in Anhang B
+„aktiv = volle Deckkraft **und Akzentrahmen**", `docs/design/README.md`
+sagt „den Rahmen in **Akzentfarbe**" — nur der Code-Ausschnitt des Handoffs
+schreibt die Schwatch-Farbe, und ich hatte den Ausschnitt höher gewichtet als
+die zwei Sätze. `INDEX.md` sagt, wer gewinnt: der Bauplan. Mit `var(--acc)`
+steigt der Kontrast auf **5.78** (Latte) und **5.82** (Gruvbox Light).
+Eigener `fix/`-Branch, weil es ein Defekt auf der laufenden Seite ist.
+
+**Als Nächstes:** G3 — Kopf (66/52 px, Logo, vier Einträge, `EN ▾`, Uhr), Fußzeile
+in zwei Fassungen, mobiles Vollbild-Menü. Die Klassenhaken dafür stehen seit G1
+ungenutzt in `layout.css`: `.nav-desktop`, `.nav-button`, `.foot-meta`,
+`.sys-pin`, und der Kopf schaltet bei **900**, nicht bei 1080. Der Umschalter
+zieht aus `page.tsx` in die Fußzeile, wohin er gehört. Die Uhr bringt ihre eigene
+Hydration-Falle mit, und die Abnahme ist **null** Hydration-Warnungen.
+
+---
+
+## Vorher — 28.08.2026, G1 in Produktion
 
 **Die Seite hat ihre Werte.** `web/styles/` trägt `tokens.css`, `globals.css` und
 `layout.css` aus dem Handoff, Tailwind 4.3 zeichnet ausschließlich daraus.
