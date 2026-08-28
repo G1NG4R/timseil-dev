@@ -70,7 +70,7 @@ report "$colours" "colour outside $TOKENS — use a token, or add one to tokens.
 
 # A radius that is a number rather than a token.
 radii=$(printf '%s\n' "$body" \
-  | grep -E 'border-radius[[:space:]]*:[[:space:]]*[^v;}]' \
+  | grep -E 'border-radius[[:space:]]*:[[:space:]]*[^v[:space:];}]' \
   | grep -v -E 'border-radius[[:space:]]*:[[:space:]]*(0|inherit|initial)[[:space:]]*[;}]?' || true)
 report "$radii" "hard-coded radius — tokens.css has --radius and --radius-dot"
 

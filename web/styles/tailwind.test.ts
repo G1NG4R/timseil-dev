@@ -85,6 +85,15 @@ void test("the spacing scale is the 4px grid, not a generator", async () => {
   // quietly produce 20px and look like a decision.
   const invented = await build(["p-5"]);
   assert.equal(emitsARule(invented), false, "p-5 invented a spacing step");
+
+  // G3 added a fifteenth step off the 4px grid: the Chrome sheet's 30px nav
+  // gap. It is the one exception, so it is pinned from both sides — 30 exists,
+  // and the 32 that seven of the ten page sheets drew still does not.
+  const gap = await build(["p-30"]);
+  assert.match(gap, /var\(--s-30\)/);
+
+  const other = await build(["p-32"]);
+  assert.equal(emitsARule(other), false, "p-32 invented a spacing step");
 });
 
 void test("radius and breakpoints are not utilities", async () => {

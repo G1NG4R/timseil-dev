@@ -9,7 +9,6 @@
 // one request to `/` has to leave a line in this container and a line in the
 // api's, joined by one trace id. H3 REPLACES this block rather than extending it.
 
-import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { serverFetch } from "@/lib/http/serverFetch";
 
 // Not redundant next to the `headers()` call inside serverFetch, and that is
@@ -31,7 +30,7 @@ export default async function Home() {
   const version = readString(health.body, "version") ?? NO_DATA;
 
   return (
-    <main>
+    <>
       <h1>timseil.dev</h1>
       <p>Development shell. The site itself is built in stage H.</p>
       <dl>
@@ -40,13 +39,7 @@ export default async function Home() {
         <dt>version</dt>
         <dd>{version}</dd>
       </dl>
-      {/* G2, and it is squatting. The switch belongs in the footer — a colour
-          scheme is a preference, not a destination — and the footer is G3, which
-          moves it. It stands here because "no flash" and "switching the
-          attribute repaints every utility" are claims somebody has to be able to
-          click, and this is the only page there is. */}
-      <ThemeSwitch />
-    </main>
+    </>
   );
 }
 

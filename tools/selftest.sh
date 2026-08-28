@@ -186,6 +186,21 @@ git add web/styles/bad.css
 rejects "a hard-coded radius rejected" tools/check-tokens.sh
 git rm -q --cached web/styles/bad.css && rm web/styles/bad.css
 
+# The other side of the same rule, and it was not covered: with the space class
+# able to match nothing, `[^v;}]` matched the SPACE after the colon and the
+# check rejected the one form it exists to require. Found in G3, the first
+# phase to write border-radius in a stylesheet rather than in a style prop —
+# and a gate that only ever saw its broken case did not know it was wrong.
+printf '.a { border-radius: var(--radius); }\n' > web/styles/good.css
+git add web/styles/good.css
+accepts "a radius from a token accepted" tools/check-tokens.sh
+git rm -q --cached web/styles/good.css && rm web/styles/good.css
+
+printf '.a { border-radius:var(--radius-dot); }\n' > web/styles/good.css
+git add web/styles/good.css
+accepts "a radius from a token, no space, accepted" tools/check-tokens.sh
+git rm -q --cached web/styles/good.css && rm web/styles/good.css
+
 printf '.a { transition: opacity 200ms ease; }\n' > web/styles/bad.css
 git add web/styles/bad.css
 rejects "a hard-coded duration rejected" tools/check-tokens.sh

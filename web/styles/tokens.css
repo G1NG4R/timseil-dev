@@ -20,6 +20,10 @@
         stored choice the site is Terminal Noir, decided 28.08.2026.
      6  color-scheme is set per palette, so the browser's own scrollbars and
         form controls follow the light themes instead of staying dark.
+     7  A fenced G3 block at the end of :root holds the chrome's own values —
+        two header heights, the nav gap, the pulse, four derived surfaces and
+        two z-indices. ADR 0044 says why each one had to become a token
+        rather than stay where the sheet wrote it.
 
    No colour VALUE changed. The contrast figures quoted below were computed
    against these exact colours and still hold.
@@ -167,6 +171,65 @@
   --e-snap: cubic-bezier(.2,.9,.1,1);
   --e-wipe: cubic-bezier(.4,0,.2,1);
   --e-out:  ease-out;
+
+  /* ── G3 · Chrome ─────────────────────────────────────────────────────────
+     The seventh departure. Everything below is ours, not the designer's, and
+     every entry exists because the Chrome sheet writes a value that invariant
+     8 will not let us write where it is used.                              */
+
+  /* The two numbers of the phase. Two tokens, not one redefined inside a
+     media query: values live here, media queries live in layout.css, and a
+     @media { :root { --head-h: 52px } } would break whichever of those two
+     rules you happened to read second.                                     */
+  --head-h:    66px;
+  --head-h-sm: 52px;
+
+  /* The nav gap. The Chrome sheet says 30, seven of the ten page sheets say
+     32; the sheet is the binding version and the pages get pulled to it.
+     Off the 4px grid on purpose — 30 is not a step, it is one component's
+     measurement, and pretending otherwise would put a fifteenth number in a
+     scale that means something.                                            */
+  --s-30: 30px;
+
+  /* The status dot. Build plan G6 and the handoff inventory both say 2.6s;
+     only the Chrome sheet says 2.4. G6 extracts StatusDot and inherits this. */
+  --d-pulse: 2600ms;
+
+  /* The header ruler's two tick gradients and the menu's scanline. In the
+     sheet these are rgba(139,152,166,.35/.14) and rgba(255,255,255,.02) —
+     Terminal Noir literals, the same defect ADR 0043 removed for --acc-line
+     and --glow. Derived, so they follow all seven palettes. The scanline
+     comes from --ink rather than from white: on latte and gruvbox a white
+     line over a light overlay is not there at all.                         */
+  --rule-major: color-mix(in srgb, var(--steel) 35%, transparent);
+  --rule-minor: color-mix(in srgb, var(--steel) 14%, transparent);
+  --overlay:    color-mix(in srgb, var(--bg)   97%, transparent);
+  --scanline:   color-mix(in srgb, var(--ink)   2%, transparent);
+
+  /* Both sit BELOW the skip link's z-index: 100 in globals.css. A header that
+     covers the first tab stop is the classic version of this bug.          */
+  --z-head: 50;
+  --z-menu: 90;
+
+  /* Two accent surfaces the chrome needs and the palette did not have. G2 wrote
+     the gap down as "accSoft fehlt: wer den Akzent als weiche Fläche braucht,
+     hat kein Token"; the chrome is the first thing that needs it.
+
+     The sheet draws SIX alphas of the accent — .55 for the open dropdown border
+     and the menu's row numbers, then .06 / .08 / .09 / .12 for four tinted
+     surfaces that are a hover, an open state, a selected row and a selected
+     chip. On a dark ground those four are not distinguishable from one another,
+     and the sheets disagree with each other about which is which; collapsing
+     them is the same move ADR 0043 made when four accent literals became one
+     definition. The states stay distinct because they were never distinct by
+     fill alone — each also carries a border in --acc-edge and a text colour. */
+  --acc-edge: color-mix(in srgb, var(--acc) 55%, transparent);
+  --acc-soft: color-mix(in srgb, var(--acc) 10%, transparent);
+
+  /* The language panel's drop shadow. Not derived from the palette: a shadow is
+     the absence of light, and it is dark on a light page too. The two light
+     palettes soften it below, the way they already turn --glow off. */
+  --shadow-panel: 0 14px 34px rgba(0,0,0,.55);
 }
 
 
@@ -227,7 +290,8 @@
   --line-soft:rgba(76,79,105,.11); --line-faint:rgba(76,79,105,.08);
   --l0:rgba(76,79,105,.12); --l1:rgba(124,47,212,.24); --l2:rgba(124,47,212,.46);
   --l3:rgba(124,47,212,.70); --l4:#7C2FD4;
-  --glow:none;                   /* kein Leuchten auf hellem Grund */
+  --glow:none;
+  --shadow-panel:0 14px 34px rgba(0,0,0,.18);                   /* kein Leuchten auf hellem Grund */
   color-scheme:light;
 }
 
@@ -240,6 +304,7 @@
   --l0:rgba(60,56,54,.14); --l1:rgba(7,102,120,.24); --l2:rgba(7,102,120,.46);
   --l3:rgba(7,102,120,.70); --l4:#076678;
   --glow:none;
+  --shadow-panel:0 14px 34px rgba(0,0,0,.18);
   color-scheme:light;
 }
 

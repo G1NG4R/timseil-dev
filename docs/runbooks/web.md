@@ -262,3 +262,105 @@ gelten und die man beim nächsten Modul wieder braucht:
   `lib/scrub.ts` parst selbst. Solange beide Seiten dieselbe Funktion riefen,
   wurde nur die Suchstrategie geprüft — und genau in dieser Lücke saß der Fehler,
   den F1b in der API gefunden hat.
+
+- **Ein `.tsx` läuft nicht unter `node --test`.** Node 24 entfernt TS-Typen,
+  transformiert aber kein JSX, und eine DOM-Bibliothek wäre eine neue
+  Abhängigkeit. Deshalb liegt seit G3 jede Verzweigung des Chromes als Funktion
+  in `lib/` und jedes Bauteil ist Markup plus ein Aufruf. Die Regel ist eine
+  Disziplin, keine erzwungene Schranke — sie gilt, bis Playwright vor H1 kommt.
+
+## Das Chrome abnehmen — Hydration und 44 × 44
+
+Die Abnahme von G3 ist **null Hydration-Warnungen in der Konsole**. Das ist
+nichts, was `make check` sehen kann, und nichts, was ein einzelner Seitenaufruf
+beweist. Der Ablauf:
+
+```bash
+cd web && npm run build && PORT=3100 npm run start   # Produktion
+cd web && PORT=3101 npm run dev                       # Dev, unminifiziert
+```
+
+Beide Modi fahren, sie scheitern verschieden: Produktion zeigt die echte Hülle
+mit minifizierten Meldungen, Dev die lesbare Differenz und StrictModes doppelten
+Aufruf.
+
+**Zuerst den Kanarienvogel.** Ein `console.error('CANARY')` absetzen und
+nachsehen, dass er in der Konsolenerfassung ankommt. Eine leere Konsole ist ohne
+diesen Schritt keine Aussage, sondern nur ein stiller Kanal — derselbe Grund, aus
+dem `clock.test.ts` seinen `TZ=UTC`-Lauf neben den Kathmandu-Lauf stellt.
+
+**Dann mindestens ein Dutzend Ladevorgänge**, über mehrere Routen, einmal kalt
+ohne `localStorage` und einmal mit `ts.theme` gesetzt. Wäre der Uhren-Store
+falsch, ist der Unterschied ein **Rennen**: er erscheint nur, wenn eine
+Sekundengrenze zwischen Server-Render und Hydration fällt. Ein Aufruf trifft das
+selten, zwölf meistens.
+
+Bestanden ist kein Eintrag auf:
+
+```
+/hydrat|did not match|Text content does not match|server-rendered HTML|getSnapshot should be cached/i
+```
+
+Der letzte ausdrücklich mit dabei — er ist eine *Warnung*, kein Fehler, und die
+Form, die `useSyncExternalStore` einführt, sobald `clockSnapshot` aufhört, ein
+Primitiv zu liefern.
+
+Im selben Durchgang mitprüfen: genau ein `<main>`, und ein `Tab` aus dem
+Kaltstart landet auf `.skip`.
+
+### Breiten messen, nicht schätzen
+
+Das Fenster zu ziehen ist unzuverlässig (hier meldete `resize_window` Erfolg und
+`window.outerWidth` blieb 0). Ein Iframe fester Breite wertet dieselben Media
+Queries gegen seinen eigenen Viewport und ist reproduzierbar:
+
+```js
+frame.style.width = "899px";  // dann 900, dann die übrigen fünf
+getComputedStyle(d.querySelector(".head")).height   // 52 bzw. 66
+```
+
+Erwartet: **66** bei 1440 · 1081 · 1079 · 1024, **52** bei 899 · 719 · 390, und
+`.ruler` sowie `.nav-desktop` verschwinden genau dort, wo `.nav-button`
+erscheint. Eine im Iframe gemessene Spaltenbreite ist um die Scrollbalkenbreite
+schmaler als auf einem Gerät ohne klassischen Balken — bei 390 also 331 statt
+346. Das ist der Balken, nicht die Formel.
+
+### 44 × 44 — gemessen, nicht gegrept
+
+Die Lehre aus `K-27`: der erste Konsistenzlauf grepte nach `min-height:44px` und
+übersah 17 Chips.
+
+```js
+[...d.querySelectorAll('a,button,[role="button"],[role="option"],summary,[tabindex]')]
+  .filter(el => el.getBoundingClientRect().width > 0)
+  .map(el => { const r = el.getBoundingClientRect();
+               return { t: el.textContent.trim().slice(0,20),
+                        b: [Math.round(r.width), Math.round(r.height)] }; })
+  .filter(x => x.b[0] < 44 || x.b[1] < 44)
+```
+
+**Und daneben immer `matchMedia('(pointer: coarse)').matches` ausgeben.** Die
+44px-Regel in `layout.css` hängt am Zeiger, nicht an der Breite. Ein
+Desktop-Chrome auf 390px gezogen bleibt `fine`, die Regel feuert nie, und der
+Bericht kommt voll mit 11px-Punkten zurück, die auf diesem Gerät *korrekt* 11px
+sind. Ist `coarse` falsch, sagen die Zahlen nichts über mobil — **so
+aufschreiben, keinen Mobil-Erfolg behaupten**, bis Playwright `hasTouch` setzen
+kann.
+
+Was sich trotzdem messen lässt, ist die Regel selbst: den coarse-Block ohne seine
+Media Query in die Seite injizieren und neu messen. Das beweist nicht, dass die
+Query auf einem Gerät greift, aber dass sie für jedes Ziel wirklich 44px
+erzeugt — und genau dort kann sie still versagen, weil `min-height` auf ein
+nicht-ersetztes Inline-Element **nicht** wirkt. Gemessen: 20 Ziele, keins darunter.
+
+### Zwei Fallen, die diese Abnahme gefunden hat
+
+- **Der CSS-Minifier schreibt Dauern um.** `tokens.css` sagt `--d-scramble: 220ms`,
+  ausgeliefert wird `.22s`. Wer den Wert zur Laufzeit liest, muss beide Formen
+  können; ein `parseInt` liefert lokal 220 und in Produktion 0. `lib/scramble.ts`
+  hat dafür `parseMs`, und der Test kennt beide Schreibweisen.
+- **`requestAnimationFrame` steht in einem Hintergrund-Tab still.** Wird eine
+  Messung getrieben, ohne dass das Fenster vorn ist, bleibt der Scramble in der
+  Schleife hängen und `data-busy` gesetzt. Kein Defekt — die Schleife läuft
+  weiter, sobald der Tab sichtbar wird —, aber eine leere Frame-Liste heißt dort
+  „Tab war verborgen", nicht „Animation läuft nicht".

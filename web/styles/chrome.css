@@ -1,0 +1,566 @@
+/* The chrome: header, mobile menu, footer. The one component that stands on
+   every page, which is why it gets a stylesheet of its own and why that
+   stylesheet is imported by the root layout.
+
+   IMPORT ORDER — fourth, before layout.css. app/layout.tsx has the full list.
+   The position is load-bearing rather than tidy: this file gives .nav-desktop
+   and .nav-button their desktop values, and layout.css's
+   @media (max-width: 899px) has to keep winning over them. Move this file after
+   layout.css and the 900 switch inverts silently, which is the worst kind of
+   inverted.
+
+   WHAT IS NOT IN HERE: anything responsive. The four switches live in
+   layout.css and nowhere else (ADR 0042) — this file describes the desktop
+   form, layout.css changes it at 900. There are no `md:` utilities to reach
+   for; the --breakpoint-* namespace is deliberately empty.
+
+   Values: every colour, radius and duration is a token (invariant 8). Lengths
+   that appear once are written as pixels, which is what layout.css does with
+   its column widths and its sticky offsets — the token scale is the spacing
+   scale, not a dictionary of every number. The two header heights are tokens
+   because layout.css needs the second one.
+
+   Letter-spacings of .04em, .1em and .12em are the handoff's and are literals
+   here; tokens.css carries only --ls-label (.14em) and --ls-head (.16em). The
+   backlog tracks that gap for G7 together with the .12/.13/.20em the other
+   handoff components use. */
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+/* The hairline and the ruler both stop at the column edge, as the sheet draws
+   them — <header> carries .col, so neither runs full-bleed. */
+.head {
+  display: flex;
+  align-items: center;
+  height: var(--head-h);
+  border-bottom: 1px solid var(--line);
+}
+
+/* TS:// — the way home from every page. On `/` it stays visible and loses its
+   pointer, which is the same treatment the active nav entry gets: the sheet's
+   rule is that the current place never looks clickable. */
+.head-mark {
+  font: 700 var(--t-body-15) / 1 var(--mono);   /* the scale's 15px, used as mono */
+  letter-spacing: .04em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.head-mark:hover { color: var(--ink); }
+.head-mark .slash { color: var(--acc); }
+.head-mark[aria-current="page"] { cursor: default; }
+
+/* THE HOOK G1 LEFT, and it covers more than the four entries. In the sheet the
+   nav, the two hairlines, the language button and the clock are ONE flex row
+   with gap:30 — and below 900 all of them go together: the mobile header is the
+   logo and the button, nothing else ("KNOPF OHNE BESCHRIFTUNG: kein
+   Sprachkürzel im Kopf"). So .nav-desktop is that whole right-hand group, which
+   is exactly what layout.css's existing `display: none` then does.
+
+   The four links keep their own <nav> for the landmark. Its gap is the same 30,
+   so nesting changes no spacing. */
+.nav-desktop,
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--s-30);
+}
+
+/* Rest is steel, hover is the accent, active is white — "HOVER UND AKTIV SIND
+   NIE DIESELBE FARBE, SONST LIEST SICH DER MAUSZEIGER ALS ORT". Focus is
+   handled globally in globals.css: an outline in --acc at --focus-offset, which
+   is the 3px the sheet's own focus swatch draws. */
+
+.nav-link {
+  font: 500 var(--t-mono-12) / 1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+  text-decoration: none;
+  transition: color var(--d-color) linear;
+}
+.nav-link:hover { color: var(--acc); }
+
+/* Active is white AND not-a-pointer — two signals, because a state carried by
+   colour alone is the defect Anhang B names and the theme swatch already paid
+   for. The underline globals.css puts on every anchor is off here: the nav is a
+   row of labels, not prose. */
+.nav-link[aria-current="page"] {
+  color: var(--ink);
+  cursor: default;
+  background-image: none;
+}
+.nav-link[aria-current="page"]:hover { color: var(--ink); }
+
+/* The two hairlines that bracket the language button. */
+.head-rule {
+  width: 1px;
+  height: var(--s-16);
+  background: var(--line-strong);
+}
+
+.head-spacer { flex: 1; }
+
+/* ── The clock ───────────────────────────────────────────────────────────── */
+
+.clock {
+  font: 500 var(--t-mono-11) / 1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.clock-digits {
+  color: var(--steel);
+  font-variant-numeric: tabular-nums;   /* eight cells, whatever the digits are */
+}
+
+/* ── EN ▾ ────────────────────────────────────────────────────────────────── */
+
+.lang { position: relative; }
+
+.lang-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 11px;
+  font: 600 11.5px / 1 var(--mono);
+  letter-spacing: .12em;
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color var(--d-color) linear, border-color var(--d-color) linear;
+}
+.lang-button:hover {
+  color: var(--ink);
+  border-color: var(--acc-edge);
+}
+.lang-button[aria-expanded="true"] {
+  color: var(--ink);
+  border-color: var(--acc-edge);
+  background: var(--acc-soft);
+}
+
+.lang-caret {
+  font: 400 8px / 1 var(--mono);
+  color: var(--dim);
+}
+.lang-button[aria-expanded="true"] .lang-caret { color: var(--acc); }
+
+.lang-panel {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: var(--z-head);
+  min-width: 216px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+}
+
+.lang-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lang-head,
+.lang-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px 8px;
+  font: 600 8.5px / 1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+}
+.lang-head { border-bottom: 1px solid var(--line); }
+.lang-foot {
+  padding: 8px 12px 9px;
+  font: 400 8.5px / 1.5 var(--mono);
+  letter-spacing: .06em;
+  border-top: 1px solid var(--line);
+}
+
+.lang-option {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 11px;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.lang-option .code {
+  font: 600 var(--t-mono-12) / 1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--steel);
+}
+.lang-option .name {
+  font: 400 var(--t-body-13) / 1 var(--body);
+  color: var(--ink-2);
+}
+.lang-option .route {
+  font: 400 var(--t-mono-10) / 1 var(--mono);
+  color: var(--dim);
+}
+
+/* The keyboard marker and the selection are two different things and must look
+   it: the marker is a neutral wash, the selection is the accent plus a bar. */
+.lang-option[data-marked="true"] { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.lang-option[aria-selected="true"] {
+  background: var(--acc-soft);
+  box-shadow: inset 2px 0 0 var(--acc);
+}
+.lang-option[aria-selected="true"] .code { color: var(--acc); }
+.lang-option[aria-selected="true"] .name { color: var(--ink); }
+
+/* [SOON] rather than a route, until G5 builds /de and /fr. */
+.lang-option[aria-disabled="true"] { cursor: default; }
+
+/* ── The 5px ruler under the header ──────────────────────────────────────── */
+
+/* Desktop only — layout.css hides it at 900, where the header is 52px and the
+   ruler would be a fifth of it. Major ticks every 96px, minor every 16px; both
+   colours derive from --steel, so the ruler is in the palette rather than in
+   Terminal Noir. */
+.ruler {
+  height: 5px;
+  opacity: .55;
+  background-image:
+    repeating-linear-gradient(90deg, var(--rule-major) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(90deg, var(--rule-minor) 0 1px, transparent 1px 16px);
+}
+
+/* ── The menu button ─────────────────────────────────────────────────────── */
+
+/* display:none here, inline-flex below 900 in layout.css — the hook has been
+   waiting there unused since G1. ALWAYS RENDERED, never conditionally: nothing
+   in the chrome may branch on viewport width at render time, or the server and
+   the browser disagree about what the tree is. */
+.nav-button {
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  margin-right: -10px;   /* cancels the padding: the hit area overhangs the
+                            gutter, the glyph stays flush with it */
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+/* One 19×1 bar; the other two lines are box-shadows at ±5px. Open drops the
+   shadows and turns the bar. That is the sheet's construction, and it means
+   there is no morph to animate — the shadows are simply gone. */
+.nav-button .bars {
+  display: block;
+  width: 19px;
+  height: 1px;
+  background: var(--ink-2);
+  box-shadow: 0 5px 0 var(--ink-2), 0 -5px 0 var(--ink-2);
+  transition: background var(--d-color) linear;
+}
+
+/* ── The full-screen menu ────────────────────────────────────────────────── */
+
+/* A real <dialog>, opened with showModal(). That buys the focus trap, Escape,
+   the top layer and inertness for the page behind it — about sixty lines of
+   hand-rolled trap that we could not test without a DOM library. The sheet
+   draws `position:absolute;inset:0`, which is a canvas artifact; the top layer
+   is the production answer to the same thing.
+
+   The dialog IS the overlay: near-opaque, not blurred, exactly as drawn. */
+.menu {
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--overlay);
+  color: var(--ink);
+  border: 0;
+  border-radius: var(--radius);
+  z-index: var(--z-menu);
+
+  /* In and out. The sheet gives only the entrance (160ms ease-out, fade plus an
+     8px rise); the exit is its mirror. @starting-style and allow-discrete keep
+     it in CSS, so no JS timer has to be held in sync with a duration — and
+     globals.css's prefers-reduced-motion block switches both off for free. */
+  opacity: 0;
+  translate: 0 8px;
+  transition:
+    opacity var(--d-glow) var(--e-out),
+    translate var(--d-glow) var(--e-out),
+    overlay var(--d-glow) allow-discrete,
+    display var(--d-glow) allow-discrete;
+}
+.menu[open] { opacity: 1; translate: none; }
+@starting-style {
+  .menu[open] { opacity: 0; translate: 0 8px; }
+}
+.menu::backdrop { background: var(--overlay); }
+
+/* THE SCROLL LOCK, TIED TO THE DIALOG'S OWN STATE rather than to an event.
+   Measured: a modal <dialog> does NOT stop the document scrolling behind it —
+   window.scrollTo(0,500) moved the page while the menu was open — so a lock is
+   required.
+
+   It was a pair of JS lock()/unlock() calls first, released from React's
+   onClose. onClose is attached and does work (dispatching `close` by hand flips
+   aria-expanded and releases it), but a lock whose failure mode is "the page can
+   never be scrolled again" must not depend on an event arriving at all. `:has()`
+   cannot go out of sync: the lock IS the open attribute.
+
+   NOT COMPENSATED, and that is measured rather than overlooked. A classic
+   scrollbar's width is reclaimed when overflow goes hidden, and the content
+   moves 15px sideways; `scrollbar-gutter: stable` does not hold it, because
+   Chrome only reserves a gutter for a box that can actually show a bar
+   (measured: clientWidth 1881 -> 1896 with the gutter declared). The remaining
+   fix is JavaScript that measures the width and pays it back as padding — which
+   is where the lock started, and the reason it left.
+
+   The shift is invisible where the menu lives: it exists only below 900, and
+   touch scrollbars are overlays with no width. What is left is a desktop window
+   narrowed past 900, which is a place developers stand and visitors do not.
+   Backlog, with the number. */
+html:has(dialog.menu[open]) { overflow: hidden; }
+
+/* The scanline wash. Derived from --ink, so it is a light wash on a light
+   palette instead of an invisible white one. */
+.menu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(0deg, var(--scanline) 0 1px, transparent 1px 3px);
+}
+
+.menu-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: none;
+  height: var(--head-h-sm);
+  padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.menu-close {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-8);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  margin-right: -10px;
+  font: 600 var(--t-mono-10) / 1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.menu-close .glyph { font: 400 var(--t-disp-26) / 1 var(--mono); color: var(--ink); }
+
+.menu-body {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-8) 22px var(--s-20);
+}
+
+/* 60px, not 44 — the sheet is explicit ("die Navigation groß, 25px, 60px
+   Zeilenhöhe"). The 44 floor is a floor. */
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: var(--s-16);
+  min-height: 60px;
+  border-bottom: 1px solid var(--line-soft);
+  text-decoration: none;
+}
+.menu-link .index {
+  font: 500 var(--t-mono-10) / 1 var(--mono);
+  color: var(--acc-edge);
+}
+.menu-link .label {
+  font: 500 25px / 1 var(--display);
+  letter-spacing: .02em;
+  color: var(--ink-2);
+}
+.menu-link .mark {
+  margin-left: auto;
+  font: 400 var(--t-mono-13) / 1 var(--mono);
+  color: var(--dim);
+}
+/* Active: white AND a filled marker AND a tinted row — three signals, none of
+   them colour on its own. */
+.menu-link[aria-current="page"] { background: var(--acc-soft); }
+.menu-link[aria-current="page"] .label { color: var(--ink); }
+
+.menu-section {
+  display: flex;
+  align-items: center;
+  gap: var(--s-12);
+  margin-top: var(--s-26);
+  font: 600 var(--t-mono-9) / 1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+}
+.menu-section .bar { flex: 1; height: 1px; background: var(--line); }
+.menu-section .tag { letter-spacing: .06em; font-weight: 400; }
+
+.menu-langs { display: flex; gap: var(--s-10); margin-top: var(--s-12); }
+.menu-lang {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+/* "KEIN SPRUNG — aktiver Chip hat denselben 1px-Rahmen wie die inaktiven, nur
+   gefüllt." Same box, different fill; nothing moves. */
+.menu-lang[aria-current="true"] { border-color: var(--acc); background: var(--acc-soft); }
+.menu-lang .code {
+  font: 600 var(--t-mono-12) / 1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--ink-2);
+}
+.menu-lang[aria-current="true"] .code { color: var(--acc); }
+.menu-lang .name { font: 400 var(--t-mono-9) / 1 var(--body); color: var(--dim); }
+.menu-lang[aria-current="true"] .name { color: var(--ink); }
+
+.menu-mail {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  margin-top: var(--s-12);
+  font: 600 21px / 1.2 var(--display);
+  color: var(--ink);
+  word-break: break-all;
+  text-decoration: none;
+}
+.menu-note {
+  font: 400 var(--t-mono-9) / 1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--dim);
+}
+
+.menu-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-14);
+  margin-top: var(--s-26);
+  padding-top: var(--s-14);
+  border-top: 1px solid var(--line);
+  font: 500 var(--t-mono-9) / 1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--dim);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.foot { border-top: 1px solid var(--line); padding-top: var(--s-16); }
+.foot:has(.foot-lead) { padding-top: 40px; }
+
+.foot-lead {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 60px;
+}
+.foot-label {
+  font: 500 var(--t-mono-9) / 1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+}
+.foot-mail {
+  display: inline-block;
+  margin-top: var(--s-10);
+  font: 600 var(--t-disp-34) / 1.1 var(--display);
+  color: var(--ink);
+  text-decoration: none;
+  word-break: break-all;
+}
+.foot-mail:hover { color: var(--acc); }
+.foot-social { display: flex; flex-direction: column; gap: 9px; }
+.foot-social > * {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  font: 500 var(--t-mono-10) / 1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.foot-social .value { color: var(--dim); }
+a.foot-social-link:hover { color: var(--acc); }
+
+/* THE HOOK G1 LEFT, and its comment says what it is for: "zwei Zeilen -> drei".
+   Two columns at desktop — the group that reads left to right, and the pair
+   that sits right — with the legal row spanning both. At 900 layout.css makes
+   it one column, and two rows become three. */
+.foot-meta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--s-10) var(--s-26);
+  margin-top: 34px;
+  padding: var(--s-14) 0 var(--s-20);
+  border-top: 1px solid var(--line);
+  font: 500 8.5px / 1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--dim);
+}
+.foot:not(:has(.foot-lead)) .foot-meta { margin-top: 0; border-top: 0; }
+
+.foot-meta-main,
+.foot-meta-side,
+.foot-legal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-10) var(--s-26);
+}
+.foot-legal { grid-column: 1 / -1; gap: var(--s-20); }
+.foot-meta a { color: var(--ink-2); text-decoration: none; }
+.foot-meta a:hover { color: var(--acc); }
+
+.foot-cell { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+
+/* The status dot. NEUTRAL AND NOT PULSING until G4: the sheet draws it live in
+   the accent, but that the web container is up says nothing about the api, and
+   invariant 1 does not make an exception for a dot. --d-pulse is declared and
+   waiting; G6 extracts StatusDot and G4 gives it something true to say. */
+.foot-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: var(--radius-dot);
+  background: var(--steel);
+}
