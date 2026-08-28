@@ -76,13 +76,12 @@ Aufgabe das Eingeständnis war.
 
 `healthCached` kehrt das um — über `healthOrThrow` in `lib/api/health.ts`, damit
 die Entscheidung dort steht, wo ein Test sie erreicht — und zwar für genau einen
-Satz: **`use cache`
-speichert jeden Rückgabewert, auch einen, der „keine Daten" bedeutet.** Fiele
-der Füllvorgang in das Rollout-Fenster aus #157, zeigte die Fußzeile die
-nächsten sechzig Sekunden `— NO DATA`, lange nachdem die API zurück ist — und
-täte damit genau das, was `compose.yaml:583` einem Cache hier verbietet. Der
-einzige Hebel, den `use cache` anbietet, um etwas *nicht* zu speichern, ist, es
-nicht zurückzugeben.
+Satz: **`use cache` speichert jeden Rückgabewert, auch einen, der „keine Daten"
+bedeutet.** Fiele der Füllvorgang in das Rollout-Fenster aus #157, zeigte die
+Fußzeile bis zu ein Cache-Fenster lang `— NO DATA`, lange nachdem die API zurück
+ist — und täte damit genau das, was `compose.yaml:583` einem Cache hier
+verbietet. Der einzige Hebel, den `use cache` anbietet, um etwas *nicht* zu
+speichern, ist, es nicht zurückzugeben.
 
 **Nachgemessen, nicht angenommen** (`sha-297cb52`, Dev-Stack, kalter Cache): mit
 gestoppter API bleibt die Zelle leer, und die erste Anfrage nach der Rückkehr
