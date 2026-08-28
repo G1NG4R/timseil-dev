@@ -72,6 +72,8 @@
   --color-rule-minor: var(--rule-minor);
   --color-overlay:    var(--overlay);
   --color-scanline:   var(--scanline);
+  --color-acc-edge:   var(--acc-edge);
+  --color-acc-soft:   var(--acc-soft);
 
   --color-l0: var(--l0);
   --color-l1: var(--l1);

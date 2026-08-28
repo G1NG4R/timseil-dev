@@ -38,6 +38,28 @@ function mix(seed: number, index: number, step: number): number {
 }
 
 /**
+ * `"220ms"` and `".22s"` → 220. Anything else → `null`.
+ *
+ * THE DURATION IS NOT WRITTEN IN TYPESCRIPT ANYWHERE. It is `--d-scramble` in
+ * tokens.css, and the component reads it off the computed style rather than
+ * carrying a copy — invariant 8 says durations live in one file, and a constant
+ * here would be a second one that the token could drift away from without
+ * anything going red.
+ *
+ * `null` rather than a fallback, and the component treats it as "do not
+ * animate". A fallback would be exactly the invented number the whole rule is
+ * about, and a nav label that simply changes colour is not a defect.
+ */
+export function parseMs(raw: string): number | null {
+  const text = raw.trim();
+  const value = Number.parseFloat(text);
+  if (!Number.isFinite(value)) return null;
+  if (text.endsWith("ms")) return value;
+  if (text.endsWith("s")) return value * 1000;
+  return null;
+}
+
+/**
  * One frame of the animation.
  *
  * LOCKS FROM THE RIGHT. `progress` is 0 → nothing settled, 1 → the label. The

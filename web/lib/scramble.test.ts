@@ -8,7 +8,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { SCRAMBLE_GLYPHS, SCRAMBLE_PASSES, scrambleFrame } from "./scramble.ts";
+import { SCRAMBLE_GLYPHS, SCRAMBLE_PASSES, parseMs, scrambleFrame } from "./scramble.ts";
 
 const LABELS = ["WORK", "LOG", "ABOUT", "CONTACT"];
 const SEEDS = [0, 1, 7, 1234, 65535];
@@ -98,4 +98,20 @@ void test("a space survives as a space", () => {
   const frame = scrambleFrame("A B", 0, 5);
   assert.equal(frame.length, 3);
   assert.equal(frame[1], " ");
+});
+
+void test("parseMs reads the token and refuses to guess", () => {
+  assert.equal(parseMs("220ms"), 220);
+  assert.equal(parseMs(" 220ms "), 220);
+  assert.equal(parseMs(".22s"), 220);
+  assert.equal(parseMs("0.22s"), 220);
+
+  // A custom property that was never set comes back as the empty string, and a
+  // typo comes back as a word. Both must be null: the component then skips the
+  // animation instead of inventing a duration, which is the one behaviour that
+  // cannot be wrong.
+  assert.equal(parseMs(""), null);
+  assert.equal(parseMs("   "), null);
+  assert.equal(parseMs("fast"), null);
+  assert.equal(parseMs("220"), null, "a bare number has no unit and is a guess");
 });

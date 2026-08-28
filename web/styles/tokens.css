@@ -210,6 +210,26 @@
      covers the first tab stop is the classic version of this bug.          */
   --z-head: 50;
   --z-menu: 90;
+
+  /* Two accent surfaces the chrome needs and the palette did not have. G2 wrote
+     the gap down as "accSoft fehlt: wer den Akzent als weiche Fläche braucht,
+     hat kein Token"; the chrome is the first thing that needs it.
+
+     The sheet draws SIX alphas of the accent — .55 for the open dropdown border
+     and the menu's row numbers, then .06 / .08 / .09 / .12 for four tinted
+     surfaces that are a hover, an open state, a selected row and a selected
+     chip. On a dark ground those four are not distinguishable from one another,
+     and the sheets disagree with each other about which is which; collapsing
+     them is the same move ADR 0043 made when four accent literals became one
+     definition. The states stay distinct because they were never distinct by
+     fill alone — each also carries a border in --acc-edge and a text colour. */
+  --acc-edge: color-mix(in srgb, var(--acc) 55%, transparent);
+  --acc-soft: color-mix(in srgb, var(--acc) 10%, transparent);
+
+  /* The language panel's drop shadow. Not derived from the palette: a shadow is
+     the absence of light, and it is dark on a light page too. The two light
+     palettes soften it below, the way they already turn --glow off. */
+  --shadow-panel: 0 14px 34px rgba(0,0,0,.55);
 }
 
 
@@ -270,7 +290,8 @@
   --line-soft:rgba(76,79,105,.11); --line-faint:rgba(76,79,105,.08);
   --l0:rgba(76,79,105,.12); --l1:rgba(124,47,212,.24); --l2:rgba(124,47,212,.46);
   --l3:rgba(124,47,212,.70); --l4:#7C2FD4;
-  --glow:none;                   /* kein Leuchten auf hellem Grund */
+  --glow:none;
+  --shadow-panel:0 14px 34px rgba(0,0,0,.18);                   /* kein Leuchten auf hellem Grund */
   color-scheme:light;
 }
 
@@ -283,6 +304,7 @@
   --l0:rgba(60,56,54,.14); --l1:rgba(7,102,120,.24); --l2:rgba(7,102,120,.46);
   --l3:rgba(7,102,120,.70); --l4:#076678;
   --glow:none;
+  --shadow-panel:0 14px 34px rgba(0,0,0,.18);
   color-scheme:light;
 }
 
