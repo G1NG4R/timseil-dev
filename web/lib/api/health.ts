@@ -15,7 +15,7 @@
 // `Number.toFixed` renders as `NaN%` in a footer that exists to argue against
 // invented numbers.
 
-import type { GetBody } from "./client.ts";
+import type { ApiResult, GetBody } from "./client.ts";
 
 export type Health = GetBody<"/api/health">;
 
@@ -24,6 +24,26 @@ export interface FooterHealth {
   build: string | null;
   uptime: number | null;
   online: boolean | null;
+}
+
+/**
+ * Unwraps an answer, or refuses to return one.
+ *
+ * The one place in this codebase that turns a result into a throw, and it exists
+ * for the cached reader alone. `use cache` stores whatever its function returns,
+ * including a value meaning "no data" — and the only lever it offers for not
+ * storing something is not returning it. So the failure leaves by the other
+ * door and the caller renders the resting state.
+ *
+ * It lives here rather than in lib/api/readers.ts because readers.ts imports
+ * `next/headers` and `node --test` cannot load such a module. A decision that
+ * cannot be tested where it is written gets moved to where it can be.
+ */
+export function healthOrThrow(result: ApiResult<Health>): Health {
+  if (result.kind !== "ok") {
+    throw new Error(`health unavailable: ${String(result.status)}`);
+  }
+  return result.data;
 }
 
 /** What the meta bar shows when there is no answer. The resting state, not an error. */

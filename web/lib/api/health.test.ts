@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { NO_DATA, buildText, footerHealth, onlineText, uptimeText, type Health } from "./health.ts";
+import type { ApiResult } from "./client.ts";
+import {
+  NO_DATA,
+  buildText,
+  footerHealth,
+  healthOrThrow,
+  onlineText,
+  uptimeText,
+  type Health,
+} from "./health.ts";
 
 /** A complete answer, in the shape /api/health really sends. */
 function health(over: Record<string, unknown> = {}): Health {
@@ -95,5 +104,33 @@ describe("the three cell texts", () => {
   it("has a word for both sides of online", () => {
     assert.equal(onlineText(true), "ONLINE");
     assert.equal(onlineText(false), "OFFLINE");
+  });
+});
+
+describe("healthOrThrow keeps a failure out of the cache", () => {
+  // The inversion that makes the cached reader safe. `use cache` stores whatever
+  // its function returns; a returned `— NO DATA` would be served for the rest of
+  // the window, which is exactly the failure compose.yaml:583 refuses to allow.
+  it("throws on every shape of refusal", () => {
+    const cases: ApiResult<Health>[] = [
+      { kind: "fail", status: 0, problem: null, upstreamRequestId: null },
+      { kind: "fail", status: 503, problem: null, upstreamRequestId: null },
+      { kind: "not-modified", status: 304, etag: null, upstreamRequestId: null },
+    ];
+    for (const c of cases) {
+      assert.throws(() => healthOrThrow(c), /health unavailable/);
+    }
+  });
+
+  it("returns the body untouched when there is one", () => {
+    const body = health();
+    const ok: ApiResult<Health> = {
+      kind: "ok",
+      status: 200,
+      data: body,
+      etag: '"abc"',
+      upstreamRequestId: null,
+    };
+    assert.equal(healthOrThrow(ok), body);
   });
 });

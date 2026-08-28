@@ -74,7 +74,9 @@ Vereinigungstyp, weil die Seite auf jeden Fehlschlag dieselbe Antwort hat und
 ein vergessenes `try` sonst eine 500 auf einer Seite erzeugt, deren einzige
 Aufgabe das Eingeständnis war.
 
-`healthCached` kehrt das um, und zwar für genau einen Satz: **`use cache`
+`healthCached` kehrt das um — über `healthOrThrow` in `lib/api/health.ts`, damit
+die Entscheidung dort steht, wo ein Test sie erreicht — und zwar für genau einen
+Satz: **`use cache`
 speichert jeden Rückgabewert, auch einen, der „keine Daten" bedeutet.** Fiele
 der Füllvorgang in das Rollout-Fenster aus #157, zeigte die Fußzeile die
 nächsten sechzig Sekunden `— NO DATA`, lange nachdem die API zurück ist — und

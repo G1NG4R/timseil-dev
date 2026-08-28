@@ -21,6 +21,11 @@
 // NEITHER FUNCTION IS UNIT TESTED, and that is the cost of the imports below.
 // What they do is covered by the container run in docs/runbooks/web.md; what
 // they decide was moved into lib/api/health.ts, which is.
+//
+// Sharing a module with a `next/headers` import does NOT stop healthCached from
+// caching. That was suspected during G4 and measured false — /about, which
+// renders only the cached islands, makes zero upstream calls over ten loads.
+// Written down so nobody splits this file for that reason.
 
 import { cacheLife, cacheTag } from "next/cache";
 import { headers } from "next/headers";
@@ -32,7 +37,7 @@ import { REQUEST_ID_HEADER } from "../reqid.ts";
 import { TRACEPARENT_HEADER, childSpan, renderTraceparent } from "../trace.ts";
 
 import { apiGet } from "./client.ts";
-import { NO_HEALTH, footerHealth, type FooterHealth, type Health } from "./health.ts";
+import { NO_HEALTH, footerHealth, healthOrThrow, type FooterHealth, type Health } from "./health.ts";
 
 /** The tag this answer is filed under. One name, so a reader can grep for it. */
 export const HEALTH_TAG = "health";
@@ -72,13 +77,7 @@ export async function healthCached(): Promise<Health> {
   // one question may only have one mechanism. Measured on /about, which renders
   // the two cached islands and nothing else: ten page loads after the first,
   // zero upstream calls.
-  const result = await apiGet("/api/health");
-
-  if (result.kind !== "ok") {
-    throw new Error(`health unavailable: ${String(result.status)}`);
-  }
-
-  return result.data;
+  return healthOrThrow(await apiGet("/api/health"));
 }
 
 // The validator from the last answer this process saw, and the answer it
