@@ -12,7 +12,135 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 28.08.2026, G3 in Produktion
+## Wo wir stehen — 28.08.2026, G4 in Produktion
+
+**Die Seite liest zum ersten Mal ihre eigene API.** Die drei Zellen der Fußzeile
+tragen Zahlen statt `— NO DATA`, und keine davon steht im Quelltext.
+`sha-040bc37`, Merge 22:42:46 UTC, Deploy 22:47:08 UTC, 259 s, `ok`, vorher
+`sha-810394a`, Version `v0.11.0`. Gemessen an `https://timseil.dev`:
+
+```
+status ok · sha 040bc37 · v0.11.0
+BUILD · ONLINE · UPTIME       040bc37 · ONLINE · 100.00%   drei Zellen, drei Messungen
+uptime90d / p95Ms / errorRate 100 / 42.55 / 0              measuredAt 22:47:23.989Z
+— NO DATA in den Bytes        6 auf /, 4 auf /about        die Hülle, vor dem Stream
+Hydration-Warnungen           0             9 Ladevorgänge, 7 Routen, Kanarienvogel vorher
+Fremd-Origins im Anfrageweg   []            12 Anfragen, alle same-origin
+Anfragen des Browsers an /api 0             der Client-Zweig hat bis H8 keinen Aufrufer
+ETag                          372 B → 0 B   auf einer 304
+Cache-Control                 public, s-maxage=60, stale-while-revalidate=600
+Stylesheet                    26 729 B      byte-gleich mit G3 — G4 bringt kein CSS
+Uhren                         3, `--:--:--` in den Bytes, tickend im Browser
+Zwillings-Fenster             22:47:17 → 22:47:39, 36 Anfragen, 36 × 200
+check-deployed                8 Behauptungen, 1 nicht von hier stellbar
+```
+
+### Die Fußzeile zeigt den SHA der API, nicht den der Seite — und der Rollout hat es vorgeführt
+
+Zweiundzwanzig Sekunden lang, von 22:47:17 bis 22:47:39, lieferte der **neue**
+web-Container die Zelle `BUILD 810394a` — den SHA der **alten** API. Das ist
+kein Defekt, sondern die Bauart: `BUILD` kommt aus `Health.sha`, und während des
+überlappenden Starts (ADR 0035) redet das neue web mit dem api-Zwilling, der
+noch der alte ist. Invariante 1 lässt keine andere Wahl — die einzige gemessene
+Quelle ist die API, und der SHA des eigenen Bündels wäre über `NEXT_PUBLIC_` zu
+holen, was `eslint.config.mjs` versperrt und ADR 0044 ausdrücklich als den
+„ehrlich aussehenden Abkürzungsweg" verwirft.
+
+**Das Labor konnte das nicht zeigen.** Dort tragen beide Container immer
+denselben Tag; erst ein echter Deploy stellt web und api kurz auf zwei
+verschiedene Stände. Offen bleibt, ob die Zelle das sagen sollte — heute heißt
+`BUILD` „der Build, der geantwortet hat", und für zweiundzwanzig Sekunden ist
+das ein anderer als der, der die Seite gerendert hat.
+
+### 36 Anfragen, 36 × 200 — und #157 hat seine Zahl gegen Produktion
+
+Der Issue sagte voraus, ab Stufe G mache jeder Deploy aus dem Rollout-Fenster
+„a burst of 500s". Eine Anfrage alle drei Sekunden quer durch den Deploy:
+**sechsunddreißig Anfragen, sechsunddreißig Mal 200.** Keine 5xx, keine 404.
+Genau **eine** Anfrage, 22:47:21, verlor die korrelierte Zeile auf `/` und zeigte
+dort `— NO DATA`.
+
+Der Grund ist der Entwurf dieser Phase: `lib/api/client.ts` wirft nie, also wird
+aus dem Fenster kein Anwendungsfehler, sondern ein fehlender Wert. Die drei
+Kandidaten des Issues sind damit entschieden — **akzeptiert und gemessen**, wie
+E5b das Label-Limit akzeptiert und gemessen hat. Das Labor hatte 2 von 56
+gesagt; Produktion sagt 1 von 36, und beide Male bei einem Beobachtungsraster,
+das gröber ist als das Fenster.
+
+### Der Kanarienvogel steht wieder vorn, und diesmal misst er neun Ladevorgänge
+
+Null Hydration-Warnungen über sieben Routen, plus eine Client-Navigation, die
+`<Activity>` benutzt — die Navigationsform, die Cache Components neu einführt.
+Die Konsole trug am Ende genau zwei Zeilen, und beide hatte ich selbst
+abgesetzt. Nach der Client-Navigation standen die drei Zellen unverändert da:
+Kopf und Fußzeile leben im Root-Layout, also fasst Activity sie nicht an.
+
+**Der Stream ist dabei die eigentliche Neuerung, und er ist in den Bytes
+nachzählbar.** Auf `/` stehen sechs `— NO DATA` — drei Fußzeilen-Zellen, das
+Wort in der Menü-Zeile und die zwei Zeilen der Entwicklungs-Hülle — und
+*daneben*, in einem `<div hidden>` am Dokumentende, die echten Werte. Der
+Platzhalter ist keine Ladeanzeige, sondern die Ruhelage dieser Leiste; genau
+deshalb kostet Streaming hier keine Gestaltung.
+
+### Drei Zahlen dieser Phase waren zuerst falsch, und das ist der teuerste Teil
+
+Ein `grep`, das beim ersten Treffer aufhörte, fand immer den Platzhalter statt
+des gestreamten Werts — zwei Minuten „der Cache hält den Fehlschlag fest", und
+es war nichts. Ein `docker compose stop` scheiterte an fehlendem `IMAGE_TAG`,
+dessen Fehlermeldung ich nach `/dev/null` geschickt hatte; fünfzehn Minuten
+„mit gestoppter API" liefen gegen eine laufende. Und zehn Seitenaufrufe
+erzeugten zehn API-Anfragen, woraus ich schloss, `use cache` greife nicht — es
+war der korrelierte Leser, der auf `/` genau einmal pro Besucher fragt und das
+auch soll. Sauber isoliert auf `/about`: **zehn Aufrufe, null API-Anfragen.**
+
+Ein Commit mit falscher Begründung stand bereits geschrieben, bevor der dritte
+Fehler auffiel; er ist ersetzt. Die Lehre ist eine Reihenfolge, und sie steht
+jetzt als drei Mess-Fallen in `docs/runbooks/web.md`: **erst nachweisen, dass
+der Aufbau den Zustand hat, den die Messung annimmt, dann messen** — und die
+Fehlerausgabe eines Kommandos, dessen Wirkung man gleich behauptet, nie
+unterdrücken.
+
+Ein vierter Fall gehört dazu, und er hätte teuer werden können: das Rate-Limit
+der API ist 120/min **pro Client**, und am API-Ende ist der ganze web-Container
+ein Client. Seit G4 ist jede beobachtete Seitenanfrage auch eine gezählte. Zwei
+Zeugen parallel liegen genau auf dem Limit; ein daraus entstehendes `429` hätte
+sich als Deploy-Fenster gelesen.
+
+### Was die Abnahme nicht behauptet
+
+**Keine Span-Ansicht.** Es gibt keinen OTel-Exporter und keinen Tempo-Dienst;
+`traceparent` ist auf beiden Seiten handgeschrieben und landet nur als
+`trace_id` in Logzeilen. „Ein Trace zeigt den ganzen Weg" ist deshalb als
+Log-Korrelation erbracht und **nur** als solche: eine Anfrage, eine `trace_id`,
+je eine Zeile in web und api. F6 zieht das SDK ein, F8 macht es sichtbar.
+
+**Keine Cache-Zählung gegen Produktion.** Dass zehn Aufrufe null API-Anfragen
+erzeugen, ist im Labor gemessen, wo die Logs der API lesbar sind. Von außen ist
+das nicht zählbar.
+
+**Kein Besucher ohne JavaScript.** Die gestreamten Werte kommen in einem
+`<div hidden>` und werden per Inline-Skript an ihren Platz gesetzt; ohne
+JavaScript bleibt der Platzhalter stehen. Kein falscher Wert, ein fehlender —
+mit M2 als Termin.
+
+**Und das Menü unter `<Activity>` ist ein Argument, keine Messung.** Es kann
+nicht im versteckten Teilbaum landen, weil `app/layout.tsx` den Kopf als
+Geschwister von `{children}` rendert. Der Beleg gehört an dieselbe Stelle wie
+der 44px-Beleg aus G3: Playwright mit `hasTouch`, vor H1.
+
+**Als Nächstes:** G5 — `/de` und `/fr` als Routen, `hreflang`, `<html lang>`,
+ein funktionsfähiger Umschalter mit **nur EN befüllt**, dazu `sitemap.ts`,
+`robots.ts`, RSS, OG über `next/og` und JSON-LD. Abgenommen ist es, wenn der
+Rich-Results-Test grün ist und der Umschalter auch mit leeren Sprachen
+funktioniert. Zwei Dinge nimmt G5 aus dieser Phase mit: die Hülle ist
+vorgerendert und soll es bleiben — `headers()` im Root-Layout nähme jede Seite
+aus dem statischen Pass (ADR 0043) —, und `<html lang>` ist genau die Stelle,
+an der ein Wert aus einer Anfrage in das Wurzelelement wollte. Der Ausweg ist
+derselbe wie beim Theme: die Route trägt die Sprache, nicht der Header.
+
+---
+
+## Vorher — 28.08.2026, G3 in Produktion
 
 **Die Seite hat ihr Gerüst.** Kopf, Menü und Fußzeile stehen auf jeder Seite
 gleich, die Uhr läuft, und die Fußzeile trägt zwei Fassungen nach Einsatzplan.
@@ -1806,6 +1934,7 @@ Vorherige Triage: Stufe F (Launch-Pfad), 27.08.2026 — siehe oben.
 | 28.08.2026 | G4 | **#157 hat seine Zahl, und seine Prämisse stimmt nicht mehr.** Der Issue sagt: „From G onwards `/` renders from the API. Then the same window turns every deploy into a burst of 500s." Gemessen am Lab-Rig, echter Tausch (`sha-12384bb` → `sha-rolltest`, beide Container `Recreated`), eine Anfrage je Sekunde auf `/`: **56 Anfragen, 56 × 200, davon 2 mit `— NO DATA`** in der korrelierten Zeile — 21:00:57 bis 21:01:03, rund sechs Sekunden. Keine 5xx, keine 404. Der Grund ist der Entwurf dieser Phase: `lib/api/client.ts` wirft nie, also wird aus dem Fenster kein Anwendungsfehler, sondern ein fehlender Wert. Die drei Kandidaten des Issues (über Traefik statt über den Container-Namen, ein Retry im Wrapper, oder „akzeptieren und messen") sind damit entschieden: **akzeptieren und messen**, und die Zahl steht hier. **Was die Messung nicht ist:** eine Produktionsmessung. Sie lief gegen das Lab-Rig, und `compose.lab.yaml` sagt im Kopf, was es reproduziert und was nicht. Der Gegenbeleg gegen Produktion gehört in die G4-Abnahme. | offen |
 | 28.08.2026 | G4 | **#94 ist erledigt, und G4 ist die Phase, die es belegen kann.** Der Issue verlangt eine Probe, die nicht `/` rendert, „weil eine API-Störung sonst aus einem Ausfall zwei macht" — sie existiert seit dem 23.08. (`web/app/healthz/route.ts`, #154; der Healthcheck im `web/Dockerfile` seit #167). Bis jetzt war das nicht prüfbar, weil keine Seite serverseitig die API las. **Jetzt gemessen, am Produktionsimage hinter dem Lab-Proxy, mit nachweislich beendetem `api`-Container** (`Exited (0)`, Proxy antwortet 503): `GET /` → **200**, Fußzeile `— NO DATA`, `timseil-web-1` → `RestartCount 0`, `health: healthy`. Die Störung bleibt eine. **Vorschlag: schließen.** Nicht von mir geschlossen — der Tracker gehört dir. | offen |
 | 28.08.2026 | G4 | **`<Activity>` und das Menü: strukturell unbedenklich, aber nicht gemessen.** `cacheComponents: true` schaltet die Navigation auf Reacts `<Activity>` — bis zu drei Routen bleiben montiert und nur versteckt. Für ein offenes `<dialog>` wäre das gefährlich: die Scroll-Sperre ist `html:has(dialog.menu[open])`, und ein in einem versteckten Teilbaum zurückgelassenes `[open]` hieße „die Seite lässt sich nie wieder scrollen" — genau der Fehlerfall, gegen den ADR 0044 die Sperre in CSS gelegt hat. **Kann hier nicht eintreten:** `app/layout.tsx` rendert `<SiteHeader />` als Geschwister von `{children}`, und Activity versteckt Routen, nicht das Layout. Das Menü ist also nie im versteckten Teilbaum. **Nicht behavioral gemessen**, und der Grund ist derselbe wie in G3: der Knopf existiert nur unter 900, und der Kachel-WM lässt das Fenster nicht schmaler ziehen; eine per CSS erzwungene Mobil-Fassung würde die Override messen und nicht die Anwendung. Der Beleg gehört an denselben Ort wie der 44px-Beleg aus G3: **Playwright mit `hasTouch`, eingerichtet vor H1.** Zu prüfen ist dort: Menü offen → Navigation über einen Link außerhalb des Dialogs bzw. über Zurück/Vorwärts → `dialog[open]` ist fort und `html` scrollt wieder. | offen |
+| 28.08.2026 | G4 | **Ein Zeuge mit einer Anfrage pro Sekunde kostet ab Stufe G API-Budget, und zwei kosten zu viel.** Das Rate-Limit der API ist `RATE_LIMIT_RPM=120` mit `RATE_LIMIT_BURST=60` **pro Client** — und am API-Ende ist der ganze web-Container *ein* Client. Seit G4 rendert jede Seitenanfrage einen Aufruf an `/api/health`, also ist jede beobachtete Anfrage auch eine gezählte. `tools/witness.sh` läuft mit einer Anfrage pro Sekunde: 60/min, innerhalb des Limits, aber die Hälfte des Budgets. **In der G4-Abnahme hatte ich zwei Zeugen parallel laufen** — 120/min, genau am Limit — und hätte das entstehende `429` als Deploy-Fenster gelesen, statt als meine eigene Last. Rechtzeitig bemerkt und auf eine Anfrage alle drei Sekunden gedrosselt. **Zu entscheiden:** ob `witness.sh` einen Hinweis oder eine Vorgabe für das Intervall bekommt, jetzt wo eine beobachtete Seite auch eine gezählte API-Anfrage ist. Berührt #158, das an derselben Datei schon eine veraltete Erklärung führt. | offen |
 
 ## Idee — noch nicht entschieden
 
