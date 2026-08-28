@@ -12,7 +12,89 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 27.08.2026, F5 gegen Produktion abgenommen
+## Wo wir stehen — 28.08.2026, G1 in Produktion
+
+**Die Seite hat ihre Werte.** `web/styles/` trägt `tokens.css`, `globals.css` und
+`layout.css` aus dem Handoff, Tailwind 4.3 zeichnet ausschließlich daraus.
+`sha-68b2ae5`, Deploy um 06:01:19 UTC, 222 s, `ok`. Gemessen an
+`https://timseil.dev`:
+
+```
+body       rgb(10,14,20) auf --ink-2      .col        1160px
+h1         62px                            oklch       0 Vorkommen
+[data-theme]-Blöcke im Stylesheet: 6 + der prefers-color-scheme-Zweig
+```
+
+**Die Default-Palette ist nicht abgestellt, sondern gelöscht.**
+`@theme { --*: initial }` räumt 288 `--color-*`-Werte über 28 Namen weg, dazu die
+erzeugende Abstandsskala und fünf Breakpoints; was danach steht, ist der Bestand
+aus `tokens.css`. Das tragende Wort ist `inline`: die Utility bekommt
+`var(--bg)`, nicht `#0A0E14` — sonst frören alle Utilities auf Terminal Noir ein
+und der Umschalter aus G2 färbte nur handgeschriebenes CSS um.
+
+### Die Abnahme hat zwei Hälften, und keine ist der Test der anderen
+
+`styles/tailwind.test.ts` kompiliert das Stylesheet: `bg-blue-500`, `p-5`,
+`rounded-lg`, `md:flex` erzeugen keine Regel, `bg-bg` löst auf `var(--bg)` auf.
+Ohne `--*: initial` fallen drei der vier Tests um — nachgemessen, damit sie nicht
+aus Versehen grün sind.
+
+`tools/check-tokens.sh` liest stattdessen den Quelltext, **weil keine
+Theme-Einstellung `bg-[#ff0000]` verhindern kann.** Neun Selftest-Fälle, in
+`make check` und damit in CI: das Protokoll des Laufs auf `main` trägt
+`✓ a hex outside tokens.css rejected`.
+
+### Der stärkste Fund kam aus einer Abnahme, die ich zuerst falsch gefahren habe
+
+`make quickstart` klonte im ersten Anlauf **`main` statt des Branches** —
+`QUICKSTART_ORIGIN` war nicht gesetzt, also holte `git clone` die veröffentlichte
+Fassung. Die Abnahme „von Null durchgelaufen" war damit über den falschen Baum,
+und sie stand schon als grün gemeldet da.
+
+Richtig gefahren fiel sie durch: acht API-URLs grün, `http://localhost:3000`
+mit 500 und `Cannot find module '@tailwindcss/postcss'` — während `npm ls` im
+Container das Paket zeigte. **Zwei Schichten:**
+
+1. `node_modules` ist ein anonymes Volume, `.next` ein benanntes. `up --build`
+   fasst keines an; die neue Abhängigkeit erreicht das Image und nie den
+   Container.
+2. Der erste gescheiterte Start kompiliert sich in `.next` hinein. Deshalb liest
+   sich `--renew-anon-volumes` wie ein Fehlschlag: mit erneuerten anonymen
+   Volumes weiter 500, nach `docker volume rm …_web-next` sofort 200.
+
+`make dev` stempelt jetzt die Prüfsumme des Lockfiles und weist einen Start ab,
+der sie bewegt hat. Bestätigt auf einem fremden Rechner: der `quickstart`-Job
+auf `main` ist grün, alle neun URLs.
+
+**Die Lehre ist nicht die Reparatur, sondern die Reihenfolge.** Eine Abnahme, die
+den falschen Baum prüft, ist nicht „fast richtig" — sie ist eine erfundene Zahl
+mit einem Häkchen daneben. Dieselbe Form wie die F5-Lehre: ich hatte gemeldet,
+bevor ich nachgesehen hatte, woher der Beleg kommt.
+
+### Was G1 gefunden und nicht repariert hat
+
+`globals.css` malt Link-Unterstrich, `::selection` und den Puls-Schein mit
+`rgba(0,229,255,…)` — dem Akzent von Terminal Noir, ausgeschrieben. Gemessen: die
+Linkfarbe folgt dem Theme (`#00E5FF` → Latte `#7C2FD4` → Phosphor `#2EE6A6`), der
+Unterstrich bleibt in allen sieben Paletten cyan.
+
+### Zwei Entscheidungen, getroffen am 28.08.2026
+
+- **Ohne gespeicherte Wahl startet die Seite immer in Terminal Noir**, auch bei
+  `prefers-color-scheme: light`. Hell erreicht man über den Umschalter aus G2.
+  Anlass: ein heller Rechner zeigte Gruvbox Light als ersten Eindruck, und die
+  verbindliche Fassung soll die sein, die zuerst zu sehen ist. Gehört in den ADR
+  von G2, nicht hierher — hier steht nur, dass sie gefallen ist.
+- **Die vier Akzent-Literale werden in G2 repariert**, nicht später: der
+  Umschalter macht aus dem Fund einen sichtbaren Fehler.
+
+**Als Nächstes:** G2 — Fonts über `next/font/google`, das Anti-Flash-Snippet
+(nonce-fähig geschrieben; die CSP selbst gehört zu L4, Bauplan Zeile 1325) und
+der Theme-Weg mit `ts.theme` als einem der beiden erlaubten localStorage-Keys.
+
+---
+
+## Vorher — 27.08.2026, F5 gegen Produktion abgenommen
 
 **Die Seite misst sich selbst.** `metric_snapshots` trägt seit heute Zeilen, die
 kein Mensch eingesetzt hat, und der Uptime-Badge bewegt sich zum ersten Mal.
