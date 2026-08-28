@@ -11,6 +11,7 @@
 
 import { Clock } from "@/components/Clock";
 import { LangMenu } from "@/components/LangMenu";
+import { MobileMenu } from "@/components/MobileMenu";
 import { NavLinks } from "@/components/NavLinks";
 import { Wordmark } from "@/components/Wordmark";
 
@@ -41,6 +42,9 @@ export function SiteHeader() {
           <span className="head-rule" aria-hidden="true" />
           <Clock />
         </div>
+        {/* Always rendered, hidden by CSS above 900. Not a conditional: a tree
+            that depends on the viewport is a tree the server gets wrong. */}
+        <MobileMenu />
       </div>
       {/* Desktop only; layout.css drops it at 900, where a 5px ruler under a
           52px header is a tenth of the header. */}
