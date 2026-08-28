@@ -1,7 +1,8 @@
 # Runbook — der Web-Container
 
-Was `web` protokolliert, was es absichtlich nicht protokolliert, und wie man eine
-Anfrage über beide Container verfolgt. Stand: F1b.
+Was `web` protokolliert, was es absichtlich nicht protokolliert, wie man eine
+Anfrage über beide Container verfolgt, und wo seit G2 die Schriften und das
+Theme sitzen. Stand: G2.
 
 Für die API-Seite: [`api.md`](api.md). Für den Stack als Ganzes:
 [`compose.md`](compose.md).
@@ -180,6 +181,74 @@ Aufgegeben ist damit „beweist, dass React rendert".
 
 Kein `NEXT_PUBLIC_*`. Der Präfix schickt den Wert in den Browser; `check-env.sh`
 und eine ESLint-Regel halten beide Hälften.
+
+## Schriften und Theme
+
+Seit G2. Beides ist im Betrieb unauffällig und genau deshalb hier aufgeschrieben
+— wer nachsehen will, ob es noch stimmt, hat sonst keinen Anhaltspunkt.
+
+### Die Schnitte liegen im Image, nicht bei Google
+
+`next/font/google` lädt die drei Familien **zur Buildzeit** herunter und legt
+sie unter `.next/static/media/*.woff2`. Zur Laufzeit geht kein Request an
+fonts.gstatic.com — das ist ein Abnahmekriterium der Phase und die Bedingung
+dafür, dass die Datenschutzseite stimmt, wenn sie sagt, dass keine dritte Partei
+im Anfrageweg steht (ADR 0006).
+
+**Die Standalone-Falle greift hier.** `.next/standalone` enthält `.next/static`
+nicht; die zweite `COPY`-Zeile in `web/Dockerfile` trägt die Schriften ins
+Image. Fehlt sie, rendert die Seite in `system-ui` und niemand bekommt einen
+Fehler zu sehen.
+
+```sh
+# 1 — im Build: kommt irgendwo eine Google-Adresse vor?
+cd web && npm run build
+grep -rl 'fonts\.gstatic\.com\|fonts\.googleapis\.com' .next/static .next/standalone
+#   nichts = richtig. Treffer unter .next/dev/ sind Dev-Artefakte und gehen
+#   nicht ins Image.
+
+# 2 — was ein lateinischer Text wirklich holt: die fünf Dateien mit `.p.` im Namen
+ls -l .next/static/media/*.p.*.woff2
+#   Chakra Petch 400/500/600, Geist variabel, JetBrains Mono variabel
+#   zusammen rund 97 KB (gemessen 99 480 B, 28.08.2026)
+
+# 3 — im Browser gegengeprüft, weil ein Grep nicht beweist, was das Netz tut
+#   performance.getEntriesByType('resource').filter(e => /gstatic|googleapis/.test(e.name))   → []
+#   performance.getEntriesByType('resource').filter(e => /\.woff2$/.test(e.name))            → alle same-origin
+```
+
+Die 23 Dateien im Verzeichnis sind kein Fehler: Google liefert je Familie
+mehrere `unicode-range`-Schnitte, der Browser holt nur den, den der Text
+braucht.
+
+### Das Theme steht vor dem ersten Paint
+
+Die Wahl liegt in `localStorage["ts.theme"]` — einer der zwei Schlüssel, die
+Invariante 9 erlaubt; eine ESLint-Regel hält die Zahl. Gesetzt wird das Attribut
+von einem Inline-Script im `<head>` (`lib/theme.ts` → `components/ThemeScript.tsx`),
+bevor irgendetwas gezeichnet wird.
+
+**Ohne gespeicherte Wahl ist die Seite Terminal Noir**, auch auf einem hellen
+Rechner. Das ist eine Entscheidung, kein Versehen — ADR 0043.
+
+```sh
+# Steht das Script im ausgelieferten HTML, und ohne async/defer?
+curl -s https://timseil.dev/ | grep -o '<script>[^<]*ts\.theme[^<]*</script>'
+```
+
+Es steht **hinter** dem Stylesheet-Link, und das ist richtig so: ein klassisches
+Inline-Script ist parser-blockierend und wartet auf ausstehende Stylesheets, der
+erste Paint wartet auf dasselbe. Steht es dort mit `async` oder `defer`, ist das
+ein Fehler — dann flackert die Seite.
+
+Fehlersuche, wenn ein Besucher „das Theme springt beim Laden" meldet:
+
+| Beobachtung | Ursache |
+|---|---|
+| kurz dunkel, dann hell | das Script läuft nicht — im HTML nachsehen, ob es da ist |
+| bleibt immer Noir | `localStorage` ist blockiert (Private Mode). Der `try` fängt es, die Erinnerung fehlt — kein Defekt |
+| Theme wechselt, Unterstrich bleibt cyan | ein Akzent-Literal ist zurückgekommen. `make check-tokens` |
+| helle Palette, dunkle Scrollleiste | `color-scheme` fehlt im `[data-theme]`-Block |
 
 ## Tests
 

@@ -18,14 +18,6 @@ set -eu
 # exception to it.
 TOKENS='web/styles/tokens.css'
 
-# Known and deliberate, 27.08.2026: the handoff's globals.css paints the link
-# underline, the selection highlight and the pulse glow with the Terminal Noir
-# accent written out as rgba(0,229,255,…) rather than var(--acc). Four lines.
-# In the six other palettes those three stay cyan. The finding is in backlog.md;
-# fixing it means new tokens in tokens.css, which is not G1's to decide. Until
-# then it is named here and printed on every run, so it cannot go quiet.
-ACCENT_LITERAL='rgba(0,229,255,'
-
 # Strip /* */ across lines and whole-line // comments, keep file:line prefixes.
 strip_comments() {
   awk '
@@ -73,8 +65,7 @@ report() {
 
 # A colour, written out. #fff, #0A0E14, rgb(), rgba(), hsl().
 colours=$(printf '%s\n' "$body" \
-  | grep -E '#[0-9a-fA-F]{3,8}([^0-9a-zA-Z]|$)|(rgba?|hsla?)\(' \
-  | grep -v -F "$ACCENT_LITERAL" || true)
+  | grep -E '#[0-9a-fA-F]{3,8}([^0-9a-zA-Z]|$)|(rgba?|hsla?)\(' || true)
 report "$colours" "colour outside $TOKENS — use a token, or add one to tokens.css"
 
 # A radius that is a number rather than a token.
@@ -94,7 +85,4 @@ report "$durations" "hard-coded duration — tokens.css has nine, --d-row to --d
   exit 1
 }
 
-known=$(printf '%s\n' "$body" | grep -c -F "$ACCENT_LITERAL" || true)
 printf '  ✓ every colour, radius and duration comes from tokens.css\n'
-[ "$known" -eq 0 ] || \
-  printf '  ! except %s accent literals in globals.css, from the handoff — backlog 27.08.2026\n' "$known"

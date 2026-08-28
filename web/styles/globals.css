@@ -1,11 +1,20 @@
-/* Copied from docs/design/code/globals.css, which is read-only, with exactly
-   one line removed — the removal is named below.
-   The German comments below are the designer's and are kept as they came;
-   nothing in this file is ours to reword. No value changes — the contrast
-   figures this file quotes were computed against these exact colours.
+/* Taken from docs/design/code/globals.css, which is read-only. The German
+   comments below are the designer's and are kept as they came; nothing in this
+   file is ours to reword.
 
-   Build plan G1. Import order lives in app/layout.tsx: tailwind, tokens,
-   globals, layout — layout last, so its media queries win. */
+   Two departures, both named:
+
+     G1  the handoff's `@import './tokens.css'` is dropped — see below.
+     G2  four colour literals are replaced by the tokens they should always
+         have been. The handoff painted the link underline, the selection
+         highlight and the two pulse shadows as rgba(0,229,255,…) — Terminal
+         Noir's accent, written out — so in the other six palettes those three
+         stayed cyan while everything around them changed. The replacements
+         carry the same numbers (35 · 25 · 70 · 20 %), derived from --acc in
+         tokens.css, so they now follow every [data-theme]. ADR 0043.
+
+   No other value changed. Import order lives in app/layout.tsx: tailwind,
+   tokens, globals, layout — layout last, so its media queries win. */
 
 /* The handoff's `@import './tokens.css'` is dropped here on purpose: the build
    plan has app/layout.tsx import all three files explicitly and in order, and
@@ -28,14 +37,14 @@ h2 { font-size: var(--t-disp-34); line-height: 1.10; }
 h3 { font-size: var(--t-disp-26); line-height: 1.14; }
 p  { margin: 0; text-wrap: pretty; max-width: 68ch; }
 
-a { color: var(--acc); text-decoration: none; border-bottom: 1px solid rgba(0,229,255,.35); }
+a { color: var(--acc); text-decoration: none; border-bottom: 1px solid var(--acc-line); }
 a:hover { color: var(--acc-hi); border-bottom-color: var(--acc-hi); }
 
 /* Fokus nur bei Tastatur, überall dieselbe Form */
 :focus { outline: none; }
 :focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
-::selection { background: rgba(0,229,255,.25); }
+::selection { background: var(--acc-select); }
 
 /* Zahlen springen nicht */
 [data-nums], .nums, table td, table th { font-variant-numeric: tabular-nums; }
@@ -49,8 +58,8 @@ a:hover { color: var(--acc-hi); border-bottom-color: var(--acc-hi); }
 .skip:focus-visible { left: 0; }
 
 @keyframes ts-blink { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
-@keyframes ts-pulse { 0%,100% { opacity: 1; box-shadow: 0 0 8px rgba(0,229,255,.7) }
-                      50%     { opacity: .5; box-shadow: 0 0 2px rgba(0,229,255,.2) } }
+@keyframes ts-pulse { 0%,100% { opacity: 1; box-shadow: 0 0 8px var(--acc-pulse) }
+                      50%     { opacity: .5; box-shadow: 0 0 2px var(--acc-pulse-2) } }
 @keyframes ts-wipe  { from { clip-path: inset(0 100% 0 0) } to { clip-path: inset(0) } }
 
 /* Scroll-gekoppelte Moves nur wo unterstützt — Endzustand ist der Default.

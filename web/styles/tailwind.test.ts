@@ -62,6 +62,21 @@ void test("tokens are the palette", async () => {
   assert.equal(css.toLowerCase().includes("#0a0e14"), false, "a token was inlined by value");
 });
 
+void test("the families are the tokens, and the tokens are the faces", async () => {
+  const css = await build(["font-display", "font-body", "font-mono"]);
+
+  // Same argument as "tokens are the palette", one namespace over. If these
+  // ever read `'Chakra Petch'` outright, the utilities have been frozen on the
+  // literal stack — and G2's whole point is that tokens.css resolves the
+  // family through var(--face-*), so a Next release that renames the generated
+  // face keeps working. Utilities baked with the name would not.
+  assert.match(css, /var\(--display\)/);
+  assert.match(css, /var\(--body\)/);
+  assert.match(css, /var\(--mono\)/);
+  assert.equal(css.includes("Chakra Petch"), false, "a family name was inlined");
+  assert.equal(css.includes("JetBrains Mono"), false, "a family name was inlined");
+});
+
 void test("the spacing scale is the 4px grid, not a generator", async () => {
   const good = await build(["p-26"]);
   assert.match(good, /var\(--s-26\)/);

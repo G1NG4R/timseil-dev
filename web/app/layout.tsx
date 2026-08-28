@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 
+import { ThemeScript } from "@/components/ThemeScript";
+
+import { fontVariables } from "./fonts";
+
 // The stylesheet order is the whole point of this block, and it is the build
 // plan's (G1), not a preference:
 //
@@ -9,9 +13,9 @@ import type { Metadata } from "next";
 //   layout    the content column and the four breakpoints — LAST, so its
 //             media queries win over anything above them
 //
-// Still deliberately absent: fonts and the anti-flash theme snippet are G2, the
-// real header and footer are G3. `--display`, `--body` and `--mono` resolve to
-// the fallbacks tokens.css names until next/font/google fills them.
+// Since G2 the faces arrive over next/font/google and reach `--display`,
+// `--body` and `--mono` through the three `--face-*` variables the classes on
+// <html> carry. Still deliberately absent: the real header and footer are G3.
 import "../styles/tailwind.css";
 import "../styles/tokens.css";
 import "../styles/globals.css";
@@ -24,7 +28,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning is required, not tidy: ThemeScript writes
+    // data-theme onto this element before React hydrates, and the server never
+    // rendered that attribute. Without it every visit with a stored theme logs a
+    // hydration mismatch — and G3's acceptance is "zero hydration warnings", so
+    // a known one left standing here would drown the ones that matter.
+    // It suppresses this element's attributes only, not the tree below it.
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body>{children}</body>
     </html>
   );
