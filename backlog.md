@@ -114,6 +114,18 @@ sich als Deploy-Fenster gelesen.
 Log-Korrelation erbracht und **nur** als solche: eine Anfrage, eine `trace_id`,
 je eine Zeile in web und api. F6 zieht das SDK ein, F8 macht es sichtbar.
 
+**Und die zweite Abnahme des Bauplans ist erst halb erbracht.** „Cache-Invalidierung
+beim Deploy getestet" heißt: ein Deploy ersetzt eine veraltete Zahl durch eine
+neue. Belegt ist bisher die Bauart — `.next/cache` liegt auf tmpfs und stirbt
+mit dem Container (`compose.yaml:583`) — und der Tausch selbst ist gemessen.
+**Der Fall, den es zu zeigen gälte, konnte hier nicht eintreten:** die vorige
+Fassung hatte gar keine gecachte Zahl, also gab es nichts zu ersetzen. **Der
+erste Deploy, der es zeigen kann, ist der von G5.** Dann steht vorher `BUILD
+040bc37` und nachher der neue SHA, und dazwischen liegt keine Wartezeit von
+sechzig Sekunden. Das ist nachzumessen und nicht anzunehmen — eine trivial
+erfüllte Abnahme als grün zu melden ist dieselbe Sorte Zahl, gegen die
+Invariante 1 steht (dieselbe Entscheidung wie bei der CSP-Abnahme in G2).
+
 **Keine Cache-Zählung gegen Produktion.** Dass zehn Aufrufe null API-Anfragen
 erzeugen, ist im Labor gemessen, wo die Logs der API lesbar sind. Von außen ist
 das nicht zählbar.
