@@ -115,10 +115,68 @@ curl -sS http://127.0.0.1:3000/
 ```
 
 Erwartet: die Seite antwortet **200** und zeigt `— NO DATA`, die Web-Zeile trägt
-`status: 0` mit derselben `trace_id`, und nichts stürzt ab. `serverFetch` wirft
-nie — die Antwort der Seite ist in beiden Fällen dieselbe, und ein Wurf hieße nur,
-dass jeder Aufrufer denselben `try`/`catch` schreiben muss, um zum selben `— NO
-DATA` zu kommen.
+`status: 0` mit derselben `trace_id`, und nichts stürzt ab. `lib/api/client.ts`
+wirft nie — die Antwort der Seite ist in beiden Fällen dieselbe, und ein Wurf
+hieße nur, dass jeder Aufrufer denselben `try`/`catch` schreiben muss, um zum
+selben `— NO DATA` zu kommen.
+
+**Die Fußzeile widerspricht dem, und zwar richtig.** Sie zeigt weiter
+`BUILD <sha> · ONLINE`, solange die zwischengespeicherte Antwort gilt. Die Zelle
+sagt „diese Antwort kam von der API", nicht „die API lebt jetzt" (ADR 0045).
+Wie lange, steht unten.
+
+## Die Zahlen der Fußzeile messen — zwei Fallen
+
+Die drei Zellen sind seit G4 eine gestreamte Insel. Wer sie mit `grep` über die
+Antwort zählt, zählt zweimal falsch:
+
+1. **Die RSC-Nutzlast trägt das Markup ein zweites Mal.** Sie steht in
+   `<script>`-Tags. Ein `grep` über die rohen Bytes zählt zwei Dokumente.
+2. **Der Platzhalter steht in Dokumentreihenfolge VOR dem Wert.** React liefert
+   den gestreamten Inhalt in einem `<div hidden id="S:n">` am Ende des `<body>`
+   nach. Ein Muster, das beim ersten Treffer aufhört, findet immer `— NO DATA` —
+   auch dann, wenn die Zahl längst da ist. Genau dieser Messfehler hat in der
+   G4-Abnahme zwei Minuten lang einen Defekt vorgetäuscht, den es nicht gab.
+
+Also Skripte entfernen und **beide** Vorkommen ansehen:
+
+```sh
+curl -sS http://127.0.0.1:3000/ | python3 -c "
+import sys, re
+h = re.sub(r'<script\b.*?</script>', '', sys.stdin.read(), flags=re.S)
+t = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', h))
+print(re.findall(r'BUILD [a-z0-9]+|BUILD —|ONLINE|OFFLINE|UPTIME [—0-9.%]+', t))
+"
+```
+
+Erwartet mit laufender API: der Platzhalter **und** der Wert, in dieser
+Reihenfolge. Nur der Platzhalter heißt, dass die Insel nicht aufgelöst hat.
+
+**Ein Screenshot schlägt beides.** Was der Browser wirklich zeigt, steht weder
+in den Bytes noch in einer DOM-Abfrage aus der Browser-Erweiterung heraus — die
+hat in der G4-Abnahme dreimal `— NO DATA` gemeldet, während auf dem Bild die
+Zahl stand. Dieselbe Klasse Fund wie das nicht beobachtbare `close`-Ereignis
+aus G3: leere oder alte Werte aus diesem Weg beweisen nichts.
+
+## Wie lange die Fußzeile eine tote API für lebendig hält
+
+`next.config.ts` gibt dem Profil `health` die Zahlen aus dem `Cache-Control` des
+Contracts (ADR 0009): `revalidate: 60`, `expire: 600`. Das heißt in dieser
+Reihenfolge, wenn die API um `T` ausfällt:
+
+| Zeitraum | Was die Fußzeile zeigt |
+|---|---|
+| `T` … `T+60s` | die letzte Antwort, frisch |
+| `T+60s` … `T+expire` | dieselbe Antwort, veraltet — im Hintergrund wird erfolglos nachgefragt, **niemand wartet** |
+| ab `T+expire` | `— NO DATA` |
+
+Nachmessen, nicht schätzen:
+
+```sh
+docker compose stop api
+while :; do date -u +%H:%M:%S; curl -sS http://127.0.0.1:8080/ \
+  | grep -c 'ONLINE'; sleep 15; done
+```
 
 ## `Cannot find module` — jede Seite 500, das Paket ist aber da
 
