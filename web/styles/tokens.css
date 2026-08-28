@@ -1,10 +1,31 @@
-/* Copied verbatim from docs/design/code/tokens.css, which is read-only.
-   The German comments below are the designer's and are kept as they came;
-   nothing in this file is ours to reword. No value changes — the contrast
-   figures this file quotes were computed against these exact colours.
+/* Taken from docs/design/code/tokens.css, which is read-only. The German
+   comments below are the designer's and are kept as they came; nothing in this
+   file is ours to reword.
 
-   Build plan G1. Import order lives in app/layout.tsx: tailwind, tokens,
-   globals, layout — layout last, so its media queries win. */
+   G1 copied it verbatim. G2 no longer does, and the six departures are named
+   here rather than left to be discovered. Every one of them is in ADR 0043.
+
+     1  --display/--body/--mono read var(--face-*) first, with the original
+        stack kept as the fallback. next/font/google fills those.
+     2  --acc-line, --acc-select, --acc-pulse, --acc-pulse-2 are new. They
+        replace four Terminal Noir literals globals.css carried into all seven
+        palettes — the open finding from G1.
+     3  --glow derives from --acc for the same reason. It was cyan in mocha,
+        amber, phosphor and tokyo, because only the two light palettes ever
+        overrode it.
+     4  --sw-* are the switch's seven identifying colours. They belong to a
+        theme's identity, so they live here once and never inside a
+        [data-theme] block.
+     5  The @media (prefers-color-scheme: light) block is gone. Without a
+        stored choice the site is Terminal Noir, decided 28.08.2026.
+     6  color-scheme is set per palette, so the browser's own scrollbars and
+        form controls follow the light themes instead of staying dark.
+
+   No colour VALUE changed. The contrast figures quoted below were computed
+   against these exact colours and still hold.
+
+   Import order lives in app/layout.tsx: tailwind, tokens, globals, layout —
+   layout last, so its media queries win. */
 
 /* timseil.dev — Design Tokens · Terminal Noir
    Quelle: Foundations- und State-Language-Blatt des Design-Handoffs.
@@ -12,6 +33,13 @@
    Regel: keine Farbe, kein Radius, keine Dauer außerhalb dieser Datei. */
 
 :root {
+  /* Sagt dem Browser, in welcher Polarität er seine EIGENEN Teile zeichnet:
+     Scrollleisten, Formularelemente, das voreingestellte Fokusbild. Ohne die
+     Zeile bleiben sie dunkel, auch wenn die Seite auf Latte oder Gruvbox Light
+     steht — sichtbar auf jeder Seite, die scrollt. Keine Farbe, eine Polarität;
+     die zwei hellen Paletten drehen sie um. */
+  color-scheme: dark;
+
   /* Flächen */
   --bg:            #0A0E14;
   --panel:         #0E141C;
@@ -31,6 +59,29 @@
   --alert:         #FF2D55; /*  5.30 — ein Moment pro Seite */
   --amber:         #FFB000; /* 10.56 */
 
+  /* Der Akzent in vier Deckkraften — abgeleitet, nicht wiederholt.
+     Weil --acc und diese vier auf demselben Element aufgelöst werden, folgt
+     jede von ihnen dem [data-theme] von selbst; vier Werte × sieben Paletten
+     wären achtundzwanzig Zeilen, die einzeln driften können.
+     Die Prozente sind die des Handoffs: 35 · 25 · 70 · 20. */
+  --acc-line:      color-mix(in srgb, var(--acc) 35%, transparent);
+  --acc-select:    color-mix(in srgb, var(--acc) 25%, transparent);
+  --acc-pulse:     color-mix(in srgb, var(--acc) 70%, transparent);
+  --acc-pulse-2:   color-mix(in srgb, var(--acc) 20%, transparent);
+
+  /* Erkennungsfarben des Umschalters. Sie sagen, WELCHES Theme ein Knopf
+     schaltet, und dürfen sich deshalb mit dem Theme nicht ändern — sie stehen
+     nur hier, nie in einem [data-theme]-Block. Bei den fünf dunklen Paletten
+     ist es der Akzent, bei den zwei hellen die Fläche: #7C2FD4 und #076678
+     wären als Schwatch nicht als „hell" zu erkennen. */
+  --sw-noir:       #00E5FF;
+  --sw-mocha:      #CBA6F7;
+  --sw-amber:      #FFB74A;
+  --sw-phosphor:   #2EE6A6;
+  --sw-tokyo:      #7AA2F7;
+  --sw-latte:      #EFF1F5;
+  --sw-gruvbox:    #FBF1C7;
+
   /* Linien */
   --line-strong:   rgba(139,152,166,.25);
   --line:          rgba(139,152,166,.16);
@@ -45,10 +96,16 @@
   --l3: rgba(0,229,255,.58);
   --l4: rgba(0,229,255,.90);
 
-  /* Familien */
-  --mono:    'JetBrains Mono', ui-monospace, monospace;
-  --display: 'Chakra Petch', system-ui, sans-serif;
-  --body:    'Geist', system-ui, sans-serif;
+  /* Familien
+     Der Handoff-Wert steht als Fallback dahinter — G2 legt die geladenen
+     Schnitte über --face-*, app/fonts.ts. Warum die Umleitung, wo Next 16 die
+     Familie unter ihrem echten Namen deklariert: der Name ist ein Detail der
+     Umsetzung, und es hat zwischen zwei Hauptversionen schon einmal gewechselt.
+     Fiele es zurück auf einen erzeugten Namen, träfe 'Chakra Petch' hier nichts
+     mehr und die Seite stünde still auf system-ui. ADR 0043. */
+  --mono:    var(--face-mono,    'JetBrains Mono', ui-monospace, monospace);
+  --display: var(--face-display, 'Chakra Petch', system-ui, sans-serif);
+  --body:    var(--face-body,    'Geist', system-ui, sans-serif);
 
   /* Größen — 13 Stufen, keine halben Pixel */
   --t-mono-9:  9px;
@@ -93,7 +150,7 @@
   --bracket-rest: 6px;
   --focus-ring: 1px solid var(--acc);
   --focus-offset: 3px;
-  --glow: 0 0 28px rgba(0,229,255,.45);
+  --glow: 0 0 28px color-mix(in srgb, var(--acc) 45%, transparent);
 
   /* Dauern */
   --d-row: 90ms;
@@ -171,6 +228,7 @@
   --l0:rgba(76,79,105,.12); --l1:rgba(124,47,212,.24); --l2:rgba(124,47,212,.46);
   --l3:rgba(124,47,212,.70); --l4:#7C2FD4;
   --glow:none;                   /* kein Leuchten auf hellem Grund */
+  color-scheme:light;
 }
 
 [data-theme="gruvbox"] {         /* Gruvbox Light — Orange auf #9C3403 abgedunkelt */
@@ -182,22 +240,24 @@
   --l0:rgba(60,56,54,.14); --l1:rgba(7,102,120,.24); --l2:rgba(7,102,120,.46);
   --l3:rgba(7,102,120,.70); --l4:#076678;
   --glow:none;
+  color-scheme:light;
 }
 
-/* Ohne gespeicherte Wahl folgt die Seite dem System: hell → Gruvbox Light.
-   Steht data-theme, gewinnt es — deshalb :root:not([data-theme]).          */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) {
-    --bg:#FBF1C7; --panel:#EBDBB2; --panel-active:#E4D4A7;
-    --ink:#3C3836; --ink-2:#504945; --ink-3:#504945; --steel:#665C54; --dim:#665C54;
-    --acc:#076678; --acc-hi:#054C5A; --alert:#9D0006; --amber:#9C3403; --on-cyan:#FBF1C7;
-    --line-strong:rgba(60,56,54,.34); --line:rgba(60,56,54,.24);
-    --line-soft:rgba(60,56,54,.13); --line-faint:rgba(60,56,54,.09);
-    --l0:rgba(60,56,54,.14); --l1:rgba(7,102,120,.24); --l2:rgba(7,102,120,.46);
-    --l3:rgba(7,102,120,.70); --l4:#076678;
-    --glow:none;
-  }
-}
+/* Hier stand ein @media (prefers-color-scheme: light)-Block, der ohne
+   gespeicherte Wahl Gruvbox Light lieferte. G2 hat ihn entfernt, entschieden
+   am 28.08.2026: OHNE GESPEICHERTE WAHL IST DIE SEITE TERMINAL NOIR. Anlass
+   war ein heller Rechner, der Gruvbox Light als ersten Eindruck zeigte —
+   verbindlich soll die Fassung sein, die zuerst zu sehen ist. Hell erreicht
+   man über den Umschalter.
+
+   Der Block hat nebenbei eine Falle getragen. Terminal Noir hat keine ID; der
+   Umschalter LÖSCHT für ihn data-theme und den Speichereintrag. Solange der
+   Block existierte, landete ein Klick auf „Terminal Noir" auf einem hellen
+   Rechner also in Gruvbox Light. Ohne ihn ist die Abwesenheit des Attributs
+   wieder das, was sie verspricht: :root, und :root ist Terminal Noir.
+
+   Zweiter Nebeneffekt: die Gruvbox-Light-Werte standen doppelt in dieser Datei.
+   Jetzt einmal, in [data-theme="gruvbox"]. ADR 0043.                        */
 
 /* Breakpoints stehen nicht hier, sondern vollständig in layout.css:
    vier Schalter 1080 · 900 · 720 · 560, dazu die Spaltenformel

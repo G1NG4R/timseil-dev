@@ -133,7 +133,7 @@ Konkret heißt das:
 
 **Sieben Themes, ein Standard.** Terminal Noir ist verbindlich; die anderen sechs — Catppuccin Mocha, Amber CRT, Phosphor, Tokyo Night, Catppuccin Latte, Gruvbox Light — sind eine Vorliebe des Besuchers, keine Markenvariante. Ein Theme tauscht nur Farbe. Struktur, Typografie, Abstände und Bewegung bleiben. Jedes ist ein Satz von etwa zwanzig Variablen auf einem Wrapper, und jede Text- und Signalfarbe erreicht in jedem Theme mindestens 4,5:1 gegen beide Flächen.
 
-Dass ein heller Modus dabei ist, ist wichtig: Terminal Noir ist eine Entscheidung, keine Bequemlichkeit. Wer bei `prefers-color-scheme: light` einen hellen Modus bekommt, sieht, dass hier jemand an andere Leute gedacht hat.
+Dass zwei helle Paletten dabei sind, ist wichtig: Terminal Noir ist eine Entscheidung, keine Bequemlichkeit. Wer hell braucht, findet Catppuccin Latte und Gruvbox Light im Umschalter und sieht, dass hier jemand an andere Leute gedacht hat. Angeboten, nicht vorausgesetzt — die Seite startet immer in Noir, siehe Kapitel 19.
 
 ---
 
@@ -752,18 +752,21 @@ Terminal Noir ist der Standard. Daneben Catppuccin Mocha, Amber CRT, Phosphor, T
 
 **Ein Theme tauscht nur Farbe.** Struktur, Typografie, Abstände, Bewegung und Regeln bleiben: ein Akzent, ein Alert-Moment pro Seite, Akzentfläche unter etwa 3 %, Zustand nie nur über Farbe. Technisch ist jedes Theme ein Satz von etwa zwanzig Variablen auf einem `[data-theme]`-Wrapper.
 
-Ohne gespeicherte Wahl folgt die Seite dem System: `prefers-color-scheme: light` liefert Gruvbox Light, sonst Terminal Noir.
+**Ohne gespeicherte Wahl ist die Seite Terminal Noir**, auch auf einem Rechner, der hell eingestellt ist. Hell erreicht man über den Umschalter in der Fußzeile. Entschieden am 28.08.2026 und in G2 umgesetzt: die verbindliche Fassung soll die sein, die zuerst zu sehen ist. Der `prefers-color-scheme`-Zweig, der vorher Gruvbox Light lieferte, ist damit aus `tokens.css` entfallen — mitsamt einer Falle, die an ihm hing: Terminal Noir hat keine ID, der Umschalter *löscht* für ihn das Attribut, und solange der Zweig existierte, führte ein Klick auf „Terminal Noir" auf einem hellen Rechner nach Gruvbox Light. ADR 0043.
 
 ### Das Anti-Flash-Problem
 
-Ein Theme, das erst nach dem ersten Paint gesetzt wird, erzeugt ein sichtbares Umspringen. Deshalb ein Inline-Script im `<head>`, **vor jedem CSS**:
+Ein Theme, das erst nach dem ersten Paint gesetzt wird, erzeugt ein sichtbares Umspringen. Deshalb ein Inline-Script im `<head>`. Es steht seit G2 in `web/lib/theme.ts` als Konstante und prüft den gespeicherten Wert gegen die Liste der Paletten, statt ihn ungeprüft ins DOM zu schreiben:
 
-```html
-<script>(function(){try{var t=localStorage.getItem('ts.theme');
-  if(t)document.documentElement.dataset.theme=t;}catch(e){}})();</script>
+```js
+(function(){try{var t=localStorage.getItem("ts.theme");
+  if(["mocha","amber","phosphor","tokyo","latte","gruvbox"].indexOf(t)>-1)
+    document.documentElement.dataset.theme=t;}catch(e){}})();
 ```
 
-**Das kollidiert mit der Content Security Policy.** Eine CSP ohne `unsafe-inline` blockt genau dieses Script. Die Lösung ist ein Nonce, den `proxy.ts` pro Request erzeugt und in beide Stellen einsetzt. Wer das übersieht, hat entweder eine schwache CSP oder ein flackerndes Theme — beides vermeidbar.
+**„Vor jedem CSS" heißt in der Umsetzung „vor dem ersten Paint".** Der App Router setzt den `<head>` selbst zusammen; nachgemessen am Produktionsbuild steht das Script hinter dem Stylesheet-Link. Das ist folgenlos und zwingend so: ein klassisches Inline-Script ist parser-blockierend und wartet auf ausstehende Stylesheets, und der erste Paint wartet auf dasselbe Stylesheet. Die Reihenfolge ist damit CSS geladen → Script → Paint.
+
+**Es kollidiert mit der Content Security Policy.** Eine CSP ohne `unsafe-inline` blockt genau dieses Script. Die Lösung ist ein Nonce, den `proxy.ts` pro Request erzeugt. Gebaut wird die CSP in L4; G2 hat das Script nur nonce-*fähig* gemacht — `ThemeScript` nimmt die Prop, niemand übergibt sie. Der Grund für die Reihenfolge steht in ADR 0043 und ist ein Satz, den auch G4 braucht: **ein Anti-Flash-Script und eine vollständig vorgerenderte HTML-Hülle schließen sich aus, sobald die CSP nonce-basiert ist** — ein Nonce heißt `headers()` im Root-Layout, und das nimmt jede Seite aus dem statischen Pass.
 
 ---
 

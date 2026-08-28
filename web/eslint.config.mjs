@@ -30,6 +30,16 @@ import tseslint from "typescript-eslint";
 // things in advance.
 const PUBLIC_ENV = [];
 
+// Invariant 9: exactly two localStorage keys on the whole site.
+//
+//   ts.theme     the palette the visitor chose      G2
+//   ts404.best   the best time on the 404 game      H10, not written yet
+//
+// Both are named here from the start, so H10 adds a feature rather than
+// arguing with a linter. Anything else is a third key, and a third key is how
+// "two" quietly becomes "a few".
+const STORAGE_KEYS = ["ts.theme", "ts404.best"];
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -77,6 +87,28 @@ const eslintConfig = defineConfig([
             "PUBLIC_ENV in eslint.config.mjs if that is intended, and make " +
             "sure it is not a secret — the prefix cannot be taken back once " +
             "a build has gone out.",
+        },
+
+        // Invariant 9, and the build plan names this rule as its proof
+        // (chapter 1, "Lint-Regel + E2E"). G2 is the phase that writes the
+        // first key, so it is the phase that owes the rule.
+        //
+        // Only a literal first argument is caught, which is the honest limit of
+        // a selector: a key assembled from a variable goes through. That is the
+        // same trade check-tokens.sh makes for colours, and the adversary is
+        // the same one — our own convenience, not a stranger.
+        {
+          selector: [
+            "CallExpression",
+            "[callee.object.name='localStorage']",
+            "[callee.property.name=/^(get|set|remove)Item$/]",
+            "[arguments.0.type='Literal']",
+            STORAGE_KEYS.map((key) => `[arguments.0.value!='${key}']`).join(""),
+          ].join(""),
+          message:
+            "Invariant 9: the site has exactly two localStorage keys, ts.theme " +
+            "and ts404.best. A third one is a decision, not a detail — make it " +
+            "in the build plan first, then add it to STORAGE_KEYS here.",
         },
       ],
     },
