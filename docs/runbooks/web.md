@@ -152,6 +152,19 @@ print(re.findall(r'BUILD [a-z0-9]+|BUILD —|ONLINE|OFFLINE|UPTIME [—0-9.%]+',
 Erwartet mit laufender API: der Platzhalter **und** der Wert, in dieser
 Reihenfolge. Nur der Platzhalter heißt, dass die Insel nicht aufgelöst hat.
 
+3. **Ein `docker compose`-Aufruf gegen den Lab-Stack ohne `IMAGE_TAG` bricht ab,
+   bevor er irgendetwas tut.** `compose.yaml` verlangt die Variable mit einer
+   Fehlermeldung statt eines Vorgabewerts. Wer die Ausgabe nach `/dev/null`
+   schickt — etwa bei einem `stop api`, dessen Wirkung er gleich messen will —
+   misst gegen einen Dienst, der nie gestoppt wurde. Passiert in der G4-Abnahme,
+   fünfzehn Minuten lang. Der Aufruf ist:
+
+   ```sh
+   export IMAGE_TAG=$(make -s image-tag) CONTRIBUTIONS_TRANSPORT=off
+   docker compose -f compose.yaml -f compose.rollout.yaml -f compose.lab.yaml stop api
+   docker ps -a --filter name=timseil-api-1 --format '{{.Status}}'   # nachsehen
+   ```
+
 **Ein Screenshot schlägt beides.** Was der Browser wirklich zeigt, steht weder
 in den Bytes noch in einer DOM-Abfrage aus der Browser-Erweiterung heraus — die
 hat in der G4-Abnahme dreimal `— NO DATA` gemeldet, während auf dem Bild die
@@ -161,22 +174,32 @@ aus G3: leere oder alte Werte aus diesem Weg beweisen nichts.
 ## Wie lange die Fußzeile eine tote API für lebendig hält
 
 `next.config.ts` gibt dem Profil `health` die Zahlen aus dem `Cache-Control` des
-Contracts (ADR 0009): `revalidate: 60`, `expire: 600`. Das heißt in dieser
-Reihenfolge, wenn die API um `T` ausfällt:
+Contracts (ADR 0009): `revalidate: 60`, `expire: 600`.
 
-| Zeitraum | Was die Fußzeile zeigt |
-|---|---|
-| `T` … `T+60s` | die letzte Antwort, frisch |
-| `T+60s` … `T+expire` | dieselbe Antwort, veraltet — im Hintergrund wird erfolglos nachgefragt, **niemand wartet** |
-| ab `T+expire` | `— NO DATA` |
-
-Nachmessen, nicht schätzen:
+**Gemessen, nicht aus dem Profil abgelesen** (G4, `/about`, API nachweislich
+gestoppt): der Wert steht noch **52 Sekunden**, dann `— NO DATA`. Der Eintrag war
+beim Stoppen rund acht Sekunden alt, es ist also das `revalidate`-Fenster, das
+den Ausschlag gibt. `expire: 600` erzeugt **keine** Gnadenfrist — sobald
+aufgefrischt werden muss und das fehlschlägt, wirft `healthCached`, und die
+Zelle sagt wieder nichts. Wer die Zahl neu braucht, misst sie:
 
 ```sh
-docker compose stop api
-while :; do date -u +%H:%M:%S; curl -sS http://127.0.0.1:8080/ \
-  | grep -c 'ONLINE'; sleep 15; done
+export IMAGE_TAG=$(make -s image-tag) CONTRIBUTIONS_TRANSPORT=off
+docker compose -f compose.yaml -f compose.rollout.yaml -f compose.lab.yaml stop api
+docker ps -a --filter name=timseil-api-1 --format '{{.Status}}'   # wirklich aus?
+
+start=$(date +%s)
+while :; do
+  v=$(curl -sS http://127.0.0.1:8080/about | grep -o 'BUILD [0-9a-f]\{6,\}' | head -1)
+  echo "+$(( $(date +%s) - start ))s ${v:-GONE}"
+  [ -z "$v" ] && break
+  sleep 10
+done
 ```
+
+**Nicht `/`.** Diese Route rendert zusätzlich den korrelierten Leser, der pro
+Besucher fragt — jede Zählung über Anfragen an die API misst dort ihn und nicht
+den Cache.
 
 ## `Cannot find module` — jede Seite 500, das Paket ist aber da
 

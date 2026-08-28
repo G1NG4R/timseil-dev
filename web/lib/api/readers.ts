@@ -67,6 +67,11 @@ export async function healthCached(): Promise<Health> {
   // line the api writes for this call therefore stands under an id of its own —
   // the fill's, not any one visitor's, which is the truthful attribution: one
   // upstream request served the next sixty seconds of visitors.
+  //
+  // And no `cache` option: the lifetime of this answer is cacheLife's above, and
+  // one question may only have one mechanism. Measured on /about, which renders
+  // the two cached islands and nothing else: ten page loads after the first,
+  // zero upstream calls.
   const result = await apiGet("/api/health");
 
   if (result.kind !== "ok") {
@@ -126,6 +131,10 @@ export async function healthLive(): Promise<Health | null> {
     headers: outboundHeaders,
     ifNoneMatch: lastEtag,
     ids,
+    // Outside any cached scope, and it says so rather than relying on the
+    // default: this answer belongs to one visitor and must never be reused for
+    // another.
+    cache: "no-store",
   });
 
   if (result.kind === "not-modified") {

@@ -89,9 +89,24 @@ der API trägt die Zahl. Ein geworfener Fehler wird nicht gespeichert.
 ### `ONLINE` heißt Herkunft, nicht Leben
 
 Die Zelle sagt: *diese Antwort kam von der API*. Sie sagt nicht: *die API lebt
-in dieser Sekunde*. Der Unterschied ist bis zu ein Cache-Fenster breit, und er
-ist gemessen: mit gestopptem `api`-Container liefert die Seite weiter
-`BUILD 297cb52 · ONLINE`, weil die Antwort im Fenster noch gültig ist.
+in dieser Sekunde*. Der Unterschied ist ein Cache-Fenster breit, und er ist
+gemessen — gegen `/about`, das nur die beiden gecachten Inseln rendert, mit
+nachweislich beendetem `api`-Container (`Exited (0)`, Proxy antwortet 503):
+
+```
++0s   BUILD 6e16275     ← API seit dieser Sekunde gestoppt
++40s  BUILD 6e16275
++52s  — NO DATA
+```
+
+**52 Sekunden**, und der Eintrag war beim Stoppen rund acht Sekunden alt — die
+Zelle hört also innerhalb eines `revalidate`-Fensters auf, `ONLINE` zu
+behaupten. Das `expire: 600` hat dabei **keine** Gnadenfrist erzeugt: sobald
+`revalidate` verstrichen ist, hängt die nächste Anfrage an einer Auffrischung,
+die fehlschlägt, und `healthCached` wirft. Das ist die ehrlichere der beiden
+denkbaren Auslegungen und war nicht vorhergesagt — die erste Fassung dieses ADR
+behauptete eine Frist von bis zu zehn Minuten, aus dem Profil abgelesen statt
+gemessen.
 
 Die Alternative — den Statuspunkt pro Anfrage ungecacht zu holen — wäre ein
 Hop auf jeder der zehn Seiten für ein Wort, und sie hätte einen eigenen Fehler:
@@ -101,6 +116,16 @@ dürfen, ist schlechter als eines, dessen Bedeutung aufgeschrieben ist.
 
 Der Punkt pulst weiterhin nicht. Dass dieser Container läuft, sagt nichts über
 die API — das war schon G3s Satz und bleibt richtig.
+
+### Dass der Cache überhaupt greift, ist gemessen — und dreimal falsch gemessen
+
+`/` ist die falsche Route dafür. Sie rendert **beide** Leser: die zwei gecachten
+Inseln und die korrelierte auf der Seite selbst. Zehn Seitenaufrufe erzeugen dort
+zehn API-Anfragen, und das sieht wie ein toter Cache aus — es ist `healthLive`,
+das genau einmal pro Besucher fragt und das auch soll.
+
+Gemessen auf `/about`, das nur die gecachten Inseln trägt, aus einem kalten
+Start: **zehn Aufrufe, null API-Anfragen** nach der ersten Füllung.
 
 ### Der Deploy invalidiert, weil der Container stirbt — nicht weil jemand ruft
 

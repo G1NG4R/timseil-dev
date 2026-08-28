@@ -91,6 +91,17 @@ export interface GetOptions {
   timeoutMs?: number;
   /** Only for the log line. The transport does not read them. */
   ids?: Correlation;
+  /**
+   * What the framework may do with this request.
+   *
+   * `"no-store"` outside a cached scope, omitted inside one. Not because
+   * `no-store` breaks `use cache` — it was accused of that during this phase and
+   * measured innocent — but because inside a `use cache` boundary the lifetime
+   * already belongs to `cacheLife`, and a second instruction about the same
+   * question is how a page ends up serving a number nobody can explain the age
+   * of.
+   */
+  cache?: RequestCache;
 }
 
 // Short on purpose. This runs inside a page render, so it is a budget for how
@@ -101,10 +112,9 @@ const DEFAULT_TIMEOUT_MS = 2_000;
 /**
  * One GET against the api, typed by the contract.
  *
- * Makes no caching decision. `cache: "no-store"` here means "this function does
- * not cache"; whether an answer is reused is decided one layer up, by whether
- * the caller sits inside a `use cache` boundary. Two mechanisms for one question
- * is how a page ends up serving a number nobody can explain the age of.
+ * Makes no caching decision of its own — it passes the caller's through. Whether
+ * an answer is reused is decided one layer up, by whether the caller sits inside
+ * a `use cache` boundary, and lib/api/readers.ts is where both callers are.
  */
 export async function apiGet<P extends GetPath>(
   path: P,
@@ -125,7 +135,7 @@ export async function apiGet<P extends GetPath>(
     const response = await fetch(apiTarget(path), {
       headers,
       signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
-      cache: "no-store",
+      ...(options.cache === undefined ? {} : { cache: options.cache }),
     });
 
     const upstreamRequestId = response.headers.get(REQUEST_ID_HEADER);
