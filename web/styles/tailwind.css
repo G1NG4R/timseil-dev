@@ -64,6 +64,15 @@
   --color-line-faint:  var(--line-faint);
   --color-grid:        var(--grid);
 
+  /* G3. Four surfaces the chrome needs; none of them will ever be reached as a
+     utility — they are gradient stops and a ::backdrop in chrome.css. Mapped
+     anyway, because ADR 0042's second line is where somebody stops and asks
+     whether the value is really new, and an unmapped token skips that. */
+  --color-rule-major: var(--rule-major);
+  --color-rule-minor: var(--rule-minor);
+  --color-overlay:    var(--overlay);
+  --color-scanline:   var(--scanline);
+
   --color-l0: var(--l0);
   --color-l1: var(--l1);
   --color-l2: var(--l2);
@@ -111,6 +120,7 @@
   --spacing-16: var(--s-16);
   --spacing-20: var(--s-20);
   --spacing-26: var(--s-26);
+  --spacing-30: var(--s-30);   /* G3, the nav gap. Off the grid on purpose. */
   --spacing-34: var(--s-34);
   --spacing-44: var(--s-44);
   --spacing-56: var(--s-56);
@@ -128,6 +138,12 @@
                status dot at 50%, which is one declaration in one component and
                reads better as `border-radius: var(--radius-dot)` than as a
                utility. `rounded-lg` should not exist.
+
+   G3 adds three tokens that get no mapping at all, and that is the same kind
+   of decision: --head-h/--head-h-sm belong to one element's height, --d-pulse
+   to one animation, --z-head/--z-menu to a stacking order. None has a Tailwind
+   namespace that would not be an invention, and all five are written as
+   var(--...) in chrome.css.
 
    --breakpoint-*  All four switches (1080 · 900 · 720 · 560) live in
                layout.css, as max-width queries, with the derivation in the

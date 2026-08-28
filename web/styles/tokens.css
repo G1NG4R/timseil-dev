@@ -20,6 +20,10 @@
         stored choice the site is Terminal Noir, decided 28.08.2026.
      6  color-scheme is set per palette, so the browser's own scrollbars and
         form controls follow the light themes instead of staying dark.
+     7  A fenced G3 block at the end of :root holds the chrome's own values —
+        two header heights, the nav gap, the pulse, four derived surfaces and
+        two z-indices. ADR 0044 says why each one had to become a token
+        rather than stay where the sheet wrote it.
 
    No colour VALUE changed. The contrast figures quoted below were computed
    against these exact colours and still hold.
@@ -167,6 +171,45 @@
   --e-snap: cubic-bezier(.2,.9,.1,1);
   --e-wipe: cubic-bezier(.4,0,.2,1);
   --e-out:  ease-out;
+
+  /* ── G3 · Chrome ─────────────────────────────────────────────────────────
+     The seventh departure. Everything below is ours, not the designer's, and
+     every entry exists because the Chrome sheet writes a value that invariant
+     8 will not let us write where it is used.                              */
+
+  /* The two numbers of the phase. Two tokens, not one redefined inside a
+     media query: values live here, media queries live in layout.css, and a
+     @media { :root { --head-h: 52px } } would break whichever of those two
+     rules you happened to read second.                                     */
+  --head-h:    66px;
+  --head-h-sm: 52px;
+
+  /* The nav gap. The Chrome sheet says 30, seven of the ten page sheets say
+     32; the sheet is the binding version and the pages get pulled to it.
+     Off the 4px grid on purpose — 30 is not a step, it is one component's
+     measurement, and pretending otherwise would put a fifteenth number in a
+     scale that means something.                                            */
+  --s-30: 30px;
+
+  /* The status dot. Build plan G6 and the handoff inventory both say 2.6s;
+     only the Chrome sheet says 2.4. G6 extracts StatusDot and inherits this. */
+  --d-pulse: 2600ms;
+
+  /* The header ruler's two tick gradients and the menu's scanline. In the
+     sheet these are rgba(139,152,166,.35/.14) and rgba(255,255,255,.02) —
+     Terminal Noir literals, the same defect ADR 0043 removed for --acc-line
+     and --glow. Derived, so they follow all seven palettes. The scanline
+     comes from --ink rather than from white: on latte and gruvbox a white
+     line over a light overlay is not there at all.                         */
+  --rule-major: color-mix(in srgb, var(--steel) 35%, transparent);
+  --rule-minor: color-mix(in srgb, var(--steel) 14%, transparent);
+  --overlay:    color-mix(in srgb, var(--bg)   97%, transparent);
+  --scanline:   color-mix(in srgb, var(--ink)   2%, transparent);
+
+  /* Both sit BELOW the skip link's z-index: 100 in globals.css. A header that
+     covers the first tab stop is the classic version of this bug.          */
+  --z-head: 50;
+  --z-menu: 90;
 }
 
 
