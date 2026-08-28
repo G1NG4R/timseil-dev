@@ -12,7 +12,145 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 28.08.2026, G2 in Produktion
+## Wo wir stehen — 28.08.2026, G3 in Produktion
+
+**Die Seite hat ihr Gerüst.** Kopf, Menü und Fußzeile stehen auf jeder Seite
+gleich, die Uhr läuft, und die Fußzeile trägt zwei Fassungen nach Einsatzplan.
+`sha-1656fd4`, Merge 18:22:30 UTC, Deploy 18:26:15 UTC, 222 s, `ok`, vorher
+`sha-93dcf81`. `make check-deployed` stellt acht Behauptungen und benennt die
+neunte, die es von hier aus nicht stellen kann. Gemessen an
+`https://timseil.dev`, im Browser:
+
+```
+status ok · sha 1656fd4 · v0.10.0
+Hydration-Warnungen             0             14 Ladevorgänge, 7 Routen, Kanarienvogel vorher
+--:--:-- im ausgelieferten HTML  3            auf jeder Route, alle drei Uhren
+Fremd-Origins im Anfrageweg     []            ein Ziel im Dokument, github.com, aber kein Request
+Requests an gstatic/googleapis   0
+woff2                            5 Dateien, 99 480 B, alle same-origin
+Stylesheet                       26 729 B     vorher 17 513 — das Chrome kostet 9 216
+prefers-color-scheme             0 Regeln
+Kopfhöhe                        66 / 52       1440·1081·1079·1024 / 899·719·390
+Ziele unter 44 px                0 von 20     coarse erzwungen, matchMedia sagt fine
+Uhren                            3, gleich    ein Intervall, 18:57:09 → :10
+— NO DATA in der Meta-Leiste     3 von 3      BUILD · ONLINE · UPTIME, Punkt ohne Puls
+Umschalter                       Fußzeile 1, Menü 0
+Konsole                          leer
+```
+
+### `--:--:--` im ausgelieferten HTML ist der bessere Beleg als eine leere Konsole
+
+Das Abnahmekriterium des Bauplans für G3 ist eine Abwesenheit: **null**
+Hydration-Warnungen. Vierzehn Ladevorgänge über sieben Routen, die Hälfte kalt,
+die Hälfte mit gesetztem `ts.theme`, liefern sie — und ein `console.error`
+davor beweist, dass der Kanal überhaupt spricht. Trotzdem ist das der
+schwächere der beiden Belege. Ein leerer Kanal und ein stummer sehen gleich
+aus, und **diese Abnahme hat selbst zwei stumme produziert**: das
+`close`-Ereignis eines `<dialog>` erreicht die Erfassung nicht, auch nicht bei
+einem nackten Kontroll-Dialog, und `requestAnimationFrame` steht in einem
+verborgenen Tab still. Beide Male fehlte nichts, beide Male schwieg die Liste.
+
+Der stärkere Beleg ist eine **Anwesenheit**. Im ausgelieferten HTML stehen
+dreimal die acht Zeichen `--:--:--`, auf jeder Route, und ein Fremder holt sie
+mit einem `curl` — ohne Browser, ohne Konsole und ohne mir zu glauben. Das ist
+der Server-Snapshot. Weil `getServerSnapshot` **immer** den Platzhalter liefert,
+liest der Hydrations-Render dieselben acht Zeichen: es gibt keinen zweiten Baum,
+über den React sich beschweren könnte. Die Warnung bleibt nicht aus, sie ist
+bauartbedingt unmöglich — `suppressHydrationWarning` steht auf dem einen `<span>`
+und ließe sich löschen, ohne dass sich etwas ändert.
+
+### Der offene G2-Fund hat einen Punkt weniger, und G3 hat ihn nebenbei geschlossen
+
+Der Fünf-Lücken-Eintrag aus G2 führte unter (2) `accSoft`: das Blatt zählt es zu
+den 20 Theme-Variablen, `tokens.css` hatte kein Äquivalent, „→ G6/H". Der Punkt
+ist zu, seit `1656fd4` läuft — und nicht, weil jemand die Lücke abgearbeitet
+hätte. Das Chrome-Blatt zeichnet **sechs** Alphas des Akzents für vier getönte
+Flächen, auf dunklem Grund nicht unterscheidbar; sie zusammenzufassen brauchte
+genau dieses Token, und so entstanden `--acc-soft` und `--acc-edge` (ADR 0044).
+**Vier Lücken sind offen, fünf standen bis heute in der Tabelle.** Ein
+Notizblock, an den nur angehängt wird, wirbt weiter für Arbeit, die getan ist.
+
+### Der Fund über `instrumentation.ts` war schon gefunden, und der Tracker sagt es seit Stufe F
+
+Die drei `Ecmascript file had an error` auf `instrumentation.ts:70,78,79` sind
+gemessen und richtig — und sie stehen als **#187** im Tracker, seit Stufe F. Ich
+habe sie trotzdem als frischen Fund in diesen Notizblock geschrieben, samt der
+offenen Frage, „ob Turbopack hier etwas Echtes meldet oder ob die Meldung nur
+Lärm ist". **#187 beantwortet sie seit D1:** Next kompiliert die Datei zusätzlich
+für die Edge-Runtime, die diese Anwendung nicht hat, und warnt dort über
+`process.on`; der Ausweg wäre die Teilung in eine Node- und eine Edge-Hälfte,
+bewusst bis F11 zurückgestellt, mit Abnahmekriterium.
+
+Die Regel dagegen steht in `CLAUDE.md`, und ihr Auslöser ist die F5-Abnahme:
+**„Wer nur den Notizblock liest, findet Dinge ein zweites Mal und meldet sie als
+neu."** Die Regel war da, die zweite Hälfte des Gedächtnisses habe ich nicht
+gelesen. Die Zeile zeigt jetzt auf #187 und bleibt stehen — dass es ein zweites
+Mal passiert ist, ist die Information.
+
+Beim Nachlesen fiel die Gegenrichtung auf, und sie ist der teurere Fall:
+**#94 trägt den Meilenstein G4 und beschreibt eine Reparatur, die es seit dem
+23.08. gibt.** Der Notizblock und der Tracker driften in beide Richtungen, und
+nur einer von beiden wird am Ende jeder Stufe triagiert.
+
+### Was die Abnahme nicht behauptet
+
+**Keinen Mobil-Erfolg.** `pointer: coarse` lässt sich in einem gezogenen
+Desktop-Fenster nicht emulieren; `matchMedia` bleibt `fine`, gleich wie schmal
+das Fenster ist. Gemessen ist deshalb nicht, dass ein Gerät die Query trifft,
+sondern dass die Regel für **jedes** Ziel wirklich 44px erzeugt: den
+coarse-Block ohne seine Media Query injiziert, dann alle zwanzig Ziele
+nachgemessen, keins darunter. Genau dort kann sie still versagen, weil
+`min-height` auf ein nicht-ersetztes Inline-Element nicht wirkt. Der Beleg für
+die Query selbst kommt mit Playwright und `hasTouch`, vor H1.
+
+**Keinen Dev-Durchgang gegen Produktion.** Die elf Ladevorgänge mit lesbaren
+Meldungen und StrictModes doppeltem Aufruf sind lokal gemessen und bleiben lokal
+aufgeschrieben. Produktion hat keinen Dev-Modus.
+
+**Und keine Zahl aus dem Quelltext.** `aria-current` erscheint auf `/privacy`
+dreimal in den ausgelieferten Bytes und **null**mal im DOM — die RSC-Nutzlast
+trägt das Markup ein zweites Mal. Jede Zählung hier kommt aus
+`querySelectorAll`; die einzige Ausnahme ist `--:--:--`, und nur weil das eine
+Behauptung über die Bytes selbst ist.
+
+### Was die Abnahme gefunden hat
+
+**Das Chrome ist das teuerste Stylesheet der Seite.** Ausgeliefert werden
+26 729 Byte CSS, in G2 waren es 17 513 — **9 216 Byte für ein Bauteil**, also
+mehr als die Hälfte dessen, was vorher insgesamt da war. Kein Defekt, aber die
+Zahl gehört in den Blick, bevor G6 und G7 zwanzig weitere Bauteile bringen.
+
+**Zum ersten Mal steht ein fremder Origin im Dokument.** `FooterLead` verlinkt
+`github.com/G1NG4R`. Im Anfrageweg ist er nicht — die Liste der Origins, die der
+Browser wirklich holt, hat weiterhin genau einen Eintrag —, aber die G2-Zeile
+„Fremd-Origins `[]`" hätte ab jetzt zwei Dinge bedeuten können, und eine Zahl,
+die zwei Dinge bedeuten kann, ist keine Messung mehr. Sie steht deshalb mit
+ihrem Zusatz da.
+
+**Und die eine Hälfte des G2-Schriftfundes stimmt nicht mehr.** Die Zeile sagt,
+Turbopack liefere „im `<head>` kein `<link rel="preload" as="font">`" —
+nachgemessen an der laufenden Seite stehen dort **fünf**, und es sind genau die
+fünf Dateien, die ein lateinischer Text holt. Die andere Hälfte steht: im
+ausgelieferten Stylesheet kommen `size-adjust`, `ascent-override` und
+`descent-override` **null**mal vor, der metrisch angepasste Ersatzschnitt fehlt
+also wirklich — und das ist der CLS-Teil des Fundes, der zu L8 gehört.
+
+**Als Nächstes:** G4 — API-Client aus den generierten Typen, serverseitig
+`http://api:8080`, clientseitig `/api`, die Request-ID durchgereicht; dazu Next 16
+Cache Components: die Hülle vorgerendert, die Metriken über `use cache` mit Tags,
+und der Deploy invalidiert. Abgenommen ist es, wenn **ein Trace den ganzen Weg
+zeigt** und die Invalidierung beim Deploy **getestet** ist, nicht behauptet. Die
+Naht liegt schon: `FooterMeta` nimmt `build`, `uptime` und `online` und lässt sie
+auf `null` — `— NO DATA` ist der Zustand, den man bekommt, wenn man nichts sagt,
+und G4 füllt drei Props, statt eine Fußzeile umzubauen. Der Weg dorthin ist
+`/api/health`, wo `version` bereits liegt. Und ADR 0044 hat eine Warnung
+hinterlegt, die G4 zuerst liest: **Kopf und Fußzeile nicht in `use cache`
+wickeln** — ein `usePathname()` in einer gecachten Grenze friert die Antwort
+einer Route ein und serviert sie allen.
+
+---
+
+## Vorher — 28.08.2026, G2 in Produktion
 
 **Die Seite hat ihre Schrift und ihre sieben Paletten.** Chakra Petch, Geist und
 JetBrains Mono liegen self-hosted im Image, das Theme steht vor dem ersten Paint,
@@ -1633,7 +1771,7 @@ sie neu. CLAUDE.md hat dafür jetzt eine Zeile, mit diesem Vorfall als Auslöser
 |---|---|---|---|
 | 28.08.2026 | G3 | **Der Kopf bleibt statisch, und die Frage wird in H1 neu gestellt.** Das Chrome-Blatt kennt kein `position` und keinen Scroll-Zustand; sticky wäre erfunden gewesen. Der einzige Hinweis ist `.rail { top: 90px }` — eine Herleitung aus einer Zahl, kein Satz. In H1 steht die Spec-Rail zum ersten Mal wirklich da, und dann lassen sich Kopf und Rail zusammen messen statt einzeln vermuten. ADR 0044. | verschoben |
 | 28.08.2026 | G3 | **Die Uhr driftet, und das ist die Fassung des Blattes.** `setInterval(1000)` verliert auf einem beschäftigten Tab gelegentlich eine Sekunde; ein sich selbst neu stellendes `setTimeout(1000 - Date.now() % 1000)` liefe auf der Sekundengrenze und sähe merklich ruhiger aus. Das Blatt schreibt `setInterval`, also `setInterval` — die Änderung wäre eine Entwurfsentscheidung und keine Reparatur. | verschoben |
-| 28.08.2026 | G3 | **Issue #96 (Favicon) trägt den Meilenstein G3 und ist nicht erledigt.** `web/public/favicon.svg` ist weiter der Platzhalter. Das Chrome-Blatt spezifiziert kein Icon; das nächstliegende Motiv wäre die Wortmarke `TS://`, aber ein Icon zu entwerfen ist eine gestalterische Handlung an einem read-only-Handoff, der keine vorsieht. **Vorschlag: auf K2 umhängen** (Blog, CV & Bilder), wo Bildmaterial ohnehin entsteht — oder du entscheidest das Motiv, dann ist es zehn Minuten. Nicht von mir umgehängt, der Tracker gehört dir. | offen |
+| 28.08.2026 | G3 | **Issue #96 (Favicon) trägt den Meilenstein G3 und ist nicht erledigt.** `web/public/favicon.svg` ist weiter der Platzhalter. Das Chrome-Blatt spezifiziert kein Icon; das nächstliegende Motiv wäre die Wortmarke `TS://`, aber ein Icon zu entwerfen ist eine gestalterische Handlung an einem read-only-Handoff, der keine vorsieht. **Vorschlag: auf K2 umhängen** (Blog, CV & Bilder), wo Bildmaterial ohnehin entsteht — oder du entscheidest das Motiv, dann ist es zehn Minuten. **Erledigt am 28.08.:** auf den neu angelegten Meilenstein **K2** umgehängt, mit der Begründung als Kommentar — die Prämisse des Issues war, dass das Chrome-Blatt die Marke trägt, und es zeichnet kein Icon. Der Meilenstein G3 ist damit leer. | erledigt |
 
 ## Gefunden — Bug oder Unklarheit
 
@@ -1646,18 +1784,19 @@ Vorherige Triage: Stufe F (Launch-Pfad), 27.08.2026 — siehe oben.
 | 27.08.2026 | G1 | **`check-topology` ist einmal mit `migrate` exit 1 aus einem leeren Volume gefallen** — im ersten Quickstart-Lauf gegen diesen Branch, direkt nach dem Web-Fehlschlag. Compose hatte die Logzeilen des Init-Containers geschluckt, und der Lauf war schon abgeräumt, als ich sie suchte. Danach zweimal nicht wiedergekehrt: `make check-topology` einzeln grün, der saubere Quickstart-Wiederholungslauf ohne ein einziges ✗. **Nicht reproduzierbar, Ursache unbekannt** — kommt es wieder, ist der erste Griff, die Logs des `migrate`-Containers zu sichern, bevor irgendetwas abgeräumt wird. | offen |
 | 28.08.2026 | G1→G2 | **Ein GHCR-Push ist mit `unknown blob` gestorben, und der Hinweistext zeigt woandershin.** `publish` auf `main` (`365431c`): `timseil-api` ging durch, `timseil-web` brach nach der Hälfte der Layer ab — mit `Layer already exists` davor. `make push` legt daraufhin den 403-Hinweis über Paketrechte nach, und der ist hier **falsch**: derselbe Job hat Sekunden vorher mit denselben Rechten gepusht. Folge: `deploy` übersprungen, Produktion auf dem vorigen Image, `check-deployed` 2 von 6 rot — genau an der Stelle, an der die Seite ihre Nachprüfbarkeit behauptet. **Ein `rerun --failed` lief sauber durch** (deploy 09:17:05 UTC, 217 s, ok), also einmalig und nicht reproduziert. Offen: ob der Hinweistext eine zweite Zeile für den Registry-Fehler bekommt, statt nur die Rechte-Erklärung anzubieten — berührt #90. | offen |
 | 28.08.2026 | G2 | **Der aktive Schwatch des Theme-Umschalters ist in den zwei hellen Paletten unsichtbar — und zwar genau der aktive.** Der Handoff zeichnet „aktiv = volle Deckkraft **und** Rahmen in der Schwatch-Farbe". Auf Latte ist die Schwatch-Farbe `#EFF1F5` und die Seitenfläche ist `#EFF1F5`; Fläche, Rahmen und Untergrund fallen zusammen. **Gemessen im Browser, 28.08.2026:** aktiver Knopf `background rgb(239,241,245)`, `border rgb(239,241,245)`, `body background rgb(239,241,245)` — Kontrast **1.00**. Gruvbox Light trägt denselben Fall mit `#FBF1C7`. Die Regel ist gegen Terminal Noir gezeichnet, wo der Schwatch ein heller Akzent auf dunklem Grund ist, und verletzt in den hellen Paletten die eigene Regel des Blattes („Zustände nie nur über Farbe"). `aria-checked` stimmt, es ist rein visuell. Eine Reparatur heißt ein zweites Merkmal für den Aktiv-Zustand und ist eine Entwurfsentscheidung, keine von G2. **Erledigt, und es war keine Entwurfsfrage.** Der Bauplan sagt in Anhang B „aktiv = volle Deckkraft **und Akzentrahmen**", `docs/design/README.md:642` sagt „den Rahmen in **Akzentfarbe**" — nur der Code-Ausschnitt des Handoffs schreibt die Schwatch-Farbe, und ich hatte den Ausschnitt höher gewichtet als die zwei Sätze. `INDEX.md` sagt, wer bei Widerspruch gewinnt: der Bauplan. Mit `var(--acc)` steigt der Kontrast gegen die Fläche von **1.00** auf **5.78** (Latte, `#7C2FD4`) und **5.82** (Gruvbox Light, `#076678`). | erledigt |
-| 28.08.2026 | G2 | **Turbopack liefert weder eine metrisch angepasste Ersatzschrift noch Font-Preloads — `adjustFontFallback` wirkt nicht.** Nachgemessen am Produktionsbuild: im ausgelieferten Stylesheet steht kein `size-adjust`, kein `ascent-override` und keine `… Fallback`-Familie, im `<head>` kein `<link rel="preload" as="font">`. Die Werte gäbe es — `getFallbackFontOverrideMetrics` rechnet sie für alle drei Familien (Chakra Petch `size-adjust 102.51%`, Geist `104.76%`, JetBrains Mono `134.59%`) —, aber die Stelle, die daraus ein `@font-face` macht, ist `build/webpack/loaders/next-font-loader/postcss-next-font.js`, und Next 16 baut mit Turbopack. Mit `font-display: swap` heißt das: echter Textwechsel beim ersten Besuch, und der verschiebt Layout. **Das ist ein CLS-Befund und gehört zu L8**, dessen Budget CLS = 0 verlangt; gemessen ist bisher die Abweichung, nicht ihre Wirkung. Ausweg wäre `display: "optional"` (kostet die Schrift bei langsamer Leitung) oder drei handgeschriebene Ersatz-`@font-face`. Nicht in G2 gebaut: ein Werkzeug ohne eine einzige CLS-Messung wäre Vorrat. | offen |
+| 28.08.2026 | G2 | **Turbopack liefert weder eine metrisch angepasste Ersatzschrift noch Font-Preloads — `adjustFontFallback` wirkt nicht.** Nachgemessen am Produktionsbuild: im ausgelieferten Stylesheet steht kein `size-adjust`, kein `ascent-override` und keine `… Fallback`-Familie, im `<head>` kein `<link rel="preload" as="font">`. Die Werte gäbe es — `getFallbackFontOverrideMetrics` rechnet sie für alle drei Familien (Chakra Petch `size-adjust 102.51%`, Geist `104.76%`, JetBrains Mono `134.59%`) —, aber die Stelle, die daraus ein `@font-face` macht, ist `build/webpack/loaders/next-font-loader/postcss-next-font.js`, und Next 16 baut mit Turbopack. Mit `font-display: swap` heißt das: echter Textwechsel beim ersten Besuch, und der verschiebt Layout. **Das ist ein CLS-Befund und gehört zu L8**, dessen Budget CLS = 0 verlangt; gemessen ist bisher die Abweichung, nicht ihre Wirkung. Ausweg wäre `display: "optional"` (kostet die Schrift bei langsamer Leitung) oder drei handgeschriebene Ersatz-`@font-face`. Nicht in G2 gebaut: ein Werkzeug ohne eine einzige CLS-Messung wäre Vorrat. **Halb korrigiert in der G3-Abnahme, gegen die laufende Seite:** die Preloads gibt es sehr wohl — fünf `rel="preload" … as="font"` im `<head>`, genau die fünf Dateien, die ein lateinischer Text holt. Die andere Hälfte steht: `size-adjust`, `ascent-override` und `descent-override` kommen im ausgelieferten Stylesheet **null**mal vor, der metrisch angepasste Ersatzschnitt fehlt wirklich — und das ist der CLS-Teil, der zu L8 gehört. | offen |
 | 28.08.2026 | G2 | **Der Handoff hat ein Bauteil, das React 19 nicht mehr annimmt.** `ThemeSwitch` stand als `useState('')` plus `useEffect`, der nach dem Mount korrigiert; `react-hooks/set-state-in-effect` weist das ab („Calling setState synchronously within an effect can trigger cascading renders") und hat recht: das Theme lebt am `<html>`-Element, also in einem externen System. In G2 auf `useSyncExternalStore` umgebaut — Server-Snapshot `null`, Client-Snapshot das Attribut. **Die übrigen fünf Handoff-Komponenten (`Button`, `Field`, `MetricTile`, `SectionHead`, `StatusDot`) sind noch nicht durch diesen Linter gelaufen**; wer sie in G6/G7 herüberholt, sollte mit derselben Klasse Fund rechnen. | erledigt |
-| 28.08.2026 | G2 | **Fünf Lücken zwischen den G2-Blättern und `code/`, keine davon in G2 zu schließen.** (1) **Mocha `--dim`:** `tokens.css` führt `#828BB8`, das Palettenblatt misst `overlay2 #9399B2` mit 5.81 — und `#828BB8` ist zugleich der `--dim`-Wert von Tokyo Night, sieht also nach Copy-Paste aus. Selbst nachgerechnet gegen `--bg #1E1E2E`: `#828BB8` erreicht **4.95** (gegen `--panel` 5.30), `#9399B2` erreicht **5.81** (6.22). Beide über AA, aber belegt ist der Wert des Blatts. → `design-correction`-Reihe, K1. (2) **`accSoft` fehlt:** das Blatt zählt es zu den 20 Theme-Variablen (`rgba(0,229,255,.14)` u. a.), `tokens.css` hat kein Äquivalent — wer den Akzent als weiche Fläche braucht, hat kein Token. → G6/H. (3) **Die mobile 404-Display-Stufe 58px** („108 → 58") hat weder Token noch Media Query. → H10. (4) **Laufweiten `.12em`, `.13em`, `.20em`** stehen als Literale in den Handoff-Komponenten, tokenisiert sind nur `--ls-label .14em` und `--ls-head .16em`. → G7. (5) **h4–h6 sind unspezifiziert** — weder Stufe noch Regel; unterhalb H3 läuft alles über `SectionHead` in Mono. → H9 (Blog-Fließtext ist der erste Ort, der sie braucht). | offen |
-| 28.08.2026 | G2 | **Issue #35 (React Compiler) ist gemessen, statt weiter vermutet zu werden.** Der Issue trägt Meilenstein G1 und verlangt zwei Zahlen — Build-Zeit und Bundle-Wirkung. Vorher war nichts zu messen: es gab keine Client-Komponente. G2 bringt die erste. **Gemessen, je drei Läufe, `rm -rf .next` davor:** mit Compiler 7 687 · 7 721 · 7 949 ms und 568 034 B JS in `.next/static/chunks`, ohne Compiler 7 434 · 7 467 · 7 750 ms und 567 524 B. Also **rund 250 ms Build-Zeit und 510 Byte JS** — der Preis ist eine Zahl statt einer Vermutung, und bei einer einzigen Client-Komponente sagt er über den Nutzen nichts. Vorschlag: bestätigen und schließen, mit der Notiz, in G7 gegen die volle Bauteil-Galerie nachzumessen. **Nicht von mir geschlossen** — der Tracker gehört dir. | offen |
+| 28.08.2026 | G2 | **Fünf Lücken zwischen den G2-Blättern und `code/`, keine davon in G2 zu schließen.** (1) **Mocha `--dim`:** `tokens.css` führt `#828BB8`, das Palettenblatt misst `overlay2 #9399B2` mit 5.81 — und `#828BB8` ist zugleich der `--dim`-Wert von Tokyo Night, sieht also nach Copy-Paste aus. Selbst nachgerechnet gegen `--bg #1E1E2E`: `#828BB8` erreicht **4.95** (gegen `--panel` 5.30), `#9399B2` erreicht **5.81** (6.22). Beide über AA, aber belegt ist der Wert des Blatts. → `design-correction`-Reihe, K1. (2) **`accSoft` fehlt:** das Blatt zählt es zu den 20 Theme-Variablen (`rgba(0,229,255,.14)` u. a.), `tokens.css` hat kein Äquivalent — wer den Akzent als weiche Fläche braucht, hat kein Token. → G6/H. **Erledigt in G3, und nicht als Lücke, sondern nebenbei:** das Chrome-Blatt zeichnet sechs Alphas des Akzents für vier getönte Flächen, und sie zusammenzufassen brauchte genau dieses Token — `tokens.css` trägt seit `1656fd4` `--acc-soft` und `--acc-edge` (ADR 0044). **Vier der fünf Lücken sind noch offen, Punkt (2) nicht mehr.** (3) **Die mobile 404-Display-Stufe 58px** („108 → 58") hat weder Token noch Media Query. → H10. (4) **Laufweiten `.12em`, `.13em`, `.20em`** stehen als Literale in den Handoff-Komponenten, tokenisiert sind nur `--ls-label .14em` und `--ls-head .16em`. → G7. (5) **h4–h6 sind unspezifiziert** — weder Stufe noch Regel; unterhalb H3 läuft alles über `SectionHead` in Mono. → H9 (Blog-Fließtext ist der erste Ort, der sie braucht). | offen |
+| 28.08.2026 | G2 | **Issue #35 (React Compiler) ist gemessen, statt weiter vermutet zu werden.** Der Issue trägt Meilenstein G1 und verlangt zwei Zahlen — Build-Zeit und Bundle-Wirkung. Vorher war nichts zu messen: es gab keine Client-Komponente. G2 bringt die erste. **Gemessen, je drei Läufe, `rm -rf .next` davor:** mit Compiler 7 687 · 7 721 · 7 949 ms und 568 034 B JS in `.next/static/chunks`, ohne Compiler 7 434 · 7 467 · 7 750 ms und 567 524 B. Also **rund 250 ms Build-Zeit und 510 Byte JS** — der Preis ist eine Zahl statt einer Vermutung, und bei einer einzigen Client-Komponente sagt er über den Nutzen nichts. Vorschlag: bestätigen und schließen, mit der Notiz, in G7 gegen die volle Bauteil-Galerie nachzumessen. **Nicht von mir geschlossen** — der Tracker gehört dir. **In der G3-Abnahme neu gemessen, gegen sieben Client-Bauteile statt einem** (`Clock`, `NavLinks`, `LangMenu`, `MobileMenu`, `FooterLeadGate`, `Wordmark`, `ThemeSwitch`), je drei Läufe, `rm -rf .next` davor, `next.config.ts` danach nachweislich unverändert: **mit** 16 528 · 16 354 · 16 415 ms und 601 421 B, **ohne** 14 556 · 13 078 · 12 937 ms und 598 821 B — rund **2,9 s Bauzeit und 2 600 B JS**. Das ist fünfmal die JS-Zahl aus G2 und etwa das Zwölffache der Bauzeit. **Damit kippt die Prämisse, statt sich zu bestätigen:** der Issue begründet das Behalten mit „adds no runtime weight to the bundle", und das trifft nicht mehr zu. Deshalb *nicht* geschlossen — es als bestätigt abzulegen wäre eine Entscheidung, die der Beleg nicht trägt. Zahlen als Kommentar am Issue, Entscheidung offen. | offen |
 | 28.08.2026 | G2 | **97 KB Schrift beim ersten Besuch, und eine der drei Familien trägt einen Schnitt, den kein Entwurf benutzt.** Im Image liegen 23 `.woff2` (252 192 B, alle `unicode-range`-Schnitte); ein lateinischer Text holt genau fünf davon — im Browser nachgemessen, alle same-origin: Chakra Petch 400/500/600 mit 9 728 · 9 944 · 10 040 B, Geist variabel 29 288 B, JetBrains Mono variabel 40 480 B, zusammen **99 480 B**. Die variable Fassung von JetBrains Mono deckt 400/500/600/700 in einer Datei ab und kostet ungefähr so viel wie vier statische Schnitte — also kein Tausch, den man rückgängig machen sollte. **Offen ist Chakra Petch 400:** der Handoff nennt 400/500/600, aber in den Musterzeilen des Foundations-Blatts steht Chakra ausschließlich mit 500 und 600. Fällt 400 weg, sind das 9 728 Byte weniger. Vor dem Streichen einmal über alle Blätter greppen, nicht nur über das eine. | offen |
 | 28.08.2026 | G3 | **`check-tokens.sh` hat die eine Form abgewiesen, die es verlangt.** Die Radius-Regel lautete `border-radius[[:space:]]*:[[:space:]]*[^v;}]` — und weil `[[:space:]]*` auch nichts treffen darf, hat `[^v;}]` das **Leerzeichen nach dem Doppelpunkt** getroffen: `border-radius: var(--radius)` wurde als hart kodierter Radius gemeldet. Aufgefallen erst jetzt, weil G3 die erste Phase ist, die `border-radius` in einem Stylesheet schreibt statt in einem `style`-Prop (dort heißt es `borderRadius` und die Regel greift gar nicht). Gebraucht wird es, weil ADR 0042 kein Preflight zulässt und der Browser Knöpfen von sich aus einen Radius gibt. **Repariert** zu `[^v[:space:];}]`; `selftest.sh` prüft jetzt beide Seiten — vorher kannte es nur den kaputten Fall, und ein Gatter, das nur seinen kaputten Fall gesehen hat, weiß nicht, dass es falsch steht. | erledigt |
 | 28.08.2026 | G3 | **Der CSS-Minifier schreibt Dauern um, und wer sie zur Laufzeit liest, muss das wissen.** `tokens.css` sagt `--d-scramble: 220ms`, im Produktionsbuild kommt `.22s` heraus — zwei Zeichen kürzer, semantisch gleich. `NavLinks` liest das Token über `getComputedStyle`, damit die Dauer nur an einer Stelle steht; ein `parseInt` hätte lokal 220 geliefert und in Produktion 0, also eine Animation, die im Dev läuft und ausgeliefert tot ist. `lib/scramble.ts` hat dafür `parseMs`, und `scramble.test.ts` kennt beide Schreibweisen ausdrücklich. | erledigt |
 | 28.08.2026 | G3 | **`.sys-pin` ist nicht die vierte Klasse des Chromes.** Der Backlog führte vier Haken aus `layout.css` als G3s Zusage; drei sind es — `.nav-desktop`, `.nav-button`, `.foot-meta`. `.sys-pin` hat im Chrome-Blatt kein Gegenstück, steht im Namensraum der `.sys-row`-Familie und gehört zu SYS.01/SYS.02, also H4/H5. In G3 bewusst unbenutzt gelassen. | erledigt |
-| 28.08.2026 | G3 | **Der Nav-Abstand steht in zwei Fassungen, und zehn Seitenblätter tragen die andere.** Das Chrome-Blatt sagt `gap:30px` und ist als „verbindliche Fassung" markiert; sieben der zehn Seitenblätter (Homepage, Work Index, Blog Index, Blog Post, About, 404, Legal, Case Study Template) sagen 32. Gebaut ist 30, nach Quellenrang — und `--s-30` liegt damit bewusst außerhalb des 4er-Rasters, was `tailwind.test.ts` von beiden Seiten festnagelt (`p-30` liefert, `p-32` nicht). **Offen bleibt, ob die zehn Seiten in den H-Phasen nachgezogen werden** oder ob das Blatt bei der nächsten Konsistenzrunde auf 32 korrigiert wird. Der Konsistenz-Check hat es nie gesehen: er prüft Beschriftungen und Farben, Abstände nur dort, wo sie ein Bauteil tragen. | offen |
+| 28.08.2026 | G3 | **Der Nav-Abstand steht in zwei Fassungen, und zehn Seitenblätter tragen die andere.** Das Chrome-Blatt sagt `gap:30px` und ist als „verbindliche Fassung" markiert; sieben der zehn Seitenblätter (Homepage, Work Index, Blog Index, Blog Post, About, 404, Legal, Case Study Template) sagen 32. Gebaut ist 30, nach Quellenrang — und `--s-30` liegt damit bewusst außerhalb des 4er-Rasters, was `tailwind.test.ts` von beiden Seiten festnagelt (`p-30` liefert, `p-32` nicht). **Offen bleibt, ob die zehn Seiten in den H-Phasen nachgezogen werden** oder ob das Blatt bei der nächsten Konsistenzrunde auf 32 korrigiert wird. Der Konsistenz-Check hat es nie gesehen: er prüft Beschriftungen und Farben, Abstände nur dort, wo sie ein Bauteil tragen. **Abnahme 28.08.:** bleibt offen und bekommt in H1 einen Termin — dort stehen Kopf und Spec-Rail zum ersten Mal zusammen, und ADR 0044 hat die Sticky-Frage schon dorthin verlegt. | offen |
 | 28.08.2026 | G3 | **Die Scroll-Sperre des Menüs verschiebt den Inhalt um 15px, und CSS allein kann das nicht ausgleichen.** Gemessen: ein modales `<dialog>` hält das Dokument dahinter *nicht* an, eine Sperre ist also nötig. Sie steht als `html:has(dialog.menu[open]) { overflow: hidden }` — bewusst nicht in JavaScript, weil eine Sperre, deren Fehlerfall „die Seite lässt sich nie wieder scrollen" heißt, nicht an einem Ereignis hängen darf. Der Preis: mit `overflow: hidden` gibt Chrome die Breite des klassischen Scrollbalkens frei, `clientWidth` springt von **1881 auf 1896**. `scrollbar-gutter: stable` hält sie nicht — Chrome reserviert nur für eine Box, die wirklich einen Balken zeigen kann (nachgemessen mit deklarierter Rinne). Der Rest wäre JavaScript, das die Breite misst und als Padding zurückgibt; genau das ist gerade weggeräumt worden. **Sichtbar ist es nirgends, wo das Menü lebt:** es existiert nur unter 900, und Touch-Balken sind Overlays ohne Breite. Übrig bleibt ein auf unter 900 gezogenes Desktop-Fenster. | offen |
-| 28.08.2026 | G3 | **Jeder `npm run build` druckt dreimal „Ecmascript file had an error", und keiner davon ist neu.** Die drei zeigen auf `instrumentation.ts:70,78,79` — die `process.on`-Registrierungen für SIGTERM und SIGINT. Der Build endet trotzdem mit 0 und alle Routen entstehen. `git diff main -- web/instrumentation.ts web/lib/drain.ts` ist leer, der Befund ist also älter als G3 und nur beim genauen Hinsehen aufgefallen. Offen ist, ob Turbopack hier etwas Echtes meldet oder ob die Meldung nur Lärm ist, der jede künftige Build-Ausgabe schwerer lesbar macht. | offen |
+| 28.08.2026 | G3 | **Jeder `npm run build` druckt dreimal „Ecmascript file had an error" — und das steht seit Stufe F als #187 im Tracker.** Die drei zeigen auf `instrumentation.ts:70,78,79`, die `process.on`-Registrierungen für SIGTERM und SIGINT; der Build endet mit 0 und alle Routen entstehen, `git diff main` auf die Datei ist leer. **Hier stand es zuerst als frischer Fund**, samt der offenen Frage, ob Turbopack etwas Echtes meldet oder nur Lärm — #187 beantwortet sie seit D1: Next übersetzt die Datei zusätzlich für die Edge-Runtime, die diese Anwendung nicht hat, und der Ausweg (Teilung in eine Node- und eine Edge-Hälfte) ist dort bewusst bis F11 zurückgestellt, mit Abnahmekriterium. **Nicht gelöscht, sondern korrigiert:** dass es ein zweites Mal gefunden wurde, ist die Information, und `CLAUDE.md` nennt genau diesen Fehlermodus mit der F5-Abnahme als Auslöser. Messung als Kommentar an #187. | Dublette von #187 |
 | 28.08.2026 | G3 | **Das Chrome bringt sechs Schriftgrößen und drei Laufweiten außerhalb der Skala mit.** Größen 25 · 21 · 19 · 11.5 · 9 · 8.5 px, Laufweiten `.04em`, `.1em`, `.06em` — alle wörtlich aus dem Chrome-Blatt, alle als Literale in `chrome.css`. `tokens.css` führt 13 Größen („keine vierzehnte") und zwei Laufweiten (`--ls-label .14em`, `--ls-head .16em`). Bewusst nicht gerundet: dem verbindlichen Blatt zu folgen ist mehr wert als meine Improvisation, und eine vierzehnte Stufe für ein Bauteil widerspricht dem eigenen Kommentar der Datei. **Gehört zu Punkt (4) des offenen G2-Fundes** (`.12em`, `.13em`, `.20em` in den Handoff-Komponenten) und mit ihm nach G7, wo die Galerie zeigt, welche Werte wirklich mehrfach vorkommen. | offen |
+| 28.08.2026 | G3→G4 | **#94 beschreibt eine Reparatur, die es seit dem 23.08. gibt.** Der Issue trägt den Meilenstein G4 und verlangt eine Probe, die nicht `/` rendert, „weil eine API-Störung sonst aus einem Ausfall zwei macht". `web/app/healthz/route.ts` kam am 22.08. mit #154, und `web/Dockerfile` prüft seit #167 am 23.08. `http://127.0.0.1:3000/healthz` — genau die Form, die der Issue beschreibt: statisch, liest nichts, 200 und ab SIGTERM 503. Gefunden beim Nachlesen des Trackers, das dieser Abnahme ohnehin gefehlt hatte, und es ist die teurere Richtung der Drift: eine Zeile im Notizblock, die zu viel behauptet, kostet einen Blick — ein Issue, das erledigte Arbeit verlangt, kostet eine Phase. **Vorschlag: gegen den Stand prüfen und schließen. Nicht von mir geschlossen — der Tracker gehört dir.** | offen |
 | 28.08.2026 | G3 | **Das `close`-Ereignis eines `<dialog>` ist aus der Browser-Erweiterung heraus nicht beobachtbar** — auch nicht bei einem nackten Kontroll-`<dialog>` ohne CSS und ohne React. Ein von Hand ausgelöstes `close` erreicht Reacts `onClose` dagegen sehr wohl (`aria-expanded` kippt, die Sperre löst). Für die nächste Abnahme heißt das: leere Ereignislisten aus diesem Weg beweisen nichts, und Zustand muss am DOM abgelesen werden, nicht an Ereignissen. Aus demselben Grund steht `requestAnimationFrame` in einem verborgenen Tab still — eine leere Frame-Liste heißt dort „Tab war verborgen", nicht „Animation läuft nicht". | offen |
 
 ## Idee — noch nicht entschieden
