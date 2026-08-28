@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import { Clock } from "@/components/Clock";
 import { NAV, activeNav } from "@/lib/chrome";
@@ -47,8 +47,13 @@ const LANGS = [
  * relying on the close event either: the button sets it, and Escape — which
  * closes the dialog natively, behind React's back — is caught as a keydown,
  * which bubbles.
+ *
+ * `status` arrives already rendered. This is a client component, so it cannot
+ * await the api itself; SiteHeader streams the word in and hands it over as a
+ * node. Passing the value instead of the markup would drag the whole header out
+ * of the prerendered shell, which is the one thing G4 was building toward.
  */
-export function MobileMenu() {
+export function MobileMenu({ status }: { status: ReactNode }) {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const closer = useRef<HTMLButtonElement>(null);
@@ -153,9 +158,13 @@ export function MobileMenu() {
           <p className="menu-note">USUALLY UNDER 24 H</p>
 
           <p className="menu-strip">
-            {/* Neutral until G4 — see the footer, and invariant 1. */}
+            {/* The same word the footer's meta bar shows, from the same cached
+                answer — lib/api/health.ts owns the mapping so the two cannot
+                say different things about one state. The dot stays neutral and
+                does not pulse: that this container is running says nothing
+                about the api. */}
             <span className="foot-dot" aria-hidden="true" />
-            <span>— NO DATA</span>
+            <span>{status}</span>
             <span className="head-spacer" />
             <Clock />
           </p>
