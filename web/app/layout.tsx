@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 
-// Deliberately bare. Fonts are phase G2 (`next/font/google` for Chakra Petch,
-// Geist and JetBrains Mono), the stylesheet order globals → layout is G1, and
-// the real chrome is G3. Nothing of that is guessed at here.
+// The stylesheet order is the whole point of this block, and it is the build
+// plan's (G1), not a preference:
 //
-// There is no stylesheet import on purpose: every colour, radius and duration
-// lives in `tokens.css` from G1 onwards, and until that file exists the honest
-// number of hardcoded ones is zero.
+//   tailwind  utilities drawn from the tokens, no palette of its own
+//   tokens    every colour, size, spacing, radius and duration — invariant 8
+//   globals   reset, typography, focus, the three keyframes
+//   layout    the content column and the four breakpoints — LAST, so its
+//             media queries win over anything above them
+//
+// Still deliberately absent: fonts and the anti-flash theme snippet are G2, the
+// real header and footer are G3. `--display`, `--body` and `--mono` resolve to
+// the fallbacks tokens.css names until next/font/google fills them.
+import "../styles/tailwind.css";
+import "../styles/tokens.css";
+import "../styles/globals.css";
+import "../styles/layout.css";
 
 export const metadata: Metadata = {
   title: "timseil.dev",
