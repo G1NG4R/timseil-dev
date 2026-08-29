@@ -648,3 +648,118 @@ docker stop og-probe
 Antwortet die Route hier mit 500, während sie unter `npx next start` ein Bild
 lieferte, fehlt `styles/tokens.css` im Image — `outputFileTracingIncludes` in
 `next.config.ts` ist die Zeile, die es hineinlegt.
+
+## Die Zustandssprache abnehmen
+
+Das Abnahmekriterium von G6 ist ein Satz — *jeder Zustand hat ein zweites
+Merkmal neben der Farbe* — und er zerfällt in zwei Prüfungen, die verschiedene
+Werkzeuge brauchen. ADR 0048.
+
+**Die Tabelle prüft `make check`.** `web/lib/state/words.test.ts` hält vier
+Regeln fest, und zwei davon sind die, die ohne Test verrutschen: es gibt weniger
+Töne als Zustände (die Farbe kann also gar keine Kennung sein), und die Füllung
+des Punktes stimmt mit der Klasse der Antwort überein — niemand darf einem
+ungemessenen Zustand die Füllung eines gemessenen geben.
+
+**Den Rest sieht nur ein Browser**, und zwar an einem Produktionsbau. `next dev`
+hydriert nicht (Backlog, 28.08.2026, G4).
+
+### Das Rig
+
+```bash
+docker compose -f compose.dev.yaml up -d --wait db migrate seed api
+cd web && npm run build
+API_INTERNAL_URL=http://127.0.0.1:8080 npx next start -p 3111
+```
+
+`API_INTERNAL_URL` ist der ganze Trick: `lib/http/url.ts` fällt sonst auf
+`http://api:8080` zurück, den Namen im Docker-Netz, den ein Prozess auf dem Host
+nicht auflöst.
+
+### DEGRADED ist herstellbar, nicht zu erfinden
+
+`api/internal/health/health.go` antwortet `degraded`, wenn das eigene System
+nicht `live` ist — „A missing self system is `degraded`, not a 500." Also einen
+Slug setzen, den es nicht gibt:
+
+```bash
+SITE_SYSTEM_SLUG=no-such-system \
+  docker compose -f compose.dev.yaml up -d --wait --force-recreate api
+curl -sS http://127.0.0.1:8080/api/health | python3 -c 'import sys,json;print(json.load(sys.stdin)["status"])'
+```
+
+**Und dann warten.** Die Startseite kippt sofort — `healthLive` ist unkorreliert
+mit keinem Cache —, die Fußzeile und der Menüstreifen hängen an `healthCached`
+mit `revalidate: 60`. Gemessen am 29.08.2026: die Zeile auf `/` sagte nach zehn
+Sekunden DEGRADED, die beiden anderen nach zwanzig. Wer nach fünf Sekunden
+misst, misst den Cache und hält ihn für einen Defekt.
+
+`— NO DATA` geht denselben Weg mit `docker compose … stop api`, und dort dauert
+es länger: gemessen 40–50 s, bis die zwei gecachten Zellen nachziehen. `/`
+antwortet die ganze Zeit `200` — die Störung bleibt eine (#94).
+
+### Was aus den Bytes zu holen ist
+
+```sh
+curl -sS http://127.0.0.1:3111/ \
+  | grep -oE '<span class="st" data-tone="[a-z]+"><span class="st-dot"[^>]*></span><span class="st-word">[^<]+' \
+  | sed -E 's/.*data-tone="([a-z]+)".*data-dot="([a-z]+)".*st-word">(.*)/\3  tone=\1  dot=\2/'
+```
+
+Ausgabe pro Zustandszelle eine Zeile: `ONLINE  tone=acc  dot=solid`.
+`data-pulse` steht nur bei `solid` und lässt sich mit demselben Aufruf
+gegenzählen.
+
+**Kein `.*` in dem Muster, und das ist Absicht.** Die erste Fassung dieses
+Befehls stand als `grep -o '<span class="st" [^>]*>.*\?</span></span>'` da und
+lieferte auf diesem Rechner das Richtige — GNU grep behandelte `.*\?` faul.
+Verlassen kann man sich darauf nicht: in BRE ist `\?` hinter einem `*` nicht
+definiert, und greedy gelesen zöge das Muster vom ersten Zustand bis zum letzten
+`</span></span>` des Dokuments durch, also **eine** Trefferzeile statt drei. Das
+Muster oben kann zwei Elemente gar nicht überspannen.
+
+**Und hier gilt die G4-Falle unverändert**, weil die drei Zellen gestreamte
+Inseln sind: der Platzhalter steht in Dokumentreihenfolge **vor** dem Wert, und
+die RSC-Nutzlast trägt beides ein zweites Mal in `<script>`-Tags. Ein Muster,
+das beim ersten Treffer aufhört, findet immer den Ruhezustand.
+
+**Dazu eine dritte, in G6 gefunden: `grep -c` zählt Zeilen, keine Vorkommen.**
+Das ausgelieferte HTML ist *eine* Zeile. `grep -c 'st-nodata-text'` meldete
+`2`, während im Dokument acht standen — vier Platzhalter und vier Werte. Die
+Zahl sah aus wie eine Aussage über den Inhalt und war eine über Zeilenumbrüche.
+Richtig gezählt wird mit `grep -o … | wc -l` oder in Python.
+
+### Was nur das Bild zeigt
+
+Zwei Aufnahmen, und die zweite ist die eigentliche Abnahme:
+
+1. **Graustufen.** `document.documentElement.style.filter = 'grayscale(1)'`,
+   dann in die Metaleiste zoomen. Bleiben ONLINE, DEGRADED und `— NO DATA`
+   unterscheidbar, trägt die Farbe die Information nicht.
+2. **Die Amber-Palette.** `document.documentElement.dataset.theme = 'amber'`
+   während DEGRADED steht. `tokens.css` schickt Degraded dort auf Mint —
+   gemessen am 29.08.2026 wanderte Wort und Ring von `rgb(255,176,0)` auf
+   `rgb(127,209,174)`, und Wort und Füllung blieben, was sie waren. **Das ist
+   der stärkere Beleg als die Graustufen:** die Farbe hat vollständig
+   gewechselt, und der Zustand war weiterhin derselbe abzulesen.
+
+Am Punkt selbst nachmessen, nicht am Stylesheet:
+
+```js
+const d = document.querySelector('.st-dot');
+({ dot: d.dataset.dot, anim: getComputedStyle(d).animationDuration,   // 2.6s
+   ring: getComputedStyle(d).boxShadow, size: getComputedStyle(d).width })
+```
+
+`animationDuration` ist der Beleg dafür, dass `--d-pulse` gelesen wird — das
+Token lag seit G1 unbenutzt da. **6px in Fußzeile und Menüstreifen, 7px sonst**,
+und das ist Absicht: das Chrome-Blatt ist an diesen zwei Stellen die verbindliche
+Fassung, das Handoff-Bauteil überall sonst.
+
+### Zwei Füllungen haben heute keinen Aufrufer
+
+`barred` (OFFLINE) und `dash` (QUEUED, `— NO DATA` als Punkt) stehen in der
+Tabelle und werden von keiner Seite gezeichnet: OFFLINE kann `/api/health` nicht
+melden, und die Metaleiste zeigt ohne Antwort `<NoData/>` als Text statt eines
+Punktes. Belegt sind sie durch `words.test.ts`, nicht durch ein Bild. Der erste
+Betrachter ist G7s Galerie, der erste Einsatz H1 und H6.

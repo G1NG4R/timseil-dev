@@ -20,11 +20,13 @@ import { Clock } from "@/components/Clock";
 import { LangMenu } from "@/components/LangMenu";
 import { MobileMenu } from "@/components/MobileMenu";
 import { NavLinks } from "@/components/NavLinks";
+import { NoData } from "@/components/state/NoData";
+import { StatusDot } from "@/components/state/StatusDot";
 import { Wordmark } from "@/components/Wordmark";
-import { onlineText } from "@/lib/api/health";
 import { footerHealthNow } from "@/lib/api/readers";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { navLabels } from "@/lib/i18n/messages";
+import { navLabels, type Messages } from "@/lib/i18n/messages";
+import { stateLabel } from "@/lib/state/words";
 
 /**
  * The header: 66px, the same on all ten pages, 52px below 900.
@@ -76,8 +78,10 @@ export async function SiteHeader() {
             respond: messages.respond,
           }}
           status={
-            <Suspense fallback={onlineText(null)}>
-              <MenuStatus />
+            // The resting state, not a loading state — the same `— NO DATA` the
+            // footer's meta bar falls back to, from the same component.
+            <Suspense fallback={<NoData />}>
+              <MenuStatus messages={messages} />
             </Suspense>
           }
         />
@@ -89,8 +93,16 @@ export async function SiteHeader() {
   );
 }
 
-/** The one word the mobile menu's strip streams in. */
-async function MenuStatus() {
-  const { online } = await footerHealthNow();
-  return <>{onlineText(online)}</>;
+/**
+ * The one state the mobile menu's strip streams in.
+ *
+ * Deliberately the SAME component the footer renders, from the same cached
+ * answer: two places that show one fact must not be able to draw it two ways.
+ * Until G6 they shared a string (`onlineText`) and each drew its own grey dot
+ * beside it; now they share the dot too.
+ */
+async function MenuStatus({ messages }: { messages: Messages }) {
+  const { status } = await footerHealthNow();
+  if (status === null) return <NoData />;
+  return <StatusDot state={status} label={stateLabel(status, messages)} />;
 }

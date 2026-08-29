@@ -44,6 +44,27 @@ export const en = {
   themeAria: "Colour scheme",
   altLabel: "ALT",
 
+  // The state words, and the one that is missing from this list.
+  //
+  // STATE.05 settles the rule these six follow: "LABEL WIRD ÜBERSETZT,
+  // DATENWERT NICHT — die Anzeige heißt auf Deutsch GEPLANT, der Wert in der
+  // API bleibt `queued`." So the contract keeps saying `queued` and `degraded`
+  // for ever, and only what a reader sees moves.
+  //
+  // ONLINE IS NOT HERE, and that is the other sheet's doing: LANG.01 names it
+  // in the set that stays English beside SYS.INIT, BUILD, Go and Docker. Nor is
+  // `— NO DATA`, which is a placeholder token like `[SOON]` — one string across
+  // all three languages since design-correction #6.
+  //
+  // lib/state/words.ts holds the same six English words as its fallback labels,
+  // and messages.test.ts refuses the two copies drifting apart.
+  stateLive: "LIVE",
+  stateDegraded: "DEGRADED",
+  stateOffline: "OFFLINE",
+  stateEmpty: "EMPTY",
+  stateQueued: "QUEUED",
+  stateAvailable: "AVAILABLE",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

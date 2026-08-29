@@ -197,13 +197,13 @@ export function MobileMenu({
           <p className="menu-note">{strings.respond}</p>
 
           <p className="menu-strip">
-            {/* The same word the footer's meta bar shows, from the same cached
-                answer — lib/api/health.ts owns the mapping so the two cannot
-                say different things about one state. The dot stays neutral and
-                does not pulse: that this container is running says nothing
-                about the api. */}
-            <span className="foot-dot" aria-hidden="true" />
-            <span>{status}</span>
+            {/* The same state the footer's meta bar shows, from the same cached
+                answer and now from the same component — SiteHeader hands this
+                a finished <StatusDot/> or <NoData/>. The dot and its word used
+                to be two things here (a neutral grey span plus a string), which
+                is exactly how two places that show one fact start drawing it
+                two ways. */}
+            {status}
             <span className="head-spacer" />
             <Clock />
           </p>

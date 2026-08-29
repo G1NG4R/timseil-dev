@@ -553,14 +553,16 @@ a.foot-social-link:hover { color: var(--acc); }
 
 .foot-cell { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
 
-/* The status dot. NEUTRAL AND NOT PULSING until G4: the sheet draws it live in
-   the accent, but that the web container is up says nothing about the api, and
-   invariant 1 does not make an exception for a dot. --d-pulse is declared and
-   waiting; G6 extracts StatusDot and G4 gives it something true to say. */
-.foot-dot {
-  width: 6px;
-  height: 6px;
-  flex: none;
-  border-radius: var(--radius-dot);
-  background: var(--steel);
-}
+/* The status dot was `.foot-dot` here until G6 — neutral, grey, not pulsing,
+   with the reason in this comment: "that the web container is up says nothing
+   about the api, and invariant 1 does not make an exception for a dot". G4 gave
+   it an answer to report and G6 turned it into <StatusDot/>, so the rule is
+   gone and only the measurement stays.
+
+   THE MEASUREMENT: the Chrome sheet draws 6px in these two places and the
+   handoff's own component draws 7 everywhere else. The sheet is the binding
+   version for the footer and the menu, and G3 accepted against it, so the two
+   numbers both stand rather than being quietly averaged. Backlog entry, not a
+   silent unification. */
+.foot-cell .st,
+.menu-strip .st { --st-dot: 6px; }

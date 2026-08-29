@@ -4,11 +4,15 @@
 import { Suspense } from "react";
 
 import { Clock } from "@/components/Clock";
+import { NoData } from "@/components/state/NoData";
+import { StatusDot } from "@/components/state/StatusDot";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
-import { NO_HEALTH, buildText, onlineText, uptimeText, type FooterHealth } from "@/lib/api/health";
+import { NO_HEALTH, buildText, uptimeText, type FooterHealth } from "@/lib/api/health";
 import { footerHealthNow } from "@/lib/api/readers";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { Messages } from "@/lib/i18n/messages";
 import { LOCALES, LOCALE_NAMES, localeHref } from "@/lib/i18n/routes";
+import { stateLabel } from "@/lib/state/words";
 
 /**
  * The meta bar. Byte-identical on all ten pages, in both footer variants — the
@@ -48,8 +52,8 @@ export async function FooterMeta() {
           which is why streaming costs nothing in this design language and why
           there is no spinner to design.
         */}
-        <Suspense fallback={<MetaCells {...NO_HEALTH} uptimeLabel={messages.uptime} />}>
-          <MetaCellsLive uptimeLabel={messages.uptime} />
+        <Suspense fallback={<MetaCells {...NO_HEALTH} messages={messages} />}>
+          <MetaCellsLive messages={messages} />
         </Suspense>
 
         <span className="foot-cell">{messages.cvHint}</span>
@@ -88,31 +92,39 @@ export async function FooterMeta() {
  * null and a number for a number, and it is the same component in the fallback
  * and in the filled state, so the two cannot drift apart.
  */
-function MetaCells({
-  build,
-  uptime,
-  online,
-  uptimeLabel,
-}: FooterHealth & { uptimeLabel: string }) {
+function MetaCells({ build, uptime, status, messages }: FooterHealth & { messages: Messages }) {
   return (
     <>
-      {/* `BUILD` and `ONLINE` are not translated and never will be. The sheet
-          names the set: "UNVERÄNDERT ENGLISCH: SYS.INIT · ONLINE · BUILD · Go ·
-          Docker — Identifier und Werkzeugnamen." `UPTIME` is a heading over a
-          number and is prose, so it comes from the dictionary. */}
+      {/* `BUILD` and `ONLINE` are not translated. The sheet names the set:
+          "UNVERÄNDERT ENGLISCH: SYS.INIT · ONLINE · BUILD · Go · Docker —
+          Identifier und Werkzeugnamen." `UPTIME` is a heading over a number and
+          is prose, so it comes from the dictionary — and since G6 so does
+          DEGRADED, which is not in that set and which STATE.05 says explicitly
+          is translated ("die Anzeige heißt auf Deutsch GEPLANT"). Hence
+          stateLabel() below rather than a literal: one of the two words the
+          cell can show moves with the language and the other does not. */}
       <span className="foot-cell">BUILD {buildText(build)}</span>
       <span className="foot-cell">
-        <span className="foot-dot" aria-hidden="true" />
-        {onlineText(online)}
+        {/* THE DOT IS G6's, AND UNTIL G6 IT WAS GREY AND SAID NOTHING.
+            chrome.css carried the reason since G3 — "that the web container is
+            up says nothing about the api, and invariant 1 does not make an
+            exception for a dot" — and G4 gave it an answer to report. Now the
+            answer has three values instead of two: ONLINE, DEGRADED, or the
+            resting `— NO DATA` when the api did not reply at all. */}
+        {status === null ? (
+          <NoData />
+        ) : (
+          <StatusDot state={status} label={stateLabel(status, messages)} />
+        )}
       </span>
       <span className="foot-cell">
-        {uptimeLabel} {uptimeText(uptime)}
+        {messages.uptime} {uptimeText(uptime)}
       </span>
     </>
   );
 }
 
 /** The same three cells, with the answer the api gave. */
-async function MetaCellsLive({ uptimeLabel }: { uptimeLabel: string }) {
-  return <MetaCells {...await footerHealthNow()} uptimeLabel={uptimeLabel} />;
+async function MetaCellsLive({ messages }: { messages: Messages }) {
+  return <MetaCells {...await footerHealthNow()} messages={messages} />;
 }
