@@ -12,7 +12,82 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 29.08.2026, G7 in Produktion, Stufe G abgeschlossen
+## Wo wir stehen — 29.08.2026, das Budget hat eine Vorschrift und zwei Zahlen
+
+**#237 ist nicht repariert worden, weil nichts kaputt war — es ist ausgerechnet
+worden.** `tools/bundle-size.sh` und ADR 0050; das CI-Gate bleibt bei L8.
+
+```
+make bundle-size          gegen d70927b
+  framework     134097 B  5 files — watched, never budgeted
+  our code        9178 B  1 file
+  ✓ our code   9178 B of 15903 B (6725 B left)
+  ✓ total      143275 B of 150000 B (6725 B left)
+```
+
+### Der Bauplan sagte, wie hoch — nicht, wie zu messen
+
+Zeile 1339 nennt „Initial JS < 150 KB gzip" und ist die einzige Stelle, die die
+Zahl führt. Welche Route, welches gzip, ob das `noModule`-Polyfill zählt: nichts
+davon stand irgendwo. Eine Zahl ohne Messvorschrift ist in CI ein Streit, kein
+Gate. Die Vorschrift steht jetzt in ADR 0050 und ist als Datei ausführbar.
+
+### Eine Seite kostet nichts — meine eigene Behauptung war falsch
+
+Der erste Entwurf von #237 sagte „Stufe H baut dreizehn Seiten hinein". **Stimmt
+nicht.** Die sechs Chunks sind für alle sieben Routen **identisch** — Layout-Chrome,
+kein Seiten-Code. Eine Seite kostet null, solange sie kein neues Client-Bauteil
+mitbringt. Der Issue ist korrigiert.
+
+**Die richtige Zahl ist dafür unangenehmer.** 134 097 B sind Rahmen. Es bleiben
+**6 725 B** für Terminal (J1/J2), 404-Spiel (H10), Contribution-Graph (H4),
+Filter-Chips (H6), Trajectory-Rail (H7) und Kontaktformular (H8) — sechs deutlich
+reichere Bauteile in zwei Dritteln dessen, was sieben einfache gekostet haben.
+Das ist eine Schätzung und steht als solche im ADR; wenn Stufe H zeigt, dass es
+nicht reicht, ist das ein Fund mit Zahlen und wird dort neu entschieden.
+
+### Warum zwei Zahlen, und der Beleg dafür
+
+Eine gemeinsame Grenze ist in beide Richtungen blind: sie geht rot für ein
+Next-Release, das niemand hier geschrieben hat, und bleibt grün, während unser
+Anteil sich verdoppelt, solange der Rahmen gerade schrumpft.
+
+**Vorgeführt statt behauptet:** mit `BUDGET_OWN` testweise auf 9 000 meldet das
+Werkzeug `✗ our code 9178 B of 9000 B` und **gleichzeitig**
+`✓ total 143275 B of 150000 B`, Exit 1. Die Summe hätte den Fall nicht gefunden.
+
+Die 15 903 sind einmal aus `150 000 − 134 097` gerechnet und **fest**, nicht bei
+jedem Lauf neu abgeleitet — sonst ließe ein Next-Update unser Budget still
+wachsen oder schrumpfen, also genau die Kopplung, die der Schnitt beseitigt.
+
+### Der Fund am Werkzeug selbst
+
+Der erste Lauf war rot: `✗ static/chunks/0wbgcnm4we8z7.js is in no manifest`.
+Der Grund war nicht Next, sondern mein `sed`: der Routenschlüssel im Manifest
+heißt `["/[lang]/page"]`, und seine eigenen eckigen Klammern schlagen das
+naheliegende Muster. Geschnitten wird jetzt an der ersten `{`. **Ein Werkzeug,
+dessen erster Lauf grün ist, hat man nicht geprüft** — dieser war rot, und zwar
+aus dem richtigen Grund.
+
+### Was #35 davon hat
+
+Der React Compiler kostet 1 945 B gzip auf dem Initial-Bundle. Gegen die Summe
+sind das 1,3 %; **gegen unseren eigenen Anteil 21 %.** Der Issue bleibt offen und
+hat ab jetzt eine ablesbare Auslöseschwelle statt einer Handmessung.
+
+### Was diese Runde nicht behauptet
+
+**Das Gate läuft nicht in CI.** Das ist L8, unverändert; ADR 0050 entscheidet die
+Zahlen und die Methode, nicht den Verdrahtungsort. `make bundle-size` hängt
+bewusst nicht in `make check` — es baut, und `check` baut nicht.
+
+**Der Rahmen bekommt keine eigene Grenze.** Er wird gedruckt, damit ein Sprung
+auffällt. Eine dritte Zahl wäre ein zweites Signal für dieselbe Sache, und für
+eine neue Regel fehlt der Fund, der sie erzwingt.
+
+---
+
+## Vorher — 29.08.2026, G7 in Produktion, Stufe G abgeschlossen
 
 **Die Seite hat zum ersten Mal einen Ort, an dem sie sich selbst ansieht.**
 `/dev/components` zeigt jedes Bauteil in jedem dokumentierten Zustand — und die

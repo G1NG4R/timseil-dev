@@ -1337,6 +1337,7 @@ Dazu die Konto-Ebene, die technisch nichts kostet und alles rettet: **2FA auf OV
 **L7 · Datenschutz-Umsetzung** — Retention automatisiert (Access 14 d, Anwendung 7 d, Rate-Limit-IP 10 min) — **der Code muss einhalten, was die Datenschutzseite verspricht.** Absatz zum Formular: Name, E-Mail, Nachricht, Zeitpunkt, IP-Hash, Auftragsverarbeiter. Löschprozess.
 
 **L8 · Performance-Budget & Lasttest** — Budget in CI: LCP < 2,0 s auf 4G, Initial JS < 150 KB gzip, CLS = 0, Lighthouse ≥ 90. k6: Baseline, Spike, 15-min-Soak.
+**Das JS-Budget ist seit ADR 0050 zwei Zahlen und hat eine Messvorschrift:** 134 KB davon sind Rahmen (React, App-Router), gemessen und beobachtet; budgetiert sind **15 903 B eigener Client-Code**, und die 150 KB bleiben die äußere Grenze. `make bundle-size` misst beides.
 *Fertig wenn:* Soak zeigt kein Speicherleck; Budget-Verstoß bricht den Build.
 
 ---
