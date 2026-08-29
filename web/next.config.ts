@@ -41,6 +41,30 @@ const nextConfig: NextConfig = {
   cacheLife: {
     health: { stale: 60, revalidate: 60, expire: 600 },
   },
+
+  // ONE FILE THE TRACER CANNOT SEE AS A DEPENDENCY, even though it currently
+  // arrives anyway.
+  //
+  // `app/og.png/route.tsx` reads `styles/tokens.css` with `readFileSync` at
+  // build time: Satori knows no cascade and no custom properties, and invariant
+  // 8 forbids the colour literals anywhere but that stylesheet, so the image
+  // parses the stylesheet rather than keeping a copy of it (lib/og/tokens.ts).
+  // `output: "standalone"` copies what the module graph reaches, and a
+  // `readFileSync` is not an import.
+  //
+  // MEASURED BOTH WAYS, AND THE HONEST ANSWER IS THAT THIS LINE CHANGES
+  // NOTHING TODAY. Built without it, `.next/standalone/styles/tokens.css` is
+  // there regardless — `app/[lang]/layout.tsx` imports the same file as a
+  // stylesheet, and the tracer follows that import and copies the source. So
+  // this is not the fix for a broken build; it is the difference between a
+  // dependency that is declared and one that holds by coincidence. The day
+  // that import moves, is bundled differently, or the layout stops loading
+  // tokens.css directly, the OG route would start throwing in production and
+  // only in production — `next dev` has the whole project on disk. Three lines
+  // to make the coupling say its own name.
+  outputFileTracingIncludes: {
+    "/og.png": ["./styles/tokens.css"],
+  },
 };
 
 export default nextConfig;

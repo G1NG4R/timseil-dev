@@ -8,19 +8,19 @@
 
 import type { Metadata } from "next";
 
-import { alternatesFor } from "@/lib/i18n/alternates";
 import { asLocale } from "@/lib/i18n/routes";
+import { seoFor } from "@/lib/seo/pages";
 
-// SEO, and one line of it is a decision rather than a convention.
-//
-// `index: false` is here because the page is a stub. A crawler that finds
-// `PRIVACY [SOON]` files that away as what this site has to say on the subject,
-// and takes a while to be talked out of it. H12 fills the page and deletes
-// this line — it disappears together with its reason. `app/robots.ts` allows
-// everything; the refusal is per page, where the reason is legible.
+// SEO, in one call. Until G5b this named its own canonical and wrote
+// `robots: { index: false }` as a literal, with the reason beside it. The
+// reason has not changed — the page is a stub, and a crawler that finds it
+// files that away as what this site has to say on the subject — but the
+// boolean now lives in lib/seo/pages.ts, because `app/sitemap.ts` needs the
+// same answer and two copies of it would drift. H12 flips it there and
+// deletes this page, and the sitemap follows in the same commit.
 export async function generateMetadata({ params }: PageProps<"/[lang]/privacy">): Promise<Metadata> {
   const { lang } = await params;
-  return { alternates: alternatesFor(asLocale(lang), "/privacy"), robots: { index: false } };
+  return seoFor(asLocale(lang), "/privacy");
 }
 
 export default function Page() {

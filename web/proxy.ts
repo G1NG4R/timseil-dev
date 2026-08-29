@@ -126,9 +126,10 @@ export const config = {
   //   _next/static   immutable, content-hashed, and answered without ever
   //                  reaching a route that could read an id.
   //
-  // favicon.svg is the whole of public/ today. G5b adds robots.txt, sitemap.xml,
-  // feed.xml and og.png, and they belong here for the same reason — they are
-  // files, not requests anybody correlates.
+  // favicon.svg is still the whole of public/; the four names after it are
+  // route handlers G5b added at the root of app/. They are excluded for the
+  // same reason as favicon.svg rather than because of where they live: each one
+  // answers a machine, and a machine has nobody to quote a request id to.
   //
   // THE MATCHER IS NOT THE SAME LIST as RESERVED in lib/i18n/routes.ts, and the
   // difference is deliberate. This one decides which requests get an id at all;
@@ -136,5 +137,7 @@ export const config = {
   // here and still need to be in RESERVED — nothing guarantees the two lists
   // stay in step, so RESERVED names every one of them itself rather than
   // trusting this matcher to have caught it first.
-  matcher: ["/((?!_next/static|_next/image|favicon\\.svg|healthz).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.svg|healthz|robots\\.txt|sitemap\\.xml|feed\\.xml|og\\.png).*)",
+  ],
 };

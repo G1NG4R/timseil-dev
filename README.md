@@ -463,7 +463,10 @@ mechanism, the routes and the switcher are not
 ([ADR 0046](docs/adr/0046-die-sprachroute-englisch-ohne-praefix-und-die-sprache-die-die-url-traegt.md)).
 
 `/healthz` carries no language: Traefik asks it once a second per backend and
-reads no prose.
+reads no prose. Neither do the four files a machine reads — `/robots.txt`,
+`/sitemap.xml`, `/feed.xml` and `/og.png`. The sitemap lists only the pages that
+are finished, which today is the homepage in all three languages; the feed is a
+valid channel with no entries until the log has pages to point at.
 
 ## Decisions
 

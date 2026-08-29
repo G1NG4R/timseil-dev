@@ -1,8 +1,9 @@
 # Runbook — der Web-Container
 
 Was `web` protokolliert, was es absichtlich nicht protokolliert, wie man eine
-Anfrage über beide Container verfolgt, und wo seit G2 die Schriften und das
-Theme sitzen. Stand: G2.
+Anfrage über beide Container verfolgt, wo seit G2 die Schriften und das Theme
+sitzen, und wie man seit G5 die Sprachrouten und die maschinenlesbaren Flächen
+nachmisst. Stand: G5b.
 
 Für die API-Seite: [`api.md`](api.md). Für den Stack als Ganzes:
 [`compose.md`](compose.md).
@@ -517,3 +518,122 @@ Der Tastaturweg dazu: `.lang-button` fokussieren, dreimal `ArrowDown`
 **Und der Kanarienvogel zuerst.** Vor jeder Aussage „null Hydration-Warnungen"
 eine eigene Meldung absetzen und wiederfinden; sonst beweist eine leere Konsole
 nur, dass niemand zugehört hat.
+
+## Die maschinenlesbaren Flächen nachmessen
+
+Vier Adressen, die kein Besucher aufruft und die trotzdem falsch sein können:
+`/robots.txt`, `/sitemap.xml`, `/feed.xml`, `/og.png`. Dazu der JSON-LD-Block
+auf `/`. ADR 0047.
+
+**Zwei Dinge, bevor irgendetwas gemessen wird.**
+
+`make check` **baut nicht**. Keine der 21 Prüfungen ruft `next build`, und diese
+vier Dateien sind genau die Sorte, die typecheckt und beim Bauen bricht. Wer sie
+angefasst hat und nur `make check` laufen lässt, hat sie nicht geprüft.
+
+Und wieder: **gegen ein Produktionsbild, nicht gegen `next dev`.** Beim OG-Bild
+hat das einen eigenen Grund — der Dev-Server hat das ganze Projekt auf der
+Platte, das Image nur, was der Tracer kopiert hat. Ein `readFileSync`, das
+lokal geht und im Container fehlschlägt, ist in `next dev` unsichtbar.
+
+```bash
+cd web && npm run build && npx next start -p 3111
+B=http://127.0.0.1:3111
+```
+
+### Was aus den Bytes zu holen ist
+
+```bash
+# 1 — die vier Dateien antworten, und keine davon bekommt eine Sprache
+for p in /robots.txt /sitemap.xml /feed.xml /og.png; do
+  printf '%-14s %s\n' "$p" "$(curl -s -o /dev/null -w '%{http_code}' $B$p)"
+done
+#   Alle vier 200. Ein 404 heißt: der Pfad fehlt in RESERVED
+#   (lib/i18n/routes.ts) und proxy.ts hat ihn nach /en/... umgeschrieben.
+
+# 2 — die Sitemap nennt nur, was indexierbar ist
+curl -s $B/sitemap.xml | xmllint --format - | grep -c '<url>'      # 3
+curl -s $B/sitemap.xml | grep -c 'x-default'                       # 3
+#   Drei URLs sind / /de /fr. Sechs Routen sind Stubs und sagen noindex;
+#   sie kommen dazu, wenn ihre H-Phase das Boolean in lib/seo/pages.ts kippt.
+#   Erscheint /about hier, WÄHREND es noch noindex trägt, widersprechen sich
+#   die Seite und die Sitemap — dann sind die zwei Listen wieder zwei.
+
+# 3 — die beiden XML-Dokumente sind wohlgeformt
+curl -s $B/sitemap.xml | xmllint --noout - && echo "sitemap ok"
+curl -s $B/feed.xml    | xmllint --noout - && echo "feed ok"
+
+# 4 — der Feed ist absichtlich leer, und das ist der Zustand, nicht ein Defekt
+curl -s $B/feed.xml | grep -c '<item>'                             # 0
+#   H9 hängt die Einträge ein. Bis dahin hätte jedes <item> ein <link> auf
+#   eine 404, weil /blog/<slug> noch keine Route ist.
+
+# 5 — der Ausweis: genau EIN ld+json-Block, und kein rohes < darin
+curl -s $B/ | python3 -c '
+import re, sys, json
+blocks = re.findall(r"<script type=\"application/ld\+json\">(.*?)</script>", sys.stdin.read(), re.S)
+print("blocks:", len(blocks))
+for b in blocks:
+    print("raw < im Text:", "<" in b)          # muss False sein
+    print(json.dumps(json.loads(b))[:120])
+'
+#   DIE FALLE HIER IST DIE RSC-NUTZLAST. Sie trägt das Markup ein zweites Mal
+#   in <script>-Tags; ein grep über die rohen Bytes zählt zwei Dokumente.
+#   Der Block oben liest das Element, nicht die Datei.
+
+# 6 — das Bild ist ein Bild, und zwar in der Größe, die im Kopf steht
+curl -s $B/og.png -o /tmp/og.png
+python3 -c "
+import struct
+d = open('/tmp/og.png','rb').read()
+assert d[:4] == b'\x89PNG', 'not a PNG at all'
+print(len(d), 'bytes,', *struct.unpack('>II', d[16:24]))"    # ... 1200 630
+curl -s $B/ | grep -o 'og:image:width" content="[0-9]*"'     # muss 1200 sagen
+```
+
+### Die Falle, in die diese Messung selbst gelaufen ist
+
+**`hrefLang`, nicht `hreflang`.** Ein `grep hreflang` über den Kopf findet
+**nichts**, und die naheliegende Schlussfolgerung — „G5b hat die vier Links
+kaputtgemacht" — ist falsch. React serialisiert die JSX-Prop mit großem L;
+HTML-Attributnamen sind case-insensitiv, Crawler lesen es korrekt. Steht schon
+weiter oben in diesem Runbook, und ist beim Bauen von G5b trotzdem genau einmal
+passiert.
+
+```bash
+curl -s $B/about | grep -o 'rel="alternate"[^>]*'
+#   fünf Zeilen: vier hrefLang plus der Feed-Link
+```
+
+### Was nur das Bild zeigt
+
+**Ein Screenshot schlägt die Bytes.** `content-type: image/png` und 1200 × 630
+sagen nichts darüber, ob auf der Karte etwas steht — ein Satori-Baum, in dem ein
+Wert `undefined` ist, rendert sauber und leer.
+
+```bash
+curl -s $B/og.png -o /tmp/og.png && xdg-open /tmp/og.png
+```
+
+Zu sehen sein müssen: die Wortmarke mit cyanfarbenem `://`, ein cyanfarbener
+Strich, der Beschreibungssatz in Hellgrau, unten Name und Rolle in Grau — auf
+fast schwarzem Grund. **Ist der Grund durchsichtig oder das Bild leer**, hat
+`requireTokens()` nicht zugeschlagen, wo es sollte: dann fehlt ein Token in
+`tokens.css` und das Bild zeichnet Fallbacks.
+
+### Und im Container, nicht nur im Projektordner
+
+Der einzige Weg, die standalone-Falle für `og.png` wirklich auszuschließen:
+
+```bash
+make image-web
+docker run -d --rm --name og-probe -p 3222:3000 \
+  -e API_INTERNAL_URL=http://127.0.0.1:9 \
+  ghcr.io/g1ng4r/timseil-web:$(make -s image-tag)
+curl -sI http://127.0.0.1:3222/og.png | grep -i content-type    # image/png
+docker stop og-probe
+```
+
+Antwortet die Route hier mit 500, während sie unter `npx next start` ein Bild
+lieferte, fehlt `styles/tokens.css` im Image — `outputFileTracingIncludes` in
+`next.config.ts` ist die Zeile, die es hineinlegt.

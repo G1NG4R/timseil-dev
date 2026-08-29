@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { ThemeScript } from "@/components/ThemeScript";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { LOCALES } from "@/lib/i18n/routes";
-import { SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 import { fontVariables } from "../fonts";
 
@@ -57,9 +57,17 @@ export const metadata: Metadata = {
   // this. lib/site.ts explains why it is a constant and not an environment
   // variable: it is a claim about which address is the real one.
   metadataBase: new URL(SITE_URL),
-  title: "timseil.dev",
-  description: "Backend and DevOps portfolio — the site is its own reference system.",
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
 };
+
+// NO `openGraph` AND NO `alternates` HERE, and that is the trap this phase
+// walked into rather than around. Next merges these two FLAT: a page that sets
+// `alternates` REPLACES the layout's instead of extending it, and its own
+// example shows a page setting only `title` still emitting the layout's
+// `og:title` (generate-metadata.md:1405-1418). Every page names its own
+// canonical, so anything social put here would be dropped by all seven of them
+// while looking perfectly correct in this file. lib/seo/pages.ts carries it.
 
 export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
   // THE ROUTE CARRIES THE LANGUAGE, NOT THE HEADER, and that is the one
