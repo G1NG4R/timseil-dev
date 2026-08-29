@@ -51,11 +51,20 @@ export const LOCALE_NAMES: Record<Locale, string> = {
  *  chrome.ts listed the locales early — the entry costs a line then and a
  *  whole-site defect later — and G5b built them into it. `og.png` is a route
  *  handler rather than an `opengraph-image` file in `app/[lang]/`, precisely so
- *  that the canonical redirect below cannot reach it. ADR 0047. */
+ *  that the canonical redirect below cannot reach it. ADR 0047.
+ *
+ *  `dev` is G7's component gallery, and it is here for a reason the others are
+ *  not: it is the first PAGE outside `app/[lang]/` rather than a route handler.
+ *  Without this entry `rewriteTarget` sends `/dev/components` to
+ *  `/en/dev/components`, which is not a route — the gallery would answer 404 in
+ *  development for a reason that looks nothing like its cause. It carries no
+ *  language for the same reason `healthz` carries none: nobody reads it as
+ *  prose. ADR 0049. */
 const RESERVED = new Set([
   "_next",
   "api",
   "healthz",
+  "dev",
   "favicon.svg",
   "favicon.ico",
   "robots.txt",
@@ -92,8 +101,15 @@ export function asLocale(value: string): Locale {
   return value;
 }
 
-export function isLocale(value: string): value is Locale {
-  return (LOCALES as readonly string[]).includes(value);
+/** `unknown` rather than `string`, and G7 is why.
+ *
+ *  `next/root-params` types `lang()` as `string | undefined` as soon as ONE
+ *  route lives outside `app/[lang]/` — the gallery is the first, so the value
+ *  that used to be a `string` everywhere stopped being one. A guard is the
+ *  right place to absorb that: it already answers "is this the thing", and
+ *  narrowing from `unknown` is the same answer with one fewer assumption. */
+export function isLocale(value: unknown): value is Locale {
+  return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 }
 
 /** `/de/about` → `/about`, `/de` → `/`. A path that merely begins with those

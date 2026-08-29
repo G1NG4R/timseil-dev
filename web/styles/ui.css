@@ -1,0 +1,210 @@
+/* The generic parts — SYS.00.07.04 of the Foundations sheet.
+   Button, Field, MetricTile, SectionHead. ADR 0049.
+
+   WHY THESE ARE MARKUP PLUS A STYLESHEET and not the handoff's inline styles.
+   docs/design/code/components/ ships them with `style={{…}}` because a
+   reference implementation has to stand on its own with no build. Here they do
+   not: the site already has a stylesheet per concern, and Button's own comment
+   in the handoff says where the rest belongs — "Hover gehört in CSS, nicht in
+   JS". Following that for the hover and not for the base would split one
+   component across two languages.
+
+   AND ONE LITERAL BECAME A TOKEN ON THE WAY. Field drew its filled border as
+   rgba(0,229,255,.4) — cyan, in all seven palettes, which is the same defect
+   ADR 0043 removed from globals.css. It reads --acc-line here, so the field
+   follows the palette the visitor chose.
+
+   Letter-spacings of .12em, .13em and .20em are the sheet's and are literals,
+   as they are in chrome.css. The open finding about them is counted in this
+   phase rather than guessed at; see the phase's pull request.
+
+   IMPORTED BY THE GALLERY ONLY, for now. No page renders these yet, so putting
+   them in the site layout would ship bytes for markup nobody reaches. The first
+   H phase to use one moves the import to app/[lang]/layout.tsx — H1 for
+   MetricTile and SectionHead, H8 for Field. */
+
+/* ── Button ────────────────────────────────────────────────────────────────
+   43px tall at the sheet's 12/20 padding, no radius, no shadow. Hover changes
+   colour and nothing else: "Hover verschiebt nichts" is one of the ten rules
+   on the State Language sheet, and a button that grows on hover moves the two
+   beside it.                                                                */
+
+.btn {
+  display: inline-block;
+  font: 600 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: .13em;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    color var(--d-color) linear,
+    background var(--d-color) linear,
+    border-color var(--d-color) linear;
+}
+
+.btn[data-variant="primary"] {
+  background: var(--acc);
+  color: var(--on-cyan);
+  border-color: var(--acc);
+}
+
+.btn[data-variant="secondary"] {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--line-strong);
+}
+
+.btn[data-variant="ghost"] {
+  background: transparent;
+  color: var(--dim);
+  padding: 12px 4px;
+}
+
+/* Hover is a pointer statement. On a touch screen there is no pointer, and the
+   sheet's rule is that touch gets the rest state — so the whole block is behind
+   `hover: hover`, the same guard layout.css uses for its coarse-pointer rules. */
+@media (hover: hover) {
+  .btn[data-variant="primary"]:hover {
+    background: var(--acc-hi);
+    border-color: var(--acc-hi);
+  }
+
+  .btn[data-variant="secondary"]:hover {
+    color: var(--acc);
+    border-color: var(--acc-edge);
+  }
+
+  .btn[data-variant="ghost"]:hover {
+    color: var(--acc);
+  }
+}
+
+/* Disabled says why through the caller's text; what it does here is stop
+   looking pressable. */
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+/* ── Field ─────────────────────────────────────────────────────────────────
+   Label above the field, always. The sheet is explicit that a placeholder is
+   not a label: it disappears exactly when someone needs it.                 */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+}
+
+.field-top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-10);
+}
+
+.field-label {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+  text-transform: uppercase;
+}
+
+.field-aside {
+  margin-inline-start: auto;
+  font: 400 var(--t-mono-9)/1 var(--mono);
+  color: var(--dim);
+}
+
+.field-input {
+  inline-size: 100%;
+  padding: 13px 15px;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: 400 var(--t-body-13)/1.7 var(--mono);
+  outline: none;
+  transition: border-color var(--d-color) linear;
+}
+
+/* Filled and wrong, in that order of specificity: a field that is both is
+   wrong, and the error is the more useful thing to see. */
+.field-input[data-filled] { border-color: var(--acc-line); }
+.field-input[aria-invalid="true"] { border-color: var(--alert); }
+
+.field-error {
+  font: 400 var(--t-mono-10)/1.6 var(--mono);
+  color: var(--alert);
+}
+
+/* ── MetricTile ────────────────────────────────────────────────────────────
+   THE BORDER IS THE SECOND FEATURE. Solid means a number was measured, dashed
+   means there is none — the same distinction the status dot draws with a
+   filled disc and a short rule, one level up. Invariant 1 in a border-style. */
+
+.tile {
+  padding: var(--s-12);
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+}
+
+.tile[data-has="no"] { border-style: dashed; }
+
+.tile-label {
+  font: 400 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: .12em;
+  color: var(--dim);
+  margin-block-end: var(--s-6);
+  text-transform: uppercase;
+}
+
+.tile-value {
+  font: 600 var(--t-disp-26)/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.tile[data-has="no"] .tile-value { color: var(--dim); }
+.tile[data-warn] .tile-value { color: var(--amber); }
+
+.tile-unit {
+  font-size: var(--t-mono-11);
+  color: var(--dim);
+}
+
+/* ── SectionHead ───────────────────────────────────────────────────────────
+   SYS.NN, title, optional meta. The reveal animation lives in globals.css and
+   the end state is the default, so a section head with no JavaScript is a
+   section head and not an empty line.                                       */
+
+.sec {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-16);
+  border-block-end: 1px solid var(--line);
+  padding-block-end: var(--s-12);
+  margin-block-end: var(--s-34);
+}
+
+.sec-id {
+  font: 600 var(--t-mono-12)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}
+
+.sec-title {
+  font: 600 var(--t-mono-12)/1 var(--mono);
+  letter-spacing: .20em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.sec-meta {
+  margin-inline-start: auto;
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: .12em;
+  color: var(--dim);
+  text-transform: uppercase;
+}

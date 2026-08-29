@@ -211,3 +211,46 @@
   font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
   color: var(--dim);
 }
+
+/* ── The glitch burst — move M5 ─────────────────────────────────────────────
+   G7, issue #230. The rule has been in lib/state/burst.ts since G6 and had no
+   motion, for the honest reason that nothing could watch it: in production no
+   state changes while a visitor is looking. The gallery is the first place with
+   a trigger AND a viewer.
+
+   THE SHEET'S SPEC, NOT A LOOSER ONE: transform ±2px, steps(2), no blur, and
+   under the 300ms ceiling — --d-glitch is 280ms in tokens.css. `steps(2)` is
+   what makes it read as a switch rather than a wobble; an eased version of the
+   same keyframe is a different move.
+
+   Red belongs to the CHANGE and never to the state that follows it: the sheet
+   reserves one alert moment per page, and a burst that left its colour behind
+   would spend it on every flip. So the keyframe moves the element and does not
+   touch its colour — the tone comes back from [data-tone] the moment it ends.
+
+   Reduced motion needs nothing here. globals.css sets `animation: none
+   !important` on the universal selector, which is stronger than any rule in
+   this file, so the final value simply stands. The component checks the same
+   preference itself before it scrambles the WORD, because that half is
+   JavaScript and no stylesheet can stop it.                                 */
+
+@keyframes ts-glitch {
+  0%   { transform: translate3d(-2px, 1px, 0) }
+  50%  { transform: translate3d(2px, -1px, 0) }
+  100% { transform: none }
+}
+
+/* ONE iteration, not two. `var(--d-glitch)` is the whole move: the sheet's
+   ceiling is 300ms for the burst, and repeating a 280ms keyframe would be 560
+   and a different move wearing the same token. */
+/* The wrapper carries it, not `.st` itself: the component owns that element
+   and a caller cannot reach into it. `inline-flex` is load-bearing rather than
+   tidy — `transform` does not apply to a non-replaced INLINE box, so a plain
+   <span> around the state would swallow the whole move in silence. */
+.st-burst {
+  display: inline-flex;
+}
+
+.st-burst[data-burst] {
+  animation: ts-glitch var(--d-glitch) steps(2);
+}

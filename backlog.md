@@ -12,7 +12,167 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 29.08.2026, G6 in Produktion
+## Wo wir stehen — 29.08.2026, G7 gebaut und am Produktionsbild abgenommen
+
+**Die Seite hat zum ersten Mal einen Ort, an dem sie sich selbst ansieht.**
+`/dev/components` zeigt jedes Bauteil in jedem dokumentierten Zustand — und die
+erste Handlung der Phase war, das Abnahmekriterium nachzuzählen.
+
+### Die Zahl im Abnahmekriterium stimmt nicht: es sind 16, nicht 15
+
+`SYS.00.04.04` des Handoff-Blattes hat **14 Zeilen und 16 Namen**; zwei Zeilen
+führen je zwei Bauteile (`SpecRail · PostCard`, `TopNav · StatusDot`). Die **15**
+steht ausschließlich im Bauplan (Zeile 1218) und ist von dort in diesen Backlog
+gewandert. **Kein Blatt nennt sie.**
+
+Dieselbe Sorte wie „vier Bauteile ohne Aufrufer" aus der G6-Abnahme — es waren
+fünf. Eine Zahl über den eigenen Bestand, aus dem Kopf geschrieben statt gezählt.
+Das Register in `lib/gallery/registry.ts` trägt jetzt die sechzehn Namen wörtlich,
+`inventoryProgress()` zählt sie, und `registry.test.ts` hält sie **als Liste**
+gegen das Blatt statt als Ganzzahl — wer sie ändert, muss einer Liste
+widersprechen und nicht einer Zahl, die man für gerundet halten könnte.
+
+**Der Bauplan ist deine Datei.** Ob dort 15 in 16 korrigiert wird, entscheidest
+du; hier steht die Zählung.
+
+Gemessen am lokal gebauten Produktionsbild:
+
+```
+Riegel        /            200        /dev/components   404   (normaler Bau)
+              /            200        /dev/components   200   (DEV_GALLERY=1)
+Zustände      8 Wörter · 4 Füllungen  solid 2 · ring 3 · barred 1 · dash 15
+              barred und dash sind zum ersten Mal zu sehen
+Puls          2 Zellen, 2.6s          nur wo die Füllung solid ist
+Burst         1 Wechsel → 1 Burst     ts-glitch 0.28s steps(2)
+              +120 ms → 0             Zustand wechselt trotzdem
+              +700 ms → 1             die 600-ms-Sperre, von außen gesehen
+              reduced-motion          keine Zwischenstufe, Endwert steht sofort
+Paletten      7 Farben                Wort, Füllung und Puls in allen sieben gleich
+Breiten       1440…390                kein Überlauf, Zellzahlen stabil
+Register      16 Namen                4 gebaut, 11 QUEUED mit schuldender Phase,
+                                      TopNav gebaut ohne Beispiel (mit Grund)
+```
+
+### Der Burst war nirgends zu sehen, und das hat den Plan geändert
+
+G6 hat die Animation mit der Begründung verschoben, G7 bringe „Auslöser **und**
+Betrachter". Der Auslöser kam; der Betrachter fehlte:
+
+- **`next dev` hydriert nicht** — der offene Fund seit G4. Im selben Server gegen
+  `/` gegengeprüft: die Uhr steht auf `--:--:--`. **Damit ist er eingegrenzt: es
+  liegt nicht am `[lang]`-Baum.** Die Galerie hat ein eigenes Root-Layout und
+  verhält sich genauso.
+- Der Produktionsbau antwortet auf der Route 404.
+
+Der Plan dieser Phase hatte eine Env-Variable ausdrücklich abgelehnt — „ein
+Schalter für einen Lauf, den niemand geschrieben hat". Die Messung hat die
+Begründung widerlegt: der Lauf war die Abnahme von #230, fällig in dieser Phase.
+`DEV_GALLERY=1` baut die Galerie in ein Produktionsbild, das hydriert; sie
+akzeptiert **genau `1`**, damit ein `DEV_GALLERY=0` nicht das Gegenteil tut, und
+`compose.yaml` setzt sie nie. Keine Sicherheitsgrenze und gibt nicht vor, eine zu
+sein — wer Env setzen kann, besitzt den Container.
+
+### Drei Dinge, die erst der Bau gezeigt hat
+
+**Eine Seite außerhalb `[lang]` ändert den Typ von `lang()`.** `next/root-params`
+gibt `string | undefined` zurück, sobald **eine** Route draußen liegt; der Bau
+brach in `dictionaries.ts`. `isLocale` nimmt jetzt `unknown` statt `string`.
+Alle bisherigen Nachbarn dort draußen (`healthz`, `feed.xml`, `og.png`, …) sind
+Route Handler — die Galerie ist die erste **Seite**, und damit die erste, die ein
+zweites Root-Layout braucht.
+
+**`"dev"` musste in `RESERVED`.** Sonst schreibt `rewriteTarget()` die Adresse auf
+`/en/dev/components` um: ein 404, dessen Ursache zwei Dateien entfernt liegt.
+Belegt — ohne die Zeile wird `routes.test.ts` rot.
+
+**Die Handoff-Fassung von `Field` kann keine Server-Komponente sein.** Sie
+erzeugt ihre IDs mit `useId()`, und ein Hook macht das Bauteil client-only — also
+JavaScript für Markup ohne Verhalten, ausgerechnet auf der Seite (H8), wo das Feld
+in Mehrzahl steht. `name` ist jetzt Pflicht, die IDs kommen daher. Das ist der
+Fund der Klasse, die ADR 0043 für diese Dateien angekündigt hat, und er ist
+kleiner als der bei `ThemeSwitch`. Nebenbei ist ein Farbliteral gefallen:
+`rgba(0,229,255,.4)` war Cyan in allen sieben Paletten, jetzt `--acc-line`.
+
+### Die Laufweiten sind gezählt, und die Antwort ist kleiner als die Frage
+
+| Wert | Vorkommen | Wo |
+|---|---|---|
+| `var(--ls-label)` | 7 | tokenisiert |
+| `.1em` | 7 | **alle sieben in `chrome.css`** |
+| `var(--ls-head)` | 5 | tokenisiert |
+| `.12em` | 3 | `chrome.css` (1), `ui.css` (2) |
+| `.06em` | 2 | beide in `chrome.css` |
+| `.20em` · `.13em` · `.04em` · `.02em` | je 1 | Einzelfälle |
+
+**Nur `.12em` überschreitet überhaupt eine Dateigrenze.** Der häufigste Literal
+gehört vollständig einer Datei und ist damit deren lokale Konstante, kein Token.
+`tokens.css` ist unberührt — ein Token dort anzulegen entscheidest du, und die
+Zählung bereitet das vor, statt es zu ersetzen. Damit ist Punkt (4) des offenen
+G2-Fundes beantwortet, ohne dass eine Zeile geraten wurde.
+
+### #35 ist gegen die volle Galerie nachgemessen — und die Prämisse kippt weiter
+
+Je drei Läufe, `rm -rf .next` davor, `next.config.ts` danach per SHA als
+unverändert belegt, beide Arme in Produktionsform gebaut:
+
+| | Bauzeit | JS in `.next/static/chunks` |
+|---|---|---|
+| **mit** Compiler | 21 457 · 21 588 · 22 165 ms | 598 576 B |
+| **ohne** Compiler | 18 613 · 19 142 · 18 096 ms | 592 918 B |
+
+Rund **3,0 s Bauzeit und 5 658 B JS**. In G2 waren es 510 B, in G3 rund 2 600 B.
+Der Issue begründet das Behalten mit „adds no runtime weight to the bundle", und
+die Zahl entfernt sich mit jeder Phase weiter davon. Zahlen an den Issue,
+**nicht von mir geschlossen** — der Tracker gehört dir.
+
+### Zwei Messfehler dieser Runde, und beide waren meine
+
+**Ein `cd web` in einem Verzeichnis, das schon `web` war.** Die erste
+#35-Messung schaltete den Compiler nie ab: `cd web && python3 …` brach am `cd` ab,
+die „ohne"-Läufe liefen also **mit**. Verraten hat es die Byte-Zahl — in beiden
+Armen exakt gleich. Wieder dieselbe Lehre wie in G4, G5 und G6: **erst nachweisen,
+dass die Messung misst, was sie zu messen glaubt.** Eine Zahl, die sich nicht
+bewegt, wo sie sich bewegen müsste, ist ein Befund über den Aufbau, nicht über
+die Sache.
+
+**`self.__next_f` aus einer Browser-Erweiterung ist kein Beleg.** Inhaltsskripte
+laufen in einer isolierten Welt; was Seitenskripte an `window` hängen, ist dort
+nicht sichtbar. Beide Zähler meldeten `0`, während die Seite einwandfrei
+hydrierte. **Der Beleg für Hydration ist das DOM** — eine Uhr, die tickt, ein
+Klick, der etwas ändert. Ich hätte daraus beinahe geschlossen, die Nutzlast fehle.
+
+### Was die Abnahme nicht behauptet
+
+**Nichts davon ist gegen Produktion gemessen, und das ist diesmal keine Lücke.**
+G7 ist die erste Phase, deren Hauptartefakt in Produktion absichtlich nicht zu
+sehen ist. Gegen `https://timseil.dev` prüfbar sind genau zwei Dinge: dass
+`/dev/components` dort **404** liefert, und dass die bestehenden Seiten sich nicht
+bewegt haben. Alles andere ist am lokalen Produktionsbild gemessen.
+
+**Die Bauteile liegen trotz 404 im Image.** `grep -rl "Component gallery"
+.next/server` findet sie nach einem Bau ohne Schalter in einem SSR-Chunk. Kein
+Besucher lädt den Chunk, weil keine Route ihn anfordert — aber „nicht im Image"
+wäre eine Behauptung über Bytes, die niemand angesehen hat.
+
+**`prefers-reduced-motion` ist nicht in einem Browser mit der Einstellung
+gemessen.** Die CSS-Hälfte ist aus dem ausgelieferten Stylesheet zitiert, die
+JS-Hälfte mit überschriebenem `matchMedia` belegt. Ein echter Lauf gehört an
+dieselbe Stelle wie der 44px-Beleg: **Playwright vor H1.**
+
+**Elf der sechzehn Bauteile sind nicht zu sehen, sondern angekündigt.** Sie
+stehen als `QUEUED` mit der Phase, die sie schuldet — die Galerie sagt über sich
+selbst, was die Seite über ihre Systeme sagt.
+
+**`--host` ist nicht gefahren.** Wie in G3 bis G6.
+
+**Als Nächstes:** die **Triage der Stufe G** — sie ist die letzte Phase dieser
+Stufe. Jeder Eintrag hier bekommt Issue, verworfen mit Begründung, oder erledigt.
+Danach der Playwright-Aufbau vor H1, an dem vier Schulden hängen: der Dev-Modus,
+der 44px-Beleg, die `<Activity>`-Messung und `prefers-reduced-motion`.
+
+---
+
+## Vorher — 29.08.2026, G6 in Produktion
 
 **Zum ersten Mal sagt die Seite einen Zustand zweimal.** Ein Wort und eine Form,
 und die Farbe kommt erst danach — was heißt, dass die Metaleiste jetzt ein
@@ -2268,6 +2428,9 @@ sie neu. CLAUDE.md hat dafür jetzt eine Zeile, mit diesem Vorfall als Auslöser
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 29.08.2026 | G7 | **Elf der sechzehn Inventar-Bauteile stehen als QUEUED, nicht als Beispiel.** `Terminal` gehört zu Stufe J, `ErrorBudgetGame` zu H10, `ContributionGraph` und `OperationGrid` an Endpunkte, die `web/` heute nicht liest; sie vorzuziehen widerspräche der Phasenzuteilung und ADR 0048s Regel, ein Vokabular erst dort abzubilden, wo sein Endpunkt gelesen wird. Jede Zeile nennt die schuldende Phase — `registry.test.ts` weist einen Eintrag ohne Begründung ab. Die Galerie wächst damit durch Stufe H mit, statt einmal zu stimmen. | verschoben |
+| 29.08.2026 | G7 | **`ui.css` liegt noch nicht im Seiten-Layout.** `Button`, `Field`, `MetricTile` und `SectionHead` sind gebaut, aber keine Seite rendert sie, also lädt nur die Galerie das Stylesheet — die öffentliche Seite bekommt kein Byte CSS für Markup, das niemand erreicht. Die erste H-Phase, die eines benutzt, zieht den Import nach `app/[lang]/layout.tsx`: **H1** für `MetricTile` und `SectionHead`, **H8** für `Field`. Steht als Kommentar im Kopf von `ui.css`, damit es nicht nur hier steht. | verschoben |
+| 29.08.2026 | G7 | **`TopNav` steht im Register als gebaut, ohne Beispiel.** Es ist das Chrome aus G3 und auf jeder Seite zu sehen; die Galerie hat ein eigenes Root-Layout ohne Chrome, und ein zweiter `<header>` darin wäre ein schlechteres Beispiel als der echte. Der Grund steht im Eintrag selbst, weil ein toter Zustand ohne Begründung ein Bug ist. Aus dem Register zu streichen, was man nicht erfüllen kann, wäre die andere Möglichkeit gewesen — dann wäre es kein Inventar mehr. | verschoben |
 | 28.08.2026 | G3 | **Der Kopf bleibt statisch, und die Frage wird in H1 neu gestellt.** Das Chrome-Blatt kennt kein `position` und keinen Scroll-Zustand; sticky wäre erfunden gewesen. Der einzige Hinweis ist `.rail { top: 90px }` — eine Herleitung aus einer Zahl, kein Satz. In H1 steht die Spec-Rail zum ersten Mal wirklich da, und dann lassen sich Kopf und Rail zusammen messen statt einzeln vermuten. ADR 0044. | verschoben |
 | 28.08.2026 | G3 | **Die Uhr driftet, und das ist die Fassung des Blattes.** `setInterval(1000)` verliert auf einem beschäftigten Tab gelegentlich eine Sekunde; ein sich selbst neu stellendes `setTimeout(1000 - Date.now() % 1000)` liefe auf der Sekundengrenze und sähe merklich ruhiger aus. Das Blatt schreibt `setInterval`, also `setInterval` — die Änderung wäre eine Entwurfsentscheidung und keine Reparatur. | verschoben |
 | 28.08.2026 | G3 | **Issue #96 (Favicon) trägt den Meilenstein G3 und ist nicht erledigt.** `web/public/favicon.svg` ist weiter der Platzhalter. Das Chrome-Blatt spezifiziert kein Icon; das nächstliegende Motiv wäre die Wortmarke `TS://`, aber ein Icon zu entwerfen ist eine gestalterische Handlung an einem read-only-Handoff, der keine vorsieht. **Vorschlag: auf K2 umhängen** (Blog, CV & Bilder), wo Bildmaterial ohnehin entsteht — oder du entscheidest das Motiv, dann ist es zehn Minuten. **Erledigt am 28.08.:** auf den neu angelegten Meilenstein **K2** umgehängt, mit der Begründung als Kommentar — die Prämisse des Issues war, dass das Chrome-Blatt die Marke trägt, und es zeichnet kein Icon. Der Meilenstein G3 ist damit leer. | erledigt |
@@ -2283,6 +2446,13 @@ Vorherige Triage: Stufe F (Launch-Pfad), 27.08.2026 — siehe oben.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
+| 29.08.2026 | G7 | **Das Abnahmekriterium von G7 nennt 15 Bauteile, das Blatt hat 14 Zeilen und 16 Namen.** `SpecRail · PostCard` und `TopNav · StatusDot` teilen sich je eine Zeile. Die 15 steht nur in `docs/build-plan.md:1218` und ist von dort hierher gewandert; **kein Blatt nennt sie**. Dieselbe Sorte wie „vier Bauteile ohne Aufrufer" in G6 — es waren fünf. Das Register trägt die sechzehn Namen wörtlich und der Test hält sie **als Liste**, nicht als Zahl. Der Bauplan ist nicht meine Datei: ob dort 15 in 16 wird, entscheidest du. | offen, Entscheidung beim Bauplan |
+| 29.08.2026 | G7 | **Eine Seite außerhalb `[lang]` macht den Root-Parameter optional.** `next/root-params` typisiert `lang()` als `string \| undefined`, sobald **eine** Route draußen liegt — der Bau brach in `dictionaries.ts`, obwohl an der Datei nichts geändert war. `isLocale` nimmt jetzt `unknown` statt `string`. Alle bisherigen Nachbarn dort draußen sind Route Handler; die Galerie ist die erste Seite und brauchte deshalb auch das erste zweite Root-Layout. Wer in H eine weitere Seite außerhalb `[lang]` anlegt, trifft beides schon fertig an. | erledigt |
+| 29.08.2026 | G7 | **Die Handoff-Fassung von `Field` kann keine Server-Komponente sein.** `useId()` macht das Bauteil client-only — JavaScript für Markup ohne Verhalten, ausgerechnet auf H8, wo das Feld in Mehrzahl steht. `name` ist jetzt Pflicht und die IDs kommen daher; das ist in einem Fehlerbericht auch lesbar, `«r3»` nicht. Der Fund der Klasse, die ADR 0043 für die fünf übrigen Handoff-Bauteile angekündigt hat — kleiner als der bei `ThemeSwitch`. Nebenbei fiel ein Farbliteral: `rgba(0,229,255,.4)` war Cyan in allen sieben Paletten, jetzt `--acc-line`. | erledigt |
+| 29.08.2026 | G7 | **Der Dev-Hydration-Fund ist eingegrenzt: es liegt nicht am `[lang]`-Baum.** Die Galerie hat ein eigenes Root-Layout, keine Sprache, keinen Dictionary-Aufruf — und hydriert unter `next dev` genauso wenig. Im selben Server gegen `/` gegengeprüft, wo die Uhr auf `--:--:--` steht. Damit fallen `getDictionary()` und die Sprachroute als Verdächtige aus; die nächsten bleiben `proxy.ts` und die drei `Ecmascript file had an error` aus #187. **Termin unverändert: gelöst vor H1**, weil dort auch der 44px-Beleg, die `<Activity>`-Messung und `prefers-reduced-motion` hängen. | offen, Termin H1 |
+| 29.08.2026 | G7 | **`self.__next_f` und React-Fiber-Schlüssel sind aus einer Browser-Erweiterung nicht lesbar.** Inhaltsskripte laufen in einer isolierten Welt; beide Zähler meldeten `0`, während die Seite einwandfrei hydrierte. Ich hätte daraus beinahe geschlossen, die RSC-Nutzlast fehle. **Der Beleg für Hydration ist das DOM** — eine Uhr, die tickt, ein Klick, der etwas ändert. Gehört neben die `grep`-Fallen im Runbook: das Werkzeug misst nicht immer, wo es hinsieht. | erledigt |
+| 29.08.2026 | G7 | **Der Riegel verhindert das Rendern, nicht das Bündeln.** Nach einem Bau ohne `DEV_GALLERY` findet `grep -rl "Component gallery" .next/server` die Galerie in einem SSR-Chunk: der Modulgraph erreicht sie, nur das gerenderte HTML fehlt. Kein Besucher lädt den Chunk, weil keine Route ihn anfordert. Der Kommentar im Code sagte zuerst „nicht im Image" — das war eine Behauptung über Bytes, die niemand angesehen hatte, und ist korrigiert. | erledigt |
+| 29.08.2026 | G7 | **Der CSS-Minifier schreibt `animation: none` in die Langform um.** Im ausgelieferten Stylesheet steht `animation: auto ease 0s 1 normal none running none !important` statt der Kurzform aus `globals.css`, und `translate3d(-2px,1px,0)` wird zu `translate(-2px, 1px)`. Beides harmlos, beides derselbe Grund, aus dem G3 die Dauern-Falle aufgeschrieben hat: **wer im Produktionsbild nach dem sucht, was er geschrieben hat, findet es nicht.** Der Burst-Beleg vergleicht deshalb Elemente statt Animationsnamen. | erledigt |
 | 27.08.2026 | G1 | **`globals.css` malt drei Dinge im Akzent von Terminal Noir statt im Akzent des Themes.** Link-Unterstrich, `::selection` und der Puls-Schein von `ts-pulse` stehen als `rgba(0,229,255,…)` da — vier Zeilen, wörtlich aus dem Handoff übernommen. In den sechs anderen Paletten bleiben sie cyan; sichtbar wird es, sobald G2 den Umschalter baut. Reparatur heißt neue Tokens in `tokens.css` (drei Deckkraften × sieben Paletten oder ein `color-mix`), und das ist keine Entscheidung von G1. `check-tokens.sh` führt die vier als benannte Ausnahme und druckt sie bei jedem Lauf. **Gemessen im Browser, 27.08.2026:** Linkfarbe folgt (`#00E5FF` → Latte `#7C2FD4` → Phosphor `#2EE6A6`), Unterstrich bleibt in allen dreien `rgba(0,229,255,.35)`. **Erledigt in G2:** vier abgeleitete Tokens in `tokens.css` (`--acc-line`, `--acc-select`, `--acc-pulse`, `--acc-pulse-2`) über `color-mix(in srgb, var(--acc) N%, transparent)`, dazu `--glow`, das denselben Fehler eine Ebene tiefer trug — es stand nur in `:root`, und nur `latte` und `gruvbox` überschrieben es, also leuchtete in `mocha`, `amber`, `phosphor` und `tokyo` weiter Cyan neben einem fremden Akzent. `check-tokens.sh` hat seine benannte Ausnahme verloren. **Nachgemessen im Browser, 28.08.2026, alle sieben:** der Unterstrich trägt jetzt in jeder Palette den Akzent bei Alpha .35 — Noir `srgb 0 .898 1`, Mocha `.796 .651 .969`, Gruvbox `.027 .4 .471`. ADR 0043. | erledigt |
 | 27.08.2026 | G1 | **Eine neue Web-Abhängigkeit kommt im Dev-Stack nicht an, und der Cache hält den Fehler fest.** `node_modules` (anonym) und `.next` (benannt) überleben `up --build`: das Image hat Tailwind, der Container nicht — `Cannot find module '@tailwindcss/postcss'`, jede Seite 500. Der erste gescheiterte Start kompiliert sich in `.next`, deshalb heilt `--renew-anon-volumes` **allein** nichts; gemessen: mit erneuerten anonymen Volumes weiter 500, nach `docker volume rm …_web-next` sofort 200. Gefunden, weil `make quickstart` gegen diesen Branch durchfiel. **Behoben:** `make dev` stempelt die Prüfsumme des Lockfiles und weist einen Start ab, der sie bewegt hat; `make dev-reset` räumt beides und löscht den Stempel. Runbook `web.md`. Nicht gedeckt: frischer Klon neben altem Volume. | erledigt |
 | 27.08.2026 | G1 | **`check-topology` ist einmal mit `migrate` exit 1 aus einem leeren Volume gefallen** — im ersten Quickstart-Lauf gegen diesen Branch, direkt nach dem Web-Fehlschlag. Compose hatte die Logzeilen des Init-Containers geschluckt, und der Lauf war schon abgeräumt, als ich sie suchte. Danach zweimal nicht wiedergekehrt: `make check-topology` einzeln grün, der saubere Quickstart-Wiederholungslauf ohne ein einziges ✗. **Nicht reproduzierbar, Ursache unbekannt** — kommt es wieder, ist der erste Griff, die Logs des `migrate`-Containers zu sichern, bevor irgendetwas abgeräumt wird. | offen |

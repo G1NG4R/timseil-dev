@@ -1,0 +1,123 @@
+/* The component gallery — G7, /dev/components. ADR 0049.
+
+   A WORKBENCH, NOT A PAGE OF THE SITE. It is loaded only by app/dev/layout.tsx
+   and the route answers 404 outside development, so nothing here reaches a
+   visitor. That is also why it is allowed to be plain: every pixel spent making
+   the gallery look designed is a pixel that stops it showing the components as
+   they actually are.
+
+   The rule it does keep is the site's: no colour, no radius, no duration that
+   is not a token (invariant 8). A workbench that drifted from the palette would
+   be lying about the thing it exists to show.                                */
+
+.gal-head {
+  padding-block: var(--s-34) var(--s-16);
+}
+
+.gal-title {
+  font: 600 var(--t-mono-13)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.gal-sub {
+  margin-block-start: var(--s-8);
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+}
+
+/* One row per component. The border is the whole layout: a gallery is a list of
+   things that must not bleed into each other. */
+.gal-part {
+  border-block-start: 1px solid var(--line);
+  padding-block: var(--s-20);
+}
+
+.gal-part-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-10);
+  margin-block-end: var(--s-12);
+}
+
+.gal-name {
+  font: 600 var(--t-mono-12)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--ink);
+}
+
+.gal-where {
+  font: 400 var(--t-mono-10)/1 var(--mono);
+  color: var(--steel);
+}
+
+/* The sheet's own state list, printed beside the component so that "every
+   documented state is visible" can be checked by a reader rather than taken on
+   trust. */
+.gal-states {
+  margin: 0;
+  font: 400 var(--t-mono-9)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+}
+
+/* Where the examples stand. `align-items: start` so a tall example does not
+   stretch the short one beside it into a shape it never has in the wild. */
+.gal-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--s-16);
+  margin-block-start: var(--s-12);
+}
+
+/* A single example and its caption. The caption is the state's name, because a
+   gallery where you cannot tell which cell is which state is a picture. */
+.gal-case {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+  min-inline-size: 0;
+}
+
+.gal-case-label {
+  font: 400 var(--t-mono-9)/1 var(--mono);
+  color: var(--steel);
+}
+
+/* The grid the state matrix uses: every state of one component, side by side.
+   Fixed columns rather than auto-fit, so the seven-palette check compares the
+   same cells at the same places in every screenshot. */
+.gal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--s-12) var(--s-16);
+  margin-block-start: var(--s-12);
+}
+
+.gal-flip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-16);
+}
+
+.gal-flip-key {
+  font: 400 var(--t-mono-10)/1 var(--mono);
+  color: var(--dim);
+}
+
+/* A part that has no example says why, in the place the example would be —
+   which is the same thing EmptyState does one level up. */
+.gal-absent {
+  font: 400 var(--t-mono-10)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+}
+
+.gal-foot {
+  border-block-start: 1px solid var(--line);
+  margin-block-start: var(--s-34);
+  padding-block: var(--s-20) var(--s-56);
+  font: 400 var(--t-mono-10)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+}

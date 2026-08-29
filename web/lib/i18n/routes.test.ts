@@ -89,6 +89,10 @@ void test("the rewrite leaves a prefixed address alone", () => {
 void test("infrastructure paths are never given a language", () => {
   assert.equal(rewriteTarget("/_next/rsc-payload"), null);
   assert.equal(rewriteTarget("/healthz"), null);
+  // G7's gallery, and the only one of these that is a page rather than a route
+  // handler. Without "dev" in RESERVED it is rewritten to /en/dev/components,
+  // which does not exist — a 404 whose cause is two files away from its symptom.
+  assert.equal(rewriteTarget("/dev/components"), null);
   assert.equal(rewriteTarget("/api/health"), null);
   assert.equal(rewriteTarget("/favicon.svg"), null);
   assert.equal(rewriteTarget("/robots.txt"), null);
