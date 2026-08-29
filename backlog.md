@@ -12,11 +12,56 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 29.08.2026, G7 gebaut und am Produktionsbild abgenommen
+## Wo wir stehen — 29.08.2026, G7 in Produktion, Stufe G abgeschlossen
 
 **Die Seite hat zum ersten Mal einen Ort, an dem sie sich selbst ansieht.**
 `/dev/components` zeigt jedes Bauteil in jedem dokumentierten Zustand — und die
 erste Handlung der Phase war, das Abnahmekriterium nachzuzählen.
+
+### Abgenommen gegen Produktion, 29.08.2026
+
+```
+status ok · sha d70927b · v0.15.0
+Merge 21:34:01Z → Deploy fertig 21:37:54Z    233 s, ok, Pipeline success
+ops                           uptime90d 100 · p95 72,5 ms · errorRate 0
+
+/ · /de · /fr · /about        200      feed · robots · sitemap · healthz  200
+/dev/components               404      /en/dev/components  308 → 404
+Metaleiste                    st-word 6 · st-dot 6 · data-tone 6
+Galerie-Markup auf /          0 Treffer für „Component gallery", gal-, st-burst
+```
+
+**Die Abnahme dieser Phase ist kurz, und das ist die Phase, nicht die Abnahme.**
+G7 ist die erste, deren Hauptartefakt in Produktion absichtlich unsichtbar ist.
+Gegen `https://timseil.dev` sind genau zwei Dinge zu prüfen — dass die Galerie
+404 gibt und dass die bestehenden Seiten sich nicht bewegt haben. Beides steht
+oben. Alles andere ist am lokalen Produktionsbild gemessen und im Abschnitt
+darunter belegt.
+
+### Zwei Dinge, die nur das ausgelieferte Stylesheet zeigt
+
+Das Stylesheet heißt jetzt `3svzn18n_d2z_.css` und misst **31 547 B**, gegen
+31 154 B in G6 — **393 Byte mehr**. Was in diesen 393 Byte steckt und was nicht,
+ist die eigentliche Abnahme der Entscheidung, `ui.css` und `gallery.css` nur vom
+Galerie-Layout laden zu lassen:
+
+| Gesucht | Treffer | |
+|---|---|---|
+| `ts-glitch` · `st-burst` | je **2** | Keyframe und Regel, bei jedem Besucher |
+| `ts-pulse` | 2 | unverändert seit G6 |
+| `gal-part` · `.btn` · `.tile` · `.field-input` · `.sec-id` | **0** | Galerie und die vier Basisbauteile sind **nicht** dabei |
+
+**Die Nullen sind der Beleg, nicht die Zusage.** `ui.css` und `gallery.css`
+erreichen die öffentliche Seite nicht — gemessen an den Bytes, die ein Besucher
+wirklich bekommt, statt an einem Kommentar im Dateikopf.
+
+**Die 393 Byte sind der Burst, und er ist für keinen Besucher auslösbar.** Das
+Keyframe liegt in `state.css`, weil dort die Zustandssprache liegt, und
+`state.css` lädt jede Seite. In Produktion wechselt kein Zustand, während jemand
+hinsieht — der Burst ist also heute 393 Byte, die niemand sehen kann. Das ist
+vertretbar und wird trotzdem hier gezählt, weil #237 gerade festgehalten hat,
+dass vom Budget rund 7 KB übrig sind: die Sorte Byte, die man einzeln nicht
+bemerkt und in Stufe H dreizehnmal ausgibt.
 
 ### Die Zahl im Abnahmekriterium stimmt nicht: es sind 16, nicht 15
 
