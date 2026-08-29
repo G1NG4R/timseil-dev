@@ -12,7 +12,153 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 29.08.2026, G5 in Produktion
+## Wo wir stehen — 29.08.2026, G6 in Produktion
+
+**Zum ersten Mal sagt die Seite einen Zustand zweimal.** Ein Wort und eine Form,
+und die Farbe kommt erst danach — was heißt, dass die Metaleiste jetzt ein
+drittes Wort hat und `— NO DATA` ein Bauteil ist statt zweier Zeichenketten.
+
+Gemessen an `https://timseil.dev`:
+
+```
+status ok · sha 46eb852 · v0.14.0
+Merge 18:54:14Z → Deploy fertig 18:58:33Z    259 s, ok, Pipeline 33269493541
+check-deployed                8 Behauptungen, 1 nicht von hier stellbar
+ops                           uptime90d 100 · p95 20,5 ms · errorRate 0
+
+Zustandszellen  / · /de · /fr   je 3      ONLINE · ONLINE · LIVE
+                /about          2         die Startseitenzeile fehlt dort
+Punkt           6 px in Fußzeile und Menüstreifen, 7 px auf der Seite
+Puls            ts-pulse 2.6s              --d-pulse, erstmals gelesen seit G1
+Stylesheet      3rf1jyfbzgp5s.css  31 154 B   byte-gleich mit dem lokalen Image
+                vier Füllungen überleben den Minifier, --d-pulse bleibt Variable
+.foot-dot       0 Treffer                  die alte Regel ist fort
+
+Sieben Paletten ONLINE, Wort und Füllung und Puls unverändert
+                #00E5FF · #CBA6F7 · #FFB74A · #2EE6A6 · #7AA2F7 · #7C2FD4 · #076678
+Graustufen      BUILD 46eb852 · ● ONLINE · UPTIME 100.00% · api ● LIVE  lesbar
+
+Hydration       4 Ladevorgänge, 4 Kanarienvögel, 0 Treffer, ein <main>
+```
+
+### Sieben Paletten sind der bessere Beleg als Graustufen
+
+Das Abnahmekriterium lautet „jeder Zustand hat ein zweites Merkmal neben der
+Farbe", und Graustufen prüfen davon nur die halbe Aussage: dass die Information
+**ohne** Farbe ankommt. Der Fall, den ein Besucher wirklich herstellt, ist ein
+anderer — er schaltet ein Theme um, und dann ist die Farbe nicht weg, sondern
+**eine völlig andere**.
+
+Über die sieben Paletten wandert ONLINE durch sieben Farben, von Cyan über
+Mauve und Amber bis zu einem Petrol auf hellem Grund, und Wort, Füllung und Puls
+sind in allen sieben identisch. Am lokalen Rig kam die Gegenprobe dazu, die
+Produktion nicht liefern kann: unter `amber` wandert DEGRADED per Token auf Mint
+(`rgb(255,176,0)` → `rgb(127,209,174)`), weil der Akzent dieser Palette selbst
+Amber ist — und der Ring blieb ein Ring.
+
+### Der Fund aus G4 ist zu, und er war zwei Zeilen groß
+
+`FooterHealth.online: boolean \| null` hatte drei Darstellungen und zwei
+erreichbare Werte. `degraded` wurde als **ONLINE** gezeigt, weil die Leiste kein
+drittes Wort hatte; `OFFLINE` stand im Code für eine Antwort, die `/api/health`
+nicht bilden kann. Beides ist fort, und was an seine Stelle trat, ist ein Wort
+statt eines Booleschen.
+
+**Herstellbar, nicht erfunden:** `api/internal/health/health.go` antwortet
+`degraded`, wenn das eigene System nicht `live` ist. Mit
+`SITE_SYSTEM_SLUG=no-such-system` am lokalen Rig sagte die Zeile auf `/` nach
+zehn Sekunden DEGRADED, Fußzeile und Menüstreifen nach zwanzig — die Differenz
+ist `healthCached` mit `revalidate: 60`, und wer nach fünf Sekunden misst, misst
+den Cache und hält ihn für einen Defekt.
+
+### Der Puls ist Schmuck, und das ist eine Entscheidung, keine Nachlässigkeit
+
+`globals.css` schaltet unter `prefers-reduced-motion: reduce` **jede** Animation
+ab. Ein pulsierender Punkt ist damit für einen Teil der Besucher nicht ein
+schwächeres Merkmal, sondern gar keines. Er darf deshalb nur dort stehen, wo die
+Füllung den Zustand schon trennt, und `lib/state/words.test.ts` weist alles
+andere ab — zusammen mit der Regel, die ohne Test leise verrutscht: **die
+Füllung muss zur Klasse der Antwort passen**, niemand darf einem ungemessenen
+Zustand die Füllung eines gemessenen geben. Invariante 1 als Unit-Test.
+
+`tokens.css` und `globals.css` sind unverändert. Der gefärbte Puls entsteht,
+indem der Punkt `--acc-pulse` und `--acc-pulse-2` lokal neu setzt und damit das
+Keyframe des Designers auf seinen eigenen Ton ausrichtet — die Datei, deren Kopf
+sagt, dass kein Wert in ihr unserer ist, hat kein Zeichen verloren.
+
+### Zwei Messfehler dieser Runde, und beide waren meine
+
+**`grep -c` zählt Zeilen, keine Vorkommen, und ausgeliefertes HTML ist eine
+Zeile.** Mit gestoppter API meldete `grep -c 'st-nodata-text'` die Zahl `2`,
+während im Dokument acht standen — vier Platzhalter und vier gestreamte Werte.
+Zwei Minuten lang sah es aus, als rendere die Hälfte der Zellen ihren
+Ruhezustand nicht. Das ist die vierte aus derselben Familie wie die drei
+G4-Fallen und die G5-Falle mit dem angehängten Schrägstrich, und die Lehre ist
+wieder eine Reihenfolge: **erst nachweisen, dass die Messung misst, was sie zu
+messen glaubt.**
+
+**Und der Befehl, den ich dagegen in den Runbook geschrieben habe, war selbst
+ungeprüft.** `grep -o '<span class="st" [^>]*>.*\?</span></span>'` lieferte auf
+diesem Rechner das Richtige, weil GNU grep `.*\?` faul behandelte. In BRE ist
+das nicht definiert; greedy gelesen zöge das Muster vom ersten Zustand bis zum
+letzten `</span></span>` des Dokuments und lieferte **eine** Zeile statt drei.
+Ersetzt durch ein Muster ohne `.*`, das zwei Elemente gar nicht überspannen
+kann, und verbatim gegen die laufende Seite belegt. **Eine Anleitung, die nie
+ausgeführt wurde, ist eine Vermutung mit Syntaxhervorhebung.**
+
+### Die Zahl „vier Bauteile ohne Aufrufer" stimmte nicht
+
+Es sind **fünf**. `StateWord` — das Wort ohne Punkt, für eine Tabellenspalte,
+die den Zustand schon in der Überschrift führt — steht in derselben Datei wie
+`StatusDot` und ist beim Zählen durchgerutscht; die Vier stand so in ADR 0048,
+im PR-Text von **#228** und im ersten Entwurf dieses Abschnitts. Gefunden beim
+Nachzählen mit `grep`, nicht beim dritten Lesen des eigenen Satzes.
+
+**Der Fehler ist klein und die Sorte ist es nicht:** eine Zahl über den eigenen
+Code, aus dem Kopf geschrieben statt gezählt, in einem Repository, dessen erste
+Regel „keine erfundenen Zahlen" heißt. ADR 0048 ist in diesem PR korrigiert;
+der PR-Text von #228 ist gemergt und bleibt stehen, mit der Korrektur hier.
+
+### Was die Abnahme nicht behauptet
+
+**DEGRADED und `— NO DATA` sind gegen das lokale Rig belegt, nicht gegen
+Produktion.** Beide dort herzustellen hieße, den laufenden Host zu verbiegen —
+`SITE_SYSTEM_SLUG` umzustellen oder die API zu stoppen. Was Produktion zeigt,
+ist ONLINE und LIVE; die anderen zwei Zustände sind an einem Produktionsbau mit
+demselben Stylesheet gemessen, und das Stylesheet ist byte-gleich.
+
+**Zwei der vier Punkt-Füllungen hat noch nie jemand gesehen.** `barred`
+(OFFLINE) kann `/api/health` nicht auslösen, `dash` (QUEUED) hat keinen
+Aufrufer. Belegt sind sie durch `words.test.ts` und dadurch, dass sie den
+Minifier überlebt haben — nicht durch ein Bild. Erster Betrachter: G7s Galerie.
+
+**`prefers-reduced-motion` ist nicht in einem Browser mit der Einstellung
+gemessen.** Die Regel steht seit G1 in `globals.css` als `animation: none
+!important` auf dem Universalselektor und ist damit stärker als jede Regel
+dieser Phase; belegt ist sie durch die Kaskade, nicht durch einen Lauf. Gehört
+an dieselbe Stelle wie der 44px-Beleg und die Tastaturbedienung: **Playwright
+vor H1.**
+
+**`--host` ist nicht gefahren.** Dass die laufenden Container **diese** Bytes
+sind, sieht nur der VPS. Acht Behauptungen von hier, die neunte nicht.
+
+**Ein Browser, ein Rechner, eine Breite.** Die sieben Prüfbreiten sind am
+lokalen Produktionsbau über einen Iframe fester Breite gemessen — 390 bis 1440,
+Zelle 50 px, kein Overflow —, nicht gegen Produktion.
+
+**Als Nächstes:** G7 — Komponenten-Galerie unter `/dev/components`, nur in
+Development, jedes Bauteil × jeder Zustand. **Sie ist der erste Betrachter von
+fünf Bauteilen, die G6 gebaut hat und keine Seite rendert** (`EmptyState`,
+`ErrorPanel`, `LoadingLines`, `DegradedNotice`, `StateWord`), und der erste Ort,
+an dem ein Zustandswechsel von Hand auslösbar ist — also die Phase, in der der
+Glitch-Burst aus `lib/state/burst.ts` seine Animation bekommt. Abgenommen ist
+G7, wenn alle 15 Bauteile des Handoff-Inventars mit allen dokumentierten
+Zuständen sichtbar sind; aus diesem Inventar stehen heute **zwei**, `ThemeSwitch`
+aus G2 und `StatusDot` aus G3 und G6.
+
+---
+
+## Vorher — 29.08.2026, G5 in Produktion
 
 **Die Seite spricht zum ersten Mal mit Maschinen, und sie sagt dabei weniger,
 als sie könnte.** Vier Adressen, die kein Besucher aufruft, dazu ein Ausweis im
