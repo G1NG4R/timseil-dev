@@ -121,9 +121,40 @@ unverändert belegt, beide Arme in Produktionsform gebaut:
 | **ohne** Compiler | 18 613 · 19 142 · 18 096 ms | 592 918 B |
 
 Rund **3,0 s Bauzeit und 5 658 B JS**. In G2 waren es 510 B, in G3 rund 2 600 B.
+Auf das Initial-Bundle von `/` und in gzip — die Zahl, gegen die L8 budgetiert —
+sind es **1 945 B**; siehe den Abschnitt darunter.
 Der Issue begründet das Behalten mit „adds no runtime weight to the bundle", und
 die Zahl entfernt sich mit jeder Phase weiter davon. Zahlen an den Issue,
 **nicht von mir geschlossen** — der Tracker gehört dir.
+
+### Das Initial-Bundle steht bei 143 KB gzip, und das Budget ist 150
+
+Nachgemessen, um #35 gegen die richtige Zahl zu stellen statt gegen rohe Bytes.
+Methode: jedes `<script src>` im vorgerenderten `/`-Dokument **ohne** das
+`noModule`-Polyfill (das lädt ein moderner Browser nie), jede Datei **einzeln**
+gzippt — so trägt es die Leitung. Erst zusammenhängen und dann einmal gzippen
+komprimiert über Dateigrenzen und schmeichelt der Summe um rund 2 KB.
+
+| | roh | gzip |
+|---|---|---|
+| mit Compiler | 479 812 B | **143 101 B** |
+| ohne Compiler | 475 443 B | **141 156 B** |
+| Differenz | 4 369 B | **1 945 B** |
+
+L8 budgetiert **Initial JS < 150 KB gzip**. Die Seite liegt damit heute bei
+**143 KB — rund 7 KB Luft**, und `web/` hat noch **keine einzige Inhaltsseite**.
+Stufe H baut dreizehn davon, Stufe J das Terminal.
+
+**Das ist der eigentliche Fund dieser Messung, nicht die Compiler-Zahl.** Die
+1 945 B des Compilers sind 1,3 % des Budgets — aber **22 % der verbliebenen
+Luft**. Die knappe Größe ist nicht das Budget, es ist der Rest davon.
+
+Kein Alarm und keine Handlung in dieser Phase: die Zahl gehört zu L8, und ein
+Budget, das erst dort in CI läuft, wird nicht in G7 nachgezogen. Aber sie sollte
+**vor H1** bekannt sein und nicht in L8 als Überraschung auftauchen — wer dreizehn
+Seiten gegen 7 KB Luft baut, will das vorher wissen. **Next 16 mit Turbopack
+druckt keine „First Load JS"-Spalte mehr**, also gibt es keine Zahl von Next
+selbst, gegen die man das halten könnte; die Methode oben ist die verfügbare.
 
 ### Zwei Messfehler dieser Runde, und beide waren meine
 
@@ -2452,6 +2483,7 @@ Vorherige Triage: Stufe F (Launch-Pfad), 27.08.2026 — siehe oben.
 | 29.08.2026 | G7 | **Der Dev-Hydration-Fund ist eingegrenzt: es liegt nicht am `[lang]`-Baum.** Die Galerie hat ein eigenes Root-Layout, keine Sprache, keinen Dictionary-Aufruf — und hydriert unter `next dev` genauso wenig. Im selben Server gegen `/` gegengeprüft, wo die Uhr auf `--:--:--` steht. Damit fallen `getDictionary()` und die Sprachroute als Verdächtige aus; die nächsten bleiben `proxy.ts` und die drei `Ecmascript file had an error` aus #187. **Termin unverändert: gelöst vor H1**, weil dort auch der 44px-Beleg, die `<Activity>`-Messung und `prefers-reduced-motion` hängen. | offen, Termin H1 |
 | 29.08.2026 | G7 | **`self.__next_f` und React-Fiber-Schlüssel sind aus einer Browser-Erweiterung nicht lesbar.** Inhaltsskripte laufen in einer isolierten Welt; beide Zähler meldeten `0`, während die Seite einwandfrei hydrierte. Ich hätte daraus beinahe geschlossen, die RSC-Nutzlast fehle. **Der Beleg für Hydration ist das DOM** — eine Uhr, die tickt, ein Klick, der etwas ändert. Gehört neben die `grep`-Fallen im Runbook: das Werkzeug misst nicht immer, wo es hinsieht. | erledigt |
 | 29.08.2026 | G7 | **Der Riegel verhindert das Rendern, nicht das Bündeln.** Nach einem Bau ohne `DEV_GALLERY` findet `grep -rl "Component gallery" .next/server` die Galerie in einem SSR-Chunk: der Modulgraph erreicht sie, nur das gerenderte HTML fehlt. Kein Besucher lädt den Chunk, weil keine Route ihn anfordert. Der Kommentar im Code sagte zuerst „nicht im Image" — das war eine Behauptung über Bytes, die niemand angesehen hatte, und ist korrigiert. | erledigt |
+| 29.08.2026 | G7 | **Das Initial-Bundle von `/` liegt bei 143 KB gzip, und L8 budgetiert 150 KB.** Gemessen an jedem `<script src>` des vorgerenderten Dokuments ohne `noModule`-Polyfill, je Datei einzeln gzippt: **143 101 B mit** Compiler, **141 156 B ohne**. Rund **7 KB Luft — und `web/` hat noch keine einzige Inhaltsseite**, Stufe H baut dreizehn und Stufe J das Terminal. Die 1 945 B des React Compilers sind 1,3 % des Budgets, aber **22 % des Rests**. Gehört zu L8 und wird nicht hier nachgezogen; sollte aber **vor H1** bekannt sein, statt in L8 zu überraschen. Next 16 mit Turbopack druckt keine „First Load JS"-Spalte mehr, es gibt also keine Zahl von Next selbst dagegenzuhalten. | offen, gehört zu L8 · vor H1 lesen |
 | 29.08.2026 | G7 | **Der CSS-Minifier schreibt `animation: none` in die Langform um.** Im ausgelieferten Stylesheet steht `animation: auto ease 0s 1 normal none running none !important` statt der Kurzform aus `globals.css`, und `translate3d(-2px,1px,0)` wird zu `translate(-2px, 1px)`. Beides harmlos, beides derselbe Grund, aus dem G3 die Dauern-Falle aufgeschrieben hat: **wer im Produktionsbild nach dem sucht, was er geschrieben hat, findet es nicht.** Der Burst-Beleg vergleicht deshalb Elemente statt Animationsnamen. | erledigt |
 | 27.08.2026 | G1 | **`globals.css` malt drei Dinge im Akzent von Terminal Noir statt im Akzent des Themes.** Link-Unterstrich, `::selection` und der Puls-Schein von `ts-pulse` stehen als `rgba(0,229,255,…)` da — vier Zeilen, wörtlich aus dem Handoff übernommen. In den sechs anderen Paletten bleiben sie cyan; sichtbar wird es, sobald G2 den Umschalter baut. Reparatur heißt neue Tokens in `tokens.css` (drei Deckkraften × sieben Paletten oder ein `color-mix`), und das ist keine Entscheidung von G1. `check-tokens.sh` führt die vier als benannte Ausnahme und druckt sie bei jedem Lauf. **Gemessen im Browser, 27.08.2026:** Linkfarbe folgt (`#00E5FF` → Latte `#7C2FD4` → Phosphor `#2EE6A6`), Unterstrich bleibt in allen dreien `rgba(0,229,255,.35)`. **Erledigt in G2:** vier abgeleitete Tokens in `tokens.css` (`--acc-line`, `--acc-select`, `--acc-pulse`, `--acc-pulse-2`) über `color-mix(in srgb, var(--acc) N%, transparent)`, dazu `--glow`, das denselben Fehler eine Ebene tiefer trug — es stand nur in `:root`, und nur `latte` und `gruvbox` überschrieben es, also leuchtete in `mocha`, `amber`, `phosphor` und `tokyo` weiter Cyan neben einem fremden Akzent. `check-tokens.sh` hat seine benannte Ausnahme verloren. **Nachgemessen im Browser, 28.08.2026, alle sieben:** der Unterstrich trägt jetzt in jeder Palette den Akzent bei Alpha .35 — Noir `srgb 0 .898 1`, Mocha `.796 .651 .969`, Gruvbox `.027 .4 .471`. ADR 0043. | erledigt |
 | 27.08.2026 | G1 | **Eine neue Web-Abhängigkeit kommt im Dev-Stack nicht an, und der Cache hält den Fehler fest.** `node_modules` (anonym) und `.next` (benannt) überleben `up --build`: das Image hat Tailwind, der Container nicht — `Cannot find module '@tailwindcss/postcss'`, jede Seite 500. Der erste gescheiterte Start kompiliert sich in `.next`, deshalb heilt `--renew-anon-volumes` **allein** nichts; gemessen: mit erneuerten anonymen Volumes weiter 500, nach `docker volume rm …_web-next` sofort 200. Gefunden, weil `make quickstart` gegen diesen Branch durchfiel. **Behoben:** `make dev` stempelt die Prüfsumme des Lockfiles und weist einen Start ab, der sie bewegt hat; `make dev-reset` räumt beides und löscht den Stempel. Runbook `web.md`. Nicht gedeckt: frischer Klon neben altem Volume. | erledigt |
