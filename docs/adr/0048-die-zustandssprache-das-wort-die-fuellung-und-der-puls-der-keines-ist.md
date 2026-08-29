@@ -187,9 +187,11 @@ Der dritte und der vierte Punkt sind die, die ohne Test verrutschen.
 
 ### Was das kostet
 
-**Vier Bauteile haben in G6 keinen Aufrufer.** `EmptyState`, `ErrorPanel`,
-`LoadingLines` und `DegradedNotice` stehen im Baum, und gerendert werden sie
-zuerst von G7s Galerie, eingesetzt von H6, H9 und H13. Das ist der Preis dafür,
+**Fünf Bauteile haben in G6 keinen Aufrufer.** `EmptyState`, `ErrorPanel`,
+`LoadingLines`, `DegradedNotice` und `StateWord` stehen im Baum, und gerendert
+werden sie zuerst von G7s Galerie, eingesetzt von H6, H9 und H13. (Dieser Absatz
+sagte zuerst „vier" — `StateWord` teilt sich eine Datei mit `StatusDot` und ist
+beim Zählen durchgerutscht. Korrigiert in der Abnahme, nachgezählt mit `grep`.) Das ist der Preis dafür,
 die Zustandssprache an einer Stelle zu entscheiden statt in fünf H-Phasen
 nebeneinander — und er wird hier benannt, nicht versteckt.
 
