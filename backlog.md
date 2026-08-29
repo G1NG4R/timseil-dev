@@ -12,7 +12,201 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 28.08.2026, G4 in Produktion
+## Wo wir stehen — 29.08.2026, G5 in Produktion
+
+**Die Seite spricht zum ersten Mal mit Maschinen, und sie sagt dabei weniger,
+als sie könnte.** Vier Adressen, die kein Besucher aufruft, dazu ein Ausweis im
+Kopf der Startseite — und drei Stellen, an denen bewusst nichts steht: kein
+`lastModified` in der Sitemap, kein Eintrag im Feed, kein `SearchAction` im
+Graphen.
+
+**Diese Abnahme misst zwei Merges.** G5 ist in zwei Hälften gebaut worden, G5a
+(`4ae69c4`, `v0.12.0`, 13:58 UTC) und G5b (`cc15115`, `v0.13.0`, 15:51 UTC), und
+das Abnahmekriterium des Bauplans umfasst beide. G5a hat deshalb keinen eigenen
+Abnahme-PR bekommen; seine Zahlen stehen hier, zwei Stunden später als die des
+Merges. Gemessen an `https://timseil.dev`:
+
+```
+status ok · sha cc15115 · v0.13.0
+Merge 15:51:07Z → Deploy fertig 15:54:55Z    224 s, ok, Pipeline 33261367801
+check-deployed                8 Behauptungen, 1 nicht von hier stellbar
+
+robots.txt      65 B      Allow: / · Sitemap: …/sitemap.xml
+sitemap.xml     1 201 B   3 <url>, 3 x-default        / · /de · /fr
+feed.xml        427 B     0 <item>                    application/rss+xml
+og.png          52 585 B  1200 × 630                  byte-gleich mit Build und Image
+ld+json auf /   1 Element                             kein rohes < im Text
+
+html lang       / en · /de de · /fr fr                die Route trägt sie
+main lang       / keins · /de en · /fr en             „KEINE HALBEN SEITEN", in den Bytes
+alternate       4 hrefLang + der Feed-Link            auf jeder der 21 Adressen
+canonical       / → timseil.dev · /de/about → …/de/about
+/en             308 → /        /en/about  308 → /about
+/es /english    404                                   eine Sprache ist ein Segment
+/about/         308 → /about                          angehängter Schrägstrich
+noindex         / indexierbar in allen drei Sprachen  21 Adressen einzeln geprüft
+                die sechs Stubs noindex in allen drei
+
+Umschalter      /de/about → EN → /about               html de→en, main en→keins
+                Tastatur: 3× ↓ → lang-option-2, Enter → /fr/about
+                drei Client-Navigationen, 0 Fehler, 0 Hydration-Warnungen
+
+Schema-Validator  0 ERRORS, 0 WARNINGS                author und publisher über @id
+Rich-Results      Crawl ok · „Keine Elemente erkannt"  siehe unten
+/api/health       s-maxage=60 · ETag · 372 B → 304/0 B  G4s Zahlen, unverändert
+```
+
+### Der Rich-Results-Test kann über dieses Markup nichts sagen, und das ist die Antwort
+
+Der Bauplan schreibt in Zeile 1212 „JSON-LD (`Person`, `WebSite`)" und
+„Rich-Results-Test grün" in denselben Satz. Beides zusammen geht nicht. Der Test
+meldet ausschließlich Typen, die in der Suche ein *Rich Result* erzeugen —
+`Article`, `FAQPage`, `BreadcrumbList`, `Product` und den Rest dieser Liste.
+`Person` und `WebSite` stehen nicht darauf; sie speisen Knowledge Panel und
+Sitelinks. Der Test hat über sie nichts zu sagen und sagt es: **Crawl
+erfolgreich, „Keine Elemente erkannt", keine Fehler, keine Warnungen.** Die
+Anzeige nannte 18:13:37 in ihrer eigenen Zeitzone, CEST, also 16:13 UTC.
+
+Grün zu bekommen ginge nur, indem man einen Typ hinzufügt, den diese Seite nicht
+hat — erfundenes Markup, um eine Prüfung zu bestehen, und damit genau das, wogegen
+die erste Regel dieses Repositories geschrieben ist.
+
+**Das Werkzeug für diese zwei Typen ist der Schema Markup Validator, und der
+sagt 0 Fehler, 0 Warnungen.** Der stärkere Teil seiner Ausgabe ist nicht die
+Null: `author` und `publisher` standen als `{"@id": …/#person}` im Dokument, und
+er hat sie zum Person-Knoten **aufgelöst** und ausgeschrieben. Dass ein
+`@graph` mit zwei Knoten, die sich über eine Kennung nennen, von einem fremden
+Parser richtig zusammengesetzt wird, ist aus dem Quelltext nicht ablesbar. Nur
+aus dem Verhalten.
+
+Als **#224** angelegt, Meilenstein M6 — nicht als Korrektur des Bauplans in
+diesem PR. Ein Kriterium nachträglich an sein Ergebnis anzupassen ist keine
+Abnahme.
+
+### Der Feed trägt ein Jahr, das niemand geschrieben hat
+
+```
+cache-control: s-maxage=31536000
+x-nextjs-cache: HIT
+```
+
+`app/feed.xml/route.ts` begründet in Zeile 18 ausführlich, warum keine
+Cache-Politik erfunden wird: „**NO `Cache-Control` EITHER.** There is no CDN in
+front of this origin (ADR 0006)." Die ausgelieferten Bytes widerlegen den Satz.
+Next setzt den Header selbst, wenn ein vorgerenderter Route Handler keinen setzt.
+
+Heute ohne Wirkung — ohne CDN adressiert `s-maxage` keinen Leser. Ab H9 stünde
+ein Jahr auf einem Dokument, das sich mit jedem Post ändert.
+
+**Die drei Nachbarn sagen etwas anderes.** `robots.txt`, `sitemap.xml` und
+`og.png` liefern alle `public, max-age=0, must-revalidate`; Next behandelt
+Metadata-Routen anders als einen selbstgeschriebenen Handler. Der Feed bekommt
+denselben Header — abgeleitet von den drei Flächen daneben, nicht gewählt, wie
+ADR 0045 es für ein Cache-Fenster verlangt. Eigener `fix(web):`-PR, weil eine
+Abnahme seit G1 genau eine Datei anfasst.
+
+**Der Fund gehört dieser Abnahme und keiner Prüfung.** `make check` liest keine
+Header, und `next build` auch nicht. Sichtbar wird so etwas erst, wenn jemand
+die Antwort einer laufenden Maschine ansieht — und das ist die einzige Sorte
+Beleg, die dieses Projekt gelten lässt.
+
+### G5a wird hier zum ersten Mal gemessen, zwei Stunden nach seinem Merge
+
+Der Umschalter ist das zweite Kriterium des Bauplans, und er ist der Teil, den
+nur ein Browser zeigen kann: im ausgelieferten HTML steht `lang-option` **null
+Mal**, die Optionen entstehen erst beim Öffnen. Von `/de/about` aus, mit dem
+Kanarienvogel davor:
+
+```
+Ausgangslage   /de/about · html lang="de" · main lang="en" · canonical /de/about
+Klick auf EN   /about    · html lang="en" · main lang=keins  · canonical /about
+Tastatur       3× ArrowDown → aria-activedescendant lang-option-2, Enter
+               /fr/about · html lang="fr" · main lang="en" · canonical /fr/about
+```
+
+`main lang` ist dabei die ganze Regel in einem Attribut. Auf `/de` und `/fr`
+steht `lang="en"` am Block, weil die Wörterbücher leer sind; auf `/about`
+verschwindet es, weil Route und Text dieselbe Sprache haben. „KEINE HALBEN
+SEITEN" ist damit nicht erklärt, sondern nachzählbar.
+
+**Und die Metadaten wandern bei der Client-Navigation mit** — nach dem Sprung
+nach `/about` standen die vier `hrefLang`-Links **und** der Feed-Link neu im
+Kopf, auf die neue Adresse gestellt. Das war keine geplante Messung; es fiel
+beim Ablesen an und ist der Beleg dafür, dass `seoFor()` auch den Weg über den
+Router überlebt.
+
+Drei Client-Navigationen, **null Fehler und null Hydration-Warnungen** — und der
+Kanarienvogel war vorher da, sonst bewiese die leere Konsole nur, dass niemand
+zugehört hat.
+
+### Eine Messung dieser Abnahme war zuerst falsch, und es war dieselbe Falle wie in G4
+
+Die `noindex`-Verteilung über sieben Routen × drei Sprachen habe ich mit einem
+angehängten Schrägstrich abgefragt — `/about/` statt `/about`. Alle einundzwanzig
+Adressen meldeten `index`, auch die sechs Stubs, die seit G5a `noindex` tragen.
+Zwei Minuten lang sah es nach einem Defekt in `lib/seo/pages.ts` aus.
+
+Es waren Weiterleitungen. Ein angehängter Schrägstrich beantwortet Next mit
+`308` auf die kanonische Form; `curl` ohne `-L` bekommt einen leeren Körper, und
+ein `grep` nach `content="noindex"` findet in einem leeren Körper nichts. Ohne
+Schrägstrich gemessen: `/` in allen drei Sprachen indexierbar, die sechs Stubs
+in allen drei `noindex` — **genau drei indexierbare Adressen, genau drei
+`<loc>` in der Sitemap.** Die Gegenprobe schließt.
+
+Das ist die vierte aus derselben Familie wie die drei G4-Fallen, und die Lehre
+ist wieder dieselbe Reihenfolge: **erst nachweisen, dass die Messung den
+Zustand hat, den sie annimmt, dann messen.** Der Zusatz aus dieser Runde ist
+klein und übertragbar: *eine Antwort ohne Körper enthält nie das, was man
+sucht* — ein `grep -c` darauf gibt `0` und sieht aus wie eine Aussage über den
+Inhalt.
+
+Als fünfte Falle in `docs/runbooks/web.md` steht bereits die Schreibweise
+`hrefLang`: ein `grep hreflang` über den Kopf findet nichts, und ich bin beim
+Bauen von G5b hineingelaufen, obwohl die Warnung seit G5a im Backlog stand. Sie
+stand im Abschnitt über die Sprachrouten und gesucht wurde im Abschnitt über die
+SEO-Flächen. Sie steht jetzt in beiden.
+
+### Was die Abnahme nicht behauptet
+
+**Der Umschalter ist auf einem Browser auf einem Rechner geprüft.** Chromium,
+Desktop-Breite, ein Zeigegerät. Der 44px-Beleg und die Tastaturbedienung auf
+`pointer: coarse` gehören an dieselbe Stelle wie in G3 und G4 — Playwright mit
+`hasTouch`, vor H1.
+
+**`--host` ist nicht gefahren.** Dass die laufenden Container **diese** Bytes
+sind, kann nur der VPS sehen; `check-deployed` sagt es selbst und nennt den
+Befehl. Acht Behauptungen von hier, die neunte nicht.
+
+**Der Feed hat null Einträge, also ist der Eintrags-Renderer in Produktion nie
+gelaufen.** Maskierung und RFC-822-Datum sind unter `node --test` belegt und
+sonst nirgends. Der erste echte Titel kommt in H9, und das ist die Messung, die
+zählt.
+
+**Das OG-Bild hat kein soziales Netz je abgeholt.** Gemessen ist, dass die
+Adresse ein PNG in 1200 × 630 liefert und dass `og:image` mit Breite, Höhe und
+Alt-Text im Kopf steht. Ob eine Vorschau daraus entsteht, sagt erst ein Dienst,
+der sie baut.
+
+**Und keine der drei Sprachen ist übersetzt.** `/de` und `/fr` liefern
+englischen Text und sagen es am Blockelement. Was hier gemessen ist, ist der
+Mechanismus, nicht der Inhalt; P6 füllt ihn.
+
+**Als Nächstes:** G6 — Zustandssprache. Die Bauteile aus STATE.05 zentral:
+Leerzustände, Fehlerpanels, DEGRADED, `— NO DATA`, Retry-Zähler, `StatusDot`
+mit 2,6 s Puls. Abgenommen ist es, wenn **jeder Zustand ein zweites Merkmal
+neben der Farbe** hat. **Zwei Sachen** nimmt G6 aus dieser Phase mit. Die erste
+ist ein Bauteil, das schon existiert und noch keinen Namen hat: `— NO DATA`
+steht seit G4 als Zeichenkette in `app/[lang]/page.tsx` und seit G5 zusätzlich
+in der Fußzeile — G6 ist die Phase, in der daraus eines wird. Die zweite ist
+eine Grenze, die G5b gezogen hat und die dort bleiben soll: **eine `.tsx` läuft
+unter `node --test` nicht**, weil Node kein JSX transformiert. Jede
+Verzweigung, die G6 baut, gehört deshalb nach `web/lib/`, und das Bauteil
+darüber ist Markup plus ein Aufruf — die Regel aus ADR 0044, in G5b zum ersten
+Mal als Preis benannt statt als Vorsatz.
+
+---
+
+## Vorher — 28.08.2026, G4 in Produktion
 
 **Die Seite liest zum ersten Mal ihre eigene API.** Die drei Zellen der Fußzeile
 tragen Zahlen statt `— NO DATA`, und keine davon steht im Quelltext.
