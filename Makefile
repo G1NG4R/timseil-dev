@@ -703,6 +703,19 @@ probe: ## Measure the site once and report it — make probe PROBE_BASE=https://
 witness: ## Write down what a visitor saw, one request a second — needs WITNESS_UNTIL
 	@tools/witness.sh $(WITNESS_UNTIL) $(WITNESS_BASE)
 
+# NOT part of `make check`, and the reason is one line long: it builds, and
+# `check` does not. It also builds EVERY time it runs — a `.next` older than the
+# tree it came from is the one way this measurement can be wrong without saying
+# so, and that is worth twenty seconds.
+#
+# Two numbers, because one cannot be acted on. 134 KB of the 143 KB it measures
+# is React and the App Router; a budget that mixes them goes red for something
+# nobody here wrote and stays green while our own half doubles. ADR 0050.
+.PHONY: bundle-size
+bundle-size: ## Initial JS of `/`, gzip — framework and our own code, separately
+	@printf 'bundle\n'
+	@tools/bundle-size.sh
+
 # NOT part of `make check`, and for a reason beyond the usual one. It needs the
 # network and a running production, which is already the line ADR 0031 §1 draws
 # — but inside `check` it would also let one merge be blocked by the deploy of
