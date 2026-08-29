@@ -761,5 +761,96 @@ Fassung, das Handoff-Bauteil überall sonst.
 `barred` (OFFLINE) und `dash` (QUEUED, `— NO DATA` als Punkt) stehen in der
 Tabelle und werden von keiner Seite gezeichnet: OFFLINE kann `/api/health` nicht
 melden, und die Metaleiste zeigt ohne Antwort `<NoData/>` als Text statt eines
-Punktes. Belegt sind sie durch `words.test.ts`, nicht durch ein Bild. Der erste
-Betrachter ist G7s Galerie, der erste Einsatz H1 und H6.
+Punktes. Belegt waren sie bis G7 durch `words.test.ts`, nicht durch ein Bild.
+**Seit G7 sind sie zu sehen** — in der Galerie, gezählt im DOM: `solid` 2,
+`ring` 3, `barred` 1, `dash` 15. Der erste Einsatz bleibt H1 und H6.
+
+---
+
+## Die Komponenten-Galerie — und warum sie zweimal gebaut wird
+
+`/dev/components` zeigt jedes Bauteil in jedem dokumentierten Zustand (G7,
+ADR 0049). Sie ist **nicht** Teil der Seite: der Riegel steht in
+`lib/gallery/visibility.ts` und fällt bei allem Unbekannten zu.
+
+### Der Riegel wirkt beim Bau
+
+Die Route ist statisch, also läuft der Riegel beim Prerender. Ein normaler Bau
+liefert einen vorgerenderten 404:
+
+```bash
+cd web && npm run build && npx next start -p 3111
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3111/            # 200
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3111/dev/components  # 404
+```
+
+**Das heißt nicht, dass die Bauteile nicht im Image liegen.** Nachgemessen:
+
+```bash
+grep -rl "Component gallery" .next/server        # findet einen ssr-Chunk
+```
+
+Der Modulgraph erreicht sie, nur das gerenderte HTML fehlt. Kein Besucher lädt
+den Chunk, weil keine Route ihn anfordert — aber „nicht im Image" wäre eine
+Behauptung über Bytes, die niemand angesehen hat.
+
+### Die Galerie ansehen: mit Schalter bauen, nicht `next dev` benutzen
+
+**`next dev` hydriert nicht** (offener Fund seit G4, Termin H1). In der Galerie
+heißt das: der Knopf tut nichts, der Burst ist nicht zu sehen. Gegengeprüft im
+selben Server auf `/` — die Uhr steht dort auf `--:--:--`. Es liegt also nicht am
+`[lang]`-Baum; die Galerie hat ein eigenes Root-Layout und verhält sich genauso.
+
+Deshalb wird sie in ein Produktionsbild gebaut, das hydriert:
+
+```bash
+cd web && DEV_GALLERY=1 npm run build && npx next start -p 3112
+```
+
+`DEV_GALLERY` akzeptiert **genau `1`**. `DEV_GALLERY=0` lässt sie zu — wer `0`
+schreibt, meint aus, und jede nichtleere Zeichenkette zu akzeptieren täte das
+Gegenteil. `compose.yaml` setzt die Variable nie; das ausgelieferte Image wird
+ohne sie gebaut.
+
+Sie ist **keine Sicherheitsgrenze**: wer auf dem Host Umgebungsvariablen setzen
+kann, besitzt den Container ohnehin.
+
+### Den Burst nachmessen
+
+Im DOM zählen, nie in den Bytes — die RSC-Nutzlast dupliziert das Markup, und
+`grep -c` zählt Zeilen:
+
+```js
+const flip = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'next state');
+const wrap = document.querySelector('.st-burst');
+let bursts = 0;
+new MutationObserver(ms => { for (const m of ms)
+  if (m.attributeName === 'data-burst' && wrap.hasAttribute('data-burst')) bursts++; })
+  .observe(wrap, { attributes: true, attributeFilter: ['data-burst'] });
+```
+
+Erwartet: ein Klick → `bursts === 1`; ein zweiter nach 120 ms → immer noch `1`,
+**der Zustand wechselt trotzdem**; einer nach 700 ms → `2`. Das ist die
+600-ms-Sperre aus `lib/state/burst.ts`, von außen gesehen.
+
+`prefers-reduced-motion` hat zwei Hälften und braucht zwei Belege. Die CSS-Hälfte
+steht in `globals.css` am Universalselektor; die JS-Hälfte fragt `matchMedia`
+selbst, weil kein Stylesheet eine rAF-Schleife anhält. Ohne einen Browser mit der
+Einstellung ist die zweite so zu prüfen:
+
+```js
+const real = window.matchMedia;
+window.matchMedia = q => q.includes('prefers-reduced-motion')
+  ? { matches: true, media: q, addEventListener(){}, removeEventListener(){} }
+  : real.call(window, q);
+// klicken — das Wort darf keine einzige Zwischenstufe zeigen
+window.matchMedia = real;
+```
+
+### Eine Falle, die diese Abnahme gefunden hat
+
+**`self.__next_f` und die React-Fiber-Schlüssel sind aus einer Browser-Erweiterung
+heraus nicht sichtbar.** Inhaltsskripte laufen in einer isolierten Welt; was
+Seitenskripte an `window` hängen, fehlt dort. Beide meldeten `0`, während die
+Seite einwandfrei hydrierte. **Der Beleg für Hydration ist das DOM** — eine Uhr,
+die tickt, ein Klick, der etwas ändert —, nicht eine Fensterproperty.

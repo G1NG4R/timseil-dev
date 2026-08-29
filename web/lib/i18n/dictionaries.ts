@@ -44,7 +44,14 @@ export async function getDictionary(): Promise<RouteDictionary> {
   // three languages, but under Cache Components it cannot be made exhaustive —
   // `dynamicParams = false` is refused there — so an unknown segment does reach
   // a component, and this is the component it reaches first. It is also what
-  // narrows the `string` next/root-params hands back to a `Locale`.
+  // narrows what next/root-params hands back to a `Locale`.
+  //
+  // AND SINCE G7 THAT VALUE CAN BE `undefined`. The gallery at /dev/components
+  // is the first page outside `app/[lang]/`, so the root parameter is no longer
+  // present on every route and the generated type says so. It never reaches
+  // here undefined — this function is only called from inside the [lang] tree —
+  // but the type is right and the guard absorbs it rather than asserting it
+  // away.
   if (!isLocale(value)) notFound();
 
   const { messages, resolved } = resolveMessages(value);
