@@ -114,17 +114,26 @@ sich als Deploy-Fenster gelesen.
 Log-Korrelation erbracht und **nur** als solche: eine Anfrage, eine `trace_id`,
 je eine Zeile in web und api. F6 zieht das SDK ein, F8 macht es sichtbar.
 
-**Und die zweite Abnahme des Bauplans ist erst halb erbracht.** „Cache-Invalidierung
-beim Deploy getestet" heißt: ein Deploy ersetzt eine veraltete Zahl durch eine
-neue. Belegt ist bisher die Bauart — `.next/cache` liegt auf tmpfs und stirbt
-mit dem Container (`compose.yaml:583`) — und der Tausch selbst ist gemessen.
-**Der Fall, den es zu zeigen gälte, konnte hier nicht eintreten:** die vorige
-Fassung hatte gar keine gecachte Zahl, also gab es nichts zu ersetzen. **Der
-erste Deploy, der es zeigen kann, ist der von G5.** Dann steht vorher `BUILD
-040bc37` und nachher der neue SHA, und dazwischen liegt keine Wartezeit von
-sechzig Sekunden. Das ist nachzumessen und nicht anzunehmen — eine trivial
-erfüllte Abnahme als grün zu melden ist dieselbe Sorte Zahl, gegen die
-Invariante 1 steht (dieselbe Entscheidung wie bei der CSP-Abnahme in G2).
+**Die zweite Abnahme des Bauplans ist erbracht — von diesem Doku-Merge, nicht
+erst von G5.** „Cache-Invalidierung beim Deploy getestet" heißt: ein Deploy
+ersetzt eine veraltete Zahl durch eine neue. Beim Deploy von `040bc37` konnte
+das nicht eintreten, weil die vorige Fassung gar keine gecachte Zahl hatte —
+also stand hier zunächst, der erste Deploy, der es zeigen kann, sei der von G5.
+**Der Merge dieser Abnahme war er schon.** Eine Anfrage alle drei Sekunden auf
+`/about`, quer durch den Deploy von `55f8849`:
+
+```
+00:02:36 … 00:05:16   BUILD 040bc37    die gecachte Zahl der vorigen Fassung
+00:05:19              — NO DATA        ein leerer Cache, in flagranti
+00:05:25              BUILD 55f8849    die neue Zahl
+```
+
+**48 Anfragen, 48 × 200. Neun Sekunden** vom letzten alten Wert zum ersten
+neuen, und dazwischen genau eine Anfrage mit `— NO DATA`. Das ist der Beleg,
+und zwar der stärkere von zwei möglichen: der Cache lieferte nicht etwa
+sechzig Sekunden lang weiter `040bc37`, sondern war leer — genau das, was
+`compose.yaml:583` mit tmpfs beabsichtigt. Niemand hat `revalidateTag`
+gerufen; der Container ist gestorben und hat den Cache mitgenommen.
 
 **Keine Cache-Zählung gegen Produktion.** Dass zehn Aufrufe null API-Anfragen
 erzeugen, ist im Labor gemessen, wo die Logs der API lesbar sind. Von außen ist
@@ -144,7 +153,8 @@ der 44px-Beleg aus G3: Playwright mit `hasTouch`, vor H1.
 ein funktionsfähiger Umschalter mit **nur EN befüllt**, dazu `sitemap.ts`,
 `robots.ts`, RSS, OG über `next/og` und JSON-LD. Abgenommen ist es, wenn der
 Rich-Results-Test grün ist und der Umschalter auch mit leeren Sprachen
-funktioniert. Zwei Dinge nimmt G5 aus dieser Phase mit: die Hülle ist
+funktioniert. Zwei Dinge nimmt G5 aus dieser Phase mit — die
+Invalidierung ist nicht mehr darunter, die ist gemessen: die Hülle ist
 vorgerendert und soll es bleiben — `headers()` im Root-Layout nähme jede Seite
 aus dem statischen Pass (ADR 0043) —, und `<html lang>` ist genau die Stelle,
 an der ein Wert aus einer Anfrage in das Wurzelelement wollte. Der Ausweg ist
