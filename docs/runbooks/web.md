@@ -568,6 +568,17 @@ curl -s $B/feed.xml | grep -c '<item>'                             # 0
 #   H9 hängt die Einträge ein. Bis dahin hätte jedes <item> ein <link> auf
 #   eine 404, weil /blog/<slug> noch keine Route ist.
 
+# 4b — und der Feed trägt den Header seiner drei Nachbarn
+for p in /robots.txt /sitemap.xml /og.png /feed.xml; do
+  printf '%-14s %s\n' "$p" "$(curl -sI $B$p | grep -i '^cache-control' | tr -d '\r')"
+done
+#   Alle vier: public, max-age=0, must-revalidate.
+#   Sagt der Feed stattdessen `s-maxage=31536000`, ist die Zeile in
+#   app/feed.xml/route.ts verlorengegangen und Next setzt wieder seinen
+#   eigenen Wert — ein Jahr auf einem Dokument, das sich ändert. Gefunden in
+#   der G5-Abnahme, weil `make check` keine Header liest und `next build`
+#   auch nicht.
+
 # 5 — der Ausweis: genau EIN ld+json-Block, und kein rohes < darin
 curl -s $B/ | python3 -c '
 import re, sys, json

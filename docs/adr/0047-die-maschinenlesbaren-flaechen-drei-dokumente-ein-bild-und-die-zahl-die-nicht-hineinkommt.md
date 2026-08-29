@@ -258,7 +258,7 @@ Wiederholung eine Ebene zu früh gewesen und ist deshalb nicht entstanden.
 | `og:locale` setzen | Das Format ist `sprache_TERRITORIUM`. `en_US` wäre geraten und `en_GB` anders geraten. `hreflang` trägt den Sprachsatz ohnehin, und in der Form, auf die ein Crawler reagiert |
 | `openGraph` ins Root-Layout | Wird von jeder Seite ersetzt, die `openGraph` setzt — und sähe im Layout richtig aus |
 | `lastBuildDate` im Feed, `lastModified` in der Sitemap | Bauzeit ist keine Änderungszeit. Invariante 1 |
-| `Cache-Control` auf Feed und Sitemap | Es gibt kein CDN vor diesem Origin (ADR 0006). Eine `s-maxage` wäre eine Anweisung an eine Maschine, die es nicht gibt |
+| `Cache-Control` auf dem Feed weglassen | **Nachträglich widerlegt.** Der Gedanke war: ohne CDN (ADR 0006) adressiert `s-maxage` niemanden, also erfinden wir keine Politik. Nichts zu setzen heißt aber nicht, dass keiner gesetzt wird — Next gibt einem vorgerenderten Route Handler `s-maxage=31536000`, gemessen in der G5-Abnahme. Der Feed trägt jetzt den Header seiner drei Nachbarn |
 
 ## Belege
 

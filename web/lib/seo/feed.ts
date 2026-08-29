@@ -31,6 +31,12 @@ export const FEED_PATH = "/feed.xml";
 
 export const FEED_CONTENT_TYPE = "application/rss+xml; charset=utf-8";
 
+/** What the three surfaces beside this one already answer. Transcribed from
+ *  what Next gives `robots.txt`, `sitemap.xml` and `og.png` — a route handler
+ *  is not a metadata route, so without this it inherits `s-maxage=31536000`
+ *  instead, which the G5 acceptance measured on production. */
+export const FEED_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+
 export interface FeedItem {
   readonly title: string;
   /** Absolute, and it has to be: a feed is read far away from the site it came
