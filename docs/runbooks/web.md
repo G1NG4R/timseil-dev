@@ -446,6 +446,14 @@ nicht-ersetztes Inline-Element **nicht** wirkt. Gemessen: 20 Ziele, keins darunt
   Schleife hängen und `data-busy` gesetzt. Kein Defekt — die Schleife läuft
   weiter, sobald der Tab sichtbar wird —, aber eine leere Frame-Liste heißt dort
   „Tab war verborgen", nicht „Animation läuft nicht".
+- **Und CSS-Animationen genauso.** Am 30.08. sah es zwei Messungen lang so aus,
+  als bliebe `data-burst` in der Galerie hängen und der Burst feuere nur einmal
+  pro Seitenaufruf. `element.getAnimations()` sagte, warum nicht:
+  `{ name: "ts-glitch", playState: "running", currentTime: 0 }` bei
+  `document.visibilityState === "hidden"`. Die Animation war da und kam nicht
+  voran, also kam kein `animationend`, also blieb das Attribut stehen.
+  **Erst `document.visibilityState` ablesen, dann Animationen messen** —
+  `getAnimations()` ist dabei aussagekräftiger als ein Ereignis, das ausbleibt.
 
 ## Die Sprachrouten nachmessen
 
@@ -454,10 +462,15 @@ schiefgehen kann. Der Baum liegt unter `app/[lang]/`, `proxy.ts` schreibt
 `/about` intern auf `/en/about` um und leitet `/en/about` mit 308 nach `/about`
 zurück. ADR 0046.
 
-**Gegen ein Produktionsbild, nicht gegen `next dev`.** Der Dev-Server hydriert
-auf diesem Baum nicht (Backlog, 28.08.2026, G4) — die Uhr steht, der
-Theme-Umschalter tut nichts, und der Sprachumschalter täte es dort ebenso wenig.
-Wer den Umschalter im Dev-Modus probiert, probiert etwas, das nicht läuft.
+**`next dev` hydriert wieder** — seit dem 30.08.2026, siehe „Der Dev-Modus und
+die Adresse" ganz unten. Bis dahin stand die Uhr, der Theme-Umschalter tat
+nichts, und vier Abnahmen sind deshalb gegen ein Produktionsbild gefahren.
+**Die Ursache war die Adresse, nicht der Baum:** über `127.0.0.1` wurden die
+JS-Chunks mit 403 abgewiesen.
+
+Gegen ein Produktionsbild zu messen bleibt trotzdem richtig, wo es um
+**ausgelieferte Bytes** geht — Minifizierung, Stylesheet-Größe, gestreamte
+Werte. Für „reagiert das Bauteil überhaupt" reicht jetzt `next dev`.
 
 ```bash
 cd web && npm run build && npx next start -p 3111
@@ -661,8 +674,11 @@ Töne als Zustände (die Farbe kann also gar keine Kennung sein), und die Füllu
 des Punktes stimmt mit der Klasse der Antwort überein — niemand darf einem
 ungemessenen Zustand die Füllung eines gemessenen geben.
 
-**Den Rest sieht nur ein Browser**, und zwar an einem Produktionsbau. `next dev`
-hydriert nicht (Backlog, 28.08.2026, G4).
+**Den Rest sieht nur ein Browser.** Ein Produktionsbau bleibt hier der richtige
+Ort, weil die Zustandssprache gegen **ausgelieferte** Bytes geprüft wird — der
+Minifizierer schreibt Dauern um, und die RSC-Nutzlast dupliziert Markup.
+(`next dev` hydriert seit dem 30.08.2026 wieder, siehe ganz unten; für diese
+Messung ändert das nichts.)
 
 ### Das Rig
 
@@ -794,14 +810,15 @@ Der Modulgraph erreicht sie, nur das gerenderte HTML fehlt. Kein Besucher lädt
 den Chunk, weil keine Route ihn anfordert — aber „nicht im Image" wäre eine
 Behauptung über Bytes, die niemand angesehen hat.
 
-### Die Galerie ansehen: mit Schalter bauen, nicht `next dev` benutzen
+### Die Galerie ansehen
 
-**`next dev` hydriert nicht** (offener Fund seit G4, Termin H1). In der Galerie
-heißt das: der Knopf tut nichts, der Burst ist nicht zu sehen. Gegengeprüft im
-selben Server auf `/` — die Uhr steht dort auf `--:--:--`. Es liegt also nicht am
-`[lang]`-Baum; die Galerie hat ein eigenes Root-Layout und verhält sich genauso.
+**Im Dev-Modus, seit dem 30.08.2026:** `make dev` oder `npx next dev`, dann
+`/dev/components`. Der Knopf reagiert, der Burst läuft. Bis dahin ging das nicht,
+und der Grund war die Adresse — siehe „Der Dev-Modus und die Adresse" ganz unten.
 
-Deshalb wird sie in ein Produktionsbild gebaut, das hydriert:
+**Gegen ein Produktionsbild** weiterhin dann, wenn es um ausgelieferte Bytes
+geht — welches CSS wirklich beim Besucher ankommt, was der Minifizierer
+umgeschrieben hat, ob der Riegel 404 gibt:
 
 ```bash
 cd web && DEV_GALLERY=1 npm run build && npx next start -p 3112
@@ -854,3 +871,73 @@ heraus nicht sichtbar.** Inhaltsskripte laufen in einer isolierten Welt; was
 Seitenskripte an `window` hängen, fehlt dort. Beide meldeten `0`, während die
 Seite einwandfrei hydrierte. **Der Beleg für Hydration ist das DOM** — eine Uhr,
 die tickt, ein Klick, der etwas ändert —, nicht eine Fensterproperty.
+
+---
+
+## Der Dev-Modus und die Adresse
+
+**`next dev` hat vier Phasen lang nicht hydriert, und die Ursache war
+`127.0.0.1`.** Gefunden am 30.08.2026, Issue #235.
+
+### Das Symptom, und warum es niemand einordnen konnte
+
+Unter `next dev` stand die Uhr auf `--:--:--`, der Theme-Umschalter tat nichts,
+und **die Browser-Konsole war leer**. Dieselben Commits als Produktionsbild
+hydrierten einwandfrei. Reproduziert außerhalb des Containers, aus einem frisch
+ausgepackten Baum, und mit einem eigenen Root-Layout ohne Sprache — es lag an
+nichts davon.
+
+### Die Ursache
+
+Next blockiert in Development den Zugriff auf `/_next/*` von fremden Origins.
+Die Voreinstellung erlaubt `['**.localhost', 'localhost', <der -H-Hostname>]`.
+
+**`127.0.0.1` ist in keiner dieser drei.** Es ist für einen Zeichenkettenvergleich
+nicht `localhost`, und `Dockerfile.dev` startet mit `-H 0.0.0.0`. Gleichzeitig
+veröffentlicht `compose.dev.yaml` den Port auf `127.0.0.1` — also genau die
+Adresse, die man tippt.
+
+**Blockiert wurde nicht nur Hot Reload, sondern die JS-Chunks selbst:**
+
+```
+⚠ Blocked cross-origin request to Next.js dev resource
+  /_next/static/chunks/….js from "127.0.0.1".
+⚠ Blocked cross-origin request to Next.js dev resource /_next/hmr from "127.0.0.1".
+```
+
+Kein Client-Bundle, keine Hydration. Und die Meldung steht im **Server-Terminal**,
+nicht in der Browser-Konsole — deshalb war dort nichts zu sehen.
+
+### Die Lehre, die übrig bleibt
+
+**Das Server-Terminal ist Teil der Messung.** Vier Abnahmen haben „die Konsole ist
+leer" als Befund notiert und die eine Stelle nicht angesehen, an der die Antwort
+stand. Wer im Dev-Modus etwas nicht funktionieren sieht, liest erst den
+Server-Ausgabestrom, dann alles andere.
+
+### Die Reparatur
+
+`allowedDevOrigins: ["127.0.0.1"]` in `web/next.config.ts` — Loopback allein.
+Eine LAN-Adresse dort gäbe die Dev-Ressourcen dieses Servers dem ganzen Netz;
+wer auf einem Telefon prüfen will, trägt seine bewusst ein.
+
+### Gegenprobe, wenn es wieder auftritt
+
+Ein Server, zwei Adressen, kein Codeunterschied:
+
+```bash
+cd web && npx next dev -p 3101
+```
+
+```js
+// im Browser, einmal über http://localhost:3101 und einmal über http://127.0.0.1:3101
+const clock = [...document.querySelectorAll('*')].find(e =>
+  e.children.length === 0 && /(\d{2}:\d{2}:\d{2}|--:--:--)$/.test(e.textContent.trim()));
+const before = clock.textContent;
+await new Promise(r => setTimeout(r, 2600));
+({ origin: location.origin, before, after: clock.textContent, ticking: before !== clock.textContent })
+```
+
+Gemessen am 30.08. **vor** der Reparatur: über `localhost` `22:24:53 → 22:24:56`,
+über `127.0.0.1` zweimal `--:--:--`. **Nach** der Reparatur tickt auch
+`127.0.0.1` (`22:26:38 → 22:26:41`), und der Theme-Klick setzt `data-theme`.
