@@ -16,6 +16,33 @@ const nextConfig: NextConfig = {
 
   reactCompiler: true,
 
+  // THE ADDRESSES `next dev` MAY SERVE ITS OWN RESOURCES TO, and this line is
+  // the answer to a finding that cost four phases.
+  //
+  // Next blocks cross-origin access to `/_next/*` in development, and its
+  // default allow-list is `['**.localhost', 'localhost', <the -H hostname>]`.
+  // `127.0.0.1` is in none of them: it is not `localhost` as far as a string
+  // comparison is concerned, and `Dockerfile.dev` starts the server with
+  // `-H 0.0.0.0`. But `compose.dev.yaml` publishes the port on `127.0.0.1`,
+  // which is therefore the address a developer actually types.
+  //
+  // WHAT WAS BLOCKED WAS NOT ONLY HOT RELOAD. The static chunks under
+  // `/_next/static/chunks/` are `/_next/*` too, so they were refused with 403 —
+  // the client bundle never ran, nothing hydrated, the clock sat at `--:--:--`
+  // and the theme switch did nothing. Measured on one server in one minute:
+  // over `localhost` the clock ticks and the switch flips `data-theme`; over
+  // `127.0.0.1` neither does.
+  //
+  // AND IT LOGGED WHERE NOBODY LOOKED. The refusal prints
+  // "Blocked cross-origin request to Next.js dev resource … from 127.0.0.1"
+  // in the SERVER terminal, not in the browser console — which is why four
+  // acceptances recorded "the console is empty" and drew the wrong conclusion.
+  //
+  // Loopback only, deliberately. A LAN address here would hand this server's
+  // dev resources to the whole network; whoever needs to test on a phone adds
+  // theirs on purpose and knows why. Issue #235.
+  allowedDevOrigins: ["127.0.0.1"],
+
   // G4. Data is dynamic by default and `use cache` decides what is not, which is
   // the round the site wants: a number is absent until something produces it.
   //
