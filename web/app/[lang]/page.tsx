@@ -15,21 +15,30 @@
 // so if this island goes, the hop stops being findable and no test says so.
 
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { JsonLd } from "@/components/JsonLd";
+import { NoData } from "@/components/state/NoData";
+import { StatusDot } from "@/components/state/StatusDot";
 import { footerHealth } from "@/lib/api/health";
 import { healthLive } from "@/lib/api/readers";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { Messages } from "@/lib/i18n/messages";
 import { asLocale } from "@/lib/i18n/routes";
 import { siteLd } from "@/lib/seo/jsonld";
 import { seoFor } from "@/lib/seo/pages";
+import { systemWord } from "@/lib/state/derive";
+import { stateLabel } from "@/lib/state/words";
 
 // `export const dynamic = "force-dynamic"` stood here until G4. Under Cache
 // Components it is an error rather than a hint — every page is dynamic unless
 // something is cached — and the job it did is now done by the <Suspense>
 // boundary: the shell prerenders, the correlated call waits for a request.
-const NO_DATA = "— NO DATA";
+//
+// `const NO_DATA = "— NO DATA"` stood here too, a second copy of the string
+// lib/api/health.ts already held. G6 gave it one home and one component: two
+// literals of this site's most load-bearing sentence, either of which could
+// have been edited alone, were one edit away from disagreeing.
 
 // The canonical, the four `hreflang` links, the feed and the social card — one
 // call, out of the table in lib/seo/pages.ts.
@@ -49,7 +58,7 @@ export default async function Home() {
   // dictionary. The graph gets that value rather than the route's, so it never
   // claims a translation the page does not have — and starts claiming one by
   // itself on the day the dictionary is filled.
-  const { resolved } = await getDictionary();
+  const { resolved, messages } = await getDictionary();
 
   return (
     <>
@@ -59,15 +68,15 @@ export default async function Home() {
       <h1>timseil.dev</h1>
       <p>Development shell. The site itself is built in stage H.</p>
       <dl>
-        <Suspense fallback={<HealthRows status={NO_DATA} build={NO_DATA} />}>
-          <HealthRowsLive />
+        <Suspense fallback={<HealthRows status={<NoData />} build={<NoData />} />}>
+          <HealthRowsLive messages={messages} />
         </Suspense>
       </dl>
     </>
   );
 }
 
-function HealthRows({ status, build }: { status: string; build: string }) {
+function HealthRows({ status, build }: { status: ReactNode; build: ReactNode }) {
   return (
     <>
       <dt>api</dt>
@@ -87,10 +96,27 @@ function HealthRows({ status, build }: { status: string; build: string }) {
  * lib/api/health.ts's, so this page and the footer cannot disagree about what a
  * missing field means.
  */
-async function HealthRowsLive() {
+async function HealthRowsLive({ messages }: { messages: Messages }) {
   const body = await healthLive();
-  if (body === null) return <HealthRows status={NO_DATA} build={NO_DATA} />;
+  if (body === null) return <HealthRows status={<NoData />} build={<NoData />} />;
 
   const { build } = footerHealth(body);
-  return <HealthRows status={body.status} build={build ?? NO_DATA} />;
+
+  // LIVE, not ONLINE, and the difference is the subject: this row is under a
+  // `<dt>api</dt>` and is about one system, while the footer's bar is about the
+  // delivery of this page. STATE.05 keeps the two words apart on purpose, and
+  // lib/state/derive.ts is where that choice is made rather than here.
+  //
+  // Until G6 this printed `body.status` — the raw contract word, `ok`, straight
+  // into the interface. The wire format is not a vocabulary a reader has.
+  const word = systemWord(body.status);
+
+  return (
+    <HealthRows
+      status={
+        word === null ? <NoData /> : <StatusDot state={word} label={stateLabel(word, messages)} />
+      }
+      build={build ?? <NoData />}
+    />
+  );
 }

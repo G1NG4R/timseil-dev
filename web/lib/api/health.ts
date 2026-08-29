@@ -15,6 +15,9 @@
 // `Number.toFixed` renders as `NaN%` in a footer that exists to argue against
 // invented numbers.
 
+import { siteWord } from "../state/derive.ts";
+import { NO_DATA, type StateKey } from "../state/words.ts";
+
 import type { ApiResult, GetBody } from "./client.ts";
 
 export type Health = GetBody<"/api/health">;
@@ -23,7 +26,16 @@ export type Health = GetBody<"/api/health">;
 export interface FooterHealth {
   build: string | null;
   uptime: number | null;
-  online: boolean | null;
+  /**
+   * The state word for the delivery of this page, or `null` for not knowing.
+   *
+   * A BOOLEAN UNTIL G6, and the change is the phase. `online: boolean | null`
+   * had three renderings and only two reachable values: `degraded` came back as
+   * ONLINE because the bar had no third word, so a state the api announces out
+   * loud was invisible; and OFFLINE stood in the code for an answer
+   * /api/health cannot form. A word has as many values as the vocabulary does.
+   */
+  status: Extract<StateKey, "online" | "degraded"> | null;
 }
 
 /**
@@ -47,7 +59,7 @@ export function healthOrThrow(result: ApiResult<Health>): Health {
 }
 
 /** What the meta bar shows when there is no answer. The resting state, not an error. */
-export const NO_HEALTH: FooterHealth = { build: null, uptime: null, online: null };
+export const NO_HEALTH: FooterHealth = { build: null, uptime: null, status: null };
 
 /**
  * Reads one health document into the three props.
@@ -58,17 +70,19 @@ export const NO_HEALTH: FooterHealth = { build: null, uptime: null, online: null
  * tags, and it is the value chapter 8.5 of the build plan curls to decide a
  * phase is finished. The footer says what `check-deployed` argues about.
  *
- * `online` is `true` for `degraded` as well, and that is not sloppiness: an api
- * that answered is not offline, and saying OFFLINE about a service that just
- * told us its own state would be a worse claim than the one we are avoiding.
- * The meta bar has no third word for it — DEGRADED is a G6 component — so the
- * gap is recorded in backlog.md rather than papered over here.
+ * `status` IS THE PART G6 CHANGED, and the entry it closes is in backlog.md
+ * (28.08., G4): this function used to answer a boolean, `degraded` collapsed
+ * into ONLINE because the meta bar had no third word, and OFFLINE sat in the
+ * rendering for a case /api/health cannot produce. It now returns the state
+ * word itself, and lib/state/derive.ts owns the mapping — so the bar, the menu
+ * strip and the homepage row cannot start disagreeing about what `degraded`
+ * looks like.
  *
- * `false` is consequently unreachable from this function today. Reaching it
- * would mean the api answered `200` and said it is off, which is not a sentence
- * the contract can form. A failure to reach the api at all is `null`: during the
- * rollout window of #157 we genuinely do not know whether anything is down, and
- * `— NO DATA` is the honest word for not knowing.
+ * OFFLINE IS STILL UNREACHABLE FROM HERE, and now it is unreachable by type as
+ * well as in practice: both words the contract can send mean "it answered".
+ * Failing to reach the api at all is `null` — during the rollout window of #157
+ * we genuinely do not know whether anything is down, and `— NO DATA` is the
+ * honest word for not knowing.
  */
 export function footerHealth(body: Health): FooterHealth {
   // The parameter type is a promise about the contract. This is the value that
@@ -78,12 +92,11 @@ export function footerHealth(body: Health): FooterHealth {
   // bytes for as long as one rollout window lasts.
   const raw = body as Record<string, unknown>;
   const ops = raw.ops as Record<string, unknown> | undefined;
-  const status = typeof raw.status === "string" ? raw.status : null;
 
   return {
     build: nonEmpty(raw.sha),
     uptime: finiteNumber(ops?.uptime90d),
-    online: status === null ? null : status === "ok" || status === "degraded",
+    status: siteWord(raw.status),
   };
 }
 
@@ -104,11 +117,8 @@ function finiteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-/** What a cell says when there is nothing to say. */
-export const NO_DATA = "— NO DATA";
-
 /**
- * The three cell texts, in one place.
+ * The two cell texts that are still texts.
  *
  * They are here rather than in the components because two components render
  * them — the meta bar in the footer and the strip at the bottom of the mobile
@@ -116,14 +126,14 @@ export const NO_DATA = "— NO DATA";
  * `0.00%` and `null` must read `— NO DATA`; a component that got that round the
  * wrong way would be a rendering detail nobody tests, and this way it is one
  * assertion.
+ *
+ * `onlineText` USED TO BE THE THIRD and is gone with G6. The state cell is no
+ * longer a string: it is a word plus a mark, which is a component's job, and
+ * `— NO DATA` now lives in lib/state/words.ts so that this file and
+ * app/[lang]/page.tsx stop holding two copies of it.
  */
 export function buildText(build: string | null): string {
   return build ?? NO_DATA;
-}
-
-export function onlineText(online: boolean | null): string {
-  if (online === null) return NO_DATA;
-  return online ? "ONLINE" : "OFFLINE";
 }
 
 export function uptimeText(uptime: number | null): string {

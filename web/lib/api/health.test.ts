@@ -1,16 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { NO_DATA } from "../state/words.ts";
+
 import type { ApiResult } from "./client.ts";
-import {
-  NO_DATA,
-  buildText,
-  footerHealth,
-  healthOrThrow,
-  onlineText,
-  uptimeText,
-  type Health,
-} from "./health.ts";
+import { buildText, footerHealth, healthOrThrow, uptimeText, type Health } from "./health.ts";
 
 /** A complete answer, in the shape /api/health really sends. */
 function health(over: Record<string, unknown> = {}): Health {
@@ -45,11 +39,18 @@ describe("footerHealth reads a whole answer", () => {
     assert.equal(footerHealth(health()).uptime, 99.98);
   });
 
-  it("calls a degraded api online, because it answered", () => {
-    // Saying OFFLINE about a service that just described its own state would be
-    // a worse claim than the one invariant 1 is guarding against. DEGRADED has
-    // no word in this bar until G6 builds one.
-    assert.equal(footerHealth(health({ status: "degraded" })).online, true);
+  it("says DEGRADED about a degraded api, which it could not until G6", () => {
+    // This assertion used to read `.online === true`, with the comment "DEGRADED
+    // has no word in this bar until G6 builds one". It has one now, and the
+    // backlog entry that recorded the gap (28.08., G4) closes here: a state the
+    // api announces out loud is no longer invisible in the interface.
+    assert.equal(footerHealth(health({ status: "degraded" })).status, "degraded");
+  });
+
+  it("says ONLINE about a healthy api, and never LIVE", () => {
+    // The bar is about the delivery of this page. LIVE is for a single system —
+    // the row on `/` uses systemWord for exactly that reason.
+    assert.equal(footerHealth(health()).status, "online");
   });
 });
 
@@ -78,14 +79,24 @@ describe("footerHealth against an answer that is missing pieces", () => {
   });
 
   it("does not know whether it is online when there is no status", () => {
-    assert.equal(footerHealth(health({ status: undefined })).online, null);
+    assert.equal(footerHealth(health({ status: undefined })).status, null);
+  });
+
+  it("refuses a status word the contract cannot send", () => {
+    // The same overlapping-start window can deliver a word this build does not
+    // know. `— NO DATA` is the honest rendering; passing it through would put
+    // an unmapped wire value on screen.
+    assert.equal(footerHealth(health({ status: "OK" })).status, null);
+    assert.equal(footerHealth(health({ status: "outage" })).status, null);
   });
 });
 
-describe("the three cell texts", () => {
+describe("the two cell texts", () => {
+  // Three until G6. The state cell is no longer a string — it is a word plus a
+  // mark, which is <StatusDot/>'s job, and lib/state/words.test.ts holds the
+  // rules about it.
   it("says — NO DATA rather than nothing", () => {
     assert.equal(buildText(null), NO_DATA);
-    assert.equal(onlineText(null), NO_DATA);
     assert.equal(uptimeText(null), NO_DATA);
   });
 
@@ -101,10 +112,6 @@ describe("the three cell texts", () => {
     assert.equal(uptimeText(100), "100.00%");
   });
 
-  it("has a word for both sides of online", () => {
-    assert.equal(onlineText(true), "ONLINE");
-    assert.equal(onlineText(false), "OFFLINE");
-  });
 });
 
 describe("healthOrThrow keeps a failure out of the cache", () => {

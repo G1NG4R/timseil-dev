@@ -1,0 +1,213 @@
+/* The state language — SYS.00.03 of the design handoff, as one stylesheet.
+   ADR 0048.
+
+   THE RULE THIS FILE EXISTS FOR: "NIE NUR FARBE: jeder Zustand hat ein zweites
+   Merkmal — Ecken, Rahmen, Unterstrich, Deckkraft, Wortlaut." Every state here
+   carries its word, and every state that makes a measured claim also carries a
+   fill that says which KIND of answer produced it. The colour is the third
+   thing, not the first.
+
+   AND THE PULSE IS NOT ONE OF THOSE MERKMALE. globals.css turns every animation
+   off under `prefers-reduced-motion: reduce`, so for those visitors a pulsing
+   dot is not a weaker signal — it is no signal. It decorates a state that a
+   still frame already tells apart, and lib/state/words.test.ts holds that line.
+
+   Import order in app/[lang]/layout.tsx: tailwind, tokens, globals, chrome,
+   state, layout — layout stays last so its media queries still win. */
+
+/* ── The tone ──────────────────────────────────────────────────────────────
+   One custom property per subtree, set from the state's tone. Everything below
+   paints with --st-color and nothing knows which of the four it got, which is
+   why the same three rules serve seven words in seven palettes.             */
+
+[data-tone="acc"]   { --st-color: var(--acc); }
+[data-tone="amber"] { --st-color: var(--amber); }
+[data-tone="alert"] { --st-color: var(--alert); }
+[data-tone="dim"]   { --st-color: var(--dim); }
+
+/* ── The dot and its word ──────────────────────────────────────────────────
+   The dot is decoration and says so with aria-hidden in the component; the
+   word is the accessible name. That order matters: a screen reader gets the
+   state, not a bullet.                                                      */
+
+.st {
+  --st-dot: 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-8);
+  white-space: nowrap;
+}
+
+/* THE WORD INHERITS ITS TYPE AND CARRIES ONLY THE COLOUR, and that is a
+   deliberate restraint rather than an oversight. The meta bar is 8.5px with
+   .1em from the Chrome sheet, which is the binding version there; a component
+   that shipped `font: 600 var(--t-mono-11)` would silently overrule it on
+   every page. Where a state needs a size of its own, the block around it has
+   one — .st-empty-head and .st-notice-list below do exactly that.
+
+   The colour is the third feature, after the word and the fill. It is here so
+   that a state reads at a glance, not so that it can be read at all. */
+.st-word { color: var(--st-color); }
+
+.st-dot {
+  position: relative;
+  flex: none;
+  inline-size: var(--st-dot, 7px);
+  block-size: var(--st-dot, 7px);
+  border-radius: var(--radius-dot);
+}
+
+/* Measured, and good. */
+.st-dot[data-dot="solid"] { background: var(--st-color); }
+
+/* Measured, and not good. `box-shadow: inset` rather than a border, so the ring
+   grows inwards and the dot keeps the same footprint as a solid one — a row of
+   states must not shift by a pixel when one of them changes. */
+.st-dot[data-dot="ring"],
+.st-dot[data-dot="barred"] { box-shadow: inset 0 0 0 1.5px var(--st-color); }
+
+/* Measured, and off: the ring with a bar across it. Drawn slightly wider than
+   the dot so the bar reads as crossing it rather than as filling it. */
+.st-dot[data-dot="barred"]::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline: -1px;
+  block-size: 1px;
+  background: var(--st-color);
+  transform: translateY(-50%);
+}
+
+/* Nothing measured. Not a circle — the em dash of `— NO DATA`, at dot size. */
+.st-dot[data-dot="dash"] {
+  border-radius: var(--radius);
+  block-size: 1px;
+  background: var(--st-color);
+}
+
+/* The one place --d-pulse is read, which is what tokens.css declared it for in
+   G1: "G6 extracts StatusDot and inherits this."
+
+   --acc-pulse and --acc-pulse-2 are REDEFINED here rather than in a second
+   keyframe. globals.css is the designer's file and its header says no value in
+   it is ours to reword; @keyframes ts-pulse resolves both properties on the
+   animated element, so setting them locally re-aims the handoff's own keyframe
+   at whichever tone this dot has. The alphas are the handoff's, 70 and 20. */
+.st-dot[data-pulse] {
+  --acc-pulse: color-mix(in srgb, var(--st-color) 70%, transparent);
+  --acc-pulse-2: color-mix(in srgb, var(--st-color) 20%, transparent);
+  animation: ts-pulse var(--d-pulse) ease-in-out infinite;
+}
+
+/* `— NO DATA` standing on its own, without a dot: a metric cell, a footer
+   value, a row that has nothing to report. */
+.st-nodata-text {
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* ── Panels that speak in lines ────────────────────────────────────────────
+   "FEHLER SIND LOGS: Code, Zeitpunkt, Retry-Zähler." And for the wait:
+   "Kein Spinner. Die Seite sagt, was sie holt und woher."                   */
+
+.st-log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--ink-3);
+}
+
+/* The prompt is drawn, not stored. Keeping it out of the strings keeps it out
+   of the accessibility tree and out of anything a visitor copies, and puts it
+   in one declaration instead of in every producer. */
+.st-log > li::before {
+  content: "> ";
+  color: var(--dim);
+}
+
+/* The edge carries the tone, the box does not: a filled red panel would be the
+   "ein Moment pro Seite" spent on a container. With data-tone="alert" from the
+   component this is the one alert moment the sheet allows. */
+.st-panel {
+  border: 1px solid var(--line);
+  border-inline-start: 1px solid var(--st-color);
+  background: var(--panel);
+  padding: var(--s-12) var(--s-16);
+}
+
+/* A wait holds the height the answer will need, so nothing below it moves when
+   the answer arrives. --st-lines is set by the component from the number of
+   lines it is standing in for. */
+.st-wait {
+  min-block-size: calc(var(--st-lines, 2) * var(--t-mono-11) * var(--lh-mono));
+  color: var(--dim);
+}
+
+/* ── EMPTY ─────────────────────────────────────────────────────────────────
+   "Leer heißt: erklären, warum leer, und einen Weg zurück anbieten", and
+   "DISABLED SAGT WARUM: 'queued' oder '0 treffer' statt einfach ausgegraut.
+   Ein toter Zustand ohne Begründung ist ein Bug."                           */
+
+.st-empty-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-10);
+  border: 1px solid var(--line-soft);
+  background: var(--panel);
+  padding: var(--s-20);
+}
+
+.st-empty-head {
+  font: 600 var(--t-mono-12)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--ink);
+}
+
+/* The reason, and it is the element that makes this component honest. Marked
+   up as its own line so a caller cannot render the panel without one. */
+.st-empty-reason {
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+  max-inline-size: 68ch;
+}
+
+.st-empty-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+  font: 400 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--ink-3);
+}
+
+/* ── DEGRADED ──────────────────────────────────────────────────────────────
+   "Teilausfall ist kein Totalausfall: Inhalte bleiben, nur die Live-Teile
+   melden sich ab." So this is a notice beside the content, never over it — no
+   overlay, no dialog, nothing that takes the page away.                     */
+
+.st-notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+  border: 1px solid var(--line);
+  border-inline-start: 1px solid var(--amber);
+  background: var(--panel);
+  padding: var(--s-12) var(--s-16);
+}
+
+.st-notice-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-10);
+}
+
+/* What is switched off, one line each. Named rather than summarised: "metrics
+   hidden" is a fact a reader can check, "some features unavailable" is not. */
+.st-notice-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+}

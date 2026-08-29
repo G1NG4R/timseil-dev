@@ -16,6 +16,7 @@ import { fontVariables } from "../fonts";
 //   tokens    every colour, size, spacing, radius and duration — invariant 8
 //   globals   reset, typography, focus, the three keyframes
 //   chrome    the header, the menu and the footer — G3
+//   state     the state language: dots, panels, empty and degraded — G6
 //   layout    the content column and the four breakpoints — LAST, so its
 //             media queries win over anything above them
 //
@@ -31,10 +32,18 @@ import { fontVariables } from "../fonts";
 // The paths gained a `../` in G5, and nothing else about them changed: this
 // file moved from `app/` into `app/[lang]/` when the language became part of
 // the route. ADR 0046.
+//
+// state.css is sixth, and its position against chrome decides nothing: the two
+// do not define the same selectors, and where the chrome adjusts a state — the
+// footer and the menu strip draw a 6px dot where the rest of the site draws 7 —
+// it does so through `.foot-cell .st`, which wins on specificity whatever the
+// order. What does matter is the same thing that mattered in G1: it stays
+// BEFORE layout.css. ADR 0048.
 import "../../styles/tailwind.css";
 import "../../styles/tokens.css";
 import "../../styles/globals.css";
 import "../../styles/chrome.css";
+import "../../styles/state.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root
