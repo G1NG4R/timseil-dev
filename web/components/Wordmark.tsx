@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { stripLocale } from "@/lib/chrome";
+import { localeHref, localeOf, stripLocale } from "@/lib/i18n/routes";
 
 /**
  * `TS://` — the way home from every page.
@@ -19,14 +19,20 @@ import { stripLocale } from "@/lib/chrome";
  * `aria-current` plus `cursor: default` — the same treatment the active nav
  * entry gets, for the same reason.
  *
- * `href="/"` is not locale-aware yet. G5 owns that, together with the routes it
- * would point at.
+ * HOME IS THE HOME OF THE LANGUAGE YOU ARE IN. From `/de/about` the wordmark
+ * leads to `/de`, not to `/` — a way home that also changes the language is not
+ * a way home. English keeps `/`, because English carries no prefix.
  */
 export function Wordmark() {
-  const atHome = stripLocale(usePathname()) === "/";
+  const pathname = usePathname();
+  const atHome = stripLocale(pathname) === "/";
 
   return (
-    <Link href="/" className="head-mark" aria-current={atHome ? "page" : undefined}>
+    <Link
+      href={localeHref(localeOf(pathname), "/")}
+      className="head-mark"
+      aria-current={atHome ? "page" : undefined}
+    >
       TS<span className="slash">://</span>
     </Link>
   );

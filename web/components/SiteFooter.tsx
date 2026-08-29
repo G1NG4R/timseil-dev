@@ -4,6 +4,7 @@
 import { FooterLead } from "@/components/FooterLead";
 import { FooterLeadGate } from "@/components/FooterLeadGate";
 import { FooterMeta } from "@/components/FooterMeta";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 /**
  * The footer, in the two versions CHR.01 assigns.
@@ -16,11 +17,13 @@ import { FooterMeta } from "@/components/FooterMeta";
  * Long: `/`, `/work`, `/blog`, `/blog/:slug`, `/about`.
  * Short: the case studies, `/contact`, the legal pages, and the 404.
  */
-export function SiteFooter() {
+export async function SiteFooter() {
+  const { messages, textLang } = await getDictionary();
+
   return (
-    <footer className="foot col">
+    <footer className="foot col" lang={textLang}>
       <FooterLeadGate>
-        <FooterLead />
+        <FooterLead channel={messages.channel} respond={messages.respond} />
       </FooterLeadGate>
       <FooterMeta />
     </footer>

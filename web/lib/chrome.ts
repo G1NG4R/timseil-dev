@@ -11,6 +11,8 @@
 // on purpose: a table the implementation reads is not an oracle, it is a second
 // copy of the answer.
 
+import { stripLocale } from "./i18n/routes.ts";
+
 /** The four entries, in the order the sheet fixes them.
  *
  *  LOG POINTS AT `/blog`, AND THAT IS NOT A TYPO. Consistency Check K-20:
@@ -31,22 +33,6 @@ export type NavId = (typeof NAV)[number]["id"];
  *  alone. Both carry PRIVACY and IMPRINT — that is why short is the fallback
  *  for a route nobody planned. */
 export type FooterVariant = "long" | "short";
-
-/** G5's routes. They do not exist yet, and this is here anyway: without it G5
- *  ships a chrome in which nothing is ever active in German, and the four lines
- *  cost less now than the bug costs then. */
-const LOCALES = ["de", "fr"] as const;
-
-/** `/de/about` → `/about`, `/de` → `/`. A path that merely starts with those two
- *  letters (`/design`) is untouched, because the comparison is against a whole
- *  segment. */
-export function stripLocale(pathname: string): string {
-  const rest = segments(pathname);
-  if (rest.length > 0 && (LOCALES as readonly string[]).includes(rest[0])) {
-    rest.shift();
-  }
-  return rest.length === 0 ? "/" : `/${rest.join("/")}`;
-}
 
 /** SEGMENTS, NOT PREFIXES, and that is the whole defence against the one bug
  *  this file can have. `pathname.startsWith("/work")` satisfies every route in
@@ -82,3 +68,9 @@ export function footerVariant(pathname: string): FooterVariant {
   if (seg.length === 2 && seg[0] === "blog") return "long"; // a post, not a case study
   return "short";
 }
+
+/** Re-exported because G5 moved it: `stripLocale` was written here one phase
+ *  early, and it belongs with the other locale logic now that `/de` and `/fr`
+ *  are real. The chrome is still the loudest caller, so the name stays
+ *  reachable from the file the components import. */
+export { stripLocale };

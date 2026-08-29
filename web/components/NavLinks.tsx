@@ -7,7 +7,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { NAV, activeNav } from "@/lib/chrome";
+import { NAV, type NavId, activeNav } from "@/lib/chrome";
+import { localeHref, localeOf } from "@/lib/i18n/routes";
 import { SCRAMBLE_PASSES, parseMs, scrambleFrame } from "@/lib/scramble";
 
 // A counter rather than Math.random(): two hovers in a row should not look
@@ -77,36 +78,45 @@ function scramble(el: HTMLElement, label: string): void {
  *
  * On `/` none of them is active. That is the build plan's sentence and
  * lib/chrome.ts's first assertion.
+ *
+ * THE LABELS ARRIVE AS A PROP AND THE ROUTES DO NOT. `lib/chrome.ts` holds the
+ * four routes, which are the same in every language — the sheet's matrix:
+ * "Navigation: übersetzt, Route bleibt /blog". The words are prose and come
+ * from the dictionary, so the server passes exactly these four strings across
+ * the boundary rather than the whole of it.
  */
-export function NavLinks() {
-  const active = activeNav(usePathname());
+export function NavLinks({ labels }: { labels: Record<NavId, string> }) {
+  const pathname = usePathname();
+  const active = activeNav(pathname);
+  const locale = localeOf(pathname);
 
   return (
     <nav className="nav-links" aria-label="Main">
       {NAV.map((entry) => {
         const on = entry.id === active;
+        const label = labels[entry.id];
         return (
           <Link
             key={entry.id}
-            href={entry.href}
+            href={localeHref(locale, entry.href)}
             className="nav-link"
             aria-current={on ? "page" : undefined}
             onMouseEnter={
               on
                 ? undefined
                 : (event) => {
-                    scramble(event.currentTarget, entry.label);
+                    scramble(event.currentTarget, label);
                   }
             }
             onFocus={
               on
                 ? undefined
                 : (event) => {
-                    scramble(event.currentTarget, entry.label);
+                    scramble(event.currentTarget, label);
                   }
             }
           >
-            {entry.label}
+            {label}
           </Link>
         );
       })}

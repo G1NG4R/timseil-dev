@@ -23,6 +23,8 @@ import { NavLinks } from "@/components/NavLinks";
 import { Wordmark } from "@/components/Wordmark";
 import { onlineText } from "@/lib/api/health";
 import { footerHealthNow } from "@/lib/api/readers";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { navLabels } from "@/lib/i18n/messages";
 
 /**
  * The header: 66px, the same on all ten pages, 52px below 900.
@@ -38,22 +40,41 @@ import { footerHealthNow } from "@/lib/api/readers";
  * the button, nothing else. `.nav-desktop` is that group, which is exactly what
  * layout.css has been hiding at 900 since G1.
  */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const { messages, textLang } = await getDictionary();
+  const labels = navLabels(messages);
+
   return (
-    <header className="col">
+    <header className="col" lang={textLang}>
       <div className="head">
         <Wordmark />
         <span className="head-spacer" />
         <div className="nav-desktop">
-          <NavLinks />
+          <NavLinks labels={labels} />
           <span className="head-rule" aria-hidden="true" />
-          <LangMenu />
+          <LangMenu
+            strings={{
+              aria: messages.langAria,
+              label: messages.langLabel,
+              esc: messages.langEsc,
+              note: messages.langNote,
+            }}
+          />
           <span className="head-rule" aria-hidden="true" />
           <Clock />
         </div>
         {/* Always rendered, hidden by CSS above 900. Not a conditional: a tree
             that depends on the viewport is a tree the server gets wrong. */}
         <MobileMenu
+          labels={labels}
+          strings={{
+            menuAria: messages.menuAria,
+            closeAria: messages.menuCloseAria,
+            close: messages.menuClose,
+            langLabel: messages.langLabel,
+            channel: messages.channel,
+            respond: messages.respond,
+          }}
           status={
             <Suspense fallback={onlineText(null)}>
               <MenuStatus />
