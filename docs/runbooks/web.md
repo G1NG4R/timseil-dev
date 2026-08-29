@@ -445,3 +445,75 @@ nicht-ersetztes Inline-Element **nicht** wirkt. Gemessen: 20 Ziele, keins darunt
   Schleife hängen und `data-busy` gesetzt. Kein Defekt — die Schleife läuft
   weiter, sobald der Tab sichtbar wird —, aber eine leere Frame-Liste heißt dort
   „Tab war verborgen", nicht „Animation läuft nicht".
+
+## Die Sprachrouten nachmessen
+
+Drei Sprachen, und **Englisch trägt kein Präfix** — daran hängt alles, was
+schiefgehen kann. Der Baum liegt unter `app/[lang]/`, `proxy.ts` schreibt
+`/about` intern auf `/en/about` um und leitet `/en/about` mit 308 nach `/about`
+zurück. ADR 0046.
+
+**Gegen ein Produktionsbild, nicht gegen `next dev`.** Der Dev-Server hydriert
+auf diesem Baum nicht (Backlog, 28.08.2026, G4) — die Uhr steht, der
+Theme-Umschalter tut nichts, und der Sprachumschalter täte es dort ebenso wenig.
+Wer den Umschalter im Dev-Modus probiert, probiert etwas, das nicht läuft.
+
+```bash
+cd web && npm run build && npx next start -p 3111
+B=http://127.0.0.1:3111
+```
+
+### Was aus den Bytes zu holen ist
+
+```bash
+# 1 — die Sprache steht am Wurzelelement, und zwar die der ROUTE
+for p in / /de /fr /about /de/about /fr/work; do
+  printf '%-12s %s\n' "$p" "$(curl -s $B$p | grep -o '<html lang="[a-z]*"' | head -1)"
+done
+
+# 2 — vier alternate-Links, x-default zeigt auf die englische Fassung
+curl -s $B/ | grep -o '<link rel="alternate" hrefLang="[^"]*" href="[^"]*"/>'
+#   React schreibt das Attribut als hrefLang; HTML-Attributnamen sind
+#   case-insensitiv, das ist kein Fund.
+
+# 3 — /en ist keine Adresse
+curl -s -o /dev/null -w '%{http_code} -> %{redirect_url}\n' $B/en/about   # 308 -> /about
+
+# 4 — DIE FALLE, die die ganze Logik trägt: eine Sprache ist ein ganzes
+#     Segment, kein Präfix. Ein Treffer hier heißt, /design und /french-toast
+#     werden in der falschen Sprache ausgeliefert.
+curl -s -o /dev/null -w '%{http_code}\n' $B/english     # 404
+curl -s -o /dev/null -w '%{http_code}\n' $B/es/about    # 404
+
+# 5 — der unübersetzte Block sagt es selbst
+curl -s $B/de | grep -o '<\(header\|main\|footer\)[^>]*lang="[a-z]*"'
+curl -s $B/  | grep -c 'lang="en"'      # 1 — nur <html>, sonst keine Marke
+```
+
+### Was nur der Browser zeigt
+
+Der Umschalter navigiert clientseitig, also ist die Frage nicht „steht das
+richtige im HTML", sondern „ändert sich das Wurzelelement bei einer Navigation,
+die keinen Seitenaufbau macht". **Zustand vom DOM lesen, nicht aus
+Ereignislisten** — ein `close`-Event ist über die Browser-Erweiterung nicht
+beobachtbar (Backlog, 28.08.2026, G3).
+
+```js
+// auf /de/about, in der Konsole
+const en = [...document.querySelectorAll(".lang-option")].find(li => li.textContent.startsWith("EN"));
+document.querySelector(".lang-button").click();
+en.click();
+await new Promise(r => setTimeout(r, 1200));
+({ url: location.pathname,                                   // /about
+   htmlLang: document.documentElement.lang,                  // en
+   mainLang: document.querySelector("main").getAttribute("lang"),   // null
+   canonical: document.querySelector('link[rel=canonical]').href })
+```
+
+Der Tastaturweg dazu: `.lang-button` fokussieren, dreimal `ArrowDown`
+(öffnet, dann zweimal weiter), `aria-activedescendant` lesen — muss
+`lang-option-2` sein —, dann `Enter`. Gemessen am 29.08.2026: `/fr/about`.
+
+**Und der Kanarienvogel zuerst.** Vor jeder Aussage „null Hydration-Warnungen"
+eine eigene Meldung absetzen und wiederfinden; sonst beweist eine leere Konsole
+nur, dass niemand zugehört hat.

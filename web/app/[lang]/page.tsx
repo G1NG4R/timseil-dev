@@ -14,16 +14,30 @@
 // answer that by construction carries nobody's request id (lib/api/readers.ts),
 // so if this island goes, the hop stops being findable and no test says so.
 
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { footerHealth } from "@/lib/api/health";
 import { healthLive } from "@/lib/api/readers";
+import { alternatesFor } from "@/lib/i18n/alternates";
+import { asLocale } from "@/lib/i18n/routes";
 
 // `export const dynamic = "force-dynamic"` stood here until G4. Under Cache
 // Components it is an error rather than a hint — every page is dynamic unless
 // something is cached — and the job it did is now done by the <Suspense>
 // boundary: the shell prerenders, the correlated call waits for a request.
 const NO_DATA = "— NO DATA";
+
+// The four `hreflang` links and the canonical, for this page. lib/i18n/alternates.ts
+// explains why every page names its own path instead of the layout deriving it
+// for all of them.
+//
+// NO `robots` FIELD HERE, unlike the six stubs: `/` is the one route that says
+// something today, and it is the address the Rich Results test reads.
+export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await params;
+  return { alternates: alternatesFor(asLocale(lang), "/") };
+}
 
 export default function Home() {
   return (

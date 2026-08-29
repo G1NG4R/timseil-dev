@@ -57,8 +57,12 @@ const THEMES: { id: ThemeId | null; label: string; swatch: string }[] = [
  * The swatches are 11 × 11 and that does not break the 44px rule: layout.css
  * grows every `button` to 44 inside its `@media (pointer: coarse)` block, and
  * the rule hangs on the pointer, not on the viewport width.
+ *
+ * TWO WORDS COME IN AND SEVEN STAY. `THEME` and the group's label are prose;
+ * the palette names are not — "Catppuccin Mocha" and "Gruvbox Light" are what
+ * their authors called them, in every language.
  */
-export function ThemeSwitch() {
+export function ThemeSwitch({ label, aria }: { label: string; aria: string }) {
   const active = useSyncExternalStore<ThemeId | null>(
     subscribeTheme,
     currentTheme,
@@ -73,7 +77,7 @@ export function ThemeSwitch() {
   return (
     <div
       role="radiogroup"
-      aria-label="Colour scheme"
+      aria-label={aria}
       style={{ display: "flex", alignItems: "center", gap: "var(--s-8)" }}
     >
       <span
@@ -83,7 +87,7 @@ export function ThemeSwitch() {
           color: "var(--dim)",
         }}
       >
-        THEME
+        {label}
       </span>
       {THEMES.map((theme) => {
         const on = theme.id === active;

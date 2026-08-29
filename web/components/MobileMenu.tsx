@@ -10,16 +10,25 @@ import { usePathname } from "next/navigation";
 import { type ReactNode, useRef, useState } from "react";
 
 import { Clock } from "@/components/Clock";
-import { NAV, activeNav } from "@/lib/chrome";
+import { NAV, type NavId, activeNav } from "@/lib/chrome";
+import {
+  LOCALES,
+  LOCALE_NAMES,
+  localeHref,
+  localeOf,
+  switchLocale,
+} from "@/lib/i18n/routes";
 
-// EN is the base language; /de and /fr are G5's. Marked rather than linked, for
-// the same reason the desktop dropdown marks them: a chip that navigates to a
-// route that does not exist is worse than one that says so.
-const LANGS = [
-  { code: "EN", name: "English", current: true },
-  { code: "DE", name: "Deutsch", current: false },
-  { code: "FR", name: "Français", current: false },
-];
+/** The words this menu says around the links. A client component, so these
+ *  are the strings it needs and not the dictionary they came from. */
+export interface MenuStrings {
+  readonly menuAria: string;
+  readonly closeAria: string;
+  readonly close: string;
+  readonly langLabel: string;
+  readonly channel: string;
+  readonly respond: string;
+}
 
 /**
  * The menu button and the full-screen menu behind it.
@@ -53,11 +62,21 @@ const LANGS = [
  * node. Passing the value instead of the markup would drag the whole header out
  * of the prerendered shell, which is the one thing G4 was building toward.
  */
-export function MobileMenu({ status }: { status: ReactNode }) {
+export function MobileMenu({
+  status,
+  labels,
+  strings,
+}: {
+  status: ReactNode;
+  labels: Record<NavId, string>;
+  strings: MenuStrings;
+}) {
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const closer = useRef<HTMLButtonElement>(null);
-  const active = activeNav(usePathname());
+  const pathname = usePathname();
+  const active = activeNav(pathname);
+  const locale = localeOf(pathname);
 
   function show() {
     dialog.current?.showModal();
@@ -77,7 +96,7 @@ export function MobileMenu({ status }: { status: ReactNode }) {
         className="nav-button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label="Menu and language"
+        aria-label={strings.menuAria}
         onClick={show}
       >
         <span className="bars" aria-hidden="true" />
@@ -86,7 +105,7 @@ export function MobileMenu({ status }: { status: ReactNode }) {
       <dialog
         ref={dialog}
         className="menu"
-        aria-label="Menu and language"
+        aria-label={strings.menuAria}
         // The backstop. The browser restores focus to the button by itself.
         onClose={() => {
           setOpen(false);
@@ -102,8 +121,14 @@ export function MobileMenu({ status }: { status: ReactNode }) {
           <span className="head-mark">
             TS<span className="slash">://</span>
           </span>
-          <button ref={closer} type="button" className="menu-close" aria-label="Close menu" onClick={hide}>
-            CLOSE
+          <button
+            ref={closer}
+            type="button"
+            className="menu-close"
+            aria-label={strings.closeAria}
+            onClick={hide}
+          >
+            {strings.close}
             <span className="glyph" aria-hidden="true">
               ✕
             </span>
@@ -117,7 +142,7 @@ export function MobileMenu({ status }: { status: ReactNode }) {
               return (
                 <Link
                   key={entry.id}
-                  href={entry.href}
+                  href={localeHref(locale, entry.href)}
                   className="menu-link"
                   aria-current={on ? "page" : undefined}
                   onClick={hide}
@@ -125,7 +150,7 @@ export function MobileMenu({ status }: { status: ReactNode }) {
                   <span className="index" aria-hidden="true">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <span className="label">{entry.label}</span>
+                  <span className="label">{labels[entry.id]}</span>
                   <span className="mark" aria-hidden="true">
                     {on ? "●" : "→"}
                   </span>
@@ -135,27 +160,41 @@ export function MobileMenu({ status }: { status: ReactNode }) {
           </nav>
 
           <p className="menu-section">
-            <span>LANGUAGE</span>
+            <span>{strings.langLabel}</span>
             <span className="bar" aria-hidden="true" />
-            <span className="tag">[SOON]</span>
           </p>
-          <ul className="menu-langs">
-            {LANGS.map((lang) => (
-              <li key={lang.code} className="menu-lang" aria-current={lang.current}>
-                <span className="code">{lang.code}</span>
-                <span className="name">{lang.name}</span>
-              </li>
+          {/* THREE LINKS, NOT A LIST OF CHIPS. Until G5 these were <li>s with a
+              [SOON] tag beside the heading, because there was nowhere to send
+              anyone. They are anchors now, which is also what makes the two
+              other languages reachable in this menu without JavaScript.
+
+              A <nav> rather than <ul><li>: .menu-lang is the flex child that
+              carries `flex: 1` and the 52px chip, and wrapping each one in an
+              <li> would move the equal-width row onto an element chrome.css
+              does not style. No stylesheet changed in this phase. */}
+          <nav className="menu-langs" aria-label={strings.langLabel}>
+            {LOCALES.map((code) => (
+              <Link
+                key={code}
+                href={switchLocale(pathname, code)}
+                className="menu-lang"
+                aria-current={code === locale}
+                onClick={hide}
+              >
+                <span className="code">{code.toUpperCase()}</span>
+                <span className="name">{LOCALE_NAMES[code]}</span>
+              </Link>
             ))}
-          </ul>
+          </nav>
 
           <p className="menu-section">
-            <span>OPEN A CHANNEL</span>
+            <span>{strings.channel}</span>
             <span className="bar" aria-hidden="true" />
           </p>
           <a className="menu-mail" href="mailto:contact@timseil.dev">
             contact@timseil.dev
           </a>
-          <p className="menu-note">USUALLY UNDER 24 H</p>
+          <p className="menu-note">{strings.respond}</p>
 
           <p className="menu-strip">
             {/* The same word the footer's meta bar shows, from the same cached

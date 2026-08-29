@@ -7,6 +7,8 @@ import { Clock } from "@/components/Clock";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { NO_HEALTH, buildText, onlineText, uptimeText, type FooterHealth } from "@/lib/api/health";
 import { footerHealthNow } from "@/lib/api/readers";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { LOCALES, LOCALE_NAMES, localeHref } from "@/lib/i18n/routes";
 
 /**
  * The meta bar. Byte-identical on all ten pages, in both footer variants — the
@@ -21,8 +23,18 @@ import { footerHealthNow } from "@/lib/api/readers";
  * `BASED IN LUXEMBOURG · PRIVACY · IMPRINT` is in every meta bar (K-07), which
  * is why the short footer still carries it — and why an unplanned route gets
  * the short footer rather than none.
+ *
+ * G5 TURNED THE `ALT` CELL FROM A CLAIM INTO A LINK. It printed `/de` and `/fr`
+ * as text while neither existed. They are anchors now, and they are the reason
+ * the two other languages are reachable WITHOUT JavaScript and by a crawler
+ * that never opens a dropdown — the sheet asks for exactly that: "Die Fußzeile
+ * nennt die Alternativen als Links, damit sie auch ohne Panel auffindbar sind."
+ * The visible text and the href are the same string, so the cell cannot say one
+ * address and lead to another.
  */
-export function FooterMeta() {
+export async function FooterMeta() {
+  const { locale, messages } = await getDictionary();
+
   return (
     <div className="foot-meta">
       <div className="foot-meta-main">
@@ -36,14 +48,22 @@ export function FooterMeta() {
           which is why streaming costs nothing in this design language and why
           there is no spinner to design.
         */}
-        <Suspense fallback={<MetaCells {...NO_HEALTH} />}>
-          <MetaCellsLive />
+        <Suspense fallback={<MetaCells {...NO_HEALTH} uptimeLabel={messages.uptime} />}>
+          <MetaCellsLive uptimeLabel={messages.uptime} />
         </Suspense>
 
-        <span className="foot-cell">CV → TERMINAL ON / : cv</span>
-        <ThemeSwitch />
+        <span className="foot-cell">{messages.cvHint}</span>
+        <ThemeSwitch label={messages.themeLabel} aria={messages.themeAria} />
         <span className="foot-cell">
-          ALT <span>/de</span> <span>/fr</span>
+          {/* No separator between the label and the links: .foot-cell is a flex
+              row with `gap: 7px`, so the spacing is the stylesheet's and a
+              literal space would only add a stray text node. */}
+          {messages.altLabel}
+          {LOCALES.filter((code) => code !== locale).map((code) => (
+            <a key={code} href={localeHref(code, "/")} hrefLang={code} title={LOCALE_NAMES[code]}>
+              {localeHref(code, "/")}
+            </a>
+          ))}
         </span>
       </div>
 
@@ -53,9 +73,9 @@ export function FooterMeta() {
       </div>
 
       <div className="foot-legal">
-        <span>BASED IN LUXEMBOURG</span>
-        <a href="/privacy">PRIVACY</a>
-        <a href="/imprint">IMPRINT</a>
+        <span>{messages.based}</span>
+        <a href={localeHref(locale, "/privacy")}>{messages.privacy}</a>
+        <a href={localeHref(locale, "/imprint")}>{messages.imprint}</a>
       </div>
     </div>
   );
@@ -68,20 +88,31 @@ export function FooterMeta() {
  * null and a number for a number, and it is the same component in the fallback
  * and in the filled state, so the two cannot drift apart.
  */
-function MetaCells({ build, uptime, online }: FooterHealth) {
+function MetaCells({
+  build,
+  uptime,
+  online,
+  uptimeLabel,
+}: FooterHealth & { uptimeLabel: string }) {
   return (
     <>
+      {/* `BUILD` and `ONLINE` are not translated and never will be. The sheet
+          names the set: "UNVERÄNDERT ENGLISCH: SYS.INIT · ONLINE · BUILD · Go ·
+          Docker — Identifier und Werkzeugnamen." `UPTIME` is a heading over a
+          number and is prose, so it comes from the dictionary. */}
       <span className="foot-cell">BUILD {buildText(build)}</span>
       <span className="foot-cell">
         <span className="foot-dot" aria-hidden="true" />
         {onlineText(online)}
       </span>
-      <span className="foot-cell">UPTIME {uptimeText(uptime)}</span>
+      <span className="foot-cell">
+        {uptimeLabel} {uptimeText(uptime)}
+      </span>
     </>
   );
 }
 
 /** The same three cells, with the answer the api gave. */
-async function MetaCellsLive() {
-  return <MetaCells {...await footerHealthNow()} />;
+async function MetaCellsLive({ uptimeLabel }: { uptimeLabel: string }) {
+  return <MetaCells {...await footerHealthNow()} uptimeLabel={uptimeLabel} />;
 }

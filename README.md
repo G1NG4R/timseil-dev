@@ -423,7 +423,7 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 | `ops/` | what runs on the host: the Postgres role bootstrap, and the weekly disk reclaim with its systemd timer |
 | `api/Dockerfile` · `web/Dockerfile` | the two images that ship — `.dev` next to each builds the local one |
 | `api/` | Go: handlers thin, logic in `internal/`, SQL in `internal/store/` |
-| `web/` | Next.js App Router, Server Components by default |
+| `web/` | Next.js App Router, Server Components by default; the route tree lives under `app/[lang]/` |
 | `web/styles/` | every colour, size and duration the site has — `tokens.css` is the only file allowed to hold a value, and `make check-tokens` says so |
 | `docs/build-plan.md` | the author, every session (German) |
 | `docs/adr/` | the author in six months, asking "why did I do that?" |
@@ -436,6 +436,34 @@ a CDN at runtime. **A black page means no network, not a broken sheet.**
 Branch `ops-data` is machine-written and has no shared history with `main`: it
 carries the uptime log committed by the probe workflow, so an outage is recorded
 **outside** the infrastructure that went down.
+
+## Routes
+
+Three languages, and **English carries no prefix**. The URL decides which one
+you get — nothing reads `Accept-Language`, so a shared link takes everyone to
+the same page.
+
+| English | Deutsch | Français | What |
+|---|---|---|---|
+| `/` | `/de` | `/fr` | home |
+| `/work` | `/de/work` | `/fr/work` | the systems |
+| `/blog` | `/de/blog` | `/fr/blog` | the log — the label says `LOG`, the route says `/blog` |
+| `/about` | `/de/about` | `/fr/about` | the operator |
+| `/contact` | `/de/contact` | `/fr/contact` | the channel |
+| `/imprint` · `/privacy` | `/de/…` | `/fr/…` | legal, reachable from every footer |
+
+`/en/...` is not an address: it redirects to the unprefixed form with a 308, so
+each page has exactly one canonical URL. Every page emits `hreflang` for all
+three plus `x-default`.
+
+**The two other languages are not translated yet.** They serve the English text
+and say so — `<html lang="de">` with `lang="en"` on the blocks that fell back,
+rather than half a page in German. Filling them is post-launch work; the
+mechanism, the routes and the switcher are not
+([ADR 0046](docs/adr/0046-die-sprachroute-englisch-ohne-praefix-und-die-sprache-die-die-url-traegt.md)).
+
+`/healthz` carries no language: Traefik asks it once a second per backend and
+reads no prose.
 
 ## Decisions
 
