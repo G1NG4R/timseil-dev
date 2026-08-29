@@ -435,8 +435,15 @@ Query auf einem Gerät greift, aber dass sie für jedes Ziel wirklich 44px
 erzeugt — und genau dort kann sie still versagen, weil `min-height` auf ein
 nicht-ersetztes Inline-Element **nicht** wirkt. Gemessen: 20 Ziele, keins darunter.
 
-### Zwei Fallen, die diese Abnahme gefunden hat
+### Drei Fallen, die diese Abnahme gefunden hat
 
+- **Das `close`-Ereignis eines `<dialog>` ist aus der Browser-Erweiterung heraus
+  nicht beobachtbar** — auch nicht bei einem nackten Kontroll-`<dialog>` ohne CSS
+  und ohne React. Ein von Hand ausgelöstes `close` erreicht Reacts `onClose`
+  dagegen sehr wohl: `aria-expanded` kippt, die Scroll-Sperre löst. **Leere
+  Ereignislisten aus diesem Weg beweisen also nichts** — Zustand wird am DOM
+  abgelesen, nicht an Ereignissen. Dieselbe Familie wie die isolierte Welt weiter
+  unten: das Werkzeug misst nicht überall, wo es hinsieht.
 - **Der CSS-Minifier schreibt Dauern um.** `tokens.css` sagt `--d-scramble: 220ms`,
   ausgeliefert wird `.22s`. Wer den Wert zur Laufzeit liest, muss beide Formen
   können; ein `parseInt` liefert lokal 220 und in Produktion 0. `lib/scramble.ts`
