@@ -17,10 +17,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { JsonLd } from "@/components/JsonLd";
 import { footerHealth } from "@/lib/api/health";
 import { healthLive } from "@/lib/api/readers";
-import { alternatesFor } from "@/lib/i18n/alternates";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale } from "@/lib/i18n/routes";
+import { siteLd } from "@/lib/seo/jsonld";
+import { seoFor } from "@/lib/seo/pages";
 
 // `export const dynamic = "force-dynamic"` stood here until G4. Under Cache
 // Components it is an error rather than a hint — every page is dynamic unless
@@ -28,20 +31,31 @@ import { asLocale } from "@/lib/i18n/routes";
 // boundary: the shell prerenders, the correlated call waits for a request.
 const NO_DATA = "— NO DATA";
 
-// The four `hreflang` links and the canonical, for this page. lib/i18n/alternates.ts
-// explains why every page names its own path instead of the layout deriving it
-// for all of them.
+// The canonical, the four `hreflang` links, the feed and the social card — one
+// call, out of the table in lib/seo/pages.ts.
 //
-// NO `robots` FIELD HERE, unlike the six stubs: `/` is the one route that says
-// something today, and it is the address the Rich Results test reads.
+// `/` IS THE ONE ROUTE WITH NO `robots` REFUSAL, and it is the only entry in
+// `sitemap.xml`. Both follow from the same boolean now: the six stubs are
+// `indexable: false` and this one is not. It is also the address the Rich
+// Results test reads, which is this phase's acceptance criterion.
 export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
-  return { alternates: alternatesFor(asLocale(lang), "/") };
+  return seoFor(asLocale(lang), "/");
 }
 
-export default function Home() {
+export default async function Home() {
+  // `resolved` is the language the STRINGS on this page are in, which is not
+  // always the language of the route: `/de` serves English until P6 fills the
+  // dictionary. The graph gets that value rather than the route's, so it never
+  // claims a translation the page does not have — and starts claiming one by
+  // itself on the day the dictionary is filled.
+  const { resolved } = await getDictionary();
+
   return (
     <>
+      {/* Person and WebSite, on `/` only. The six stubs say `noindex`, so a
+          graph on them would describe a page nothing is allowed to list. */}
+      <JsonLd data={siteLd(resolved)} />
       <h1>timseil.dev</h1>
       <p>Development shell. The site itself is built in stage H.</p>
       <dl>

@@ -46,12 +46,12 @@ export const LOCALE_NAMES: Record<Locale, string> = {
  *  excludes `_next/static` and `_next/image` already; everything else under
  *  `_next` reaches this file.
  *
- *  The four files are G5b's (`robots.txt`, `sitemap.xml`, `feed.xml`, `og.png`)
- *  and are listed one phase early for the same reason chrome.ts listed the
- *  locales one phase early: the entry costs a line now and a whole-site defect
- *  later. `og.png` is a route handler rather than an `opengraph-image` file in
- *  `app/[lang]/`, precisely so that the canonical redirect below cannot reach
- *  it. */
+ *  The four after it are G5b's (`robots.txt`, `sitemap.xml`, `feed.xml`,
+ *  `og.png`). They were listed here one phase early, for the same reason
+ *  chrome.ts listed the locales early — the entry costs a line then and a
+ *  whole-site defect later — and G5b built them into it. `og.png` is a route
+ *  handler rather than an `opengraph-image` file in `app/[lang]/`, precisely so
+ *  that the canonical redirect below cannot reach it. ADR 0047. */
 const RESERVED = new Set([
   "_next",
   "api",
@@ -77,11 +77,16 @@ function join(parts: string[]): string {
 
 /** The route segment as a `Locale`, or an exception.
  *
- *  Unreachable while `dynamicParams = false` stands in the root layout: the
- *  router answers anything outside the three with a 404 before a page runs. It
- *  throws rather than falling back to English, because a silent default here
- *  would serve an English page at an address that claims another language —
- *  and be invisible while doing it. */
+ *  Practically unreachable, but NOT for the reason this comment gave until
+ *  G5b. It said "while `dynamicParams = false` stands in the root layout" —
+ *  and that config was never there: Turbopack refuses it under Cache
+ *  Components, which is written down in the layout and in ADR 0046. What
+ *  actually keeps `/es/about` away from here is `getDictionary()`, which calls
+ *  `notFound()` one layer up.
+ *
+ *  It throws rather than falling back to English, because a silent default
+ *  here would serve an English page at an address that claims another
+ *  language — and be invisible while doing it. */
 export function asLocale(value: string): Locale {
   if (!isLocale(value)) throw new Error(`not a language segment: ${value}`);
   return value;
