@@ -54,11 +54,20 @@ Schale für das Segment `[slug]` selbst, und der Kopf hat keinen Pfad zu lesen.
 Zwei Ursachen, zwei Reparaturen: die Slug-Liste aus dem Inhaltsregister, und
 vier `<Suspense>`-Grenzen um alles, was `connection()` erreicht.
 
-**Eine gestreamte Seite trägt Fallback und Ersetzung gleichzeitig.** Bei 390 rot
-gegangen: `.cs-crumb a` löste auf zwei Elemente auf. Kein Fehler — React
+**Eine gestreamte Seite trägt Fallback und Ersetzung gleichzeitig — und das gilt
+für alle vier Bereiche, nicht für einen.** Zuerst bei 390 an der Brotkrume rot
+gegangen und dort lokal repariert; **beim ersten Lauf ohne erreichbare API dann
+an `.spec`, `.cs-eyebrow` und `.ops-tiles` gleich mit**. Kein Fehler — React
 liefert die Ersetzung in einem `<div hidden>` nach und tauscht per Skript.
-Bliebe einer stehen, wäre das die Form von #256. Der Test sichert jetzt „genau
-eine" zu, und das Warten darauf ist dieselbe Zeile.
+
+**Warum es der Lauf ohne API war, ist der eigentliche Punkt:** mit antwortender
+API ist das Fenster Millisekunden breit und alle Tests waren grün. Ohne sie ist
+es die vollen zwei Sekunden des Zeitbudgets. Ein Test, der grün ist, weil die
+Antwort schnell war, prüft die Geschwindigkeit und nicht die Seite.
+
+Jede Prüfung wartet jetzt auf denselben Satz — genau eine Brotkrume —, und
+dieselbe Zeile ist die Zusicherung: bliebe eine Kopie stehen, wäre das die Form
+von #256.
 
 **Der erste E2E-Entwurf war ein Test über mein Terminal.** Er behauptete fünf
 Gedankenstriche und ging rot, weil `reuseExistingServer` meinen Server mit
@@ -89,6 +98,21 @@ wäre geraten.
 
 E2E: **221 Zusicherungen** über acht Projekte statt 130, axe auf der neuen Route
 an allen sieben Breiten grün. `npm test`: 318.
+
+**Vier Suspense-Grenzen sind eine Anfrage, und das ist jetzt gemessen statt
+kommentiert.** Produktionsbuild ohne erreichbare API, drei Seitenaufrufe:
+
+```
+  /work/timseil-dev   ttfb 9-10 ms   total 2,03 s
+  /about              ttfb 8-12 ms   total 2,02 s
+  Logzeilen:  3 x /api/systems/{slug}   (nicht 12)
+```
+
+`systemCached` wirft im Fehlerfall, speichert also nichts — und trotzdem teilen
+sich die vier Grenzen **einen** Upstream-Aufruf je Aufruf der Seite. Die 2,03 s
+sind das Zeitbudget des Clients, nicht die Zahl der Grenzen: `/about` mit einer
+einzigen Grenze braucht dieselben zwei Sekunden. Der Zeitpunkt des ersten Bytes
+zeigt, dass die Schale wirklich statisch ist.
 
 Generator-Abweisungen vorgeführt statt behauptet: Dienst umbenannt →
 `✗ compose.yaml has no service api`; `depends_on` im `api`-Block entfernt →

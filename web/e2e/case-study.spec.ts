@@ -36,8 +36,34 @@ function widthOf(page: Page): number {
   return page.viewportSize()?.width ?? 0;
 }
 
+/**
+ * The page after streaming has settled.
+ *
+ * FOUND BY THIS FILE, TWICE, AND THE SECOND TIME IT WAS GENERAL. A streamed page
+ * carries both the Suspense fallback and its replacement: React ships the
+ * replacement inside a `<div hidden>` and a script swaps them, so between those
+ * two events every one of the four regions is in the document twice — the
+ * breadcrumb, the eyebrow, the spec rail and the tile row. A strict locator sees
+ * both and refuses.
+ *
+ * THE RACE IS WIDEST WHEN THE API IS DOWN, which is why the first run to catch
+ * it was the first one with nothing to answer: the upstream call spends its full
+ * two-second budget before the replacement can render, and every assertion made
+ * before that saw two of everything. With an api answering in milliseconds the
+ * same tests had passed.
+ *
+ * Waiting on the breadcrumb count is the wait AND the assertion. If the swap
+ * never happened, one copy of each region would stay in the page — which is
+ * #256's shape exactly, a second copy of a component lying in the document — and
+ * this is the line that would say so.
+ */
+async function settled(page: Page): Promise<void> {
+  await expect(page.locator(".cs-crumb")).toHaveCount(1);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto(CASE_STUDY);
+  await settled(page);
 });
 
 test("the page is the system's, and it says which system", async ({ page }) => {
@@ -147,17 +173,17 @@ test("nothing pushes the page wider than the window", async ({ page }) => {
 // to this page rather than to the chrome. Clicked, not read — a link whose href
 // is right and whose element is covered is the defect #256 was.
 //
-// THE COUNT IS PART OF THE TEST AND NOT A WAIT. A streamed page carries both the
-// Suspense fallback and its replacement for a moment: React ships the
-// replacement inside a `<div hidden>` and a script swaps them, so between those
-// two events the document really does hold two breadcrumbs. Found at 390 on the
-// first run, where the swap had not happened yet. One of them surviving would be
-// #256's shape exactly — a second copy of a component sitting in the page — so
-// the assertion says one, and retrying until it is one is the wait.
-test("the breadcrumb goes back to the work index, and there is one of it", async ({ page }) => {
-  await expect(page.locator(".cs-crumb")).toHaveCount(1);
+test("the breadcrumb goes back to the work index", async ({ page }) => {
   await page.locator(".cs-crumb a").click();
   await expect(page).toHaveURL(/\/work$/);
+});
+
+// The other half of `settled`, said out loud rather than left implicit in a
+// helper: after the swap there is one of each region and not two.
+test("nothing is left over from the streaming", async ({ page }) => {
+  for (const selector of [".cs-crumb", ".cs-eyebrow", ".spec", ".ops-tiles"]) {
+    await expect(page.locator(selector), selector).toHaveCount(1);
+  }
 });
 
 // The registry is the gate: one system has a case study and the other does not.
