@@ -9,7 +9,7 @@
  */
 export function Constraints({ items, label }: { items: readonly string[]; label: string }) {
   return (
-    <aside className="rail" aria-label={label}>
+    <aside className="rail cs-panel" aria-label={label}>
       <p className="spec-label">{label}</p>
       <ol className="cs-constraints">
         {items.map((item) => (

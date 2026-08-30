@@ -1039,3 +1039,73 @@ during prerendering.
 Zwei Ursachen, eine Reparatur je: `generateStaticParams` für den Slug — sonst
 baut Next eine Schale für das Segment `[slug]` selbst, und der Kopf hat keinen
 Pfad zu lesen — und die vier Grenzen um alles, was `connection()` erreicht.
+
+---
+
+## Den Blattvergleich und den Durchzug fahren
+
+Zwei Playwright-Projekte, die ihre Breite selbst setzen und deshalb **einmal**
+laufen statt siebenmal:
+
+```sh
+make e2e E2E_ARGS="--project=sheet"   # die Seite gegen das, was das Blatt zeichnet
+make e2e E2E_ARGS="--project=sweep"   # die Seite gegen die Arithmetik ihres Rasters
+```
+
+### Wenn der Vergleich rot ist
+
+Die Fehlermeldung trägt **die Blattzeile im Text**:
+
+```
+Error: docs/design/Case Study Template - timseil.dev.dc.html:113
+       says `grid-template-columns: 16px 1fr`
+Expected: "16px"   Received: "26px"
+```
+
+Das ist die ganze Diagnose. Aufschlagen, nachlesen, und dann eins von beiden:
+
+1. **Die Seite ist falsch** → CSS reparieren. Der Regelfall.
+2. **Wir weichen bewusst ab** → einen `diverges`-Block in
+   `tools/gen-sheet-oracle.mjs` eintragen, mit einer `class`, die in
+   `DIVERGENCE` **einen niedergeschriebenen Grund hat**. Ohne den hält der
+   Generator an — sonst wird „weicht ab" der stille Ausweg aus jedem Fund.
+
+Danach `make gen`, sonst meldet `make check-contract` Drift.
+
+### Wenn der Durchzug rot ist
+
+Zwei verschiedene Meldungen, zwei verschiedene Fehler:
+
+- **`toEqual([1080, 900, 720, 560])` mit einer fünften Zahl** → irgendwo steht
+  eine Media Query, die kein Schalter sein darf. Die Zahl ist die Breite, an der
+  sie feuert.
+- **`across 720` mit einem Schlüssel zu viel oder zu wenig** → ein Bauteil hat
+  angefangen oder aufgehört, an diesem Schalter teilzunehmen. `SWITCH_MOVES` in
+  `layout.sweep.spec.ts` sagt, was dort erwartet wird.
+
+**Der Fingerabdruck sagt, wo sich etwas ändert, nicht was.** Das ist gemessen,
+nicht vermutet: `.rail` überall auf `position: static` zu setzen — die
+Sticky-Rail also ganz zu löschen — ließ die Kantenliste unberührt, weil vier
+andere Bauteile bei 1080 weiter schalten. Dagegen steht die zweite Tabelle, und
+für die **Werte** an einem Schalter ist `case-study.spec.ts` zuständig.
+
+### Warum kein Screenshot und kein `make design` im Lauf
+
+Die Blätter laden React von unpkg und ihre Schnitte von Google Fonts. Eine
+schwarze Seite heißt: kein Netz — und das wäre dann ein roter Lauf aus einem
+Grund, der nicht unserer ist. Der Vergleich liest deshalb die **Quelle** der
+Artboards, die zu 100 % inline gestylt ist. ADR 0053.
+
+`make design` bleibt, wofür es gebaut ist: damit ein Mensch das Blatt danebenlegt.
+
+### Das Orakel von Hand ansehen
+
+```sh
+jq -r '.entries[] | "\(.width)  \(.id)  \(.says)  → \(.expect)\(if .diverges then "  [" + .diverges.class + "]" else "" end)"' \
+  web/e2e/oracle/case-study.gen.json
+```
+
+Die Datei ist zugleich **die vollständige Liste dessen, wo wir vom Blatt
+abweichen und warum**. Wächst die Zahl der `diverges`-Einträge schneller als die
+der Messungen, misst der Vergleich nicht mehr die Seite, sondern unsere
+Ausreden.

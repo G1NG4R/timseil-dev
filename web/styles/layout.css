@@ -118,6 +118,11 @@
 @media (max-width: 1079px) {
   .spec-body { grid-template-columns: 72px 1fr 72px 1fr }
   .spec      { background-size: 14px 1px, 1px 14px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0 }
+
+  /* The constraints do the same thing for the same reason, and H1b found that
+     they were not doing it: the 1024 frame draws them `1fr 1fr`. Five short
+     lines in a full-width plate leave a stripe of nothing beside them. */
+  .cs-constraints { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-12) var(--s-26) }
 }
 
 /* ---- < 720: the rail stacks, and the tiles are already handled ----------
