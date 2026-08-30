@@ -76,6 +76,34 @@ nachgesehen. Danach das ganze Bauteil gegen seine drei Blattzeilen gehalten:
 Alle sieben repariert, alle sieben als Einträge im Orakel — damit sie nicht
 zurückdriften.
 
+### Das Review hat gefunden, was die Prüfung nicht gefunden hat
+
+**Der Diff gegen `main` gelesen, wie der Bauplan es verlangt** („Code Review auch
+solo"), und dabei zwei Dinge gefunden, die alle 258 Zusicherungen durchgelassen
+haben:
+
+**1 · Die Zweispalter reichten bis 390 hinunter.** Ich hatte das 1024er-Blatt
+gelesen und daraus `max-width: 1079` gemacht. Das mobile Blatt zeichnet die
+Constraints **einspaltig** (Template 398) — und ich hatte es nicht aufgeschlagen.
+Untere Grenze ist jetzt der 720er-Schalter, und die Begründung stand längst im
+Kopf von `layout.css`: „Tabellen einspaltig (zweite Spalte bliebe unter 300)".
+
+**Das Orakel hat den Fall nicht gefangen, weil ich ihn nicht eingetragen hatte.**
+Ein Vergleich prüft, was seine Karte nennt. Er findet keine Abweichung an einer
+Stelle, nach der niemand gefragt hat — und das ist die Grenze dieser ganzen
+Bauart, in einem Satz. Der mobile Eintrag steht jetzt drin.
+
+**2 · Und der Fingerabdruck war an einer Stelle blind.**
+`grid-template-columns` behält seinen berechneten Wert auf einem Kasten, der
+kein Grid mehr ist. `.cs-constraints` deklariert `1fr 1fr` in einer
+`max-width: 1079`-Query und wird bei 720 wieder `flex` — die Spurliste las
+darunter weiter `1fr 1fr`, und der Schalter sah aus, als bewege er nichts. Der
+Abdruck liest jetzt erst `display`. **Gefunden hat es der Test selbst**, weil die
+Reparatur aus Fund 1 ihn rot machte und nicht das war, was ich erwartet hatte.
+
+Beide nachgemutiert: Constraints unter 720 zweispaltig lassen → rot; die
+Rail-Mutation von vorhin → weiter rot.
+
 ### Was dabei nebenbei korrigiert wurde
 
 **1024 hat sehr wohl eine Zeichnung.** `case-study.spec.ts` behauptet im Kopf,
@@ -88,10 +116,10 @@ Annotationen zum einspaltigen Umbau. Ohne Zeichnung sind **vier** Breiten:
 ### Gemessen
 
 ```
-e2e              228 → 258 Zusicherungen        make check grün
-Generator        25 Messungen, 6 abweichend, 4 Abweisungen vorgeführt
+e2e              228 → 259 Zusicherungen        make check grün
+Generator        26 Messungen, 6 abweichend, 4 Abweisungen vorgeführt
 Durchzug         Kanten 1080 · 900 · 720 · 560, binär auf das Pixel
-sheet + sweep    30 Zusicherungen in 23 s
+sheet + sweep    31 Zusicherungen in 11 s
 ```
 
 Die vier Abweisungen des Generators, vorgeführt statt behauptet: die Karte

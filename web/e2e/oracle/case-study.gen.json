@@ -297,6 +297,21 @@
       "expect": "34px"
     },
     {
+      "id": "mobile-constraints-one-column",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 398,
+      "width": 390,
+      "says": "flex-direction: column",
+      "reading": "and on a phone they are one column again — found in review, after the 1024 frame had been read and the mobile one had not",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-constraints",
+        "prop": "flex-direction"
+      },
+      "expect": "column"
+    },
+    {
       "id": "mobile-column",
       "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
       "artboard": "1c",

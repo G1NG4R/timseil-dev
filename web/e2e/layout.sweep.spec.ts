@@ -59,9 +59,20 @@ async function fingerprint(page: Page): Promise<string> {
     const tracks = (selector: string): string => {
       const el = document.querySelector(selector);
       if (el === null) return "absent";
-      const value = getComputedStyle(el).gridTemplateColumns;
+
+      const style = getComputedStyle(el);
+
+      // THE DISPLAY HAS TO BE READ FIRST, and finding out why cost a red test.
+      // `grid-template-columns` keeps its computed value on a box that is no
+      // longer a grid: `.cs-constraints` declares `1fr 1fr` inside a
+      // `max-width: 1079` query and returns to `display: flex` at 720, so the
+      // track list still reads "1fr 1fr" below 720 and the switch looked as if
+      // it moved nothing. A row is one column or two because of both.
+      if (!style.display.includes("grid")) return style.display;
+
       // The COUNT, not the widths: the widths follow the window continuously
       // and the count is what a switch changes.
+      const value = style.gridTemplateColumns;
       return value === "none" ? "none" : String(value.split(/\s+/).length);
     };
 
@@ -118,7 +129,7 @@ const SWITCH_MOVES: Record<number, string[]> = {
   // the entry measurement corrected rather than reasoned: the two-pair grid it
   // takes below 1080 needs 300px per pair, and at a 639px column the second
   // pair would break mid-word, so H1a stacks key over value here as well.
-  720: ["h1", "spec", "tiles"],
+  720: ["cons", "h1", "spec", "tiles"],
   // Two columns cannot divide five; the fifth runs the full width.
   560: ["tiles"],
 };

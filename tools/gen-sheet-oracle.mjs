@@ -222,6 +222,14 @@ const MAP = [
     measure: { kind: 'computed', selector: '.cs-spec h1', prop: 'font-size' }, expect: '34px',
   },
   {
+    id: 'mobile-constraints-one-column',
+    sheet: 'template', artboard: '1c', width: 390, line: 398,
+    decl: 'flex-direction', says: 'column',
+    reading: 'and on a phone they are one column again — found in review, after the 1024 frame had been read and the mobile one had not',
+    measure: { kind: 'computed', selector: '.cs-constraints', prop: 'flex-direction' },
+    expect: 'column',
+  },
+  {
     id: 'mobile-column',
     sheet: 'template', artboard: '1c', width: 390, line: 345,
     decl: 'padding', says: '0 22px',
