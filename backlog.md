@@ -106,8 +106,29 @@ gehört zur Abnahme dieser Änderung und steht als Erstes an.
 
 ### Der Tracker ist gegen die Veröffentlichungsregel gelesen worden
 
-Ergebnis nicht hier — es steht in `backlog.local.md`, und es wartet auf eine
-Entscheidung.
+**Das ist der teuerste Fund der Runde, und er stand in keinem Issue, sondern
+über allen.** CLAUDE.md verbietet den Ist-Stand einer Sicherheitsfrage dieses
+Hosts in allem, was nach außen geht — Issues ausdrücklich eingeschlossen. Vier
+Issues aus D3 taten genau das. Das Repository ist öffentlich.
+
+**Vier neu gestellt, vier gelöscht.** #252 bis #255 tragen die Aufgabe und ihr
+Abnahmekriterium; der Zustand steht in den privaten Notizen. Die Originale sind
+weg, nicht überschrieben — **einen Issue-Text zu ersetzen entfernt ihn nicht**,
+GitHub zeigt die Bearbeitungshistorie jedem Leser eines öffentlichen
+Repositories. Das ist der Teil, den man beim ersten Hinsehen falsch macht.
+
+Vor dem Löschen geprüft: **kein einziger Verweis** auf die vier, weder im
+Repository noch in einem ADR, einem Runbook oder einer anderen Issue. Der Preis,
+den diese Entscheidung zu kosten schien, war null.
+
+Die neuen Texte sind gegen die Klasse gegrept, die sie nicht enthalten dürfen —
+Pfade, Modi, Ports, Namen von Komponenten. Kein Treffer.
+
+**Was das für die Zukunft ändert:** die Frage vor jedem Backlog-Eintrag —
+*nützt das jemandem, der diese Maschine angreifen will?* — gilt wörtlich auch
+für jede Issue, und niemand hat sie beim Anlegen gestellt. Sie gehört an
+dieselbe Stelle wie beim Notizblock: vor das Schreiben, nicht danach.
+
 ## Vorher — 30.08.2026, das Rig hat beim ersten Lauf zwei Funde gemacht
 
 **Das H1-Tor steht, und es hat sofort etwas gefunden, das niemand vermutet hat.**
