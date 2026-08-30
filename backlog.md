@@ -12,7 +12,171 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, H1a in Produktion, und die Seite war nie leer
+## Wo wir stehen — 30.08.2026, H1b gebaut, und ein Satz im Blatt hat sechs Funde gemacht
+
+**Die Prüfung, die der Bauplan „vor H1 einmalig einrichten" nennt, steht** — in
+einer anderen Form als er sie beschreibt, und beide Abweichungen sind
+entschieden und begründet. ADR 0053.
+
+### Der Satz, den ich viermal gelesen und dreimal übergangen habe
+
+Im Prüfprotokoll von `Intermediate Widths`, unter der Tabelle:
+
+> Zwischen diesen Breiten wird zusätzlich einmal langsam durchgezogen — von 1440
+> bis 390 am Fenstergriff. **Was dabei springt, ohne in dieser Tabelle zu stehen,
+> ist ein Fehler.**
+
+Das beschreibt eine Prüfung, die ein Mensch einmal macht, schlecht, und dann nie
+wieder. Ein Browser macht sie in vier Sekunden: Fingerabdruck aus neun rein
+diskreten Werten, alle 20 px abgetastet, jede gefundene Kante **binär auf das
+Pixel eingegrenzt**. Die Kanten müssen `[1080, 900, 720, 560]` sein und sonst
+nichts.
+
+### Der erste Lauf war grün, also war er nichts wert
+
+Drei Mutationen:
+
+| | |
+|---|---|
+| fünfte Media Query bei 1000 | **rot** — Kante bei 1000 gemeldet |
+| Kopfhöhen-Schalter entfernt | **rot** — 900 bewegt den Kopf nicht mehr |
+| `.rail` überall `static` | **grün** ← der Fund |
+
+**Die dritte ist der eigentliche Fund.** Die Sticky-Rail ganz zu löschen ließ die
+Kantenliste unberührt, weil vier andere Bauteile bei 1080 weiter schalten. Der
+Durchzug fragt **wo** sich etwas ändert, nicht **was**. Dagegen steht jetzt eine
+zweite Tabelle — je Schalter, welche Schlüssel sich bewegen müssen. Sie hat die
+Mutation gefangen und mich gleich mit: ich hatte für 720 drei Bauteile
+aufgeschrieben, der Browser fand vier. Das vierte war eine Regel, die ich in H1a
+selbst geschrieben und vergessen hatte.
+
+### Sechs Abweichungen in einem Bauteil, plus eine bei 1024
+
+Der Blattvergleich lief mit 19 Messungen. Achtzehn grün, eine rot:
+
+```
+docs/design/Case Study Template.dc.html:113
+  says `grid-template-columns: 16px 1fr`
+Expected: "16px"   Received: "26px"
+```
+
+Es gibt keinen Grund für 26. Ich habe es nicht gegen 16 entschieden, ich habe nie
+nachgesehen. Danach das ganze Bauteil gegen seine drei Blattzeilen gehalten:
+
+| Blatt | Gebaut |
+|---|---|
+| Platte mit Rahmen und `22px 24px` (110) | keine Platte |
+| Ordinalspalte `16px`, `gap:10px` (113) | `26px`, `gap:12px` |
+| Mono 11,5/1.55 (112) | Geist 13 |
+| Zeilenabstand als `gap:13px` (112) | `padding-block` |
+| **keine Linien zwischen den Zeilen** | Haarlinien, erfunden |
+| Ink-2 (112) | Steel |
+| bei 1024 zweispaltig (Widths 457) | einspaltig bei jeder Breite |
+
+Alle sieben repariert, alle sieben als Einträge im Orakel — damit sie nicht
+zurückdriften.
+
+### Das Review hat gefunden, was die Prüfung nicht gefunden hat
+
+**Der Diff gegen `main` gelesen, wie der Bauplan es verlangt** („Code Review auch
+solo"), und dabei zwei Dinge gefunden, die alle 258 Zusicherungen durchgelassen
+haben:
+
+**1 · Die Zweispalter reichten bis 390 hinunter.** Ich hatte das 1024er-Blatt
+gelesen und daraus `max-width: 1079` gemacht. Das mobile Blatt zeichnet die
+Constraints **einspaltig** (Template 398) — und ich hatte es nicht aufgeschlagen.
+Untere Grenze ist jetzt der 720er-Schalter, und die Begründung stand längst im
+Kopf von `layout.css`: „Tabellen einspaltig (zweite Spalte bliebe unter 300)".
+
+**Das Orakel hat den Fall nicht gefangen, weil ich ihn nicht eingetragen hatte.**
+Ein Vergleich prüft, was seine Karte nennt. Er findet keine Abweichung an einer
+Stelle, nach der niemand gefragt hat — und das ist die Grenze dieser ganzen
+Bauart, in einem Satz. Der mobile Eintrag steht jetzt drin.
+
+**2 · Und der Fingerabdruck war an einer Stelle blind.**
+`grid-template-columns` behält seinen berechneten Wert auf einem Kasten, der
+kein Grid mehr ist. `.cs-constraints` deklariert `1fr 1fr` in einer
+`max-width: 1079`-Query und wird bei 720 wieder `flex` — die Spurliste las
+darunter weiter `1fr 1fr`, und der Schalter sah aus, als bewege er nichts. Der
+Abdruck liest jetzt erst `display`. **Gefunden hat es der Test selbst**, weil die
+Reparatur aus Fund 1 ihn rot machte und nicht das war, was ich erwartet hatte.
+
+Beide nachgemutiert: Constraints unter 720 zweispaltig lassen → rot; die
+Rail-Mutation von vorhin → weiter rot.
+
+### Was dabei nebenbei korrigiert wurde
+
+**1024 hat sehr wohl eine Zeichnung.** `case-study.spec.ts` behauptet im Kopf,
+„fünf der sieben Breiten" hätten keine — das war ein Artboard zu wenig.
+`Intermediate Widths` zeichnet die Fallstudie ein drittes Mal bei 1024
+(`data-screen-label="Fallstudie 1024"`), und das ist genau der Rahmen mit den
+Annotationen zum einspaltigen Umbau. Ohne Zeichnung sind **vier** Breiten:
+1081 · 1079 · 899 · 719.
+
+### Gemessen
+
+```
+e2e              228 → 259 Zusicherungen        make check grün
+Generator        26 Messungen, 6 abweichend, 4 Abweisungen vorgeführt
+Durchzug         Kanten 1080 · 900 · 720 · 560, binär auf das Pixel
+sheet + sweep    31 Zusicherungen in 11 s
+```
+
+Die vier Abweisungen des Generators, vorgeführt statt behauptet: die Karte
+behauptet `1fr 420px`, wo die Zeile `1fr 400px` sagt → Abbruch mit beiden Werten;
+eine Eigenschaft, die die Zeile nicht trägt → Abbruch mit der Liste, die sie
+trägt; eine Abweichung ohne niedergeschriebenen Grund → Abbruch; eine Zeile, die
+es nicht gibt → Abbruch.
+
+### Was diese Runde nicht behauptet
+
+**Der Vergleich sieht keine Farbe.** Er misst Geometrie und Typografie; ein
+falsch eingefärbtes Bauteil mit richtigen Maßen kommt durch. Dagegen stehen
+`check-tokens`, die Zustandssprache und M2.
+
+**Die CI-Laufzeit ist gemessen, und sie war unter meiner Schätzung.** Ich hatte
+3:30–4:30 erwartet und damit gerechnet, dass `e2e` der neue kritische Pfad wird.
+Erster Lauf, PR #269, **kalter Browser-Cache**:
+
+```
+  e2e     2:36        check   3:50
+  images  2:10        db      1:55
+  codeql  1:03 / 1:09 scan    0:29
+```
+
+**`e2e` ist nicht der langsamste Job.** Das PR-Feedback bleibt bei `check` und
+damit bei 3:50 — siebzig Sekunden unter E1s Kriterium, und die zweite Zahl
+kommt noch herunter, weil dieser Lauf den Chromium erst geladen hat. Die
+vorbereitete Teilung nach Projekten wird nicht gebraucht.
+
+**Der Vergleich deckt eine Seite.** Die Startseite hängt H3 an, den Work Index
+H6. Generator und Projekt bleiben, jede Phase bringt ihr Blatt mit.
+
+---
+
+## Gefunden
+
+- **`.sec` trägt im Blatt `margin-bottom:38px`**, gebaut ist `--s-34`. 38 liegt
+  auf keiner Stufe der Skala; als `spacing-scale`-Abweichung eingetragen. Fällt
+  die Skala je auf, ist das der Ort. *(30.08.2026, H1b)*
+- **Der Fingerabdruck deckt neun Werte.** Was nicht darin steht, kann still
+  aufhören zu schalten — `.cs-note`, `.tile`, die Fußzeile. Erweitern, wenn eine
+  H-Phase ein Bauteil bringt, das an einem Schalter hängt. *(30.08.2026, H1b)*
+- **`selftest` flackert an `witness.sh`, einmal in fünf Läufen.** „the witness
+  accepts a window in which the process restarted (rejected, should accept)",
+  einmal rot, danach viermal grün — bei einer Änderung, die nur `backlog.md`
+  angefasst hat, also nicht meine. Der Fall ist ein Rennen: ein
+  `( sleep 3; schreib )` im Hintergrund gegen `WITNESS_MAX_SEC=20`, und die
+  Maschine trug in dem Moment einen Playwright-Lauf. **Nicht repariert, weil ich
+  nur die Häufigkeit habe und nicht den Mechanismus** — eine Reparatur nach
+  Gefühl an einem Test, der Zeit misst, macht ihn ruhiger und nicht richtiger.
+  Kommt es wieder, ist der erste Verdacht `WITNESS_TAIL_SEC=1` gegen eine
+  belastete Uhr. Verwandt mit #145, aber die andere Richtung: dort grün aus dem
+  falschen Grund, hier rot ohne Grund. *(30.08.2026, H1b)*
+
+---
+
+## Vorher — 30.08.2026, H1a in Produktion, und die Seite war nie leer
 
 **`62cefdb` / `v0.16.0`, Merge 18:23:34Z → Deploy fertig 18:27:55Z, 258 s, ok.**
 `make check-deployed`: acht Ansprüche, einer nicht von hier zu stellen. Beide

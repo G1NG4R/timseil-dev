@@ -1,0 +1,139 @@
+---
+title: 'The check the design handoff asked for in one sentence'
+deck: 'A design document told me to drag the window from 1440 to 390 and watch for anything that jumps. Nobody does that more than once. Turning it into a test found six deviations in a component I had built the week before.'
+published: 2026-08-30
+tags: ['design-handoff', 'testing', 'frontend']
+system: 'timseil-dev'
+summary: |
+  The handoff for this site includes a sheet about what happens between the two
+  widths it draws. Buried in its test protocol is one sentence asking for a check
+  no human runs twice: drag the window across the whole range and treat any jump
+  that is not at a declared breakpoint as a defect. Mechanising it took an
+  afternoon, immediately proved the four breakpoints hold — and then a second
+  check built the same way found six things wrong with a component I had shipped
+  three days earlier.
+---
+
+## The sentence
+
+The design handoff for this site is twenty-nine canvases. One of them exists
+only to work out what happens *between* the two widths the others draw, and it
+ends with a seven-row test protocol: check at 1440, at 1081 and 1079, at 1024,
+at 899, at 719, at 390. Under the table, one more line:
+
+> Between these widths, drag through once slowly — from 1440 to 390, by the
+> window handle. Anything that jumps without being in this table is a defect.
+
+I read that four times over three phases and did nothing about it, because it
+describes a check a person runs once, badly, and then never again. You cannot
+drag a window and watch nine measurements at the same time.
+
+But a browser can.
+
+## What it looks like as a test
+
+Two halves.
+
+The first is the sheet's own table of content-column widths — at 1440 the column
+is 1160 with 140px margins, at 1024 it is 944 with 40, at 390 it is 346 with 22.
+Those seven rows come from one formula, `min(1160px, 100% - 80px)`, and a
+formula that only holds at the points somebody wrote down is not the rule that
+was written. So the test checks the seven rows *and* every twentieth pixel
+between them.
+
+The second half is the sentence. Take a fingerprint of the layout — nine values
+that can only jump, never slide: how many columns each two-column row has, the
+headline size, the header height, whether the desktop nav is displayed, whether
+the spec rail is sticky. Sample it every 20px from 1440 down to 390. Wherever
+two neighbouring samples differ, binary-search the gap to find the exact pixel
+where it flipped.
+
+Then assert that the list of pixels is exactly `[1080, 900, 720, 560]` — the four
+switches the stylesheet declares — and nothing else.
+
+It ran green the first time, which meant nothing. A tool whose first run is green
+has not been tested. So I broke it on purpose: added a fifth media query at
+1000px, and the test reported an edge at 1000 that was not in the list. Removed
+the header's height switch, and the test said the 900 edge had stopped moving the
+header. Both red for the right reason.
+
+## The mutation that got through
+
+The third mutation was the interesting one. I set the spec rail to
+`position: static` at every width — deleting the sticky behaviour outright, which
+is a real feature with a real reason — and **the test stayed green.**
+
+Of course it did. The rail is one of five things that change at 1080. Delete its
+participation and four others still change there, the edge is still found at
+1080, and the list of edges is unchanged. The sweep asks *where* the layout
+changes. It cannot, on its own, ask *what* changed.
+
+So the file grew a second table: for each of the four switches, which fingerprint
+keys must move. Not their values — those live in another spec, and two copies of
+a number is how two numbers start disagreeing — just which keys. That table
+caught the mutation, and it also immediately caught me: I had written down three
+things that move at 720 and the browser found four. The fourth was a rule I had
+written myself the week before and forgotten.
+
+## The other check, and the six
+
+The same afternoon I built the neighbouring check: does the built page match what
+the sheet actually draws?
+
+The obvious way is to screenshot both. That does not survive contact with
+reality. The sheets render at runtime from a CDN and load their typefaces from
+Google Fonts — a blocked CDN gives you a black page, which is a red pipeline for
+a reason that is not yours. And glyph rasterisation differs between my machine
+and the CI runner, so a baseline made here fails there.
+
+The way that does survive is duller and better. The artboards are styled entirely
+inline — I counted: between the artboard boundaries there is not one `class`
+attribute — so every measurement in them is readable from the file. A small
+generator reads the lines I name, proves that each one really says what I claim
+it says, and writes the result next to the test.
+
+The split matters. The machine checks the *transcription*: line 66 of the
+template must literally say `grid-template-columns:1fr 400px`, and if it says
+anything else the generator stops. The *reading* — that this means the rail is
+400px wide — is mine, written out in the entry, and a reviewer can disagree with
+it.
+
+Nineteen measurements. Eighteen passed. The failure said:
+
+```
+docs/design/Case Study Template.dc.html:113
+  says `grid-template-columns: 16px 1fr`
+Expected: "16px"   Received: "26px"
+```
+
+I had built the constraints list with a 26px column for the ordinals. There is no
+reason for 26. I did not choose it over 16; I never looked.
+
+So I looked at the rest of that component against its three lines in the sheet,
+and found five more. The sheet draws the list on a panel — I had drawn no panel.
+The sheet sets it in the monospace face at 11.5px — I had used the body face at
+13. The sheet spaces the rows with a gap — I had used padding. The sheet draws no
+rules between the rows — I had added hairlines. The sheet colours the text Ink-2
+— I had used Steel. And at 1024 the sheet lays the five constraints out in two
+columns; mine were one column at every width.
+
+Six deviations plus one, in one component, none of them decisions. Every one is
+now an entry in the generated file, so they cannot drift back.
+
+## Where a divergence is allowed to live
+
+Some differences are real decisions. The template draws three metric tiles and
+this page has five, for reasons argued out in a decision record. The sheets draw
+type at 9.5, 10.5 and 11.5px and the token scale has no half pixels.
+
+Those are in the same file, and each one carries the decision that moved it. The
+generator refuses a divergence whose reason is not written down — because
+otherwise "we differ here" becomes the quiet way out of every finding the check
+will ever make, and a comparison you can talk your way past is not a comparison.
+
+The file that comes out is the thing I did not expect to build and now value
+most: not the assertions, but **the complete list of where this site departs from
+its own design, with the reason attached to each one.** Twenty-five measurements,
+six of them divergent, all six explained by three decisions.
+
+Before this afternoon that list existed in nobody's head, including mine.

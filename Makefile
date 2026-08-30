@@ -162,6 +162,7 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
              api/migrations/testdata/skill_states.json \
              api/internal/seed/stack.gen.json \
              web/content/generated/compose-api.gen.json \
+             web/e2e/oracle/case-study.gen.json \
              api/internal/store/db.go api/internal/store/models.go \
              api/internal/store/health.sql.go api/internal/store/systems.sql.go \
              api/internal/store/training.sql.go api/internal/store/ops.sql.go \
@@ -180,7 +181,7 @@ check-contract: ## Validate the OpenAPI contract and check for codegen drift
 	@printf 'contract\n'
 	@tools/check-contract.sh
 # One checksum per file rather than one over all of them: GENERATED covers
-# fourteen files from six sources now, and "something is stale" would send you
+# fifteen files from seven sources now, and "something is stale" would send you
 # looking in the contract when what moved was a column in a migration.
 #
 # training.sql.go was missing from that list for a whole phase — C3 added the file
@@ -360,7 +361,12 @@ gen: ## Generate Go and TS types from the contract, the skill states and the sta
 # the VPS runs, so it cannot drift from it — the same guarantee stack.yaml gives
 # a version number. Both narrate to stderr, so both are silenced the same way.
 	@node tools/gen-compose-excerpt.mjs 2>/dev/null
-	@printf '  ✓ public bundle, go types, sql types, ts types, skill states, stack manifest, compose excerpt\n'
+# H1b. What the design handoff draws, extracted from the sheets so that a test
+# can hold the built page against it. The sheets are read-only and never move,
+# so this file never changes on its own — what the drift check guards is the
+# EXTRACTOR, and the transcription inside it.
+	@node tools/gen-sheet-oracle.mjs 2>/dev/null
+	@printf '  ✓ public bundle, go types, sql types, ts types, skill states, stack manifest, compose excerpt, sheet oracle\n'
 
 # --------------------------------------------------------------- migrations
 

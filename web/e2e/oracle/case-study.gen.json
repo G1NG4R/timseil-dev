@@ -1,0 +1,417 @@
+{
+  "comment": "Generated from the design handoff by tools/gen-sheet-oracle.mjs — do not edit by hand.",
+  "divergenceReasons": {
+    "half-pixel": "The sheets draw 9.5, 10.5 and 11.5px. tokens.css has thirteen steps and \"keine halben Pixel\" (G1) — every mono size rounds down to the nearest step. One decision, many places.",
+    "spacing-scale": "The sheets draw spacing off the 4px grid (22, 24, 13, 38, 100px). Foundations fixes the scale and G1 made it binding, so case.css reads the nearest step. The largest single difference is 4px.",
+    "adr-0052": "Decided in ADR 0052 with its sources: Case Study 02, the Intermediate Widths register and Consistency Check K-29 all say five tiles; the template draws three."
+  },
+  "entries": [
+    {
+      "id": "hero-rail-width",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 66,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 400px",
+      "reading": "the hero row is one flexible column and a 400px rail",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".cs-spec > .rail"
+      },
+      "expect": 400
+    },
+    {
+      "id": "hero-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 66,
+      "width": 1440,
+      "says": "gap: 80px",
+      "reading": "and 80px of air between them",
+      "measure": {
+        "kind": "gap-x",
+        "from": ".cs-spec > div:first-child",
+        "to": ".cs-spec > .rail"
+      },
+      "expect": 80
+    },
+    {
+      "id": "hero-h1-size",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 74,
+      "width": 1440,
+      "says": "font: 500 52px/1.1 'Chakra Petch',sans-serif",
+      "reading": "the case study headline is the 52px display step — K-08 keeps 62 for the homepage and About",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-spec h1",
+        "prop": "font-size"
+      },
+      "expect": "52px"
+    },
+    {
+      "id": "hero-h1-measure",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 74,
+      "width": 1440,
+      "says": "max-width: 660px",
+      "reading": "and it is capped so the sentence breaks where the sheet breaks it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-spec h1",
+        "prop": "max-width"
+      },
+      "expect": "660px"
+    },
+    {
+      "id": "spec-key-column",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 83,
+      "width": 1440,
+      "says": "grid-template-columns: 72px 1fr",
+      "reading": "the spec rail sets its keys in a fixed 72px column",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".spec-body > dt:first-of-type"
+      },
+      "expect": 72
+    },
+    {
+      "id": "spec-row-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 83,
+      "width": 1440,
+      "says": "gap: 11px 16px",
+      "reading": "11px between rows",
+      "measure": {
+        "kind": "computed",
+        "selector": ".spec-body",
+        "prop": "row-gap"
+      },
+      "expect": "10px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "11px"
+      }
+    },
+    {
+      "id": "metric-columns",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 93,
+      "width": 1440,
+      "says": "grid-template-columns: repeat(3,1fr)",
+      "reading": "the template draws three metric cells",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".ops-tiles"
+      },
+      "expect": 5,
+      "diverges": {
+        "class": "adr-0052",
+        "sheet": "3"
+      }
+    },
+    {
+      "id": "section-head-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 100,
+      "width": 1440,
+      "says": "gap: 16px",
+      "reading": "the section number and its title sit 16px apart",
+      "measure": {
+        "kind": "computed",
+        "selector": ".sec",
+        "prop": "column-gap"
+      },
+      "expect": "16px"
+    },
+    {
+      "id": "section-head-rule",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 100,
+      "width": 1440,
+      "says": "padding-bottom: 12px",
+      "reading": "and stand 12px above their hairline",
+      "measure": {
+        "kind": "computed",
+        "selector": ".sec",
+        "prop": "padding-bottom"
+      },
+      "expect": "12px"
+    },
+    {
+      "id": "problem-rail-width",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 104,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 380px",
+      "reading": "the constraints rail is narrower than the spec rail by 20px",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".cs-prob > .rail"
+      },
+      "expect": 380
+    },
+    {
+      "id": "section-head-space",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 100,
+      "width": 1440,
+      "says": "margin-bottom: 38px",
+      "reading": "and 38px of air before the section body",
+      "measure": {
+        "kind": "computed",
+        "selector": ".sec",
+        "prop": "margin-bottom"
+      },
+      "expect": "34px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "38px"
+      }
+    },
+    {
+      "id": "constraint-number-column",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 113,
+      "width": 1440,
+      "says": "grid-template-columns: 16px 1fr",
+      "reading": "each constraint sets its ordinal in a 16px column",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-constraints li",
+        "prop": "grid-template-columns"
+      },
+      "expect": "16px"
+    },
+    {
+      "id": "constraint-ordinal-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 113,
+      "width": 1440,
+      "says": "gap: 10px",
+      "reading": "with 10px between the ordinal and its sentence",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-constraints li",
+        "prop": "column-gap"
+      },
+      "expect": "10px"
+    },
+    {
+      "id": "constraint-row-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 112,
+      "width": 1440,
+      "says": "gap: 13px",
+      "reading": "the five are spaced by a gap, not by padding, and carry no rule between them",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-constraints",
+        "prop": "row-gap"
+      },
+      "expect": "12px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "13px"
+      }
+    },
+    {
+      "id": "constraint-face",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 112,
+      "width": 1440,
+      "says": "font: 400 11.5px/1.55 'JetBrains Mono',monospace",
+      "reading": "they are set in mono, not in the body face the first build used",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-constraints",
+        "prop": "font-size"
+      },
+      "expect": "11px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "11.5px"
+      }
+    },
+    {
+      "id": "constraint-panel",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 110,
+      "width": 1440,
+      "says": "padding: 22px 24px",
+      "reading": "the list sits on a plate — the first build drew none at all",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-panel",
+        "prop": "padding-top"
+      },
+      "expect": "20px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "22px"
+      }
+    },
+    {
+      "id": "mobile-head-height",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 347,
+      "width": 390,
+      "says": "height: 52px",
+      "reading": "the header is 52px below the 900 switch — ADR 0044 put the switch there",
+      "measure": {
+        "kind": "computed",
+        "selector": ".head",
+        "prop": "height"
+      },
+      "expect": "52px"
+    },
+    {
+      "id": "mobile-h1-size",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 364,
+      "width": 390,
+      "says": "font: 500 34px/1.12 'Chakra Petch',sans-serif",
+      "reading": "the display step falls to 34 on a phone — K-08, and layout.css owns the 720 switch",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-spec h1",
+        "prop": "font-size"
+      },
+      "expect": "34px"
+    },
+    {
+      "id": "mobile-constraints-one-column",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 398,
+      "width": 390,
+      "says": "flex-direction: column",
+      "reading": "and on a phone they are one column again — found in review, after the 1024 frame had been read and the mobile one had not",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-constraints",
+        "prop": "flex-direction"
+      },
+      "expect": "column"
+    },
+    {
+      "id": "mobile-column",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 345,
+      "width": 390,
+      "says": "padding: 0 22px",
+      "reading": "the mobile margin is 22px a side, which is the 346px column",
+      "measure": {
+        "kind": "box-width",
+        "selector": "main.col"
+      },
+      "expect": 346
+    },
+    {
+      "id": "tablet-head-height",
+      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 387,
+      "width": 1024,
+      "says": "height: 66px",
+      "reading": "at 1024 the header is still the full 66px — the sheet says \"Kopf noch vollständig\"",
+      "measure": {
+        "kind": "computed",
+        "selector": ".head",
+        "prop": "height"
+      },
+      "expect": "66px"
+    },
+    {
+      "id": "tablet-hero-single-column",
+      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 411,
+      "width": 1024,
+      "says": "flex-direction: column",
+      "reading": "and the hero is one column, the rail underneath it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-spec",
+        "prop": "flex-direction"
+      },
+      "expect": "column"
+    },
+    {
+      "id": "tablet-hero-gap",
+      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 411,
+      "width": 1024,
+      "says": "gap: 44px",
+      "reading": "44px between the text and the rail below it — the one number the sheet leaves open, and it settles it here",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-spec",
+        "prop": "row-gap"
+      },
+      "expect": "44px"
+    },
+    {
+      "id": "tablet-h1-size",
+      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 414,
+      "width": 1024,
+      "says": "font: 500 52px/1.08 'Chakra Petch',sans-serif",
+      "reading": "the headline stays at 52 down to the 720 switch",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-spec h1",
+        "prop": "font-size"
+      },
+      "expect": "52px"
+    },
+    {
+      "id": "tablet-constraints-two-columns",
+      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 457,
+      "width": 1024,
+      "says": "grid-template-columns: 1fr 1fr",
+      "reading": "below 1080 the constraints go two-up for the reason the rail does — five short lines in a full-width plate leave a stripe of nothing",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".cs-constraints"
+      },
+      "expect": 2
+    },
+    {
+      "id": "tablet-spec-two-pairs",
+      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 426,
+      "width": 1024,
+      "says": "grid-template-columns: 72px 1fr 72px 1fr",
+      "reading": "the rail grows sideways rather than downwards — the sheet annotates this frame with exactly that sentence",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".spec-body"
+      },
+      "expect": 4
+    }
+  ]
+}

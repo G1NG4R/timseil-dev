@@ -118,6 +118,11 @@
 @media (max-width: 1079px) {
   .spec-body { grid-template-columns: 72px 1fr 72px 1fr }
   .spec      { background-size: 14px 1px, 1px 14px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0 }
+
+  /* The constraints do the same thing for the same reason, and H1b found that
+     they were not doing it: the 1024 frame draws them `1fr 1fr`. Five short
+     lines in a full-width plate leave a stripe of nothing beside them. */
+  .cs-constraints { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-12) var(--s-26) }
 }
 
 /* ---- < 720: the rail stacks, and the tiles are already handled ----------
@@ -126,6 +131,13 @@
    which is what the mobile artboard draws.                                  */
 @media (max-width: 719px) {
   .spec-body { grid-template-columns: 1fr; gap: var(--s-4) var(--s-16) }
+
+  /* And the constraints go back to one column, which is what the mobile
+     artboard draws (Case Study Template 398). The bound is this switch and not
+     another because the derivation at the head of this file already states the
+     rule for it: "Tabellen einspaltig (zweite Spalte bliebe unter 300)". Two
+     columns of a 639px content column are 300 each with the gap taken off. */
+  .cs-constraints { display: flex }
   .spec-key  { margin-block-start: var(--s-8) }
   .cs-head   { padding-block: var(--s-26) var(--s-44) }
   .cs-metrics { margin-block-end: var(--s-56) }

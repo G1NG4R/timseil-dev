@@ -50,13 +50,37 @@ export default defineConfig({
     // The width sweep. Every spec that is not width-specific runs at all seven.
     ...WIDTHS.map((width) => ({
       name: `w${String(width)}`,
-      testIgnore: /\.coarse\.spec\.ts$/,
+      // Three suffixes are excluded, and the reason differs for each. `.coarse`
+      // needs a pointer these projects do not have. `.sweep` and `.sheet` set
+      // their own viewport — the sweep because sizing the window IS the test,
+      // the sheet because it drives the three widths a drawing exists at. Run
+      // by a width project they would each do their work seven times over and
+      // ignore the width they were given.
+      testIgnore: /\.(coarse|sheet|sweep)\.spec\.ts$/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width, height: heightFor(width) },
         hasTouch: false,
       },
     })),
+
+    // H1b. Two projects that own their own viewport, and therefore run once
+    // rather than seven times.
+    //
+    // `sheet` compares the built page with the measurements the design handoff
+    // draws, at the three widths a drawing exists for. `sweep` asks the
+    // question no drawing can answer: between those widths, does the layout
+    // change anywhere other than at the four declared switches.
+    {
+      name: "sheet",
+      testMatch: /\.sheet\.spec\.ts$/,
+      use: { ...devices["Desktop Chrome"], hasTouch: false },
+    },
+    {
+      name: "sweep",
+      testMatch: /\.sweep\.spec\.ts$/,
+      use: { ...devices["Desktop Chrome"], hasTouch: false },
+    },
 
     // The coarse pointer, at the one width where the mobile chrome exists.
     // 390 rather than 719 because it is the narrower of the two and every
