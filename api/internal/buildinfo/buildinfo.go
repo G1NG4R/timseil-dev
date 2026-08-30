@@ -43,6 +43,23 @@ type Info struct {
 }
 
 var read = sync.OnceValue(func() Info {
+	return resolve(version, sha, debug.ReadBuildInfo)
+})
+
+// resolve is the derivation, with the three places its inputs come from handed
+// in rather than reached for.
+//
+// Separated from read() so that the cases that matter can be given to it. The
+// values it derives from are a linker flag and a property of the binary, and
+// neither can be arranged from a test — which is how this package ended up as
+// the one with no test file at all (#144), while /api/health, verify-deploy and
+// check-deployed all read what it returns. A package three gates depend on
+// should not be the package nobody could test.
+//
+// The seam is a function rather than an interface because there is one caller
+// and one shape; buildinfo_test.go is the second, and a second caller is the
+// bar this repository has used twice before for extracting anything wider.
+func resolve(version, sha string, buildInfo func() (*debug.BuildInfo, bool)) Info {
 	info := Info{Version: version, SHA: sha}
 
 	if info.Version == "" {
@@ -54,8 +71,8 @@ var read = sync.OnceValue(func() Info {
 
 	// Nothing from the linker: ask the binary about itself.
 	info.SHA = unknownSHA
-	build, ok := debug.ReadBuildInfo()
-	if !ok {
+	build, ok := buildInfo()
+	if !ok || build == nil {
 		return info
 	}
 
@@ -83,7 +100,7 @@ var read = sync.OnceValue(func() Info {
 	info.SHA = revision
 
 	return info
-})
+}
 
 // Read returns the identity of this binary. Computed once: it cannot change
 // while the process runs, and /api/health is polled often enough that walking
