@@ -12,7 +12,89 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, H1a gebaut, und die Blätter waren sich uneinig
+## Wo wir stehen — 30.08.2026, H1a in Produktion, und die Seite war nie leer
+
+**`62cefdb` / `v0.16.0`, Merge 18:23:34Z → Deploy fertig 18:27:55Z, 258 s, ok.**
+`make check-deployed`: acht Ansprüche, einer nicht von hier zu stellen. Beide
+Images aus `62cefdb`, gegen den Digest geprüft, nicht gegen den Tag.
+
+### Die Abnahme hat das Gegenteil dessen gezeigt, wofür die Seite gebaut ist
+
+Der ganze Entwurf dreht sich um den Leerzustand — fünf Kacheln `— NO DATA` und
+eine Amber-Notiz, die erklärt warum. **In Produktion trägt jede Kachel eine
+Zahl**, seit dem ersten Aufruf:
+
+```
+UPTIME · 91 D   P95      ERROR RATE   DEPLOY · MEDIAN   INCIDENTS
+   100.00 %     68.1 MS     0.00 %        246 S             0
+   8 of 91 days measured
+```
+
+Der Grund ist kein Fehler, sondern die Reihenfolge der Stufen: F5 hat die
+Snapshot-Schleife gebaut, die Seite misst sich seit dem 27.08. selbst. Der
+Leerzustand ist **der Zustand einer frischen Datenbank**, nicht der von
+`timseil.dev` — und `make dev-reset` zeigt ihn jederzeit.
+
+**Die Amber-Notiz ist folgerichtig weg**, und das ist die Zusicherung, die dabei
+am meisten wert war: sie steht nur, solange höchstens eine Kachel eine Zahl
+trägt. Eine Bildunterschrift, die einen vergangenen Zustand beschreibt, wäre
+neben einer gemessenen Zahl gelesen worden wie eine Warnung über sie.
+
+### #208 hat eine echte Zahl bekommen
+
+`100.00 %` steht über `8 of 91 days measured`. Genau die Angabe, die
+`docs/slo.md` seit F5 als Text führt und die niemand erreicht hat, der nur auf
+die Seite sieht. Gegengeprüft gegen die API im selben Lauf: `window 91`,
+`measured 8` — die Seite rechnet nicht, sie zählt.
+
+### Gegen Produktion abgenommen, 30.08.2026
+
+```
+status ok · sha 62cefdb · v0.16.0        uptime90d 100 · p95 68,12 ms · errorRate 0
+
+/work/timseil-dev            200     /work/vat-check      404
+/de/work/timseil-dev         200     /work/nope           404
+/fr/work/timseil-dev         200     /work/UPPER          404
+/en/work/timseil-dev         308     /work/..%2fetc       404
+
+api  systemNo 02 · state live · window 91 · stack 11 · days 91 · measured 8
+     incidents 0 · deploys 71 · metrics alle vier gesetzt
+
+sitemap   6 locs (/ · /de · /fr · dreimal die Fallstudie), lastmod 2026-08-30
+canonical https://timseil.dev/work/timseil-dev        noindex  nein
+stale     kein „React Router", kein „PostgreSQL 16"
+
+/ · /de · /fr · /about · /blog · /contact · /privacy · /imprint   200
+/healthz · /robots.txt · /feed.xml · /og.png                      200
+```
+
+**Geklickt, nicht gelesen.** Das Rig gegen `https://timseil.dev`:
+`e2e/case-study.spec.ts` **84/84** über sieben Breiten, dazu axe und
+`prefers-reduced-motion` über alle acht Routen **133/133**. Die Rail klebt bei
+1081 und ist bei 1079 gelöst, die Kacheln brechen 5 → 3 → 2, die Brotkrume
+navigiert, und nach dem Streaming steht von jedem der vier Bereiche genau einer
+im Dokument.
+
+**Der 1024er-Umbau steht auch im Bild**, gegen die laufende Seite angesehen: die
+Spec-Rail wird zweispaltig statt vierzeilig und der Corner-Bracket schrumpft auf
+die Marke oben links — die Annotation des Blattes, wortgleich umgesetzt.
+
+### Was diese Abnahme nicht behauptet
+
+**`DEPLOY · MEDIAN 246 S` über 71 Deploys ist eine Pipeline-Dauer**, nicht die
+Dauer eines Deploys — #242, fällig mit H2. Die Kachel druckt, was die API
+sendet, und ADR 0052 benennt den Vorbehalt.
+
+**Der Leerzustand ist in Produktion nicht mehr beobachtbar** und war es nie. Er
+ist lokal gegen einen frischen Seed abgenommen, und `e2e/case-study.spec.ts`
+sichert ihn als Regel statt als Bild zu — deshalb läuft dieselbe Datei gegen die
+leere und gegen die volle Seite grün.
+
+**Der Blattvergleich fehlt weiter.** H1b.
+
+---
+
+## Vorher — 30.08.2026, H1a gebaut, und die Blätter waren sich uneinig
 
 **Die erste Inhaltsseite steht.** `/work/timseil-dev`, gebaut aus
 `GET /api/systems/{slug}`, und sie zeigt an fünf Stellen `— NO DATA`, weil das
