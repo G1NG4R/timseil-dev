@@ -64,6 +64,31 @@
 # A CONNECTION ERROR IS NOT A FAILURE, it is the expected middle of a deploy.
 # Containers restart, Traefik re-resolves, and for a few seconds there is
 # nothing listening. Only the clock ends this loop.
+#
+# A REFUSAL IS NOT AN OUTAGE, AND IT IS THE THIRD EXIT. Zero, the build is live.
+# One, the application was reached and was not it. Two, the answer did not come
+# from the application at all and this script cannot judge the deploy.
+#
+# On 2026-08-30 at 21:28 this file said "the deploy did not come up" about a
+# build that was serving — measured from elsewhere in the same window, and at
+# 21:37 the site answered 200 on every route. What it had actually seen was
+# `/api/health answered 403`. Every code that is not 200 went into one bucket,
+# was retried for sixty seconds and then called an outage; the rollback asked the
+# same caller the same question, read the same answer, and the gate concluded the
+# site was down. Two wrong verdicts out of one status code nobody read.
+#
+# THE CONTRACT DECIDES WHICH CODES, not experience. /api/health is public,
+# contract/openapi.yaml gives it 200, 304, 429 and 500, and every failure of this
+# service is an RFC 9457 document — so a 401, 403 or 451 there is by construction
+# not our answer. A 429 may well be ours, the rate limiter covers this route too,
+# but being throttled says nothing about which build is running either. Both end
+# the loop AT ONCE: the sixty seconds exist so that a container can come up, and
+# a refusal is not a container coming up. Asking again makes it worse, not
+# better, and the message arrives in seconds instead of two minutes.
+#
+# 500 and a connection error stay in the waiting lane on purpose — those are the
+# application failing to answer, which is what the budget and the rollback were
+# built for. ADR 0054.
 set -eu
 
 # --started prints the instant the running process came up, and nothing else, so
@@ -149,6 +174,23 @@ while :; do
       last="status $status, running sha $running"
     fi
   else
+    # The two refusals, and neither of them is evidence about the deploy. The
+    # header carries the argument; what matters here is that the loop STOPS.
+    case $code in
+      401 | 403 | 451)
+        printf '  ! /api/health answered %s — that is not this application'"'"'s answer\n' "$code"
+        printf '    the public health route serves 200 or 304 and reports failures as RFC 9457\n'
+        printf '    documents, so a refusal came from something in front of it. Nothing here\n'
+        printf '    says whether sha %s is running.\n' "$sha"
+        exit 2
+        ;;
+      429)
+        printf '  ! /api/health answered 429 — this caller is being refused\n'
+        printf '    that may be this service'"'"'s own rate limiter or something in front of it.\n'
+        printf '    Either way it says nothing about whether sha %s is running.\n' "$sha"
+        exit 2
+        ;;
+    esac
     last="/api/health answered ${code:-nothing}"
   fi
 

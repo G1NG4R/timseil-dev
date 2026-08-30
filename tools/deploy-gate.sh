@@ -59,6 +59,15 @@
 # EXIT CODE. Zero only when the requested build is live. A rollback that worked
 # perfectly still exits 1: the deploy failed, and a green tick over a rolled-back
 # deploy is the pipeline telling a comfortable lie.
+#
+# AND THE VERDICT IT READS HAS THREE VALUES. verify-deploy.sh answers 2 when the
+# answer did not come from the application at all, and on 2026-08-30 the `if`
+# that knew only two of them rolled back a good deploy and then reported the site
+# as down. On a 2 there is no rollback — it would ask the same caller the same
+# question — and no row in `deploys`: this gate does not know whether the deploy
+# is up, so both `ok` and `rollback` would be a claim nobody measured. The
+# missing row is the honest trace, which is invariant 1 one instrument along and
+# the same argument the drill makes above. ADR 0054.
 set -eu
 
 tag=${1:?usage: deploy-gate.sh <sha-tag> <sha7> <started-at-epoch>}
@@ -146,12 +155,25 @@ previous=$("$here/deploy.sh" "$tag")
 
 printf '\n─── verify ───────────────────────────────────────────\n'
 
-if VERIFY_PREVIOUS_START="$before" "$here/verify-deploy.sh" "$sha"; then
+# Three values, so not an `if`. The header says what the middle one costs.
+verdict=0
+VERIFY_PREVIOUS_START="$before" "$here/verify-deploy.sh" "$sha" || verdict=$?
+
+if [ "$verdict" -eq 0 ]; then
   elapsed=$(( $(date +%s) - started ))
   printf '\n─── report ───────────────────────────────────────────\n'
   report "$sha" "$elapsed" ok
   printf '\n  ✓ %s is live\n' "$tag"
   exit 0
+fi
+
+if [ "$verdict" -eq 2 ]; then
+  printf '\n  ✗ the verify was refused — no rollback, and nothing reported\n'
+  printf '    %s may or may not be live; this gate did not find out. production is\n' "$tag"
+  printf '    where it was, and which build that is has to be measured from somewhere\n'
+  printf '    this caller is not being refused from.\n'
+  printf '    docs/runbooks/dokploy.md, Rollback → the verify was refused\n'
+  exit 1
 fi
 
 # ------------------------------------------------------------------ rollback
@@ -168,7 +190,20 @@ printf '  rolling back to %s\n' "$previous"
 before=$("$here/verify-deploy.sh" --started)
 "$here/deploy.sh" "$previous" >/dev/null
 
-if ! VERIFY_PREVIOUS_START="$before" "$here/verify-deploy.sh" "${previous#sha-}"; then
+# The same three values. "The site is down" is the loudest sentence this pipeline
+# can say, and it was the second wrong verdict of 2026-08-30: it may only be said
+# when the application was reached and was actually not there.
+verdict=0
+VERIFY_PREVIOUS_START="$before" "$here/verify-deploy.sh" "${previous#sha-}" || verdict=$?
+
+if [ "$verdict" -eq 2 ]; then
+  printf '\n  ✗ %s was deployed and the verify was refused — whether it came up is unknown\n' "$previous"
+  printf '    nothing is reported: the row would say rollback, and nobody measured that.\n'
+  printf '    docs/runbooks/dokploy.md, Rollback → the verify was refused\n'
+  exit 1
+fi
+
+if [ "$verdict" -ne 0 ]; then
   printf '\n  ✗ THE ROLLBACK DID NOT COME UP EITHER — the site is down\n'
   printf '    docs/runbooks/dokploy.md part 5, and docs/runbooks/compose.md for the chain\n'
   exit 1

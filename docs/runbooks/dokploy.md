@@ -1207,6 +1207,46 @@ Was du dann siehst und was es heißt:
 | `✗ sha-… did not come up; sha-… is live again` | erledigt. Die Seite läuft auf dem vorherigen Stand, die `rollback`-Zeile steht in `deploys` |
 | `✗ nothing to roll back to` | der neue Tag war schon der laufende. Handbetrieb, unten |
 | `✗ THE ROLLBACK DID NOT COME UP EITHER` | die Seite ist unten. Teil 5, und `docs/runbooks/compose.md` für die Kette |
+| `✗ the verify was refused` | **nichts ist passiert und nichts ist bekannt.** Kein Rollback, keine Zeile in `deploys`. Unten |
+| `✗ … was deployed and the verify was refused` | der Rollback lief, ob er hochkam ist offen. Derselbe Abschnitt unten |
+
+### Der Verify wurde abgewiesen — Exit 2
+
+Seit dem 30.08.2026 kennt `tools/verify-deploy.sh` einen dritten Ausgang. `2`
+heißt: **die Antwort auf `/api/health` kam nicht von der Anwendung.** Ein 401,
+403 oder 451 steht für diese Route nicht im Contract, und ein 429 kann unserer
+sein oder nicht — in beiden Fällen sagt er nichts darüber, welcher Build läuft.
+Der Gate bricht dann in Sekunden ab. ADR 0054.
+
+**Was der Gate dabei *nicht* getan hat**, und beides ist Absicht:
+
+- **Kein Rollback.** Er würde denselben Aufrufer dasselbe fragen und dieselbe
+  Antwort bekommen. Genau das ist am 30.08.2026 passiert und hat einen guten
+  Deploy weggeräumt.
+- **Keine Zeile in `deploys`.** Sie sagt `ok` oder `rollback`; beides wäre eine
+  Behauptung, die niemand gemessen hat. Die Lücke ist die ehrliche Spur.
+
+**Was daraus folgt:** Produktion steht, wo sie stand — **welcher Stand das ist,
+weiß der Gate nicht.** Der Deploy kann längst durchgelaufen sein; der Gate hat
+ihn nur nicht sehen dürfen. Das ist die erste Frage, nicht die letzte.
+
+Drei Schritte, in dieser Reihenfolge:
+
+```bash
+curl -s https://timseil.dev/api/health | jq -r '.sha'   # 1. von einem anderen Netz aus
+make check-deployed                                      # 2. alle Ansprüche
+```
+
+1. **Von einem anderen Netz als dem abgewiesenen.** Zeigt es den Kopf von `main`,
+   ist der Deploy oben und es fehlt nur der Datensatz — nachtragen von Hand
+   kommt nicht in Frage (Invariante 1), aber es ist auch kein Vorfall.
+2. Stimmen die Ansprüche, ist die Seite in Ordnung und die Frage ist eine über
+   den Aufrufer, nicht über den Deploy.
+3. **Erst dann am Host nachsehen.** Was dort gefunden wird, gehört nach
+   `backlog.local.md` — dieses Runbook ist öffentlich.
+
+Kommt die Abweisung wieder, ist der `deploy`-Job in Sekunden rot und richtet
+nichts an. Er ist damit kein Notfall, sondern eine Aufgabe.
 
 ### Der Drill — den Rollback absichtlich auslösen
 
