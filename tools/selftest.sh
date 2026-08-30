@@ -1825,6 +1825,53 @@ rm -f w.out
 kill "$NOOP_PID" 2>/dev/null
 rm -rf noop
 
+# THE REFUSALS, and this is the incident that bought them. On 2026-08-30 at 21:28
+# the deploy of 28a2c63 was rolled back and the log said "the site is down". The
+# site was serving that very build, and at 21:37 it answered 200 everywhere. What
+# verify-deploy.sh had actually seen was `/api/health answered 403` — every code
+# that is not 200 in one bucket, retried for sixty seconds and then called an
+# outage.
+#
+# The no-op tree cannot stage this: python's http.server answers 200 for a file
+# and 404 for everything else, and a chmod is still a 404 — it maps every OSError
+# on open to NOT_FOUND. So a second server, which reads the code it must answer
+# out of the first path segment. One process on one port for every status, rather
+# than a port to keep track of per case.
+python3 -c '
+import http.server as h
+class H(h.BaseHTTPRequestHandler):
+    def do_GET(s): s.send_response(int(s.path.split("/")[1])); s.end_headers()
+    def log_message(s, *a): pass
+h.HTTPServer(("127.0.0.1", 8732), H).serve_forever()
+' >/dev/null 2>&1 &
+CODES_PID=$!
+CODES=http://127.0.0.1:8732
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  curl -s -o /dev/null --max-time 1 "$CODES/200/api/health" && break
+  sleep 0.3
+done
+
+# `timeout 6` around an exit-2 assertion proves both halves at once: had the
+# script gone on sampling, the code would be 124 and not 2. That the loop stops
+# is half the repair — sixty more seconds of asking a caller who is being refused
+# makes the message later, not truer.
+accepts "verify calls a 403 something other than an outage" \
+  sh -c "VERIFY_BASE_URL=$CODES/403 timeout 6 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 2 ] && grep -q \"not this application's answer\" ref.out"
+# 429 is in the contract for this route and the rate limiter does cover it, so it
+# may well be ours — which is why it gets its own sentence and not that one.
+accepts "verify does not blame the application for a 429" \
+  sh -c "VERIFY_BASE_URL=$CODES/429 timeout 6 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 2 ] && grep -q 'being refused' ref.out"
+
+# THE COUNTER-CHECK, and it is the one that matters: the outage path must not
+# have been carried off with the repair. A 503 is the application failing to
+# answer, which is exactly what the sixty seconds and the rollback were built
+# for — so it must still be waiting when the timeout arrives, and 124 says so.
+accepts "verify still waits out a 503 instead of judging it" \
+  sh -c "VERIFY_BASE_URL=$CODES/503 timeout 6 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 124 ] && ! grep -q 'not this application' ref.out"
+rm -f ref.out
+
+kill "$CODES_PID" 2>/dev/null
+
 # The gate's third argument has no default anywhere, and these two are what keep
 # it that way: a duration measured from a clock the pipeline started itself would
 # describe the last two steps while claiming all seven.
@@ -1840,6 +1887,87 @@ refuses "a mismatched tag and sha need the drill flag" "DEPLOY_DRILL=1" \
   tools/deploy-gate.sh sha-1234abc 7654321 1700000000
 refuses "the drill flag without a mismatch rejected"   "not a drill" \
   env DEPLOY_DRILL=1 tools/deploy-gate.sh sha-1234abc 1234abc 1700000000
+
+# THE GATE'S VERDICT, all five branches, in milliseconds. deploy-gate.sh reaches
+# its three siblings through `here=$(dirname "$0")`, and that is the seam: a
+# directory holding the REAL gate with three stand-ins beside it.
+#
+# What is under test here is the BRANCHING — whether a rollback happens, whether
+# a row is written, and which sentence is printed. The codes the real verify
+# produces are asserted above against a real server; running the two together
+# would buy one joint and cost two sixty-second waits in the first target of
+# `make check`.
+mkdir -p gatebox
+cp tools/deploy-gate.sh gatebox/
+cat > gatebox/deploy.sh <<'STUB'
+#!/bin/sh
+echo "deploy $1" >> calls.log
+printf 'sha-old1234\n'
+STUB
+cat > gatebox/report-deploy.sh <<'STUB'
+#!/bin/sh
+echo "report $*" >> report.log
+STUB
+# One verdict per line, popped per call. `--started` consumes none: the gate asks
+# for it once before each deploy, and that is not a verify.
+cat > gatebox/verify-deploy.sh <<'STUB'
+#!/bin/sh
+[ "${1:-}" = "--started" ] && exit 0
+code=$(head -1 verdicts)
+sed 1d verdicts > verdicts.rest && mv verdicts.rest verdicts
+exit "$code"
+STUB
+chmod +x gatebox/*.sh
+
+gate() { # gate <one verdict per line> — leaves code, calls.log, report.log, out
+  ( cd gatebox
+    rm -f calls.log report.log out
+    printf '%s\n' "$1" > verdicts
+    c=0
+    ./deploy-gate.sh sha-1234abc 1234abc 1700000000 > out 2>&1 || c=$?
+    printf '%s\n' "$c" > code )
+}
+
+# The gate measures the clock and refuses to deploy between 23:45 and 00:00 UTC,
+# because dokploy prunes at 23:50. These five would go red for those fifteen
+# minutes for a reason that is not theirs, so they stand down out loud.
+if [ "$(date -u '+%H%M')" -ge 2345 ]; then
+  printf '  – gate branches skipped: inside the prune window, %s UTC\n' "$(date -u '+%H:%M')"
+else
+  gate 0
+  accepts "the gate reports ok when the build is live" \
+    sh -c '[ "$(cat gatebox/code)" = 0 ] && [ "$(wc -l < gatebox/calls.log)" -eq 1 ] && grep -q " ok$" gatebox/report.log'
+
+  # 2026-08-30, both halves of it. Rolling back asks the same caller the same
+  # question and reads the same answer; and a row saying `ok` or `rollback` would
+  # be a claim nobody measured, because the gate does not know whether the deploy
+  # is up. The missing row is the honest trace — invariant 1, one instrument on.
+  gate 2
+  accepts "a refused verify rolls nothing back and writes nothing down" \
+    sh -c '[ "$(cat gatebox/code)" != 0 ] && [ "$(wc -l < gatebox/calls.log)" -eq 1 ] && [ ! -f gatebox/report.log ]'
+  accepts "and the gate says it did not find out" \
+    grep -q 'no rollback, and nothing reported' gatebox/out
+
+  # The counter-check: the rollback still happens for the case it was built for.
+  gate '1
+0'
+  accepts "a deploy that did not come up is still rolled back and recorded" \
+    sh -c '[ "$(cat gatebox/code)" = 1 ] && [ "$(wc -l < gatebox/calls.log)" -eq 2 ] && grep -q "rollback$" gatebox/report.log'
+
+  # The second wrong verdict of that night, and the one the rollback path can
+  # still reach on its own: the refusal arriving only after the rollback.
+  gate '1
+2'
+  accepts "a refusal after the rollback is not called an outage" \
+    sh -c '[ "$(wc -l < gatebox/calls.log)" -eq 2 ] && [ ! -f gatebox/report.log ] && ! grep -qi "site is down" gatebox/out'
+
+  # And the sentence is still available for what it was written for.
+  gate '1
+1'
+  accepts "the site is called down only when the application was reached" \
+    grep -q 'THE ROLLBACK DID NOT COME UP EITHER' gatebox/out
+fi
+rm -rf gatebox
 
 rm -f dep.env dep.out dep-none.env dep-two.env dep-empty.env
 
