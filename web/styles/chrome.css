@@ -292,7 +292,22 @@
   height: 100%;
   max-height: none;
   padding: 0;
-  display: flex;
+  /* display:none, and the UA stylesheet already says so — it is repeated here
+     because the pair below only reads as a pair if both halves are visible.
+
+     IT WAS `display: flex` UNCONDITIONALLY, and that shipped. A <dialog> that
+     is not open gets `display: none` from the user agent; overriding it in the
+     base rule left the closed menu laid out at `inset: 0`, full viewport, at
+     z-index 90, with `opacity: 0` — invisible, and still hit-testable. An
+     element at zero opacity still receives pointer events, so the closed menu
+     was a transparent shield over every page at every width, and nothing on
+     the site could be clicked.
+
+     `transition: display allow-discrete` below is what makes this correct
+     rather than a choice between an exit animation and a usable page: the
+     discrete flip back to none is deferred until the fade has run. Setting
+     flex on the base rule defeated the mechanism it was written for. */
+  display: none;
   flex-direction: column;
   background: var(--overlay);
   color: var(--ink);
@@ -312,7 +327,7 @@
     overlay var(--d-glow) allow-discrete,
     display var(--d-glow) allow-discrete;
 }
-.menu[open] { opacity: 1; translate: none; }
+.menu[open] { display: flex; opacity: 1; translate: none; }
 @starting-style {
   .menu[open] { opacity: 0; translate: 0 8px; }
 }
