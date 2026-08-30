@@ -12,7 +12,107 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, H1b gebaut, und ein Satz im Blatt hat sechs Funde gemacht
+## Wo wir stehen — 30.08.2026, H1b abgenommen, und die Abnahme hat den Prüfer geprüft
+
+**`3479024`, Merge 20:52 → Deploy fertig 21:00:07Z, 242 s, ok.** Stufe H1 ist
+damit vollständig: Seite gebaut, deployt, gegen Produktion abgenommen und
+mechanisch gegen den Entwurf abgesichert.
+
+### Der Fund ist diesmal am Prüfwerkzeug
+
+`make check-deployed` meldete acht Ansprüche grün, und einer davon war es aus
+dem falschen Grund:
+
+```
+  ✓ the site reports that deploy itself: ok, 290s, 2026-08-30T18:52:18Z
+```
+
+**Das ist der vorige Deploy.** Sekunden später aus derselben Antwort gelesen:
+
+```json
+"lastDeploy": { "at": "2026-08-30T21:00:07Z", "durationSec": 242, "sha": "3479024" }
+```
+
+290 s / 18:52 gegen 242 s / 21:00 — der Anspruch hat den Datensatz von #268
+gedruckt und für den von #269 gehalten. Die Ursache steht in
+`tools/check-deployed.sh:220-222`: gelesen werden `result`, `durationSec` und
+`at`. **`sha` steht im selben Objekt und wird nicht gelesen.**
+
+Der Wortlaut behauptet dabei genau das, was nicht geprüft wird — *„the site
+reports **that deploy itself**"*. Ein Rennen macht es sichtbar: der Container
+läuft, `/api/health.sha` ist schon der neue, und der Deploy-Bericht landet erst
+danach. Wer in diesem Fenster misst, bekommt einen grünen Haken über einen
+fremden Datensatz.
+
+**Die Reparatur ist ein Vergleich**, und die Zeile darunter wüsste dann auch, ob
+sie warten muss. Verwandt mit #243 — dieselbe Datei, dieselbe Klasse: ein
+Anspruch, den niemand nachgerechnet hat. **Nicht in dieser Phase repariert**,
+`check-deployed` gehört E4b; hier steht der Befund mit seinem Beleg.
+
+### Gegen Produktion abgenommen, 30.08.2026
+
+```
+sha 3479024 · v0.16.0-2-g3479024      lastDeploy ok, 242 s, 21:00:07Z
+check-deployed  8 Ansprüche, 1 von hier nicht stellbar, beide Images per Digest
+
+e2e gegen https://timseil.dev     259/259     davon sheet + sweep 31/31
+```
+
+**Der Durchzug hält unter echten Inhalten.** Lokal misst er einen
+Produktionsbuild ohne API — alle Kacheln leer, kürzeste mögliche Seite. Gegen
+Produktion misst er dieselbe Seite mit fünf Zahlen, elf Stack-Einträgen und
+einem längeren Fließtext, und die Kanten sind dieselben vier: **1080 · 900 ·
+720 · 560**. Die Rasterarithmetik hängt nicht am Inhalt.
+
+### Die sichtbare Hälfte, an den drei Breiten nachgemessen
+
+H1b war kein reiner Test-PR — die Constraints-Reparatur ändert das Bild:
+
+```
+1440px  flex · JetBrains Mono 11px · rgb(198,209,219)   Platte 380 × 251
+1024px  grid · JetBrains Mono 11px · rgb(198,209,219)   Platte 944 × 142
+ 390px  flex · JetBrains Mono 11px · rgb(198,209,219)   Platte 346 × 251
+```
+
+Platte statt nackter Liste, Mono statt Geist, Ink-2 statt Steel, 16px-Spalte für
+die Ordinale, keine Haarlinien — und zweispaltig genau zwischen 1080 und 720.
+Angesehen, nicht nur gemessen.
+
+### Die Laufzeit über vier CI-Läufe
+
+```
+        e2e     check
+kalt    2:36    3:50
+warm    2:21    3:20
+warm    1:50    2:55
+warm    2:24    3:38
+```
+
+**`e2e` war in keinem Lauf der langsamste Job.** Das PR-Feedback bleibt bei
+`check`; der Browser-Cache hat den Download aus der Zahl genommen, und die
+vorbereitete Teilung nach Projekten wird nicht gebraucht.
+
+### Was diese Abnahme nicht behauptet
+
+**Der Vergleich sieht weiter keine Farbe.** Geometrie und Typografie, nicht
+Malfehler.
+
+**Er deckt eine Seite.** H3 hängt die Startseite an, H6 den Work Index.
+
+**`check-deployed` ist nicht repariert**, nur nachgewiesen.
+
+---
+
+## Gefunden
+
+- **`check-deployed` liest `ops.lastDeploy.sha` nicht**, obwohl der Anspruch
+  „that deploy itself" es behauptet — am 30.08.2026 grün über den Datensatz des
+  vorigen Deploys. Ein Vergleich repariert es; die Zeile wüsste dann auch, wann
+  sie warten muss. Verwandt mit #243, gehört E4b. *(30.08.2026, H1b-Abnahme)*
+
+---
+
+## Vorher — 30.08.2026, H1b gebaut, und ein Satz im Blatt hat sechs Funde gemacht
 
 **Die Prüfung, die der Bauplan „vor H1 einmalig einrichten" nennt, steht** — in
 einer anderen Form als er sie beschreibt, und beide Abweichungen sind
