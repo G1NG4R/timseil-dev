@@ -1,0 +1,21 @@
+# What CodeQL is allowed to look at.
+#
+# Issue #182. Of 93 open alerts, 87 came from docs/design/ — the read-only
+# design handoff. Those sheets are never served, never built and never imported;
+# they are generated HTML carrying JSX that a JavaScript parser does not read as
+# JSX, which is why 86 of the 87 are the same rule saying the same thing.
+#
+# The cost was not the noise, it was the six findings underneath it. Five
+# go/log-injection and one go/email-injection in api/ had been sitting in a list
+# nobody opens, and a list nobody opens is not a list.
+#
+# THE EXCLUSION NAMES THE DIRECTORY, NOT THE RULE, and that is the whole point.
+# Turning off js/useless-expression globally would silence it in web/ too, where
+# it is a rule worth having — the noise is a property of where these files come
+# from, not of the question being asked.
+#
+# paths-ignore applies to the interpreted languages. The Go analysis compiles the
+# module and never reaches this directory anyway, so there is nothing to exclude
+# on that side and no entry here pretending otherwise.
+paths-ignore:
+  - docs/design
