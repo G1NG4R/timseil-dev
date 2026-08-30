@@ -104,6 +104,48 @@ func (q *stubDispatchQueries) counts() (sent, failed int) {
 	return len(q.sent), len(q.failed)
 }
 
+// EVERY field of this stub is read through a method, and none of them directly.
+//
+// Issue #181. The dispatcher owns a goroutine in the tests that drive it with a
+// real loop, so a test body reading q.listCall while that goroutine writes it is
+// a data race — `go test -race` reported exactly that at waitFor below, and it
+// had been there since E2.
+//
+// The instance was one line. The reason the whole stub grew accessors instead is
+// that the safety of a direct read depends on which constructor the test used:
+// driven() runs runOnce on the test's own goroutine and races with nothing,
+// startDispatcher() does not. That is a distinction nobody can see at the call
+// site, and the next test to be written from the wrong neighbour reintroduces it
+// silently. With no field reachable without the mutex there is nothing to get
+// right.
+
+func (q *stubDispatchQueries) calls() int {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.listCall
+}
+
+func (q *stubDispatchQueries) sentRows() []store.MarkContactMessageSentParams {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return append([]store.MarkContactMessageSentParams(nil), q.sent...)
+}
+
+func (q *stubDispatchQueries) failedRows() []store.MarkContactMessageFailedParams {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return append([]store.MarkContactMessageFailedParams(nil), q.failed...)
+}
+
+// row is the queued message a test hands straight to markFailed or send. The
+// queue is written once before the dispatcher starts, but the loop reads it
+// under the lock, so the test does too.
+func (q *stubDispatchQueries) row(i int) store.ListDeliverableContactMessagesRow {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.queue[i]
+}
+
 func queued(n int, attempts int32) []store.ListDeliverableContactMessagesRow {
 	rows := make([]store.ListDeliverableContactMessagesRow, 0, n)
 	for i := range n {
@@ -166,7 +208,7 @@ func TestAQueuedMessageIsDeliveredAndMarked(t *testing.T) {
 	if sent != 1 {
 		t.Fatalf("%d rows marked sent, want 1", sent)
 	}
-	if q.sent[0].MailMessageID == nil {
+	if q.sentRows()[0].MailMessageID == nil {
 		t.Error("the row was marked sent with no Message-ID to find the mail by")
 	}
 }
@@ -207,8 +249,8 @@ func TestAFailedDeliveryStaysQueuedUntilTheCeiling(t *testing.T) {
 
 	d.runOnce(context.Background())
 
-	if len(q.failed) != 1 || q.failed[0].DeliveryStatus != "queued" {
-		t.Fatalf("the row is %+v, want queued", q.failed)
+	if failed := q.failedRows(); len(failed) != 1 || failed[0].DeliveryStatus != "queued" {
+		t.Fatalf("the row is %+v, want queued", failed)
 	}
 }
 
@@ -220,8 +262,8 @@ func TestTheLastAttemptGivesUp(t *testing.T) {
 
 	d.runOnce(context.Background())
 
-	if len(q.failed) != 1 || q.failed[0].DeliveryStatus != "failed" {
-		t.Fatalf("the row is %+v, want failed at the ceiling", q.failed)
+	if failed := q.failedRows(); len(failed) != 1 || failed[0].DeliveryStatus != "failed" {
+		t.Fatalf("the row is %+v, want failed at the ceiling", failed)
 	}
 }
 
@@ -232,8 +274,8 @@ func TestAPermanentRefusalGivesUpOnTheFirstAttempt(t *testing.T) {
 
 	d.runOnce(context.Background())
 
-	if len(q.failed) != 1 || q.failed[0].DeliveryStatus != "failed" {
-		t.Fatalf("the row is %+v, want failed — retrying cannot fix a 550", q.failed)
+	if failed := q.failedRows(); len(failed) != 1 || failed[0].DeliveryStatus != "failed" {
+		t.Fatalf("the row is %+v, want failed — retrying cannot fix a 550", failed)
 	}
 }
 
@@ -289,16 +331,16 @@ func TestThreeFailedRunsStopTheDispatcherReachingTheRelay(t *testing.T) {
 		clock = clock.Add(dispatchEvery)
 	}
 
-	before := q.listCall
+	before := q.calls()
 	d.runOnce(context.Background())
-	if q.listCall != before {
+	if q.calls() != before {
 		t.Error("the dispatcher read the queue with the breaker open")
 	}
 
 	// And it comes back after the cooldown, for exactly one probe.
 	clock = clock.Add(breakerCooldown)
 	d.runOnce(context.Background())
-	if q.listCall != before+1 {
+	if q.calls() != before+1 {
 		t.Error("no probe went through after the cooldown")
 	}
 }
@@ -325,10 +367,10 @@ func TestOneDeliveryClosesTheBreaker(t *testing.T) {
 		d.runOnce(context.Background())
 	}
 
-	before := q.listCall
+	before := q.calls()
 	clock = clock.Add(dispatchEvery)
 	d.runOnce(context.Background())
-	if q.listCall == before {
+	if q.calls() == before {
 		t.Error("the breaker opened on a count that a success should have reset")
 	}
 }
@@ -366,7 +408,7 @@ func TestATickRunsAgain(t *testing.T) {
 	// Both rows are settled, so a second run finds an empty queue and the
 	// counts do not move. What is asserted is that the tick is read at all.
 	ticks <- testNow
-	waitFor(t, func() bool { return q.listCall >= 2 })
+	waitFor(t, func() bool { return q.calls() >= 2 })
 }
 
 func TestStopIsIdempotent(_ *testing.T) {
@@ -390,8 +432,8 @@ func TestAnUnreadableQueueDoesNotEndTheLoop(t *testing.T) {
 	d.runOnce(context.Background())
 	d.runOnce(context.Background())
 
-	if q.listCall != 2 {
-		t.Errorf("the queue was read %d times, want 2", q.listCall)
+	if n := q.calls(); n != 2 {
+		t.Errorf("the queue was read %d times, want 2", n)
 	}
 }
 
@@ -419,7 +461,7 @@ func TestACutRunStillRecordsTheAttempt(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	d.markFailed(ctx, q.queue[0], errors.New("451 busy"))
+	d.markFailed(ctx, q.row(0), errors.New("451 busy"))
 
 	if _, failed := q.counts(); failed != 1 {
 		t.Fatalf("%d attempts recorded under a cancelled context, want 1", failed)
@@ -435,7 +477,7 @@ func TestACutRunStillRecordsADelivery(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	if err := d.send(ctx, q.queue[0]); err != nil {
+	if err := d.send(ctx, q.row(0)); err != nil {
 		t.Fatalf("send: %v", err)
 	}
 	if sent, _ := q.counts(); sent != 1 {

@@ -116,14 +116,27 @@ check-rule-names: ## Every recording rule internal/snapshots asks for exists in 
 	@tools/check-rule-names.sh .
 
 .PHONY: check-go
-check-go: ## gofmt, go vet, go test
+check-go: ## gofmt, go vet, go test -race
 	@printf 'go\n'
 # gofmt -l prints the offenders and exits 0 — on its own it is a check that
 # reports and then lets everything through. The emptiness of its output is the
 # assertion, so that is what gets tested.
+#
+# -race, and the second half of issue #181 is the decision to put it here rather
+# than in a target of its own. The argument against was runtime, so it was
+# measured instead of estimated: 6 s without, 8 s with, on a cold test cache.
+# Two seconds does not buy a second target to remember, and the class it catches
+# — a goroutine and a test body touching the same field — is the class that does
+# not fail until it fails in production. The first thing it found had been in
+# internal/contact since E2 and no gate had ever looked.
+#
+# NOT in check-db, and that is a separate line rather than an oversight. Those
+# run in a container against a real server, the cost there is container time
+# rather than two seconds, and the races this finds are in-process ones that
+# the untagged run already covers.
 	@cd api && bad=$$(gofmt -l .); \
 		[ -z "$$bad" ] || { printf '  ✗ not gofmt-clean:\n'; printf '%s\n' "$$bad" | sed 's/^/    /'; exit 1; }; \
-		go vet ./... && go test ./... && printf '  ✓ gofmt, vet, test\n'
+		go vet ./... && go test -race ./... && printf '  ✓ gofmt, vet, test -race\n'
 # Tidiness, in its own script so that tools/selftest.sh can hold it against a
 # module that is deliberately untidy. The reasons are in the file.
 	@tools/check-tidy.sh api
