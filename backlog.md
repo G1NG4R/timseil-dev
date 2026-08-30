@@ -12,7 +12,57 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, der Tracker ist einmal ganz gelesen worden
+## Wo wir stehen — 30.08.2026, sechs PRs durch, und ein Rücklauf, den es nicht gibt
+
+`21706c4 · c6b2f16 · 7b89a15 · ff9e076 · 84dbb3f · 9cd4f87` — #256, #181, #182,
+#144, #236, #180. Mit den neun aus der Triage sind das **fünfzehn Issues**, und
+die offene Liste steht bei 92 statt 105.
+
+### Der Rücklauf war meine Erfindung, und die Messung hat sie kassiert
+
+Ich habe dreimal geschrieben, die Historie sei nach #180 falsch und brauche einen
+Lauf über die 91 Tage — im Backlog, im PR-Text und im Gespräch. **Gemessen gegen
+Produktion, nach dem Deploy:**
+
+```
+91 Zellen   83 nodata · 8 ok · 0 degraded · 0 outage
+Zellen mit downSec > 0:  0
+```
+
+**Es hat nie einen Ausfall gegeben.** `down_sec` ist überall null, und null ist
+es unter beiden Arithmetiken. Es gab nichts nachzurechnen, und ich hätte das vor
+dem ersten Vorschlag messen können statt danach — die Abfrage ist ein `curl`.
+
+**Die Abnahme ist deshalb das Gegenteil dessen, was geplant war:** das Raster
+darf sich *nicht* bewegen. Vor und nach dem Deploy dieselben 83/8/0, und
+`measuredAt` liegt hinter dem Deploy, die Schleife läuft also mit dem neuen Code.
+Wäre eine Zelle gewandert, hätte die neue Arithmetik dort etwas getan, wo sie
+nichts zu tun hat.
+
+**Der eigentliche Beweis steht aus und lässt sich nicht herstellen.** Ob eine
+Dauer richtig gerechnet wird, zeigt der erste echte Ausfall. Einen zu erzeugen,
+damit ein Haken grün wird, ist die falsche Richtung — das sagen #190 und #191
+seit F4, und M1 ist der Ort, an dem es ehrlich zusammenkommt.
+
+### Was aus #182 herausgefallen ist
+
+93 Alarme wurden 6, und die sechs sind zum ersten Mal sichtbar statt unter 87
+Zeilen Rauschen. Der `critical` darunter — `go/email-injection` im Mail-Pfad —
+**ist als Fehlalarm belegt**: Header-Prüfung vor dem Encoding, Body als Base64,
+also strukturell unfähig einen Header zu tragen. Die fünf `go/log-injection` hat
+niemand angesehen. #264.
+
+### Was heute gemessen wurde und nicht geschätzt
+
+- `-race` kostet auf `main` **33 s** (3m30s gegen 2m57s), lokal 6 → 8 s. Ich
+  hatte „knapp eine Minute" geschätzt; das war zu hoch.
+- `durationSec` meldete über vier Deploys **238 · 270 · 263 · —** Sekunden, jedes
+  Mal weit über dem `deploy`-Job. Dritte und vierte Bestätigung für #242.
+- Chakra Petch 400 raus: **89 752 B statt 99 480 B** beim ersten Besuch.
+
+---
+
+## Vorher — 30.08.2026, der Tracker ist einmal ganz gelesen worden
 
 **105 offene Issues, jedes gegen `main` gehalten.** Der Notizblock war seit der
 G-Triage leer, also war der Tracker der ganze Zustand — und als Ganzes war er nie
