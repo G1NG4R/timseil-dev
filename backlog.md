@@ -12,7 +12,70 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, der Gate hat einen guten Deploy zurückgerollt
+## Wo wir stehen — 31.08.2026, der Verify hat einen dritten Ausgang
+
+**Gebaut auf `fix/deploy-gate-403`, `make check` grün, nicht gepusht.** Der
+Befund von gestern ist repariert, und zwar an beiden Stellen, an denen er in
+jener Nacht zugeschlagen hat.
+
+### Was jetzt gilt
+
+`tools/verify-deploy.sh` kennt drei Ausgänge: `0` live, `1` die Anwendung wurde
+erreicht und war es nicht, **`2` die Antwort kam nicht von der Anwendung**. Bei
+`401`, `403`, `451` und `429` bricht es bei der ersten Abweisung ab statt sechzig
+Sekunden weiterzufragen — gemessen: 0 s statt 60. `500` und der
+Verbindungsfehler bleiben in der Warte-Bahn, das ist der Fall, für den das Budget
+gebaut wurde.
+
+**Der Contract trägt die Regel, nicht die Erfahrung.** `/api/health` kennt laut
+`contract/openapi.yaml` 200, 304, 429 und 500, und jeder Fehler dieses Dienstes
+ist ein RFC-9457-Dokument — ein 401, 403 oder 451 dort ist bauartbedingt nicht
+unsere Antwort.
+
+`tools/deploy-gate.sh` liest den Code an **beiden** Verify-Aufrufen:
+
+| Lage | Was passiert |
+|---|---|
+| Verify → 2 | kein Rollback, **keine Zeile in `deploys`**, Exit 1 |
+| Verify → 1, Rollback, dann 2 | kein Report, und **nicht** „the site is down" |
+| sonst | wie bisher |
+
+Die fehlende Zeile ist Absicht: `ok` und `rollback` wären beide eine Behauptung,
+die niemand gemessen hat. ADR 0054.
+
+### Zwei Korrekturen am Plan, beide nachgemessen
+
+- **`/api/health` kann 429 antworten** — er steht im Contract, und der
+  Rate-Limiter deckt die Route ab (`chain_test.go:349`). Er endet die Schleife
+  trotzdem, bekommt aber eine eigene Meldung statt „not this application's
+  answer".
+- **`chmod 000` erzeugt keinen 403, sondern 404.** `python3 -m http.server`
+  bildet jeden `OSError` beim Öffnen auf `NOT_FOUND` ab. Die Attrappe im
+  `selftest` liest den Code stattdessen aus dem Pfad — ein Server für jede Lage.
+
+### Der kaputte Fall, und wie er vorgeführt wurde
+
+Neun Zusicherungen: drei am echten Verify gegen einen echten Server
+(403 · 429 · 503), sechs an den fünf Verzweigungen des Gates in einem Sandkasten,
+in dem der echte Gate neben Attrappen für seine drei Geschwister steht — das ist
+die Naht `here=$(dirname "$0")`, und sie kostet keine sechzig Sekunden.
+
+Drei Mutationen haben belegt, dass sie greifen. **Eine davon war zu schwach und
+hat es dabei selbst gezeigt:** sie suchte „the verify was refused", und der
+Wortlaut steht auch in der Meldung des Rollback-Pfads — also blieb sie grün, als
+die Verzweigung entfernt wurde, die sie bewachen sollte. Sie hängt jetzt an einer
+Formulierung, die nur die erste Verzweigung hat.
+
+### Offen
+
+**Produktion steht weiter auf `3479024`, `main` auf `28a2c63`.** Der Deploy nach
+dem Merge ist die Abnahme dieser Reparatur: läuft er durch, ist die Lücke zu und
+Produktion in Sync. Kommt der 403 wieder, scheitert der Job in Sekunden ohne
+Rollback — und das ist das eigentliche Ergebnis.
+
+---
+
+## Vorher — 30.08.2026, der Gate hat einen guten Deploy zurückgerollt
 
 **Die Seite war zu keiner Sekunde unten.** Der `deploy`-Job von `28a2c63` ist
 rot, hat den Deploy zurückgerollt und „the site is down" ins Log geschrieben —
@@ -178,6 +241,15 @@ Malfehler.
 **`check-deployed` ist nicht repariert**, nur nachgewiesen.
 
 ---
+
+## Idee
+
+- **Abnahmen gegen den lokalen Produktionsbuild fahren**, gegen Produktion nur
+  das, was die Abnahme wirklich braucht. Eine Browser-Suite mehrfach gegen
+  Produktion zu ziehen ist Verkehr, auf den eine Schutzschicht reagieren darf; ob
+  das am 30.08.2026 mitgespielt hat, ist unbewiesen und steht als Verdacht in den
+  privaten Notizen. Die Werkzeuglücke ist davon unabhängig und ist zu.
+  *(31.08.2026, E4b)*
 
 ## Gefunden
 
