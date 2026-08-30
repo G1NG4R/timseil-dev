@@ -1073,8 +1073,28 @@ load: ## Push k6 load through the lab proxy — needs `make rolling-lab`
 # ---------------------------------------------------------------- placeholders
 
 .PHONY: e2e
-e2e: ## Playwright end-to-end, a11y and visual regression — stage H
-	@printf 'make e2e arrives before H1 (playwright at 1440·1081·1079·1024·899·719·390).\n'
+# The rig the build plan asks for before H1, and the window three measurements
+# from stage G were waiting in (#236).
+#
+# It builds and starts a PRODUCTION server, not `next dev`. That is a decision
+# with a reason rather than caution: `cacheComponents: true` keeps up to three
+# routes mounted and merely hidden, and that behaviour only exists in a
+# production build — the `<Activity>` question cannot be asked of a dev server.
+# playwright.config.ts carries the whole argument.
+#
+# NOT in `make check`, and not in the pipeline yet. It downloads a browser, it
+# builds the app, and it takes minutes rather than seconds; wiring it into CI is
+# a decision about runner time that belongs to H1, where the sheet comparison
+# gives it something to earn.
+e2e: ## Playwright: touch targets, the mobile menu, reduced motion, axe — stage H
+	@printf 'e2e\n'
+	@[ -d web/node_modules ] || { printf '  ✗ web/node_modules is missing — run: make deps\n'; exit 1; }
+# The browser is not a dependency npm installs; it is a download Playwright
+# manages. Saying which command fixes it beats a stack trace from deep inside
+# the runner.
+	@cd web && npx playwright install --dry-run chromium >/dev/null 2>&1 || { \
+		printf '  ✗ no chromium — run: cd web && npx playwright install chromium\n'; exit 1; }
+	@cd web && npx playwright test $(E2E_ARGS)
 
 # The sheets pull react@18.3.1 and @babel/standalone from unpkg at runtime, so
 # this needs network: with unpkg blocked, <x-dc> is never replaced and the page

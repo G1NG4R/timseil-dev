@@ -12,7 +12,115 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 29.08.2026, das Budget hat eine Vorschrift und zwei Zahlen
+## Wo wir stehen — 30.08.2026, das Rig hat beim ersten Lauf zwei Funde gemacht
+
+**Das H1-Tor steht, und es hat sofort etwas gefunden, das niemand vermutet hat.**
+`make e2e` ist kein `printf` mehr: 130 Zusicherungen über acht Projekte in
+1,1 Minuten, Playwright plus axe-core, Chromium.
+
+### #256 — der geschlossene Dialog lag über jeder Seite
+
+`.menu` setzte `display: flex` in der Grundregel. Ein `<dialog>` ohne `open`
+bekommt vom Browser `display: none`; das zu überschreiben ließ das
+**geschlossene** Menü bei `inset: 0` über dem ganzen Viewport liegen, `z-index`
+90, `opacity: 0`. **Ein Element mit Deckkraft null nimmt weiterhin Zeiger-
+Ereignisse entgegen.**
+
+```
+Breite  geschlossener Dialog  Element in der Seitenmitte  Klick auf WORK
+1440    display:flex          div.menu-body               BLOCKIERT
+...     dasselbe an allen sieben Breiten
+```
+
+Derselbe Klick mit `dialog.menu:not([open]){display:none}` navigiert nach
+`/work`. **Die Ursache ist isoliert, nicht erschlossen.** Und sie stand auf der
+laufenden Seite — im ausgelieferten Stylesheet von `timseil.dev` nachgelesen.
+
+**Warum es niemand gemerkt hat, ist der eigentliche Fund.** Jede Abnahme bisher
+hat Statuscodes, Header und den Inhalt des ausgelieferten Stylesheets gemessen.
+**Nichts hat je auf irgendetwas geklickt.** Genau darüber ist #236 geschrieben
+worden, und es war das Erste, was aufgeschlagen ist.
+
+`transition: display allow-discrete` stand schon in der Datei — die Reparatur
+kostet die Ausblend-Animation deshalb nichts. Die Grundregel auf `flex` zu
+setzen hatte den Mechanismus ausgehebelt, für den sie geschrieben war.
+
+### #257 — 11 px für die Maus, 44 px für den Finger
+
+axe fand `target-size` auf jeder Route: die sieben Theme-Plättchen sind
+**11 × 11 px bei 8 px Abstand**. Unter `pointer: coarse` sind es **44 × 44** —
+`layout.css:92` tut genau das, was CLAUDE.md verlangt.
+
+**Die Lücke ist keine fehlende Regel, sondern eine Regel, die einen Schritt vor
+dem Standard aufhört, den sie sonst übertrifft.** WCAG 2.2 AA 2.5.8 kennt keine
+Zeiger-Ausnahme und will 24 px; die Abstands-Ausnahme rettet den Fall nicht, weil
+sie 24 px zwischen den Mittelpunkten braucht und hier 19 liegen. Zu entscheiden
+in M6, und es ist eine Entwurfsfrage, keine CSS-Zeile.
+
+Bis dahin trägt `e2e/a11y.spec.ts` die Regel als benannte Ausnahme **mit Datum** —
+dieselbe Form, die `check-vuln` für eine getragene CVE benutzt. Läuft das Datum
+ab, wird die Suite von allein rot.
+
+### Zwei Tests waren erst falsch, und beide Male war ich es
+
+**Der Kanarienvogel.** Ein `<dialog>` ohne Stylesheet bekommt `display: none` zu
+und `display: block` offen — vom Browser, umsonst. Das sieht einem bestandenen
+Ergebnis zum Verwechseln ähnlich, und eine Seite ohne CSS hätte die halbe Datei
+grün gemacht. Der Test liest jetzt `--d-glow` als Kanarienvogel — **und
+vergleicht die Dauer, nicht die Schreibweise**, weil die erste Fassung `160ms`
+festnagelte und gegen einen Build rot ging, der dasselbe als `.16s` ausliefert.
+
+**Die Uhr.** Ich habe `header .clock` verlangt und bei 899, 719 und 390 rot
+bekommen — zu Recht: unter der Umschaltbreite ist der Header 52 px aus Wortmarke
+und Menüknopf, und die Uhr sitzt in der Fußzeile und im Menü. Der Test war
+falsch, nicht das Chrome.
+
+### Gegen Produktion abgenommen, 30.08.2026
+
+`21706c4` / `v0.15.2`, und die Abnahme ist geklickt statt gelesen:
+
+```
+Breite  geschl. Dialog  Fläche  Mitte der Seite   Handlung
+1440    none            0       div.foot-meta     header link → /work
+1081    none            0       div.foot-meta     header link → /work
+1079    none            0       div.foot-meta     header link → /work
+1024    none            0       div.foot-meta     header link → /work
+ 899    none            0       footer.foot       menu button → dialog[open]
+ 719    none            0       span.foot-cell    menu button → dialog[open]
+ 390    none            0       div.foot-lead     menu button → dialog[open]
+```
+
+Dazu die volle Menü-Strecke gegen die laufende Seite, 11 von 11: Sperre auf und
+zu, Escape nativ ohne hinterlassene Sperre, ein Link im Menü, Zurück und
+Vorwärts, und die Trefferflächen.
+
+**Die drei Zahlen, die dabei nebenbei anfielen:** `durationSec` meldete 238 s,
+dann 270 s, dann 263 s — dreimal derselbe Abstand zum tatsächlichen `deploy`-Job.
+Kein neuer Fund, aber die dritte Bestätigung für #242.
+
+### Was der Lauf noch beweist
+
+`hasTouch: true` liefert wirklich `pointer: coarse` und `hover: none` —
+**gemessen, bevor irgendetwas darauf gebaut wurde.** Der Zeiger ist eine eigene
+Dimension und keine Folge der Breite; ein schmales Desktop-Fenster ist kein
+Telefon.
+
+Das Rig läuft gegen einen **Produktions-Build**. `next dev` hydriert seit #235
+wieder, aber `cacheComponents` hält Routen nur in Produktion montiert — die
+`<Activity>`-Frage lässt sich einem Entwicklungsserver nicht stellen.
+
+### Was diese Runde nicht behauptet
+
+**Das Rig hängt nicht in CI.** Es lädt einen Browser und baut die Anwendung; die
+Verdrahtung ist eine Entscheidung über Runner-Zeit und gehört zu H1, wo der
+Blattvergleich ihr etwas zu verdienen gibt.
+
+**Der Blattvergleich fehlt.** Der Bauplan will Playwright gegen `make design`;
+solange Stufe H keine Seite gebaut hat, gäbe es nichts zu vergleichen.
+
+**axe ist nicht M2.** Es findet einen Bruchteil dessen, was ein Audit findet.
+
+## Vorher — 29.08.2026, das Budget hat eine Vorschrift und zwei Zahlen
 
 **#237 ist nicht repariert worden, weil nichts kaputt war — es ist ausgerechnet
 worden.** `tools/bundle-size.sh` und ADR 0050; das CI-Gate bleibt bei L8.
