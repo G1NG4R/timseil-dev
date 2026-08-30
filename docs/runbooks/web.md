@@ -948,3 +948,94 @@ await new Promise(r => setTimeout(r, 2600));
 Gemessen am 30.08. **vor** der Reparatur: über `localhost` `22:24:53 → 22:24:56`,
 über `127.0.0.1` zweimal `--:--:--`. **Nach** der Reparatur tickt auch
 `127.0.0.1` (`22:26:38 → 22:26:41`), und der Theme-Klick setzt `data-theme`.
+
+---
+
+## Die Fallstudie abnehmen — vier Löcher in einer statischen Schale
+
+`/work/<slug>` ist die erste Seite, die einen Pfadparameter trägt, und die
+erste, deren Inhalt aus zwei Quellen kommt: die Prosa aus
+`web/content/case-studies/`, die Zahlen aus `/api/systems/{slug}`. Was daran
+schiefgehen kann, geht an vier Stellen schief.
+
+### Die Seite ist eine Schale mit vier Löchern
+
+Alles außer vier Bereichen steht im Repository und wird vorgerendert. Die vier
+warten auf die API: Brotkrume, Hero-Eyebrow, Spec-Rail, Kachelreihe. Jeder
+Fallback ist **dasselbe Bauteil im Ruhezustand** — nie ein Spinner, nie eine
+Lücke.
+
+**Das heißt: eine gestreamte Seite trägt kurzzeitig beides.** React liefert die
+Ersetzung in einem `<div hidden>` nach und tauscht sie per Skript. Zwischen
+diesen zwei Ereignissen stehen wirklich zwei Brotkrumen im Dokument. Wer mit
+`curl` misst, sieht deshalb **den Fallback zuerst** und die echte Antwort weiter
+unten im selben Body:
+
+```sh
+curl -s http://127.0.0.1:3100/work/timseil-dev | grep -o '<p class="cs-crumb".*</p>'
+#   <p class="cs-crumb"><a href="/work">WORK</a> / <span class="here">timseil-dev</span></p>
+#   <p class="cs-crumb"><a href="/work">WORK</a> / <span class="here">02 timseil.dev</span></p>
+```
+
+**Zwei Treffer sind richtig, einer wäre der Fund.** Bleibt nach der Hydration
+einer stehen, ist das die Form von #256 — eine zweite Kopie eines Bauteils, die
+in der Seite liegt. `e2e/case-study.spec.ts` sichert genau das zu, und die
+Zusicherung ist zugleich das Warten darauf.
+
+### Der Leerzustand ist der Normalfall, nicht der Ausnahmefall
+
+`api/internal/seed/seed.sql` schreibt **keine Messwerte**. Gegen eine frisch
+gesäte Datenbank steht `timseil.dev` auf `live` und zeigt trotzdem in allen fünf
+Kacheln `— NO DATA`, mit der Amber-Notiz darunter. Wer eine gefüllte Seite sehen
+will, braucht eine Sonde oder einen Deploy, nicht einen anderen Seed.
+
+Die Abdeckungszeile unter der Uptime zählt gegen `days[]` und ist die Gegenprobe
+zum `curl`:
+
+```sh
+curl -s http://127.0.0.1:8080/api/systems/timseil-dev \
+  | jq '{window, measured: ([.days[]|select(.state!="nodata")]|length)}'
+# { "window": 91, "measured": 0 }   →  Seite: "0 of 91 days measured"
+```
+
+**Antwortet die API gar nicht, trägt die Kachel kein Fenster** — sie heißt dann
+`UPTIME` statt `UPTIME · 91 D` und hat keine zweite Zeile. 91 ist der
+Vorgabewert des Contracts; ihn dort zu drucken wäre eine Zahl, die niemand
+gesagt hat.
+
+### Den Produktionsbuild gegen eine echte API fahren
+
+`make e2e` baut und startet selbst, **ohne** `API_INTERNAL_URL` — der Lauf misst
+also die leere Seite. Für den gefüllten Fall von Hand:
+
+```sh
+docker compose -f compose.dev.yaml up -d db migrate seed api
+cd web && npm run build
+API_INTERNAL_URL=http://127.0.0.1:8080 npm run start -- --port 3100
+```
+
+**Die Falle:** `reuseExistingServer` im Playwright-Rig ist lokal an. Läuft dieser
+Server noch, misst `make e2e` gegen ihn — also gegen eine API — und Tests, die
+fünf Gedankenstriche behaupten, gehen rot. Deshalb sichert
+`e2e/case-study.spec.ts` **Regeln** zu und keine Daten: eine Kachel ist genau
+dann gestrichelt, wenn sie keine Zahl trägt. Der erste Entwurf tat es anders und
+war ein Test über das Terminal des Entwicklers.
+
+### Was die vier Löcher kosten — gemessen
+
+Vier `<Suspense>`-Grenzen sind **eine** Anfrage: `systemCached` ist eine
+`use cache`-Funktion mit dem Slug als Schlüssel, die späteren Aufrufer lesen die
+Füllung des ersten. Dasselbe teilen sich Fußzeile und Menüstreifen seit G4.
+
+Ohne die Grenzen baut die Seite nicht. Gemessen beim ersten Versuch:
+
+```
+Error: Route "/[lang]/work/[slug]": Next.js encountered URL data `usePathname()`
+in a Client Component outside of <Suspense>.        (5×)
+Error: Route "/[lang]/work/[slug]": Next.js encountered uncached or runtime data
+during prerendering.
+```
+
+Zwei Ursachen, eine Reparatur je: `generateStaticParams` für den Slug — sonst
+baut Next eine Schale für das Segment `[slug]` selbst, und der Kopf hat keinen
+Pfad zu lesen — und die vier Grenzen um alles, was `connection()` erreicht.

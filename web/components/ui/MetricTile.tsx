@@ -16,16 +16,26 @@ import { NoData } from "@/components/state/NoData";
  *
  * `warn` is for a number that is real and bad. It stays amber rather than
  * alert: the sheet reserves red for one moment per page.
+ *
+ * `note` IS ISSUE #208, AND IT QUALIFIES THE VALUE RATHER THAN ADDING ONE. The
+ * uptime tile is the case it was added for: "100.00 %" reads the same whether
+ * five of ninety-one days were measured or all of them, and on a case study the
+ * grid that would show the gaps is a screen further down — on the badge and in
+ * the footer it does not exist at all. So the tile carries the coverage under
+ * the figure. It is deliberately not a second `value`: a tile with two numbers
+ * is two tiles.
  */
 export function MetricTile({
   label,
   value,
   unit,
+  note,
   warn,
 }: {
   label: string;
   value?: number | string | null;
   unit?: string;
+  note?: string;
   warn?: boolean;
 }) {
   const has = value !== undefined && value !== null;
@@ -43,6 +53,7 @@ export function MetricTile({
           <NoData />
         )}
       </p>
+      {note === undefined ? null : <p className="tile-note">{note}</p>}
     </div>
   );
 }

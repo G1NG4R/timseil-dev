@@ -19,6 +19,7 @@ import { siteWord } from "../state/derive.ts";
 import { NO_DATA, type StateKey } from "../state/words.ts";
 
 import type { ApiResult, GetBody } from "./client.ts";
+import { finiteNumber, nonEmpty } from "./values.ts";
 
 export type Health = GetBody<"/api/health">;
 
@@ -98,23 +99,6 @@ export function footerHealth(body: Health): FooterHealth {
     uptime: finiteNumber(ops?.uptime90d),
     status: siteWord(raw.status),
   };
-}
-
-/** A string, or nothing. An empty string is not a build identity. */
-function nonEmpty(value: unknown): string | null {
-  return typeof value === "string" && value !== "" ? value : null;
-}
-
-/**
- * A number, or nothing.
- *
- * Invariant 1 lives in the `finite` half. The contract already types this field
- * `number | null`, so `null` arrives honestly — but `undefined` from an older
- * build, or a `NaN` from a body that parsed further than it should have, must
- * end up in the same place as `null` and not in `toFixed`.
- */
-function finiteNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 /**

@@ -1,0 +1,262 @@
+/* The case study's own parts — SYS.02, and the template every project page will
+   follow. Build plan H1. ADR 0052.
+
+   WHAT IS HERE AND WHAT IS NOT. This file draws; layout.css switches. Every
+   width-dependent rule for these components lives in layout.css beside the four
+   switches it already owns, in the section marked H1 — one file where a reader
+   can see all of them at once, which is the whole argument of "EIN SCHALTER FÜR
+   ALLE ZWEISPALTER" on the Intermediate Widths sheet. Nothing in here carries a
+   media query.
+
+   THE GRID IS ALREADY BUILT. `.cs-hero`, `.cs-spec`, `.cs-prob` and `.rail`
+   were copied into layout.css in G1 and have had no consumer since. H1 is the
+   first page to use them, so this file adds the surfaces inside them and not a
+   second opinion about their columns.
+
+   SPACING IS ROUNDED TO THE SCALE. The sheet draws 22/24px padding and 100px
+   between sections; Foundations defines the scale those come from and G1 made
+   it the binding one, so this file reads --s-20/--s-26/--s-96. The difference is
+   under three pixels and the alternative is fourteen literals that no longer
+   belong to any system.                                                       */
+
+/* ── Breadcrumb ────────────────────────────────────────────────────────────
+   K-16: every page carries a way back. This one points at /work, which is
+   still the [SOON] stub until H6 — a stub is a place, an absent link is not. */
+
+.cs-crumb {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  text-transform: uppercase;
+  padding-block-start: var(--s-20);
+}
+
+.cs-crumb a { color: var(--dim); }
+.cs-crumb a:hover { color: var(--acc); }
+.cs-crumb .here { color: var(--ink-3); }
+
+/* ── Hero ──────────────────────────────────────────────────────────────────
+   The system number, its name and its state, on one baseline. K-14 keeps the
+   LARGE hero status dot to the homepage; the case study carries the same small
+   one every other row does, so this is StatusDot at its normal size and not a
+   third measurement.                                                         */
+
+/* WHICH GRID THE HERO USES, because layout.css carries two and they are the two
+   sheets' two drawings of the same row. `.cs-hero` is 420px with
+   `align-items: end` — Case Study 02, whose rail is a 2×N pair block.
+   `.cs-spec` is 400px with `align-items: start` — the Case Study Template,
+   whose rail is the bordered plate with the corner brackets. H1 builds the
+   Template, so it builds `.cs-spec`; `.cs-hero` keeps its consumer for the day
+   the two are reconciled. The register on the Intermediate Widths sheet lists
+   both rows separately for the same reason.
+
+   The padding is a second class because `.cs-spec` is a grid above 1080 and a
+   flex column below it, and the vertical rhythm is the same either way. */
+.cs-head { padding-block: var(--s-34) var(--s-72); }
+
+/* The gap the sheet draws between the metric row and `.01 PROBLEM`. It is on a
+   wrapper rather than on `.cs-note`, because the note disappears once a number
+   arrives and the rhythm may not disappear with it. */
+.cs-metrics { margin-block-end: var(--s-96); }
+
+.cs-eyebrow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-14);
+  margin-block-end: var(--s-20);
+}
+
+.cs-no {
+  font: 500 var(--t-mono-12)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}
+
+.cs-name {
+  font: 600 var(--t-mono-12)/1 var(--mono);
+  letter-spacing: .2em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+/* K-08, and the reason for `:where`. The two H1 steps are 62 for the homepage
+   and About and 52 everywhere else; globals.css sets 62 on the element and
+   layout.css drops it to 34 below 720. A class here would beat BOTH — the page
+   would keep 52 on a phone. `:where()` contributes no specificity, so this rule
+   is exactly as specific as those two and source order decides: globals (62) →
+   case (52) → layout (34 under 720), which is the import order app/[lang]/
+   layout.tsx already documents. */
+:where(.cs-spec) h1 {
+  font-size: var(--t-disp-52);
+  max-width: 660px;
+  text-wrap: pretty;
+  margin-block-end: var(--s-20);
+}
+
+.cs-lead {
+  max-width: 60ch;
+  color: var(--steel);
+}
+
+/* THE ONE RED MOMENT ON THE PAGE. The design notes card is explicit: "Ein
+   Alert-Moment: die rote Zeile im Hero. Sonst nur Signal-Cyan." Nothing else on
+   a case study may use --alert, and H2's operation grid has to keep to that. */
+.cs-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  margin-block-start: var(--s-20);
+  font: 600 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--alert);
+}
+
+.cs-alert-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-dot);
+  background: var(--alert);
+  box-shadow: var(--glow-alert);
+  flex: none;
+}
+
+/* ── Spec rail ─────────────────────────────────────────────────────────────
+   "Diagramm-Platte trägt Corner-Brackets, sonst nichts — zwei FUI-Devices pro
+   Fläche." Eight gradients rather than four pseudo-elements: a ::before and an
+   ::after can draw two corners, and the panel would then need two more nested
+   elements for the other two. The marks are 13px, which is the panel's own
+   measure and not tokens.css's --bracket — that pair is the rest/hover length
+   of an interactive bracket and means something else.                        */
+
+.spec {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  padding: var(--s-20) var(--s-26);
+
+  background-image:
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge));
+  background-repeat: no-repeat;
+  background-size: 13px 1px, 1px 13px, 13px 1px, 1px 13px, 13px 1px, 1px 13px, 13px 1px, 1px 13px;
+  background-position:
+    left top, left top, right top, right top,
+    left bottom, left bottom, right bottom, right bottom;
+}
+
+.spec-label {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+  text-transform: uppercase;
+  margin: 0 0 var(--s-16);
+}
+
+.spec-body {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: var(--s-10) var(--s-16);
+  margin: 0;
+  font: 400 var(--t-mono-11)/1.6 var(--mono);
+}
+
+.spec-key {
+  color: var(--dim);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.spec-val {
+  margin: 0;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.spec-val a { color: var(--acc); }
+.spec-val a:hover { color: var(--acc-hi); }
+
+/* The sub-line under SOURCE for a closed system: "<> PRIVATE" with no reason
+   would be an excuse, so the contract requires one and the rail prints it. */
+.spec-why {
+  display: block;
+  font-size: var(--t-mono-9);
+  color: var(--dim);
+}
+
+/* ── The five tiles ────────────────────────────────────────────────────────
+   Five and not three: Case Study 02 draws five, the Intermediate Widths
+   register sizes the row as 5 × 1fr with 120px minimum per tile, and layout.css
+   has carried the 5 → 3 → 2 reflow since G1. ADR 0052.                       */
+
+.ops-tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s-16);
+}
+
+/* "EMPTY ON PURPOSE". Amber, not alert — the page's one red moment is the hero
+   line, and an empty tile is not an error. It is rendered only while all five
+   are empty, so it disappears with the condition it describes rather than
+   becoming a caption nobody rereads. */
+.cs-note {
+  margin-block: var(--s-16) 0;
+  padding: var(--s-12) var(--s-16);
+  background: var(--panel);
+  border-inline-start: 1px solid var(--amber);
+}
+
+.cs-note-label {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: .12em;
+  color: var(--amber);
+  text-transform: uppercase;
+  margin: 0 0 var(--s-8);
+}
+
+.cs-note p {
+  margin: 0;
+  font-size: var(--t-body-13);
+  color: var(--steel);
+}
+
+/* ── .01 PROBLEM ───────────────────────────────────────────────────────────
+   Reading measure 68 characters, which is the number that set the 1080 switch:
+   517px at 15px Geist, plus a 380px rail and an 80px gap, is 977. Foundations
+   fixes the measure and globals.css already caps `p` at 68ch — the class is
+   here so the section's spacing does not have to be set on every paragraph.  */
+
+.cs-prose p { margin: 0 0 var(--s-20); }
+.cs-prose p:last-child { margin-block-end: 0; }
+
+.cs-constraints {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: constraint;
+}
+
+.cs-constraints li {
+  counter-increment: constraint;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: var(--s-12);
+  padding-block: var(--s-10);
+  border-block-start: 1px solid var(--line-faint);
+  font-size: var(--t-body-13);
+  color: var(--steel);
+}
+
+.cs-constraints li:first-child { border-block-start: 0; }
+
+/* The number is content, not decoration: it is how the constraints are referred
+   to elsewhere — build plan chapter 3 refuses WebGL by quoting "Constraint 04"
+   back at this list. `content` from a counter is announced by screen readers in
+   list context, and the item text stands on its own either way. */
+.cs-constraints li::before {
+  content: counter(constraint, decimal-leading-zero);
+  font: 500 var(--t-mono-10)/1.6 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}

@@ -11,21 +11,27 @@
 // boolean lives in lib/seo/pages.ts, which is also what the pages read — a
 // stage-H phase flips it once and both follow.
 //
-// NO `lastModified`, NO `changeFrequency`, NO `priority`.
+// `lastModified` ONLY WHERE SOMETHING WROTE ONE. NO `changeFrequency`, NO
+// `priority`.
 //
-// The first is the one that matters. `new Date()` here is the moment this
-// container was built, which is not the moment anything on the page changed —
-// every deploy would move every date, and a crawler would be told the whole
-// site was rewritten because a dependency got a patch bump. That is invariant 1
-// in a file nobody looks at: a number no system measured does not get
-// published. When H1 and H9 give pages a real modification date, it comes from
-// the content, and this is where it goes.
+// The rule this file was written with still holds: `new Date()` here is the
+// moment the container was built, which is not the moment anything on the page
+// changed — every deploy would move every date, and a crawler would be told the
+// whole site was rewritten because a dependency got a patch bump. That is
+// invariant 1 in a file nobody looks at.
+//
+// H1 IS THE PHASE THIS FILE NAMED. It said "when H1 and H9 give pages a real
+// modification date, it comes from the content, and this is where it goes", and
+// content/case-studies now carries one per study, written by hand next to the
+// prose it describes. So a case study has a date and the homepage does not, and
+// that asymmetry is the honest one: nothing has measured when `/` last changed.
 //
 // The other two are hints Google says in writing that it ignores. Writing them
 // anyway would be decoration that looks like configuration.
 
 import type { MetadataRoute } from "next";
 
+import { CASE_STUDIES, caseStudyPath } from "@/content/case-studies/index";
 import { LOCALES, localeHref } from "@/lib/i18n/routes";
 import { indexablePaths } from "@/lib/seo/pages";
 import { SITE_URL } from "@/lib/site";
@@ -47,13 +53,24 @@ function alternateLanguages(path: string): Record<string, string> {
   return languages;
 }
 
+/** The date the content of a path was last written, for the paths that have one. */
+function lastModifiedFor(path: string): Date | undefined {
+  const study = CASE_STUDIES.find((entry) => caseStudyPath(entry) === path);
+  return study === undefined ? undefined : new Date(study.updatedAt);
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return indexablePaths().flatMap((path) => {
     const languages = alternateLanguages(path);
+    const lastModified = lastModifiedFor(path);
 
     return LOCALES.map((locale) => ({
       url: absolute(localeHref(locale, path)),
       alternates: { languages },
+      // Spread rather than set: `lastModified: undefined` is still a key, and a
+      // sitemap entry that carries an empty one is a claim about a date nobody
+      // wrote.
+      ...(lastModified === undefined ? {} : { lastModified }),
     }));
   });
 }

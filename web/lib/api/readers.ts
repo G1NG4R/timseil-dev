@@ -1,7 +1,11 @@
-// The two ways this site reads /api/health, and why there have to be two.
+// Every read this site makes against the api, and the rule that decides which
+// door each one takes.
 //
-// They are in one file so the contrast is unavoidable to whoever adds a third
-// reader in stage H. The rule that forces it is in Next's own documentation,
+// The file was written in G4 with two readers of /api/health and a note about
+// "whoever adds a third reader in stage H". H1 is that phase, and the third one
+// reads a different endpoint — so the heading is no longer about one document,
+// but the rule below is unchanged and is what the contrast was kept for. It is
+// in Next's own documentation,
 // node_modules/next/dist/docs/01-app/03-api-reference/01-directives/use-cache.md:
 //
 //   "Cached functions and components cannot access runtime APIs like cookies(),
@@ -18,9 +22,11 @@
 // Hence: the cached reader carries no correlation and is honest about it, and
 // the correlated reader carries no cache and is honest about that.
 //
-// NEITHER FUNCTION IS UNIT TESTED, and that is the cost of the imports below.
-// What they do is covered by the container run in docs/runbooks/web.md; what
-// they decide was moved into lib/api/health.ts, which is.
+// NOTHING IN HERE IS UNIT TESTED, and that is the cost of the imports below.
+// What these functions do is covered by the container run in docs/runbooks/web.md;
+// what they decide was moved into lib/api/health.ts and lib/api/systems.ts,
+// which are. A reader that grew a judgement of its own would be a decision with
+// no test, so the shape to keep is: fetch, cache, hand it on.
 //
 // Sharing a module with a `next/headers` import does NOT stop healthCached from
 // caching. That was suspected during G4 and measured false — /about, which
@@ -38,6 +44,7 @@ import { TRACEPARENT_HEADER, childSpan, renderTraceparent } from "../trace.ts";
 
 import { apiGet } from "./client.ts";
 import { NO_HEALTH, footerHealth, healthOrThrow, type FooterHealth, type Health } from "./health.ts";
+import type { SystemDetail } from "./systems.ts";
 
 /** The tag this answer is filed under. One name, so a reader can grep for it. */
 export const HEALTH_TAG = "health";
@@ -179,5 +186,68 @@ export async function footerHealthNow(): Promise<FooterHealth> {
     return footerHealth(await healthCached());
   } catch {
     return NO_HEALTH;
+  }
+}
+
+/** The tag a system's answer is filed under. One name, so a reader can grep for it. */
+export const SYSTEMS_TAG = "systems";
+
+/**
+ * One system in full, shared between every visitor for the length of one cache
+ * window.
+ *
+ * THE THIRD READER THIS FILE'S HEADER PREDICTED, and it takes the cached door
+ * rather than the correlated one on purpose. A case study is the same page for
+ * everybody: nothing on it depends on who is asking, so nothing on it needs the
+ * visitor's request id — and the rule at the top of this file says a value that
+ * enters a cached scope may not carry one anyway. The web→api hop stays findable
+ * through `healthLive`, which every page already makes for its meta bar.
+ *
+ * IT THROWS FOR healthCached's REASON, not for a new one. `use cache` stores
+ * whatever the function returns, including a value meaning "no data", and the
+ * only lever it offers for not storing something is not returning it. A failure
+ * that landed in the cache would hold `— NO DATA` across the whole expire window
+ * — five minutes of a page saying it has no numbers, minutes after the api came
+ * back. So the failure leaves by the other door and the page renders the resting
+ * state.
+ *
+ * `connection()` IS THE CALLER'S JOB, not this one's, and app/[lang]/work/[slug]
+ * makes the call. Without it these values are rendered during `next build`,
+ * which runs inside `docker build`, where no `api:8080` exists — every visitor
+ * would then be served a shell baked with `— NO DATA` for the length of the
+ * expire window. Same line, same reason, as `footerHealthNow` below.
+ */
+export async function systemCached(slug: string): Promise<SystemDetail> {
+  "use cache";
+  cacheLife("systems");
+  cacheTag(SYSTEMS_TAG, `${SYSTEMS_TAG}:${slug}`);
+
+  // The slug is a cache key, and that is the one thing that makes this call
+  // different from healthCached: an argument is part of the key, so this is one
+  // entry per system rather than one per visitor. With two systems that is two
+  // entries; the shape stays right when there are twenty.
+  const result = await apiGet("/api/systems/{slug}", { params: { slug } });
+  if (result.kind !== "ok") {
+    throw new Error(`system unavailable: ${slug} ${String(result.status)}`);
+  }
+  return result.data;
+}
+
+/**
+ * One system, or the resting state. Never throws.
+ *
+ * The shape a page can render without a try/catch of its own, and the twin of
+ * `footerHealthNow`: wait for a request, ask the shared cache, and show the
+ * page's empty form rather than an error if there is no answer. The catch
+ * swallows nothing that was not already recorded — lib/api/client.ts wrote the
+ * status, the duration and the scrubbed error before it got here.
+ */
+export async function systemNow(slug: string): Promise<SystemDetail | null> {
+  await connection();
+
+  try {
+    return await systemCached(slug);
+  } catch {
+    return null;
   }
 }

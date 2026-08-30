@@ -447,6 +447,7 @@ the same page.
 |---|---|---|---|
 | `/` | `/de` | `/fr` | home |
 | `/work` | `/de/work` | `/fr/work` | the systems |
+| `/work/<slug>` | `/de/work/<slug>` | `/fr/work/<slug>` | one system in full — a case study exists for a system that has been written about, and `/work/vat-check` is a 404 because none has |
 | `/blog` | `/de/blog` | `/fr/blog` | the log — the label says `LOG`, the route says `/blog` |
 | `/about` | `/de/about` | `/fr/about` | the operator |
 | `/contact` | `/de/contact` | `/fr/contact` | the channel |
@@ -465,8 +466,10 @@ mechanism, the routes and the switcher are not
 `/healthz` carries no language: Traefik asks it once a second per backend and
 reads no prose. Neither do the four files a machine reads — `/robots.txt`,
 `/sitemap.xml`, `/feed.xml` and `/og.png`. The sitemap lists only the pages that
-are finished, which today is the homepage in all three languages; the feed is a
-valid channel with no entries until the log has pages to point at.
+are finished — today the homepage and one case study, in all three languages
+each — and the case study is the only URL in it that carries a `lastModified`,
+because it is the only one whose content has a date somebody wrote. The feed is
+a valid channel with no entries until the log has pages to point at.
 
 ## Decisions
 

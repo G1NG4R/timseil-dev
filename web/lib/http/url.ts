@@ -68,3 +68,67 @@ export function apiTarget(path: string): string {
   assertPath(path);
   return typeof window === "undefined" ? upstreamUrl(path).toString() : path;
 }
+
+/** What a path segment may be made of. See `resolvePath` for why it is this narrow. */
+const SAFE_PARAM = /^[A-Za-z0-9_~-]+$/;
+
+/**
+ * Fills the `{name}` placeholders of a contract path, or refuses the value.
+ *
+ * `/api/systems/{slug}` is the first templated path this site reads, and it is
+ * the first time a value that is not a source literal reaches an outgoing URL.
+ * CLAUDE.md: "Keine URL aus Nutzereingabe in ausgehende Requests."
+ *
+ * IT REFUSES RATHER THAN ENCODES, and that is the decision in this function.
+ * `encodeURIComponent` would turn every bad value into a working request
+ * against a path nobody meant — `..` stays `..`, and `/api/systems/..` resolves
+ * to `/api/`, a different endpoint answering with a different shape. A value
+ * outside the allow-list is a bug at the call site, so it leaves by the same
+ * door `assertPath` uses: a throw, which lib/api/client.ts turns into the one
+ * "no answer" result a page already handles.
+ *
+ * THE ALLOW-LIST HAS NO DOT, on purpose and not by oversight. Unreserved
+ * characters in RFC 3986 include it, and `.` and `..` are the two path segments
+ * that mean something other than themselves. No parameter this contract
+ * declares needs one; the day one does, it gets its own rule and its own test
+ * rather than a loosened default.
+ *
+ * IT IS NOT THE CONTRACT'S PATTERN, and it deliberately does not restate it.
+ * `Slug` is `^[a-z0-9]+(-[a-z0-9]+)*$` (contract/openapi.yaml), and the same
+ * shape is a CHECK constraint in migration 00002. A third copy here would drift
+ * from both. What this guard owes is narrower and its own: nothing may leave
+ * this segment. A value that passes here and fails the contract is answered
+ * with a 404 by the api, which is the correct answer to it.
+ */
+export function resolvePath(template: string, params: Record<string, string>): string {
+  const used = new Set<string>();
+
+  const path = template.replace(/\{([A-Za-z0-9_]+)\}/g, (_match, name: string) => {
+    if (!Object.hasOwn(params, name)) {
+      throw new Error(`no value for the path parameter: ${name}`);
+    }
+
+    // Read as `unknown`, and the `typeof` below is not ceremony. This file's own
+    // header says why: the type is erased at runtime, and a value that arrived
+    // through a cast or from JSON reaches here unchecked. Without it,
+    // `SAFE_PARAM.test(undefined)` coerces to the string "undefined", which
+    // passes the allow-list and asks the api for `/api/systems/undefined`.
+    const value: unknown = params[name];
+    if (typeof value !== "string" || !SAFE_PARAM.test(value)) {
+      throw new Error(`a path parameter may not carry this value: ${name}`);
+    }
+    used.add(name);
+    return value;
+  });
+
+  // A parameter nobody asked for means the caller and the template disagree
+  // about which path this is. Silently dropping it would hide the mismatch
+  // until someone renamed a placeholder and every call kept working.
+  for (const name of Object.keys(params)) {
+    if (!used.has(name)) {
+      throw new Error(`the path has no such parameter: ${name}`);
+    }
+  }
+
+  return path;
+}

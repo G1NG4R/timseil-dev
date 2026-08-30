@@ -6,11 +6,14 @@
 // Google indexes, and nothing in the build says so.
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import test from "node:test";
 
 import { NAV } from "../chrome.ts";
 import { LOCALES } from "../i18n/routes.ts";
 import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
+import { CASE_STUDIES, caseStudyPath } from "../../content/case-studies/index.ts";
 import { PAGES, indexablePaths, seoFor } from "./pages.ts";
 
 // A page added to `app/[lang]/` without a line in PAGES has not been decided
@@ -21,11 +24,55 @@ void test("a path the table does not know throws instead of guessing", () => {
   assert.throws(() => seoFor("en", "/about/"), /no page entry/);
 });
 
-// The one route that says something today. The build plan's acceptance for this
-// phase is the Rich Results test, and this is the address it reads.
-void test("only the homepage is indexable today", () => {
-  assert.deepEqual(indexablePaths(), ["/"]);
+// The two routes that say something today. It was one until H1; the case study
+// is the second, and `/work` is deliberately not among them — the index it
+// belongs to is still the [SOON] stub H6 replaces.
+void test("the homepage and the case studies are indexable, and nothing else", () => {
+  assert.deepEqual(indexablePaths(), ["/", "/work/timseil-dev"]);
   assert.equal(seoFor("en", "/").robots, undefined);
+  assert.equal(seoFor("en", "/work/timseil-dev").robots, undefined);
+  assert.deepEqual(seoFor("en", "/work").robots, { index: false });
+});
+
+// The drift this table was restructured to make impossible: a case study that
+// renders at an address the SEO table has never heard of. `entryFor` throws for
+// an unknown path, so the failure would be a 500 on the page rather than a
+// missing sitemap line — loud, but only for whoever visits it first.
+void test("every case study has a row, and every row says it may be indexed", () => {
+  const known = new Map(PAGES.map((page) => [page.path, page.indexable]));
+  for (const study of CASE_STUDIES) {
+    const path = caseStudyPath(study);
+    assert.ok(known.has(path), `no page entry for ${path}`);
+    assert.equal(known.get(path), true, `${path} is written but not indexable`);
+    assert.doesNotThrow(() => seoFor("en", path));
+  }
+});
+
+// The drift that would be invisible from inside web/: a case study written for a
+// system the api has never heard of. The page would 404 at the api, render its
+// empty form, and the sitemap would go on advertising it — nothing red anywhere.
+// seed.sql is the curated list of systems, so it is the file to hold this
+// against; reading across the boundary is the same move og/tokens.ts makes when
+// it parses tokens.css rather than keeping a copy.
+void test("every case study names a system the seed actually creates", () => {
+  const seed = readFileSync(
+    join(import.meta.dirname, "..", "..", "..", "api", "internal", "seed", "seed.sql"),
+    "utf8",
+  );
+  for (const study of CASE_STUDIES) {
+    assert.match(seed, new RegExp(`\\('${study.slug}',`), `seed.sql has no system ${study.slug}`);
+  }
+});
+
+// The slug travels into a URL, so it is held against the contract's own shape
+// rather than trusted. A capital letter or a dot here would be a 404 from the
+// api and a page nobody could reach — and the sitemap would still list it.
+void test("a case study slug is a slug the api can be asked about", () => {
+  for (const study of CASE_STUDIES) {
+    assert.match(study.slug, /^[a-z0-9]+(-[a-z0-9]+)*$/, study.slug);
+    assert.match(study.updatedAt, /^\d{4}-\d{2}-\d{2}$/, `${study.slug} has no real date`);
+    assert.ok(!Number.isNaN(Date.parse(study.updatedAt)), `${study.slug}: ${study.updatedAt}`);
+  }
 });
 
 void test("every stub refuses indexing, and says so in the metadata", () => {

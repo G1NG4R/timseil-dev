@@ -12,7 +12,147 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, sechs PRs durch, und ein Rücklauf, den es nicht gibt
+## Wo wir stehen — 30.08.2026, H1a gebaut, und die Blätter waren sich uneinig
+
+**Die erste Inhaltsseite steht.** `/work/timseil-dev`, gebaut aus
+`GET /api/systems/{slug}`, und sie zeigt an fünf Stellen `— NO DATA`, weil das
+der Zustand ist. Drei seit Stufe G vertagte Entscheidungen sind gefallen:
+**#240**, **#208**, **#75**. ADR 0052.
+
+### Der stärkste Fund: die Antwort lag seit sieben Phasen im Stylesheet
+
+`Case Study Template` zeichnet **drei** Metrik-Kacheln, `Case Study 02` zeichnet
+**fünf**. Beide Blätter gehören H1, beide sind read-only, und keins ist falsch.
+
+Entschieden hat es nicht ein Quellenrang, sondern `web/styles/layout.css` — in G1
+wortgleich aus dem Handoff kopiert und seitdem ausgeliefert:
+
+```css
+@media (max-width: 719px) { .ops-tiles { grid-template-columns: repeat(3, minmax(0,1fr)) } }
+@media (max-width: 559px) { .ops-tiles { grid-template-columns: repeat(2, minmax(0,1fr)) } }
+```
+
+**Fünf → drei → zwei.** Diese zwei Regeln hatten bis zu dieser Phase **keinen
+einzigen Konsumenten**, und für eine Dreierreihe sind sie unerreichbar: drei
+Spalten auf drei Spalten ist kein Umbruch. Dazu das Register in
+`Intermediate Widths` (`5 × 1fr`, 120px je Kachel gerechnet für `— NO DATA`) und
+`Consistency Check` K-29. Drei Quellen gegen eine, und die vierte war
+ausführbar.
+
+**Die Regel, die daraus folgt und die vorher nicht dastand:** widersprechen sich
+zwei Blätter, such das, das ausgeliefert wird. Ein Canvas ist ein Bild einer
+Absicht; eine Datei unter `docs/design/code/` ist dieselbe Absicht so
+geschrieben, dass ein Browser sie ausführt — und ausführbare Absicht trägt ein
+Detail, das ein Bild nicht hat.
+
+### Was der Bau gefunden hat und keine Messung vorher
+
+**Die Route baut ohne `generateStaticParams` gar nicht.** Fünfmal
+`usePathname() in a Client Component outside of <Suspense>` plus
+`uncached or runtime data during prerendering`. Ohne die Liste baut Next eine
+Schale für das Segment `[slug]` selbst, und der Kopf hat keinen Pfad zu lesen.
+Zwei Ursachen, zwei Reparaturen: die Slug-Liste aus dem Inhaltsregister, und
+vier `<Suspense>`-Grenzen um alles, was `connection()` erreicht.
+
+**Eine gestreamte Seite trägt Fallback und Ersetzung gleichzeitig — und das gilt
+für alle vier Bereiche, nicht für einen.** Zuerst bei 390 an der Brotkrume rot
+gegangen und dort lokal repariert; **beim ersten Lauf ohne erreichbare API dann
+an `.spec`, `.cs-eyebrow` und `.ops-tiles` gleich mit**. Kein Fehler — React
+liefert die Ersetzung in einem `<div hidden>` nach und tauscht per Skript.
+
+**Warum es der Lauf ohne API war, ist der eigentliche Punkt:** mit antwortender
+API ist das Fenster Millisekunden breit und alle Tests waren grün. Ohne sie ist
+es die vollen zwei Sekunden des Zeitbudgets. Ein Test, der grün ist, weil die
+Antwort schnell war, prüft die Geschwindigkeit und nicht die Seite.
+
+Jede Prüfung wartet jetzt auf denselben Satz — genau eine Brotkrume —, und
+dieselbe Zeile ist die Zusicherung: bliebe eine Kopie stehen, wäre das die Form
+von #256.
+
+**Der erste E2E-Entwurf war ein Test über mein Terminal.** Er behauptete fünf
+Gedankenstriche und ging rot, weil `reuseExistingServer` meinen Server mit
+laufender API aufgriff. Jetzt sichert die Datei **Regeln** zu: eine Kachel ist
+genau dann gestrichelt, wenn sie keine Zahl trägt.
+
+**`UPTIME — NO DATA — NO DATA`.** Am laufenden Bild gesehen: ohne Antwort war die
+Abdeckungszeile selbst ein Gedankenstrich, zwei untereinander. Jetzt trägt die
+Kachel ohne bekanntes Fenster gar keine zweite Zeile — und heißt `UPTIME` statt
+`UPTIME · 91 D`, weil 91 der Vorgabewert des Contracts ist und niemand ihn
+gesagt hat.
+
+### Gemessen, nicht geschätzt
+
+Bundle, gegen `cbdd9f0` in einem zweiten Worktree gebaut:
+
+```
+                main (cbdd9f0)        phase/h1a
+  framework     134 097 B, 5 Dateien  134 401 B, 6 Dateien
+  our code        9 178 B, 1 Datei      9 178 B, 1 Datei
+  total         143 275 B             143 579 B
+```
+
+**Die Seite kostet null Byte eigenen Code** — sie bringt kein Client-Bauteil mit,
+und #237s Rechnung hält. Der Rahmen bewegt sich um **304 B** und zerfällt in
+sechs statt fünf Chunks; das ist Turbopacks Aufteilung, und weiter zuzuordnen
+wäre geraten.
+
+E2E: **221 Zusicherungen** über acht Projekte statt 130, axe auf der neuen Route
+an allen sieben Breiten grün. `npm test`: 318.
+
+**Vier Suspense-Grenzen sind eine Anfrage, und das ist jetzt gemessen statt
+kommentiert.** Produktionsbuild ohne erreichbare API, drei Seitenaufrufe:
+
+```
+  /work/timseil-dev   ttfb 9-10 ms   total 2,03 s
+  /about              ttfb 8-12 ms   total 2,02 s
+  Logzeilen:  3 x /api/systems/{slug}   (nicht 12)
+```
+
+`systemCached` wirft im Fehlerfall, speichert also nichts — und trotzdem teilen
+sich die vier Grenzen **einen** Upstream-Aufruf je Aufruf der Seite. Die 2,03 s
+sind das Zeitbudget des Clients, nicht die Zahl der Grenzen: `/about` mit einer
+einzigen Grenze braucht dieselben zwei Sekunden. Der Zeitpunkt des ersten Bytes
+zeigt, dass die Schale wirklich statisch ist.
+
+Generator-Abweisungen vorgeführt statt behauptet: Dienst umbenannt →
+`✗ compose.yaml has no service api`; `depends_on` im `api`-Block entfernt →
+`✗ service api has no depends_on`; `service_healthy` → `service_started` bewegt
+die Prüfsumme (`d6204a8d…` → `8789198c…`).
+
+### Was diese Runde nicht behauptet
+
+**Der Blattvergleich fehlt weiter.** Er ist H1b, zusammen mit den Baselines für
+die fünf nicht zeichenbaren Breiten und der CI-Verdrahtung von `make e2e`.
+
+**Die Seite ist nicht gegen Produktion abgenommen.** Alles oben ist lokal gegen
+einen Produktionsbuild gemessen, teils mit und teils ohne API.
+
+**`DEPLOY · MEDIAN` zeigt eine Zahl, deren Bedeutung offen ist** — #242, fällig
+mit H2. Die Kachel druckt, was die API sendet, und ADR 0052 benennt es.
+
+---
+
+## Gefunden
+
+- **`in_build` hat kein Zustandswort**, und H1 hat keins erfunden. Die
+  Zustandssprache kennt acht Einträge, `IN BUILD` steht auf dem Work-Index-Blatt
+  — H6 gibt ihm Ton, Punktform und Wörterbuchschlüssel. Bis dahin `null`.
+  Auslöser für ein Issue in der H-Triage. *(30.08.2026, H1a)*
+- **Badge und Fußzeile führen `uptime90d` weiter ohne Abdeckung**, und dort gibt
+  es kein `days[]`. Contract-Feld (`Metrics.measuredDays`), das
+  `/api/health`, `OpsSummary` und drei Badge-Routen mitträfe — **fällig mit H5**,
+  wo die Startseite die Zahl ein zweites Mal zeigt. *(30.08.2026, H1a)*
+- **Die README-Entscheidungstabelle endet weiter bei ADR 0029**, jetzt fehlen
+  dreiundzwanzig. 0052 allein nachzutragen hätte die Lücke absichtlich aussehen
+  lassen; das ist #205. *(30.08.2026, H1a)*
+- **`.cs-hero` hat weiter keinen Konsumenten.** `layout.css` trägt zwei
+  Hero-Geometrien — 420px mit `align-items: end` (Case Study 02) und 400px mit
+  `start` (Vorlage). H1 baut die Vorlage. Zusammenzuführen ist es, wenn H2 die
+  zweite Fassung braucht. *(30.08.2026, H1a)*
+
+---
+
+## Vorher — 30.08.2026, sechs PRs durch, und ein Rücklauf, den es nicht gibt
 
 `21706c4 · c6b2f16 · 7b89a15 · ff9e076 · 84dbb3f · 9cd4f87` — #256, #181, #182,
 #144, #236, #180. Mit den neun aus der Triage sind das **fünfzehn Issues**, und

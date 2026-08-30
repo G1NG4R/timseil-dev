@@ -1,0 +1,114 @@
+---
+title: 'Two sheets drew the same row, and the stylesheet had already decided'
+deck: 'The design handoff shows three metric tiles on one page and five on another. The argument was not settled by picking a sheet — it was settled by a reflow rule that had been sitting in the repository for seven phases with nothing to reflow.'
+published: 2026-08-30
+tags: ['design-handoff', 'frontend', 'invariants']
+system: 'timseil-dev'
+summary: |
+  Building the first content page of this site meant resolving a contradiction
+  between two design sheets that are both binding for the same phase. One draws
+  three metric tiles, the other five. The tie-breaker turned out to be a CSS file
+  copied verbatim out of the handoff seven phases earlier, which carries a
+  five-to-three-to-two reflow that can only ever fire for five tiles. The
+  designer had shipped the answer as code before anyone thought to count.
+---
+
+## Two sheets, one row, two numbers
+
+The design handoff for this site is twenty-nine canvases. Two of them describe
+the case study page, and the phase that builds its hero is assigned both.
+
+The `Case Study Template` draws the metric row as three cells between two
+hairlines: uptime over ninety-one days, deploy time, p95 latency. The numbers in
+it are bracketed placeholders — `[99.98 %]`, `[42 S]`, `[— MS]`.
+
+`Case Study 02` draws the same row as five bordered tiles: uptime, p95, error
+rate, deploy median, incidents. Every one of them reads `— NO DATA`, and
+underneath sits an amber note explaining why:
+
+> These five tiles fill from the first day of operation and stay empty until
+> then. A case study that shows uptime before the server has run is the thing
+> this page exists to argue against.
+
+Both sheets are read-only. Both are assigned to this phase. Neither is wrong.
+
+## The tempting way to decide
+
+The obvious move is to rank them. The template is the structural sheet — it is
+the one with the problem section and the constraints list, and the build plan
+names both when it describes the phase. So: three tiles, and the second sheet is
+the older draft.
+
+That reasoning is clean and it is worth about as much as a coin toss. Both
+sheets were drawn on the same day by the same person. "Structural sheet" is a
+label this repository invented afterwards to organise its own reading, not a
+statement the handoff makes about itself.
+
+## Where the answer actually was
+
+The third sheet in the phase is `Intermediate Widths`, which exists to work out
+what happens between the two artboard widths the others draw. It carries a
+register of every two-column component with its minimum width, and one of its
+rows reads:
+
+> Ops-Kacheln 5 × 1fr — `— NO DATA` bei 15px Mono braucht 120. Fünf Kacheln
+> halten bis 736.
+
+Five. Computed, with the reason: the string `— NO DATA` needs a hundred and
+twenty pixels at that size, five of them plus their gaps hold together down to a
+window of seven hundred and thirty-six, and the breakpoint below that catches
+them. That is not a drawing. That is arithmetic about a row that has five cells
+in it.
+
+And then the part that settled it. Seven phases ago, the layout stylesheet was
+copied out of the handoff verbatim, with a header saying nothing in it is ours
+to reword and no value in it is ours to change. It has been shipping ever since.
+Two of its rules are:
+
+```css
+@media (max-width: 719px) { .ops-tiles { grid-template-columns: repeat(3, minmax(0,1fr)) } }
+@media (max-width: 559px) { .ops-tiles { grid-template-columns: repeat(2, minmax(0,1fr)) } }
+```
+
+Five to three to two. Those two rules have been in the shipped stylesheet since
+the first frontend phase, and until this one they had **no consumer at all** —
+no page rendered anything with that class. They are also unreachable for a
+three-tile row: three columns falling back to three columns is not a reflow, it
+is a no-op that somebody wrote by hand and nobody would have.
+
+The consistency check, a fourth sheet, records the same thing in a sentence: the
+five ops tiles wrap five to three to two.
+
+So the count was never a matter of judgement. It was in the repository, in a
+file that had been read by every page load for two weeks, in a rule that could
+not do anything until the row it was written for existed.
+
+## What that changes about reading a handoff
+
+The rule this repository already had was **form from the sheet, facts from the
+build plan** — the drawings are older than half the decisions, so a version
+number or a stack name from a sheet is never copied.
+
+What this phase adds is narrower and, in hindsight, obvious: **when two sheets
+disagree, look for the one that ships.** A canvas is a picture of an intention.
+A stylesheet in the handoff's `code/` directory is the same intention written so
+that a browser can execute it, and executable intent carries a detail a picture
+cannot — a rule that fires only under a condition tells you the condition was
+expected.
+
+Three sheets said five. The fourth said five in CSS. The one that said three
+said it in a template whose own caption calls its numbers placeholders.
+
+## The count was not the expensive part
+
+The tiles are all empty, and they will be for a while. The seed for this site
+writes no measurements at all, and the comment above it says why:
+
+> No ops_checks, no ops_days, no incidents, no deploys, no metric_snapshots.
+> Those are measurements, and a measurement that a seed writes is an invented
+> number.
+
+So the first day this page existed it rendered five em dashes, and the amber
+note under them is not an apology. It is the argument. A page that shows uptime
+before the server has run is the thing the page exists to argue against — and
+the count of empty cells is the only part of it that had a right answer.

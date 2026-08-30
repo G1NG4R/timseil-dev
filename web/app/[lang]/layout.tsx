@@ -17,6 +17,8 @@ import { fontVariables } from "../fonts";
 //   globals   reset, typography, focus, the three keyframes
 //   chrome    the header, the menu and the footer — G3
 //   state     the state language: dots, panels, empty and degraded — G6
+//   ui        button, field, metric tile, section head — G7, site-wide since H1
+//   case      the case study's own surfaces — H1
 //   layout    the content column and the four breakpoints — LAST, so its
 //             media queries win over anything above them
 //
@@ -44,6 +46,16 @@ import "../../styles/tokens.css";
 import "../../styles/globals.css";
 import "../../styles/chrome.css";
 import "../../styles/state.css";
+// ui.css was the gallery's alone until H1. Its own header set the condition —
+// "the first H phase to use one moves the import to app/[lang]/layout.tsx — H1
+// for MetricTile and SectionHead" — and the case study is that page.
+//
+// case.css sits between them for the reason the whole list exists: it may not
+// override chrome or state, and layout.css's media queries have to win over it.
+// Its one specificity-sensitive rule, the 52px h1, is written with `:where()`
+// so that source order and not a class decides against globals and layout.
+import "../../styles/ui.css";
+import "../../styles/case.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root

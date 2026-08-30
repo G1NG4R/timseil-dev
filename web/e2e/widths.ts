@@ -32,8 +32,26 @@ export const ROUTES = [
   "/",
   "/about",
   "/work",
+  // H1. The first route with a segment in it, and the first one that is allowed
+  // to be indexed besides `/`. content/case-studies is the list of slugs that
+  // exist; there is one.
+  "/work/timseil-dev",
   "/blog",
   "/contact",
   "/privacy",
   "/imprint",
 ] as const;
+
+/** The case study every width test drives. One system has a page today. */
+export const CASE_STUDY = "/work/timseil-dev";
+
+/**
+ * Where the two-column rows collapse, from the Intermediate Widths sheet.
+ *
+ * 1080 is not a round number chosen for tidiness: the case study's spec rail is
+ * the component that sets it. 400px rail + 80px gap + 517px of reading measure
+ * (68 characters at 15px Geist) is 997, in a content column that is the window
+ * minus 80 — so the row breaks at 1077, rounded up so that every two-column
+ * component in the site switches at one width.
+ */
+export const RAIL_BREAKPOINT = 1080;

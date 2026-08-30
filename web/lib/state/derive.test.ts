@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { healthStatus, siteWord, systemWord } from "./derive.ts";
+import { healthStatus, siteWord, systemStateWord, systemWord } from "./derive.ts";
 
 // The broken case first, because it is the one that happens in production.
 //
@@ -71,5 +71,32 @@ describe("the two subjects one answer can be about", () => {
       assert.notEqual(siteWord(value), "offline");
       assert.notEqual(systemWord(value), "offline");
     }
+  });
+});
+
+describe("systemStateWord reads a system's own record", () => {
+  it("maps the two states this site holds rows for", () => {
+    assert.equal(systemStateWord("live"), "live");
+    assert.equal(systemStateWord("queued"), "queued");
+  });
+
+  // Not an omission. The vocabulary has no word for it, IN BUILD is drawn on
+  // the Work Index sheet, and H6 is the phase that gives it a tone, a dot and a
+  // dictionary key. A ninth mark invented here would be a state nobody has seen.
+  it("has no word for in_build yet, and says so with null", () => {
+    assert.equal(systemStateWord("in_build"), null);
+  });
+
+  it("guesses at nothing", () => {
+    for (const value of ["LIVE", "ok", "", null, undefined, 1, {}]) {
+      assert.equal(systemStateWord(value), null);
+    }
+  });
+
+  // The two functions read two different fields of two different documents, and
+  // the failure mode is silent: `systemWord("ok")` also returns "live".
+  it("is not systemWord — it reads a row, not a health answer", () => {
+    assert.equal(systemStateWord("ok"), null);
+    assert.equal(systemWord("live"), null);
   });
 });
