@@ -106,9 +106,20 @@ es nicht gibt → Abbruch.
 falsch eingefärbtes Bauteil mit richtigen Maßen kommt durch. Dagegen stehen
 `check-tokens`, die Zustandssprache und M2.
 
-**Die CI-Laufzeit ist noch nicht gemessen.** Der Job steht, die Zahl kommt aus
-dem ersten Lauf. Reißt sie die fünf Minuten aus E1, wird nach Projekten geteilt —
-nicht auf `main` verschoben.
+**Die CI-Laufzeit ist gemessen, und sie war unter meiner Schätzung.** Ich hatte
+3:30–4:30 erwartet und damit gerechnet, dass `e2e` der neue kritische Pfad wird.
+Erster Lauf, PR #269, **kalter Browser-Cache**:
+
+```
+  e2e     2:36        check   3:50
+  images  2:10        db      1:55
+  codeql  1:03 / 1:09 scan    0:29
+```
+
+**`e2e` ist nicht der langsamste Job.** Das PR-Feedback bleibt bei `check` und
+damit bei 3:50 — siebzig Sekunden unter E1s Kriterium, und die zweite Zahl
+kommt noch herunter, weil dieser Lauf den Chromium erst geladen hat. Die
+vorbereitete Teilung nach Projekten wird nicht gebraucht.
 
 **Der Vergleich deckt eine Seite.** Die Startseite hängt H3 an, den Work Index
 H6. Generator und Projekt bleiben, jede Phase bringt ihr Blatt mit.
@@ -123,6 +134,17 @@ H6. Generator und Projekt bleiben, jede Phase bringt ihr Blatt mit.
 - **Der Fingerabdruck deckt neun Werte.** Was nicht darin steht, kann still
   aufhören zu schalten — `.cs-note`, `.tile`, die Fußzeile. Erweitern, wenn eine
   H-Phase ein Bauteil bringt, das an einem Schalter hängt. *(30.08.2026, H1b)*
+- **`selftest` flackert an `witness.sh`, einmal in fünf Läufen.** „the witness
+  accepts a window in which the process restarted (rejected, should accept)",
+  einmal rot, danach viermal grün — bei einer Änderung, die nur `backlog.md`
+  angefasst hat, also nicht meine. Der Fall ist ein Rennen: ein
+  `( sleep 3; schreib )` im Hintergrund gegen `WITNESS_MAX_SEC=20`, und die
+  Maschine trug in dem Moment einen Playwright-Lauf. **Nicht repariert, weil ich
+  nur die Häufigkeit habe und nicht den Mechanismus** — eine Reparatur nach
+  Gefühl an einem Test, der Zeit misst, macht ihn ruhiger und nicht richtiger.
+  Kommt es wieder, ist der erste Verdacht `WITNESS_TAIL_SEC=1` gegen eine
+  belastete Uhr. Verwandt mit #145, aber die andere Richtung: dort grün aus dem
+  falschen Grund, hier rot ohne Grund. *(30.08.2026, H1b)*
 
 ---
 
