@@ -952,6 +952,10 @@ jobs:
           # a strict linter, so the marginal cost is small and the marginal
           # finding is the interesting one.
           queries: security-and-quality
+          # Which directories are ours to answer for. The file says why, and it
+          # is a file rather than a line here because the reason is longer than
+          # the rule (#182).
+          config-file: ./.github/codeql/config.yml
 
       - uses: github/codeql-action/autobuild@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
 
