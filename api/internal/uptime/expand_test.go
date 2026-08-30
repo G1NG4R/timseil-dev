@@ -1,8 +1,10 @@
 // The arithmetic, held against the sentence queries/ops.sql computes.
 //
-// down_sec is failed checks TIMES the probe interval, so the count these cases
-// assert is a public number in disguise: one instant too many or too few is an
-// outage duration that is five minutes wrong on a page that says it measures.
+// The count these cases assert is a public number in disguise. Until #180 it was
+// the duration — failed checks times the probe interval — and since #180 it is
+// the two evidence columns behind the colour: checks_total and checks_down are
+// what the outage threshold is compared against, so one instant too many or too
+// few is a cell that is the wrong colour on a page that says it measures.
 package uptime
 
 import (

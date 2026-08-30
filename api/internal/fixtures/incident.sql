@@ -7,7 +7,12 @@
 -- `degraded` and `outage`.
 --
 -- The raw checks and the daily roll-up are both written, and they agree by
--- construction: down_sec is the number of failed probes times the probe interval.
+-- construction: down_sec is the number of failed probes times this fixture's own
+-- half-hourly cadence. The roll-up has multiplied nothing since #180 — it sums
+-- the gaps between the instants — and the two agree here anyway, because these
+-- probes are evenly spaced and every failure is closed by the probe after it.
+-- That agreement is a property of THIS fixture and not of the arithmetic;
+-- store/ops_down_sec_db_test.go carries the cases where the two would differ.
 -- That is on purpose — C4 computes ops_days FROM ops_checks, and a fixture whose
 -- aggregate contradicts its raw data cannot tell a correct aggregation from a
 -- wrong one. The states here are stated, not derived: deriving them is the job of

@@ -97,6 +97,14 @@ und würfe `ops_checks_unique_observation` weg.
 
 ### 4. `down_sec` sind fehlgeschlagene Checks mal Sondenintervall, gedeckelt
 
+> **Revidiert am 30.08.2026 durch [ADR 0051](0051-die-dauer-die-aus-zeitstempeln-kommt-und-die-luecke-die-niemand-fuellt.md).**
+> Der Absatz unten benennt seine eigene Schwäche und behält sie — F4 hat sie dann
+> vorgeführt: die Sonde lief mit einem Siebtel ihrer erklärten Kadenz, und jede
+> Ausfalldauer auf der Seite war um denselben Faktor zu klein. `down_sec` ist
+> seither die Summe der Lücken zwischen echten Instanten; es wird nichts mehr
+> multipliziert. Der Text bleibt stehen, weil er die Frage richtig gestellt hat.
+
+
 Es gibt keine Messung der Ausfalldauer — es gibt nur Sonden, die geantwortet
 haben, und Sonden, die es nicht taten. `down_sec` ist deshalb eine Herleitung und
 keine Beobachtung: `fehlgeschlagene Checks × Intervall`, geklemmt bei 86 400.

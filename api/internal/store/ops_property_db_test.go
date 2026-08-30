@@ -107,11 +107,17 @@ func TestTheRollUpHoldsForAnyPatternOfMeasurement(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
 		days := drawDays(rt)
 
-		// The cadence and the threshold are drawn too. down_sec is failures times
-		// an interval the caller states, so an interval the test never varies is an
-		// interval the test never checks — and 86400 is drawn on purpose, because
-		// it is the one that makes LEAST do something.
-		probeInterval := rapid.SampledFrom([]int{60, 300, 1800, 86400}).Draw(rt, "probeInterval")
+		// The threshold is drawn, and so is the CADENCE THE ROWS ARE WRITTEN AT.
+		// Before #180 the drawn number was a query parameter and the rows were
+		// always a minute apart, so a thousand cases could not tell a cadence that
+		// happens from a cadence that is declared. Now it is the spacing itself:
+		// the generator writes the checks at it, the assertion reads the expected
+		// duration off it, and nothing in between multiplies by a constant.
+		//
+		// 1800 is the ceiling because the day has to hold the checks — 47 gaps of
+		// half an hour is 84 600 seconds, which is inside a day, and drawing more
+		// would test the generator rather than the query.
+		spacing := rapid.SampledFrom([]int{60, 300, 900, 1800}).Draw(rt, "spacingSec")
 		outageChecks := rapid.IntRange(1, 5).Draw(rt, "outageChecks")
 
 		tx, err := pool.Begin(ctx)
@@ -131,13 +137,13 @@ func TestTheRollUpHoldsForAnyPatternOfMeasurement(t *testing.T) {
 				INSERT INTO ops_checks (system_id, observed_at, up, latency_ms, reason, origin)
 				SELECT $1,
 				       (((now() AT TIME ZONE 'UTC')::date - $2::int)::timestamp AT TIME ZONE 'UTC')
-				           + (n * interval '1 minute'),
+				           + (n * $5::int * interval '1 second'),
 				       n >= $3::int,
 				       CASE WHEN n >= $3::int THEN 118 END,
 				       CASE WHEN n <  $3::int THEN 'generated' END,
 				       'probe'
 				  FROM generate_series(0, $4::int - 1) AS n`,
-				id, d.back, d.failed, d.total,
+				id, d.back, d.failed, d.total, spacing,
 			); err != nil {
 				rt.Fatalf("measuring day -%d (%d checks, %d failed): %v",
 					d.back, d.total, d.failed, err)
@@ -145,9 +151,8 @@ func TestTheRollUpHoldsForAnyPatternOfMeasurement(t *testing.T) {
 		}
 
 		if _, err := txq.RollUpOpsDays(ctx, store.RollUpOpsDaysParams{
-			LookbackSec:      testLookback,
-			OutageChecks:     int32(outageChecks),
-			ProbeIntervalSec: int32(probeInterval),
+			LookbackSec:  testLookback,
+			OutageChecks: int32(outageChecks),
 		}); err != nil {
 			rt.Fatalf("RollUpOpsDays: %v", err)
 		}
@@ -177,9 +182,16 @@ func TestTheRollUpHoldsForAnyPatternOfMeasurement(t *testing.T) {
 				rt.Fatalf("day -%d with %d of %d failed at a threshold of %d reads %q, want %q",
 					d.back, d.failed, d.total, outageChecks, state, want)
 			}
-			if want := min(d.failed*probeInterval, 86400); downSec != want {
-				rt.Fatalf("day -%d reports %ds of downtime, want %d (%d failures × %ds, capped)",
-					d.back, downSec, want, d.failed, probeInterval)
+			// The failures are the FIRST rows of the day, so each of them is closed
+			// by the row after it — except when every check failed, and then the
+			// last one has no successor inside the day and vouches for nothing.
+			// That single subtraction is the whole of the open-outage rule,
+			// written here in Go so the SQL has something independent to be held
+			// against.
+			if want := wantDownSec(d.failed, d.total, spacing); downSec != want {
+				rt.Fatalf("day -%d reports %ds of downtime, want %d — %d failures at %ds "+
+					"apart, %d of them closed by a later check",
+					d.back, downSec, want, d.failed, spacing, closedGaps(d.failed, d.total))
 			}
 			// The evidence columns, asked separately. A FILTER that counts the wrong
 			// rows can still land on the right colour by accident; asking for the
@@ -224,6 +236,22 @@ func TestTheRollUpHoldsForAnyPatternOfMeasurement(t *testing.T) {
 			}
 		}
 	})
+}
+
+// wantDownSec is the arithmetic of queries/ops.sql, restated independently: the
+// sum of the gaps that closed. A gap closes when the failed check has a
+// successor on the same day, which for this generator's shape — the failures
+// first, the answers after — is every failure but the last one of an all-failed
+// day.
+func wantDownSec(failed, total, spacing int) int {
+	return min(closedGaps(failed, total)*spacing, 86400)
+}
+
+func closedGaps(failed, total int) int {
+	if failed == total && failed > 0 {
+		return failed - 1
+	}
+	return failed
 }
 
 func dayKey(back int) string {

@@ -2228,11 +2228,16 @@ rm -rf "$tmp/rel"
 printf 'probe cadence\n'
 # The one rule in this file that guards a number nobody can see is wrong.
 #
-# down_sec is failed checks times ops.ProbeInterval, and the failed checks are
-# however often the workflow ran. Halve one of the two and every outage on the
-# site is half as long as it was — with the right number of cells, in the right
-# colour, and no error anywhere. docs/runbooks/ops.md has asked for this check
-# since C7; these are its broken cases.
+# The cron and ops.ProbeInterval are two halves of one number: the workflow says
+# how often the probe runs, the constant says at what spacing internal/uptime
+# reconstructs an outage it could not observe. Halve one of the two and a
+# replayed outage carries half as many cells as it should — in the right colour,
+# with no error anywhere. docs/runbooks/ops.md has asked for this check since C7;
+# these are its broken cases.
+#
+# It used to guard the duration itself. #180 took that out of the constant's
+# hands, and the header of tools/check-probe-cadence.sh says why this gate still
+# earns its place afterwards.
 mkdir -p .github/workflows api/internal/ops
 
 write_cadence() {

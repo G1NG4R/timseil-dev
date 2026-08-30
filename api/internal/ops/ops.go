@@ -29,29 +29,36 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/traceparent"
 )
 
-// The four numbers the roll-up runs on.
+// The four numbers this loop runs on.
 //
 // They are constants and not environment variables, and that is a decision
 // rather than an omission. cmd/api gives the same reason for its connection
 // limits — they answer no question that differs between one deployment and
 // another — and two of these carry a second reason on top of it.
 //
-// ProbeInterval and outageChecks decide what a public cell CLAIMS: down_sec is
-// failed checks times the interval, and the threshold is the line between amber
-// and red. An operator who could move either from the environment would recolour
+// outageChecks decides what a public cell CLAIMS: it is the line between amber
+// and red. An operator who could move it from the environment would recolour
 // months of history on the next tick, and the site would go on looking correct.
-// That is invariant 1's failure mode wearing an operations hat, so the values
-// live in the repository, in a commit, next to the reason for them.
+// That is invariant 1's failure mode wearing an operations hat, so the value
+// lives in the repository, in a commit, next to the reason for it.
+//
+// ProbeInterval USED TO BE the second of those and is not any more. down_sec was
+// failed checks times this number until #180 counted the probe actually running
+// at about a seventh of its declared cadence; queries/ops.sql now derives every
+// duration from the observed_at instants themselves, and no constant reaches a
+// public duration.
 const (
 	// The cadence of the external probe (F4). The other half of this number is
 	// the cron expression in .github/workflows/probe.yml, and the two have to
 	// move together — tools/check-probe-cadence.sh is what makes that true
 	// rather than remembered, and docs/runbooks/ops.md says why.
 	//
-	// Exported, alone among the four. internal/uptime expands an outage onto
-	// this same interval when it replays the log, and the two have to agree for
-	// the same reason the cron does: down_sec is failed checks TIMES this
-	// number. A private copy over there would be one number with two truths.
+	// Exported, alone among the four, and the reason changed with #180. It is no
+	// longer that a duration is multiplied by it — nothing multiplies anything
+	// now. It is that internal/uptime replays an outage as instants at this
+	// spacing, and those instants become checks_total and checks_down, which are
+	// what outageChecks is compared against. A private copy over there would be
+	// one number with two truths.
 	ProbeInterval = 5 * time.Minute
 
 	// One failed check is a bad ten minutes, two is an outage. The Incident
@@ -186,9 +193,8 @@ func (a *Aggregator) runOnce(ctx context.Context) {
 	}
 
 	days, err := a.queries.RollUpOpsDays(ctx, store.RollUpOpsDaysParams{
-		LookbackSec:      int32(lookback.Seconds()),
-		OutageChecks:     outageChecks,
-		ProbeIntervalSec: int32(ProbeInterval.Seconds()),
+		LookbackSec:  int32(lookback.Seconds()),
+		OutageChecks: outageChecks,
 	})
 	switch {
 	case errors.Is(err, context.Canceled):

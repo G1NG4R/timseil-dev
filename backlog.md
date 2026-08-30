@@ -12,7 +12,124 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, das Rig hat beim ersten Lauf zwei Funde gemacht
+## Wo wir stehen — 30.08.2026, der Tracker ist einmal ganz gelesen worden
+
+**105 offene Issues, jedes gegen `main` gehalten.** Der Notizblock war seit der
+G-Triage leer, also war der Tracker der ganze Zustand — und als Ganzes war er nie
+geprüft. Ergebnis: **neun waren erledigt und niemand hatte sie zugemacht**, und
+eine der neun war seit zwei Merges repariert.
+
+### Neun geschlossen, und zwei davon anders als sie gestellt waren
+
+| | Warum |
+|---|---|
+| #235 | in `639e39d` repariert, PR #250 trug kein `Closes` |
+| #67 | `tools/check-probe-cadence.sh` läuft in `make check` |
+| #115 | ADR 0039 hat es entschieden, F2 hat es gebaut |
+| #102 | `ops/prometheus/prometheus.yml` scrapet `timseil-traefik:8082` |
+| #94 | in F1b repariert — `web/app/healthz/route.ts` |
+| #84 | **Prämisse tot:** `traefik_build_info` existiert nicht, gegen zwei Versionen gemessen |
+| #90 | beide Hälften: Push im `publish`-Job, Aufbewahrung in `prune-registry.sh` gemessen |
+| #68 | Auslöser trifft nicht zu — `Retry` hat zwei Aufrufer |
+| #30 | CI fährt `make check-db` gegen echtes Postgres, bewusst über Compose statt `services:` |
+
+**#30 und #84 sind anders zu als gefragt**, und das steht im Schließkommentar.
+Sonst liest der nächste eine erledigte Aufgabe, die so nie erledigt wurde.
+
+### #180 ist repariert, und der Fehler war größer als die Zahl
+
+`down_sec` war fehlgeschlagene Checks **mal** `ProbeInterval`. Die Sonde lief mit
+etwa einem Siebtel ihrer erklärten Kadenz, also war jede Ausfalldauer auf dem
+öffentlichen Raster um denselben Faktor zu klein — **und zwar zu unseren
+Gunsten.** Jetzt trägt eine fehlgeschlagene Prüfung die Lücke bis zur nächsten
+Prüfung desselben Tages, und `down_sec` ist die Summe dieser Lücken. ADR 0051.
+
+**Der Fall, der den Entwurf umgeworfen hat, kam beim Schreiben des Tests.** Die
+erste Fassung klemmte eine Spanne auf die Tagesgrenze. Das ergibt für eine
+einzige fehlgeschlagene Prüfung um 00:00 an einem sonst ungemessenen Tag
+**86 400 Sekunden Ausfall in einer Zelle, deren `checks_total` auf 1 steht** —
+ein voller Tag, hergeleitet aus einem Blick. Die Spanne fällt jetzt weg statt
+geklemmt zu werden, und die Zelle sagt `degraded` ohne Dauer. Das ist die wahre
+Aussage, und #208 ist die Frage, die Abdeckung daneben zu zeigen.
+
+### Die Fixture konnte den Fund nicht fangen, und das musste erst auffallen
+
+Die Incident-Fixture sondiert alle 30 Minuten und ihr Roll-up wurde mit 1800
+parametrisiert — **alte und neue Arithmetik liefern für sie dieselben Zahlen.**
+3600 am Ausfalltag, 1800 am degradierten, beide unverändert. Diese
+Übereinstimmung ist der Beleg dafür, dass die neue Form INC-001 trifft, und
+zugleich der Grund, warum diese Tests eine Regression nicht fangen könnten.
+
+Der Property-Test war schlimmer: er **zog** die Kadenz als Query-Parameter und
+schrieb die Zeilen immer im Minutenabstand. Tausend Fälle, und keiner konnte eine
+gefahrene Kadenz von einer erklärten unterscheiden. Jetzt ist die gezogene Zahl
+der Abstand der Zeilen selbst.
+
+Mutationstest zum Schluss: die Konstante zurückgesetzt, **zehn Tests rot**, der
+Kopf davon mit `down_sec is 300, want 2100`.
+
+### Ein Test wurde durch die Änderung genauer, ohne dass jemand ihn anfasste
+
+`TestALateBackfillMovesTheDayItBelongsTo` schreibt eine fehlgeschlagene Prüfung
+auf `:15`, während die Fixture auf der halben Stunde sondiert. Erwartet waren
+1800. Richtig sind **900** — die Prüfung um 04:15 wird von der um 04:30
+geschlossen. Die alte Anweisung multiplizierte sie mit einem erklärten Intervall
+und sagte dreißig Minuten, egal wo die Zeile im Tag lag.
+
+### Gemessen, weil der Kommentar es behauptet hat
+
+52 416 Zeilen über 182 Tage, dieselbe Form, die die Datei schon zitiert:
+
+```
+                          ein Tag        182 Tage    Index-Suchen   Sort
+ohne Fensterfunktion       0,36 ms         420 ms        182         nein
+mit lead()                 0,72 ms         518 ms        182         nein
+```
+
+`WindowAgg` sitzt direkt auf dem Index Scan — `ops_checks_unique_observation`
+liefert den Tag bereits nach `observed_at` sortiert. Der Alltagsfall verdoppelt
+sich und bleibt unter einer Millisekunde, alle fünf Minuten.
+
+### Was diese Runde nicht behauptet
+
+**Die Historie ist noch falsch.** Der Roll-up liest jeden berührten Tag neu, aber
+alte Tage fallen nicht mehr in den `lookback`. Ein einmaliger Rücklauf über das
+Fenster gehört in die Abnahme, und bis dahin trägt das Raster für alte Zellen die
+alte Zahl.
+
+**Der Replay ist einen Schritt kürzer geworden.** Fünf Instanten sind vier
+Lücken, weil die Erholung keine Zeile ist (ADR 0038). Exakt würde es wieder,
+indem sie eine wird — das ändert ADR 0038 und war nicht diese Aufgabe.
+
+**Die Historie ist noch nicht nachgerechnet.** Der Rücklauf über das Fenster
+gehört zur Abnahme dieser Änderung und steht als Erstes an.
+
+### Der Tracker ist gegen die Veröffentlichungsregel gelesen worden
+
+**Das ist der teuerste Fund der Runde, und er stand in keinem Issue, sondern
+über allen.** CLAUDE.md verbietet den Ist-Stand einer Sicherheitsfrage dieses
+Hosts in allem, was nach außen geht — Issues ausdrücklich eingeschlossen. Vier
+Issues aus D3 taten genau das. Das Repository ist öffentlich.
+
+**Vier neu gestellt, vier gelöscht.** #252 bis #255 tragen die Aufgabe und ihr
+Abnahmekriterium; der Zustand steht in den privaten Notizen. Die Originale sind
+weg, nicht überschrieben — **einen Issue-Text zu ersetzen entfernt ihn nicht**,
+GitHub zeigt die Bearbeitungshistorie jedem Leser eines öffentlichen
+Repositories. Das ist der Teil, den man beim ersten Hinsehen falsch macht.
+
+Vor dem Löschen geprüft: **kein einziger Verweis** auf die vier, weder im
+Repository noch in einem ADR, einem Runbook oder einer anderen Issue. Der Preis,
+den diese Entscheidung zu kosten schien, war null.
+
+Die neuen Texte sind gegen die Klasse gegrept, die sie nicht enthalten dürfen —
+Pfade, Modi, Ports, Namen von Komponenten. Kein Treffer.
+
+**Was das für die Zukunft ändert:** die Frage vor jedem Backlog-Eintrag —
+*nützt das jemandem, der diese Maschine angreifen will?* — gilt wörtlich auch
+für jede Issue, und niemand hat sie beim Anlegen gestellt. Sie gehört an
+dieselbe Stelle wie beim Notizblock: vor das Schreiben, nicht danach.
+
+## Vorher — 30.08.2026, das Rig hat beim ersten Lauf zwei Funde gemacht
 
 **Das H1-Tor steht, und es hat sofort etwas gefunden, das niemand vermutet hat.**
 `make e2e` ist kein `printf` mehr: 130 Zusicherungen über acht Projekte in

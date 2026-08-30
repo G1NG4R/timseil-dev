@@ -238,6 +238,35 @@ berührtem Tag — 386 ms im selben Extremfall, 27 ms im Alltag.
 **C4 nimmt diese Form.** Der Index bleibt, wie er ist; es war wieder nicht der
 Index, es war die Frage.
 
+Nachgetragen am 30.08.2026, gleiches Volumen (52 416 Zeilen, 182 Tage), für die
+Fensterfunktion aus **ADR 0051** — `down_sec` ist seither die Summe der Lücken
+zwischen echten Instanten, und dafür steht ein `lead(observed_at)` im LATERAL:
+
+| Query | Plan | Zeit |
+|---|---|---|
+| Roll-up, Alltag (ein Tag), **ohne** Fensterfunktion | Index Scan, 1 Suche | **0,36 ms** |
+| Roll-up, Alltag (ein Tag), **mit** `lead()` | `WindowAgg` auf demselben Index Scan, 1 Suche | **0,72 ms** |
+| Roll-up, alle 182 Tage, **ohne** Fensterfunktion | Nested Loop, 182 Suchen | **420 ms** |
+| Roll-up, alle 182 Tage, **mit** `lead()` | derselbe Plan plus `WindowAgg` | **518 ms** |
+
+**Der Punkt ist, was NICHT im Plan steht.** `Index Searches: 182` in beiden
+Fassungen — die Fensterfunktion kauft keinen zusätzlichen Zugriff. Und es gibt
+**keinen `Sort`**: `WindowAgg` sitzt direkt auf dem Index Scan, weil
+`ops_checks_unique_observation` die Zeilen bereits nach `observed_at` sortiert
+liefert, also genau in der Reihenfolge, die `OVER (ORDER BY observed_at)`
+verlangt. Spitzenspeicher des Fensters: 17 kB je Tag.
+
+Der Alltagsfall verdoppelt sich und bleibt unter einer Millisekunde, alle fünf
+Minuten. Der Extremfall kostet 23 % mehr und tritt nur auf, wenn ein Rücklauf
+das ganze Fenster berührt.
+
+**Warum das keine zweite Zeile aus dem Folgetag holt.** Der letzte Check eines
+Tages hat innerhalb des LATERAL keinen Nachfolger, und ihm einen zu besorgen
+hieße, je berührtem Tag ein zweites Mal in den Index zu greifen — für eine
+Spanne, die ADR 0051 ohnehin ablehnt, weil sie über Mitternacht in eine Zelle
+liefe, die `nodata` sein muss. Die Grenze ist eine Entscheidung, und sie ist
+nebenbei die billigere.
+
 Der Seq Scan über `recorded_at` bleibt und wird nicht indiziert: 6 ms alle fünf
 Minuten auf einer Tabelle, die alle fünf Minuten eine Zeile bekommt, sind kein
 Index wert. Die Zeile steht im Backlog, weil derselbe Index später den

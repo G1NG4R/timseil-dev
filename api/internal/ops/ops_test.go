@@ -140,19 +140,21 @@ func TestEveryTickRunsTheRollUp(t *testing.T) {
 	}
 }
 
-// The four constants are the only thing this package contributes to a public
-// number, and this is the one place they leave it. Reading them back is how a
-// wrong Duration conversion stops being invisible: int32(5*time.Minute) is
-// 300 000 000 000 truncated, not 300.
+// The constants this package hands to the statement, read back at the one place
+// they leave it. A wrong Duration conversion is invisible everywhere else:
+// int32(24*time.Hour) is the nanosecond count truncated, not 86400.
+//
+// It used to carry a third field. ProbeIntervalSec went with #180 — no constant
+// from this package reaches a public duration any more, and the roll-up derives
+// every one of them from the observed_at instants themselves.
 func TestTheParametersAreTheOnesTheGridIsBuiltOn(t *testing.T) {
 	s := newStub()
 	newAggregator(t, s, &safeBuffer{})
 	waitForCalls(t, s, 1)
 
 	want := store.RollUpOpsDaysParams{
-		LookbackSec:      86400,
-		OutageChecks:     2,
-		ProbeIntervalSec: 300,
+		LookbackSec:  86400,
+		OutageChecks: 2,
 	}
 	if got := s.calls()[0]; got != want {
 		t.Errorf("the roll-up ran with %+v, want %+v", got, want)

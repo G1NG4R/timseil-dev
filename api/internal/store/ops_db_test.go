@@ -38,10 +38,12 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
 
-// The Incident fixture's own numbers, and the reason the roll-up takes them as
-// parameters instead of holding them: replaying a fixture with the cadence it
-// was written at is what makes the comparison meaningful. The production values
-// live in internal/ops and are a different pair.
+// The Incident fixture's own numbers. The threshold is a parameter of the query
+// for the reason it always was — replaying a fixture with the convention it was
+// written at is what makes the comparison meaningful, and a rule baked into the
+// statement would make this test a tautology. The cadence is no longer a
+// parameter of anything (#180); it is a property of the rows below, and it is
+// named here because the expected durations are read off it.
 const (
 	fixtureProbeInterval = 1800 // the fixture probes every 30 minutes
 	fixtureOutageChecks  = 2    // ...and two failures are its outage
@@ -55,15 +57,22 @@ const (
 	fixtureUnmeasuredDay = 61 // 91 - 30, the cells before measurement started
 )
 
-// rollUp runs the aggregation with the Incident fixture's cadence and returns the
-// number of rows it wrote.
+// rollUp runs the aggregation with the Incident fixture's threshold and returns
+// the number of rows it wrote.
+//
+// probeInterval is still a parameter of this helper and no longer one of the
+// query. Every call site passes fixtureProbeInterval because that is the cadence
+// its own rows were written at, and keeping the argument is what lets a reader
+// see which cadence a case is built on — #180 took the number out of the
+// arithmetic, not out of the test data.
 func rollUp(t *testing.T, q *store.Queries, probeInterval, outageChecks int32) int64 {
 	t.Helper()
 
+	_ = probeInterval
+
 	n, err := q.RollUpOpsDays(context.Background(), store.RollUpOpsDaysParams{
-		LookbackSec:      testLookback,
-		OutageChecks:     outageChecks,
-		ProbeIntervalSec: probeInterval,
+		LookbackSec:  testLookback,
+		OutageChecks: outageChecks,
 	})
 	if err != nil {
 		t.Fatalf("RollUpOpsDays: %v", err)
@@ -174,15 +183,22 @@ func TestTheRollUpRebuildsTheIncidentGridFromItsRawChecks(t *testing.T) {
 		t.Errorf("the grid carries %d distinct states, want %d: %v", len(got), len(want), got)
 	}
 
-	// down_sec is failed checks times the cadence, and on the outage day that has
-	// to come out as the hour INC-001 claims. The two numbers are written by
-	// different authors — this fixture and this query — and a reader is invited
-	// to check them against each other.
+	// down_sec is the sum of the gaps the failed checks left, and on the outage
+	// day that has to come out as the hour INC-001 claims: two consecutive
+	// failures half an hour apart with the next probe answering is 1800 + 1800.
+	// The two numbers are written by different authors — this fixture and this
+	// query — and a reader is invited to check them against each other.
+	//
+	// This pair survived #180 unchanged, which is exactly why it cannot be the
+	// only evidence for the arithmetic: at this fixture's cadence the old
+	// statement and the new one agree. ops_down_sec_db_test.go carries the cases
+	// where they do not.
 	if sec := scalar(t, db, `SELECT down_sec FROM ops_days WHERE state = 'outage'`); sec != 3600 {
 		t.Errorf("the outage day reports %ds of downtime, want 3600 — INC-001.duration_sec", sec)
 	}
 	if sec := scalar(t, db, `SELECT down_sec FROM ops_days WHERE state = 'degraded'`); sec != fixtureProbeInterval {
-		t.Errorf("the degraded day reports %ds of downtime, want %d", sec, fixtureProbeInterval)
+		t.Errorf("the degraded day reports %ds of downtime, want %d — one failure, and "+
+			"the probe that answered next came half an hour later", sec, fixtureProbeInterval)
 	}
 
 	// The evidence columns behind the colour. Every measured day saw the full 48
@@ -203,6 +219,12 @@ func TestTheRollUpRebuildsTheIncidentGridFromItsRawChecks(t *testing.T) {
 // The agreement query from migrations/fixtures_db_test.go, turned around: there
 // it holds the fixture against its own raw data, here it holds a grid this code
 // produced against the same raw data.
+//
+// down_sec is re-derived here rather than multiplied out. Since #180 the second
+// expression below is the independent one: it walks the same instants with a
+// window function of its own and sums the gaps, so a wrong LEAD or a wrong
+// FILTER in queries/ops.sql shows up as a disagreement rather than as two
+// copies of the same mistake.
 func TestTheRecomputedGridStillAgreesWithItsRawChecks(t *testing.T) {
 	q := loaded(t, fixtures.Incident)
 	db := dbtest.App(t)
@@ -213,14 +235,25 @@ func TestTheRecomputedGridStillAgreesWithItsRawChecks(t *testing.T) {
 	if n := scalar(t, db, `
 		SELECT count(*) FROM ops_days d
 		  JOIN (SELECT system_id,
-		               (observed_at AT TIME ZONE 'UTC')::date AS day,
+		               day,
 		               count(*) AS total,
-		               count(*) FILTER (WHERE up) AS up
-		          FROM ops_checks GROUP BY 1, 2) c
+		               count(*) FILTER (WHERE up) AS up,
+		               COALESCE(floor(sum(EXTRACT(EPOCH FROM (next_at - observed_at)))
+		                   FILTER (WHERE NOT up AND next_at IS NOT NULL)), 0) AS down
+		          FROM (SELECT system_id,
+		                       observed_at,
+		                       up,
+		                       (observed_at AT TIME ZONE 'UTC')::date AS day,
+		                       lead(observed_at) OVER (
+		                           PARTITION BY system_id,
+		                                        (observed_at AT TIME ZONE 'UTC')::date
+		                               ORDER BY observed_at) AS next_at
+		                  FROM ops_checks) w
+		         GROUP BY 1, 2) c
 		    ON c.system_id = d.system_id AND c.day = d.day
 		 WHERE d.checks_total <> c.total
 		    OR d.checks_up <> c.up
-		    OR d.down_sec <> (c.total - c.up) * $1`, fixtureProbeInterval); n != 0 {
+		    OR d.down_sec <> c.down`); n != 0 {
 		t.Errorf("%d derived days disagree with the checks they were derived from", n)
 	}
 }
@@ -374,6 +407,12 @@ func TestALateBackfillMovesTheDayItBelongsTo(t *testing.T) {
 
 	// A day that came out ok, and an instant on it that no probe used: the fixture
 	// probes on the half hour, this one lands at :15.
+	//
+	// That offset is what makes the expected duration 900 rather than 1800 since
+	// #180, and it is the change in one line: a failed check at 04:15 is closed by
+	// the probe at 04:30, so it vouches for fifteen minutes. The old statement
+	// multiplied it by a declared interval and said thirty, whatever the row's
+	// actual position in the day.
 	const back = 20
 	if _, err := db.Exec(`
 		INSERT INTO ops_checks (system_id, observed_at, up, reason, origin, source_ref)
@@ -403,8 +442,9 @@ func TestALateBackfillMovesTheDayItBelongsTo(t *testing.T) {
 	if state != "degraded" {
 		t.Errorf("the backfilled day reads %q, want degraded", state)
 	}
-	if downSec != fixtureProbeInterval {
-		t.Errorf("the backfilled day reports %ds of downtime, want %d", downSec, fixtureProbeInterval)
+	if want := fixtureProbeInterval / 2; downSec != want {
+		t.Errorf("the backfilled day reports %ds of downtime, want %d — the failed check "+
+			"sits at :15 and the probe that answers next runs at :30", downSec, want)
 	}
 	if total != fixtureChecksPerDay+1 {
 		t.Errorf("the backfilled day counts %d checks, want %d", total, fixtureChecksPerDay+1)
@@ -452,25 +492,44 @@ func TestRunningTheRollUpTwiceChangesNothing(t *testing.T) {
 
 // ------------------------------------------------------------- the broken case
 
-// A cadence that does not fit in a day. down_sec is capped at 86400 by
-// ops_days_down_sec_ck, and the statement has to clamp one cell rather than
-// abort the whole run — a misconfigured interval must not stop the grid from
-// updating for every system at once.
+// The widest day the shape allows, and it still fits.
 //
-// Mutation test: drop LEAST from the INSERT and this fails with a check
-// constraint violation instead of a wrong number, which is exactly the point.
-func TestADayCannotReportMoreDowntimeThanADayHas(t *testing.T) {
-	q := loaded(t, fixtures.Incident)
+// This test used to hand the roll-up a "probe interval" of a full day so that
+// two failed checks came to 172 800 seconds and LEAST had to clamp them. #180
+// took that lever away: there is no interval parameter any more, and every span
+// ends at a check inside the same day, so the sum cannot exceed a day by
+// construction rather than by clamping.
+//
+// So the test states the construction instead of the clamp. Two failures as far
+// apart as one day can put them — the first instant of the day and the last —
+// is the widest down_sec this statement can ever write, and it comes to one
+// second short of a day. There is no input that reaches 86 400.
+//
+// The claim itself is sound in a way the extrapolating one would not be: both
+// ends are OBSERVATIONS, both say down, and the interval between two failures is
+// downtime that happened. What the roll-up refuses is the span after the last
+// observation, and ops_down_sec_db_test.go is where that refusal is tested.
+//
+// LEAST stays in the statement and is now unreachable from it. That is a belt
+// costing one function call against a constraint that aborts the whole run
+// rather than one cell — see the header of queries/ops.sql.
+func TestTheWidestDayTheShapeAllowsStillFitsInADay(t *testing.T) {
+	q := loaded(t, "day-one")
+	id := selfID(t, q)
+
+	day := time.Now().UTC().AddDate(0, 0, -1).Truncate(24 * time.Hour)
+	check(t, q, id, day, false)
+	check(t, q, id, day.Add(24*time.Hour-time.Second), false)
+
+	rollUp(t, q, fixtureProbeInterval, fixtureOutageChecks)
+
 	db := dbtest.App(t)
 
-	wipeRollUp(t, db)
-
-	// One "probe interval" of a full day, so the outage day's two failed checks
-	// would come to 172 800 seconds.
-	rollUp(t, q, 86400, fixtureOutageChecks)
-
-	if sec := scalar(t, db, `SELECT down_sec FROM ops_days WHERE state = 'outage'`); sec != 86400 {
-		t.Errorf("the outage day reports %ds of downtime, want it clamped to 86400", sec)
+	if sec := scalar(t, db,
+		`SELECT down_sec FROM ops_days WHERE system_id = $1 AND day = $2`,
+		id, day.Format(time.DateOnly)); sec != 86399 {
+		t.Errorf("the widest day reports %ds of downtime, want 86399 — midnight to "+
+			"23:59:59, and nothing after the last observation", sec)
 	}
 	if n := scalar(t, db, `SELECT count(*) FROM ops_days WHERE down_sec > 86400`); n != 0 {
 		t.Errorf("%d days report more downtime than a day has", n)
