@@ -192,6 +192,45 @@ describe("apiGet when there is no answer at all", () => {
   });
 });
 
+// H1 is the first phase to read a path with a placeholder in it, and the two
+// assertions below are the two halves of that: the request goes to the resolved
+// address, and the log line does not.
+describe("apiGet resolves a templated path", () => {
+  it("asks for the resolved address", async () => {
+    answer(() => json({ slug: "timseil-dev" }));
+
+    await apiGet("/api/systems/{slug}", { params: { slug: "timseil-dev" } });
+
+    assert.match(calls[0].url, /\/api\/systems\/timseil-dev$/);
+    assert.doesNotMatch(calls[0].url, /[{}]/);
+  });
+
+  // The field a log query groups by. One line per slug would make `path` a
+  // dimension with as many values as this site has systems, which is the shape
+  // that stops being groupable exactly when there is enough traffic to care.
+  it("files the line under the template, not under the slug", async () => {
+    answer(() => json({ slug: "timseil-dev" }));
+
+    await apiGet("/api/systems/{slug}", { params: { slug: "timseil-dev" } });
+
+    const line = JSON.parse(written[0]) as Record<string, unknown>;
+    assert.equal(line.path, "/api/systems/{slug}");
+  });
+
+  // A refused value must not reach the network at all, and it must arrive at the
+  // caller as the same "no answer" every other failure does — not as a throw
+  // that a page has no branch for.
+  it("never asks at all for a value the guard refuses", async () => {
+    answer(() => json({}));
+
+    const result = await apiGet("/api/systems/{slug}", { params: { slug: "../../etc" } });
+
+    assert.equal(result.kind, "fail");
+    assert.equal(result.status, 0);
+    assert.equal(calls.length, 0);
+  });
+});
+
 // Not a behaviour, a boundary — and the reason it is asserted rather than
 // commented is in use-cache.md:196: a `next/headers` call reachable from a
 // cached scope "can pass `next build` and fail under `next start`". A rule that

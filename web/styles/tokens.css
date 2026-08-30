@@ -155,6 +155,11 @@
   --focus-ring: 1px solid var(--acc);
   --focus-offset: 3px;
   --glow: 0 0 28px color-mix(in srgb, var(--acc) 45%, transparent);
+  /* H1. The hero's alert dot, the page's one red moment: the Case Study
+     Template draws it as a 6px disc with `0 0 8px rgba(255,45,85,.5)`.
+     Derived from --alert the way --glow is derived from --acc, so it
+     follows every palette instead of staying Terminal Noir's red. */
+  --glow-alert: 0 0 8px color-mix(in srgb, var(--alert) 50%, transparent);
 
   /* Dauern */
   --d-row: 90ms;

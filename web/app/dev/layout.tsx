@@ -24,17 +24,20 @@ import { fontVariables } from "../fonts";
 // state names verbatim, because they are transcriptions, not copy).
 //
 // The stylesheets are the site's, in the site's order (see app/[lang]/layout.tsx
-// for why that order is load-bearing), plus ui.css for the four Foundations
-// parts that no page renders yet. chrome.css is included even though there is
-// no chrome here: MobileMenu and the footer are not the only things in it, and
-// leaving it out would give the gallery a different cascade from the site,
-// which is the one thing a component gallery may not have.
+// for why that order is load-bearing), plus gallery.css. chrome.css is included
+// even though there is no chrome here: MobileMenu and the footer are not the
+// only things in it, and leaving it out would give the gallery a different
+// cascade from the site, which is the one thing a component gallery may not
+// have. Same reason ui.css and case.css are here now that the site loads them
+// both: a preview that renders under a shorter cascade than the page is a
+// preview of something else.
 import "../../styles/tailwind.css";
 import "../../styles/tokens.css";
 import "../../styles/globals.css";
 import "../../styles/chrome.css";
 import "../../styles/state.css";
 import "../../styles/ui.css";
+import "../../styles/case.css";
 import "../../styles/gallery.css";
 import "../../styles/layout.css";
 

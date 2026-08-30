@@ -1,0 +1,21 @@
+{
+  "comment": "Generated from compose.yaml by tools/gen-compose-excerpt.mjs — do not edit by hand.",
+  "source": "compose.yaml",
+  "service": "api",
+  "keys": [
+    "image",
+    "depends_on"
+  ],
+  "lines": [
+    "services:",
+    "  api:",
+    "    image: ghcr.io/g1ng4r/timseil-api:${IMAGE_TAG:?set IMAGE_TAG in Dokploy — the deploy pipeline sets it to sha-<short sha>}",
+    "    depends_on:",
+    "      db:",
+    "        condition: service_healthy",
+    "      migrate:",
+    "        condition: service_completed_successfully",
+    "      seed:",
+    "        condition: service_completed_successfully"
+  ]
+}

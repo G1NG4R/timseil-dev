@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { apiTarget, upstreamUrl } from "./url.ts";
+import { apiTarget, resolvePath, upstreamUrl } from "./url.ts";
 
 const BASE = "http://api:8080";
 
@@ -88,5 +88,66 @@ describe("apiTarget picks the route by where it is running", () => {
     assert.throws(() => apiTarget("//example.com/x"));
     assert.throws(() => withWindow(() => apiTarget("//example.com/x")));
     assert.throws(() => withWindow(() => apiTarget("/\\example.com/x")));
+  });
+});
+
+describe("resolvePath fills a templated contract path", () => {
+  it("substitutes the placeholder", () => {
+    assert.equal(resolvePath("/api/systems/{slug}", { slug: "timseil-dev" }), "/api/systems/timseil-dev");
+  });
+
+  it("leaves a path without placeholders alone", () => {
+    assert.equal(resolvePath("/api/health", {}), "/api/health");
+  });
+
+  it("fills every placeholder, not only the first", () => {
+    assert.equal(resolvePath("/a/{one}/b/{two}", { one: "x", two: "y" }), "/a/x/b/y");
+  });
+});
+
+describe("resolvePath refuses to leave the segment", () => {
+  // The failure this guard is for: `..` is made only of characters RFC 3986
+  // calls unreserved, so an allow-list built from that list would pass it —
+  // and `new URL("/api/systems/..", base)` resolves to `/api/`, an endpoint
+  // with a different shape answering a question nobody asked.
+  it("refuses the two segments that mean something else", () => {
+    assert.equal(new URL("/api/systems/..", BASE).pathname, "/api/");
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: ".." }));
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "." }));
+  });
+
+  it("refuses a separator rather than encoding it", () => {
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "a/b" }));
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "a\\b" }));
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "../../etc" }));
+  });
+
+  it("refuses a value that would open a query or a fragment", () => {
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "a?b=1" }));
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "a#b" }));
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "a%2fb" }));
+  });
+
+  it("refuses an empty value, which would collapse the segment", () => {
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "" }));
+  });
+
+  // Both directions, because either one means the caller and the template are
+  // talking about different paths.
+  it("refuses a placeholder with no value and a value with no placeholder", () => {
+    assert.throws(() => resolvePath("/api/systems/{slug}", {}));
+    assert.throws(() => resolvePath("/api/health", { slug: "timseil-dev" }));
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "a", window: "91" }));
+  });
+});
+
+// Not reachable through the typed client, and that is the point: the type is
+// erased, and this is the value that would otherwise be asked for as the string
+// "undefined" rather than refused.
+describe("resolvePath does not trust the type", () => {
+  it("refuses a present key whose value is not a string", () => {
+    const cast = { slug: undefined } as unknown as Record<string, string>;
+    assert.throws(() => resolvePath("/api/systems/{slug}", cast));
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: 7 } as unknown as Record<string, string>));
   });
 });

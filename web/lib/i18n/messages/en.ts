@@ -65,6 +65,24 @@ export const en = {
   stateQueued: "QUEUED",
   stateAvailable: "AVAILABLE",
 
+  // H1 · case study. The rail's keys and the two section names, plus the two
+  // tile labels that are ordinary words rather than identifiers.
+  //
+  // WHAT H1 DID NOT ADD IS THE INTERESTING HALF, and every omission is LANG.01's
+  // set: `SPEC` is a section label like `SYS`, `STACK` names technologies and a
+  // German page would still read "Go · Docker", `P95` is in the sheet's list
+  // word for word, and `DEPLOY` is the verb this repository uses in its own
+  // pipeline. `UPTIME` already had a key — it is a heading over a number, and
+  // the meta bar has translated it since G5.
+  csRole: "ROLE",
+  csYear: "YEAR",
+  csStatus: "STATUS",
+  csSource: "SOURCE",
+  csProblem: "PROBLEM",
+  csConstraints: "CONSTRAINTS",
+  csErrorRate: "ERROR RATE",
+  csIncidents: "INCIDENTS",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

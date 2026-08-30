@@ -154,9 +154,9 @@ export const PARTS: readonly Part[] = [
     where: "case study",
     states: ["sticky", "gelöst"],
     origin: "inventory",
-    module: null,
-    owedBy: "H1",
-    preview: false,
+    module: "components/case/SpecRail.tsx",
+    owedBy: null,
+    preview: true,
     note: null,
   },
   {

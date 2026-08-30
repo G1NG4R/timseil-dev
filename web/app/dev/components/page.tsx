@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { SpecRail } from "@/components/case/SpecRail";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
 import { EmptyState } from "@/components/state/EmptyState";
@@ -284,6 +285,67 @@ export default function GalleryPage() {
           <div className="gal-case">
             <span className="gal-case-label">no data</span>
             <MetricTile label="deliverability" />
+          </div>
+          <div className="gal-case">
+            {/* H1, issue #208: a percentage over 91 days reads the same whether
+                eight of them were measured or all of them, so the coverage
+                stands under the figure. Both states, because the empty one is
+                the one that shipped first. */}
+            <span className="gal-case-label">with its coverage</span>
+            <MetricTile label="UPTIME · 91 D" value="100.00" unit="%" note="8 of 91 days measured" />
+          </div>
+          <div className="gal-case">
+            <span className="gal-case-label">no data, and none measured</span>
+            <MetricTile label="UPTIME · 91 D" note="0 of 91 days measured" />
+          </div>
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">SpecRail</h2>
+          <span className="gal-where">case study · sticky above 1080, static below</span>
+        </div>
+        <div className="gal-grid">
+          <div className="gal-case">
+            <span className="gal-case-label">public source</span>
+            <SpecRail
+              role="Design, backend, infrastructure — solo"
+              stack="Next.js 16.3 · Go 1.26 · PostgreSQL 18.6"
+              year="2026 — ongoing"
+              state="live"
+              hosting="self-hosted"
+              source={{ access: "public", url: "https://github.com/G1NG4R/timseil-dev" }}
+              messages={en}
+            />
+          </div>
+          <div className="gal-case">
+            {/* K-21: source is its own axis. A closed system owes a reason, and
+                the schema refuses one without it. */}
+            <span className="gal-case-label">closed, with a reason</span>
+            <SpecRail
+              role="Backend — contract work"
+              stack="Python · FastAPI · Docker"
+              year="2025"
+              state="queued"
+              hosting="client infrastructure"
+              source={{ access: "private", reason: "nda" }}
+              messages={en}
+            />
+          </div>
+          <div className="gal-case">
+            {/* The api did not answer. Everything the row would have carried is
+                absent, and none of it falls back to a plausible value. */}
+            <span className="gal-case-label">no answer from the api</span>
+            <SpecRail
+              role="Design, backend, infrastructure — solo"
+              stack={null}
+              year="2026 — ongoing"
+              state={null}
+              hosting="self-hosted"
+              source={null}
+              messages={en}
+            />
           </div>
         </div>
       </section>

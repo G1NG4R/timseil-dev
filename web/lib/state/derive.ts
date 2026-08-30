@@ -64,3 +64,33 @@ export function systemWord(status: unknown): Extract<StateWord, "live" | "degrad
   if (value === null) return null;
   return value === "ok" ? "live" : "degraded";
 }
+
+/**
+ * What a system's own record says it is — the value of `systems.state`.
+ *
+ * H1 is the phase that first reads `/api/systems/{slug}`, so by this file's rule
+ * the mapping lands here rather than in the page.
+ *
+ * IT IS A DIFFERENT AXIS FROM `systemWord` ABOVE, and the two must not be
+ * confused. That one reads a health document and says whether the api answered
+ * well *now*; this one reads a row and says whether the system has been built at
+ * all. A system can be `live` and momentarily degraded, and neither field knows
+ * the other's answer.
+ *
+ * `in_build` HAS NO WORD YET, AND THAT IS DELIBERATE. The vocabulary in
+ * lib/state/words.ts holds eight entries and none of them means "being built";
+ * the label IN BUILD is drawn on the Work Index sheet, which INDEX.md assigns to
+ * H6 — the phase where all three system states stand next to each other and a
+ * ninth mark can be given a tone, a dot and a dictionary key with a sheet behind
+ * each. Inventing one here would be a state nobody has seen, for a system that
+ * does not exist: the seed holds one `live` and one `queued` row.
+ *
+ * `null` is therefore "this page has no word for that", and callers render it
+ * the way components/FooterMeta.tsx already renders an unknown status — as
+ * `— NO DATA` rather than as a guess.
+ */
+export function systemStateWord(state: unknown): Extract<StateWord, "live" | "queued"> | null {
+  if (state === "live") return "live";
+  if (state === "queued") return "queued";
+  return null;
+}

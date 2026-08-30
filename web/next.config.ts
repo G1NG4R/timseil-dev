@@ -65,8 +65,19 @@ const nextConfig: NextConfig = {
   //
   // If the contract moves, this moves with it. A number invented here would be
   // a second source of truth for a freshness the api already declares.
+  // H1 adds the second, by the same reading of the same file. ADR 0009 gives
+  // GET /api/systems/{slug} `public, s-maxage=300, stale-while-revalidate=1800`
+  // (api/internal/httpx/cache.go, `CacheControlMedium`), so the profile is that
+  // header read twice: 300 s before a refresh is due, 1800 s before a stale
+  // answer stops being servable.
+  //
+  // TWO PROFILES AND NOT ONE, because the api declares two freshnesses and the
+  // difference is deliberate: the deploy gate polls /api/health, and a case
+  // study is a page that changes when a deploy or a probe writes a row. A
+  // single profile here would quietly re-declare one of them.
   cacheLife: {
     health: { stale: 60, revalidate: 60, expire: 600 },
+    systems: { stale: 300, revalidate: 300, expire: 1800 },
   },
 
   // ONE FILE THE TRACER CANNOT SEE AS A DEPENDENCY, even though it currently

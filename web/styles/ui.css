@@ -18,10 +18,12 @@
    as they are in chrome.css. The open finding about them is counted in this
    phase rather than guessed at; see the phase's pull request.
 
-   IMPORTED BY THE GALLERY ONLY, for now. No page renders these yet, so putting
-   them in the site layout would ship bytes for markup nobody reaches. The first
-   H phase to use one moves the import to app/[lang]/layout.tsx — H1 for
-   MetricTile and SectionHead, H8 for Field. */
+   IMPORTED BY THE SITE SINCE H1. It was the gallery only until the case study
+   put MetricTile and SectionHead on a real page — the note that stood here said
+   "the first H phase to use one moves the import to app/[lang]/layout.tsx — H1
+   for MetricTile and SectionHead, H8 for Field", and H1 moved it. Button and
+   Field still have no page; they ride along because splitting one stylesheet
+   per component would cost more requests than the rules weigh. */
 
 /* ── Button ────────────────────────────────────────────────────────────────
    43px tall at the sheet's 12/20 padding, no radius, no shadow. Hover changes
@@ -172,6 +174,17 @@
 .tile-unit {
   font-size: var(--t-mono-11);
   color: var(--dim);
+}
+
+/* H1, and issue #208 in a line of CSS. A percentage over 91 days looks the same
+   whether five of them were measured or all ninety-one, so the count stands
+   under it. Smaller than the label on purpose: it qualifies the number, it is
+   not a second one. */
+.tile-note {
+  margin-block-start: var(--s-8);
+  font: 400 var(--t-mono-9)/1.4 var(--mono);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── SectionHead ───────────────────────────────────────────────────────────

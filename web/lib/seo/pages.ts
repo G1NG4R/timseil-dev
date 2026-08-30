@@ -22,6 +22,7 @@
 
 import type { Metadata } from "next";
 
+import { caseStudyPaths } from "../../content/case-studies/index.ts";
 import { alternatesFor } from "../i18n/alternates.ts";
 import { type Locale, localeHref } from "../i18n/routes.ts";
 import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
@@ -34,7 +35,7 @@ import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
  *  `ABOUT [SOON]` files that away as what this site has to say on the subject
  *  and takes a while to be talked out of it. The phase named in each comment
  *  fills the page and flips the boolean in the same commit. */
-export const PAGES = [
+const FIXED_PAGES = [
   { path: "/", indexable: true },
   { path: "/work", indexable: false }, // H6
   { path: "/blog", indexable: false }, // H9
@@ -44,7 +45,30 @@ export const PAGES = [
   { path: "/privacy", indexable: false }, // H12
 ] as const;
 
-export type PagePath = (typeof PAGES)[number]["path"];
+export interface PageEntry {
+  readonly path: string;
+  readonly indexable: boolean;
+}
+
+/**
+ * The seven fixed routes plus one row per case study.
+ *
+ * H1 IS WHERE THIS TABLE STOPPED BEING SEVEN LITERALS, and the alternative was
+ * worse than the shape change. `/work/<slug>` is one address per system, so the
+ * literals cannot be written out without writing the slug twice — once here and
+ * once in content/case-studies — and the second copy is the one that would be
+ * forgotten. The registry is therefore the source, and this table reads it.
+ *
+ * A CASE STUDY IS INDEXABLE AND `/work` IS NOT, which looks backwards for one
+ * phase and is not: `/work` is still the `[SOON]` stub H6 replaces, and a
+ * crawler that read it would file `WORK [SOON]` as what this site has to say
+ * about its work. The case study has something to say, so it says it. The two
+ * flip independently because the boolean is per row.
+ */
+export const PAGES: readonly PageEntry[] = [
+  ...FIXED_PAGES,
+  ...caseStudyPaths().map((path) => ({ path, indexable: true })),
+];
 
 /** The image every page points at, and the feed every page announces. Both are
  *  route handlers at the root, outside `app/[lang]/` — lib/i18n/routes.ts says
@@ -57,7 +81,7 @@ const FEED = "/feed.xml";
  *  owed the sentence, not a description of the typography. */
 const OG_ALT = `${SITE_NAME} — ${SITE_DESCRIPTION}`;
 
-function entryFor(path: string): (typeof PAGES)[number] {
+function entryFor(path: string): PageEntry {
   const entry = PAGES.find((page) => page.path === path);
   // A path this table does not know is a page that was added without deciding
   // whether it may be indexed. Returning something harmless here would ship

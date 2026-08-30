@@ -161,6 +161,7 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
              api/internal/httpx/gen.go web/lib/api/schema.d.ts \
              api/migrations/testdata/skill_states.json \
              api/internal/seed/stack.gen.json \
+             web/content/generated/compose-api.gen.json \
              api/internal/store/db.go api/internal/store/models.go \
              api/internal/store/health.sql.go api/internal/store/systems.sql.go \
              api/internal/store/training.sql.go api/internal/store/ops.sql.go \
@@ -179,7 +180,7 @@ check-contract: ## Validate the OpenAPI contract and check for codegen drift
 	@printf 'contract\n'
 	@tools/check-contract.sh
 # One checksum per file rather than one over all of them: GENERATED covers
-# thirteen files from five sources now, and "something is stale" would send you
+# fourteen files from six sources now, and "something is stale" would send you
 # looking in the contract when what moved was a column in a migration.
 #
 # training.sql.go was missing from that list for a whole phase — C3 added the file
@@ -355,7 +356,11 @@ gen: ## Generate Go and TS types from the contract, the skill states and the sta
 # Its own success line goes; a failure still speaks, because it speaks on stderr.
 	@node tools/gen-skill-states.mjs >/dev/null
 	@cd api && go run ./cmd/genstack
-	@printf '  ✓ public bundle, go types, sql types, ts types, skill states, stack manifest\n'
+# H1, issue #75. The excerpt the case study shows is cut out of the compose file
+# the VPS runs, so it cannot drift from it — the same guarantee stack.yaml gives
+# a version number. Both narrate to stderr, so both are silenced the same way.
+	@node tools/gen-compose-excerpt.mjs 2>/dev/null
+	@printf '  ✓ public bundle, go types, sql types, ts types, skill states, stack manifest, compose excerpt\n'
 
 # --------------------------------------------------------------- migrations
 

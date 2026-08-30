@@ -32,7 +32,7 @@ import { log } from "../log.ts";
 import { REQUEST_ID_HEADER } from "../reqid.ts";
 import { errorText } from "../scrub.ts";
 
-import { apiTarget } from "../http/url.ts";
+import { apiTarget, resolvePath } from "../http/url.ts";
 // The generated declarations, by name and without an extension: TypeScript
 // resolves `schema.d.ts` from here, and `import type` is erased before Node ever
 // sees a specifier to resolve. Written by `make gen`; never by hand.
@@ -84,6 +84,15 @@ export type ApiResult<T> =
     };
 
 export interface GetOptions {
+  /**
+   * Values for the `{name}` placeholders of a templated contract path.
+   *
+   * `/api/systems/{slug}` is the first path that has any; every path before H1
+   * was a literal and passed none. lib/http/url.ts holds the rule about what a
+   * value may be, because that is the SSRF guard and it is the file a unit test
+   * can reach.
+   */
+  params?: Record<string, string>;
   /** Headers to add — correlation on the live path, nothing on the cached one. */
   headers?: Record<string, string>;
   /** A validator from an earlier answer, sent as `If-None-Match`. */
@@ -132,7 +141,14 @@ export async function apiGet<P extends GetPath>(
   }
 
   try {
-    const response = await fetch(apiTarget(path), {
+    // Resolved here rather than by the caller so that the log line below keeps
+    // the TEMPLATE. `path` is the field a query groups by, and a resolved one
+    // would grow a new value per slug — the cardinality mistake that makes a
+    // log field useless exactly when there is enough traffic to need it. The
+    // route is in the template, and the answer's status is in the same line.
+    const target = options.params === undefined ? path : resolvePath(path, options.params);
+
+    const response = await fetch(apiTarget(target), {
       headers,
       signal: AbortSignal.timeout(options.timeoutMs ?? DEFAULT_TIMEOUT_MS),
       ...(options.cache === undefined ? {} : { cache: options.cache }),
