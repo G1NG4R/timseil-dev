@@ -130,5 +130,5 @@ for (const width of [...new Set(oracle.entries.map((entry) => entry.width))].sor
 test("the oracle still covers every width a sheet draws", () => {
   const widths = [...new Set(oracle.entries.map((entry) => entry.width))].sort((a, b) => b - a);
   expect(widths).toEqual([1440, 1024, 390]);
-  expect(oracle.entries.length).toBeGreaterThanOrEqual(25);
+  expect(oracle.entries.length).toBeGreaterThanOrEqual(26);
 });
