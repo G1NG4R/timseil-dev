@@ -12,7 +12,83 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, H1b abgenommen, und die Abnahme hat den Prüfer geprüft
+## Wo wir stehen — 30.08.2026, der Gate hat einen guten Deploy zurückgerollt
+
+**Die Seite war zu keiner Sekunde unten.** Der `deploy`-Job von `28a2c63` ist
+rot, hat den Deploy zurückgerollt und „the site is down" ins Log geschrieben —
+und beide Schlüsse waren falsch.
+
+### Was das Log sagt und was gleichzeitig gemessen wurde
+
+```
+21:28:07  verify: waiting up to 60s for sha 28a2c63
+21:29:07  ✗ 60s elapsed and the deploy did not come up
+          last seen: /api/health answered 403
+21:29:07  rollback → sha-3479024
+21:30:09  ✗ 60s elapsed … last seen: 403
+          ✗ THE ROLLBACK DID NOT COME UP EITHER — the site is down
+```
+
+Im selben Fenster, von hier aus gemessen:
+
+```
+~21:28:5x   deployt: 28a2c63
+            /  200 · /work/timseil-dev  200 · /de/…  200 · /work/vat-check  404
+```
+
+**Der Deploy war oben.** Der Gate hat ihn weggeräumt, weil *er* ihn nicht sehen
+konnte, und der Rollback lief ebenfalls sauber durch, während der Gate ihn für
+gescheitert erklärte. Um 21:37 antwortet die Seite auf allen Wegen 200,
+`status ok`, uptime 100, p95 17,9 ms.
+
+### Der Befund: ein Nicht-200 ist kein Beleg für einen Ausfall
+
+`tools/verify-deploy.sh:151-153`:
+
+```sh
+else
+  last="/api/health answered ${code:-nothing}"
+fi
+```
+
+**Jeder Statuscode, der nicht 200 ist, landet im selben Topf** und wird sechzig
+Sekunden lang wiederholt, bevor das Skript „did not come up" sagt. Ein 502 und
+ein 403 sind darin nicht zu unterscheiden — und sie bedeuten Gegenteiliges:
+
+| | |
+|---|---|
+| `000` · `502` · `503` | die Anwendung antwortet nicht — der Deploy ist wirklich nicht oben |
+| **`403`** | **jemand vor der Anwendung weist genau diesen Aufrufer ab** — über die Anwendung sagt das nichts |
+
+Auf einen 403 hin zurückzurollen ist die falsche Richtung: der Rollback fragt
+denselben Aufrufer noch einmal, bekommt dieselbe Antwort, und das Werkzeug
+schließt daraus auf einen Totalausfall. Zwei Deploys, zwei Fehlurteile, aus einem
+Statuscode, den niemand gelesen hat.
+
+**Dieselbe Klasse wie der `check-deployed`-Fund von vorhin** — ein Anspruch, der
+mehr behauptet, als sein Beleg trägt. Nur kostet dieser einen guten Deploy und
+schreibt einen Ausfall in ein Log, das später jemand als Beleg liest.
+
+### Zustand
+
+| | |
+|---|---|
+| Seite | oben, `3479024`, alles 200, kein Datenverlust |
+| `main` | `28a2c63`, **ein Commit voraus** |
+| Nicht deployt | #270 — reiner Doku-PR, nichts Sichtbares fehlt |
+
+**Fertig, wenn:** `verify-deploy` einen 403 als eigene Lage behandelt und nicht
+als Ausfall — abbrechen mit einer Meldung, die sagt, dass die Antwort nicht von
+der Anwendung kam, statt einen laufenden Deploy zurückzurollen. Und der Gate
+rollt nur zurück, wenn er die Anwendung wirklich erreicht hat.
+
+**Warum die Ursache des 403 hier nicht steht:** sie ist der Ist-Stand einer
+Sicherheitsfrage dieses Hosts. Sie ist untersucht und in den privaten Notizen
+festgehalten; hier steht die Aufgabe.
+
+---
+
+## Vorher — 30.08.2026, H1b abgenommen, und die Abnahme hat den Prüfer geprüft
 
 **`3479024`, Merge 20:52 → Deploy fertig 21:00:07Z, 242 s, ok.** Stufe H1 ist
 damit vollständig: Seite gebaut, deployt, gegen Produktion abgenommen und
