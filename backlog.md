@@ -12,11 +12,11 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 31.08.2026, der Verify hat einen dritten Ausgang
+## Wo wir stehen — 30.08.2026, der Verify hat einen dritten Ausgang, und der Deploy hat ihn abgenommen
 
-**Gebaut auf `fix/deploy-gate-403`, `make check` grün, nicht gepusht.** Der
-Befund von gestern ist repariert, und zwar an beiden Stellen, an denen er in
-jener Nacht zugeschlagen hat.
+**#271 gemergt, `6c728db` in Produktion, `report ok … 258s`.** Der Befund von
+21:28 ist repariert, und zwar an beiden Stellen, an denen er zugeschlagen hat.
+Produktion und `main` stehen wieder gleich; #270 ist mit rausgegangen.
 
 ### Was jetzt gilt
 
@@ -66,12 +66,45 @@ Wortlaut steht auch in der Meldung des Rollback-Pfads — also blieb sie grün, 
 die Verzweigung entfernt wurde, die sie bewachen sollte. Sie hängt jetzt an einer
 Formulierung, die nur die erste Verzweigung hat.
 
+### Gegen Produktion abgenommen, 30.08.2026
+
+Der Deploy nach dem Merge war die Abnahme, und er lief ohne Abweisung durch:
+
+```
+22:42:07Z  merge 6c728db          22:46:29Z  ✓ sha-6c728db is live
+verify: ✓ /api/health 200 · status ok · sha 6c728db
+        ✓ a new process, up since 22:46:21.220711262Z
+        ✓ / 200
+report ok 6c728db in 258s         ✓ 204
+```
+
+**Der Verify sagte beim ersten Sample ja** — kein 403, keine Wiederholung, kein
+Rollback. Der dritte Ausgang wurde also nicht gebraucht; dass er da ist, ist
+trotzdem der Punkt.
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest, `v0.16.1`. Die Zeile „the site reports that deploy itself" stimmt
+diesmal — von Hand nachgelesen, nicht dem Werkzeug geglaubt: `ops.lastDeploy` ist
+`{sha 6c728db, at 22:46:28Z, 258s, ok}`. Der Fund von gestern (#243, `sha` wird
+nicht gelesen) bleibt davon unberührt offen.
+
+### Der Zeuge — und diesmal war er vor dem Merge gestartet
+
+```
+/            233 Anfragen   233 × 200
+/api/health  233 Anfragen   233 × 200
+```
+
+Über den Containerwechsel hinweg, eine Anfrage je Sekunde je Pfad, bis 30 s nach
+dem neuen Prozess. **Kein Besucher hat in diesem Fenster einen Fehler gesehen.**
+Das ist die Gegenmessung, die am 30.08. um 21:28 gefehlt hat — nicht weil sie
+nicht möglich gewesen wäre, sondern weil niemand sie gemacht hatte, bevor das
+Werkzeug „the site is down" schrieb.
+
 ### Offen
 
-**Produktion steht weiter auf `3479024`, `main` auf `28a2c63`.** Der Deploy nach
-dem Merge ist die Abnahme dieser Reparatur: läuft er durch, ist die Lücke zu und
-Produktion in Sync. Kommt der 403 wieder, scheitert der Job in Sekunden ohne
-Rollback — und das ist das eigentliche Ergebnis.
+Nichts aus dieser Reparatur. `check-deployed` (#243) und die Ursache des 403
+selbst bleiben, wo sie stehen — letztere in den privaten Notizen.
 
 ---
 
@@ -249,7 +282,7 @@ Malfehler.
   Produktion zu ziehen ist Verkehr, auf den eine Schutzschicht reagieren darf; ob
   das am 30.08.2026 mitgespielt hat, ist unbewiesen und steht als Verdacht in den
   privaten Notizen. Die Werkzeuglücke ist davon unabhängig und ist zu.
-  *(31.08.2026, E4b)*
+  *(30.08.2026, E4b)*
 
 ## Gefunden
 
