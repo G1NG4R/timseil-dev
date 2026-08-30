@@ -22,11 +22,22 @@ type outage struct {
 // outages turns transitions into the checks the prober could not deliver.
 //
 // One pair at a time: a `down` and the `up` that closes it become an instant
-// every step from the first, up to but NOT including the recovery. The
-// arithmetic has to agree with the roll-up's, because down_sec in
-// queries/ops.sql is failed checks TIMES the probe interval — five instants
-// across 09:15 to 09:40 is 1500 seconds, which is the outage that happened. An
-// off-by-one here is a public number that is five minutes wrong and looks right.
+// every step from the first, up to but NOT including the recovery.
+//
+// WHAT THE COUNT DECIDES CHANGED WITH #180. It used to decide the duration:
+// down_sec was failed checks TIMES the probe interval, so five instants across
+// 09:15 to 09:40 came to the 1500 seconds that happened, and an off-by-one here
+// was a public number five minutes wrong. The roll-up now sums the gaps between
+// the instants themselves, so the count decides two other things instead —
+// checks_total and checks_down, which are what the outage threshold is compared
+// against, and therefore the COLOUR of the cell rather than the number under it.
+//
+// The duration it produces is now one step short, and that is stated rather than
+// papered over: the last instant has no successor, because the recovery is not
+// written as a row — a replayed line may never claim the site was up (ADR 0038).
+// Five instants are four gaps. Making it exact again means writing the recovery
+// as an observation of its own, which is a change to ADR 0038 and not to this
+// file.
 //
 // A TRAILING `down` PRODUCES NOTHING. It has no end yet: either the host is
 // still away, in which case nothing here is running to ask, or the prober has

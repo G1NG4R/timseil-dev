@@ -3,11 +3,24 @@
 #
 #   check-probe-cadence.sh [repo-root]     default: .
 #
-# down_sec in queries/ops.sql is failed checks TIMES ops.ProbeInterval, and the
-# failed checks are however often .github/workflows/probe.yml actually ran. Move
-# one without the other and every outage duration on a public page is wrong by
-# that factor — while the page keeps looking entirely correct, because the grid
-# still has the right number of cells and they are still the right colour.
+# WHAT THIS CHECK GUARDS CHANGED WITH #180, and it now guards something smaller.
+# It used to be the whole defence of a public duration: down_sec was failed
+# checks TIMES ops.ProbeInterval, so moving one half without the other made every
+# outage on the site wrong by that factor. That defence never worked, and this
+# script could not have made it work — it compares the two DECLARED halves and
+# cannot see the driven one by construction. Counted over 2026-08-24 the probe
+# ran 41 times in 23.66 hours against a cron promising 284, and both halves
+# agreed with each other the whole time.
+#
+# queries/ops.sql now derives every duration from the observed_at instants
+# themselves, so no cadence reaches a public number any more. What is left here
+# is still worth a gate: internal/uptime replays an outage as instants at
+# ops.ProbeInterval, and those instants become checks_total and checks_down —
+# the counts the outage threshold is compared against. A replay at the wrong
+# spacing puts the wrong number of cells behind a colour.
+#
+# The failure mode is the same shape as before and one size down: the page keeps
+# looking entirely correct, because the grid still has the right number of cells.
 #
 # THIS CHECK WAS ORDERED BEFORE IT WAS WRITTEN. docs/runbooks/ops.md has carried
 # the sentence "nothing checks that today, F4 should bring a check for it" since

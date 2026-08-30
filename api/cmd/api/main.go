@@ -143,9 +143,11 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	// host that has just come back, and this is what turns the outage nobody here
 	// could record into rows in ops_checks (F4).
 	//
-	// ops.ProbeInterval and not a literal. down_sec is failed checks times that
-	// number, so the expansion over there and the roll-up in here are two halves
-	// of one arithmetic — see ADR 0019 §6.
+	// ops.ProbeInterval and not a literal. Since #180 the roll-up multiplies
+	// nothing — it sums the gaps between real instants — so this is no longer one
+	// half of an arithmetic. It is the spacing a replayed outage is reconstructed
+	// at, and that spacing decides how many rows land in ops_checks, which is what
+	// the outage threshold counts. ADR 0019 §6, and the ADR that revises it.
 	backfiller := uptime.New(store.New(pool), cfg.Uptime, cfg.SiteSystemSlug, ops.ProbeInterval, log)
 
 	// The fourth background user of the pool, and the second thing in this

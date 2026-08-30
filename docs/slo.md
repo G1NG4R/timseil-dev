@@ -73,8 +73,12 @@ ADR 0041 §1.
     --jq '.[].createdAt'
   ```
 
-  Dieselbe Lücke trifft `down_sec` im Betriebsraster, das *fehlgeschlagene
-  Prüfungen × fünf Minuten* rechnet — siehe `backlog.md`, offen für F4/F10.
+  `down_sec` im Betriebsraster hing bis zum 30.08.2026 an derselben Lücke: es
+  rechnete *fehlgeschlagene Prüfungen × fünf Minuten* und meldete einen
+  35-Minuten-Ausfall als fünf. **Seit ADR 0051 rechnet es die Lücken, die
+  wirklich zwischen zwei Prüfungen liegen**, also trägt die schwankende Kadenz
+  die Dauer nicht mehr. Was sie weiter trägt, ist die **Abdeckung** — der
+  nächste Punkt.
 - **Wie viel des Fensters überhaupt gemessen wurde.** Ein Tag ohne Messung ist
   `nodata` und trägt zu keiner der beiden Summen bei — er verdünnt nichts und
   füllt nichts (Invariante 6). Die Kehrseite: **eine Prozentzahl über 91 Tage

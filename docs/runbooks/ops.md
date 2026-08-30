@@ -150,7 +150,7 @@ github.com/G1NG4R/timseil-dev/actions  →  probe
 | Befund | Heißt |
 |---|---|
 | Läufe kommen, alle grün | Die Zeilen sind unterwegs — **aber nicht unbedingt oft genug**, siehe die Zeile darunter. Dann weiter unten in dieser Datei suchen. |
-| Läufe kommen, alle grün, **aber viel zu wenige** | GitHub verwirft geplante Läufe unter Last. Am 27.08.2026 gemessen: **1,23 statt 12 Läufe je Stunde**, Abstände median 36 und maximal 660 Minuten, kein einziger unter sechs. Das Raster füllt sich dann langsamer als gedacht, und **`down_sec` untertreibt**, weil es fehlgeschlagene Prüfungen mit fünf Minuten multipliziert. Kein Ausfall, aber auch nicht der Takt, auf dem die Arithmetik steht. |
+| Läufe kommen, alle grün, **aber viel zu wenige** | GitHub verwirft geplante Läufe unter Last. Am 27.08.2026 gemessen: **1,23 statt 12 Läufe je Stunde**, Abstände median 36 und maximal 660 Minuten, kein einziger unter sechs. Das Raster füllt sich dann langsamer als gedacht. **`down_sec` untertreibt seit ADR 0051 nicht mehr deswegen** — es rechnet die tatsächlichen Lücken, also wird ein Ausfall in einer 36-Minuten-Lücke auch als 36 Minuten gemeldet. Was dünn bleibt, ist die Abdeckung: weniger Läufe heißt weniger gemessene Tage, und eine Prozentzahl sagt nicht, über wie viele (#208). |
 | Läufe fehlen ganz | GitHub hat den Zeitplan abgeschaltet. Siehe unten. |
 | Läufe sind rot mit `401` | `INTERNAL_PROBE_TOKEN` im Repository stimmt nicht mit dem im Container überein. **Kein Ausfall** — die Sonde schreibt in diesem Fall bewusst nichts. |
 | Läufe sind rot mit „stopped answering" | Der Host antwortet wirklich nicht. Das ist der Alarm, nicht der Fehler. |
@@ -317,9 +317,19 @@ um, ohne dass die Seite falsch aussähe.
 
 **Die eine Zeile, die hier wirklich wichtig ist:** `ProbeInterval` und der
 Cron-Ausdruck in `.github/workflows/probe.yml` sind zwei Hälften derselben Zahl.
-`down_sec` ist fehlgeschlagene Checks **mal diesem Intervall** — läuft die Sonde
-alle zehn Minuten, während hier fünf steht, ist jede Ausfalldauer auf der Seite
-halb so groß wie die echte, bei richtiger Zellenzahl und richtiger Farbe.
+Was diese Zahl entscheidet, ist seit **ADR 0051** kleiner: `down_sec` ist nicht
+mehr fehlgeschlagene Checks mal diesem Intervall, sondern die Summe der Lücken
+zwischen den Zeitstempeln, die wirklich in `ops_checks` stehen. `ProbeInterval`
+ist jetzt der Abstand, in dem `internal/uptime` einen Ausfall aus dem Protokoll
+**rekonstruiert** — läuft die Sonde alle zehn Minuten, während hier fünf steht,
+trägt ein wiedereingespielter Ausfall die falsche Anzahl Zellen hinter der
+richtigen Farbe.
+
+**Warum die alte Fassung dieses Absatzes wichtig bleibt:** genau der Fall, vor
+dem sie warnte, ist eingetreten — die Zeile über GitHubs verworfene Läufe weiter
+oben ist die Messung dazu, und keine der beiden erklärten Hälften war dabei
+falsch. Ein Vergleich zweier Erklärungen kann eine nicht gefahrene Kadenz nicht
+sehen. Deshalb hängt die Dauer nicht mehr daran.
 
 **Seit F4 prüft `make check-probe-cadence` das**, und `ProbeInterval` ist
 deshalb exportiert: `api/internal/uptime` bekommt den Wert übergeben, statt eine

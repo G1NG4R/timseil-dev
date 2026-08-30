@@ -205,8 +205,20 @@ func TestReplayingTheSameOutageTwiceWritesNothingTheSecondTime(t *testing.T) {
 
 // End to end, which is the only place the arithmetic in internal/uptime and the
 // arithmetic in queries/ops.sql are held against each other: N replayed
-// instants have to become N times the probe interval of down_sec, and the day
-// has to come out an outage rather than a gap.
+// instants have to become an outage day whose duration is the gaps between
+// them, rather than a gap in the grid.
+//
+// #180 CHANGED WHAT THIS TEST EXPECTS, and the change is a cost worth naming.
+// The roll-up used to multiply N by the interval, so a replay came out exact by
+// construction. It now sums the gaps the instants leave, and the last instant
+// has no successor — the recovery is NOT written as a row, because a backfilled
+// row may never claim the site was up (ADR 0038). So a replayed outage is one
+// step short: four gaps for five instants.
+//
+// That is an understatement and it is the direction this repository prefers, but
+// it is not free. Making it exact again would mean writing the recovery as an
+// observation of its own, which reopens ADR 0038 rather than settling #180, and
+// is deliberately not done here.
 func TestReplayedInstantsBecomeAnOutageDay(t *testing.T) {
 	q := loaded(t, "day-one")
 	id := selfID(t, q)
@@ -247,9 +259,10 @@ func TestReplayedInstantsBecomeAnOutageDay(t *testing.T) {
 		t.Errorf("the day is %q, want outage — %d failed checks is past the threshold of %d",
 			state, n, fixtureOutageChecks)
 	}
-	if want := n * fixtureProbeInterval; downSec != want {
-		t.Errorf("down_sec is %d, want %d — the expansion in internal/uptime and the roll-up disagree",
-			downSec, want)
+	if want := (n - 1) * fixtureProbeInterval; downSec != want {
+		t.Errorf("down_sec is %d, want %d — %d instants leave %d closed gaps, and the "+
+			"last one has no successor to be bounded by",
+			downSec, want, n, n-1)
 	}
 	if total != n || upCount != 0 {
 		t.Errorf("the day counted %d checks with %d up, want %d and 0", total, upCount, n)

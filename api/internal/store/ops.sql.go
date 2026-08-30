@@ -187,23 +187,34 @@ WITH touched AS (
            c.system_id,
            (c.observed_at AT TIME ZONE 'UTC')::date AS day
       FROM ops_checks c
-     WHERE c.recorded_at >= now() - ($3::int * interval '1 second')
+     WHERE c.recorded_at >= now() - ($2::int * interval '1 second')
 ),
 rolled AS (
     SELECT t.system_id,
            t.day,
            a.checks_total,
            a.checks_up,
-           a.checks_down
+           a.checks_down,
+           a.down_sec
       FROM touched t
       CROSS JOIN LATERAL (
           SELECT count(*)                         AS checks_total,
-                 count(*) FILTER (WHERE c.up)     AS checks_up,
-                 count(*) FILTER (WHERE NOT c.up) AS checks_down
-            FROM ops_checks c
-           WHERE c.system_id = t.system_id
-             AND c.observed_at >= (t.day::timestamp AT TIME ZONE 'UTC')
-             AND c.observed_at <  ((t.day + 1)::timestamp AT TIME ZONE 'UTC')
+                 count(*) FILTER (WHERE s.up)     AS checks_up,
+                 count(*) FILTER (WHERE NOT s.up) AS checks_down,
+                 COALESCE(
+                     sum(EXTRACT(EPOCH FROM (s.next_at - s.observed_at)))
+                         FILTER (WHERE NOT s.up AND s.next_at IS NOT NULL),
+                     0
+                 )                                AS down_sec
+            FROM (
+                SELECT c.up,
+                       c.observed_at,
+                       lead(c.observed_at) OVER (ORDER BY c.observed_at) AS next_at
+                  FROM ops_checks c
+                 WHERE c.system_id = t.system_id
+                   AND c.observed_at >= (t.day::timestamp AT TIME ZONE 'UTC')
+                   AND c.observed_at <  ((t.day + 1)::timestamp AT TIME ZONE 'UTC')
+            ) s
       ) a
 )
 INSERT INTO ops_days (system_id, day, state, down_sec, checks_total, checks_up, computed_at)
@@ -214,7 +225,7 @@ SELECT system_id,
            WHEN checks_down < $1::int THEN 'degraded'
            ELSE                                                 'outage'
        END,
-       LEAST(checks_down * $2::int, 86400)::int,
+       LEAST(floor(down_sec), 86400)::int,
        checks_total,
        checks_up,
        now()
@@ -229,9 +240,8 @@ SELECT system_id,
 `
 
 type RollUpOpsDaysParams struct {
-	OutageChecks     int32
-	ProbeIntervalSec int32
-	LookbackSec      int32
+	OutageChecks int32
+	LookbackSec  int32
 }
 
 // The aggregation behind the operations grid: ops_checks -> ops_days.
@@ -248,10 +258,19 @@ type RollUpOpsDaysParams struct {
 // recounted.
 // RollUpOpsDays recomputes every day that has received a raw check recently.
 //
-// Three parameters and no defaults, so the caller states the probe cadence, the
-// outage threshold and the scan bound. The db test can therefore replay the
-// Incident fixture's own convention (1800 s, 2 checks) and get its stated
-// histogram back; a rule baked into this file would make that test a tautology.
+// Two parameters and no defaults, so the caller states the outage threshold and
+// the scan bound. The db test can therefore replay the Incident fixture's own
+// convention (2 checks) and get its stated histogram back; a rule baked into
+// this file would make that test a tautology.
+//
+// THERE IS NO CADENCE PARAMETER ANY MORE, and that is issue #180. down_sec used
+// to be failed checks TIMES a declared interval, and the interval was declared
+// rather than driven: counted over 2026-08-24, the probe ran 41 times in 23.66
+// hours where its cron promises 284 — a real interval of about 35 minutes
+// against a constant of five. Every outage duration on the public grid was
+// therefore understated by roughly that factor, and it flattered us. A duration
+// derived from a cadence that does not happen is an invented number wearing an
+// operations hat, which is invariant 1.
 //
 // WHY A DAY WITHOUT A MEASUREMENT CANNOT COME OUT `ok`. `rolled` is an inner
 // join against ops_checks, so a group exists only where at least one check does.
@@ -274,6 +293,41 @@ type RollUpOpsDaysParams struct {
 // roll-up over a slice of a day would undercount checks_total and put a wrong
 // number underneath a correct-looking colour.
 //
+// HOW LONG A FAILED CHECK VOUCHES FOR, now that no constant answers it.
+//
+// A check at T states one thing: the site was down at T. It says nothing about
+// T plus a second. What the timestamps DO give is the pair — the check after it.
+// So a failed check carries the span to its successor, and the sum of those
+// spans over a day is down_sec. Nothing is multiplied by anything, and a stated
+// duration can be recounted from the two instants that produced it, which is
+// what #180 asks for.
+//
+// THE SUCCESSOR HAS TO BE ON THE SAME DAY, or the span is dropped rather than
+// shortened. That is the rule that keeps this arithmetic from replacing an
+// understatement with a much louder overstatement, and the case that forced it
+// is small: one failed check at 00:00 on a day nothing else measured. Its next
+// check is the following midnight. Clipping the span to the day boundary would
+// put 86 400 seconds of outage on a cell whose own checks_total reads 1 — a
+// full day of downtime derived from a single glance. Dropping it says the true
+// thing instead: we looked once, it was down, and we cannot say for how long.
+//
+// The direction of the remaining error is stated rather than hidden. It always
+// UNDERSTATES, never flatters twice: an outage running past midnight loses its
+// last span, and an outage that is still open contributes nothing at all, which
+// is the same refusal internal/uptime/expand.go already makes for a trailing
+// `down` — counting up to now() would put a number on the page that no probe
+// produced. The replay pays it too: five instants replayed with no live check
+// after them are four spans, not five.
+//
+// It reproduces the numbers the Incident fixture declares, and that is the
+// evidence for the shape rather than an argument for it. Two consecutive failed
+// probes half an hour apart with the next one answering: 1800 + 1800 = 3600,
+// and INC-001 independently says 3600. One failed probe with the next
+// answering: 1800. Both agreements survive the change — which is also why the
+// fixture tests alone cannot catch a regression here. The case that separates
+// the two arithmetics is one whose cadence differs from the old constant, and
+// ops_down_sec_db_test.go is that case.
+//
 // The second stage is a LATERAL and the predicate is a half-open range on
 // observed_at, and both halves of that were measured rather than assumed.
 //
@@ -288,20 +342,35 @@ type RollUpOpsDaysParams struct {
 // touched day instead, and the same work takes 51 ms. The measurement is in
 // docs/runbooks/migrations.md; it was never the index, it was the question.
 //
+// The window function reads the SAME rows the counts read, and that was checked
+// in the plan rather than assumed: `Index Searches: 182` with it and without it,
+// and NO Sort node — WindowAgg sits straight on the index scan, because
+// ops_checks_unique_observation already returns the day in observed_at order.
+// Measured 30.08.2026 on 52 416 rows over 182 days: the everyday case (one day)
+// goes 0.36 ms -> 0.72 ms, the whole window 420 ms -> 518 ms, and the peak
+// window storage is 17 kB per day. docs/runbooks/migrations.md carries the table.
+//
+// That is the other reason the successor is bounded to the day: a sentinel row
+// from the next day would have cost a second index search per touched day to buy
+// a span this file has just refused to claim.
+//
 // ORDER BY before ON CONFLICT is not cosmetic. E5 runs two instances of this
 // binary at once during a deploy, and two upserts touching the same rows in
 // different orders is the textbook deadlock.
 //
-// LEAST is load-bearing: ops_days_down_sec_ck caps down_sec at a full day, so
-// without it a misconfigured cadence would abort the whole statement instead of
-// clamping one cell.
+// LEAST is now unreachable from this statement and stays. Every span ends at a
+// check inside the same day, so the sum cannot exceed a day by construction —
+// but ops_days_down_sec_ck aborts the whole statement rather than clamping one
+// cell, and a belt that costs one function call is the cheap side of that trade.
+// floor(), not a round, because a fractional second rounded up is a duration
+// nobody measured.
 //
 // incident_id is deliberately absent from the DO UPDATE list. The notch is
 // human-curated — 00004_operations.sql says C4 aggregates the outage and a
 // person writes the post-mortem afterwards — so recomputing a day must not
 // touch it.
 func (q *Queries) RollUpOpsDays(ctx context.Context, arg RollUpOpsDaysParams) (int64, error) {
-	result, err := q.db.Exec(ctx, rollUpOpsDays, arg.OutageChecks, arg.ProbeIntervalSec, arg.LookbackSec)
+	result, err := q.db.Exec(ctx, rollUpOpsDays, arg.OutageChecks, arg.LookbackSec)
 	if err != nil {
 		return 0, err
 	}
