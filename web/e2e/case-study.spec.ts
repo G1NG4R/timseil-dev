@@ -36,6 +36,9 @@ function widthOf(page: Page): number {
   return page.viewportSize()?.width ?? 0;
 }
 
+/** The four regions `page.tsx` streams, each behind its own `<Suspense>`. */
+const STREAMED_REGIONS = [".cs-crumb", ".cs-eyebrow", ".spec", ".ops-tiles"] as const;
+
 /**
  * The page after streaming has settled.
  *
@@ -52,13 +55,24 @@ function widthOf(page: Page): number {
  * before that saw two of everything. With an api answering in milliseconds the
  * same tests had passed.
  *
- * Waiting on the breadcrumb count is the wait AND the assertion. If the swap
- * never happened, one copy of each region would stay in the page — which is
- * #256's shape exactly, a second copy of a component lying in the document — and
- * this is the line that would say so.
+ * WAITING ON ONE REGION IS NOT WAITING ON THE PAGE, and that is the third time
+ * this file has paid for the same streaming window. The four boundaries are
+ * independent — `page.tsx` opens a separate `<Suspense>` for each — so each
+ * spends its own two-second budget and they settle in no fixed order. A
+ * breadcrumb that has already swapped says nothing about the spec rail beside
+ * it. Two runs on main proved it on 31.08.: the first failed on `.spec`, the
+ * re-run on `.ops-tiles`, two different tests out of one family, and `retries:
+ * 0` means every run draws again.
+ *
+ * The count is the wait AND the assertion. If a swap never happened, one copy of
+ * each region would stay in the page — which is #256's shape exactly, a second
+ * copy of a component lying in the document — and this is the line that would
+ * say so.
  */
 async function settled(page: Page): Promise<void> {
-  await expect(page.locator(".cs-crumb")).toHaveCount(1);
+  for (const selector of STREAMED_REGIONS) {
+    await expect(page.locator(selector), selector).toHaveCount(1);
+  }
 }
 
 test.beforeEach(async ({ page }) => {
@@ -178,10 +192,13 @@ test("the breadcrumb goes back to the work index", async ({ page }) => {
   await expect(page).toHaveURL(/\/work$/);
 });
 
-// The other half of `settled`, said out loud rather than left implicit in a
-// helper: after the swap there is one of each region and not two.
+// What `settled` enforces, said out loud rather than left implicit in a helper.
+// It asserts the same four counts the beforeEach already waited on, and that
+// repetition is the point: a region that never stops being doubled fails here
+// under its own name, instead of turning all 30-odd tests in this file into a
+// setup error nobody can read.
 test("nothing is left over from the streaming", async ({ page }) => {
-  for (const selector of [".cs-crumb", ".cs-eyebrow", ".spec", ".ops-tiles"]) {
+  for (const selector of STREAMED_REGIONS) {
     await expect(page.locator(selector), selector).toHaveCount(1);
   }
 });
