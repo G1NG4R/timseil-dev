@@ -27,6 +27,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import { STREAMED_REGIONS, settled } from "./streaming";
 import { CASE_STUDY, RAIL_BREAKPOINT } from "./widths";
 
 const NO_DATA = "— NO DATA";
@@ -34,45 +35,6 @@ const NO_DATA = "— NO DATA";
 /** The width this project runs at, so a test can say which side of a switch it is on. */
 function widthOf(page: Page): number {
   return page.viewportSize()?.width ?? 0;
-}
-
-/** The four regions `page.tsx` streams, each behind its own `<Suspense>`. */
-const STREAMED_REGIONS = [".cs-crumb", ".cs-eyebrow", ".spec", ".ops-tiles"] as const;
-
-/**
- * The page after streaming has settled.
- *
- * FOUND BY THIS FILE, TWICE, AND THE SECOND TIME IT WAS GENERAL. A streamed page
- * carries both the Suspense fallback and its replacement: React ships the
- * replacement inside a `<div hidden>` and a script swaps them, so between those
- * two events every one of the four regions is in the document twice — the
- * breadcrumb, the eyebrow, the spec rail and the tile row. A strict locator sees
- * both and refuses.
- *
- * THE RACE IS WIDEST WHEN THE API IS DOWN, which is why the first run to catch
- * it was the first one with nothing to answer: the upstream call spends its full
- * two-second budget before the replacement can render, and every assertion made
- * before that saw two of everything. With an api answering in milliseconds the
- * same tests had passed.
- *
- * WAITING ON ONE REGION IS NOT WAITING ON THE PAGE, and that is the third time
- * this file has paid for the same streaming window. The four boundaries are
- * independent — `page.tsx` opens a separate `<Suspense>` for each — so each
- * spends its own two-second budget and they settle in no fixed order. A
- * breadcrumb that has already swapped says nothing about the spec rail beside
- * it. Two runs on main proved it on 31.08.: the first failed on `.spec`, the
- * re-run on `.ops-tiles`, two different tests out of one family, and `retries:
- * 0` means every run draws again.
- *
- * The count is the wait AND the assertion. If a swap never happened, one copy of
- * each region would stay in the page — which is #256's shape exactly, a second
- * copy of a component lying in the document — and this is the line that would
- * say so.
- */
-async function settled(page: Page): Promise<void> {
-  for (const selector of STREAMED_REGIONS) {
-    await expect(page.locator(selector), selector).toHaveCount(1);
-  }
 }
 
 test.beforeEach(async ({ page }) => {

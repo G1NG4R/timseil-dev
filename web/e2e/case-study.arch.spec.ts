@@ -11,6 +11,13 @@
  * nothing measured at all. If an assertion below could ever be changed by the
  * api being up, it is testing the wrong thing.
  *
+ * IT WAITS ON ALL FOUR STREAMED REGIONS, THOUGH NEITHER SECTION IS ONE. `.02`
+ * and `.03` prerender whole, so nothing here can be caught mid-swap — and the
+ * first draft of this file still copied the pre-#279 wait that looked only at
+ * the breadcrumb. A local helper is copied; that is what local helpers are for.
+ * The definition now lives in `streaming.ts`, both specs import it, and the next
+ * spec against this route inherits the fix instead of the bug.
+ *
  * COUPLINGS, NOT FIXTURES. "The two owned stations are accented" is checked as
  * *all owned boxes share a border colour, all others share another, and the two
  * differ* — never as a hex value. There are seven palettes and the theme is
@@ -20,6 +27,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import excerpt from "../content/generated/compose-api.gen.json";
+import { settled } from "./streaming";
 import { CASE_STUDY, RAIL_BREAKPOINT } from "./widths";
 
 /** The switch below which tables go to one column — layout.css's third. */
@@ -27,16 +35,6 @@ const TABLE_BREAKPOINT = 720;
 
 async function widthOf(page: Page): Promise<number> {
   return page.evaluate(() => window.innerWidth);
-}
-
-/**
- * The same wait `case-study.spec.ts` uses, and the same reason: during the
- * streaming swap React holds the fallback and its replacement in the document at
- * once, so every strict locator sees two of everything until it is over. The
- * wait is also the assertion — exactly one breadcrumb means the swap is done.
- */
-async function settled(page: Page): Promise<void> {
-  await expect(page.locator(".cs-crumb")).toHaveCount(1);
 }
 
 test.beforeEach(async ({ page }) => {
