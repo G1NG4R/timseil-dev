@@ -109,6 +109,30 @@
   .term-body { display: none }
 }
 
+/* ---- Der feine Zeiger hat auch ein Mindestmass, H3 ----------------------
+   #257: the seven theme swatches are 44 x 44 to a finger and 11 x 11 to a
+   mouse, at every width. The project rule is right where it applies —
+   CLAUDE.md hangs 44px on `pointer: coarse` and not on the viewport — but it
+   stops one step short of a standard it is otherwise stricter than. WCAG 2.2
+   AA 2.5.8 asks 24 x 24 of every pointer input, a mouse included.
+
+   IT IS THE SPACING EXCEPTION AND NOT THE SIZE, which is why nothing is
+   redrawn. 2.5.8 lets a target stay under 24 when its centre is at least 24
+   from every adjacent target's. At 11px wide with 8px of gap the centres are
+   19 apart; at 14 they are 25. So the swatches keep the size the Chrome sheet
+   draws them at, and only the air between them grows — the smallest change
+   that satisfies the rule, and the only one that is not a design correction.
+
+   --s-14 rather than 13, because 13 is not a step and the difference is one
+   pixel of margin over the standard.
+
+   COARSE IS UNTOUCHED. There the buttons are already 44 and their centres 52
+   apart, and a wider gap would push the row past a 346px column at 390. The
+   pointer decides, as it does above.                                        */
+@media (pointer: fine) {
+  .theme-row { gap: var(--s-14) }
+}
+
 /* ---- Touch haengt am Zeiger, nicht an der Breite ------------------------- */
 @media (pointer: coarse) {
   a, button, [role="button"], .chip, .tag { min-height: 44px; min-width: 44px }

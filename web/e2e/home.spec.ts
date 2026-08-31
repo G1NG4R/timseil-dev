@@ -164,3 +164,40 @@ test.describe("the page as a whole", () => {
     await expect(page.locator(".nav-desktop [aria-current]")).toHaveCount(0);
   });
 });
+
+/**
+ * #257, and it is here rather than in touch-targets.coarse.spec.ts because the
+ * pointer it is about is the one that file does not have.
+ *
+ * MEASURED, NOT GREPPED. K-27 is the finding that made that a rule: the first
+ * touch pass counted `min-height: 44px` and missed seventeen chips that got
+ * their height from padding. This reads boxes off the page and does the
+ * arithmetic 2.5.8 actually specifies.
+ */
+test.describe("what a mouse has to hit", () => {
+  test("the theme swatches are 24 apart, centre to centre", async ({ page }) => {
+    const boxes = await page.locator(".theme-row [role='radio']").evaluateAll((els) =>
+      els.map((el) => {
+        const box = el.getBoundingClientRect();
+        return { centre: box.x + box.width / 2, width: box.width };
+      }),
+    );
+
+    // The presence check first. Seven is the number every sheet draws and the
+    // number ThemeSwitch renders; an empty list would make the loop below pass
+    // without measuring anything, which is the shape H2b found four times.
+    expect(boxes, "no theme swatches to measure").toHaveLength(7);
+
+    for (let i = 1; i < boxes.length; i++) {
+      const offset = boxes[i].centre - boxes[i - 1].centre;
+      // WCAG 2.2 AA 2.5.8: a target under 24 x 24 passes when its centre is at
+      // least 24 from every adjacent target's. These are 11 wide by design —
+      // the Chrome sheet draws them that way — so the offset is what has to
+      // carry it.
+      expect(
+        offset,
+        `swatch ${String(i)} sits ${String(offset)} from its neighbour's centre`,
+      ).toBeGreaterThanOrEqual(24);
+    }
+  });
+});

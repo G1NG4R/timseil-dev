@@ -75,10 +75,22 @@ export function ThemeSwitch({ label, aria }: { label: string; aria: string }) {
   }
 
   return (
+    // `.theme-row` exists so that layout.css can reach the space BETWEEN the
+    // swatches without moving the label with it. #257: at a fine pointer the
+    // targets are 11px with 8px of gap, which puts their centres 19px apart,
+    // and WCAG 2.2 AA 2.5.8 wants 24. The class is the seam; the rule and the
+    // reason are in layout.css, beside the coarse-pointer block it belongs
+    // next to.
     <div
       role="radiogroup"
       aria-label={aria}
-      style={{ display: "flex", alignItems: "center", gap: "var(--s-8)" }}
+      className="theme-row"
+      // THE GAP IS NOT INLINE, and finding out why cost a red test. An inline
+      // declaration beats every stylesheet rule regardless of specificity, so
+      // `gap` written here could not be overridden by a media query at all —
+      // layout.css's fine-pointer rule was correct and simply never applied.
+      // The base value moved to chrome.css, where the rest of the footer is.
+      style={{ display: "flex", alignItems: "center" }}
     >
       <span
         style={{

@@ -541,6 +541,11 @@ html:has(dialog.menu[open]) { overflow: hidden; }
    FOCUS IS NOT REPEATED HERE. globals.css gives every focusable element
    `:focus-visible { outline: var(--focus-ring) }`, and a second ring on this
    one element would be an exception nobody decided. */
+/* The theme swatch row. The base gap is here rather than inline on the
+   component so that layout.css can raise it for a fine pointer — an inline
+   declaration wins over every stylesheet rule, media query or not. #257. */
+.theme-row { gap: var(--s-8); }
+
 .foot-mail {
   transition:
     color var(--d-glow) var(--e-out),
