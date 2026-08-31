@@ -24,84 +24,31 @@
  * WHY ONE PROJECT. Resizing the window is the test, so a project that fixes a
  * viewport has nothing to offer it. playwright.config.ts excludes
  * `*.sweep.spec.ts` from the seven width projects for that reason.
+ *
+ * THE CONTENT COLUMN IS CHECKED HERE AND NOWHERE ELSE. `.col` is set by the
+ * root layout and is the same rule on all ten pages, so `home.sweep.spec.ts`
+ * does not repeat it: a second run of a page-independent rule is time, not
+ * coverage. What that file does carry is its own fingerprint, because what a
+ * switch moves is a property of the page.
  */
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
+import { HEIGHT, STEP, at, edges, moved, type Probe } from "./sweep";
 import { CASE_STUDY, COLUMN_TABLE, SWITCHES, column } from "./widths";
 
-/** Tall enough that nothing is scrolled by accident at any width. */
-const HEIGHT = 1200;
-
-/** The coarse step. 1440 → 390 in 20px increments is 53 samples. */
-const STEP = 20;
-
-/**
- * What the layout looks like, as values that can only jump.
- *
- * ONLY DISCRETE VALUES BELONG IN HERE. The content column changes continuously
- * — it is `min(1160px, 100% - 80px)` — so putting its width in the fingerprint
- * would report a jump at every single sample. It is checked separately, against
- * the formula, at every sample; that is the half of this file that covers the
- * space between the sheet's seven rows rather than only on them.
- *
- * Each entry is a thing one of the four switches moves. `null` where a
- * component is not on the page at that width, which is itself a value: the
- * desktop nav disappearing IS the 900 switch.
- */
-async function fingerprint(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const read = (selector: string, prop: string): string => {
-      const el = document.querySelector(selector);
-      if (el === null) return "absent";
-      return getComputedStyle(el).getPropertyValue(prop);
-    };
-
-    const tracks = (selector: string): string => {
-      const el = document.querySelector(selector);
-      if (el === null) return "absent";
-
-      const style = getComputedStyle(el);
-
-      // THE DISPLAY HAS TO BE READ FIRST, and finding out why cost a red test.
-      // `grid-template-columns` keeps its computed value on a box that is no
-      // longer a grid: `.cs-constraints` declares `1fr 1fr` inside a
-      // `max-width: 1079` query and returns to `display: flex` at 720, so the
-      // track list still reads "1fr 1fr" below 720 and the switch looked as if
-      // it moved nothing. A row is one column or two because of both.
-      if (!style.display.includes("grid")) return style.display;
-
-      // The COUNT, not the widths: the widths follow the window continuously
-      // and the count is what a switch changes.
-      const value = style.gridTemplateColumns;
-      return value === "none" ? "none" : String(value.split(/\s+/).length);
-    };
-
-    return [
-      `hero=${tracks(".cs-spec")}`,
-      `prob=${tracks(".cs-prob")}`,
-      `spec=${tracks(".spec-body")}`,
-      `tiles=${tracks(".ops-tiles")}`,
-      `cons=${tracks(".cs-constraints")}`,
-      `rail=${read(".spec", "position")}`,
-      `h1=${read("h1", "font-size")}`,
-      `head=${read(".head", "height")}`,
-      `nav=${read(".nav-desktop", "display")}`,
-      `button=${read(".nav-button", "display")}`,
-    ].join(" · ");
-  });
-}
-
-async function at(page: Page, width: number): Promise<string> {
-  await page.setViewportSize({ width, height: HEIGHT });
-  return fingerprint(page);
-}
-
-/** Which fingerprint keys changed between two prints. */
-function moved(wide: string, narrow: string): string[] {
-  const a = new Map(wide.split(" · ").map((part) => part.split("=") as [string, string]));
-  const b = new Map(narrow.split(" · ").map((part) => part.split("=") as [string, string]));
-  return [...a.keys()].filter((key) => a.get(key) !== b.get(key)).sort();
-}
+/** What the case study's four switches move. */
+const PROBES: readonly Probe[] = [
+  { key: "hero", kind: "tracks", selector: ".cs-spec" },
+  { key: "prob", kind: "tracks", selector: ".cs-prob" },
+  { key: "spec", kind: "tracks", selector: ".spec-body" },
+  { key: "tiles", kind: "tracks", selector: ".ops-tiles" },
+  { key: "cons", kind: "tracks", selector: ".cs-constraints" },
+  { key: "rail", kind: "computed", selector: ".spec", prop: "position" },
+  { key: "h1", kind: "computed", selector: "h1", prop: "font-size" },
+  { key: "head", kind: "computed", selector: ".head", prop: "height" },
+  { key: "nav", kind: "computed", selector: ".nav-desktop", prop: "display" },
+  { key: "button", kind: "computed", selector: ".nav-button", prop: "display" },
+];
 
 /**
  * What each switch is FOR — the sheet's "WORAUF GESCHAUT WIRD" column, as keys.
@@ -171,40 +118,7 @@ test.describe("nothing changes shape except at a declared switch", () => {
   test("every edge between 1440 and 390 is one of the four", async ({ page }) => {
     await page.goto(CASE_STUDY);
 
-    // Coarse pass: find the intervals in which the fingerprint changed.
-    const samples: { width: number; print: string }[] = [];
-    for (let width = 1440; width >= 390; width -= STEP) {
-      samples.push({ width, print: await at(page, width) });
-    }
-
-    const intervals: { wide: number; narrow: number }[] = [];
-    for (let i = 1; i < samples.length; i++) {
-      if (samples[i].print !== samples[i - 1].print) {
-        intervals.push({ wide: samples[i - 1].width, narrow: samples[i].width });
-      }
-    }
-
-    // Fine pass: bisect each interval to the exact pixel. The edge is reported
-    // as the narrowest width that still LOOKS LIKE the wider layout plus one —
-    // i.e. the first width at which the wider layout no longer applies, which
-    // is how SWITCHES is defined and how `max-width` queries actually fire.
-    const edges: number[] = [];
-    for (const interval of intervals) {
-      let wide = interval.wide;
-      let narrow = interval.narrow;
-      const wideprint = await at(page, wide);
-
-      while (wide - narrow > 1) {
-        const middle = Math.floor((wide + narrow) / 2);
-        if ((await at(page, middle)) === wideprint) wide = middle;
-        else narrow = middle;
-      }
-      edges.push(wide);
-    }
-
-    // A switch that fires twice — two components crossing at the same width —
-    // is one edge, not two.
-    const found = [...new Set(edges)].sort((a, b) => b - a);
+    const found = await edges(page, PROBES);
 
     expect(found, "the layout changes shape somewhere the sheet does not allow").toEqual([
       ...SWITCHES,
@@ -218,8 +132,8 @@ test.describe("nothing changes shape except at a declared switch", () => {
     await page.goto(CASE_STUDY);
 
     for (const width of SWITCHES) {
-      const wide = await at(page, width);
-      const narrow = await at(page, width - 1);
+      const wide = await at(page, width, PROBES);
+      const narrow = await at(page, width - 1, PROBES);
 
       expect(moved(wide, narrow), `across ${String(width)}`).toEqual(SWITCH_MOVES[width]);
     }
