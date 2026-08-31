@@ -25,13 +25,15 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { Hero } from "@/components/home/Hero";
+import { SysSection } from "@/components/home/SysSection";
 import { TerminalPanelLive } from "@/components/home/Live";
 import { TerminalPanel } from "@/components/home/TerminalPanel";
 import { JsonLd } from "@/components/JsonLd";
+import { SECTIONS } from "@/lib/home/sections";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { siteLd } from "@/lib/seo/jsonld";
 import { seoFor } from "@/lib/seo/pages";
-import { asLocale } from "@/lib/i18n/routes";
+import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { stateLabel } from "@/lib/state/words";
 
 // The canonical, the four `hreflang` links, the feed and the social card — one
@@ -50,7 +52,7 @@ export default async function Home() {
   // always the language of the route: `/de` serves English until P6 fills the
   // dictionary. The graph gets that value rather than the route's, so it never
   // claims a translation the page does not have.
-  const { resolved, messages } = await getDictionary();
+  const { locale, resolved, messages } = await getDictionary();
 
   return (
     <>
@@ -78,6 +80,29 @@ export default async function Home() {
           <TerminalPanelLive messages={messages} />
         </Suspense>
       </div>
+
+      {/* THE ORDER IS NOT WRITTEN HERE, and that is the point. HOME.01 is
+          lib/home/sections.ts and a unit test holds it against a second
+          transcription of the sheet, because four markers written out by hand
+          in a page are four markers somebody can reorder without disagreeing
+          with anything. K-26 records that happening once already. */}
+      {SECTIONS.map((section) => (
+        <SysSection
+          key={section.id}
+          id={section.id}
+          title={section.title}
+          titleId={`sec-${section.id.toLowerCase().replace(".", "-")}`}
+          reason={messages[section.reasonKey]}
+          exit={
+            section.exit === null
+              ? null
+              : {
+                  href: localeHref(locale, section.exit.path),
+                  label: messages[section.exit.labelKey],
+                }
+          }
+        />
+      ))}
     </>
   );
 }

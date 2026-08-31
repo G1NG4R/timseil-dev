@@ -11,6 +11,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { NAV } from "../chrome.ts";
 import { en } from "../i18n/messages/en.ts";
 import { SECTIONS, markerNumber } from "./sections.ts";
 
@@ -88,4 +89,35 @@ void test("markerNumber refuses what is not a marker", () => {
   }
   assert.equal(markerNumber("SYS.01"), 1);
   assert.equal(markerNumber("SYS.12"), 12);
+});
+
+// A way back that points nowhere is worse than no way back: the reader leaves
+// the empty panel and lands on a 404, which is the one thing invariant 5 exists
+// to prevent one table over. NAV is transcribed from the Chrome sheet, so this
+// holds the shells against the navigation rather than against itself.
+void test("every way back is a route the navigation knows", () => {
+  // Widened on purpose. NAV's hrefs are a literal union, and a Set of that type
+  // would turn a wrong path into a COMPILE error — which sounds stricter and is
+  // weaker: the point of this test is to catch a path somebody typed, and a
+  // typo is a string before it is a type.
+  const routes = new Set<string>(NAV.map((entry) => entry.href));
+
+  for (const section of SECTIONS) {
+    if (section.exit === null) continue;
+    assert.ok(
+      routes.has(section.exit.path),
+      `${section.id} sends a reader to ${section.exit.path}, which is not a nav route`,
+    );
+    assert.ok(en[section.exit.labelKey].length > 0, `${section.id}'s way back has no label`);
+  }
+});
+
+// Not every shell has one, and that is the assertion rather than an omission:
+// a test that only checked the two exits it expects would pass on a page where
+// somebody had quietly given the training log a destination it does not have.
+void test("only the two sections with somewhere to go carry a way back", () => {
+  assert.deepEqual(
+    SECTIONS.filter((section) => section.exit !== null).map((section) => section.id),
+    ["SYS.02", "SYS.04"],
+  );
 });

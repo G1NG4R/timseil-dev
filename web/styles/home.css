@@ -187,3 +187,16 @@
   color: var(--dim);
   max-width: none;
 }
+
+/* ── Section shells ────────────────────────────────────────────────────────
+   Four markers, four empty states. The sheet puts 104px between sections and
+   the scale's nearest step is 96 — eight pixels, the class case.css already
+   carries and the oracle already names.                                     */
+
+.home-section { margin-block-end: var(--s-96); }
+
+.home-exit {
+  margin-block-start: var(--s-12);
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+}

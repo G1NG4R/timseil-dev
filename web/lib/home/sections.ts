@@ -49,6 +49,22 @@ export interface Section {
    * than against anybody's memory.
    */
   readonly owedBy: string;
+  /**
+   * The way out of the empty state, or `null` where there is none.
+   *
+   * STATE.05 asks an empty panel for three things — what is missing, why, and a
+   * way back — and EmptyState makes the first two required. The third cannot
+   * be: two of these four sections have somewhere to send a reader and two do
+   * not. A training log has no index of its own and neither does the uplink;
+   * inventing a destination for them would be worse than admitting there is
+   * none.
+   *
+   * The paths are the navigation's, held against lib/chrome.ts by the test.
+   * Both are still `[SOON]` stubs, and that is deliberately fine: case.css
+   * settled it for the breadcrumb in H1 — "a stub is a place, an absent link is
+   * not."
+   */
+  readonly exit: { readonly path: string; readonly labelKey: keyof Messages } | null;
 }
 
 /**
@@ -68,24 +84,31 @@ export const SECTIONS: readonly Section[] = [
     title: "TRAINING LOG",
     reasonKey: "homeSys01Why",
     owedBy: "H4",
+    exit: null,
   },
   {
     id: "SYS.02",
     title: "SELECTED WORK",
     reasonKey: "homeSys02Why",
     owedBy: "H5",
+    exit: { path: "/work", labelKey: "navWork" },
   },
   {
     id: "SYS.03",
     title: "UPLINK",
     reasonKey: "homeSys03Why",
     owedBy: "H5",
+    exit: null,
   },
   {
     id: "SYS.04",
     title: "LOG",
     reasonKey: "homeSys04Why",
     owedBy: "H5",
+    // LOG points at /blog, and that is not a typo — K-20 unified the label and
+    // left the path alone because it is in other people's bookmarks. lib/chrome.ts
+    // carries the same split for the navigation.
+    exit: { path: "/blog", labelKey: "navLog" },
   },
 ];
 
