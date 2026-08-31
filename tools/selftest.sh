@@ -1851,16 +1851,54 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   sleep 0.3
 done
 
-# `timeout 6` around an exit-2 assertion proves both halves at once: had the
-# script gone on sampling, the code would be 124 and not 2. That the loop stops
-# is half the repair — sixty more seconds of asking a caller who is being refused
-# makes the message later, not truer.
+# THE SECOND INCIDENT, and it moved this block rather than adding to it. #271
+# made a refusal exit on the first sample and these assertions held it there with
+# `timeout 6`: had the script gone on sampling, the code would be 124 and not 2.
+# On 2026-08-31 the deploy of 499d284 measured what that costs — the first sample
+# fell 0.39 s after dokploy accepted the job, answered 403, and the new process
+# came up 28 s later on a site that was healthy from then on. The gate had
+# already said it could not tell.
+#
+# So the budget is kept and the verdict is reached at the end. The assertions
+# below say the same two things they always said — a 403 is not an outage, a 429
+# is not the application's fault — and one thing more: that getting there takes
+# the budget. VERIFY_BUDGET_SEC exists for this and for nothing else; production
+# runs the default.
 accepts "verify calls a 403 something other than an outage" \
-  sh -c "VERIFY_BASE_URL=$CODES/403 timeout 6 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 2 ] && grep -q \"not this application's answer\" ref.out"
+  sh -c "VERIFY_BASE_URL=$CODES/403 VERIFY_BUDGET_SEC=4 timeout 20 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 2 ] && grep -q \"not this application's answer\" ref.out"
 # 429 is in the contract for this route and the rate limiter does cover it, so it
 # may well be ours — which is why it gets its own sentence and not that one.
 accepts "verify does not blame the application for a 429" \
-  sh -c "VERIFY_BASE_URL=$CODES/429 timeout 6 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 2 ] && grep -q 'being refused' ref.out"
+  sh -c "VERIFY_BASE_URL=$CODES/429 VERIFY_BUDGET_SEC=4 timeout 20 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 2 ] && grep -q 'being refused' ref.out"
+# THE REGRESSION THE INCIDENT ASKS FOR: a refusal must not end the run before the
+# budget does. With a 2s budget the script cannot finish inside 1s, so `timeout 1`
+# returning 124 is the proof that it was still sampling.
+accepts "verify keeps its budget while it is being refused" \
+  sh -c "VERIFY_BASE_URL=$CODES/403 VERIFY_BUDGET_SEC=20 timeout 1 tools/verify-deploy.sh 1234abc > ref.out 2>&1; [ \$? -eq 124 ]"
+# And the half that makes waiting worth anything: a refusal followed by a real
+# answer is a moment the swap produced, not a verdict. The stub answers 403 until
+# a marker file appears, then 200 with the sha — which is the shape of 499d284's
+# deploy, where the 403 came 28s before the process did.
+python3 -c '
+import http.server as h, os, json
+class H(h.BaseHTTPRequestHandler):
+    def do_GET(s):
+        if not os.path.exists("swapped"):
+            s.send_response(403); s.end_headers(); return
+        b = json.dumps({"status":"ok","sha":"1234abc","startedAt":"2026-08-31T14:38:36Z"}).encode()
+        s.send_response(200); s.send_header("content-type","application/json")
+        s.send_header("content-length", str(len(b))); s.end_headers(); s.wfile.write(b)
+    def log_message(s, *a): pass
+h.HTTPServer(("127.0.0.1", 8733), H).serve_forever()
+' >/dev/null 2>&1 &
+SWAP_PID=$!
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  curl -s -o /dev/null --max-time 1 "http://127.0.0.1:8733/api/health" && break
+  sleep 0.3
+done
+accepts "verify passes when the refusal was only the swap window" \
+  sh -c "( sleep 4; touch swapped ) & VERIFY_BASE_URL=http://127.0.0.1:8733 VERIFY_BUDGET_SEC=30 timeout 40 tools/verify-deploy.sh 1234abc > ref.out 2>&1; rc=\$?; rm -f swapped; [ \$rc -eq 0 ] && grep -q 'waiting it out' ref.out"
+kill "$SWAP_PID" 2>/dev/null
 
 # THE COUNTER-CHECK, and it is the one that matters: the outage path must not
 # have been carried off with the repair. A 503 is the application failing to

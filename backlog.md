@@ -12,7 +12,94 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 31.08.2026, H2a abgenommen: die Klasse hieß Architektur und war Build
+## Wo wir stehen — 31.08.2026, eine Stichprobe, aus der niemand etwas schließen kann
+
+**Branch `fix/a-refusal-during-the-swap-is-not-a-verdict`.** Der `deploy`-Job von
+`499d284` (#281) ist rot, und die Seite war zu keiner Sekunde unten.
+
+### Was gemessen wurde, bevor irgendetwas geglaubt wurde
+
+```
+14:38:07.559  dokploy accepted the deploy
+14:38:07.949  /api/health answered 403      ← erste Stichprobe, 0,39 s später
+14:38:36.474  der neue Prozess kam hoch     ← 28 s nachdem der Gate aufgab
+```
+
+`check-deployed` danach: **8 Ansprüche, 1 von hier nicht stellbar**, Produktion
+auf `499d284`, beide Routen 200. Der Deploy hat funktioniert; nur seine
+Bestätigung wurde abgewiesen.
+
+### Der Fund
+
+**#271 hat zwei Dinge getan, und nur eines war die Reparatur.** Das Urteil —
+kein Rollback, keine Zeile in `deploys`, Exit 2 — war es. Der Sofort-Abbruch bei
+einer Abweisung war die Zugabe, begründet mit „eine Abweisung ist kein
+hochkommender Container".
+
+Dieses Argument hat jetzt sein Gegenbeispiel — aber nicht das, das ich zuerst
+aufgeschrieben hatte. **Der Lauf sagt über die Abweisung fast nichts**, weil es
+genau eine Stichprobe gibt: ob der 403 zwei Sekunden galt oder zwei Minuten,
+steht nirgends. Der `--started`-Aufruf **vor** dem Deploy kam ebenfalls leer
+zurück, was gegen die bequeme Lesart „das war nur das Tauschfenster" spricht; er
+verschluckt aber jeden Fehler, also trägt auch das nichts.
+
+**Das ist der Punkt.** Ein Werkzeug, das nach einer Stichprobe aufgibt, erzeugt
+einen Datenpunkt, aus dem niemand etwas schließen kann — der Gate nicht und ein
+Mensch hinterher auch nicht. Zwanzig Stichproben hätten die Frage beantwortet,
+die dieser Lauf offenlässt. Das Budget ist das Instrument dafür, und es wurde
+nicht benutzt.
+
+**Repariert:** eine Abweisung beendet die Schleife nicht mehr. Sie wird gemerkt,
+das Budget läuft weiter, das Urteil fällt am Ende. Antwortet die Anwendung
+vorher korrekt, ist das ein Durchgang; wird am Ende immer noch abgewiesen, ist
+es Exit 2 wie bisher. `deploy-gate.sh` bleibt unberührt. ADR 0056.
+
+**Vorgeführt statt behauptet**, gegen eine Attrappe, die 403 antwortet, bis eine
+Markierung erscheint — die Form, die ein Deploy haben *kann*:
+
+```
+alt   ✗ exit 2 nach 0,4 s
+neu   ! /api/health answered 403 — waiting it out
+      ✓ /api/health 200 · status ok · sha 1234abc
+      ✓ / 200                                        exit 0 nach 6 s
+```
+
+Dazu: mit 20 s Budget und `timeout 1` beweist Exit 124, dass noch gesampelt
+wird. Fünf Verify-Zusicherungen statt drei, und die 503-Gegenprüfung steht
+unverändert — ein Ausfall bleibt ein Ausfall.
+
+**Der Preis** sind die sechzig Sekunden, die #271 gespart hat, im Fall einer
+dauerhaften Abweisung. Der Tausch ist richtig herum: ein Komfortgewinn, der
+Fehlschläge erfindet, ist keiner.
+
+### Was diese Runde nicht behauptet
+
+**Die Ursache der Abweisung ist nicht hier.** Sie liegt vor der Anwendung, ist
+Host-Zustand und steht in den privaten Notizen — dort gegen den Vorfall vom
+30.08. gehalten, der dieselbe Signatur hatte.
+
+**`ops.lastDeploy` nennt weiter `e4bc8d8`.** Die Zeile wurde absichtlich nicht
+geschrieben; die Seite untertreibt damit ihren letzten Deploy, bis der nächste
+durchgeht.
+
+**`check-deployed` meldete „the site reports that deploy itself" trotzdem grün**
+— über den Datensatz des vorigen Deploys. Das ist #243, heute zum zweiten Mal
+sichtbar und weiter offen.
+
+### Und eine Regel, gegen die ich selbst verstoßen habe
+
+Die private Notiz vom 30.08. schließt mit einer Anweisung an die **nächste**
+Abnahme: die Browser-Suite gegen den lokalen Produktionsbuild fahren, gegen
+Produktion nur, was die Abnahme wirklich braucht. Ich habe heute die volle Suite
+(349 Zusicherungen) gegen Produktion gefahren. Der zeitliche Abstand zum 403
+beträgt 53 Minuten und ist damit deutlich größer als am 30.08. — die Korrelation
+ist schwächer und bleibt unbewiesen. Die Anweisung stand trotzdem da, und ich
+habe sie nicht gelesen. Sie steht als Idee seit dem 30.08. im Abschnitt unten
+und gehört ab jetzt in den Ablauf, nicht in eine Ideenliste.
+
+---
+
+## Vorher — 31.08.2026, H2a abgenommen: die Klasse hieß Architektur und war Build
 
 **#280 gemergt, `e4bc8d8` / `v0.17.0` in Produktion.** `/work/timseil-dev` trägt
 `.01 .02 .03` — Problem, Architecture, Build. `.04 OPERATIONS` und `.05 RESULT`
