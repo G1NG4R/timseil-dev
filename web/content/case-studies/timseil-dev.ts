@@ -33,11 +33,22 @@ import type { CaseStudy } from "./types.ts";
 export const timseilDev: CaseStudy = {
   slug: "timseil-dev",
 
-  // The sheet's own date for the copy below, not a build time. sitemap.ts asked
-  // for exactly this in G5: "When H1 and H9 give pages a real modification date,
-  // it comes from the content, and this is where it goes." A `new Date()` here
-  // would move every page's date on every dependency bump.
-  updatedAt: "2026-08-30",
+  // The date of the copy below, not a build time. sitemap.ts asked for exactly
+  // this in G5: "When H1 and H9 give pages a real modification date, it comes
+  // from the content, and this is where it goes." A `new Date()` here would move
+  // every page's date on every dependency bump.
+  //
+  // WHICH MEANS IT MOVES WHEN THE COPY DOES, and H2a is the phase that found out
+  // what happens when it does not: two whole sections were added to this page on
+  // the 31st and this line still read the 30th, so all three language routes
+  // published `lastmod 2026-08-30` for a page that had changed. Nothing catches
+  // it — there is one consumer (app/sitemap.ts) and lib/seo/pages.test.ts asserts
+  // the shape of this string and never its value.
+  //
+  // So the rule, until something enforces it: EDIT THE PROSE IN THIS FILE, MOVE
+  // THIS DATE. It is the one field here that is a claim about the file rather
+  // than a claim in it.
+  updatedAt: "2026-08-31",
 
   headline: "This site is the system it describes.",
 
