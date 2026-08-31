@@ -83,6 +83,25 @@ export const en = {
   csErrorRate: "ERROR RATE",
   csIncidents: "INCIDENTS",
 
+  // H2a · the two sections under the problem, and the words inside them.
+  //
+  // THE SAME OMISSIONS AS H1's, by the same rule. There is no key for the two
+  // section metas the sheet draws — "HOP LATENCIES ARE PLACEHOLDERS" and
+  // "CAPTURES ARE PLACEHOLDERS" — because neither placeholder is built and a
+  // meta that described the drawing rather than the page would be nomenclature
+  // for something absent. `.01 PROBLEM` carries no meta either.
+  //
+  // `WHY THIS ONE` is the Template's column head, not `Case Study 02`'s
+  // "REJECTED — AND WHAT IT COSTS". Which sheet wins was settled in ADR 0052.
+  csArchitecture: "ARCHITECTURE",
+  csBuild: "BUILD",
+  csSideLanes: "SIDE LANES",
+  csDecisions: "DECISIONS",
+  csDecision: "DECISION",
+  csAlternative: "ALTERNATIVE",
+  csWhyThisOne: "WHY THIS ONE",
+  csPhases: "PHASES",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

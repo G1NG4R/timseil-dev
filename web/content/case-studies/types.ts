@@ -9,6 +9,50 @@
 // those come from /api/systems/{slug}, and lib/api/systems.ts reads them. If a
 // field ever wants a number, that is the signal it belongs in the api instead.
 
+/**
+ * One station on the request path.
+ *
+ * `own` is the sheet's own vocabulary and not a styling flag: the Case Study Map
+ * labels every box `EIGEN` or `EXTERN`, and the Template draws the two stations
+ * that are our code with a signal border while the browser, the edge and the
+ * volume keep the ordinary one. The distinction is what the section argues, so
+ * it is content.
+ */
+export interface Hop {
+  /** `CLIENT`, `EDGE`, `WEB`, `API`, `DATA` — the station, not the product. */
+  readonly key: string;
+  /** The thing standing there. A technology, never a version. */
+  readonly name: string;
+  readonly detail: string;
+  /** Whether this station is code in this repository. */
+  readonly own: boolean;
+}
+
+/** One of the lanes beside the path: the things that are not a request. */
+export interface Lane {
+  readonly key: string;
+  readonly detail: string;
+}
+
+/**
+ * One row of the decision table.
+ *
+ * `alternative` is required, and that is the point of the table rather than a
+ * schema detail — the Operations sheet says it in one line: a choice recorded
+ * without what it rejected "ist es keine Entscheidung".
+ */
+export interface Decision {
+  readonly decision: string;
+  readonly alternative: string;
+  readonly why: string;
+}
+
+/** One phase of the build, in the order it happened. */
+export interface Phase {
+  readonly title: string;
+  readonly detail: string;
+}
+
 export interface CaseStudy {
   /** The system's slug in `systems`. The route is `/work/<slug>`. */
   readonly slug: string;
@@ -28,6 +72,19 @@ export interface CaseStudy {
 
   readonly problem: readonly string[];
   readonly constraints: readonly string[];
+
+  /** `.02 ARCHITECTURE` — the request path, the lanes beside it, the decisions. */
+  readonly architecture: {
+    readonly hops: readonly Hop[];
+    readonly lanes: readonly Lane[];
+    readonly decisions: readonly Decision[];
+  };
+
+  /** `.03 BUILD` — the caption under the compose block, and the order of work. */
+  readonly build: {
+    readonly composeCaption: string;
+    readonly phases: readonly Phase[];
+  };
 
   readonly emptyNote: {
     readonly label: string;

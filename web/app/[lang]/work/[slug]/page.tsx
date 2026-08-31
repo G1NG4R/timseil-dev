@@ -12,21 +12,31 @@
 // it will. Case Study 02 draws exactly that. Testing the full page and shipping
 // the empty one is how a stage-H phase gets this backwards.
 //
-// SECTIONS .02 TO .05 ARE H2's — architecture, build, operations, result, and
-// the 91-day grid with its clickable notches. This file ends after `.01
-// PROBLEM`, and `coverage()` is the reason the uptime tile can stand here at all
-// without the grid beside it: it says how much of the window was measured.
+// SECTIONS .04 AND .05 ARE H2b's — operations and result, and the 91-day grid
+// with its clickable notches. This file ends after `.03 BUILD`, and `coverage()`
+// is the reason the uptime tile can stand here at all without the grid beside
+// it: it says how much of the window was measured.
+//
+// WHERE THE PHASE BOUNDARY RUNS, because it is not where the section numbers
+// suggest. H2a is everything above that reads nothing measured: `.02` and `.03`
+// are prose plus one build artefact, so they prerender whole and the page still
+// makes exactly one upstream call per view. H2b brings the grid, and with it the
+// first client component this directory has.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { BuildPhases } from "@/components/case/BuildPhases";
 import { CaseCrumb } from "@/components/case/CaseCrumb";
 import { CaseEyebrow } from "@/components/case/CaseEyebrow";
 import { CaseHero } from "@/components/case/CaseHero";
+import { ComposeExcerpt } from "@/components/case/ComposeExcerpt";
 import { Constraints } from "@/components/case/Constraints";
+import { DecisionTable } from "@/components/case/DecisionTable";
 import { CaseCrumbLive, CaseEyebrowLive, MetricRowLive, SpecRailLive } from "@/components/case/Live";
 import { MetricRow } from "@/components/case/MetricRow";
+import { RequestPath } from "@/components/case/RequestPath";
 import { SpecRail } from "@/components/case/SpecRail";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { CASE_STUDIES, caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
@@ -128,12 +138,12 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
         </Suspense>
       </div>
 
-      <section>
+      <section className="cs-section" aria-labelledby="sec-01">
         {/* The head spans both columns and the body below it is the two-column
             row — that is how the sheet draws it, and it is also the only way the
             hairline reaches the full content width. `.cs-prob` is the 380px
             rail; the hero above uses the 400px one. */}
-        <SectionHead id="01" title={messages.csProblem} />
+        <SectionHead id="01" title={messages.csProblem} titleId="sec-01" />
 
         <div className="cs-prob">
           <div className="cs-prose">
@@ -143,6 +153,53 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
           </div>
 
           <Constraints items={study.constraints} label={messages.csConstraints} />
+        </div>
+      </section>
+
+      {/* H2a. NEITHER SECTION IS BEHIND A SUSPENSE BOUNDARY, and that is the
+          shape of the phase rather than an omission: nothing below reads
+          /api/systems/{slug}. The request path, the decisions and the phases are
+          prose from content/case-studies; the compose block is a build artefact
+          written by `make gen`. So this half of the page prerenders whole, costs
+          no upstream call, and adds nothing to the initial JS. */}
+      <section className="cs-section" aria-labelledby="sec-02">
+        <SectionHead id="02" title={messages.csArchitecture} titleId="sec-02" />
+
+        {/* Full width, unlike `.01` and `.03`. The Template draws no rail beside
+            the path: five stations across the content column is the picture, and
+            a 380px column taken out of it would break the row at 1440 before any
+            breakpoint did. */}
+        <RequestPath
+          hops={study.architecture.hops}
+          lanes={study.architecture.lanes}
+          lanesLabel={messages.csSideLanes}
+        />
+
+        <DecisionTable
+          rows={study.architecture.decisions}
+          caption={messages.csDecisions}
+          headings={{
+            decision: messages.csDecision,
+            alternative: messages.csAlternative,
+            why: messages.csWhyThisOne,
+          }}
+        />
+      </section>
+
+      <section className="cs-section" aria-labelledby="sec-03">
+        <SectionHead id="03" title={messages.csBuild} titleId="sec-03" />
+
+        {/* `.cs-arch` — 1fr and a 420px rail with a 60px gap, copied into
+            layout.css in G1 and without a consumer until now. Its name says
+            architecture and its measurements say this row: the Template draws
+            `grid-template-columns:1fr 420px;gap:60px;align-items:start` exactly
+            once, here, around the compose block and the phases. The same rule
+            that settled the five tiles in H1a — when the sheets and the shipped
+            stylesheet disagree, the stylesheet is the one that was executed. */}
+        <div className="cs-arch">
+          <ComposeExcerpt caption={study.build.composeCaption} />
+
+          <BuildPhases phases={study.build.phases} label={messages.csPhases} />
         </div>
       </section>
     </>

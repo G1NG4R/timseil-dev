@@ -1,0 +1,129 @@
+---
+title: 'A correction table does not tell you which lines ship'
+deck: 'Nine facts in the design handoff went stale before anyone built from it, and the index says so. What the index cannot say is whether a stale fact is an annotation nobody sees or a sentence the page publishes — and two of these nine were the second kind.'
+published: 2026-08-31
+tags: ['design-handoff', 'frontend', 'invariants']
+system: 'timseil-dev'
+summary: |
+  This site's design handoff is older than several of its architecture
+  decisions, and the index that fronts it carries a table of nine corrections so
+  nobody copies a number that stopped being true. Building the architecture
+  section of the case study showed that the table is answering half the
+  question. It records which facts are wrong. It does not record where they sit,
+  and two of the nine sit in English body copy rather than in a designer's note
+  — which is the difference between a mistake nobody would have seen and a false
+  claim on the one page whose whole argument is that it does not make any.
+---
+
+## The table that was already there
+
+The design handoff for this site was frozen in August, before most of the system
+existed. It is read-only, and the one file in it we are allowed to write is an
+index. Near the top of that index is a table with nine rows, which exists so
+that no phase copies a fact the project has since decided differently:
+
+| The sheet says | What holds |
+|---|---|
+| `React Router 7` | Next.js |
+| `PostgreSQL 16` | PostgreSQL 18 |
+| A health container with SQLite | An API container with Postgres |
+| "no Prometheus" | Prometheus is in the stack |
+
+It has worked. Two of those rows were caught in the phase that built the page's
+hero, and the spec rail that would have printed a version number now cannot: the
+versions arrive from the API, filled at build time out of `go.mod`,
+`package.json` and the compose file. There is no place left in that component
+where a version could be typed.
+
+So the table was doing its job. Then the next phase built the section directly
+underneath, and the job turned out to have a second half.
+
+## Where a wrong fact lives changes what it costs
+
+The architecture section quotes a request path, a set of side lanes and a table
+of four decisions. The template sheet draws all three, and the sheet next to it
+fills them in for this project. Reading them to write the real content, the
+"no Prometheus" row stopped being a row in a table and became this:
+
+> No metrics stack for one host and three services.
+
+and, in the decisions table:
+
+> Rejected: Prometheus and Grafana — two more containers to patch for one host.
+
+Those are not annotations. They are not a note in the margin telling an
+implementer what the picture means. They are English sentences, in the voice of
+the page, in the slot where the page's own copy goes. Transcribed the way the
+first four rows of the correction table were transcribed — carefully, from the
+sheet, into the content file — they would have shipped.
+
+And they are false. This project runs Prometheus, Loki, Grafana and an Alloy
+collector, decided in two separate records, one of which exists precisely
+*because* parsing an access log was rejected in favour of a metrics stack. The
+sheet is not lying; it is old. It was drawn when the answer was different, and
+the answer changed, and the index recorded that it changed.
+
+What the index could not record is that this particular stale fact was load-bearing
+copy. A correction table is a list of *what* is wrong. The cost of missing a row
+depends entirely on *where* the row is, and that column does not exist.
+
+## The asymmetry
+
+It is worth being precise about why this is not just "read the table more
+carefully".
+
+When a stale fact sits in an annotation — a caption saying `HOP LATENCIES ARE
+PLACEHOLDERS`, a label reading `PostgreSQL 16` inside a diagram box — missing it
+produces a wrong picture. Someone reviewing the built page against the sheet
+sees a mismatch, and mismatches are what review is for. The failure is loud.
+
+When it sits in body copy, missing it produces a *correct-looking page that
+states something untrue about its own system*. Nothing mismatches: the page says
+exactly what the sheet says. Every check passes. The design comparison passes,
+because that comparison measures geometry and type and deliberately never
+compares words. The only thing that catches it is somebody knowing the stack
+well enough to read the sentence and disagree with it.
+
+For a portfolio that argues its numbers are real, publishing "no metrics stack"
+next to a live uptime figure produced by that metrics stack is not a typo. It is
+the failure the whole site is built to avoid, arriving through the one door
+nobody had put a check on.
+
+## What we did instead
+
+The content for the section is written from the repository, not from the sheets.
+The architecture documents in `docs/architecture/` are hand-written, current, and
+their own provenance line says they take their *form* from the same design sheet
+— so the page and the architecture record share a shape and cannot disagree
+about facts. The sheets give the drawing. The repository gives what is true.
+
+Then a test, which runs at all seven checked widths:
+
+```ts
+for (const stale of ["React Router", "PostgreSQL 16", "SQLite", "metrics stack", "wget", "env_file"]) {
+  expect(text).not.toContain(stale);
+}
+```
+
+That is a crude check and it is the right kind of crude. It does not understand
+the architecture. It knows six strings that were true once, are not true now, and
+are sitting in a read-only file that a future phase will read again — because
+every remaining section of this page comes from those same sheets. The hero
+section already carries the same guard for the two strings that would have
+reached it. This adds four more and moves the line down the page.
+
+## The rule this leaves behind
+
+A correction table needs a second column, and it is not hard to fill in: for each
+stale fact, is it a note or is it copy?
+
+The notes can stay as they are. Someone will catch them by looking. The copy
+needs the treatment the version numbers already got — not "remember to fix it",
+but *no place in the code where the wrong value can be typed*. Versions come
+from the manifest. The compose excerpt on this same page is cut out of the
+compose file by a generator, and the build goes red if the file moves and the
+page does not follow. Neither of those can drift, because neither of them is
+transcribed.
+
+The prose cannot be generated that way. So it gets the next best thing: a list of
+sentences that used to be true, and a test that refuses to serve them.
