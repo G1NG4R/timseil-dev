@@ -101,11 +101,11 @@ zusätzlich die **gerenderte** Fassung Zeile für Zeile gegen die Datei — ein
 Bauteil, das eine Zeile verschluckt, umsortiert oder anders einrückt, kommt
 durch jede Prüfung im Makefile und fällt dort durch.
 
-**Gemessen, nicht behauptet:** das Bundle bewegt sich um **null Byte**
-(134 401 B Rahmen, 9 178 B eigener Code, 143 579 B gesamt — dieselben drei
-Zahlen wie vor dem Branch). Kein Client-Bauteil, kein neuer Upstream-Aufruf,
-kein zusätzlicher Suspense-Rand: `.02` und `.03` lesen nichts Gemessenes und
-werden ganz vorgerendert.
+**Gemessen, nicht behauptet:** das Bundle bewegt sich um **null Byte** —
+134 403 B Rahmen, 9 178 B eigener Code, 143 581 B gesamt, und dieselben drei
+Zahlen für `a063785` in einem zweiten Worktree auf derselben Next-Fassung. Kein
+Client-Bauteil, kein neuer Upstream-Aufruf, kein zusätzlicher Suspense-Rand:
+`.02` und `.03` lesen nichts Gemessenes und werden ganz vorgerendert.
 
 Das Blatt-Orakel wächst von 26 auf **39 Messungen, 9 davon abweichend**; drei
 der Abweichungen sind neu und tragen zwei neue, ausgeschriebene Gründe.

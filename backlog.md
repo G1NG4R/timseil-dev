@@ -79,19 +79,31 @@ finden sie beim nächsten Mal.
 
 ### Gemessen, nicht geschätzt
 
+Gegen `a063785` in einem zweiten Worktree gebaut, **beide auf Next 16.3.3**:
+
 ```
-                vor dem Branch        phase/h2a
-  framework     134 401 B, 6 Dateien  134 401 B, 6 Dateien
+                main (a063785)        phase/h2a
+  framework     134 403 B, 6 Dateien  134 403 B, 6 Dateien
   our code        9 178 B, 1 Datei      9 178 B, 1 Datei
-  total         143 579 B             143 579 B
+  total         143 581 B             143 581 B
 ```
 
-**Null Byte.** Zwei Abschnitte, vier Bauteile, kein Client-Bauteil, kein neuer
-Upstream-Aufruf, kein zusätzlicher Suspense-Rand — `.02` und `.03` lesen nichts
-Gemessenes und werden ganz vorgerendert.
+**Null Byte, Byte für Byte gleich.** Zwei Abschnitte, vier Bauteile, kein
+Client-Bauteil, kein neuer Upstream-Aufruf, kein zusätzlicher Suspense-Rand —
+`.02` und `.03` lesen nichts Gemessenes und werden ganz vorgerendert.
 
-`make check` grün · `npm test` **324** (von 318) · e2e **349** über zehn Projekte
-(von 221 nach H1a) · Blatt-Orakel **39 Messungen, 9 abweichend** (von 26).
+*Die erste Messung dieser Phase lief noch gegen Next 16.3.2 und nannte
+143 579 B. Die zwei Byte Unterschied sind der Versionssprung, nicht diese
+Phase — und das ist jetzt gemessen statt vermutet, weil die Grundlinie auf
+derselben Next-Fassung neu gebaut wurde.*
+
+`make check` grün · `npm test` **324** (von 318) · Blatt-Orakel **39 Messungen,
+9 abweichend** (von 26).
+
+**e2e: 1047 grün, 0 rot** — die volle Suite dreimal (`--repeat-each=3`) über
+zehn Projekte, gegen einen Produktions-Build **ohne API auf 8080**. Das ist
+genau die Bedingung, unter der das Tauschfenster auf volle zwei Sekunden
+aufgeht und `settled()` am 31.08. zweimal auf `main` rot ging.
 
 ### Der kaputte Fall, vorgeführt statt behauptet
 
@@ -106,6 +118,24 @@ Drei Mutationen, jede von genau einem Test gefangen:
 Die stärkste Zusicherung ist die erste: `make gen` schneidet den Auszug aus
 `compose.yaml` und `make check-contract` prüft die Prüfsumme — aber dass die
 **gerenderte** Fassung dieselbe ist, prüfte bis jetzt nichts.
+
+### Auf `main` rebased, und dabei einen eigenen Fehler gefunden
+
+Der Branch lag drei Commits hinter `main` — Next 16.3.2 → 16.3.3, die
+Dependabot-Welle, und **#279, der `settled()`-Fix**. Beim Rebase kam heraus,
+dass `case-study.arch.spec.ts` eine Kopie der Fassung **vor** dem Fix trug: sie
+wartete nur auf die Brotkrume.
+
+**Sie hätte nie rot werden können.** `.02` und `.03` hängen hinter keiner
+Suspense-Grenze, werden also nie doppelt gerendert — die kaputte Wartebedingung
+wäre durch jeden Review und jeden Lauf gekommen und von H2b ein drittes Mal
+kopiert worden. Ein lokaler Helfer wird kopiert; dafür sind lokale Helfer da.
+
+`STREAMED_REGIONS` und `settled()` liegen jetzt in `e2e/streaming.ts`, beide
+Specs importieren sie, und der Kommentar aus #279 ist **wortgleich**
+mitgezogen — die Belege darin (zwei Läufe auf `main`, erst `.spec`, dann
+`.ops-tiles`, `retries: 0`) sind der Teil, der verhindert, dass es ein viertes
+Mal gelernt wird.
 
 ### Offen aus dieser Runde
 
@@ -139,6 +169,59 @@ Die stärkste Zusicherung ist die erste: `make gen` schneidet den Auszug aus
 - **Die zwei Bildplatzhalter des Blattes (`[TERMINAL CAPTURE]`, `[UI CAPTURE]`)
   sind nicht gebaut.** Bilder sind K2; H2a lässt die Stellen weg statt sie zu
   erfinden. Zuordnung hiermit notiert. *(31.08.2026, H2a)*
+- **Zwei Pins sind hinter der Welt, und kein Ökosystem hebt sie.** Der geplante
+  Lauf vom 31.08., 10:53 UTC (`schedule/ci`, 33384431612) meldet in
+  `check-pins-online`: `syft` steht auf v1.51.0, oben ist v1.51.1
+  (`tools/sbom.sh`); `golangci-lint` steht auf v2.13.1, oben ist v2.13.2
+  (`.golangci-lint-version`). Genau der Fall, für den die Prüfung existiert —
+  Dependabot fasst beide nicht an. Beim golangci-lint-Pin daran denken, dass
+  die gepinnte Fassung lokal in `~/.local/bin` liegt und mitgezogen werden
+  muss. *(31.08.2026, Dependabot-Welle)*
+- **`prune-registry` hat die Abnahme verweigert, und die Ursache ist offen.**
+  Derselbe geplante Lauf: „production runs b0c54f9 and no version of
+  timseil-api carries sha-b0c54f9 — the inventory is wrong", danach Abbruch
+  ohne eine einzige Löschung. Die Schutzregel hat also getan, was sie soll.
+  Ob die Registry den Stand wirklich nicht führt oder die Bestandsaufnahme des
+  Skripts zu kurz liest, ist von einem Arbeitsplatz ohne `read:packages` nicht
+  zu entscheiden — die Abfrage antwortet dort 403. Aufgabe: mit einem Token
+  mit `read:packages` einmal nachzählen und die Frage beantworten, bevor der
+  nächste geplante Lauf sie erneut stellt. *(31.08.2026, Dependabot-Welle)*
+- **`settled()` wartet auf eine von vier Suspense-Grenzen und wird benutzt, als
+  wartete es auf alle vier.** `case-study.spec.ts:60` prüft `.cs-crumb` auf
+  `toHaveCount(1)` und läuft als `beforeEach`. Der Kopfkommentar der Datei hat
+  das Problem bereits einmal diagnostiziert — „the upstream call spends its full
+  two-second budget before the replacement can render, and every assertion made
+  before that saw two of everything" — und genau eine Region abgesichert.
+  `page.tsx` hat aber **vier** unabhängige `<Suspense>`-Löcher (`.cs-crumb`,
+  `.cs-eyebrow`, `.spec`, `.ops-tiles`), jedes mit eigenem Zwei-Sekunden-Budget.
+  Die Brotkrume kann fertig getauscht sein, während Rail und Kacheln noch
+  doppelt im DOM stehen.
+  **Belegt, nicht vermutet:** am 31.08. auf `main` zweimal hintereinander rot,
+  beim ersten Lauf `.spec` (Zeile 128), beim Re-Run `.ops-tiles` (Zeile 155) —
+  zwei verschiedene Tests, dieselbe Familie, 258 andere grün. `retries: 0` ist
+  Absicht, also würfelt jeder Lauf neu.
+  **Der Fix steht in derselben Datei schon da:** der Test „nothing is left over
+  from the streaming" (Zeile 182) zählt bereits alle vier Selektoren. `settled()`
+  müsste dieselbe Liste nehmen statt nur `.cs-crumb`.
+  **Das ist teuer, nicht nur unschön:** `deploy` hängt an `needs: e2e`, also hat
+  dieser Flake zweimal einen fertigen, signierten Build nicht ausgeliefert.
+  Dass die API im Rig gar nicht antwortet (`health unavailable: 0`), ist dabei
+  **kein** Fehler — das Rig fährt einen lokalen Produktions-Build ohne API, und
+  die NO-DATA-Fassung ist der Fall, den es messen soll. Es ist nur der Zustand,
+  der jedes Tauschfenster auf volle zwei Sekunden aufzieht.
+  **Repariert, liegt bereit:** `fix/settled-waits-on-every-boundary`, `e42077f`
+  — `STREAMED_REGIONS` als eine Definition, `settled()` zählt alle vier. Lokal
+  gegen die ursächliche Bedingung gemessen (keine API auf 8080):
+  `--repeat-each=3` über alle sieben Breiten, 252 grün, volle Suite 259.
+  Nicht gepusht. *(31.08.2026, Dependabot-Welle)*
+- **Der Deploy-Gate prüft die Anwendung, nicht die Beobachtungsdienste.**
+  `tools/verify-deploy.sh` kennt fünf Bedingungen, und alle fünf hängen an
+  `/api/health` und `/`. `loki`, `alloy` und `prometheus` stehen in keiner — ein
+  Bump von `compose.yaml`, der einen von ihnen nicht hochkommen lässt, deployt
+  grün und fällt erst beim nächsten leeren Log-Query auf. Aufgefallen an der
+  Dependabot-Welle vom 31.08. (#274, loki 3.7.6 → 3.7.7). Zu entscheiden:
+  gehören sie zu den Bedingungen des Gates, oder ist das bewusst Sache von
+  `make check-observability` und des Dashboards? *(31.08.2026, H2a)*
 
 ---
 
