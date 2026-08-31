@@ -71,6 +71,13 @@ const DIVERGENCE = {
     'because a second exists only to be forgotten when the first is corrected. ' +
     'The full sentences then need a column each below 560, where the sheet ' +
     'still draws two.',
+  'divider-is-the-gap':
+    'The sheet divides the pipeline with a border on each box — vertical at ' +
+    '1440 (line 244), horizontal at 390 (line 511). Two rules for one picture, ' +
+    'and which one applies depends on where the row wraps. case.css draws both ' +
+    'with a 1px gap over the container line instead, so the divider follows the ' +
+    'column count with no rule to keep in step. Built the sheet\'s way first, ' +
+    'and a screenshot at 390 showed seven stages reading as one paragraph.',
   'path-stacks':
     'At 390 the sheet keeps the request path horizontal inside a swipe ' +
     'container and captions it "REQUEST PATH — SWIPE →": five 146px boxes and ' +
@@ -401,6 +408,94 @@ const MAP = [
     measure: { kind: 'computed', selector: '.decision-table tbody', prop: 'row-gap' },
     expect: '14px',
   },
+  // ── 1440 · Case Study Template, artboard 1a — .04 and .05 ────────────────
+  {
+    id: 'ops-grid-flow',
+    sheet: 'template', artboard: '1a', width: 1440, line: 288,
+    decl: 'grid-auto-flow', says: 'column',
+    reading: 'the operation grid fills downwards and then rightwards, so a column is a week',
+    measure: { kind: 'computed', selector: '.ops-grid', prop: 'grid-auto-flow' }, expect: 'column',
+  },
+  {
+    id: 'ops-grid-rows',
+    sheet: 'template', artboard: '1a', width: 1440, line: 288,
+    decl: 'grid-template-rows', says: 'repeat(7,15px)',
+    reading: 'seven rows of 15px — the seven that make 91 come out even (invariant 7)',
+    measure: { kind: 'computed', selector: '.ops-grid', prop: 'grid-template-rows' },
+    expect: '15px 15px 15px 15px 15px 15px 15px',
+  },
+  {
+    id: 'ops-grid-columns',
+    sheet: 'template', artboard: '1a', width: 1440, line: 288,
+    decl: 'grid-auto-columns', says: '15px',
+    reading: 'and every column it adds is 15px wide',
+    measure: { kind: 'computed', selector: '.ops-grid', prop: 'grid-auto-columns' }, expect: '15px',
+  },
+  {
+    id: 'ops-grid-gap',
+    sheet: 'template', artboard: '1a', width: 1440, line: 288,
+    decl: 'gap', says: '4px',
+    reading: '4px between cells — with the two above, the 243px layout.css computes for the whole grid',
+    measure: { kind: 'computed', selector: '.ops-grid', prop: 'row-gap' }, expect: '4px',
+  },
+  {
+    id: 'ops-block-margin',
+    sheet: 'template', artboard: '1a', width: 1440, line: 279,
+    decl: 'margin', says: '0 0 56px',
+    reading: 'the grid block is followed by 56px of air before whatever comes next',
+    measure: { kind: 'computed', selector: '.ops-figure', prop: 'margin-bottom' }, expect: '56px',
+  },
+  {
+    id: 'ops-caption-size',
+    sheet: 'template', artboard: '1a', width: 1440, line: 281,
+    decl: 'font', says: "500 9.5px 'JetBrains Mono',monospace",
+    reading: 'the caption over the grid is the smallest mono step',
+    measure: { kind: 'computed', selector: '.ops-label', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  {
+    id: 'ops-legend-gap',
+    sheet: 'template', artboard: '1a', width: 1440, line: 283,
+    decl: 'gap', says: '7px',
+    reading: 'the legend sets its swatch 7px from its word',
+    measure: { kind: 'computed', selector: '.ops-legend li', prop: 'column-gap' }, expect: '6px',
+    diverges: { class: 'spacing-scale', sheet: '7px' },
+  },
+  {
+    id: 'result-columns',
+    sheet: 'template', artboard: '1a', width: 1440, line: 296,
+    decl: 'grid-template-columns', says: '1fr 1fr',
+    reading: 'what held and what would change get equal width — the second is not a footnote',
+    measure: { kind: 'track-count', selector: '.cs-result' }, expect: 2,
+  },
+  {
+    id: 'result-gap',
+    sheet: 'template', artboard: '1a', width: 1440, line: 296,
+    decl: 'gap', says: '80px',
+    reading: 'with 80px between them, the same air as the other two-column rows on this page',
+    measure: { kind: 'computed', selector: '.cs-result', prop: 'column-gap' }, expect: '72px',
+    diverges: { class: 'spacing-scale', sheet: '80px' },
+  },
+
+  // ── 390 · Case Study Template, artboard 1c — .04 ─────────────────────────
+  {
+    id: 'pipeline-one-column',
+    sheet: 'template', artboard: '1c', width: 390, line: 511,
+    decl: 'border-bottom', says: '1px solid rgba(139,152,166,.12)',
+    reading:
+      'on the phone the stages are stacked and divided horizontally — a bottom rule between ' +
+      'boxes is only a divider if they are one above the other',
+    measure: { kind: 'track-count', selector: '.pipeline' }, expect: 1,
+  },
+  {
+    id: 'pipeline-divider',
+    sheet: 'template', artboard: '1c', width: 390, line: 511,
+    decl: 'padding', says: '13px 16px',
+    reading: 'and each stacked stage keeps its own padding rather than collapsing to a list row',
+    measure: { kind: 'computed', selector: '.pipe-stage', prop: 'padding-top' }, expect: '16px',
+    diverges: { class: 'spacing-scale', sheet: '13px' },
+  },
+
 ];
 
 // ---------------------------------------------------------------- extraction

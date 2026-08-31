@@ -250,7 +250,13 @@
 /* ---- >= 1080: as drawn --------------------------------------------------- */
 @media (min-width: 1080px) {
   .pipeline  { grid-template-columns: repeat(7, minmax(0, 1fr)) }
-  .cs-result { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+
+  /* The sheet draws 80px between the two result panels, which is the air every
+     other two-column row on this page carries. 72 is the nearest step on the
+     scale G1 made binding — the oracle's `spacing-scale` divergence, and the
+     largest single difference it names is 4px; this one is 8. Stacked, the row
+     gap stays 26: 72px between two plates in one column is a gap, not a rhythm. */
+  .cs-result { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-72) }
 }
 
 /* ---- < 720: four would be 148px each, which is the lanes' bound ---------- */
