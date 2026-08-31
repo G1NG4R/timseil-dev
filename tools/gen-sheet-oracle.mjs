@@ -40,11 +40,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const target = 'web/e2e/oracle/case-study.gen.json';
-
 const SHEETS = {
   template: 'docs/design/Case Study Template - timseil.dev.dc.html',
   widths: 'docs/design/Intermediate Widths - timseil.dev.dc.html',
+  // H3. The homepage draws itself at 1440 and 390 and nowhere else — the
+  // Intermediate Widths sheet says so and gives the reason: "DIE STARTSEITE
+  // FEHLT ABSICHTLICH: ihr Umbau ist der einfachste von allen."
+  homepage: 'docs/design/Homepage - timseil.dev.dc.html',
 };
 
 // ONE DECISION MOVES MANY MEASUREMENTS, so the reasons are named once and
@@ -57,8 +59,10 @@ const DIVERGENCE = {
     'step. One decision, many places.',
   'spacing-scale':
     'The sheets draw spacing off the 4px grid (22, 24, 13, 38, 100px). ' +
-    'Foundations fixes the scale and G1 made it binding, so case.css reads the ' +
-    'nearest step. The largest single difference is 4px.',
+    'Foundations fixes the scale and G1 made it binding, so the stylesheets read ' +
+    'the nearest step. Differences of up to 8px, and no further: where the gap ' +
+    'grew past that it got a class of its own rather than a wider excuse. H3 is ' +
+    'where that line was drawn — see `hero-rhythm`.',
   'adr-0052':
     'Decided in ADR 0052 with its sources: Case Study 02, the Intermediate ' +
     'Widths register and Consistency Check K-29 all say five tiles; the ' +
@@ -78,6 +82,26 @@ const DIVERGENCE = {
     'with a 1px gap over the container line instead, so the divider follows the ' +
     'column count with no rule to keep in step. Built the sheet\'s way first, ' +
     'and a screenshot at 390 showed seven stages reading as one paragraph.',
+  // ── H3 ───────────────────────────────────────────────────────────────────
+  'hero-rhythm':
+    'The homepage hero is drawn with 84px above it, twelve pixels off the ' +
+    'nearest step of a scale G1 made binding. `spacing-scale` covers roundings ' +
+    'of up to eight and this is not one; folding it in would have turned a ' +
+    'reason into a habit. The rhythm is --s-72 over --s-96, which is the same ' +
+    'pair `.cs-head` uses, so the two heroes on this site breathe alike.',
+  'mono-scale':
+    'The sheet sets the hero subline at 14px mono and tracks AVAILABLE at ' +
+    '.18em. The mono scale has 9 · 10 · 11 · 12 · 13 and the tracking tokens ' +
+    'are .14em and .16em — neither value is a step, and G1\'s "keine halben ' +
+    'Pixel" applies to a scale with no fourteen just as much as to a 11.5. ' +
+    'Rounded down, as `half-pixel` rounds.',
+  'placeholder-height':
+    'The sheet gives the terminal body 348px and a scrollbar, because there it ' +
+    'is a session. Here it is a frame stage J will fill, and it is as tall as ' +
+    'what it says. Built the sheet\'s way first: 348px of empty box does not ' +
+    'read as a component waiting for a later phase, it reads as one that ' +
+    'failed to load. `.st-wait` holds a height for two seconds; this stands ' +
+    'for four phases, which is a different question with the same shape.',
   'path-stacks':
     'At 390 the sheet keeps the request path horizontal inside a swipe ' +
     'container and captions it "REQUEST PATH — SWIPE →": five 146px boxes and ' +
@@ -98,7 +122,7 @@ const DIVERGENCE = {
  * entry in DIVERGENCE stops this script, so "we differ here" can never become
  * the quiet way out of a finding.
  */
-const MAP = [
+const CASE_MAP = [
   // ── 1440 · Case Study Template, artboard 1a ──────────────────────────────
   {
     id: 'hero-rail-width',
@@ -498,6 +522,191 @@ const MAP = [
 
 ];
 
+/**
+ * The homepage's map. Build plan H3.
+ *
+ * TWO ARTBOARDS AND NO THIRD. `Intermediate Widths` draws the case study a
+ * third time at 1024 and says in the same breath why it does not draw this
+ * page: "DIE STARTSEITE FEHLT ABSICHTLICH: ihr Umbau ist der einfachste von
+ * allen — Terminal unter den Hero-Text, Reihenfolge bleibt." So five of the
+ * seven checked widths have no drawing here, and home.sweep.spec.ts covers
+ * them with the other question.
+ *
+ * WHAT IS DELIBERATELY ABSENT FROM THIS MAP, because a measurement of a
+ * component nobody built would throw rather than fail:
+ *
+ *   line 45 · 306  the 88px page raster behind every artboard. It is chrome
+ *                  and not homepage — the same grid stands behind all ten
+ *                  pages — and G3 built the chrome without it. `--grid` has a
+ *                  token and still no consumer. Backlog.
+ *   line 326       the mobile strip "TAP TO OPEN — DOCKS AS DRAWER". Nothing
+ *                  opens until stage J; the frame drops its body at 720
+ *                  instead, which home.spec.ts asserts. Backlog, owed by J2.
+ */
+const HOME_MAP = [
+  // ── 1440 · Homepage, artboard 1a ─────────────────────────────────────────
+  {
+    id: 'home-hero-rail-width',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 64,
+    decl: 'grid-template-columns', says: '1fr 480px',
+    reading: 'the hero row is one flexible column and a 480px rail for the terminal',
+    measure: { kind: 'box-width', selector: '.hero > .term' }, expect: 480,
+  },
+  {
+    id: 'home-hero-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 64,
+    decl: 'gap', says: '72px',
+    reading: 'and 72px of air between them — eight less than the case study, which is the sheet’s choice and not ours',
+    measure: { kind: 'gap-x', from: '.hero-say', to: '.term' }, expect: 72,
+  },
+  {
+    id: 'home-hero-padding',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 64,
+    decl: 'padding', says: '84px 0 96px',
+    reading: 'the hero stands 84px below the ruler',
+    measure: { kind: 'computed', selector: '.hero-head', prop: 'padding-top' }, expect: '72px',
+    diverges: { class: 'hero-rhythm', sheet: '84px' },
+  },
+  {
+    id: 'home-eyebrow-size',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 69,
+    decl: 'font', says: "500 11.5px 'JetBrains Mono',monospace",
+    reading: 'the eyebrow is the 11px mono step',
+    measure: { kind: 'computed', selector: '.hero-eyebrow', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+  {
+    id: 'home-eyebrow-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 69,
+    decl: 'margin-bottom', says: '26px',
+    reading: 'and stands 26px above the headline',
+    measure: { kind: 'computed', selector: '.hero-eyebrow', prop: 'margin-bottom' }, expect: '26px',
+  },
+  {
+    id: 'home-h1-size',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 70,
+    decl: 'font', says: "500 62px/1.06 'Chakra Petch',sans-serif",
+    reading: 'the homepage headline is the 62px display step — K-08 keeps 52 for every page but this one and About',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '62px',
+  },
+  {
+    id: 'home-h1-measure',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 70,
+    decl: 'max-width', says: '620px',
+    reading: 'and it is capped at 620px, which is where the sentence breaks into two lines',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'max-width' }, expect: '620px',
+  },
+  {
+    id: 'home-sub-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 71,
+    decl: 'margin-top', says: '26px',
+    reading: 'the stack line sits 26px under the headline',
+    measure: { kind: 'computed', selector: '.hero-sub', prop: 'margin-top' }, expect: '26px',
+  },
+  {
+    id: 'home-sub-size',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 71,
+    decl: 'font', says: "400 14px 'JetBrains Mono',monospace",
+    reading: 'and it is mono at the top of the scale',
+    measure: { kind: 'computed', selector: '.hero-sub', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'mono-scale', sheet: '14px' },
+  },
+  {
+    id: 'home-avail-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 72,
+    decl: 'margin-top', says: '30px',
+    reading: 'the availability line stands 30px lower again — the second consumer --s-30 has ever had',
+    measure: { kind: 'computed', selector: '.hero-avail', prop: 'margin-top' }, expect: '30px',
+  },
+  {
+    id: 'home-avail-row-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 72,
+    decl: 'gap', says: '10px',
+    reading: 'with 10px between the dot, the word and the sentence',
+    measure: { kind: 'computed', selector: '.hero-avail', prop: 'column-gap' }, expect: '10px',
+  },
+  {
+    id: 'home-avail-dot',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 73,
+    decl: 'width', says: '7px',
+    reading: 'the large hero dot is the state language’s own 7px — K-14 puts it on this page and no other',
+    measure: { kind: 'box-width', selector: '.hero-dot' }, expect: 7,
+  },
+  {
+    id: 'home-avail-word',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 74,
+    decl: 'font', says: "600 11px 'JetBrains Mono',monospace",
+    reading: 'AVAILABLE is mono 11 — and it had to be said here, because `.st-word` carries only a colour and inherits the rest',
+    measure: { kind: 'computed', selector: '.hero-avail .st-word', prop: 'font-size' }, expect: '11px',
+  },
+  {
+    id: 'home-term-bar-padding',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 80,
+    decl: 'padding', says: '11px 16px',
+    reading: 'the title bar of the frame is padded on the scale',
+    measure: { kind: 'computed', selector: '.term-bar', prop: 'padding-top' }, expect: '12px',
+    diverges: { class: 'spacing-scale', sheet: '11px' },
+  },
+  {
+    id: 'home-term-body-padding',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 89,
+    decl: 'padding', says: '16px 18px',
+    reading: 'and the body inside it',
+    measure: { kind: 'computed', selector: '.term-body', prop: 'padding-top' }, expect: '16px',
+  },
+  {
+    id: 'home-term-body-scrolls',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 89,
+    decl: 'overflow-y', says: 'auto',
+    reading: 'the sheet scrolls a session in a fixed 348px body; the placeholder is as tall as what it says and scrolls nothing',
+    measure: { kind: 'computed', selector: '.term-body', prop: 'overflow-y' }, expect: 'visible',
+    diverges: { class: 'placeholder-height', sheet: 'auto' },
+  },
+  {
+    id: 'home-section-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 106,
+    decl: 'margin-bottom', says: '104px',
+    reading: 'the sections stand 104px apart',
+    measure: { kind: 'computed', selector: '.home-section', prop: 'margin-bottom' }, expect: '96px',
+    diverges: { class: 'spacing-scale', sheet: '104px' },
+  },
+  {
+    id: 'home-sec-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 107,
+    decl: 'gap', says: '16px',
+    reading: 'the marker and its title sit 16px apart — the same head H1 built, and this sheet is the second witness for it',
+    measure: { kind: 'computed', selector: '.sec', prop: 'column-gap' }, expect: '16px',
+  },
+  {
+    id: 'home-sec-rule',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 107,
+    decl: 'padding-bottom', says: '12px',
+    reading: 'standing 12px above their hairline',
+    measure: { kind: 'computed', selector: '.sec', prop: 'padding-bottom' }, expect: '12px',
+  },
+  {
+    id: 'home-sec-space',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 107,
+    decl: 'margin-bottom', says: '34px',
+    reading: 'with 34px of air before the section body',
+    measure: { kind: 'computed', selector: '.sec', prop: 'margin-bottom' }, expect: '34px',
+  },
+
+  // ── 390 · Homepage, artboard 1b ──────────────────────────────────────────
+  {
+    id: 'home-mobile-h1',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 317,
+    decl: 'font', says: "500 34px/1.1 'Chakra Petch',sans-serif",
+    reading: 'the display step falls to 34 on a phone. The artboard draws an h2 there; a crop is not a document outline, and this page keeps its one h1',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '34px',
+  },
+];
+
+const TARGETS = [
+  { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
+  { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
+];
+
 // ---------------------------------------------------------------- extraction
 
 /** The `style` attribute of one line, as a map of declaration → value. */
@@ -532,67 +741,84 @@ for (const [key, path] of Object.entries(SHEETS)) {
   sources[key] = readFileSync(resolve(root, path), 'utf8');
 }
 
-const entries = [];
+/**
+ * One map in, one oracle out.
+ *
+ * The ids are checked across BOTH maps, not within each: two pages sharing an
+ * id would make a failure name a measurement from the other one.
+ */
 const seen = new Set();
 
-for (const entry of MAP) {
-  if (seen.has(entry.id)) die(`two entries share the id ${entry.id}`);
-  seen.add(entry.id);
+function build(map, target) {
+  const entries = [];
 
-  const file = SHEETS[entry.sheet];
-  if (file === undefined) die(`${entry.id}: no sheet named ${entry.sheet}`);
+  for (const entry of map) {
+    if (seen.has(entry.id)) die(`two entries share the id ${entry.id}`);
+    seen.add(entry.id);
 
-  const declarations = declarationsOn(sources[entry.sheet], file, entry.line);
-  const actual = declarations.get(entry.decl);
+    const file = SHEETS[entry.sheet];
+    if (file === undefined) die(`${entry.id}: no sheet named ${entry.sheet}`);
 
-  if (actual === undefined) {
-    die(
-      `${entry.id}: ${file}:${String(entry.line)} has no \`${entry.decl}\` — it has ` +
-        `${[...declarations.keys()].join(', ')}`,
-    );
+    const declarations = declarationsOn(sources[entry.sheet], file, entry.line);
+    const actual = declarations.get(entry.decl);
+
+    if (actual === undefined) {
+      die(
+        `${entry.id}: ${file}:${String(entry.line)} has no \`${entry.decl}\` — it has ` +
+          `${[...declarations.keys()].join(', ')}`,
+      );
+    }
+
+    // THE ONE THING THIS SCRIPT PROVES. Everything else in an entry is a reading;
+    // this is the transcription, and a transcription that is not checked is the
+    // defect the whole file exists to avoid.
+    if (actual !== entry.says) {
+      die(`${entry.id}: ${file}:${String(entry.line)} says \`${actual}\`, the map claims \`${entry.says}\``);
+    }
+
+    if (entry.diverges !== undefined && DIVERGENCE[entry.diverges.class] === undefined) {
+      die(`${entry.id}: diverges as "${entry.diverges.class}", which has no reason written down`);
+    }
+
+    entries.push({
+      id: entry.id,
+      sheet: file,
+      artboard: entry.artboard,
+      line: entry.line,
+      width: entry.width,
+      says: `${entry.decl}: ${entry.says}`,
+      reading: entry.reading,
+      measure: entry.measure,
+      expect: entry.expect,
+      ...(entry.diverges === undefined ? {} : { diverges: entry.diverges }),
+    });
   }
 
-  // THE ONE THING THIS SCRIPT PROVES. Everything else in an entry is a reading;
-  // this is the transcription, and a transcription that is not checked is the
-  // defect the whole file exists to avoid.
-  if (actual !== entry.says) {
-    die(`${entry.id}: ${file}:${String(entry.line)} says \`${actual}\`, the map claims \`${entry.says}\``);
+  // A map that resolved nothing is a green test that asserts nothing. The number
+  // is written down so that deleting half the map is loud rather than quiet.
+  if (entries.length !== map.length) {
+    die(`resolved ${String(entries.length)} of ${String(map.length)} entries`);
   }
 
-  if (entry.diverges !== undefined && DIVERGENCE[entry.diverges.class] === undefined) {
-    die(`${entry.id}: diverges as "${entry.diverges.class}", which has no reason written down`);
-  }
+  const document = {
+    comment: 'Generated from the design handoff by tools/gen-sheet-oracle.mjs — do not edit by hand.',
+    // EVERY REASON IN EVERY FILE, not only the ones this page cites. A reader
+    // holding one oracle should be able to see which decisions exist to be
+    // pointed at, and the alternative is two files that disagree about what a
+    // class means.
+    divergenceReasons: DIVERGENCE,
+    entries,
+  };
 
-  entries.push({
-    id: entry.id,
-    sheet: file,
-    artboard: entry.artboard,
-    line: entry.line,
-    width: entry.width,
-    says: `${entry.decl}: ${entry.says}`,
-    reading: entry.reading,
-    measure: entry.measure,
-    expect: entry.expect,
-    ...(entry.diverges === undefined ? {} : { diverges: entry.diverges }),
-  });
+  mkdirSync(resolve(root, dirname(target)), { recursive: true });
+  writeFileSync(resolve(root, target), `${JSON.stringify(document, null, 2)}\n`);
+
+  const diverging = entries.filter((entry) => entry.diverges !== undefined).length;
+  console.error(
+    `  ✓ ${target} — ${String(entries.length)} measurements, ${String(diverging)} diverging`,
+  );
 }
 
-// A map that resolved nothing is a green test that asserts nothing. The number
-// is written down so that deleting half the map is loud rather than quiet.
-if (entries.length !== MAP.length) {
-  die(`resolved ${String(entries.length)} of ${String(MAP.length)} entries`);
+for (const { map, target } of TARGETS) {
+  build(map, target);
 }
-
-const document = {
-  comment: 'Generated from the design handoff by tools/gen-sheet-oracle.mjs — do not edit by hand.',
-  divergenceReasons: DIVERGENCE,
-  entries,
-};
-
-mkdirSync(resolve(root, dirname(target)), { recursive: true });
-writeFileSync(resolve(root, target), `${JSON.stringify(document, null, 2)}\n`);
-
-const diverging = entries.filter((entry) => entry.diverges !== undefined).length;
-console.error(
-  `  ✓ ${target} — ${String(entries.length)} measurements, ${String(diverging)} diverging`,
-);

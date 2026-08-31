@@ -163,6 +163,7 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
              api/internal/seed/stack.gen.json \
              web/content/generated/compose-api.gen.json \
              web/e2e/oracle/case-study.gen.json \
+             web/e2e/oracle/home.gen.json \
              api/internal/store/db.go api/internal/store/models.go \
              api/internal/store/health.sql.go api/internal/store/systems.sql.go \
              api/internal/store/training.sql.go api/internal/store/ops.sql.go \

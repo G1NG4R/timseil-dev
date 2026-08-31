@@ -124,3 +124,24 @@ export function column(viewport: number): number {
  * "does this match a picture" but "does this obey the arithmetic of its grid".
  */
 export const DRAWN_WIDTHS = [1440, 1024, 390] as const;
+
+/**
+ * The widths a sheet draws the HOMEPAGE at. Two, and the Intermediate Widths
+ * sheet says why there is no third in the same breath as it draws one for the
+ * case study: "DIE STARTSEITE FEHLT ABSICHTLICH: ihr Umbau ist der einfachste
+ * von allen — Terminal unter den Hero-Text, Reihenfolge bleibt. Die Zahl dafür
+ * steht im Register, ein Bild hätte nichts hinzugefügt."
+ */
+export const HOME_DRAWN_WIDTHS = [1440, 390] as const;
+
+/**
+ * Where the homepage changes shape. THREE OF THE FOUR, and the missing one is
+ * the assertion rather than an omission.
+ *
+ * 560 turns table rows into cards — `.work-row`, `.sys-row`, `.log-row` — and
+ * none of those is on this page until H5 fills SYS.02 and SYS.04. Writing
+ * `[...SWITCHES]` here would go red immediately and would report the wrong
+ * thing: not "a switch is missing" but "this page has a component it does not
+ * have yet".
+ */
+export const HOME_SWITCHES = [1080, 900, 720] as const;

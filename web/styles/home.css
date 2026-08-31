@@ -86,6 +86,16 @@
    `data-dot` it has no fill of its own, which is the whole point. */
 .hero-dot { background: var(--st-color); }
 
+/* `.st-word` carries only the colour and inherits its type, which state.css
+   argues for and which is right in the meta bar: the block around it sets the
+   size. Here the block is a paragraph, so AVAILABLE inherited the body face at
+   15px where the sheet draws mono 11. Found by writing the oracle entry for
+   line 74, not by looking at it — the difference is one step of one scale. */
+.hero-avail .st-word {
+  font: 600 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+}
+
 .hero-avail-note {
   font: 500 var(--t-mono-11)/1 var(--mono);
   letter-spacing: var(--ls-head);
