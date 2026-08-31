@@ -150,3 +150,78 @@
   .ops-tiles          { gap: var(--s-10) }
   .ops-tiles > :nth-child(5) { grid-column: span 2 }
 }
+
+/* ---- Case study, H2a ----------------------------------------------------
+   The width-dependent half of the .02 and .03 sections. Same placement rule as
+   the H1 block above: the switches live here, all four in one file, and no
+   component gets its own value.
+
+   No new switch. 1080 is the one the head of this file already derives for
+   every two-column row, and the request path is the same kind of row: five
+   boxes need ~140px each plus four 64px gaps to hold `PostgreSQL` on one line,
+   which is 956px of content column — reached at 1036 and comfortable at 1080.
+   720 and 560 are the table switches, and the lanes are a table.             */
+
+/* ---- < 1080: the path stands up ----------------------------------------
+   Five stations across a 944px column at 1024 would be 137px each, and the
+   longest name is already 86 of them. The arrows go rather than shrink, which
+   is this file's existing answer for a part that no longer fits — `.work-row
+   .prev { display: none }`, "weglassen, nicht verkleinern". A column of five
+   boxes reads as a sequence without them, and the order is in the `<ol>`.   */
+@media (max-width: 1079px) {
+  .arch-path  { grid-template-columns: 1fr; row-gap: var(--s-16) }
+  .arch-arrow { display: none }
+}
+
+/* ---- < 720: four lanes would be 148px each ------------------------------
+   The same bound the head of this file gives for tables — "zweite Spalte
+   bliebe unter 300" — applied to four columns instead of two: 591px of content
+   across four is 148, and the lanes are mono 11 prose.
+
+   And the decisions become blocks at the same switch, which is the same rule
+   this file already states for tables one line further up. The header row goes
+   and each cell says its own column instead; DecisionTable.tsx explains why the
+   labels swap rather than the reader scrolling. Three columns of 213px, one of
+   them 13px Geist prose, was the alternative.                               */
+@media (max-width: 719px) {
+  .arch-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+
+  .decision-table thead { display: none }
+  .decision-table,
+  .decision-table tr,
+  .decision-table th,
+  .decision-table td { display: block }
+
+  /* "Tabelle wird zu Karten" — the mobile artboard's own caption, and it means
+     what it says: each decision becomes a plate with the same fill and hairline
+     as every other panel on this page, stacked with 14px between them. */
+  .decision-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-14);
+  }
+  .decision-table tbody tr {
+    background: var(--panel);
+    border: 1px solid var(--line-soft);
+    padding: var(--s-16) var(--s-20);
+  }
+  .decision-table tbody th,
+  .decision-table tbody td { border-block-end: 0 }
+  .decision-table th,
+  .decision-table td { padding: 0; padding-block-start: var(--s-12) }
+  .decision-table tbody tr > :first-child { padding-block-start: 0 }
+
+  .dt-label {
+    display: block;
+    margin-block-end: var(--s-4);
+    font: 600 var(--t-mono-9)/1 var(--mono);
+    letter-spacing: var(--ls-head);
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+}
+
+/* ---- < 560: and two would be 165 ---------------------------------------- */
+@media (max-width: 559px) {
+  .arch-lanes { grid-template-columns: 1fr }
+}

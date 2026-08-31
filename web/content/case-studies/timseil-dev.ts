@@ -89,6 +89,173 @@ export const timseilDev: CaseStudy = {
     "Operable by keyboard, AA contrast throughout.",
   ],
 
+  // ── .02 ARCHITECTURE ──────────────────────────────────────────────────────
+  //
+  // THE FORM IS THE SHEET'S, THE FACTS ARE THE REPOSITORY'S. The Case Study
+  // Template draws this section with `React Router 7`, `PostgreSQL 16` and a Go
+  // container that parses the access log into SQLite. All three are older than
+  // ADR 0005 and ADR 0007, and `docs/architecture/c4-container.md` — which is
+  // hand-written, current, and says of itself "Form angelehnt an Case Study Map"
+  // — is the source used instead. The two documents describe one system and may
+  // not disagree.
+  //
+  // NO VERSION, NO PORT, NO CADENCE. The version rule is this file's own, at the
+  // top. The other two are CLAUDE.md's: the current state of a security question
+  // about this host does not go on a public page, so the edge says what it does
+  // and never which ports are open, and the monitor says that it measures from
+  // outside without saying how often or where it reports.
+  architecture: {
+    // Five stations, as the sheet draws them. `own` marks the two that are code
+    // in this repository — the browser is the visitor's, the edge is configured
+    // rather than written, and the volume is the host's.
+    hops: [
+      {
+        key: "CLIENT",
+        name: "Browser",
+        detail: "HTTPS · HTTP/2",
+        own: false,
+      },
+      {
+        key: "EDGE",
+        name: "Traefik",
+        detail: "TLS, routing, rate limit",
+        own: false,
+      },
+      {
+        key: "WEB",
+        name: "Next.js",
+        detail: "Server components. No data logic.",
+        own: true,
+      },
+      {
+        key: "API",
+        name: "Go",
+        detail: "The contract, the derivations, the database.",
+        own: true,
+      },
+      {
+        key: "DATA",
+        name: "PostgreSQL",
+        detail: "Named volume.",
+        own: false,
+      },
+    ],
+
+    // The things that are not a request. Five lanes in a four-column grid, so
+    // the fifth wraps — the sheet draws exactly that, the same way the fifth
+    // metric tile drops to its own row under 560.
+    lanes: [
+      {
+        key: "CI",
+        detail:
+          "GitHub Actions builds and tests, the registry holds the image, and " +
+          "the tag is the commit it was built from.",
+      },
+      {
+        key: "ASSETS",
+        detail: "Same origin, no CDN — nothing third-party in the path.",
+      },
+      {
+        key: "EXTERNAL",
+        detail:
+          "The GitHub API for the contribution calendar, cached in the API so " +
+          "a rate limit there is not an outage here.",
+      },
+      {
+        key: "POST-MORTEM",
+        detail:
+          "No notch without a post-mortem. Cause, fix and the entry that " +
+          "explains it are required fields, not good intentions.",
+      },
+      {
+        key: "MONITOR",
+        detail:
+          "Uptime is measured from outside this host, so an outage is still " +
+          "recorded when the machine that would record it is the one down.",
+      },
+    ],
+
+    // The Template's four rows. All four still hold; what changed is the
+    // alternative in the first (React Router → Next.js) and the reason in the
+    // third, which now names the real argument: the derivations are SQL views,
+    // and invariant 2 says a state is computed in one and nowhere else.
+    decisions: [
+      {
+        decision: "A Go API as its own service",
+        alternative: "Route handlers inside the Next.js app",
+        why:
+          "A real service boundary is the thing being demonstrated. The same " +
+          "endpoints serve this page, the badges in the readme, and anyone " +
+          "with curl — so the page and the claim cannot drift apart.",
+      },
+      {
+        decision: "Docker Compose on one host",
+        alternative: "Managed hosting, or Kubernetes on day one",
+        why:
+          "I wanted to own the runtime: proxy, TLS, logs, restarts. A second " +
+          "host waits until a second project carries it, and Compose stays " +
+          "small enough to hold in your head until then.",
+      },
+      {
+        decision: "PostgreSQL, not a file",
+        alternative: "A single embedded database on the host",
+        why:
+          "Every derived state on this site is a SQL view, and a view is the " +
+          "only place one may be computed. Migrations, backups and restore " +
+          "drills then transfer instead of being one-offs.",
+      },
+      {
+        decision: "Deploy by image tag",
+        alternative: "git pull and rebuild on the host",
+        why:
+          "Builds belong in CI, never on the machine serving traffic. The host " +
+          "only pulls a tagged image, so a rollback is one tag and no build.",
+      },
+    ],
+  },
+
+  // ── .03 BUILD ─────────────────────────────────────────────────────────────
+  build: {
+    // What the block under it is, and why it can be trusted. The sheet captions
+    // it with a note about its own syntax colouring — "keys in Signal, values in
+    // Amber" — which is a fact about the drawing and not about the system.
+    composeCaption:
+      "Nobody typed this block. It is cut out of the compose file the host " +
+      "runs, by the same command that generates the types — and the build turns " +
+      "red if that file moves and this block does not follow it.",
+
+    // The order is checkable rather than remembered: the contract landed on
+    // 17.08.2026, the schema and the derivations the same day, the endpoints the
+    // day after, the pipeline on the 20th, the deploy on the 22nd, and the first
+    // line of interface on the 28th. `git log --diff-filter=A` says so.
+    phases: [
+      {
+        title: "Contract first",
+        detail:
+          "The OpenAPI document before either side of it. Every type on this " +
+          "page is generated from that file; none is written by hand.",
+      },
+      {
+        title: "Data before pages",
+        detail:
+          "Schema, then the derivations as SQL views, then the endpoints. The " +
+          "front end was never allowed to hold data.",
+      },
+      {
+        title: "Pipeline before polish",
+        detail:
+          "The deploy gate, the health check and the rollback were automated " +
+          "while the site was still a single empty page.",
+      },
+      {
+        title: "Interface last",
+        detail:
+          "Tokens, chrome, then pages — all built against endpoints that were " +
+          "already answering.",
+      },
+    ],
+  },
+
   // Verbatim from Case Study 02, which draws the five tiles empty and says why
   // underneath. It is shown only while all five are empty — see components/case.
   emptyNote: {

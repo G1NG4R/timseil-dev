@@ -3,7 +3,9 @@
   "divergenceReasons": {
     "half-pixel": "The sheets draw 9.5, 10.5 and 11.5px. tokens.css has thirteen steps and \"keine halben Pixel\" (G1) — every mono size rounds down to the nearest step. One decision, many places.",
     "spacing-scale": "The sheets draw spacing off the 4px grid (22, 24, 13, 38, 100px). Foundations fixes the scale and G1 made it binding, so case.css reads the nearest step. The largest single difference is 4px.",
-    "adr-0052": "Decided in ADR 0052 with its sources: Case Study 02, the Intermediate Widths register and Consistency Check K-29 all say five tiles; the template draws three."
+    "adr-0052": "Decided in ADR 0052 with its sources: Case Study 02, the Intermediate Widths register and Consistency Check K-29 all say five tiles; the template draws three.",
+    "one-copy-set": "The sheet carries two sets of words for the architecture section — full sentences at 1440 and abbreviations at 390 (\"Same origin, no CDN\" against \"Same origin, no CDN — nothing third-party in the path\"), and it drops the POST-MORTEM lane on the phone. content/case-studies carries ONE set, because a second exists only to be forgotten when the first is corrected. The full sentences then need a column each below 560, where the sheet still draws two.",
+    "path-stacks": "At 390 the sheet keeps the request path horizontal inside a swipe container and captions it \"REQUEST PATH — SWIPE →\": five 146px boxes and four arrows, 898px of content behind 346px of screen. It stacks here instead, at the 1080 switch every other two-column row already uses — layout.css states the rule (\"Kein Bauteil bekommt seinen eigenen Wert\"), and a swipe hides four fifths of the argument on the one device where the reader cannot see there is more. Recorded as a design correction rather than settled here."
   },
   "entries": [
     {
@@ -412,6 +414,207 @@
         "selector": ".spec-body"
       },
       "expect": 4
+    },
+    {
+      "id": "arch-panel-padding",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 131,
+      "width": 1440,
+      "says": "padding: 34px 36px 30px",
+      "reading": "the request-path plate is the third bracketed surface on the page, and the roomiest of the three",
+      "measure": {
+        "kind": "computed",
+        "selector": ".arch",
+        "prop": "padding-top"
+      },
+      "expect": "34px"
+    },
+    {
+      "id": "arch-arrow-track",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 134,
+      "width": 1440,
+      "says": "width: 64px",
+      "reading": "the arrow between two stations owns a 64px column, which is why the five boxes stay equal",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".arch-hop:nth-child(2) .arch-arrow"
+      },
+      "expect": 64
+    },
+    {
+      "id": "arch-lanes-columns",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 144,
+      "width": 1440,
+      "says": "grid-template-columns: repeat(4,1fr)",
+      "reading": "four columns for five lanes, so the fifth wraps — the same shape the fifth metric tile takes under 560",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".arch-lanes"
+      },
+      "expect": 4
+    },
+    {
+      "id": "arch-lanes-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 144,
+      "width": 1440,
+      "says": "gap: 18px",
+      "reading": "and 18px between them",
+      "measure": {
+        "kind": "computed",
+        "selector": ".arch-lanes",
+        "prop": "column-gap"
+      },
+      "expect": "16px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "18px"
+      }
+    },
+    {
+      "id": "decision-first-column",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 154,
+      "width": 1440,
+      "says": "grid-template-columns: 230px 1fr 1fr",
+      "reading": "the decision names the row in a fixed 230px column, and the two prose columns share what is left",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".decision-table thead th:first-child"
+      },
+      "expect": 230
+    },
+    {
+      "id": "build-rail-width",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 209,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 420px",
+      "reading": "THE ROW `.cs-arch` WAS COPIED FOR. layout.css has carried `minmax(0,1fr) 420px` with a 60px gap since G1 under a name that says architecture, and this is the only row on the sheet with those measurements — it is the build row, around the compose block and the phases",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".cs-arch > .rail"
+      },
+      "expect": 420
+    },
+    {
+      "id": "build-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 209,
+      "width": 1440,
+      "says": "gap: 60px",
+      "reading": "and 60px of air between them, which is narrower than the hero row above and wider than nothing else",
+      "measure": {
+        "kind": "gap-x",
+        "from": ".cs-arch > div:first-child",
+        "to": ".cs-arch > .rail"
+      },
+      "expect": 60
+    },
+    {
+      "id": "compose-size",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 211,
+      "width": 1440,
+      "says": "font: 400 12px/1.85 'JetBrains Mono',monospace",
+      "reading": "the compose block is the 12px mono step at the mono line height — the one place on this sheet where the drawn number and the token agree to the decimal",
+      "measure": {
+        "kind": "computed",
+        "selector": ".compose",
+        "prop": "font-size"
+      },
+      "expect": "12px"
+    },
+    {
+      "id": "phases-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 227,
+      "width": 1440,
+      "says": "gap: 12px",
+      "reading": "and 12px between a phase ordinal and its text",
+      "measure": {
+        "kind": "computed",
+        "selector": ".phases li",
+        "prop": "column-gap"
+      },
+      "expect": "12px"
+    },
+    {
+      "id": "mobile-path-scrolls",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 414,
+      "width": 390,
+      "says": "overflow-x: auto",
+      "reading": "the sheet swipes the path sideways on a phone; it stacks here, and `path-stacks` says why",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".arch-path"
+      },
+      "expect": 1,
+      "diverges": {
+        "class": "path-stacks",
+        "sheet": "overflow-x: auto, one row"
+      }
+    },
+    {
+      "id": "mobile-lanes-columns",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 427,
+      "width": 390,
+      "says": "grid-template-columns: 1fr 1fr",
+      "reading": "the sheet keeps two lane columns on a phone, with its own shorter words in them",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".arch-lanes"
+      },
+      "expect": 1,
+      "diverges": {
+        "class": "one-copy-set",
+        "sheet": "1fr 1fr"
+      }
+    },
+    {
+      "id": "mobile-decisions-stack",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 434,
+      "width": 390,
+      "says": "flex-direction: column",
+      "reading": "the table stops being one on a phone — \"Tabelle wird zu Karten\" is the artboard's own caption, and each decision becomes a plate carrying its own column words",
+      "measure": {
+        "kind": "computed",
+        "selector": ".decision-table",
+        "prop": "display"
+      },
+      "expect": "block"
+    },
+    {
+      "id": "mobile-decision-card-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 434,
+      "width": 390,
+      "says": "gap: 14px",
+      "reading": "with 14px between the cards",
+      "measure": {
+        "kind": "computed",
+        "selector": ".decision-table tbody",
+        "prop": "row-gap"
+      },
+      "expect": "14px"
     }
   ]
 }

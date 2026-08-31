@@ -12,7 +12,137 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 30.08.2026, der Verify hat einen dritten Ausgang, und der Deploy hat ihn abgenommen
+## Wo wir stehen — 31.08.2026, H2a gebaut: die Klasse hieß Architektur und war Build
+
+**Branch `phase/h2a-case-study-architecture`, nicht gepusht.** `/work/timseil-dev`
+trägt jetzt `.01 .02 .03` — Problem, Architecture, Build. `.04 OPERATIONS` und
+`.05 RESULT` sind H2b.
+
+### Der Schnitt, und warum er zwischen 03 und 04 liegt
+
+H2 braucht drei Blätter und rund fünfunddreißig Dateien; der Bauplan teilt an
+genau dieser Stelle selbst. Der Schnitt liegt aber nicht dort, wo „statisch
+gegen gemessen" ihn hinlegen würde (`.02 .03 .05` gegen `.04`), sondern nach
+`.03`: die Seite geht nach jedem Merge live, und `01 02 03 05` wäre für die
+Dauer eines PRs eine Seite mit einem Loch.
+
+### Der stärkste Fund: zwei der veralteten Blattstellen sind UI-Text
+
+Die Korrekturtabelle in `docs/design/INDEX.md` führt „ohne Prometheus" als
+Blattfakt. Beim Bauen stellte sich heraus, **wo** er steht: `Case Study 02`
+liefert ihn als englischen Fließtext der Seite — „No metrics stack for one host
+and three services." — und als Entscheidungszeile „Rejected: Prometheus and
+Grafana — two more containers to patch for one host." Das sind keine
+Annotationen an ein Bild, das sind Sätze, die veröffentlicht worden wären.
+
+Der Unterschied ist wichtig genug für eine Regel: **eine Korrekturtabelle sagt,
+dass ein Blatt falsch liegt, nicht ob die falsche Stelle eine Notiz oder eine
+Zeile Copy ist.** Bei einer Notiz kostet das Übersehen nichts. Bei Copy
+veröffentlicht es eine Falschaussage über den eigenen Stack, auf der Seite,
+deren ganzes Argument ist, dass sie das nicht tut.
+
+### `.cs-arch` ist die Build-Zeile, und der Name sagt das Gegenteil
+
+`layout.css:39` trägt seit G1 `minmax(0,1fr) 420px · gap 60 · align-items:start`
+ohne Aufrufer. Im `Case Study Template` steht diese Kombination **genau einmal**
+— in `04.03 BUILD`, um den Compose-Block und die Phasenliste. Der
+Architektur-Abschnitt hat gar keine zweispaltige Zeile.
+
+Zweite Anwendung der H1a-Regel, und diesmal gegen einen Klassennamen statt gegen
+ein Blatt: **widersprechen sich Entwurf und ausgeliefertes Stylesheet, hat das
+Stylesheet recht.** ADR 0055.
+
+### Am Bild gefunden, nicht am Quelltext — vier Stück
+
+- **Die Phasenliste setzte ein Wort pro Zeile.** Der Zähler ist ein drittes
+  Rasterelement, also landete der Fließtext in der 18-px-Ordinalspalte. Im Code
+  unsichtbar, im ersten Screenshot sofort.
+- **Der Compose-Block schnitt seine wichtigste Zeile ab.** `overflow-x: auto`
+  versteckte das Ende der `image`-Zeile hinter einem Rollbalken. Jetzt `pre-wrap`.
+- **Die Entscheidungstabelle las sich auf 390 als kaputt.** Seitlich scrollend,
+  Zeilen so hoch wie ihre höchste Zelle: zwei magere Spalten mit 180 px Nichts
+  dazwischen. Jetzt Karten — was das Mobil-Artboard ohnehin sagt („Tabelle wird
+  zu Karten").
+
+- **Die Seite hatte überhaupt keinen Abschnittsrhythmus**, und ein Abschnitt
+  war der Grund, warum es niemand sah. H1 lieferte `.01` allein aus, mit den
+  96 px von `.cs-metrics` darüber — die Lücke, die als „Abstand vor dem
+  Abschnitt" las, war der Abstand *nach* der Kachelzeile. Mit `.02` und `.03`
+  darunter: **0 px zwischen den Abschnitten und 0 px vor der Fußzeile.**
+  Gemessen, nicht gesehen — fehlender Abstand fällt im Bild weit weniger auf als
+  falscher. Jetzt `.cs-section`, 96 px, und eine Zusicherung, die prüft, dass
+  alle Lücken gleich und keine null ist.
+
+Alle vier hätte kein Typecheck, kein Lint und kein Unit-Test gefunden — und die
+letzte auch kein Screenshot. Die Playwright-Regeln, die jetzt danebenstehen,
+finden sie beim nächsten Mal.
+
+### Gemessen, nicht geschätzt
+
+```
+                vor dem Branch        phase/h2a
+  framework     134 401 B, 6 Dateien  134 401 B, 6 Dateien
+  our code        9 178 B, 1 Datei      9 178 B, 1 Datei
+  total         143 579 B             143 579 B
+```
+
+**Null Byte.** Zwei Abschnitte, vier Bauteile, kein Client-Bauteil, kein neuer
+Upstream-Aufruf, kein zusätzlicher Suspense-Rand — `.02` und `.03` lesen nichts
+Gemessenes und werden ganz vorgerendert.
+
+`make check` grün · `npm test` **324** (von 318) · e2e **349** über zehn Projekte
+(von 221 nach H1a) · Blatt-Orakel **39 Messungen, 9 abweichend** (von 26).
+
+### Der kaputte Fall, vorgeführt statt behauptet
+
+Drei Mutationen, jede von genau einem Test gefangen:
+
+| Mutation | Wer sie fing |
+|---|---|
+| Einrückung aus dem Compose-Renderer entfernt | „the compose block is the generated excerpt, line for line" |
+| Signal-Rand der eigenen Stationen entfernt | „the accent marks exactly the owned ones" |
+| `.dt-label { display: none }` → `block` | „exactly one source of column labels is showing" |
+
+Die stärkste Zusicherung ist die erste: `make gen` schneidet den Auszug aus
+`compose.yaml` und `make check-contract` prüft die Prüfsumme — aber dass die
+**gerenderte** Fassung dieselbe ist, prüfte bis jetzt nichts.
+
+### Offen aus dieser Runde
+
+- **`.decision-table` in `layout.css:78` hat weiter keinen Konsumenten.** Die
+  Regel setzt ein Raster aus `<div>`s voraus; ein solches Raster bricht nur mit
+  `display: contents` auf den Zeilen um, und das nimmt Browser samt Rollen aus
+  dem Accessibility-Baum. Die Tabelle bleibt eine Tabelle. Kandidat für ein
+  Issue: Regel entfernen oder begründet stehen lassen.
+- **`.cs-hero` hat immer noch keinen Konsumenten.** H2a brauchte die zweite
+  Hero-Fassung nicht; die Frage aus der H1a-Notiz bleibt offen.
+- **Zwei Abweichungen vom Mobil-Artboard**, beide im Orakel mit Grund: der
+  Anfrageweg stapelt statt zu swipen, die Nebenspuren werden unter 560
+  einspaltig. Ursache der zweiten ist, dass das Blatt **zwei Textfassungen**
+  führt und `content/case-studies` eine.
+
+## Gefunden
+
+- **Zwei Blattkorrekturen stehen in der UI-Copy, nicht in einer Annotation.**
+  `Case Study 02` liefert „No metrics stack for one host and three services." und
+  „Rejected: Prometheus and Grafana" als englischen Seitentext. Die
+  Korrekturtabelle in `INDEX.md` führt den Fakt, sagt aber nicht, dass die Stelle
+  ausgeliefert würde. Kandidat für ein Design-Correction-Issue neben #79–#83, und
+  für eine Spalte „Notiz oder Copy" in der Korrekturtabelle. *(31.08.2026, H2a)*
+- **Das Mobil-Artboard führt eine zweite, kürzere Textfassung** für die
+  Nebenspuren und lässt POST-MORTEM auf dem Telefon ganz weg. Wir führen eine
+  Fassung. Entweder das Blatt bekommt hier eine Korrektur, oder der Entwurf
+  bekommt kürzere Sätze für beide Breiten. *(31.08.2026, H2a)*
+- **Der Anfrageweg swipt im Blatt bei 390** und stapelt bei uns ab 1080.
+  Design-Correction-Kandidat: 898 px Inhalt hinter 346 px Bildschirm gegen die
+  Regel „Kein Bauteil bekommt seinen eigenen Wert". *(31.08.2026, H2a)*
+- **Die zwei Bildplatzhalter des Blattes (`[TERMINAL CAPTURE]`, `[UI CAPTURE]`)
+  sind nicht gebaut.** Bilder sind K2; H2a lässt die Stellen weg statt sie zu
+  erfinden. Zuordnung hiermit notiert. *(31.08.2026, H2a)*
+
+---
+
+## Vorher — 30.08.2026, der Verify hat einen dritten Ausgang, und der Deploy hat ihn abgenommen
 
 **#271 gemergt, `6c728db` in Produktion, `report ok … 258s`.** Der Befund von
 21:28 ist repariert, und zwar an beiden Stellen, an denen er zugeschlagen hat.

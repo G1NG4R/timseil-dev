@@ -63,6 +63,23 @@ const DIVERGENCE = {
     'Decided in ADR 0052 with its sources: Case Study 02, the Intermediate ' +
     'Widths register and Consistency Check K-29 all say five tiles; the ' +
     'template draws three.',
+  'one-copy-set':
+    'The sheet carries two sets of words for the architecture section — full ' +
+    'sentences at 1440 and abbreviations at 390 ("Same origin, no CDN" against ' +
+    '"Same origin, no CDN — nothing third-party in the path"), and it drops the ' +
+    'POST-MORTEM lane on the phone. content/case-studies carries ONE set, ' +
+    'because a second exists only to be forgotten when the first is corrected. ' +
+    'The full sentences then need a column each below 560, where the sheet ' +
+    'still draws two.',
+  'path-stacks':
+    'At 390 the sheet keeps the request path horizontal inside a swipe ' +
+    'container and captions it "REQUEST PATH — SWIPE →": five 146px boxes and ' +
+    'four arrows, 898px of content behind 346px of screen. It stacks here ' +
+    'instead, at the 1080 switch every other two-column row already uses — ' +
+    'layout.css states the rule ("Kein Bauteil bekommt seinen eigenen Wert"), ' +
+    'and a swipe hides four fifths of the argument on the one device where the ' +
+    'reader cannot see there is more. Recorded as a design correction rather ' +
+    'than settled here.',
 };
 
 /**
@@ -279,6 +296,110 @@ const MAP = [
     decl: 'grid-template-columns', says: '72px 1fr 72px 1fr',
     reading: 'the rail grows sideways rather than downwards — the sheet annotates this frame with exactly that sentence',
     measure: { kind: 'track-count', selector: '.spec-body' }, expect: 4,
+  },
+
+  // ── 1440 · Case Study Template, artboard 1a · H2a ────────────────────────
+  // `04.02 ARCHITECTURE` and `04.03 BUILD`.
+  {
+    id: 'arch-panel-padding',
+    sheet: 'template', artboard: '1a', width: 1440, line: 131,
+    decl: 'padding', says: '34px 36px 30px',
+    reading: 'the request-path plate is the third bracketed surface on the page, and the roomiest of the three',
+    measure: { kind: 'computed', selector: '.arch', prop: 'padding-top' }, expect: '34px',
+  },
+  {
+    id: 'arch-arrow-track',
+    sheet: 'template', artboard: '1a', width: 1440, line: 134,
+    decl: 'width', says: '64px',
+    reading: 'the arrow between two stations owns a 64px column, which is why the five boxes stay equal',
+    measure: { kind: 'box-width', selector: '.arch-hop:nth-child(2) .arch-arrow' }, expect: 64,
+  },
+  {
+    id: 'arch-lanes-columns',
+    sheet: 'template', artboard: '1a', width: 1440, line: 144,
+    decl: 'grid-template-columns', says: 'repeat(4,1fr)',
+    reading: 'four columns for five lanes, so the fifth wraps — the same shape the fifth metric tile takes under 560',
+    measure: { kind: 'track-count', selector: '.arch-lanes' }, expect: 4,
+  },
+  {
+    id: 'arch-lanes-gap',
+    sheet: 'template', artboard: '1a', width: 1440, line: 144,
+    decl: 'gap', says: '18px',
+    reading: 'and 18px between them',
+    measure: { kind: 'computed', selector: '.arch-lanes', prop: 'column-gap' }, expect: '16px',
+    diverges: { class: 'spacing-scale', sheet: '18px' },
+  },
+  {
+    id: 'decision-first-column',
+    sheet: 'template', artboard: '1a', width: 1440, line: 154,
+    decl: 'grid-template-columns', says: '230px 1fr 1fr',
+    reading: 'the decision names the row in a fixed 230px column, and the two prose columns share what is left',
+    measure: { kind: 'box-width', selector: '.decision-table thead th:first-child' }, expect: 230,
+  },
+  {
+    id: 'build-rail-width',
+    sheet: 'template', artboard: '1a', width: 1440, line: 209,
+    decl: 'grid-template-columns', says: '1fr 420px',
+    reading: 'THE ROW `.cs-arch` WAS COPIED FOR. layout.css has carried `minmax(0,1fr) 420px` with a 60px gap since G1 under a name that says architecture, and this is the only row on the sheet with those measurements — it is the build row, around the compose block and the phases',
+    measure: { kind: 'box-width', selector: '.cs-arch > .rail' }, expect: 420,
+  },
+  {
+    id: 'build-gap',
+    sheet: 'template', artboard: '1a', width: 1440, line: 209,
+    decl: 'gap', says: '60px',
+    reading: 'and 60px of air between them, which is narrower than the hero row above and wider than nothing else',
+    measure: { kind: 'gap-x', from: '.cs-arch > div:first-child', to: '.cs-arch > .rail' },
+    expect: 60,
+  },
+  {
+    id: 'compose-size',
+    sheet: 'template', artboard: '1a', width: 1440, line: 211,
+    decl: 'font', says: "400 12px/1.85 'JetBrains Mono',monospace",
+    reading: 'the compose block is the 12px mono step at the mono line height — the one place on this sheet where the drawn number and the token agree to the decimal',
+    measure: { kind: 'computed', selector: '.compose', prop: 'font-size' }, expect: '12px',
+  },
+  {
+    id: 'phases-gap',
+    sheet: 'template', artboard: '1a', width: 1440, line: 227,
+    decl: 'gap', says: '12px',
+    reading: 'and 12px between a phase ordinal and its text',
+    measure: { kind: 'computed', selector: '.phases li', prop: 'column-gap' }, expect: '12px',
+  },
+
+  // ── 390 · Case Study Template, artboard 1c · H2a ─────────────────────────
+  // "Diagramm scrollt, Tabelle wird zu Karten". The table agrees; the diagram
+  // does not, and the reason is written down rather than argued twice.
+  {
+    id: 'mobile-path-scrolls',
+    sheet: 'template', artboard: '1c', width: 390, line: 414,
+    decl: 'overflow-x', says: 'auto',
+    reading: 'the sheet swipes the path sideways on a phone; it stacks here, and `path-stacks` says why',
+    measure: { kind: 'track-count', selector: '.arch-path' }, expect: 1,
+    diverges: { class: 'path-stacks', sheet: 'overflow-x: auto, one row' },
+  },
+  {
+    id: 'mobile-lanes-columns',
+    sheet: 'template', artboard: '1c', width: 390, line: 427,
+    decl: 'grid-template-columns', says: '1fr 1fr',
+    reading: 'the sheet keeps two lane columns on a phone, with its own shorter words in them',
+    measure: { kind: 'track-count', selector: '.arch-lanes' }, expect: 1,
+    diverges: { class: 'one-copy-set', sheet: '1fr 1fr' },
+  },
+  {
+    id: 'mobile-decisions-stack',
+    sheet: 'template', artboard: '1c', width: 390, line: 434,
+    decl: 'flex-direction', says: 'column',
+    reading: 'the table stops being one on a phone — "Tabelle wird zu Karten" is the artboard\'s own caption, and each decision becomes a plate carrying its own column words',
+    measure: { kind: 'computed', selector: '.decision-table', prop: 'display' },
+    expect: 'block',
+  },
+  {
+    id: 'mobile-decision-card-gap',
+    sheet: 'template', artboard: '1c', width: 390, line: 434,
+    decl: 'gap', says: '14px',
+    reading: 'with 14px between the cards',
+    measure: { kind: 'computed', selector: '.decision-table tbody', prop: 'row-gap' },
+    expect: '14px',
   },
 ];
 

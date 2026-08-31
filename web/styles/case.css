@@ -279,3 +279,305 @@
   color: var(--acc);
   font-variant-numeric: tabular-nums;
 }
+
+/* ══ H2a · .02 ARCHITECTURE and .03 BUILD ═══════════════════════════════════
+   The same division of labour as the H1 block above: this file draws, and every
+   width-dependent rule lives in layout.css beside the four switches it already
+   owns. Nothing below carries a media query.
+
+   SPACING IS ROUNDED TO THE SCALE, and the tie-break is stated once here so it
+   is not re-decided per declaration: nearest step, and on a tie round DOWN —
+   the same direction tokens.css takes for the mono sizes ("keine halben
+   Pixel"). The sheet's 36 becomes 34, its 22 becomes 20, its 18 and its 30
+   become 16 and 26. The largest single difference is 4px.
+
+   ONE THING THE SHEET DRAWS IS NOT BUILT, and it is worth naming rather than
+   quietly dropping: the two owned stations carry `box-shadow:0 0 22px
+   rgba(0,229,255,.05)`. Five per cent over 22px of blur is below the threshold
+   where it reads on any of the seven palettes, the signal border beside it
+   already carries the same distinction, and a token nobody can see the effect
+   of is a value that will be copied without being understood. --glow-alert
+   earned its place in H1 at fifty per cent on a 6px disc; this does not.       */
+
+/* ── The rhythm between sections ───────────────────────────────────────────
+   THE PAGE HAD NONE, AND ONE SECTION IS WHY NOBODY SAW IT. H1 shipped `.01`
+   alone with `.cs-metrics`'s 96px above it, so the gap that reads as "space
+   before the section" was really space after the metric row. With `.02` and
+   `.03` under it the sections sat flush — measured at zero pixels between them,
+   and zero between the last one and the footer.
+
+   The sheet draws 100px after every section block, including the last. 96 is
+   the step, and it is the same one `.cs-metrics` already spends for the same
+   100 — so this is one number appearing twice, not two numbers.              */
+
+.cs-section { margin-block-end: var(--s-96); }
+
+/* ── The request path ──────────────────────────────────────────────────────
+   The plate is the sheet's third surface after `.spec` and `.cs-panel`, and the
+   only one of the three with brackets at 16px rather than 13 — the marks scale
+   with the plate, and this one is the full content column. Eight gradients for
+   the reason `.spec` gives above: two pseudo-elements draw two corners.        */
+
+.arch {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  padding: var(--s-34) var(--s-34) var(--s-26);
+  margin-block-end: var(--s-34);
+
+  background-image:
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge));
+  background-repeat: no-repeat;
+  background-size: 16px 1px, 1px 16px, 16px 1px, 1px 16px, 16px 1px, 1px 16px, 16px 1px, 1px 16px;
+  background-position:
+    left top, left top, right top, right top,
+    left bottom, left bottom, right bottom, right bottom;
+}
+
+/* Five equal boxes with the arrow living in the gap rather than in the row.
+   Putting the arrow inside the flow would make every box after the first 64px
+   narrower than the one before it, which is the bug this grid avoids by
+   construction: the columns are equal because the arrows are not in them.
+   64px is the sheet's track and stays a literal, the way `.spec-body`'s 72px
+   key column does — a track width is not a spacing step. */
+.arch-path {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  column-gap: 64px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.arch-hop {
+  position: relative;
+  display: flex;
+}
+
+.arch-arrow {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -64px;
+  width: 64px;
+  display: grid;
+  place-items: center;
+  font: 400 var(--t-mono-13)/1 var(--mono);
+  color: var(--acc);
+}
+
+.arch-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-strong);
+  padding: var(--s-16) var(--s-20);
+}
+
+/* The two stations that are code in this repository. The border is the whole
+   distinction — see the note at the head of this block about the glow. */
+.arch-hop[data-own="yes"] .arch-box { border-color: var(--acc-line); }
+.arch-hop[data-own="yes"] .arch-key { color: var(--acc); }
+
+.arch-key {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-block-end: var(--s-8);
+}
+
+.arch-name {
+  font: 500 var(--t-mono-13)/1 var(--mono);
+  color: var(--ink);
+}
+
+.arch-detail {
+  font: 400 var(--t-mono-10)/1.4 var(--mono);
+  color: var(--steel);
+  margin-block-start: var(--s-6);
+}
+
+/* ── Side lanes ────────────────────────────────────────────────────────────
+   The label and the dashed rule beside it are one element: the rule is what is
+   left of the row after the word, so it cannot fall out of step with it.      */
+
+.arch-lanes-label {
+  /* globals.css caps every `p` at the 68ch reading measure, which is right for
+     prose and wrong for a rule that has to reach the edge of the plate: without
+     this the dashed line stops two thirds of the way across and reads as a
+     mistake rather than a divider. The element stays a `p` because that is what
+     `.spec-label` is, and one label element for the page beats two. */
+  max-width: none;
+  display: flex;
+  align-items: center;
+  gap: var(--s-14);
+  margin: var(--s-26) 0 var(--s-20);
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+.arch-lanes-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 4px, transparent 4px 9px);
+}
+
+/* Four columns and five lanes, so the fifth wraps — the sheet draws exactly
+   that, and it is the same shape the fifth metric tile takes under 560. */
+.arch-lanes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-16);
+  margin: 0;
+}
+
+.arch-lane {
+  border: 1px dashed var(--line-strong);
+  padding: var(--s-14) var(--s-16);
+}
+
+.arch-lane dt {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-block-end: var(--s-8);
+}
+
+.arch-lane dd {
+  margin: 0;
+  font: 400 var(--t-mono-11)/1.5 var(--mono);
+  color: var(--ink-2);
+}
+
+/* ── The decision table ────────────────────────────────────────────────────
+   A table above 720 and labelled blocks below it; DecisionTable.tsx carries the
+   argument for both halves and for why layout.css:78 still has no consumer.
+   The width-dependent half is in layout.css, as everything width-dependent on
+   this page is.                                                               */
+
+.decision-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: start;
+}
+
+.decision-table th,
+.decision-table td {
+  vertical-align: top;
+  text-align: start;
+  padding: var(--s-20) var(--s-4);
+  padding-inline-end: var(--s-26);
+}
+
+.decision-table thead th {
+  padding-block: 0 var(--s-12);
+  border-block-end: 1px solid var(--line);
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+.decision-table thead th:first-child { width: 230px; }
+
+.decision-table tbody th {
+  border-block-end: 1px solid var(--line-soft);
+  font: 500 var(--t-mono-12)/1.4 var(--mono);
+  color: var(--ink);
+}
+
+.decision-table tbody td {
+  border-block-end: 1px solid var(--line-soft);
+  font: 400 var(--t-body-13)/1.6 var(--body);
+  color: var(--ink-2);
+  /* The reading measure, which globals.css puts on every `p` and a `td` does
+     not inherit. Inert above 720 — the columns are 465px there, well inside it
+     — and load-bearing below, where the cell becomes a full-width paragraph. */
+  max-width: 68ch;
+}
+
+/* The alternative is the quieter of the two prose columns, because the row is
+   an argument and the rejected option is its premise, not its conclusion. */
+.decision-table .dt-alt { color: var(--steel); }
+
+/* Hidden here and shown under 720, where the header row is gone. `display:none`
+   rather than a visually-hidden class on purpose: above this width the label
+   must be out of the accessibility tree too, because `<th scope="col">` is
+   already saying it. */
+.dt-label { display: none; }
+
+/* ── The compose excerpt ───────────────────────────────────────────────────
+   1.85 is --lh-mono exactly, which is the one place in this file where the
+   sheet's number and the token's are the same to the decimal.                 */
+
+.compose {
+  margin: 0;
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  padding: var(--s-20);
+  /* Wrapping, not scrolling — the component says why. `pre-wrap` keeps every
+     space of the indentation, which is the structure of the file. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 400 var(--t-mono-12)/var(--lh-mono) var(--mono);
+  color: var(--ink-2);
+}
+
+.compose-key { color: var(--acc); }
+.compose-val { color: var(--amber); }
+
+.compose-caption {
+  margin: var(--s-14) 0 0;
+  font: 400 var(--t-mono-11)/1.7 var(--mono);
+  color: var(--dim);
+}
+
+/* ── The phases ────────────────────────────────────────────────────────────
+   Same counter as `.cs-constraints`, and the same argument for it: `01` is the
+   sheet's form and a list marker cannot be zero-padded. The ordinal is content
+   here too — "Contract first" is a claim about order, and the number is what
+   says so.                                                                    */
+
+.phases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: phase;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-16);
+}
+
+.phases li {
+  counter-increment: phase;
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: var(--s-12);
+}
+
+.phases li::before {
+  content: counter(phase, decimal-leading-zero);
+  font: 600 var(--t-mono-10)/1.4 var(--mono);
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}
+
+.phase-title {
+  display: block;
+  font: 500 var(--t-mono-12)/1.4 var(--mono);
+  color: var(--ink);
+}
+
+.phase-detail {
+  display: block;
+  margin-block-start: var(--s-4);
+  font: 400 var(--t-body-13)/1.55 var(--body);
+  color: var(--steel);
+}
