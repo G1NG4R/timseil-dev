@@ -12,7 +12,46 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 31.08.2026, eine Stichprobe, aus der niemand etwas schließen kann
+## Wo wir stehen — 31.08.2026, H2b begonnen: der Schnittpunkt, bevor er gebraucht wird
+
+**Branch `phase/h2b-case-study-operations`.** `.04 OPERATIONS` und `.05 RESULT`,
+wie ADR 0055 die Phase geschnitten hat.
+
+### Das Abbruchkriterium steht hier, weil es hinterher eine Rechtfertigung wäre
+
+Die Phase fasst **22 Code-Dateien plus 4 Dokumente** an — gezählt, nicht
+geschätzt. Das liegt über der Richtgröße von ~15 aus dem Phasenzuschnitt, und
+der Bauplan beantwortet den Widerspruch selbst: „Der Maßstab ist **Kopplung**,
+nicht Anzahl." `.05` fasst fünf derselben Dateien an wie `.04` — `types.ts`,
+`timseil-dev.ts`, `en.ts`, `page.tsx`, `case.css` —, und „beide Phasen fassen
+dieselben Dateien an" ist die linke Spalte derselben Tabelle: **zusammenlegen**.
+
+Bleibt der Auslöser, den der Bauplan wirklich nennt: „Läuft Claude Code mitten
+in einer Phase in die Kompaktierung, war sie zu groß — teil sie und notier es."
+
+> **Abbruch, wenn eins davon eintritt:**
+> 1. Kontext-Kompaktierung mitten in der Phase, **oder**
+> 2. ein Bauteil stellt sich als `'use client'`-pflichtig heraus.
+>
+> Dann geht `.04` allein als PR raus, `.05` wird **H2c**. Der Schnitt liegt
+> wieder dort, wo die Seite nach dem Merge vollständig ist: `01 02 03 04` ist
+> eine Seite, `01 02 03 05` wäre eine mit einem Loch — dasselbe Argument, mit
+> dem ADR 0055 zwischen `.03` und `.04` geschnitten hat.
+
+Warum das vorher dasteht und nicht nachher: ein Abbruchkriterium, das erst
+formuliert wird, wenn der Abbruch schon passiert ist, ist keine Entscheidung
+mehr, sondern eine Beschreibung. Dieselbe Klasse wie die Sondenkadenz und der
+`-race`-Fund, die drei Tage als Issue dastanden und trotzdem als „neu" gemeldet
+wurden — der Notizblock hilft nur, wenn er **vor** dem Bedarf beschrieben ist.
+
+### Was diese Phase nicht anfasst
+
+Kein Go, kein SQL, keine Migration: `/api/systems/{slug}` liefert `window`,
+`days[]`, `incidents[]` und `deploys[]` seit Stufe C. H2b ist Frontend.
+
+---
+
+## Vorher — 31.08.2026, eine Stichprobe, aus der niemand etwas schließen kann
 
 **Branch `fix/a-refusal-during-the-swap-is-not-a-verdict`.** Der `deploy`-Job von
 `499d284` (#281) ist rot, und die Seite war zu keiner Sekunde unten.
@@ -311,14 +350,16 @@ Mal gelernt wird.
   (`app/sitemap.ts:59`); `lib/seo/pages.test.ts:73` prüft nur das Format, nicht
   den Wert, und hätte es deshalb nie gemerkt. Korrektur als eigener PR.
   *(31.08.2026, H2a-Abnahme)*
-- **Das Datum wird von Hand gepflegt, und das ist die eigentliche Frage.** Jede
-  Phase, die Copy dieser Seite anfasst, muss daran denken — dieselbe Klasse
-  Fehler, die Kapitel 12.3 für Versionsnummern mit „nobody types a value into a
-  page again" abgeräumt hat. Der Kopfkommentar der Datei begründet, warum dort
-  kein `new Date()` steht (es würde bei jedem Dependency-Bump wandern); die
-  andere Hälfte — woher das Datum dann kommt, wenn nicht aus dem Kopf des
-  Autors — steht nirgends. Issue-Kandidat, nicht in dieser Runde gelöst.
-  *(31.08.2026, H2a-Abnahme)*
+- **#284 — das Datum wird von Hand gepflegt, und das ist die eigentliche
+  Frage.** Jede Phase, die Copy dieser Seite anfasst, muss daran denken —
+  dieselbe Klasse Fehler, die Kapitel 12.3 für Versionsnummern mit „nobody
+  types a value into a page again" abgeräumt hat. Der Kopfkommentar der Datei
+  begründet, warum dort kein `new Date()` steht (es würde bei jedem
+  Dependency-Bump wandern); die andere Hälfte — woher das Datum dann kommt, wenn
+  nicht aus dem Kopf des Autors — steht nirgends. Als **#284** angelegt, mit
+  dem Abnahmekriterium: ein PR, der die Prosa einer Fallstudie ändert und
+  `updatedAt` stehen lässt, wird von CI abgewiesen — vorgeführt, nicht
+  behauptet. *(31.08.2026, H2a-Abnahme)*
 
 - **Zwei Blattkorrekturen stehen in der UI-Copy, nicht in einer Annotation.**
   `Case Study 02` liefert „No metrics stack for one host and three services." und
@@ -376,11 +417,12 @@ Mal gelernt wird.
   **kein** Fehler — das Rig fährt einen lokalen Produktions-Build ohne API, und
   die NO-DATA-Fassung ist der Fall, den es messen soll. Es ist nur der Zustand,
   der jedes Tauschfenster auf volle zwei Sekunden aufzieht.
-  **Repariert, liegt bereit:** `fix/settled-waits-on-every-boundary`, `e42077f`
+  **Repariert:** `fix/settled-waits-on-every-boundary`, `e42077f`
   — `STREAMED_REGIONS` als eine Definition, `settled()` zählt alle vier. Lokal
   gegen die ursächliche Bedingung gemessen (keine API auf 8080):
   `--repeat-each=3` über alle sieben Breiten, 252 grün, volle Suite 259.
-  Nicht gepusht. *(31.08.2026, Dependabot-Welle)*
+  Gepusht und als **#279** gemergt (`95336bb` auf `main`); GitHub hat den
+  Branch danach gelöscht. *(31.08.2026, Dependabot-Welle)*
 - **Der Deploy-Gate prüft die Anwendung, nicht die Beobachtungsdienste.**
   `tools/verify-deploy.sh` kennt fünf Bedingungen, und alle fünf hängen an
   `/api/health` und `/`. `loki`, `alloy` und `prometheus` stehen in keiner — ein
