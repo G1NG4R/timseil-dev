@@ -133,7 +133,16 @@ export function metricTiles(body: SystemDetail | null, messages: Messages): Metr
     },
     { label: "P95", value: p95Value(finiteNumber(metrics?.p95Ms)), unit: "MS" },
     { label: messages.csErrorRate, value: errorRateValue(finiteNumber(metrics?.errorRate)), unit: "%" },
-    { label: "DEPLOY · MEDIAN", value: deployMedianValue(raw.deploys), unit: "S" },
+    // PIPELINE, NOT DEPLOY, AND THAT IS ISSUE #242 ANSWERED HALFWAY. H1 shipped
+    // this tile as `DEPLOY · MEDIAN` and left the meaning open; H2b was the
+    // phase that had to decide, and the decision is that the field should
+    // measure the deploy — from Dokploy accepting it to the new process coming
+    // up. Until it does, the label says what the number IS: the whole pipeline
+    // run, queue time included. Renaming the tile is one line and honest today;
+    // redefining the field touches report-deploy.sh, deploy.sh, check-deployed's
+    // tolerance and the contract, which is a different blast radius and its own
+    // PR. ADR 0057.
+    { label: "PIPELINE · MEDIAN", value: deployMedianValue(raw.deploys), unit: "S" },
     { label: messages.csIncidents, value: incidentCountValue(raw.incidents) },
   ];
 }

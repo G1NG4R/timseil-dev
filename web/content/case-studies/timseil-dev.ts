@@ -289,7 +289,7 @@ export const timseilDev: CaseStudy = {
       },
       {
         title: "CHECK",
-        detail: "Go vet, eslint, tsc, both unit suites, and every rule in `make check`.",
+        detail: "Everything `make check` runs: vet, eslint, tsc, both unit suites, every rule.",
         job: "check",
       },
       {
@@ -335,8 +335,8 @@ export const timseilDev: CaseStudy = {
       {
         key: "LOGS",
         detail:
-          "Structured, one line per request, no IP address and no form " +
-          "contents — the privacy page and the log format agree by construction.",
+          "Structured, one line per request, and neither an IP address nor the " +
+          "contents of a form is in a position to be written.",
       },
       {
         key: "METRICS",
@@ -372,9 +372,10 @@ export const timseilDev: CaseStudy = {
       "Observability came after the pipeline instead of before it. Most of the " +
         "window above is unmeasured for exactly that reason: the grid could not " +
         "start filling until something was watching.",
-      "A deploy duration went on this page before anyone asked what it counted. " +
-        "It was measuring the whole pipeline run, waiting in a queue included, " +
-        "and a slow unrelated merge made this system look slower.",
+      "A deploy duration went on this page before anyone asked what it counts. " +
+        "It measures the whole pipeline run, waiting in a queue included, so an " +
+        "unrelated merge landing first makes this system look slower. The tile " +
+        "says pipeline now; the number still has to be redefined.",
       "One value on this page is still typed by a person — the date the copy " +
         "last changed. It was wrong for a day, which is the exact class of " +
         "mistake the rest of the site is built to make impossible.",

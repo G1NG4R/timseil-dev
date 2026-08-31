@@ -71,7 +71,7 @@ describe("the five tiles when nothing has been measured", () => {
   it("keeps the five in the order the sheet draws them", () => {
     assert.deepEqual(
       metricTiles(body(), en).map((tile) => tile.label),
-      ["UPTIME · 91 D", "P95", "ERROR RATE", "DEPLOY · MEDIAN", "INCIDENTS"],
+      ["UPTIME · 91 D", "P95", "ERROR RATE", "PIPELINE · MEDIAN", "INCIDENTS"],
     );
   });
 });
@@ -82,7 +82,7 @@ describe("the five tiles when the api did not answer at all", () => {
   it("still names all five", () => {
     assert.deepEqual(
       metricTiles(null, en).map((tile) => tile.label),
-      ["UPTIME", "P95", "ERROR RATE", "DEPLOY · MEDIAN", "INCIDENTS"],
+      ["UPTIME", "P95", "ERROR RATE", "PIPELINE · MEDIAN", "INCIDENTS"],
     );
   });
 

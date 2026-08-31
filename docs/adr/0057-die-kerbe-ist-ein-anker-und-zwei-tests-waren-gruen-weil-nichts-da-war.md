@@ -15,7 +15,7 @@ Merge live, `01 02 03` ist eine vollständige Seite, `01 02 03 05` wäre eine mi
 einem Loch. H2b baut den Rest — den Anfahrtsweg eines Commits, das 91-Tage-Raster
 mit seinen Kerben, den Vorfall-Log und den Schluss.
 
-Sechs Fragen ließen sich erst beantworten, als die Abschnitte gebaut waren. Zwei
+Sieben Fragen ließen sich erst beantworten, als die Abschnitte gebaut waren. Zwei
 davon hat nicht das Bauen beantwortet, sondern ein Screenshot und ein
 Testergebnis, das zu gut aussah.
 
@@ -135,7 +135,29 @@ zu prüfen.
 Auswahl in Komponenten-State verlegt, wird damit rot, statt über einen
 Klassennamen hinweg grün zu bleiben.
 
-### 5. Der Trenner der Pipeline ist die Lücke, nicht der Rand
+### 5. #242 ist entschieden und halb umgesetzt: die Kachel heißt jetzt PIPELINE
+
+Das Issue sagt „decide with H2". Die Entscheidung: **das Feld soll den Deploy
+messen**, von „Dokploy hat den Deploy angenommen" bis „der neue Prozess kam hoch"
+— genau die zwei Zeitstempel, die die Abnahme vom 31.08. schon von Hand
+nebeneinandergelegt hat (`14:38:07.559` / `14:38:36.474`). Eine Zahl, die keine
+fremde Merge-Warteschlange aufblähen kann.
+
+**Umgesetzt wird das hier nicht.** Es fasst `report-deploy.sh`, `deploy.sh`, die
+Toleranz in `check-deployed.sh:210` und die Contract-Beschreibung an — anderer
+Radius, andere Reviewer-Frage. Was diese Phase schließen kann, ist die andere
+Hälfte des Abnahmekriteriums („the case study tile says which"): die Kachel heißt
+`PIPELINE · MEDIAN` statt `DEPLOY · MEDIAN`, weil das die Zahl ist, die dort
+steht — der ganze Lauf, Wartezeit inklusive. Eine Zeile, heute wahr. ADR 0052
+hatte den Preis dieser Kachel schon notiert; hier wird er bezahlt, statt ihn
+weiterzuschieben.
+
+`.05` sagt dasselbe im Präsens und ohne Reparatur zu behaupten — die erste
+Fassung dieses Absatzes stand im Imperfekt („It **was** measuring") und hätte
+eine Korrektur veröffentlicht, die es nicht gibt. Beim Lesen des eigenen Diffs
+gefunden.
+
+### 6. Der Trenner der Pipeline ist die Lücke, nicht der Rand
 
 Am Bild gefunden. Mit `border-inline-end` je Kasten und keinem am letzten ist die
 Zeile bei 1440 geteilt und bei 390 **eine einzige ungeteilte Spalte** — sieben
@@ -147,7 +169,7 @@ Richtungen, bei jeder Spaltenzahl, ohne eine Regel, die nachgeführt werden muss
 Das Mobil-Artboard bestätigt die Absicht: dort trägt jede Stufe ein
 `border-bottom` — dieselbe Trennung, andere Achse.
 
-### 6. Das Raster rechnet seine Spalten, statt sie zu nennen
+### 7. Das Raster rechnet seine Spalten, statt sie zu nennen
 
 `91 days (13 weeks)` in der Kopfzeile sind `cells.length` und
 `Math.ceil(cells / 7)` aus `lib/api/systems.ts`. Invariante 7 will, dass das
