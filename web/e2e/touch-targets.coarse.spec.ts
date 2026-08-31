@@ -132,4 +132,21 @@ test.describe("targets a finger has to hit", () => {
     // on a page this early; what must not happen is a control that is too small.
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
+
+  // H3. The fourth block, and the first one about a page rather than about the
+  // chrome — until this phase `<main>` on `/` held a heading, a sentence and a
+  // description list, and there was nothing in it a finger could meet.
+  //
+  // A COUNT IS ASSERTED HERE AND NOT IN THE FOOTER, because the difference is
+  // knowable: the homepage carries the two ways back out of the empty section
+  // shells, SYS.02 and SYS.04, and lib/home/sections.test.ts holds that there
+  // are exactly two. A run that measured nothing would otherwise be green — the
+  // shape H2b found four times in one file.
+  test("the homepage's own controls are at least 44 x 44", async ({ page }) => {
+    await page.goto("/");
+    const targets = await measure(page, "main");
+
+    expect(targets.length, "no interactive element found on the homepage").toBe(2);
+    expect(tooSmall(targets), report(targets)).toEqual([]);
+  });
 });

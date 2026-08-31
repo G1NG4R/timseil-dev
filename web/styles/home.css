@@ -210,3 +210,14 @@
   font: 500 var(--t-mono-11)/1 var(--mono);
   letter-spacing: var(--ls-label);
 }
+
+/* `inline-flex` AND NOT `inline`, WHICH IS THE WHOLE OF K-27 IN ONE RULE.
+   layout.css raises every `a` to 44 x 44 under `pointer: coarse`, and
+   `min-height` does not apply to a non-replaced inline box — so the rule was
+   there, matched this link, and did nothing. Measured at 50.86 x 15 before this
+   line. The chrome's own targets are flex for the same reason; this one had to
+   learn it separately, which is why the measurement is a test and not a grep. */
+.home-exit a {
+  display: inline-flex;
+  align-items: center;
+}
