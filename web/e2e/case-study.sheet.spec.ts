@@ -15,8 +15,6 @@
  * have no drawing: 1081, 1079, 899, 719, and `layout.sweep.spec.ts` covers them
  * with a different question.
  */
-import { expect } from "@playwright/test";
-
 // Imported rather than read off disk: `resolveJsonModule` is on, Playwright
 // transpiles this file to CommonJS where `import.meta` does not exist, and an
 // import gives the oracle a compile-time shape as a side effect — a generator
@@ -24,16 +22,19 @@ import { expect } from "@playwright/test";
 // a run that quietly asserted nothing.
 import generated from "./oracle/case-study.gen.json";
 import { runSheetOracle, type Oracle } from "./sheet";
+import { settled } from "./streaming";
 import { CASE_STUDY, DRAWN_WIDTHS } from "./widths";
 
 runSheetOracle({
   oracle: generated as unknown as Oracle,
   route: CASE_STUDY,
-  // The streaming swap leaves both the fallback and its replacement in the
-  // document for a moment; every locator would see two of everything.
-  ready: async (page) => {
-    await expect(page.locator(".cs-crumb")).toHaveCount(1);
-  },
+  // WAS ONE REGION AND IS NOW ALL FIVE, which is the #279 family caught a
+  // third time. This file waited on `.cs-crumb` alone, inline, while
+  // streaming.ts has held every region since that fix — the five boundaries
+  // are independent, each spends its own two-second budget, and a settled
+  // breadcrumb says nothing about the spec rail beside it. The rig runs with
+  // no api at all, which is exactly the condition that widens the race.
+  ready: settled,
   drawnWidths: DRAWN_WIDTHS,
   // 26 after H1b, 39 after H2a. The floor moves up with each phase that adds
   // measurements; it never moves down without someone saying why.

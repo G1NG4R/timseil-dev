@@ -15,8 +15,9 @@
 
 import { expect, type Page } from "@playwright/test";
 
-/** The regions `page.tsx` streams, each behind its own `<Suspense>`. */
-export const STREAMED_REGIONS = [
+/** The regions the case study's `page.tsx` streams, each behind its own
+ *  `<Suspense>`. */
+export const CASE_REGIONS = [
   ".cs-crumb",
   ".cs-eyebrow",
   ".spec",
@@ -57,8 +58,30 @@ export const STREAMED_REGIONS = [
  * copy of a component lying in the document — and this is the line that would
  * say so.
  */
-export async function settled(page: Page): Promise<void> {
-  for (const selector of STREAMED_REGIONS) {
+/**
+ * The homepage's, since H3. One region, and one is not an oversight: the page
+ * has one thing to ask the api and one place to put the answer. Everything else
+ * on it is in the repository.
+ *
+ * `.term` rather than the row inside it, because the whole frame is what the
+ * fallback and the answer both render — that is the seam ADR 0044 describes,
+ * and it is the boundary React actually swaps.
+ */
+export const HOME_REGIONS = [".term"] as const;
+
+/**
+ * The page after streaming has settled.
+ *
+ * THE REGION LIST IS AN ARGUMENT, and H3 is why it is now one. Before this
+ * phase the list was a constant this function closed over, which was correct
+ * while there was one streamed route and is how the pre-#279 copy came about:
+ * a second route either passes its own regions or grows a second `settled`.
+ */
+export async function settled(
+  page: Page,
+  regions: readonly string[] = CASE_REGIONS,
+): Promise<void> {
+  for (const selector of regions) {
     await expect(page.locator(selector), selector).toHaveCount(1);
   }
 }

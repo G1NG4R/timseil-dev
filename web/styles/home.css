@@ -66,9 +66,18 @@
    "one component's measurement". It is now two, and both are the sheet's: the
    nav gap and the space above this line. The token keeps its name and its
    value; only the note beside it grows. */
+/* `.st` is built for a state chip and says `white-space: nowrap`, which is
+   right for one word and wrong for the sentence beside it: at 390 this line
+   could not break and pushed the whole page sideways. Found by the rig rather
+   than by reading — the mobile menu's close button ended up outside the visible
+   width, because a horizontally overflowing page widens the layout viewport and
+   the dialog with it. So the box wraps and the sentence wraps inside it; the
+   dot and the word are separate flex items and stay on one line either way. */
 .hero-avail {
   margin-block-start: var(--s-30);
   gap: var(--s-10);
+  flex-wrap: wrap;
+  white-space: normal;
 }
 
 /* The one declaration this dot needs. `.st-dot` gave it the size, the radius
@@ -82,4 +91,99 @@
   letter-spacing: var(--ls-head);
   color: var(--steel);
   text-transform: uppercase;
+}
+
+/* ── Terminal frame ────────────────────────────────────────────────────────
+   The placeholder, not the component: no input, no prompt, no boot lines.
+   ADR 0058 and the header of components/home/TerminalPanel.tsx carry the
+   argument; this file only draws it.
+
+   THE CORNER MARKS ARE THE SPEC RAIL'S, in accent rather than steel. Eight
+   gradients rather than eight pseudo-elements, which is how case.css draws
+   `.spec` — one box, no extra nodes, and nothing to keep in step when the
+   panel resizes.                                                            */
+
+.term {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  background-image:
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge));
+  background-repeat: no-repeat;
+  background-size: 14px 1px, 1px 14px, 14px 1px, 1px 14px,
+                   14px 1px, 1px 14px, 14px 1px, 1px 14px;
+  background-position: 0 0, 0 0, 100% 0, 100% 0,
+                       0 100%, 0 100%, 100% 100%, 100% 100%;
+}
+
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  padding: var(--s-12) var(--s-16);
+  border-block-end: 1px solid var(--line);
+}
+
+.term-lights { display: flex; gap: var(--s-6); }
+
+.term-light {
+  inline-size: var(--st-dot, 7px);
+  block-size: var(--st-dot, 7px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-dot);
+}
+
+.term-title {
+  flex: 1;
+  text-align: center;
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.term-soon {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--acc);
+}
+
+/* NO HEIGHT, AND THE SHEET'S 348px IS THE FIRST THING THIS PHASE MEASURED AND
+   THEN DROPPED. The argument for keeping it was `.st-wait`'s — "a wait holds
+   the height the answer will need, so nothing below it moves when the answer
+   arrives" — and it does not carry here. That rule is about a hole that fills
+   in two seconds. This frame stands for four phases, and 348px of it is empty
+   in a screenshot: a visitor does not see a box waiting for stage J, a visitor
+   sees a panel that failed to load. Built it the sheet's way first and looked
+   at it, which is the only way that difference shows up.
+
+   So the body is as tall as what it says. Recorded as a divergence: J1 gives
+   the terminal its height back when there is a session to scroll.
+
+   The scanline is the sheet's; it is a token because G2 derived one. */
+.term-body {
+  padding: var(--s-16);
+  background-image: repeating-linear-gradient(
+    0deg, var(--scanline) 0 1px, transparent 1px 3px
+  );
+}
+
+.term-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-10);
+}
+
+.term-key { color: var(--steel); }
+
+.term-why {
+  margin-block-start: var(--s-16);
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+  max-width: none;
 }

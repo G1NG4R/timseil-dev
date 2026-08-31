@@ -88,6 +88,27 @@
      a 15px plus 12 Abstaende a 4px = 243px.                                  */
 }
 
+/* ---- Homepage, H3 -------------------------------------------------------
+   The width-dependent half of styles/home.css, here for the reason the head of
+   this file gives: the four switches are meant to be readable in one place.
+
+   ONE RULE, AND IT USES A SWITCH THAT ALREADY EXISTS. Below 720 the terminal
+   frame loses its body and keeps its bar. That IS the mobile artboard, which
+   draws a single strip where the desktop draws a window — built from one
+   component instead of two, and without the strip's "TAP TO OPEN — DOCKS AS
+   DRAWER": nothing opens until stage J, and an instruction that cannot be
+   carried out is the dead control STATE.05 refuses. Recorded as a divergence
+   in the oracle and as a line in the backlog, owed by J2.
+
+   NO NEW SWITCH. The register on the Intermediate Widths sheet computes 1012
+   for this row and then says the homepage schalts at 1080 with every other
+   two-column component anyway — "Kein Bauteil bekommt seinen eigenen Wert."
+   720 is where the display step already falls, and a frame that keeps a 348px
+   body under a 34px headline is a box with more air than page.               */
+@media (max-width: 719px) {
+  .term-body { display: none }
+}
+
 /* ---- Touch haengt am Zeiger, nicht an der Breite ------------------------- */
 @media (pointer: coarse) {
   a, button, [role="button"], .chip, .tag { min-height: 44px; min-width: 44px }
