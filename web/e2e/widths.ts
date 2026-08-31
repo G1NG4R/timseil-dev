@@ -45,6 +45,9 @@ export const ROUTES = [
 /** The case study every width test drives. One system has a page today. */
 export const CASE_STUDY = "/work/timseil-dev";
 
+/** The homepage. H3 — the second route with a spec of its own. */
+export const HOME = "/";
+
 /**
  * Where the two-column rows collapse, from the Intermediate Widths sheet.
  *
