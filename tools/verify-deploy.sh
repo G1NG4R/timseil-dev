@@ -81,10 +81,35 @@
 # contract/openapi.yaml gives it 200, 304, 429 and 500, and every failure of this
 # service is an RFC 9457 document — so a 401, 403 or 451 there is by construction
 # not our answer. A 429 may well be ours, the rate limiter covers this route too,
-# but being throttled says nothing about which build is running either. Both end
-# the loop AT ONCE: the sixty seconds exist so that a container can come up, and
-# a refusal is not a container coming up. Asking again makes it worse, not
-# better, and the message arrives in seconds instead of two minutes.
+# but being throttled says nothing about which build is running either. Neither
+# may ever be reported as ok or as an outage; both end in exit 2.
+#
+# THEY DO NOT END THE LOOP, AND THAT SENTENCE USED TO SAY THE OPPOSITE. #271 made
+# a refusal exit at once, on the argument that "the sixty seconds exist so that a
+# container can come up, and a refusal is not a container coming up". On
+# 2026-08-31 that argument met its counter-example, measured in the deploy of
+# 499d284:
+#
+#   14:38:07.559  dokploy accepted the deploy
+#   14:38:07.949  /api/health answered 403      ← first sample, 0.39 s later
+#   14:38:36.474  the new process came up       ← 28 s after the gate gave up
+#
+# The site was healthy on the new sha the whole time after that, and the gate had
+# already reported that it could not tell. The refusal was not a verdict about
+# the build; it was something in front of the application answering DURING the
+# swap, and the budget is exactly the instrument for "not yet". Exiting on the
+# first sample turned a wait that would have succeeded into a hard failure.
+#
+# So a refusal is remembered and the loop keeps its budget. If the application
+# answers correctly before the budget ends, that is a pass — a refusal seen on
+# the way there was a moment, not a state. If the budget ends while the caller is
+# still being refused, THEN it is exit 2, with the same verdict as before.
+#
+# WHAT THIS COSTS is the sixty seconds #271 saved, in the case where the refusal
+# is permanent. That trade is the right way round: the defect #271 actually
+# repaired was the VERDICT — a refused verify used to roll a good build back and
+# print "the site is down" — and that repair is untouched here. The speed was the
+# bonus, and a bonus that invents failures is not one.
 #
 # 500 and a connection error stay in the waiting lane on purpose — those are the
 # application failing to answer, which is what the budget and the rollback were
@@ -108,7 +133,10 @@ previous_start=${VERIFY_PREVIOUS_START:-}
 # The budget, and the gap between attempts. 3 s gives twenty samples inside the
 # window, which is enough resolution to see in the log roughly when the new
 # build arrived without turning the log into the interesting part.
-BUDGET_SEC=60
+# Overridable ONLY so that selftest.sh can prove the refusal path inside a few
+# seconds instead of a minute. Nothing in the pipeline sets it; the default is
+# the budget, and the default is what production runs.
+BUDGET_SEC=${VERIFY_BUDGET_SEC:-60}
 INTERVAL_SEC=3
 
 for tool in curl jq; do
@@ -138,6 +166,10 @@ fi
 
 deadline=$(( $(date +%s) + BUDGET_SEC ))
 last='no answer yet'
+# The refusal seen on the most recent sample, or empty. Not "was one ever seen":
+# a refusal followed by a real answer is a moment the swap produced, and the
+# answer is what the caller came for.
+refused=''
 
 while :; do
   # --max-time bounded well under the interval: a hung connection must not eat
@@ -174,21 +206,18 @@ while :; do
       last="status $status, running sha $running"
     fi
   else
-    # The two refusals, and neither of them is evidence about the deploy. The
-    # header carries the argument; what matters here is that the loop STOPS.
+    # The refusals, and neither of them is evidence about the deploy. The header
+    # carries the argument; what matters here is that the loop KEEPS ITS BUDGET
+    # and remembers what it saw. `refused` is cleared by any sample that reaches
+    # the application, so the verdict below is about the state at the end rather
+    # than about the worst moment in the window.
     case $code in
-      401 | 403 | 451)
-        printf '  ! /api/health answered %s — that is not this application'"'"'s answer\n' "$code"
-        printf '    the public health route serves 200 or 304 and reports failures as RFC 9457\n'
-        printf '    documents, so a refusal came from something in front of it. Nothing here\n'
-        printf '    says whether sha %s is running.\n' "$sha"
-        exit 2
+      401 | 403 | 451 | 429)
+        [ -n "$refused" ] || printf '  ! /api/health answered %s — waiting it out\n' "$code"
+        refused=$code
         ;;
-      429)
-        printf '  ! /api/health answered 429 — this caller is being refused\n'
-        printf '    that may be this service'"'"'s own rate limiter or something in front of it.\n'
-        printf '    Either way it says nothing about whether sha %s is running.\n' "$sha"
-        exit 2
+      *)
+        refused=''
         ;;
     esac
     last="/api/health answered ${code:-nothing}"
@@ -197,6 +226,26 @@ while :; do
   [ "$(date +%s)" -lt "$deadline" ] || break
   sleep "$INTERVAL_SEC"
 done
+
+# Still refused when the budget ran out: the same verdict #271 wrote, reached by
+# waiting rather than by giving up. No rollback follows from this, and no row is
+# written — deploy-gate.sh reads exit 2 at both of its verify calls.
+if [ -n "$refused" ]; then
+  case $refused in
+    429)
+      printf '  ! /api/health answered 429 for the whole %ss — this caller is being refused\n' "$BUDGET_SEC"
+      printf '    that may be this service'"'"'s own rate limiter or something in front of it.\n'
+      printf '    Either way it says nothing about whether sha %s is running.\n' "$sha"
+      ;;
+    *)
+      printf '  ! /api/health answered %s for the whole %ss — that is not this application'"'"'s answer\n' "$refused" "$BUDGET_SEC"
+      printf '    the public health route serves 200 or 304 and reports failures as RFC 9457\n'
+      printf '    documents, so a refusal came from something in front of it. Nothing here\n'
+      printf '    says whether sha %s is running.\n' "$sha"
+      ;;
+  esac
+  exit 2
+fi
 
 printf '  ✗ %ss elapsed and the deploy did not come up\n' "$BUDGET_SEC"
 printf '    last seen: %s\n' "$last"
