@@ -522,7 +522,38 @@ html:has(dialog.menu[open]) { overflow: hidden; }
   text-decoration: none;
   word-break: break-all;
 }
-.foot-mail:hover { color: var(--acc); }
+/* THE ONE CTA, AND ITS FOUR STATES. The handoff inventory has listed
+   "rest · hover (glow) · focus · active" since the beginning and H3 is the
+   phase that owed them; until now the only one drawn was a colour change.
+
+   `text-shadow` AND NOT `box-shadow`. This is an `<a>` with `word-break:
+   break-all`, so a box shadow would draw a rectangle around a wrapped address
+   instead of a glow around the words. Tried it; it looks like a selection.
+
+   --glow's FIRST CONSUMER. tokens.css has derived it from --acc since G2 —
+   "0 0 28px color-mix(...45%...)" — precisely so that a glow follows all seven
+   palettes instead of being cyan in every one of them.
+
+   HOVER IS BEHIND `hover: hover`, the guard ui.css uses for the same reason:
+   on a touch screen there is no pointer and the sheet's rule is that touch
+   gets the rest state.
+
+   FOCUS IS NOT REPEATED HERE. globals.css gives every focusable element
+   `:focus-visible { outline: var(--focus-ring) }`, and a second ring on this
+   one element would be an exception nobody decided. */
+.foot-mail {
+  transition:
+    color var(--d-glow) var(--e-out),
+    text-shadow var(--d-glow) var(--e-out);
+}
+
+@media (hover: hover) {
+  .foot-mail:hover { color: var(--acc); text-shadow: var(--glow); }
+}
+
+/* Pressed: the brighter accent and no glow. The glow says "this is reachable",
+   and a control being pressed is past that. */
+.foot-mail:active { color: var(--acc-hi); text-shadow: none; }
 .foot-social { display: flex; flex-direction: column; gap: 9px; }
 .foot-social > * {
   display: flex;
