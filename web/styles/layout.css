@@ -28,12 +28,21 @@
   .col { width: calc(100% - 44px); }   /* Mobil-Entwürfe: Rand 22 */
 }
 
+/* `.cs-hero` STOOD HERE AND IS GONE, H3. It was the second of the two hero
+   geometries the handoff's layout.css carries — 420px with `align-items: end`,
+   the row Case Study 02 draws — against `.cs-spec`'s 400px and `start` from the
+   Template. H1 built the Template and left the question open; H2a and H2b did
+   not need it and said so; H3 built the last hero this site has, and it is
+   `.hero`. Three phases deferred a decision that has no candidate left, and a
+   rule nobody can reach is not a spare part, it is a claim that something
+   exists. docs/design/code/layout.css keeps its copy — that folder is
+   read-only and is the drawing, not the build.                               */
+
 /* ---- >= 1080: zweispaltig, wie gezeichnet -------------------------------- */
 /* minmax(0,1fr) statt 1fr: eine 1fr-Spalte hat implizit min-width:auto und
    wird von einem <pre>, das nicht umbricht, aufgesprengt.                    */
 @media (min-width: 1080px) {
   .hero     { display: grid; grid-template-columns: minmax(0,1fr) 480px; gap: 72px; align-items: center }
-  .cs-hero  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 80px; align-items: end }
   .cs-spec  { display: grid; grid-template-columns: minmax(0,1fr) 400px; gap: 80px; align-items: start }
   .cs-prob  { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 80px; align-items: start }
   .cs-arch  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 60px; align-items: start }
@@ -43,7 +52,7 @@
 
 /* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
 @media (max-width: 1079px) {
-  .hero, .cs-hero, .cs-spec, .cs-prob, .cs-arch {
+  .hero, .cs-spec, .cs-prob, .cs-arch {
     display: flex; flex-direction: column; gap: 44px;
   }
   .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
