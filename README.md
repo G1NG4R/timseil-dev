@@ -312,11 +312,12 @@ different things: `make check-stack` names the entry that stopped resolving, and
 without regenerating is a red check rather than a page showing last week's version
 ([ADR 0012](docs/adr/0012-stack-manifest-resolved-at-gen-time.md)).
 
-`make help` lists all targets. **Targets that belong to a later phase say so and
-exit instead of pretending they checked something** — `make e2e` arrives before
-stage H. That is deliberate: a quickstart that lies is the failure mode this
-project is built to avoid, so since stage E2 two checks keep this section
-honest. `make check-readme` asserts that every target named above exists, on
+`make help` lists all targets. **A target that cannot do its job says so and
+exits instead of pretending it checked something** — `make e2e` builds the app
+and drives a browser, so it names the command that installs the one it is
+missing rather than failing somewhere inside a runner. That is deliberate: a
+quickstart that lies is the failure mode this project is built to avoid, so
+since stage E2 two checks keep this section honest. `make check-readme` asserts that every target named above exists, on
 every pull request; `make quickstart` clones the repository and runs the block
 above for real on every push to `main` and once a week, then fetches every URL
 listed below it.
@@ -445,7 +446,7 @@ the same page.
 
 | English | Deutsch | Français | What |
 |---|---|---|---|
-| `/` | `/de` | `/fr` | home |
+| `/` | `/de` | `/fr` | home — the statement, the training log, the systems, the uplink and the log, in that order |
 | `/work` | `/de/work` | `/fr/work` | the systems |
 | `/work/<slug>` | `/de/work/<slug>` | `/fr/work/<slug>` | one system in full — a case study exists for a system that has been written about, and `/work/vat-check` is a 404 because none has |
 | `/blog` | `/de/blog` | `/fr/blog` | the log — the label says `LOG`, the route says `/blog` |
