@@ -581,3 +581,335 @@
   font: 400 var(--t-body-13)/1.55 var(--body);
   color: var(--steel);
 }
+
+/* ══ .04 OPERATIONS ═════════════════════════════════════════════════════════
+   H2b. Everything below is drawn by the Case Study Template's `04.04` artboard
+   and specified by the `Operation Grid` sheet, with the widths in layout.css as
+   always.                                                                     */
+
+/* ── The pipeline ──────────────────────────────────────────────────────────
+   Seven boxes with one hairline between each pair, which is the sheet's own
+   construction: `border-right` on every stage and none on the last, so the row
+   reads as one plate divided rather than as seven plates. `border-inline-end`
+   rather than `border-right` because the whole stylesheet is written in logical
+   properties and a right border would be on the wrong side in the first RTL
+   language this site takes.
+
+   The counter is the third one on this page, after the constraints and the
+   phases, and for the reason both of those give: `01` is the sheet's form, a
+   list marker cannot be zero-padded, and here the order IS the claim — a
+   pipeline drawn out of order is a different pipeline.                        */
+
+.pipeline {
+  list-style: none;
+  margin: 0 0 var(--s-34);
+  padding: 0;
+  counter-reset: stage;
+  display: grid;
+  border: 1px solid var(--line);
+  /* THE DIVIDER IS THE GAP, NOT A BORDER, and that is what a screenshot
+     changed. With `border-inline-end` on each box and none on the last, the row
+     is divided at 1440 and a single undivided column at 390 — seven stages
+     reading as one paragraph. The dividing line is where a wrap happens, and
+     only the grid knows that; a media query would have to restate the column
+     count in a third place. One pixel of gap over the container's own line
+     draws it in both directions, at every column count, with no rule to keep
+     in step. */
+  gap: 1px;
+  background: var(--line);
+}
+
+.pipe-stage {
+  counter-increment: stage;
+  padding: var(--s-16);
+  background: var(--bg);
+}
+
+.pipe-title::before {
+  content: counter(stage, decimal-leading-zero) " ";
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}
+
+.pipe-title {
+  display: block;
+  margin-block-end: var(--s-8);
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}
+
+.pipe-detail {
+  display: block;
+  font: 400 var(--t-body-13)/1.55 var(--body);
+  color: var(--steel);
+}
+
+/* ── The operation grid ────────────────────────────────────────────────────
+   THE CELL IS 15px AND THAT IS NOT A SPACING STEP. The 4px scale governs the
+   air between things; this is a component's own dimension, like `--bracket` at
+   11px. It is also not ours to round: layout.css already carries the
+   designer's arithmetic for it — "91 Tage sind 13 Spalten a 15px plus 12
+   Abstaende a 4px = 243px" — and that comment is the reason the grid needs no
+   rule at the 560 switch. Rounding the cell to 16 would leave a computed width
+   in that file describing a grid that no longer exists.
+
+   `grid-auto-flow: column` with seven fixed rows is what makes a flat list of
+   ninety-one days come out as thirteen weeks: the cells fill downwards and then
+   move right, which is the direction a week runs. lib/api/systems.ts counts the
+   columns for the caption; nothing here does.                                 */
+
+.ops-figure {
+  /* The sheet's own two dimensions, and the reason they are here rather than in
+     tokens.css: both belong to this one component. `--cell` is quoted in
+     layout.css's arithmetic, `--swatch` is the legend's 9px square. */
+  --cell: 15px;
+  --swatch: 9px;
+  margin: var(--s-34) 0 var(--s-56);
+}
+
+/* Caption and legend on one baseline, the sheet's `display:flex;
+   align-items:baseline` with the legend pushed to the far end. It wraps rather
+   than compressing: at 390 the caption alone is the width of the column, and a
+   legend squeezed onto the same line would set four two-word labels in a
+   column of one word each. */
+.ops-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-8) var(--s-14);
+  margin-block-end: var(--s-12);
+}
+
+.ops-label {
+  font: 500 var(--t-mono-9)/1.4 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+}
+
+.ops-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell));
+  grid-auto-flow: column;
+  grid-auto-columns: var(--cell);
+  gap: var(--s-4);
+  justify-content: start;
+}
+
+/* THE FOUR FILLS, AND ONLY ONE OF THEM IS A BORDER. `nodata` is drawn as an
+   outline with nothing inside because that is the shape of the statement: the
+   day is in the window and no measurement is. A grey fill would be a fifth
+   colour meaning "measured, and grey"; the dashed rule is the same choice
+   words.ts makes for its `dash` dot, one component larger.
+
+   The `ok` fill is mixed from `--acc` rather than taken from `--l3`, which is
+   the contribution graph's third level and happens to be the same value. The
+   two grids share a grammar and not a scale — "GLEICHE GRAMMATIK, ANDERE
+   MESSUNG" — and borrowing the token would tie an operation day to whatever a
+   commit level becomes.                                                       */
+
+.ops-cell {
+  position: relative;
+  background: color-mix(in srgb, var(--acc) 55%, transparent);
+}
+
+.ops-cell[data-state="nodata"] {
+  background: none;
+  border: 1px dashed var(--line-strong);
+}
+
+.ops-cell[data-state="degraded"] { background: var(--amber) }
+
+/* The one place on this page other than the hero line where `--alert` is used,
+   and the `Operation Grid` sheet is explicit that it belongs here: "Rot nur für
+   einen echten Ausfall". With no incidents in the window it never renders, so
+   the Template's "ein Alert-Moment pro Seite" holds today by arithmetic rather
+   than by rule — worth knowing when the first outage lands. */
+.ops-cell[data-state="outage"] { background: var(--alert) }
+
+/* THE HIT AREA IS A HULL, NOT A BIGGER CELL. The sheet asks for exactly this —
+   "Trefferfläche über eine unsichtbare Hülle, nicht über größere Zellen" — and
+   layout.css's `pointer: coarse` block already gives every `a` 44px in both
+   directions. Absolutely positioned and centred, that 44px grows around the
+   cell without touching the grid: the picture stays 15px and the target is a
+   finger. On a fine pointer the link is the cell.                             */
+.ops-notch {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  translate: -50% -50%;
+  display: block;
+  width: var(--cell);
+  height: var(--cell);
+}
+
+/* ── The legend ────────────────────────────────────────────────────────────
+   Four words with the swatch they describe. It reuses the cell's own selectors
+   by carrying the same `data-state`, so a fill can never be changed in one
+   place and explained in the other.                                           */
+
+.ops-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-6) var(--s-14);
+  font: 400 var(--t-mono-9)/1.4 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.ops-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+}
+
+/* Nine pixels, not fifteen: the legend is a key and not a sample of the grid,
+   and the sheet sizes it smaller for exactly that reason. */
+.ops-swatch {
+  flex: none;
+  width: var(--swatch);
+  height: var(--swatch);
+  background: color-mix(in srgb, var(--acc) 55%, transparent);
+}
+
+.ops-legend [data-state="nodata"] .ops-swatch {
+  background: none;
+  border: 1px dashed var(--line-strong);
+}
+
+.ops-legend [data-state="degraded"] .ops-swatch { background: var(--amber) }
+.ops-legend [data-state="outage"] .ops-swatch { background: var(--alert) }
+
+/* ── The incident log ──────────────────────────────────────────────────────
+   `:target` IS THE SELECTED STATE, and it is the whole of what the notch's
+   click does. The component inventory lists `selected` among the operation
+   grid's states and the sheet draws it as a panel opening beside the grid; here
+   the entry the notch points at is the thing that lights up, because that is
+   where the answer is. components/case/OpsGrid.tsx carries the argument for why
+   it is a fragment and not a piece of component state.                        */
+
+.incidents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-14);
+}
+
+.incident {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-inline-start: 1px solid var(--alert);
+  padding: var(--s-16) var(--s-20);
+  scroll-margin-block-start: var(--s-96);
+}
+
+/* THE SELECTED STATE HAS TO BE SEEN, and the first version of this rule was not.
+   It shifted the three non-alert borders from `--line-soft` to `--acc-line` —
+   10% steel to 35% cyan — and in a screenshot of two entries side by side the
+   targeted one was indistinguishable from the other. Found by looking, which is
+   the only way this one could have been found: every test that could assert it
+   would have asserted the rule rather than the difference.
+
+   The sheet's own selection mark is what replaces it: `outline: 1px solid
+   #00E5FF; outline-offset: 2px`, which is `--focus-ring` with an offset, on the
+   two artboards where the Operation Grid shows a chosen cell. The left rule
+   stays `--alert`, because an incident is still an incident when you open it. */
+.incident:target {
+  outline: var(--focus-ring);
+  outline-offset: var(--s-4);
+  background: var(--panel-active);
+}
+
+.incident-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-12);
+  margin: 0 0 var(--s-12);
+  font: 600 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.incident-id { color: var(--alert) }
+.incident-when,
+.incident-down { color: var(--dim) }
+
+.incident-body {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: var(--s-6) var(--s-16);
+}
+
+.incident-body dt {
+  font: 600 var(--t-mono-9)/1.6 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.incident-body dd {
+  margin: 0;
+  font: 400 var(--t-body-13)/1.55 var(--body);
+  color: var(--ink-2);
+}
+
+/* The post-mortem is named, not linked: H9 renders content/posts and until it
+   does an `<a>` here would answer 404. Invariant 5 — evidence never points into
+   nothing — in the one place on this page the database cannot enforce it. */
+.incident-post {
+  font-family: var(--mono);
+  color: var(--steel);
+}
+
+/* ══ .05 RESULT ═════════════════════════════════════════════════════════════
+   Two panels of equal weight and a card. The lists reuse `.cs-constraints`, so
+   the mark, the measure and the leading are H1's and not a second opinion.    */
+
+.cs-result {
+  display: grid;
+  gap: var(--s-26);
+}
+
+/* The card is a link, so everything that distinguishes it has to survive
+   `:focus-visible` and `:hover` without moving — the same rule the work rows
+   follow. Only the hairline and the arrow change. */
+.cs-next {
+  display: block;
+  margin-block-start: var(--s-26);
+  text-decoration: none;
+  transition: border-color var(--d-glow);
+}
+
+.cs-next:hover,
+.cs-next:focus-visible { border-color: var(--acc-line) }
+
+.cs-next-name {
+  display: block;
+  margin-block-start: var(--s-8);
+  font: 500 var(--t-disp-26)/1.15 var(--display);
+  color: var(--ink);
+}
+
+.cs-next-detail {
+  display: block;
+  margin-block-start: var(--s-8);
+  font: 400 var(--t-body-13)/1.55 var(--body);
+  color: var(--steel);
+}
+
+.cs-next-more {
+  display: block;
+  margin-block-start: var(--s-12);
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}

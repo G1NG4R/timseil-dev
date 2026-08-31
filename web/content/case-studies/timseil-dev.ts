@@ -267,6 +267,128 @@ export const timseilDev: CaseStudy = {
     ],
   },
 
+  // ── .04 OPERATIONS ────────────────────────────────────────────────────────
+  //
+  // Same rule as `.02`, one notch tighter: NO VERSION, NO PORT, NO CADENCE, and
+  // no statement about what is or is not yet hardened on this host. What the
+  // sheet's DATA SAFETY panel asks for — backup target, backup schedule, the
+  // date of the last restore drill, where the secrets live — is not written
+  // anywhere below, and types.ts carries the reason.
+  //
+  // The stages are the real jobs of .github/workflows/ci.yml, not the sheet's
+  // (`go test ./...`, `compose pull + up`). lib/content/pipeline.test.ts holds
+  // every `job` below against that file, so a renamed job is a red test rather
+  // than a page describing a pipeline that no longer exists.
+  operations: {
+    stages: [
+      {
+        title: "PUSH",
+        detail: "A squash merge onto main. Nothing deploys from a branch.",
+        // Not a job: it is the event the workflow answers.
+        job: null,
+      },
+      {
+        title: "CHECK",
+        detail: "Everything `make check` runs: vet, eslint, tsc, both unit suites, every rule.",
+        job: "check",
+      },
+      {
+        title: "DB",
+        detail: "Every migration up, then down, against a real Postgres.",
+        job: "db",
+      },
+      {
+        title: "E2E",
+        detail: "The browser suite at seven widths, against a production build.",
+        job: "e2e",
+      },
+      {
+        title: "PUBLISH",
+        detail: "Two images, tagged with the commit they were built from. Never `latest`.",
+        job: "publish",
+      },
+      {
+        title: "DEPLOY",
+        detail: "The server pulls the tag and swaps the container. It never builds.",
+        job: "deploy",
+      },
+      {
+        title: "VERIFY",
+        detail:
+          "A gate that asks the new container what it is running. It answers " +
+          "with the commit, or the previous tag goes back.",
+        // Inside `deploy`, not beside it: a verification that could be skipped
+        // as its own job is not a gate.
+        job: null,
+      },
+    ],
+
+    // Four lines that `.02` does not already say. The MONITOR lane there covers
+    // where uptime is measured from and why; none of this repeats it.
+    observability: [
+      {
+        key: "TRACES",
+        detail:
+          "One trace id joins the browser's request, this container and the " +
+          "API, so a slow page has a span and not a theory.",
+      },
+      {
+        key: "LOGS",
+        detail:
+          "Structured, one line per request, and neither an IP address nor the " +
+          "contents of a form is in a position to be written.",
+      },
+      {
+        key: "METRICS",
+        detail:
+          "Latency and error rate come from recording rules over the proxy's " +
+          "own metrics, not from parsing an access log that gets rotated.",
+      },
+      {
+        key: "RETENTION",
+        detail:
+          "Bounded by size and not only by age. Logs and metrics share a disk " +
+          "with the database, and a time limit alone does not protect it.",
+      },
+    ],
+  },
+
+  // ── .05 RESULT ────────────────────────────────────────────────────────────
+  result: {
+    holds: [
+      "Push to live is one pipeline with a health gate, and a rollback is one " +
+        "image tag — no build, no branch, no guessing which commit is running.",
+      "The API is the only source of a number on this site. Nothing shown here " +
+        "can drift from what was recorded, because there is no second place to " +
+        "drift to.",
+      "Every type crossing the boundary is generated from one OpenAPI document. " +
+        "A field the API renames is a build failure, not a blank cell somebody " +
+        "notices in a screenshot three weeks later.",
+    ],
+
+    // Each of these is something that happened, with a commit or an issue
+    // behind it. None of them is a statement about what is not yet hardened.
+    change: [
+      "Observability came after the pipeline instead of before it. Most of the " +
+        "window above is unmeasured for exactly that reason: the grid could not " +
+        "start filling until something was watching.",
+      "A deploy duration went on this page before anyone asked what it counts. " +
+        "It measures the whole pipeline run, waiting in a queue included, so an " +
+        "unrelated merge landing first makes this system look slower. The tile " +
+        "says pipeline now; the number still has to be redefined.",
+      "One value on this page is still typed by a person — the date the copy " +
+        "last changed. It was wrong for a day, which is the exact class of " +
+        "mistake the rest of the site is built to make impossible.",
+    ],
+
+    next: {
+      name: "VAT Check API",
+      detail:
+        "Specified, not written. It gets a page when it has a system to point " +
+        "at rather than a plan.",
+    },
+  },
+
   // Verbatim from Case Study 02, which draws the five tiles empty and says why
   // underneath. It is shown only while all five are empty — see components/case.
   emptyNote: {

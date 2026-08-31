@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 
+import { IncidentLog } from "@/components/case/IncidentLog";
+import { OpsGrid } from "@/components/case/OpsGrid";
 import { SpecRail } from "@/components/case/SpecRail";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
@@ -13,11 +15,55 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { MetricTile } from "@/components/ui/MetricTile";
 import { SectionHead } from "@/components/ui/SectionHead";
+import type { Incident, OpsCell } from "@/lib/api/systems";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
 import { en } from "@/lib/i18n/messages/en";
 import { retryLine } from "@/lib/state/retry";
 import { MARKS, STATE_KEYS, stateLabel, type StateKey } from "@/lib/state/words";
+
+/**
+ * A window with all four kinds of day in it, and an incident to reach.
+ *
+ * THE ONLY PLACE THREE OF THESE STATES EXIST. Production answers `incidents: []`
+ * and a window that is mostly `nodata`, so `degraded`, `outage` and the notch
+ * that opens one have never rendered outside a unit test. The registry has asked
+ * for all five since G7; this is where they are shown.
+ *
+ * AND THE FIFTH ONE IS NOT DRAWN, IT IS OPERATED. `selected` is `:target`, so
+ * the notch below is a working link into the incident under it — clicking it in
+ * this gallery produces the real state rather than a picture of it. That is the
+ * whole argument for the anchor, standing in the one place it can be tried.
+ */
+const GALLERY_DAYS: OpsCell[] = Array.from({ length: 91 }, (_, i): OpsCell => {
+  const date = new Date(Date.UTC(2026, 5, 2) + i * 86_400_000).toISOString().slice(0, 10);
+  if (i === 84) return { date, state: "outage", downSec: 2520, incidentId: "INC-001" };
+  if (i === 87) return { date, state: "degraded", downSec: 1080, incidentId: "INC-002" };
+  return { date, state: i < 78 ? "nodata" : "ok", downSec: 0, incidentId: null };
+});
+
+const GALLERY_INCIDENT: Incident[] = [
+  {
+    id: "INC-001",
+    startedAt: "2026-08-25T02:14:00Z",
+    durationSec: 2520,
+    cause: "postgres hit its memory limit while a migration held a lock",
+    fix: "limit raised, migration split into two steps, lock timeout set",
+    postSlug: "011-the-migration-that-locked-the-table",
+  },
+  // TWO, NOT ONE, AND A TEST NEEDED THE SECOND. `selected` is a difference
+  // rather than an appearance — the first `:target` rule was invisible beside an
+  // untargeted entry and a screenshot is what caught it — so the gallery has to
+  // show a targeted entry next to one that is not.
+  {
+    id: "INC-002",
+    startedAt: "2026-08-28T03:02:00Z",
+    durationSec: 1080,
+    cause: "certificate renewal raced a container restart and the proxy served a stale chain",
+    fix: "renewal moved into a fixed window, the restart waits for the store",
+    postSlug: "012-acme-json-and-the-three-am-restart",
+  },
+];
 
 // The gallery — every component this site has, in every state its sheet
 // documents. Build plan G7, ADR 0049.
@@ -397,6 +443,42 @@ export default function GalleryPage() {
         </p>
         <div className="gal-demo">
           <ThemeSwitch label={en.themeLabel} aria={en.themeAria} />
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">OperationGrid</h2>
+          <span className="gal-where">case study `.04` · 91 days · notches are links</span>
+        </div>
+        <p className="gal-states">
+          Four kinds of day and the fifth state that is not a kind of day:
+          clicking the red cell targets the incident under it, which is what
+          `selected` is. No JavaScript is involved — components/case/OpsGrid.tsx
+          says why not.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <OpsGrid
+            grid={{ cells: GALLERY_DAYS, weeks: 13 }}
+            label="Operation grid, gallery sample"
+            messages={en}
+          />
+          <IncidentLog incidents={GALLERY_INCIDENT} messages={en} />
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">IncidentLog</h2>
+          <span className="gal-where">case study `.04` · the empty state is the one that ships</span>
+        </div>
+        <p className="gal-states">
+          Production has answered `incidents: []` every day this page has
+          existed, so the panel below is what a visitor actually sees. It owes a
+          reason, and STATE.05 is why: an empty list without one is a dead end.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <IncidentLog incidents={[]} messages={en} />
         </div>
       </section>
 

@@ -18,9 +18,15 @@
 // start puts a real case behind the difference.
 
 import type { Messages } from "../i18n/messages/en.ts";
-import { NO_DATA } from "../state/words.ts";
+import { dayState } from "../state/derive.ts";
+import { NO_DATA, type DayState } from "../state/words.ts";
 
 import type { GetBody } from "./client.ts";
+// The generated declarations, by name and without an extension, as
+// lib/api/client.ts explains. `Incident` is taken rather than written: the
+// contract declares it, and CLAUDE.md's rule has no exception for a small
+// object.
+import type { components } from "./schema";
 import { finiteNumber, nonEmpty } from "./values.ts";
 
 /** One system in full, as the contract answers it. */
@@ -127,7 +133,16 @@ export function metricTiles(body: SystemDetail | null, messages: Messages): Metr
     },
     { label: "P95", value: p95Value(finiteNumber(metrics?.p95Ms)), unit: "MS" },
     { label: messages.csErrorRate, value: errorRateValue(finiteNumber(metrics?.errorRate)), unit: "%" },
-    { label: "DEPLOY · MEDIAN", value: deployMedianValue(raw.deploys), unit: "S" },
+    // PIPELINE, NOT DEPLOY, AND THAT IS ISSUE #242 ANSWERED HALFWAY. H1 shipped
+    // this tile as `DEPLOY · MEDIAN` and left the meaning open; H2b was the
+    // phase that had to decide, and the decision is that the field should
+    // measure the deploy — from Dokploy accepting it to the new process coming
+    // up. Until it does, the label says what the number IS: the whole pipeline
+    // run, queue time included. Renaming the tile is one line and honest today;
+    // redefining the field touches report-deploy.sh, deploy.sh, check-deployed's
+    // tolerance and the contract, which is a different blast radius and its own
+    // PR. ADR 0057.
+    { label: "PIPELINE · MEDIAN", value: deployMedianValue(raw.deploys), unit: "S" },
     { label: messages.csIncidents, value: incidentCountValue(raw.incidents) },
   ];
 }
@@ -256,4 +271,148 @@ export function sourceView(body: SystemDetail | null): SourceView {
   }
 
   return null;
+}
+
+// ── .04 OPERATIONS ──────────────────────────────────────────────────────────
+//
+// H2b. Everything below reads the three arrays the contract sends only for a
+// system in state `live`, and the header of this file applies to all of it: the
+// empty answer is the normal one. On 31.08.2026 production answered 91 days of
+// which 82 were `nodata`, and `incidents: []`.
+
+/** One incident of the window, as the contract declares it. */
+export type Incident = components["schemas"]["Incident"];
+
+/** Seven. The rows the grid is drawn with, and the only place the number is written. */
+const DAYS_PER_WEEK = 7;
+
+/** One cell of the operation grid. One cell is one day. */
+export interface OpsCell {
+  /** The date as the answer sent it. Never parsed, never reformatted here. */
+  readonly date: string;
+  readonly state: DayState;
+  /** Seconds of downtime, or nothing. `0` is a measurement and survives. */
+  readonly downSec: number | null;
+  /**
+   * The incident this cell is a notch for, or nothing.
+   *
+   * RESOLVED AGAINST THE INCIDENT LIST, never copied from the day. A day can
+   * carry an `incidentId` whose incident is not in `incidents[]` — the database
+   * forbids it with ON DELETE RESTRICT (invariant 5), but this function reads
+   * bytes and not the schema, and ADR 0035's overlapping start is the case where
+   * the two differ. A notch that kept an unresolvable id would render a link
+   * into nothing, which is the one thing invariant 5 exists to prevent.
+   */
+  readonly incidentId: string | null;
+}
+
+/** The grid, and the number of columns it fills. */
+export interface OpsGrid {
+  readonly cells: readonly OpsCell[];
+  /**
+   * Columns of seven. COUNTED, NEVER TYPED — invariant 7 wants 91 to stay
+   * countable, and a caption reading "13 WEEKS" beside a grid of twelve is
+   * exactly the drift the invariant is about. 91 ÷ 7 is 13; a window that is
+   * not a multiple of seven rounds up, because a part-week is still a column.
+   */
+  readonly weeks: number;
+}
+
+/**
+ * The incidents of the window, or nothing.
+ *
+ * `null` AND `[]` ARE DIFFERENT ANSWERS, the same way `incidentCountValue` above
+ * already treats them: an empty array is the api saying it looked and found
+ * none, and a missing array is a system that is not `live`, which was never
+ * asked.
+ *
+ * INVARIANT 4 IS ENFORCED HERE AND NOT ONLY IN THE SCHEMA. "Ohne Post-Mortem
+ * keine Kerbe": `cause`, `fix` and `postSlug` are NOT NULL in the table and
+ * required in the contract, and an entry arriving without one of them is
+ * therefore a body that is not the body the contract promised. It is dropped
+ * rather than rendered with a blank line, because a red mark with no explanation
+ * is the thing the invariant refuses — and dropping it here is what makes the
+ * notch above unresolvable, so the cell stays an outage and stops being a link.
+ */
+export function incidentList(body: SystemDetail | null): readonly Incident[] | null {
+  const raw = (body ?? {}) as unknown as Record<string, unknown>;
+  if (!Array.isArray(raw.incidents)) return null;
+
+  return raw.incidents.filter((entry): entry is Incident => {
+    const row = entry as Record<string, unknown>;
+    return (
+      nonEmpty(row.id) !== null &&
+      nonEmpty(row.cause) !== null &&
+      nonEmpty(row.fix) !== null &&
+      nonEmpty(row.postSlug) !== null
+    );
+  });
+}
+
+/**
+ * The 91 cells of the grid, in the order the answer sent them.
+ *
+ * THE ORDER IS THE API'S. `days` arrives oldest first and the grid is drawn
+ * column by column, seven rows deep, which is what `grid-auto-flow: column` in
+ * case.css does with a flat list. Sorting here would be this file deciding what
+ * a week looks like; the contract already says the array covers `window` days.
+ *
+ * A CELL WITH NO STATE IS UNMEASURED, NOT CLEAN. `dayState` refuses anything it
+ * does not know (invariant 1) and the fallback is `nodata` rather than `ok`
+ * (invariant 6). Those are two different rules pointing the same way, and the
+ * cell they produce is the dashed one.
+ */
+export function opsGrid(body: SystemDetail | null): OpsGrid {
+  const raw = (body ?? {}) as unknown as Record<string, unknown>;
+  const days = Array.isArray(raw.days) ? (raw.days as Record<string, unknown>[]) : [];
+
+  const known = new Set((incidentList(body) ?? []).map((incident) => incident.id));
+
+  const cells = days.map((day): OpsCell => {
+    const id = nonEmpty(day.incidentId);
+    return {
+      date: nonEmpty(day.d) ?? "",
+      state: dayState(day.state) ?? "nodata",
+      downSec: finiteNumber(day.downSec),
+      incidentId: id !== null && known.has(id) ? id : null,
+    };
+  });
+
+  return { cells, weeks: Math.ceil(cells.length / DAYS_PER_WEEK) };
+}
+
+/**
+ * The day an incident started, or nothing.
+ *
+ * THE DATE PART OF THE TIMESTAMP AND NOTHING ELSE. `startedAt` is an RFC 3339
+ * instant and the sheet writes `INC-001 · [DATE]`; the minute an outage began is
+ * in the log, not in a heading. It is sliced rather than parsed for the reason
+ * lib/clock.ts gives about `toISOString`: the string the api sent is already
+ * UTC, and running it through a `Date` would hand the answer to whatever zone
+ * the container happens to be in.
+ *
+ * A value that is not a timestamp is `null`, not a substring of a guess.
+ */
+export function incidentDate(startedAt: unknown): string | null {
+  const value = nonEmpty(startedAt);
+  if (value === null) return null;
+  return /^\d{4}-\d{2}-\d{2}T/.test(value) ? value.slice(0, 10) : null;
+}
+
+/**
+ * How long an outage lasted, in the unit that is worth reading.
+ *
+ * MINUTES ABOVE A MINUTE, SECONDS BELOW IT. `2520 s` is the number the api
+ * sends and `42 min` is the number a reader can hold; the grid's own tooltip in
+ * the sheet writes it exactly that way. Under a minute the rounding would turn a
+ * thirty-second blip into "1 min", which is a worse statement than the raw
+ * number, so the small case keeps its unit.
+ *
+ * `0` SURVIVES, as it does in every other reader here: a degraded day with no
+ * downtime is a measurement, and the check is against `null`.
+ */
+export function downtimeLabel(downSec: unknown): string | null {
+  const seconds = finiteNumber(downSec);
+  if (seconds === null || seconds < 0) return null;
+  return seconds < 60 ? `${String(seconds)} s` : `${String(Math.round(seconds / 60))} min`;
 }

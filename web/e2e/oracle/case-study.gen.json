@@ -5,6 +5,7 @@
     "spacing-scale": "The sheets draw spacing off the 4px grid (22, 24, 13, 38, 100px). Foundations fixes the scale and G1 made it binding, so case.css reads the nearest step. The largest single difference is 4px.",
     "adr-0052": "Decided in ADR 0052 with its sources: Case Study 02, the Intermediate Widths register and Consistency Check K-29 all say five tiles; the template draws three.",
     "one-copy-set": "The sheet carries two sets of words for the architecture section — full sentences at 1440 and abbreviations at 390 (\"Same origin, no CDN\" against \"Same origin, no CDN — nothing third-party in the path\"), and it drops the POST-MORTEM lane on the phone. content/case-studies carries ONE set, because a second exists only to be forgotten when the first is corrected. The full sentences then need a column each below 560, where the sheet still draws two.",
+    "divider-is-the-gap": "The sheet divides the pipeline with a border on each box — vertical at 1440 (line 244), horizontal at 390 (line 511). Two rules for one picture, and which one applies depends on where the row wraps. case.css draws both with a 1px gap over the container line instead, so the divider follows the column count with no rule to keep in step. Built the sheet's way first, and a screenshot at 390 showed seven stages reading as one paragraph.",
     "path-stacks": "At 390 the sheet keeps the request path horizontal inside a swipe container and captions it \"REQUEST PATH — SWIPE →\": five 146px boxes and four arrows, 898px of content behind 346px of screen. It stacks here instead, at the 1080 switch every other two-column row already uses — layout.css states the rule (\"Kein Bauteil bekommt seinen eigenen Wert\"), and a swipe hides four fifths of the argument on the one device where the reader cannot see there is more. Recorded as a design correction rather than settled here."
   },
   "entries": [
@@ -615,6 +616,185 @@
         "prop": "row-gap"
       },
       "expect": "14px"
+    },
+    {
+      "id": "ops-grid-flow",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 288,
+      "width": 1440,
+      "says": "grid-auto-flow: column",
+      "reading": "the operation grid fills downwards and then rightwards, so a column is a week",
+      "measure": {
+        "kind": "computed",
+        "selector": ".ops-grid",
+        "prop": "grid-auto-flow"
+      },
+      "expect": "column"
+    },
+    {
+      "id": "ops-grid-rows",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 288,
+      "width": 1440,
+      "says": "grid-template-rows: repeat(7,15px)",
+      "reading": "seven rows of 15px — the seven that make 91 come out even (invariant 7)",
+      "measure": {
+        "kind": "computed",
+        "selector": ".ops-grid",
+        "prop": "grid-template-rows"
+      },
+      "expect": "15px 15px 15px 15px 15px 15px 15px"
+    },
+    {
+      "id": "ops-grid-columns",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 288,
+      "width": 1440,
+      "says": "grid-auto-columns: 15px",
+      "reading": "and every column it adds is 15px wide",
+      "measure": {
+        "kind": "computed",
+        "selector": ".ops-grid",
+        "prop": "grid-auto-columns"
+      },
+      "expect": "15px"
+    },
+    {
+      "id": "ops-grid-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 288,
+      "width": 1440,
+      "says": "gap: 4px",
+      "reading": "4px between cells — with the two above, the 243px layout.css computes for the whole grid",
+      "measure": {
+        "kind": "computed",
+        "selector": ".ops-grid",
+        "prop": "row-gap"
+      },
+      "expect": "4px"
+    },
+    {
+      "id": "ops-block-margin",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 279,
+      "width": 1440,
+      "says": "margin: 0 0 56px",
+      "reading": "the grid block is followed by 56px of air before whatever comes next",
+      "measure": {
+        "kind": "computed",
+        "selector": ".ops-figure",
+        "prop": "margin-bottom"
+      },
+      "expect": "56px"
+    },
+    {
+      "id": "ops-caption-size",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 281,
+      "width": 1440,
+      "says": "font: 500 9.5px 'JetBrains Mono',monospace",
+      "reading": "the caption over the grid is the smallest mono step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".ops-label",
+        "prop": "font-size"
+      },
+      "expect": "9px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "9.5px"
+      }
+    },
+    {
+      "id": "ops-legend-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 283,
+      "width": 1440,
+      "says": "gap: 7px",
+      "reading": "the legend sets its swatch 7px from its word",
+      "measure": {
+        "kind": "computed",
+        "selector": ".ops-legend li",
+        "prop": "column-gap"
+      },
+      "expect": "6px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "7px"
+      }
+    },
+    {
+      "id": "result-columns",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 296,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 1fr",
+      "reading": "what held and what would change get equal width — the second is not a footnote",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".cs-result"
+      },
+      "expect": 2
+    },
+    {
+      "id": "result-gap",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 296,
+      "width": 1440,
+      "says": "gap: 80px",
+      "reading": "with 80px between them, the same air as the other two-column rows on this page",
+      "measure": {
+        "kind": "computed",
+        "selector": ".cs-result",
+        "prop": "column-gap"
+      },
+      "expect": "72px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "80px"
+      }
+    },
+    {
+      "id": "pipeline-one-column",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 511,
+      "width": 390,
+      "says": "border-bottom: 1px solid rgba(139,152,166,.12)",
+      "reading": "on the phone the stages are stacked and divided horizontally — a bottom rule between boxes is only a divider if they are one above the other",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".pipeline"
+      },
+      "expect": 1
+    },
+    {
+      "id": "pipeline-divider",
+      "sheet": "docs/design/Case Study Template - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 511,
+      "width": 390,
+      "says": "padding: 13px 16px",
+      "reading": "and each stacked stage keeps its own padding rather than collapsing to a list row",
+      "measure": {
+        "kind": "computed",
+        "selector": ".pipe-stage",
+        "prop": "padding-top"
+      },
+      "expect": "16px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "13px"
+      }
     }
   ]
 }

@@ -102,6 +102,47 @@ export const en = {
   csWhyThisOne: "WHY THIS ONE",
   csPhases: "PHASES",
 
+  // H2b · the last two sections, the grid legend, and the words a notch opens.
+  //
+  // THE LEGEND IS FOUR WORDS AND ONLY TWO ARE NEW. `DEGRADED` is already a state
+  // word above and means the same thing about a day that it means about a
+  // service, so it is read from there rather than written twice. `— NO DATA` is
+  // the placeholder token and never a key. That leaves `NO INCIDENT`, which is
+  // the sheet's own word for a day where nothing happened — the state vocabulary
+  // has no word for it, and lib/state/derive.ts spends a paragraph on why —
+  // and `OUTAGE`, which is the day, not the system: OFFLINE is what a system is,
+  // an outage is something that happened to it.
+  //
+  // NO KEY FOR THE PIPELINE META. The sheet captions the row "STAGE TIMINGS ARE
+  // PLACEHOLDERS" and there are no stage timings to place — same omission as
+  // H2a's two, by the same rule.
+  //
+  // `DAYS` AND `WEEKS` ARE LOWERCASE HERE ON PURPOSE. They stand next to a
+  // number the page counted, and the stylesheet uppercases the line; a string
+  // that arrived shouting would be a second opinion about the same rule.
+  csOperations: "OPERATIONS",
+  csResult: "RESULT",
+  csPushToLive: "PUSH TO LIVE",
+  csObservability: "OBSERVABILITY",
+  csOperation: "OPERATION",
+  csDays: "days",
+  csWeeks: "weeks",
+  csOneCellOneDay: "ONE CELL IS ONE DAY",
+  csNoIncident: "NO INCIDENT",
+  csOutage: "OUTAGE",
+  csIncidentLog: "INCIDENT LOG",
+  csCause: "CAUSE",
+  csFix: "FIX",
+  csPostMortem: "POST-MORTEM",
+  csNoIncidentsHead: "NO INCIDENTS IN THIS WINDOW",
+  csNoIncidentsWhy:
+    "Not a clean record — a short one. The grid above says how much of the " +
+    "window was measured, and an incident here would carry its cause, its fix " +
+    "and the entry that explains it.",
+  csWhatHolds: "WHAT HOLDS",
+  csWhatIdChange: "WHAT I WOULD CHANGE",
+  csNextSystem: "NEXT SYSTEM",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

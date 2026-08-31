@@ -12,7 +12,120 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 31.08.2026, eine Stichprobe, aus der niemand etwas schließen kann
+## Wo wir stehen — 31.08.2026, H2b gebaut: die Seite ist vollständig, die Abnahme fehlt
+
+**Branch `phase/h2b-case-study-operations`, sechs Commits, nicht gepusht.**
+`/work/timseil-dev` trägt `.01` bis `.05`. Der Schnitt aus ADR 0055 ist zu, das
+Abbruchkriterium unten hat nicht gegriffen.
+
+### Lokal gemessen, gegen Produktion noch nicht
+
+```
+make check   grün
+npm test     347   (von 327)
+e2e          479 grün, 0 rot, zehn Projekte
+Orakel       50 Messungen, 13 abweichend   (von 39 / 9)
+Bundle       143 581 B — Byte für Byte wie H2a
+```
+
+Am gebauten Bild an allen sieben Breiten: **kein waagerechter Überlauf**,
+Rhythmus **96/96/96/96** und keine Lücke null, 91 Zellen in 13 Spalten zu 15 px.
+Geklickt: eine Kerbe landet auf `#inc-001`, genau ein `:target`.
+
+**Was noch aussteht:** die Abnahme gegen Produktion als eigener PR — Zeuge vor
+dem Tausch, `check-deployed`, Seite geklickt statt gelesen, `QUICKSTART_ORIGIN`
+auf den Branch, Uhrzeit mit `date -u`.
+
+### Der stärkste Fund: zwei Tests waren grün, weil nichts da war
+
+Das Rig fährt einen Produktions-Build **ohne API** — genau die Bedingung, unter
+der die Leerzustände geprüft werden. Also ist das Raster leer, und zwei
+Zusicherungen über Zellen liefen null Mal und waren grün.
+
+**Die dritte fiel durch, und der Unterschied war eine Zeile.** Sie begann mit
+`expect(shape.nodata).not.toBeNull()` — nicht aus Umsicht, sondern weil der Wert
+nullable zurückkam und der Typprüfer eine Wache wollte. Das Experiment hat sich
+selbst gefahren: dieselbe Datei, dieselbe leere Seite, innerhalb einer Stunde
+geschrieben, und genau die eine mit der Anwesenheitsprüfung wurde rot.
+
+Der Ort, an dem diese Zustände existieren, war schon da: die **Galerie** aus G7
+zeichnet jedes Bauteil ohne API. Alle drei Tests sind dorthin umgezogen, das Rig
+öffnet die Route mit `DEV_GALLERY=1`. Post 010, ADR 0057 §4.
+
+### Am Bild gefunden, nicht am Quelltext — zwei Stück
+
+- **Der `selected`-Zustand war unsichtbar.** Die erste `:target`-Regel verschob
+  drei Ränder von 10 % Stahl auf 35 % Cyan. Eine echte Änderung im Stylesheet,
+  die jeder Test *der Regel* gefunden hätte — nebeneinander gestellt sah man
+  keinen Unterschied. Jetzt ein `outline`, wie das Blatt selbst auswählt, und der
+  Test vergleicht **zwei Einträge** statt eine Deklaration zu prüfen.
+- **Die Pipeline war bei 390 ein Absatz.** `border-inline-end` je Kasten teilt
+  die Zeile bei 1440 und gar nichts bei einer Spalte. Jetzt 1 px `gap` über der
+  Containerlinie — teilt in beide Richtungen, bei jeder Spaltenzahl. Das
+  Mobil-Artboard bestätigt die Absicht mit `border-bottom` je Stufe.
+
+### Eine Zahl in meinem eigenen Text war falsch
+
+Der erste Entwurf von Post und ADR sagte **drei** hohle Tests. Der Lauf sagt
+zwei: `a day without a measurement is never a filled cell` stand unter den
+Fehlschlägen, nicht unter den grünen. Gefunden beim Nachzählen vor dem
+Veröffentlichen, korrigiert in Post, ADR und beiden Commit-Nachrichten — nichts
+war gepusht.
+
+Das ist dieselbe Fehlerklasse, über die der Post handelt, eine Ebene höher: eine
+Zahl, die plausibel war und die niemand nachgezählt hatte.
+
+### Zwei Regeln, die H2b bestätigt hat
+
+- **`.deploy-strip` bekommt weiterhin keinen Konsumenten.** Dritte Anwendung der
+  H1a-Regel, diesmal mit dem Ergebnis, dass die Regel *keinem* Abschnitt
+  zugewiesen wird: das Blatt zeichnet den Balken unter SYS.03 der Startseite,
+  nicht in `.04` der Vorlage. Gehört zu H5.
+- **`.decision-table` und `.cs-hero` bleiben ohne Konsumenten.** Unverändert
+  offen aus H1a/H2a.
+
+---
+
+## Vorher — 31.08.2026, H2b begonnen: der Schnittpunkt, bevor er gebraucht wird
+
+**Branch `phase/h2b-case-study-operations`.** `.04 OPERATIONS` und `.05 RESULT`,
+wie ADR 0055 die Phase geschnitten hat.
+
+### Das Abbruchkriterium steht hier, weil es hinterher eine Rechtfertigung wäre
+
+Die Phase fasst **22 Code-Dateien plus 4 Dokumente** an — gezählt, nicht
+geschätzt. Das liegt über der Richtgröße von ~15 aus dem Phasenzuschnitt, und
+der Bauplan beantwortet den Widerspruch selbst: „Der Maßstab ist **Kopplung**,
+nicht Anzahl." `.05` fasst fünf derselben Dateien an wie `.04` — `types.ts`,
+`timseil-dev.ts`, `en.ts`, `page.tsx`, `case.css` —, und „beide Phasen fassen
+dieselben Dateien an" ist die linke Spalte derselben Tabelle: **zusammenlegen**.
+
+Bleibt der Auslöser, den der Bauplan wirklich nennt: „Läuft Claude Code mitten
+in einer Phase in die Kompaktierung, war sie zu groß — teil sie und notier es."
+
+> **Abbruch, wenn eins davon eintritt:**
+> 1. Kontext-Kompaktierung mitten in der Phase, **oder**
+> 2. ein Bauteil stellt sich als `'use client'`-pflichtig heraus.
+>
+> Dann geht `.04` allein als PR raus, `.05` wird **H2c**. Der Schnitt liegt
+> wieder dort, wo die Seite nach dem Merge vollständig ist: `01 02 03 04` ist
+> eine Seite, `01 02 03 05` wäre eine mit einem Loch — dasselbe Argument, mit
+> dem ADR 0055 zwischen `.03` und `.04` geschnitten hat.
+
+Warum das vorher dasteht und nicht nachher: ein Abbruchkriterium, das erst
+formuliert wird, wenn der Abbruch schon passiert ist, ist keine Entscheidung
+mehr, sondern eine Beschreibung. Dieselbe Klasse wie die Sondenkadenz und der
+`-race`-Fund, die drei Tage als Issue dastanden und trotzdem als „neu" gemeldet
+wurden — der Notizblock hilft nur, wenn er **vor** dem Bedarf beschrieben ist.
+
+### Was diese Phase nicht anfasst
+
+Kein Go, kein SQL, keine Migration: `/api/systems/{slug}` liefert `window`,
+`days[]`, `incidents[]` und `deploys[]` seit Stufe C. H2b ist Frontend.
+
+---
+
+## Vorher — 31.08.2026, eine Stichprobe, aus der niemand etwas schließen kann
 
 **Branch `fix/a-refusal-during-the-swap-is-not-a-verdict`.** Der `deploy`-Job von
 `499d284` (#281) ist rot, und die Seite war zu keiner Sekunde unten.
@@ -301,6 +414,23 @@ Mal gelernt wird.
 
 ## Gefunden
 
+- **Rot steht ab dem ersten Ausfall zweimal auf der Fallstudie.** Die Vorlage
+  notiert „Ein Alert-Moment: die rote Zeile im Hero", das `Operation Grid`-Blatt
+  verlangt „Rot nur für einen echten Ausfall". Mit `incidents: []` gilt die erste
+  Regel heute **durch Arithmetik statt durch Konstruktion**. Beim ersten Vorfall
+  stehen zwei rote Stellen auf der Seite. Entwurfsfrage, keine Überraschung —
+  Issue-Kandidat für M2. *(31.08.2026, H2b)*
+- **Zwei Orakel-Abweichungen sind acht Pixel groß.** `spacing-scale` deckte
+  bisher höchstens vier ab; der Abstand zwischen den Ergebnisspalten ist 72 statt
+  80. Der Grund steht, aber die Klasse dehnt sich, und irgendwann ist sie eine
+  Sammelentschuldigung statt einer Entscheidung. *(31.08.2026, H2b)*
+- **Der Post-Mortem-Eintrag ist ein Name, kein Link.** `postSlug` zeigt auf
+  `content/posts`, und H9 baut erst den Renderer. Ein `<a>` heute wäre ein 404 —
+  Invariante 5. Bei H9 mitziehen, sonst bleibt es stehen. *(31.08.2026, H2b)*
+- **Die Galerie ist jetzt Teil des Testlaufs.** `DEV_GALLERY=1` in
+  `playwright.config.ts`. Keine Sicherheitsentscheidung — `visibility.ts` sagt
+  selbst, dass die Fahne keine Grenze ist —, aber eine Route mehr, die ein Lauf
+  offen hält. Benannt statt bemerkt. *(31.08.2026, H2b)*
 - **Der Sitemap nennt ein Änderungsdatum, das nicht stimmt.**
   `content/case-studies/timseil-dev.ts` trägt `updatedAt: "2026-08-30"`, und H2a
   hat der Seite am **31.08.** zwei ganze Abschnitte hinzugefügt, ohne das Datum
@@ -311,14 +441,16 @@ Mal gelernt wird.
   (`app/sitemap.ts:59`); `lib/seo/pages.test.ts:73` prüft nur das Format, nicht
   den Wert, und hätte es deshalb nie gemerkt. Korrektur als eigener PR.
   *(31.08.2026, H2a-Abnahme)*
-- **Das Datum wird von Hand gepflegt, und das ist die eigentliche Frage.** Jede
-  Phase, die Copy dieser Seite anfasst, muss daran denken — dieselbe Klasse
-  Fehler, die Kapitel 12.3 für Versionsnummern mit „nobody types a value into a
-  page again" abgeräumt hat. Der Kopfkommentar der Datei begründet, warum dort
-  kein `new Date()` steht (es würde bei jedem Dependency-Bump wandern); die
-  andere Hälfte — woher das Datum dann kommt, wenn nicht aus dem Kopf des
-  Autors — steht nirgends. Issue-Kandidat, nicht in dieser Runde gelöst.
-  *(31.08.2026, H2a-Abnahme)*
+- **#284 — das Datum wird von Hand gepflegt, und das ist die eigentliche
+  Frage.** Jede Phase, die Copy dieser Seite anfasst, muss daran denken —
+  dieselbe Klasse Fehler, die Kapitel 12.3 für Versionsnummern mit „nobody
+  types a value into a page again" abgeräumt hat. Der Kopfkommentar der Datei
+  begründet, warum dort kein `new Date()` steht (es würde bei jedem
+  Dependency-Bump wandern); die andere Hälfte — woher das Datum dann kommt, wenn
+  nicht aus dem Kopf des Autors — steht nirgends. Als **#284** angelegt, mit
+  dem Abnahmekriterium: ein PR, der die Prosa einer Fallstudie ändert und
+  `updatedAt` stehen lässt, wird von CI abgewiesen — vorgeführt, nicht
+  behauptet. *(31.08.2026, H2a-Abnahme)*
 
 - **Zwei Blattkorrekturen stehen in der UI-Copy, nicht in einer Annotation.**
   `Case Study 02` liefert „No metrics stack for one host and three services." und
@@ -376,11 +508,12 @@ Mal gelernt wird.
   **kein** Fehler — das Rig fährt einen lokalen Produktions-Build ohne API, und
   die NO-DATA-Fassung ist der Fall, den es messen soll. Es ist nur der Zustand,
   der jedes Tauschfenster auf volle zwei Sekunden aufzieht.
-  **Repariert, liegt bereit:** `fix/settled-waits-on-every-boundary`, `e42077f`
+  **Repariert:** `fix/settled-waits-on-every-boundary`, `e42077f`
   — `STREAMED_REGIONS` als eine Definition, `settled()` zählt alle vier. Lokal
   gegen die ursächliche Bedingung gemessen (keine API auf 8080):
   `--repeat-each=3` über alle sieben Breiten, 252 grün, volle Suite 259.
-  Nicht gepusht. *(31.08.2026, Dependabot-Welle)*
+  Gepusht und als **#279** gemergt (`95336bb` auf `main`); GitHub hat den
+  Branch danach gelöscht. *(31.08.2026, Dependabot-Welle)*
 - **Der Deploy-Gate prüft die Anwendung, nicht die Beobachtungsdienste.**
   `tools/verify-deploy.sh` kennt fünf Bedingungen, und alle fünf hängen an
   `/api/health` und `/`. `loki`, `alloy` und `prometheus` stehen in keiner — ein

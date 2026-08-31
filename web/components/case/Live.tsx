@@ -1,4 +1,4 @@
-// The four regions of a case study that wait for the api, and the only place
+// The five regions of a case study that wait for the api, and the only place
 // this page calls it.
 //
 // WHY THEY ARE SEPARATE FROM THE COMPONENTS THEY RENDER. Each one is an async
@@ -9,24 +9,33 @@
 // into two different layouts. Keeping the fetch out of the presentational
 // components is what lets the gallery render them without an api at all.
 //
-// WHY FOUR BOUNDARIES AND NOT ONE. Under `cacheComponents` everything outside a
-// Suspense boundary has to be prerenderable, and `systemNow` calls
-// `connection()` — it is runtime data by construction. One boundary around the
-// whole page would put the headline, the lead and the problem section behind
-// the api too, and those are in the repository. Four boundaries keep the static
-// shell static and leave four small holes for the measured words.
+// FIVE SINCE H2b, AND THE FIFTH IS ONE BOUNDARY AROUND TWO COMPONENTS. The grid
+// and the incident log read the same two arrays of the same answer and stand
+// against each other — a notch in the grid is a link into the log — so a reader
+// who saw one settle before the other would see a link to something not yet
+// there. They wait together, in one region, behind one fallback.
 //
-// FOUR CALLS ARE ONE REQUEST. `systemCached` is a `use cache` function keyed by
+// WHY SEVERAL BOUNDARIES AND NOT ONE. Under `cacheComponents` everything outside
+// a Suspense boundary has to be prerenderable, and `systemNow` calls
+// `connection()` — it is runtime data by construction. One boundary around the
+// whole page would put the headline, the lead, the problem section and all of
+// `.02`, `.03` and `.05` behind the api too, and every one of those is in the
+// repository. Five boundaries keep the static shell static and leave five small
+// holes for the measured words.
+//
+// FIVE CALLS ARE ONE REQUEST. `systemCached` is a `use cache` function keyed by
 // the slug, so the later callers read the fill the first one made. The footer
 // and the mobile menu have shared `footerHealthNow` the same way since G4, and
-// /about measured zero upstream calls over ten loads.
+// /about measured zero upstream calls over ten loads. H2b adds a fifth caller
+// and no fifth request; the acceptance measures it rather than assuming it.
 
 import { CaseCrumb } from "@/components/case/CaseCrumb";
 import { CaseEyebrow } from "@/components/case/CaseEyebrow";
 import { MetricRow } from "@/components/case/MetricRow";
+import { OpsSection } from "@/components/case/OpsSection";
 import { SpecRail } from "@/components/case/SpecRail";
 import { systemNow } from "@/lib/api/readers";
-import { metricTiles, sourceView, stackLine } from "@/lib/api/systems";
+import { incidentList, metricTiles, opsGrid, sourceView, stackLine } from "@/lib/api/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
 import { systemStateWord } from "@/lib/state/derive";
 
@@ -107,4 +116,31 @@ export async function MetricRowLive({
   // nothing under them, so the row that says "no answer" and the row that says
   // "nothing measured yet" are the same markup and cannot drift.
   return <MetricRow tiles={metricTiles(system, messages)} note={note} />;
+}
+
+/**
+ * `.04`'s two measured parts, waiting together.
+ *
+ * THE FALLBACK IS THE SAME COMPONENT WITH NOTHING IN IT — literally the same
+ * one: `OpsSection` is rendered here with an answer and in page.tsx with
+ * `EMPTY_GRID`, which is the seam ADR 0044 describes. An empty grid and an empty
+ * log are exactly what a system with no history renders, so "no answer yet" and
+ * "no answer at all" cannot drift into two layouts. There is no spinner here for
+ * the same reason there is none anywhere else on this page.
+ *
+ * `null` GOES STRAIGHT IN. `opsGrid(null)` is no cells and `incidentList(null)`
+ * is `null`, and both components already draw that — the api being down and the
+ * system never having run produce one picture, and it is the honest one.
+ */
+export async function OpsLive({ slug, messages, gridLabel }: Common & { gridLabel: string }) {
+  const system = await systemNow(slug);
+
+  return (
+    <OpsSection
+      grid={opsGrid(system)}
+      incidents={incidentList(system)}
+      label={gridLabel}
+      messages={messages}
+    />
+  );
 }

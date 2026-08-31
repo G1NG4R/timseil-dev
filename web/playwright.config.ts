@@ -104,5 +104,25 @@ export default defineConfig({
     timeout: 300_000,
     stdout: "ignore",
     stderr: "pipe",
+    // H2b OPENS THE GALLERY TO THE RIG, and the reason is a hole this phase
+    // walked into. The operation grid has four kinds of cell and a notch that
+    // opens an incident; production has answered `incidents: []` and a window
+    // that is mostly `nodata` every day the page has existed, and this rig runs
+    // a production build with no api at all. So every rule about what a
+    // measured cell looks like was unassertable on the page that carries it —
+    // the first draft of `case-study.ops.spec.ts` had four tests that passed by
+    // finding nothing to check.
+    //
+    // The gallery is where those states exist, because G7 built it to render
+    // every component in every state without an api. `gallery.ops.spec.ts` is
+    // the first spec to use it, and it is what makes "the notch works" a test
+    // rather than a screenshot.
+    //
+    // NOT A SECURITY DECISION and lib/gallery/visibility.ts says so in its own
+    // words: the flag is off unless someone sets it, compose.yaml never does,
+    // and anyone who can set an environment variable on the host already owns
+    // the container. This sets it for a server that exists for the length of a
+    // test run.
+    env: { DEV_GALLERY: "1" },
   },
 });

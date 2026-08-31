@@ -11,7 +11,21 @@
 // branch therefore lives in this directory and every component above it is
 // markup plus one call (ADR 0044, and ADR 0048 for this phase).
 
+// The generated declarations, by name and without an extension, as
+// lib/api/client.ts explains — `import type` is erased before Node sees a
+// specifier, so nothing enters this file at runtime.
+import type { components } from "../api/schema";
 import type { Messages } from "../i18n/messages/en.ts";
+
+/**
+ * One day of the operation grid, as the contract enumerates it.
+ *
+ * TAKEN, NOT WRITTEN: CLAUDE.md's rule about the contract has no exception for a
+ * four-word union. It lives beside the other vocabularies rather than in
+ * derive.ts, so that this file owns every set of words and that one owns every
+ * judgement about which of them a value is.
+ */
+export type DayState = components["schemas"]["DayState"];
 
 /**
  * The seven words, with exactly one meaning each.
@@ -224,4 +238,33 @@ export function isStateKey(value: unknown): value is StateKey {
 export function stateLabel(key: StateKey, messages: Messages): string {
   const mark = MARKS[key];
   return mark.messageKey === null ? mark.label : messages[mark.messageKey];
+}
+
+/**
+ * The four words of the operation grid's legend.
+ *
+ * A SECOND TABLE, AND IT HAS TO BE. `MARKS` above is the state a *system* is in;
+ * these are the four things a *day* can be, and only one word appears in both.
+ * `degraded` means the same thing at both scales and is read from `MARKS` rather
+ * than written again. The other three do not fit:
+ *
+ *   ok       the vocabulary has no word for "nothing happened here". LIVE is
+ *            what a system is; a Tuesday is not live, and the sheet calls this
+ *            NO INCIDENT.
+ *   outage   OFFLINE is a state a system is IN. An outage is something that
+ *            HAPPENED to it, and the day it happened on is over.
+ *   nodata   the same absence as everywhere else, and the same token.
+ *
+ * lib/state/derive.ts carries the long form of the argument. This is where the
+ * words it refused to invent actually live.
+ *
+ * IT IS HERE AND NOT IN A COMPONENT because it is the accessible name of
+ * ninety-one cells. A label a screen reader reads is not decoration, and a
+ * judgement with no test is the shape of every finding this repository has had.
+ */
+export function dayLabel(state: DayState, messages: Messages): string {
+  if (state === "degraded") return stateLabel("degraded", messages);
+  if (state === "outage") return messages.csOutage;
+  if (state === "ok") return messages.csNoIncident;
+  return NO_DATA;
 }

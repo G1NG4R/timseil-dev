@@ -1,3 +1,4 @@
+import { Lanes } from "@/components/case/Lanes";
 import type { Hop, Lane } from "@/content/case-studies/types";
 
 /**
@@ -46,16 +47,10 @@ export function RequestPath({ hops, lanes, lanesLabel }: {
         ))}
       </ol>
 
-      <p className="arch-lanes-label">{lanesLabel}</p>
-
-      <dl className="arch-lanes">
-        {lanes.map((lane) => (
-          <div className="arch-lane" key={lane.key}>
-            <dt>{lane.key}</dt>
-            <dd>{lane.detail}</dd>
-          </div>
-        ))}
-      </dl>
+      {/* Moved into its own component in H2b, when `.04`'s observability panel
+          became the second caller of the same row. Nothing about the markup
+          changed; it just stopped being in one place and used in two. */}
+      <Lanes lanes={lanes} label={lanesLabel} />
     </div>
   );
 }

@@ -111,12 +111,21 @@ test("the arrows are drawn between stations and go when the path stands up", asy
 });
 
 test("the five side lanes reflow 4 to 2 to 1", async ({ page }) => {
-  await expect(page.locator(".arch-lane")).toHaveCount(5);
+  // SCOPED TO `.02`, WHICH IT SHOULD HAVE BEEN FROM THE START. H2a wrote this
+  // when the page had one row of lanes, so a page-wide locator and a locator for
+  // this section were the same thing; H2b gave `.04`'s observability panel the
+  // same row — same four columns, same three switches, "Kein Bauteil bekommt
+  // seinen eigenen Wert" — and the count went from five to nine.
+  //
+  // The reflow below is the shared behaviour and holds for both. What belongs to
+  // `.02` is that there are five of them, and that is what the scope protects.
+  const lanes = page.locator('section[aria-labelledby="sec-02"] .arch-lanes');
+  await expect(lanes.locator(".arch-lane")).toHaveCount(5);
 
   const width = await widthOf(page);
   const expected = width < 560 ? 1 : width < TABLE_BREAKPOINT ? 2 : 4;
 
-  const tracks = await page.locator(".arch-lanes").evaluate((node) =>
+  const tracks = await lanes.evaluate((node) =>
     getComputedStyle(node).gridTemplateColumns.split(" ").length,
   );
   expect(tracks).toBe(expected);
