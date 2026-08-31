@@ -53,6 +53,48 @@ export interface Phase {
   readonly detail: string;
 }
 
+/**
+ * One stage of the pipeline that puts a commit on the server.
+ *
+ * `job` IS THE HALF THAT CAN BE CHECKED. The sheet draws seven boxes with a
+ * duration under each — `[—s]` — and nothing measures a stage, so the duration
+ * is left out for the reason `Hop` gives about hop latency. What is left is
+ * seven names, and a name is exactly the kind of prose that goes stale silently:
+ * a renamed job in `ci.yml` would leave this page describing a pipeline that no
+ * longer exists.
+ *
+ * So a stage that IS a job in `.github/workflows/ci.yml` names it, and
+ * lib/content/pipeline.test.ts holds the two against each other. `null` is for
+ * the two stages that are real and are not jobs — the push that triggers the run
+ * and the health gate that runs inside `deploy`.
+ */
+export interface Stage {
+  /** The word in the box. `PUSH`, `CHECK`, `DEPLOY`. */
+  readonly title: string;
+  readonly detail: string;
+  /** The `ci.yml` job with this name, or `null` when the stage is not a job. */
+  readonly job: string | null;
+}
+
+/**
+ * The card at the foot of `.05`: what is being built next.
+ *
+ * NO STATE WORD AND NO NUMBER, which is the whole decision. The sheet draws
+ * `05 FOUNDRY ◇ QUEUED` — a system number and a state — and both of those live
+ * in `systems`, not here. Reading them would mean a fifth `<Suspense>` boundary
+ * and a second endpoint (`/api/systems`) on a page that makes one upstream call,
+ * for a card; writing them here would put a state word in a file that is not
+ * allowed to hold a measurement.
+ *
+ * So the card names the system and links to the Work Index, which is the page
+ * whose job this is. H6 builds it and can give this card its source.
+ */
+export interface NextSystem {
+  /** The system's name, as a person writes it. Not its slug. */
+  readonly name: string;
+  readonly detail: string;
+}
+
 export interface CaseStudy {
   /** The system's slug in `systems`. The route is `/work/<slug>`. */
   readonly slug: string;
@@ -84,6 +126,56 @@ export interface CaseStudy {
   readonly build: {
     readonly composeCaption: string;
     readonly phases: readonly Phase[];
+  };
+
+  /**
+   * `.04 OPERATIONS` — how a commit reaches the server, and what watches it.
+   *
+   * THE GRID IS NOT IN HERE, and that is the shape of the section rather than an
+   * omission: the 91 days, the notches and the incidents all come from
+   * `/api/systems/{slug}`. This field is the prose around them.
+   *
+   * WHAT IS DELIBERATELY ABSENT. The Template draws a DATA SAFETY panel beside
+   * the monitoring one — backup target, backup retention, the date of the last
+   * restore drill, where the secrets live. The `Operations` sheet names three of
+   * those four in its own list of what must not be published ("Nicht öffentlich:
+   * Backup-Ziel und -Zeitplan. Wer weiß, wann gedumpt wird, weiß, wann die Last
+   * steigt"), and CLAUDE.md's rule is wider still: the current state of a
+   * security question about this host does not go on a public page.
+   *
+   * So the panel is not here and is not `— NO DATA` either. An em dash would say
+   * a number is coming; this one is not coming, it is being withheld, and the
+   * two are different sentences. ADR 0057 carries the decision — the page does
+   * not carry the reason, because the reason is the shape of the answer.
+   */
+  readonly operations: {
+    readonly stages: readonly Stage[];
+    /**
+     * The observability panel, in the shape the lanes already use.
+     *
+     * IT MUST NOT REPEAT `.02`. The architecture section already carries a
+     * MONITOR lane and a POST-MORTEM lane; what stands here is what those two do
+     * not say. No cadence, no port, no hostname — the same three the
+     * architecture section's own comment refuses.
+     */
+    readonly observability: readonly Lane[];
+  };
+
+  /** `.05 RESULT` — what held, what would change, and what comes next. */
+  readonly result: {
+    readonly holds: readonly string[];
+    /**
+     * What would be done differently.
+     *
+     * EVERY LINE IS CHECKED AGAINST THE SAME RULE AS `.04`. "Verification happens
+     * against production" is a sentence about engineering practice; "the panel is
+     * still reachable from outside" would be a direction. The sheet's three lines
+     * are fiction — a staging target, a WebGL budget, structured logs from the
+     * first commit — and the replacements come from what this repository actually
+     * did, each with something in `git log` or an issue behind it.
+     */
+    readonly change: readonly string[];
+    readonly next: NextSystem;
   };
 
   readonly emptyNote: {

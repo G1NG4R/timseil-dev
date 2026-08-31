@@ -15,8 +15,18 @@
 
 import { expect, type Page } from "@playwright/test";
 
-/** The four regions `page.tsx` streams, each behind its own `<Suspense>`. */
-export const STREAMED_REGIONS = [".cs-crumb", ".cs-eyebrow", ".spec", ".ops-tiles"] as const;
+/** The regions `page.tsx` streams, each behind its own `<Suspense>`. */
+export const STREAMED_REGIONS = [
+  ".cs-crumb",
+  ".cs-eyebrow",
+  ".spec",
+  ".ops-tiles",
+  // H2b, and the line the comment above predicted. `.ops-live` is one region
+  // holding two components: the grid and the incident log read the same answer
+  // and point at each other, so they settle together or the notch links into a
+  // log that has not arrived.
+  ".ops-live",
+] as const;
 
 /**
  * The page after streaming has settled.

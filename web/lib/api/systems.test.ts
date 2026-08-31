@@ -10,7 +10,9 @@ import {
   deployMedianValue,
   errorRateValue,
   incidentCountValue,
+  incidentDate,
   incidentList,
+  downtimeLabel,
   metricTiles,
   opsGrid,
   p95Value,
@@ -427,5 +429,32 @@ describe("the incident list", () => {
       const broken = { ...INC_001, [field]: undefined };
       assert.deepEqual(incidentList(body({ incidents: [broken] })), [], field);
     }
+  });
+});
+
+describe("what a notch says when it is opened", () => {
+  it("shows the day and not the minute", () => {
+    assert.equal(incidentDate("2026-06-12T02:14:00Z"), "2026-06-12");
+  });
+
+  it("refuses anything that is not a timestamp rather than slicing it", () => {
+    for (const value of ["2026-06-12", "yesterday", "", null, undefined, 20260612]) {
+      assert.equal(incidentDate(value), null);
+    }
+  });
+
+  it("reads a long outage in minutes and a short one in seconds", () => {
+    assert.equal(downtimeLabel(2520), "42 min");
+    assert.equal(downtimeLabel(60), "1 min");
+    assert.equal(downtimeLabel(30), "30 s");
+  });
+
+  // A degraded day with no downtime is a measurement, not a missing one — the
+  // same rule errorRateValue follows one screen up.
+  it("keeps a measured zero and refuses a missing duration", () => {
+    assert.equal(downtimeLabel(0), "0 s");
+    assert.equal(downtimeLabel(null), null);
+    assert.equal(downtimeLabel(undefined), null);
+    assert.equal(downtimeLabel(-1), null);
   });
 });

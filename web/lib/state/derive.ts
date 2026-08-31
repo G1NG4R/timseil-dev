@@ -15,20 +15,7 @@
 // file holds all four and the rule has cost nothing but four small functions in
 // one place.
 
-// The generated declarations, by name and without an extension — the same
-// import lib/api/client.ts makes and for the reason it writes down: TypeScript
-// resolves `schema.d.ts` from here, and `import type` is erased before Node
-// ever sees a specifier. It brings nothing from `next/*` into this file.
-//
-// `DayState` is taken rather than written because CLAUDE.md's rule about the
-// contract has no exception for a four-word union: "Nie einen Typ von Hand
-// schreiben, der im Contract steht."
-import type { components } from "../api/schema";
-
-import type { StateWord } from "./words.ts";
-
-/** One day of the operation grid, as the contract enumerates it. */
-export type DayState = components["schemas"]["DayState"];
+import type { DayState, StateWord } from "./words.ts";
 
 /**
  * The status field of a health document, or nothing.
@@ -130,10 +117,10 @@ export function systemStateWord(state: unknown): Extract<StateWord, "live" | "qu
  * not live.
  *
  * The legend the sheet draws says so in its own words: NO INCIDENT · DEGRADED ·
- * OUTAGE · NO DATA. Two of those four are words this file already maps, one is
- * the absence of a measurement, and the first belongs to no vocabulary at all.
- * Forcing a mapping would have given eighty-two cells of a fresh window the word
- * LIVE with the pulse that goes with it.
+ * OUTAGE · NO DATA. Only one of those four is a word from `MARKS`. Forcing the
+ * rest through it would have given eighty-two cells of a fresh window the word
+ * LIVE and the pulse that goes with it, so the legend got a table of its own —
+ * `dayLabel` in words.ts, beside the vocabulary it is not part of.
  *
  * SO WHAT IT DOES IS REFUSE. Same shape as `healthStatus` and for the same
  * measured reason: the generated type describes the contract, ADR 0035's

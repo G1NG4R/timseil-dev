@@ -18,8 +18,8 @@
 // start puts a real case behind the difference.
 
 import type { Messages } from "../i18n/messages/en.ts";
-import { dayState, type DayState } from "../state/derive.ts";
-import { NO_DATA } from "../state/words.ts";
+import { dayState } from "../state/derive.ts";
+import { NO_DATA, type DayState } from "../state/words.ts";
 
 import type { GetBody } from "./client.ts";
 // The generated declarations, by name and without an extension, as
@@ -272,7 +272,7 @@ export function sourceView(body: SystemDetail | null): SourceView {
 // which 82 were `nodata`, and `incidents: []`.
 
 /** One incident of the window, as the contract declares it. */
-type Incident = components["schemas"]["Incident"];
+export type Incident = components["schemas"]["Incident"];
 
 /** Seven. The rows the grid is drawn with, and the only place the number is written. */
 const DAYS_PER_WEEK = 7;
@@ -370,4 +370,40 @@ export function opsGrid(body: SystemDetail | null): OpsGrid {
   });
 
   return { cells, weeks: Math.ceil(cells.length / DAYS_PER_WEEK) };
+}
+
+/**
+ * The day an incident started, or nothing.
+ *
+ * THE DATE PART OF THE TIMESTAMP AND NOTHING ELSE. `startedAt` is an RFC 3339
+ * instant and the sheet writes `INC-001 · [DATE]`; the minute an outage began is
+ * in the log, not in a heading. It is sliced rather than parsed for the reason
+ * lib/clock.ts gives about `toISOString`: the string the api sent is already
+ * UTC, and running it through a `Date` would hand the answer to whatever zone
+ * the container happens to be in.
+ *
+ * A value that is not a timestamp is `null`, not a substring of a guess.
+ */
+export function incidentDate(startedAt: unknown): string | null {
+  const value = nonEmpty(startedAt);
+  if (value === null) return null;
+  return /^\d{4}-\d{2}-\d{2}T/.test(value) ? value.slice(0, 10) : null;
+}
+
+/**
+ * How long an outage lasted, in the unit that is worth reading.
+ *
+ * MINUTES ABOVE A MINUTE, SECONDS BELOW IT. `2520 s` is the number the api
+ * sends and `42 min` is the number a reader can hold; the grid's own tooltip in
+ * the sheet writes it exactly that way. Under a minute the rounding would turn a
+ * thirty-second blip into "1 min", which is a worse statement than the raw
+ * number, so the small case keeps its unit.
+ *
+ * `0` SURVIVES, as it does in every other reader here: a degraded day with no
+ * downtime is a measurement, and the check is against `null`.
+ */
+export function downtimeLabel(downSec: unknown): string | null {
+  const seconds = finiteNumber(downSec);
+  if (seconds === null || seconds < 0) return null;
+  return seconds < 60 ? `${String(seconds)} s` : `${String(Math.round(seconds / 60))} min`;
 }

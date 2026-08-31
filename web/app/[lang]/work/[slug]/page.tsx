@@ -12,16 +12,18 @@
 // it will. Case Study 02 draws exactly that. Testing the full page and shipping
 // the empty one is how a stage-H phase gets this backwards.
 //
-// SECTIONS .04 AND .05 ARE H2b's — operations and result, and the 91-day grid
-// with its clickable notches. This file ends after `.03 BUILD`, and `coverage()`
-// is the reason the uptime tile can stand here at all without the grid beside
-// it: it says how much of the window was measured.
+// THE PAGE IS COMPLETE AS OF H2b: `.01` through `.05`, and the 91-day grid with
+// its notches. What that phase did NOT bring is the client component the earlier
+// version of this comment expected. The notch is an anchor into the incident log
+// and `:target` marks the one that was opened — components/case/OpsGrid.tsx
+// argues it, and the short version is that with `incidents: []` in production a
+// click-to-open panel would be a component shipped to every visitor that nothing
+// can open. So this route still runs on zero bytes of its own JavaScript.
 //
-// WHERE THE PHASE BOUNDARY RUNS, because it is not where the section numbers
-// suggest. H2a is everything above that reads nothing measured: `.02` and `.03`
-// are prose plus one build artefact, so they prerender whole and the page still
-// makes exactly one upstream call per view. H2b brings the grid, and with it the
-// first client component this directory has.
+// WHAT THE FIVE SUSPENSE HOLES COST IS ONE REQUEST, not five. `systemCached` is
+// keyed by the slug, so the first caller fills it and the rest read the fill;
+// everything outside those holes is prose from the repository and prerenders
+// whole.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -34,9 +36,21 @@ import { CaseHero } from "@/components/case/CaseHero";
 import { ComposeExcerpt } from "@/components/case/ComposeExcerpt";
 import { Constraints } from "@/components/case/Constraints";
 import { DecisionTable } from "@/components/case/DecisionTable";
-import { CaseCrumbLive, CaseEyebrowLive, MetricRowLive, SpecRailLive } from "@/components/case/Live";
+import { IncidentLog } from "@/components/case/IncidentLog";
+import { Lanes } from "@/components/case/Lanes";
+import {
+  CaseCrumbLive,
+  CaseEyebrowLive,
+  MetricRowLive,
+  OpsLive,
+  SpecRailLive,
+} from "@/components/case/Live";
 import { MetricRow } from "@/components/case/MetricRow";
+import { NextSystem } from "@/components/case/NextSystem";
+import { OpsGrid } from "@/components/case/OpsGrid";
+import { Pipeline } from "@/components/case/Pipeline";
 import { RequestPath } from "@/components/case/RequestPath";
+import { Result } from "@/components/case/Result";
 import { SpecRail } from "@/components/case/SpecRail";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { CASE_STUDIES, caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
@@ -44,6 +58,11 @@ import { metricTiles } from "@/lib/api/systems";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { seoFor } from "@/lib/seo/pages";
+
+// The resting grid, and the only place it is written. `opsGrid(null)` produces
+// exactly this, so the Suspense fallback and the answer-less render are the same
+// picture by construction rather than by two people agreeing.
+const EMPTY_GRID = { cells: [], weeks: 0 } as const;
 
 // THE SLUGS ARE KNOWN AT BUILD TIME, and saying so is not an optimisation — it
 // is what makes the route prerenderable at all. Without this list Next has to
@@ -84,7 +103,7 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
   const { locale, messages } = await getDictionary();
   const backHref = localeHref(locale, "/work");
 
-  // Everything below this line is in the repository. The four `<Suspense>`
+  // Everything below this line is in the repository. The five `<Suspense>`
   // holes are the only places the api is asked, and each fallback is the same
   // component in its resting state — never a spinner and never a blank, because
   // "no answer yet" and "no answer at all" look the same to a reader and this
@@ -201,6 +220,56 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
 
           <BuildPhases phases={study.build.phases} label={messages.csPhases} />
         </div>
+      </section>
+
+      {/* H2b. The one section on this page with a measured half and a written
+          half standing next to each other: the pipeline and the observability
+          panel are prose, the grid and the incident log are the answer.
+
+          WHAT IS NOT HERE is the Template's DATA SAFETY panel — backup target,
+          backup schedule, the date of the last restore drill, where the secrets
+          live. Three of those four are named in the `Operations` sheet's own
+          list of what must not be published, and CLAUDE.md's rule is wider. It
+          is left out rather than drawn as `— NO DATA`, because an em dash says a
+          number is coming and this one is being withheld. ADR 0057. */}
+      <section className="cs-section" aria-labelledby="sec-04">
+        <SectionHead id="04" title={messages.csOperations} titleId="sec-04" />
+
+        <Pipeline stages={study.operations.stages} label={messages.csPushToLive} />
+
+        <Lanes
+          lanes={study.operations.observability}
+          label={messages.csObservability}
+        />
+
+        <Suspense
+          fallback={
+            <div className="ops-live">
+              <OpsGrid grid={EMPTY_GRID} label={messages.csOperation} messages={messages} />
+              <IncidentLog incidents={null} messages={messages} />
+            </div>
+          }
+        >
+          <OpsLive slug={study.slug} gridLabel={messages.csOperation} messages={messages} />
+        </Suspense>
+      </section>
+
+      <section className="cs-section" aria-labelledby="sec-05">
+        <SectionHead id="05" title={messages.csResult} titleId="sec-05" />
+
+        <Result
+          holds={study.result.holds}
+          change={study.result.change}
+          holdsLabel={messages.csWhatHolds}
+          changeLabel={messages.csWhatIdChange}
+        />
+
+        <NextSystem
+          next={study.result.next}
+          label={messages.csNextSystem}
+          href={backHref}
+          more={messages.navWork}
+        />
       </section>
     </>
   );
