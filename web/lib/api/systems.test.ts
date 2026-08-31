@@ -10,7 +10,9 @@ import {
   deployMedianValue,
   errorRateValue,
   incidentCountValue,
+  incidentList,
   metricTiles,
+  opsGrid,
   p95Value,
   sourceView,
   stackLine,
@@ -292,5 +294,138 @@ describe("the source axis", () => {
     assert.equal(sourceView(body({ source: { access: "private" } })), null);
     assert.equal(sourceView(body({ source: { access: "private", reason: "because" } })), null);
     assert.equal(sourceView(body({ source: undefined })), null);
+  });
+});
+
+// ── .04 OPERATIONS ──────────────────────────────────────────────────────────
+
+/** One incident, complete. The four required fields are what invariant 4 is. */
+const INC_001 = {
+  id: "INC-001",
+  startedAt: "2026-06-12T02:14:00Z",
+  durationSec: 2520,
+  cause: "postgres hit its memory limit while a migration held a lock",
+  fix: "limit raised, migration split in two, lock timeout set",
+  postSlug: "011-the-migration-that-locked-the-table",
+};
+
+/** A window with one notch on the third day. Everything else is unmeasured. */
+function withNotch(patch: Record<string, unknown> = {}) {
+  const days = Array.from({ length: 91 }, (_, i) => ({
+    d: `2026-06-${String(i)}`,
+    state: i === 2 ? "outage" : "nodata",
+    downSec: i === 2 ? 2520 : 0,
+    ...(i === 2 ? { incidentId: "INC-001" } : {}),
+  }));
+  return body({ days, incidents: [INC_001], ...patch });
+}
+
+describe("the operation grid when nothing has been measured", () => {
+  // The shipping case, not a fixture: this is what production served on
+  // 31.08.2026 with 82 of 91 days unmeasured and an empty incident list.
+  it("draws ninety-one cells and calls none of them clean", () => {
+    const grid = opsGrid(body());
+
+    assert.equal(grid.cells.length, 91);
+    assert.equal(
+      grid.cells.every((cell) => cell.state === "nodata"),
+      true,
+    );
+    assert.equal(
+      grid.cells.some((cell) => cell.incidentId !== null),
+      false,
+    );
+  });
+
+  // Invariant 7 in one assertion. The caption says "13 WEEKS" and must never be
+  // able to say it about a grid of twelve columns.
+  it("counts thirteen columns of seven rather than printing the number", () => {
+    assert.equal(opsGrid(body()).weeks, 13);
+  });
+
+  it("has no grid at all when the system is not live", () => {
+    const grid = opsGrid(body({ days: undefined, incidents: undefined }));
+
+    assert.deepEqual(grid.cells, []);
+    assert.equal(grid.weeks, 0);
+  });
+
+  // An api that did not answer is not a system with a clean window.
+  it("draws nothing for a body that never arrived", () => {
+    assert.deepEqual(opsGrid(null).cells, []);
+    assert.equal(incidentList(null), null);
+  });
+
+  // A part-week is still a column, and the number still comes from the cells.
+  it("rounds a window that is not a multiple of seven up", () => {
+    const days = Array.from({ length: 30 }, () => ({ d: "2026-06-01", state: "nodata", downSec: 0 }));
+    const grid = opsGrid(body({ days, window: 30 }));
+
+    assert.equal(grid.cells.length, 30);
+    assert.equal(grid.weeks, 5);
+  });
+});
+
+describe("a day that is a notch", () => {
+  it("keeps its incident when the incident is really there", () => {
+    const cell = opsGrid(withNotch()).cells[2];
+
+    assert.equal(cell.state, "outage");
+    assert.equal(cell.incidentId, "INC-001");
+    assert.equal(cell.downSec, 2520);
+  });
+
+  // INVARIANT 5. The day points at an incident the answer did not send, which
+  // the database forbids and the wire can still deliver during an overlapping
+  // start. The outage is real and stays drawn; the link is not, and goes.
+  it("stops being a link when its incident is not in the list", () => {
+    const cell = opsGrid(withNotch({ incidents: [] })).cells[2];
+
+    assert.equal(cell.state, "outage");
+    assert.equal(cell.incidentId, null);
+  });
+
+  // INVARIANT 4, enforced where the bytes arrive rather than only in the table.
+  // "Ohne Post-Mortem keine Kerbe" — an entry with no fix is not an incident
+  // this page can show, so it is dropped, and the notch above loses its target
+  // with it.
+  it("drops an incident with no post-mortem, and the notch loses its link", () => {
+    const half = { ...INC_001, fix: "" };
+    const grid = opsGrid(withNotch({ incidents: [half] }));
+
+    assert.deepEqual(incidentList(withNotch({ incidents: [half] })), []);
+    assert.equal(grid.cells[2].state, "outage");
+    assert.equal(grid.cells[2].incidentId, null);
+  });
+
+  it("keeps a measured zero and refuses a state it does not know", () => {
+    const days = [
+      { d: "2026-06-01", state: "ok", downSec: 0 },
+      { d: "2026-06-02", state: "OUTAGE", downSec: 60 },
+    ];
+    const cells = opsGrid(body({ days })).cells;
+
+    assert.equal(cells[0].downSec, 0);
+    assert.equal(cells[0].state, "ok");
+    // Not `ok`, and not a guess at `outage` either — unmeasured.
+    assert.equal(cells[1].state, "nodata");
+  });
+});
+
+describe("the incident list", () => {
+  it("tells an empty window from a system that was never asked", () => {
+    assert.deepEqual(incidentList(body()), []);
+    assert.equal(incidentList(body({ incidents: undefined })), null);
+  });
+
+  it("keeps an incident that carries all four required fields", () => {
+    assert.deepEqual(incidentList(body({ incidents: [INC_001] })), [INC_001]);
+  });
+
+  it("drops one that is missing any of them", () => {
+    for (const field of ["id", "cause", "fix", "postSlug"]) {
+      const broken = { ...INC_001, [field]: undefined };
+      assert.deepEqual(incidentList(body({ incidents: [broken] })), [], field);
+    }
   });
 });

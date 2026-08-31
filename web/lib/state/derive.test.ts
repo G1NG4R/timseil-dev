@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { healthStatus, siteWord, systemStateWord, systemWord } from "./derive.ts";
+import { dayState, healthStatus, siteWord, systemStateWord, systemWord } from "./derive.ts";
 
 // The broken case first, because it is the one that happens in production.
 //
@@ -98,5 +98,36 @@ describe("systemStateWord reads a system's own record", () => {
   it("is not systemWord — it reads a row, not a health answer", () => {
     assert.equal(systemStateWord("ok"), null);
     assert.equal(systemWord("live"), null);
+  });
+});
+
+// H2b. The fourth vocabulary, and the one that is a validator rather than a
+// translation — a day is not a state a system is in.
+describe("one day of the operation grid", () => {
+  it("hands back the four the contract enumerates", () => {
+    for (const value of ["ok", "degraded", "outage", "nodata"]) {
+      assert.equal(dayState(value), value);
+    }
+  });
+
+  // The load-bearing one. A value this function does not know must not become a
+  // clean day: eighty-two of ninety-one cells are `nodata` in production today,
+  // and a grid that filled in on a shrug is the picture invariants 1 and 6 both
+  // exist to prevent.
+  it("turns anything else into nothing, never into a measured day", () => {
+    for (const value of ["OK", "up", "down", "", null, undefined, 0, 1, {}, ["ok"]]) {
+      assert.equal(dayState(value), null);
+    }
+  });
+
+  // Two vocabularies with the same word in them, read off two different
+  // documents. `degraded` means "it answered badly" in a health document and
+  // "that day was reduced" in a grid — the failure mode is silent, because both
+  // functions return something for it.
+  it("is not healthStatus — it reads a day, not a health answer", () => {
+    assert.equal(dayState("outage"), "outage");
+    assert.equal(healthStatus("outage"), null);
+    assert.equal(dayState("ok"), "ok");
+    assert.equal(healthStatus("ok"), "ok");
   });
 });

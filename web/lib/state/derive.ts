@@ -1,15 +1,34 @@
 // What a state word may be derived from, and from what it may not.
 //
 // The contract carries four state vocabularies — `Health.status`,
-// `SystemState`, `TrackState` and `DayState` — and `web/` reads exactly one
-// document today: /api/health. So exactly one of them is mapped here.
+// `SystemState`, `TrackState` and `DayState`. G6 mapped the first, when
+// /api/health was the only document `web/` read, and wrote down the rule for
+// the rest so that H1, H4, H5 and H6 would not each invent one:
 //
-// THE RULE FOR THE OTHER THREE, so H1, H4, H5 and H6 do not each invent one: a
-// contract value is mapped in the phase that first reads its endpoint, and the
-// mapping lands in this file. A table for data nobody fetches is a claim about
-// an endpoint nobody has seen.
+//	a contract value is mapped in the phase that first reads its endpoint,
+//	and the mapping lands in this file. A table for data nobody fetches is
+//	a claim about an endpoint nobody has seen.
+//
+// H1 added `SystemState` with the case study's spec rail; H2b adds `DayState`
+// with its operation grid. `TrackState` is the one still owed, and H4 owes it —
+// the training log is the first page to read /api/training. When it lands, this
+// file holds all four and the rule has cost nothing but four small functions in
+// one place.
+
+// The generated declarations, by name and without an extension — the same
+// import lib/api/client.ts makes and for the reason it writes down: TypeScript
+// resolves `schema.d.ts` from here, and `import type` is erased before Node
+// ever sees a specifier. It brings nothing from `next/*` into this file.
+//
+// `DayState` is taken rather than written because CLAUDE.md's rule about the
+// contract has no exception for a four-word union: "Nie einen Typ von Hand
+// schreiben, der im Contract steht."
+import type { components } from "../api/schema";
 
 import type { StateWord } from "./words.ts";
+
+/** One day of the operation grid, as the contract enumerates it. */
+export type DayState = components["schemas"]["DayState"];
 
 /**
  * The status field of a health document, or nothing.
@@ -93,4 +112,38 @@ export function systemStateWord(state: unknown): Extract<StateWord, "live" | "qu
   if (state === "live") return "live";
   if (state === "queued") return "queued";
   return null;
+}
+
+/**
+ * What a single day of operation says about itself — the value of `days[].state`.
+ *
+ * THE FOURTH AND LAST VOCABULARY THIS FILE OWES. H2b is the phase that first
+ * reads `days[]`, so by the rule at the top of this file the mapping lands here.
+ * With it, all four of the contract's state enums are mapped in one place, and
+ * the note about "the other three" at the top has been paid off.
+ *
+ * IT IS A VALIDATOR AND NOT A TRANSLATION, which is what makes it different from
+ * the three functions above. Those turn a contract value into one of the seven
+ * words in lib/state/words.ts; this one hands the value back. The reason is that
+ * a day is not a state a system is in — `ok` means "nothing happened here", and
+ * the vocabulary has no word for that. LIVE is what a system is; a Tuesday is
+ * not live.
+ *
+ * The legend the sheet draws says so in its own words: NO INCIDENT · DEGRADED ·
+ * OUTAGE · NO DATA. Two of those four are words this file already maps, one is
+ * the absence of a measurement, and the first belongs to no vocabulary at all.
+ * Forcing a mapping would have given eighty-two cells of a fresh window the word
+ * LIVE with the pulse that goes with it.
+ *
+ * SO WHAT IT DOES IS REFUSE. Same shape as `healthStatus` and for the same
+ * measured reason: the generated type describes the contract, ADR 0035's
+ * overlapping start means the bytes can be a build older than it, and a value
+ * this function does not know is `null` rather than a guess. A cell with no
+ * state is drawn as unmeasured, never as a clean day — invariant 1, and
+ * invariant 6 says the same thing about the same cell.
+ */
+export function dayState(value: unknown): DayState | null {
+  return value === "ok" || value === "degraded" || value === "outage" || value === "nodata"
+    ? value
+    : null;
 }
