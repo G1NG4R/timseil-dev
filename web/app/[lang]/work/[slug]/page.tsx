@@ -36,7 +36,6 @@ import { CaseHero } from "@/components/case/CaseHero";
 import { ComposeExcerpt } from "@/components/case/ComposeExcerpt";
 import { Constraints } from "@/components/case/Constraints";
 import { DecisionTable } from "@/components/case/DecisionTable";
-import { IncidentLog } from "@/components/case/IncidentLog";
 import { Lanes } from "@/components/case/Lanes";
 import {
   CaseCrumbLive,
@@ -47,7 +46,7 @@ import {
 } from "@/components/case/Live";
 import { MetricRow } from "@/components/case/MetricRow";
 import { NextSystem } from "@/components/case/NextSystem";
-import { OpsGrid } from "@/components/case/OpsGrid";
+import { EMPTY_GRID, OpsSection } from "@/components/case/OpsSection";
 import { Pipeline } from "@/components/case/Pipeline";
 import { RequestPath } from "@/components/case/RequestPath";
 import { Result } from "@/components/case/Result";
@@ -58,11 +57,6 @@ import { metricTiles } from "@/lib/api/systems";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { seoFor } from "@/lib/seo/pages";
-
-// The resting grid, and the only place it is written. `opsGrid(null)` produces
-// exactly this, so the Suspense fallback and the answer-less render are the same
-// picture by construction rather than by two people agreeing.
-const EMPTY_GRID = { cells: [], weeks: 0 } as const;
 
 // THE SLUGS ARE KNOWN AT BUILD TIME, and saying so is not an optimisation — it
 // is what makes the route prerenderable at all. Without this list Next has to
@@ -237,17 +231,16 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
 
         <Pipeline stages={study.operations.stages} label={messages.csPushToLive} />
 
-        <Lanes
-          lanes={study.operations.observability}
-          label={messages.csObservability}
-        />
+        <Lanes lanes={study.operations.observability} label={messages.csObservability} />
 
         <Suspense
           fallback={
-            <div className="ops-live">
-              <OpsGrid grid={EMPTY_GRID} label={messages.csOperation} messages={messages} />
-              <IncidentLog incidents={null} messages={messages} />
-            </div>
+            <OpsSection
+              grid={EMPTY_GRID}
+              incidents={null}
+              label={messages.csOperation}
+              messages={messages}
+            />
           }
         >
           <OpsLive slug={study.slug} gridLabel={messages.csOperation} messages={messages} />

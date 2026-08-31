@@ -31,9 +31,8 @@
 
 import { CaseCrumb } from "@/components/case/CaseCrumb";
 import { CaseEyebrow } from "@/components/case/CaseEyebrow";
-import { IncidentLog } from "@/components/case/IncidentLog";
 import { MetricRow } from "@/components/case/MetricRow";
-import { OpsGrid } from "@/components/case/OpsGrid";
+import { OpsSection } from "@/components/case/OpsSection";
 import { SpecRail } from "@/components/case/SpecRail";
 import { systemNow } from "@/lib/api/readers";
 import { incidentList, metricTiles, opsGrid, sourceView, stackLine } from "@/lib/api/systems";
@@ -122,11 +121,12 @@ export async function MetricRowLive({
 /**
  * `.04`'s two measured parts, waiting together.
  *
- * THE FALLBACK IS THE SAME PAIR WITH NOTHING IN IT, which is the seam ADR 0044
- * describes: an empty grid and an empty log are exactly what a system with no
- * history renders, so "no answer yet" and "no answer at all" cannot drift into
- * two different layouts. There is no spinner here for the same reason there is
- * none anywhere else on this page.
+ * THE FALLBACK IS THE SAME COMPONENT WITH NOTHING IN IT — literally the same
+ * one: `OpsSection` is rendered here with an answer and in page.tsx with
+ * `EMPTY_GRID`, which is the seam ADR 0044 describes. An empty grid and an empty
+ * log are exactly what a system with no history renders, so "no answer yet" and
+ * "no answer at all" cannot drift into two layouts. There is no spinner here for
+ * the same reason there is none anywhere else on this page.
  *
  * `null` GOES STRAIGHT IN. `opsGrid(null)` is no cells and `incidentList(null)`
  * is `null`, and both components already draw that — the api being down and the
@@ -136,9 +136,11 @@ export async function OpsLive({ slug, messages, gridLabel }: Common & { gridLabe
   const system = await systemNow(slug);
 
   return (
-    <div className="ops-live">
-      <OpsGrid grid={opsGrid(system)} label={gridLabel} messages={messages} />
-      <IncidentLog incidents={incidentList(system)} messages={messages} />
-    </div>
+    <OpsSection
+      grid={opsGrid(system)}
+      incidents={incidentList(system)}
+      label={gridLabel}
+      messages={messages}
+    />
   );
 }
