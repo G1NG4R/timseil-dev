@@ -18,17 +18,17 @@
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.62.1",
-    "@redocly/cli": "^2.47.0",
+    "@redocly/cli": "^2.49.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.3.2",
+    "eslint-config-next": "16.3.3",
     "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5",
-    "typescript-eslint": "^8.67.0"
+    "typescript-eslint": "^8.68.0"
   }
 }
