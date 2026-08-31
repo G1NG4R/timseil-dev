@@ -17,6 +17,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 
+import { Hero } from "@/components/home/Hero";
 import { JsonLd } from "@/components/JsonLd";
 import { NoData } from "@/components/state/NoData";
 import { StatusDot } from "@/components/state/StatusDot";
@@ -65,8 +66,20 @@ export default async function Home() {
       {/* Person and WebSite, on `/` only. The six stubs say `noindex`, so a
           graph on them would describe a page nothing is allowed to list. */}
       <JsonLd data={siteLd(resolved)} />
-      <h1>timseil.dev</h1>
-      <p>Development shell. The site itself is built in stage H.</p>
+
+      <div className="hero-head">
+        <Hero
+          eyebrow={messages.homeEyebrow}
+          headline={messages.homeHeadline}
+          tagline={messages.homeTagline}
+          available={stateLabel("available", messages)}
+          availability={messages.homeAvailability}
+        />
+      </div>
+
+      {/* Still the F1b island, unchanged, and it moves in the next commit. It
+          is the only correlated, uncached call on this site; the header above
+          this file says what happens if it disappears. */}
       <dl>
         <Suspense fallback={<HealthRows status={<NoData />} build={<NoData />} />}>
           <HealthRowsLive messages={messages} />

@@ -19,6 +19,7 @@ import { fontVariables } from "../fonts";
 //   state     the state language: dots, panels, empty and degraded — G6
 //   ui        button, field, metric tile, section head — G7, site-wide since H1
 //   case      the case study's own surfaces — H1
+//   home      the homepage's own surfaces — H3
 //   layout    the content column and the four breakpoints — LAST, so its
 //             media queries win over anything above them
 //
@@ -56,6 +57,10 @@ import "../../styles/state.css";
 // so that source order and not a class decides against globals and layout.
 import "../../styles/ui.css";
 import "../../styles/case.css";
+// home.css sits beside case.css and under the same condition: it may not
+// override the chrome or the state language, and layout.css's media queries
+// have to win over it. H3.
+import "../../styles/home.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root
