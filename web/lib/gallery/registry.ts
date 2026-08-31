@@ -114,10 +114,13 @@ export const PARTS: readonly Part[] = [
     where: "homepage SYS.03 (30 d) · jede case study (91 d, klickbar)",
     states: ["ok", "degraded", "outage", "nodata", "selected"],
     origin: "inventory",
-    module: null,
-    owedBy: "H2",
-    preview: false,
-    note: null,
+    module: "components/case/OpsGrid.tsx",
+    owedBy: null,
+    preview: true,
+    // H2b built the case study half. The homepage's 30-day strip is display
+    // only — the sheet is explicit that the same grammar is used there without
+    // the click — and it belongs to H5 with the rest of SYS.02–04.
+    note: "case study only; the homepage strip is H5",
   },
   {
     id: "MetricTile",
