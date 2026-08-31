@@ -1,0 +1,173 @@
+---
+title: 'Two tests were green because there was nothing to check'
+deck: 'A grid of ninety-one cells, a suite that runs without an API, and no cells in it. Two tests iterated over nothing and passed. A third asked the same question and failed — the only difference between them was one line saying "there should be something here".'
+published: 2026-08-31
+tags: ['testing', 'frontend', 'invariants']
+system: 'timseil-dev'
+summary: |
+  The case study on this site carries a 91-day operation grid: one cell per day,
+  a notch where something went wrong, and a link from the notch to the
+  post-mortem. The browser suite that checks it runs against a production build
+  with no API, which is deliberate — it is how the empty state gets tested. It
+  also means the grid is empty, so two tests asking what a measured cell looks
+  like iterated over nothing and passed. A third, written minutes earlier and
+  asking about the same cells, failed loudly — because it happened to begin by
+  asserting that a cell existed. That one line is the whole difference, and the
+  repair was noticing that the component gallery, built two phases earlier for
+  an unrelated reason, is the only place in this repository where those states
+  exist at all.
+---
+
+## The picture that has no data in it
+
+The case study for this site has a section called `.04 OPERATIONS`. Most of it
+is prose — how a commit reaches the server, what watches it afterwards — and
+then there is a grid: ninety-one squares, thirteen columns of seven, one square
+per day of the last quarter. A day with nothing wrong is filled. A day with an
+outage is a notch, and the notch is a link to the entry in the incident log
+below it, which carries the cause, the fix, and the name of the post-mortem.
+
+Ninety-one, not ninety, because thirteen sevens come out even and ninety would
+leave a hole in the last column that looks like a bug.
+
+The grid is the section's whole argument. Everything above it is a claim that
+this is a running system; the grid is the part that shows it, day by day, with
+the bad days included and explained. It is also, right now, almost entirely
+empty: eighty-two of the ninety-one days carry no measurement, because the probe
+that fills them started late, and the incident list has been `[]` every day the
+page has existed.
+
+That is the honest picture and it ships as it is. A day without a check is drawn
+as an outline with nothing in it — never as a good day, which would be a full
+grid where an empty one is the truth.
+
+## The suite that runs without an API
+
+The browser suite here runs against a production build of the site with nothing
+answering on the API port. That is not an oversight either. It is the condition
+under which the page's empty states are the ones being rendered, and those are
+the states that actually shipped: a fresh database writes no measurements, so
+`— NO DATA` is the normal answer and a filled tile is the edge case.
+
+So the specs for this page carry a rule at the top: nothing here may assume
+whether the API answered. Every assertion is about structure — a section exists
+once, a list has seven items, a column count matches a caption — and none of
+them can be changed by an upstream that is up or down.
+
+I wrote the new spec to that rule. Then I wrote three tests that broke it
+without looking like they did:
+
+```
+a day without a measurement is never a filled cell
+every notch reaches its incident, and nothing else is a link
+every cell says which day it is and what happened
+```
+
+Read them again. Each one is a statement about cells, and with no API there are
+no cells. The second iterated a list of length zero. The third counted how many
+cells lacked an accessible name and got zero — correctly, out of zero cells.
+Both passed. They would have passed if the grid had never been written.
+
+The first one failed.
+
+Not because it was better written in any way I had thought about. It opened with
+a line the other two did not have:
+
+```js
+expect(shape.nodata).not.toBeNull();
+```
+
+That is all. One assertion that there was something to look at, put there
+because the value came back as a nullable object and TypeScript wanted a guard.
+It turned an empty page from a pass into a failure, and it is the only reason
+the other two were ever looked at.
+
+## What made it visible
+
+Not a review, and not a suspicion. Four tests in that file failed on the first
+run — the guard above, a caption format, a counter, and a selector that had
+picked up one element too many — and while reading the output I noticed the
+shape of the ones that had held. Thirteen tests over two widths: eight failures,
+eighteen passes, four distinct tests broken. Two of the nine that held were
+about a thing that was not on the page.
+
+This is worth being precise about, because the comfortable version of the story
+is that careful reading caught it. It did not. A failing run caught it, by
+putting the passing tests next to the failing ones where the difference was
+visible. If those four had happened to pass, the two would have stayed green for
+as long as the file existed, and the day someone broke the grid the suite would
+have said nothing.
+
+A test that passes over an empty collection is not a weak test. It is not a test
+at all, and it costs more than having no test, because it occupies the place
+where one would have gone.
+
+## The gallery was already there
+
+The obvious repair is to give the spec some data — a fixture, a stub API, a
+recorded response. All three would work and all three add a second source of
+truth about what the API sends, which is the thing this project spends most of
+its rules avoiding.
+
+The actual repair was two phases old. There is a component gallery in this
+repository, built earlier to satisfy a different criterion: every component in
+the design inventory, in every state its sheet documents, on one page. It exists
+because a state nobody can look at is a specification with a compile step. It
+renders components from data written in the page, with no API involved — which
+is exactly, and accidentally, the property the grid's tests needed.
+
+So the gallery got a window with all four kinds of day in it and two incidents
+to reach, and all three tests moved there — the two that were hollow and the one
+that had told me so. They are the same assertions. Now they have something to be
+wrong about.
+
+There is a second thing that came free. The grid's fifth state is `selected` —
+the incident you opened — and it is implemented as `:target`, which means a
+click on a notch changes the URL fragment and the stylesheet does the rest. No
+JavaScript, which on this page is a deliberate choice with a bundle measurement
+behind it. In the gallery that state can be *produced* rather than described:
+the test clicks a notch and asks the document which entry is targeted. If
+someone later replaces the anchor with component state, that test goes red
+instead of continuing to pass over a class name.
+
+## And one that only a picture could find
+
+While we are counting things a green suite did not catch: the first version of
+the rule that marks the selected incident shifted three of its borders from ten
+percent grey to thirty-five percent cyan. It is a real change, it is in the
+stylesheet, and any test that asserted the rule would have found it there.
+
+Side by side with an unselected entry it was invisible. I found it by taking a
+screenshot of the section and looking at two panels that were supposed to differ
+and did not.
+
+The rule is now an outline — which is what the design sheet uses for the same
+purpose in its own artboards — and the test compares the targeted entry against
+its neighbour rather than checking that a declaration is present. That is the
+version that could have failed.
+
+## What I would take from this
+
+Three things, in the order they cost something.
+
+**A count of zero is a result, and it needs saying out loud.** This is not a
+guess about what would have helped — the experiment ran itself. Three tests, same
+file, same empty page, written within an hour of each other; the one that began
+by asserting something was there failed, and the two that went straight to the
+loop passed. `expect(cells).toBeGreaterThan(0)` is one line, and in this run it
+was the entire difference between a test and a decoration.
+
+**Where a state exists is a design question, not a test question.** The grid's
+four cell states do not exist on the page that carries it, and no amount of
+effort in that spec file would have changed that. They exist in the gallery.
+Asking "where can this actually be observed" got a better answer than asking
+"how do I assert this here".
+
+**A run that is entirely green tells you less than one that is not.** These were
+found because something else failed. That is not an argument for flaky tests; it
+is an argument for reading a passing run at least once with the question "what
+did each of these actually execute", especially the first time a file is
+written.
+
+The suite is 479 tests now and all of them are green. Two of them mean something
+they did not mean this morning, and one of them was already trying to say so.
