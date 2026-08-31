@@ -12,11 +12,72 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 31.08.2026, H2a gebaut: die Klasse hieß Architektur und war Build
+## Wo wir stehen — 31.08.2026, H2a abgenommen: die Klasse hieß Architektur und war Build
 
-**Branch `phase/h2a-case-study-architecture`, nicht gepusht.** `/work/timseil-dev`
-trägt jetzt `.01 .02 .03` — Problem, Architecture, Build. `.04 OPERATIONS` und
-`.05 RESULT` sind H2b.
+**#280 gemergt, `e4bc8d8` / `v0.17.0` in Produktion.** `/work/timseil-dev` trägt
+`.01 .02 .03` — Problem, Architecture, Build. `.04 OPERATIONS` und `.05 RESULT`
+sind H2b.
+
+### Gegen Produktion abgenommen, 31.08.2026
+
+Der Deploy nach dem Merge war die Abnahme, und er lief ohne Abweisung durch:
+
+```
+13:36:01Z  merge e4bc8d8 (#280)      13:40:24Z  deploy ok, 260 s
+13:37:21Z  images gebaut             13:40:37Z  neuer Prozess, v0.17.0
+```
+
+**Der Zeuge war vor dem Tausch gestartet**, nicht danach:
+
+```
+/            32 Anfragen   32 × 200
+/api/health  32 Anfragen   32 × 200
+```
+
+Kein Besucher hat in diesem Fenster einen Fehler gesehen.
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar.** Beide Images
+per Digest aus `e4bc8d8`. `ops.lastDeploy` ist `{e4bc8d8, 13:40:24Z, 260 s, ok}`
+— von Hand nachgelesen, nicht dem Werkzeug geglaubt.
+
+**Die Seite live**, und das ist die Zeile, um die es dieser Phase ging:
+
+```
+/work/timseil-dev        200     drei Abschnitte, sec-01 sec-02 sec-03
+/de/work/timseil-dev     200     dieselben drei
+/fr/work/timseil-dev     200     dieselben drei
+
+5 Stationen · 5 Spuren · 4 Entscheidungen · 4 Phasen · 10 Compose-Zeilen
+Rhythmus  96 / 96 / 96 px bei 1440 und bei 390      Überlauf  0
+stale     keine der sechs Zeichenketten
+```
+
+**Der Compose-Block stimmt Zeile für Zeile mit `compose-api.gen.json`** — die
+Behauptung „nobody typed this block" ist damit nicht nur lokal geprüft, sondern
+an dem Dokument, das ein Fremder abruft.
+
+**Geklickt, nicht gelesen.** Das Rig gegen `https://timseil.dev`: **349/349**
+über zehn Projekte — das neue `case-study.arch.spec.ts` an allen sieben Breiten,
+dazu axe, Trefferflächen, Blattvergleich und der Layout-Sweep.
+
+Der API-Querschnitt zur selben Zeit, damit die Seite gegen ihre Quelle steht:
+
+```
+state live · window 91 · stack 11 · days 91 (82 nodata, 9 ok)
+incidents 0 · deploys 80 · uptime 100 · p95 5,3 ms · errorRate 0
+```
+
+### Was diese Abnahme nicht behauptet
+
+**Die 260 s sind eine Pipeline-Dauer alter Lesart.** #242 definiert das Feld in
+H2b um — die Wartezeit in der Actions-Queue fliegt raus. Hier steht die Zahl als
+**Vorher-Wert mit ihrem Vorbehalt**; neben dem umdefinierten Feld notiert wäre
+dieselbe Zahl irreführend.
+
+**Der Sitemap behauptet ein falsches Änderungsdatum.** Der Fund dieser Abnahme,
+unten unter „Gefunden", und die Korrektur ist ein eigener PR — ein
+`docs(backlog):`-Commit, der den Sitemap verändert, trüge einen falschen Typ im
+Titel.
 
 ### Der Schnitt, und warum er zwischen 03 und 04 liegt
 
@@ -152,6 +213,25 @@ Mal gelernt wird.
   führt und `content/case-studies` eine.
 
 ## Gefunden
+
+- **Der Sitemap nennt ein Änderungsdatum, das nicht stimmt.**
+  `content/case-studies/timseil-dev.ts` trägt `updatedAt: "2026-08-30"`, und H2a
+  hat der Seite am **31.08.** zwei ganze Abschnitte hinzugefügt, ohne das Datum
+  zu bewegen. Live nachgesehen: alle drei Sprachfassungen melden
+  `lastmod 2026-08-30T00:00:00.000Z`. Das Feld ist in seiner eigenen Datei als
+  „the page's real modification date for sitemap.ts" dokumentiert — es ist also
+  eine Behauptung der Seite nach außen, und sie ist falsch. Genau ein Konsument
+  (`app/sitemap.ts:59`); `lib/seo/pages.test.ts:73` prüft nur das Format, nicht
+  den Wert, und hätte es deshalb nie gemerkt. Korrektur als eigener PR.
+  *(31.08.2026, H2a-Abnahme)*
+- **Das Datum wird von Hand gepflegt, und das ist die eigentliche Frage.** Jede
+  Phase, die Copy dieser Seite anfasst, muss daran denken — dieselbe Klasse
+  Fehler, die Kapitel 12.3 für Versionsnummern mit „nobody types a value into a
+  page again" abgeräumt hat. Der Kopfkommentar der Datei begründet, warum dort
+  kein `new Date()` steht (es würde bei jedem Dependency-Bump wandern); die
+  andere Hälfte — woher das Datum dann kommt, wenn nicht aus dem Kopf des
+  Autors — steht nirgends. Issue-Kandidat, nicht in dieser Runde gelöst.
+  *(31.08.2026, H2a-Abnahme)*
 
 - **Zwei Blattkorrekturen stehen in der UI-Copy, nicht in einer Annotation.**
   `Case Study 02` liefert „No metrics stack for one host and three services." und
