@@ -12,7 +12,99 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 31.08.2026, H2b gebaut: die Seite ist vollständig, die Abnahme fehlt
+## Wo wir stehen — 31.08.2026, H2b abgenommen: 10 von 10, zum ersten Mal seit Stufe F
+
+**#285 gemergt, `761f357` / `v0.18.0` in Produktion.** `/work/timseil-dev` trägt
+`.01` bis `.05`. Die Fallstudie ist vollständig.
+
+### Der Deploy war die Abnahme, und der Zeuge lief vorher
+
+```
+20:39:44Z  merge 761f357 (#285)       20:44:06Z  deploy ok, 259 s
+20:40:28Z  Zeuge gestartet            20:44:25Z  neuer Prozess, v0.18.0
+```
+
+Der Zeuge stand **vier Minuten vor dem Tausch** und lief 252 s durch:
+
+```
+/            252 Anfragen   252 × 200
+/api/health  252 Anfragen   252 × 200
+```
+
+Kein Besucher hat in diesem Fenster einen Fehler gesehen.
+
+### Die neunte und zehnte Behauptung — #243 ist beantwortet
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `761f357`.
+
+Und dann doch: **die neunte und zehnte Behauptung sind gestellt worden.** Nicht
+über `--host` — das braucht `docker` auf der Maschine, und der Weg dorthin ist
+seit #140 zu —, sondern über die Panel-API, die für F3 schon benutzt wurde. Die
+laufenden Container tragen beide den **veröffentlichten Digest**.
+
+```
+10 von 10 Behauptungen
+```
+
+Zum ersten Mal seit Stufe F. Damit ist belegt, was der Klon nur folgern kann:
+die laufenden Container sind die Bytes, die die Pipeline gebaut, gescannt und
+signiert hat. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+Die Antwort auf #243 ist damit kein „jede Stufe statt jede Phase", sondern:
+`check-deployed.sh` kennt genau einen Weg zu dieser Behauptung, und der ist von
+hier aus versperrt. Deshalb wurde sie fünfmal ausgelassen. Ein zweiter Zweig im
+Werkzeug wäre die Reparatur — Aufgabe unten, Zustand lokal.
+
+### Die Seite live, an drei Breiten geklickt
+
+```
+/work/timseil-dev        200    sec-01 … sec-05
+/de/work/timseil-dev     200    dieselben fünf
+/fr/work/timseil-dev     200    dieselben fünf
+
+91 Zellen · 82 nodata · 9 ok · 13 Spalten · 7 Stufen · 4 Spuren · 2 Ergebnisplatten
+Rhythmus  96/96/96/96 bei 1440, 1024 und 390      Überlauf  0
+stale     keine der neun Zeichenketten            4xx/5xx-Unterressourcen  0
+```
+
+Der API-Querschnitt zur selben Zeit, damit die Seite gegen ihre Quelle steht:
+
+```
+state live · window 91 · stack 11 · days 91 (82 nodata, 9 ok)
+incidents 0 · deploys 83 · uptime 100 · p95 46,8 ms · errorRate 0
+Pipeline-Median 249 s
+```
+
+**Die Kachel heißt jetzt `PIPELINE · MEDIAN`**, und 249 s ist genau das: der
+ganze Lauf, Wartezeit inklusive. #242 bleibt offen — die Hälfte, die diese Phase
+schließen konnte, war die Beschriftung.
+
+### Ohne JavaScript — #244 bekommt eine Region dazu, und sie fällt ehrlich aus
+
+Gemessen gegen Produktion, mit und ohne JS:
+
+```
+mit JS    91 Zellen sichtbar   „OPERATION · 91 days (13 weeks) …"
+ohne JS    0 Zellen sichtbar   „OPERATION · — NO DATA"
+```
+
+Der Platzhalter bleibt stehen, wie #244 es beschreibt. **Kein falscher Wert, nur
+ein fehlender** — die Kopfzeile sagt den Platzhalter und nicht „0 days
+(0 weeks)", was die erste erfundene Zahl auf einer Seite gegen erfundene Zahlen
+gewesen wäre. Pipeline (7 Stufen) und Ergebnis (2 Platten) stehen ohne JS
+vollständig da, weil sie außerhalb der Suspense-Grenze liegen.
+
+### Was diese Abnahme nicht behauptet
+
+**Die Kerbe ist in Produktion nicht auslösbar.** `incidents: []`, also hat das
+Raster null Tab-Stopps und der Vorfall-Log zeigt seinen Leerzustand. Dass ein
+Klick funktioniert, ist gegen die **Galerie** gemessen und nicht gegen die
+Fallstudie — dort gibt es nichts zu klicken, und das ist der ehrliche Zustand.
+
+---
+
+## Vorher — 31.08.2026, H2b gebaut: die Seite ist vollständig
 
 **Branch `phase/h2b-case-study-operations`, sechs Commits, nicht gepusht.**
 `/work/timseil-dev` trägt `.01` bis `.05`. Der Schnitt aus ADR 0055 ist zu, das
@@ -414,6 +506,13 @@ Mal gelernt wird.
 
 ## Gefunden
 
+- **`check-deployed.sh` kennt genau einen Weg zur neunten Behauptung, und der
+  ist von hier aus zu.** `--host` setzt `docker` auf der Maschine voraus; ein
+  zweiter Zweig über die Panel-API würde denselben Digest-Vergleich von hier
+  aus stellbar machen — er bräuchte einen Schlüssel und Container-Namen, die
+  beide nicht aus dem Repository kommen, und das ist die eigentliche
+  Entwurfsfrage. **Gegen Produktion geprüft, Weg und Ergebnis nicht hier.**
+  Antwortet #243. *(31.08.2026, H2b-Abnahme)*
 - **Rot steht ab dem ersten Ausfall zweimal auf der Fallstudie.** Die Vorlage
   notiert „Ein Alert-Moment: die rote Zeile im Hero", das `Operation Grid`-Blatt
   verlangt „Rot nur für einen echten Ausfall". Mit `incidents: []` gilt die erste
