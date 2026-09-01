@@ -32,6 +32,30 @@ import { finiteNumber, nonEmpty, padTwo } from "./values.ts";
 /** One system in full, as the contract answers it. */
 export type SystemDetail = GetBody<"/api/systems/{slug}">;
 
+/**
+ * The two windows this site asks for, and they are asked for out loud.
+ *
+ * UNTIL H5b THERE WAS NO WINDOW ANYWHERE IN `web/`. The case study got 91 days
+ * because 91 is the contract's default and the client could not have said
+ * otherwise — lib/http/url.ts had no way to write a query at all. That worked
+ * exactly as long as one window was the only one.
+ *
+ * SO THEY ARE PASSED, NOT DEFAULTED. `systemCached` takes the window as an
+ * argument with no default, and both call sites name one of these. A default
+ * would put 91 back where it was: true, invisible, and impossible to see going
+ * wrong from the call site. It is also the cache key — an argument is part of a
+ * `use cache` function's identity — so a window that never appears in a
+ * signature is a window that never separates two entries.
+ *
+ * Both are members of the contract's `window` enum `[30, 91, 182]`; anything
+ * else is a 400 rather than a quiet fallback, and the api says so in as many
+ * words.
+ */
+export const OPS_WINDOW_CASE = 91;
+
+/** The homepage strip. One row, thirty cells, no notches — see components/home/OpsStrip. */
+export const OPS_WINDOW_HOME = 30;
+
 /** Every system, as the contract answers the list. */
 export type SystemList = GetBody<"/api/systems">;
 

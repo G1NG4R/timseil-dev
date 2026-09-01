@@ -35,6 +35,11 @@ import { Hero } from "@/components/home/Hero";
 import { SysSection } from "@/components/home/SysSection";
 import { Systems } from "@/components/home/Systems";
 import { SystemsLive } from "@/components/home/SystemsLive";
+import { ContributionGraph } from "@/components/home/ContributionGraph";
+import { ContributionGraphLive } from "@/components/home/ContributionGraphLive";
+import { OpsStrip } from "@/components/home/OpsStrip";
+import { OpsStripLive } from "@/components/home/OpsStripLive";
+import { Uplink } from "@/components/home/Uplink";
 import { TrainingLive } from "@/components/home/Training";
 import { TrainingLog } from "@/components/home/TrainingLog";
 import { TerminalPanelLive } from "@/components/home/Live";
@@ -98,21 +103,25 @@ export default async function Home() {
           in a page are four markers somebody can reorder without disagreeing
           with anything. K-26 records that happening once already. */}
       {SECTIONS.map((section) => {
-        // TWO SECTIONS WITH COMPONENTS OF THEIR OWN, and the branch is still on
-        // the id rather than on `reasonKey === null` because the id is what
+        // THREE SECTIONS WITH COMPONENTS OF THEIR OWN, and the branch is still
+        // on the id rather than on `reasonKey === null` because the id is what
         // decides WHICH component — the nullable field only says THAT there is
         // one.
         //
         // STILL NOT A LOOKUP TABLE, and H4's own comment here predicted the
-        // wrong thing. It said H5 "is the phase in which this probably becomes a
-        // lookup"; with two entries a table would be a map from a string to a
-        // closure, read once, right beside the two `if`s it replaced. H5c is
-        // where the question is worth asking again, because there the four
-        // branches stand together and the shape of the fourth is known.
+        // wrong thing twice now. It said H5 "is the phase in which this probably
+        // becomes a lookup"; at three entries a table is still a map from a
+        // string to a closure, read once, standing beside the three `if`s it
+        // replaced — and the third of them does not have the shape of the other
+        // two, which is the thing a table would have to flatten. H5c asks the
+        // question with all four branches visible and the fourth one written.
         //
-        // The head is inside each streamed region and not above it, because its
-        // meta line carries that answer's own counts. TrainingLog says why, and
-        // Systems repeats it for its own count.
+        // THE HEAD IS INSIDE THE FIRST TWO REGIONS AND OUTSIDE THE THIRD, and
+        // that is a difference worth reading rather than a slip. SYS.01 and
+        // SYS.02 put their heads in the stream because the meta line carries the
+        // answer's own count. SYS.03's meta carries a statement instead, so it
+        // is prerendered — and its two blocks stream under it separately,
+        // because they read two endpoints with two freshnesses.
         if (section.id === "SYS.01") {
           return (
             <Suspense key={section.id} fallback={<TrainingLog body={null} messages={messages} />}>
@@ -140,6 +149,28 @@ export default async function Home() {
             >
               <SystemsLive exit={exit} messages={messages} />
             </Suspense>
+          );
+        }
+
+        if (section.id === "SYS.03") {
+          // TWO BOUNDARIES INSIDE ONE SECTION, the first on this site. The
+          // fallback of each is its own component in its resting state, which is
+          // the ADR 0044 split every streamed region here uses — and it is what
+          // lets /dev/components draw both with no api at all.
+          return (
+            <Uplink
+              key={section.id}
+              graph={
+                <Suspense fallback={<ContributionGraph body={null} messages={messages} />}>
+                  <ContributionGraphLive messages={messages} />
+                </Suspense>
+              }
+              strip={
+                <Suspense fallback={<OpsStrip body={null} messages={messages} />}>
+                  <OpsStripLive messages={messages} />
+                </Suspense>
+              }
+            />
           );
         }
 

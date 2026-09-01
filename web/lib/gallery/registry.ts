@@ -84,16 +84,19 @@ export const PARTS: readonly Part[] = [
     where: "hero",
     states: ["loading (skeleton)", "ok", "error (cache)", "no-data"],
     origin: "inventory",
-    module: null,
-    // H4 UNTIL THIS PHASE READ ITS OWN NAME AND FOUND IT WRONG. H4 is SYS.01,
-    // the training log; the contribution graph belongs to SYS.03 UPLINK, which
-    // the build plan gives to H5 and the Homepage sheet draws there. The `where`
-    // column says "hero" because the handoff inventory put it there before
-    // HOME.01 existed — that is the sheet's word and stays, but the phase that
-    // owes it is not a transcription and was simply wrong.
-    owedBy: "H5",
-    preview: false,
-    note: null,
+    // H4 UNTIL H5a READ ITS OWN NAME AND FOUND IT WRONG, then built in H5b. H4
+    // is SYS.01, the training log; the contribution graph belongs to SYS.03
+    // UPLINK, which the build plan gives to H5 and the Homepage sheet draws
+    // there. The `where` column still says "hero" because the handoff inventory
+    // put it there before HOME.01 existed — that is the sheet's word and stays.
+    module: "components/home/ContributionGraph.tsx",
+    owedBy: null,
+    preview: true,
+    // The fourth state is not an error panel: the api answers with the last good
+    // calendar and its age whenever it has one, so "from cache" is an ordinary
+    // answer wearing a large `cacheAgeSec`. Only the cold start — GitHub has
+    // never replied — draws `no-data`.
+    note: "error (cache) is an old answer with its age, not a panel",
   },
   {
     id: "SkillRow",
@@ -158,13 +161,21 @@ export const PARTS: readonly Part[] = [
     where: "homepage SYS.03 (30 d) · jede case study (91 d, klickbar)",
     states: ["ok", "degraded", "outage", "nodata", "selected"],
     origin: "inventory",
+    // ONE PATH BECAUSE THE FIELD IS CHECKED, and registry.test.ts opens it. The
+    // homepage half is components/home/OpsStrip.tsx; it is named in the note
+    // rather than here, because a `module` that is two paths is a `module` that
+    // is neither.
     module: "components/case/OpsGrid.tsx",
     owedBy: null,
     preview: true,
-    // H2b built the case study half. The homepage's 30-day strip is display
-    // only — the sheet is explicit that the same grammar is used there without
-    // the click — and it belongs to H5 with the rest of SYS.02–04.
-    note: "case study only; the homepage strip is H5",
+    // H2b built the case study half and H5b the homepage's. TWO COMPONENTS AND
+    // NOT ONE WITH A FLAG: the sheet separates them in a single sentence — 91
+    // days over seven rows with clickable notches there, 30 days in one wrapping
+    // row and no click here — and what they share is the derivation and the four
+    // cell states, not the markup.
+    note:
+      "two components, one vocabulary — 91 days clickable here, 30 days display " +
+      "only in components/home/OpsStrip.tsx",
   },
   {
     id: "MetricTile",

@@ -22,15 +22,17 @@ runSheetOracle({
   route: HOME,
   ready: (page) => settled(page, HOME_REGIONS),
   drawnWidths: HOME_DRAWN_WIDTHS,
-  // 21 in H3, 30 in H4, 40 in H5a. It moves up with each phase that adds
-  // measurements to this page, and never down without someone saying why.
+  // 21 in H3, 30 in H4, 40 in H5a, 53 in H5b. It moves up with each phase that
+  // adds measurements to this page, and never down without someone saying why.
   //
   // FIVE OF THE EIGHT H4 ADDED ARE MEASURED ON ANOTHER ROUTE, AND ALL TEN OF
-  // H5a's ARE. The oracle carries an `on` field for that, and e2e/sheet.ts
-  // explains it: without an api SYS.01 is an outage panel here and SYS.02 is a
-  // second one, so neither the module grid nor a single system row is in the
-  // document, and an entry pointed at `/` would assert against nothing. That is
-  // H2b's finding, one page over — and the share of this oracle that has to
-  // stand in the gallery grows with every section that connects to the api.
-  minimumEntries: 40,
+  // H5a's ARE, AND SO ARE ALL THIRTEEN OF H5b's. The oracle carries an `on`
+  // field for that, and e2e/sheet.ts explains it: without an api SYS.01 is an
+  // outage panel here and SYS.02 is a second one, so neither the module grid nor
+  // a single system row is in the document, and an entry pointed at `/` would
+  // assert against nothing. SYS.03 makes it two panels of its own, because it
+  // reads two endpoints. That is H2b's finding, one page over — and the share of
+  // this oracle that has to stand in the gallery grows with every section that
+  // connects to the api.
+  minimumEntries: 53,
 });

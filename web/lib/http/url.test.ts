@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { apiTarget, resolvePath, upstreamUrl } from "./url.ts";
+import { apiTarget, buildQuery, resolvePath, upstreamUrl } from "./url.ts";
 
 const BASE = "http://api:8080";
 
@@ -149,5 +149,56 @@ describe("resolvePath does not trust the type", () => {
     const cast = { slug: undefined } as unknown as Record<string, string>;
     assert.throws(() => resolvePath("/api/systems/{slug}", cast));
     assert.throws(() => resolvePath("/api/systems/{slug}", { slug: 7 } as unknown as Record<string, string>));
+  });
+});
+
+describe("buildQuery is the second option and not a looser path", () => {
+  it("writes the pairs it is given, in the order it is given them", () => {
+    assert.equal(buildQuery({ window: "30" }), "?window=30");
+    assert.equal(buildQuery({ window: "30", limit: "2" }), "?window=30&limit=2");
+  });
+
+  // So `path + buildQuery(map)` is still the path when the map is empty, and a
+  // caller with a conditional parameter needs no branch of its own.
+  it("answers an empty map with an empty string", () => {
+    assert.equal(buildQuery({}), "");
+  });
+
+  // The pair `resolvePath` refuses and this one has to accept: the whole reason
+  // the function exists is that a window is not a path segment.
+  it("accepts what the path guard rejects, and still on the path's terms", () => {
+    assert.throws(() => resolvePath("/api/systems/{slug}", { slug: "a", window: "30" }));
+    assert.equal(buildQuery({ window: "30" }), "?window=30");
+  });
+});
+
+describe("buildQuery refuses to end the pair early", () => {
+  // Every character that could close this pair and open one the caller did not
+  // write. Encoding them would make each of these a working request.
+  it("refuses a value carrying a separator", () => {
+    for (const bad of ["30&admin=1", "30=1", "a b", "a+b", "a#b", "a%26b", "a?b", "a/b"]) {
+      assert.throws(() => buildQuery({ window: bad }), new RegExp("value"), bad);
+    }
+  });
+
+  it("refuses an empty value, which is a parameter asked for and left blank", () => {
+    assert.throws(() => buildQuery({ window: "" }));
+  });
+
+  it("keeps the dot the path guard drops", () => {
+    assert.equal(buildQuery({ ratio: "0.5" }), "?ratio=0.5");
+  });
+
+  it("refuses a name outside the allow-list", () => {
+    for (const bad of ["", "Window", "9lives", "win-dow", "win dow", "win&dow", "__proto__"]) {
+      assert.throws(() => buildQuery({ [bad]: "30" }), new RegExp("name"), bad);
+    }
+  });
+
+  // The type is erased at runtime, and this is the value that would otherwise
+  // be asked for as the string "undefined" rather than refused.
+  it("does not trust the type", () => {
+    assert.throws(() => buildQuery({ window: undefined } as unknown as Record<string, string>));
+    assert.throws(() => buildQuery({ window: 30 } as unknown as Record<string, string>));
   });
 });

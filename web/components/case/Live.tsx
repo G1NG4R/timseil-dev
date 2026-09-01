@@ -35,7 +35,14 @@ import { MetricRow } from "@/components/case/MetricRow";
 import { OpsSection } from "@/components/case/OpsSection";
 import { SpecRail } from "@/components/case/SpecRail";
 import { systemNow } from "@/lib/api/readers";
-import { incidentList, metricTiles, opsGrid, sourceView, stackLine } from "@/lib/api/systems";
+import {
+  OPS_WINDOW_CASE,
+  incidentList,
+  metricTiles,
+  opsGrid,
+  sourceView,
+  stackLine,
+} from "@/lib/api/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
 import { systemStateWord } from "@/lib/state/derive";
 
@@ -50,7 +57,7 @@ export async function CaseCrumbLive({
   href,
   back,
 }: Omit<Common, "messages"> & { href: string; back: string }) {
-  const system = await systemNow(slug);
+  const system = await systemNow(slug, OPS_WINDOW_CASE);
 
   return (
     <CaseCrumb
@@ -65,7 +72,7 @@ export async function CaseCrumbLive({
 }
 
 export async function CaseEyebrowLive({ slug, name, messages }: Common & { name: string }) {
-  const system = await systemNow(slug);
+  const system = await systemNow(slug, OPS_WINDOW_CASE);
 
   return (
     <CaseEyebrow
@@ -86,7 +93,7 @@ export async function SpecRailLive({
   hosting,
   messages,
 }: Common & { role: string; year: string; hosting: string }) {
-  const system = await systemNow(slug);
+  const system = await systemNow(slug, OPS_WINDOW_CASE);
 
   return (
     <SpecRail
@@ -110,7 +117,7 @@ export async function MetricRowLive({
   note,
   messages,
 }: Common & { note: { label: string; text: string } }) {
-  const system = await systemNow(slug);
+  const system = await systemNow(slug, OPS_WINDOW_CASE);
 
   // `null` goes straight in: metricTiles draws the same five labels with
   // nothing under them, so the row that says "no answer" and the row that says
@@ -133,7 +140,7 @@ export async function MetricRowLive({
  * system never having run produce one picture, and it is the honest one.
  */
 export async function OpsLive({ slug, messages, gridLabel }: Common & { gridLabel: string }) {
-  const system = await systemNow(slug);
+  const system = await systemNow(slug, OPS_WINDOW_CASE);
 
   return (
     <OpsSection

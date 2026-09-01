@@ -132,3 +132,57 @@ export function resolvePath(template: string, params: Record<string, string>): s
 
   return path;
 }
+
+/** What a query key may be made of. Narrower than the contract needs, on purpose. */
+const SAFE_QUERY_KEY = /^[a-z][a-zA-Z0-9]*$/;
+
+/** What a query value may be made of. See `buildQuery` for why it is this narrow. */
+const SAFE_QUERY_VALUE = /^[A-Za-z0-9_~.-]+$/;
+
+/**
+ * Builds the `?a=1&b=2` half of an upstream URL, or refuses the pair.
+ *
+ * A SECOND OPTION AND NOT A LOOSER PATH, and that is the whole decision here.
+ * `resolvePath` above rejects any key its template does not declare, which is
+ * what caught the first attempt to ask for `?window=30` — and loosening it
+ * would have paid for one query parameter with the guard that keeps every path
+ * segment inside its endpoint. So the query gets its own function, its own
+ * allow-list and its own test, and `resolvePath` is not touched.
+ *
+ * IT REFUSES RATHER THAN ENCODES, for `resolvePath`'s reason one line up.
+ * `encodeURIComponent` would turn `window=91&admin=1` into a working request
+ * carrying a parameter nobody meant; a value outside the allow-list is a bug at
+ * the call site, and it leaves by the same door every other bad value here does.
+ *
+ * THE VALUE ALLOW-LIST KEEPS THE DOT that the path one drops. `.` and `..` mean
+ * another segment in a path and mean nothing at all in a query, and a decimal
+ * point is the first thing a numeric parameter will want. What it does not keep
+ * is `&`, `=`, `#`, `?`, `%`, `+` and the space — every character that could end
+ * this pair early and start one the caller did not write.
+ *
+ * THE EMPTY OBJECT ANSWERS WITH THE EMPTY STRING, so a caller can pass a
+ * conditional map without a branch, and `path + buildQuery(...)` is still the
+ * path. An empty VALUE is refused: `?window=` is a parameter asked for and left
+ * blank, which every server on earth reads differently.
+ */
+export function buildQuery(search: Record<string, string>): string {
+  const pairs: string[] = [];
+
+  for (const name of Object.keys(search)) {
+    if (!SAFE_QUERY_KEY.test(name)) {
+      throw new Error(`a query parameter may not carry this name: ${name}`);
+    }
+
+    // Read as `unknown` for the reason `resolvePath` gives at length: the type
+    // is erased, and `SAFE_QUERY_VALUE.test(undefined)` would coerce to the
+    // string "undefined" and ask the api for `?window=undefined`.
+    const value: unknown = search[name];
+    if (typeof value !== "string" || !SAFE_QUERY_VALUE.test(value)) {
+      throw new Error(`a query parameter may not carry this value: ${name}`);
+    }
+
+    pairs.push(`${name}=${value}`);
+  }
+
+  return pairs.length === 0 ? "" : `?${pairs.join("&")}`;
+}

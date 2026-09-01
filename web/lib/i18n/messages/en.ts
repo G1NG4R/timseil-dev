@@ -213,18 +213,22 @@ export const en = {
   // about a different emptiness. Those are about the api not answering now, not
   // about a component that does not exist yet.
   //
-  // Both of the two left say WHAT is missing and WHY it is missing rather than
-  // being greyed out, which is what EmptyState requires of its caller and what
+  // `homeSys03Why` JOINED THEM IN H5b, for the same reason and with one more
+  // thing to say for itself: its sentence was the specification. "Two blocks,
+  // each naming its own source. Neither is drawn before its source has answered"
+  // is why SYS.03 has two Suspense boundaries rather than one, why its head sits
+  // outside both, and why the calendar and the strip each carry a source line.
+  // The section was built to the sentence, and then the sentence was deleted.
+  //
+  // The one left says WHAT is missing and WHY it is missing rather than being
+  // greyed out, which is what EmptyState requires of its caller and what
   // STATE.05 requires of the page.
   //
-  // NEITHER CARRIES A COUNT. The sheet writes `LATEST 03` into the SYS.04 meta;
-  // that is a number its phase has not been given, and a sentence that mentioned
-  // it would be an invented figure on a site built to argue against them. SYS.01
-  // and SYS.02 now carry their counts because the answers carry them —
-  // `trainingMeta` and `systemsMeta` in lib/api/.
-  homeSys03Why:
-    "Activity and operation — two blocks, each naming its own source. Neither " +
-    "is drawn before its source has answered.",
+  // IT CARRIES NO COUNT. The sheet writes `LATEST 03` into the SYS.04 meta; that
+  // is a number its phase has not been given, and a sentence that mentioned it
+  // would be an invented figure on a site built to argue against them. SYS.01,
+  // SYS.02 and SYS.03 now carry their counts because the answers carry them —
+  // `trainingMeta`, `systemsMeta` and `contributionsMeta` in lib/api/.
   homeSys04Why:
     "The running part of this site rather than the proving part. Entries " +
     "appear once the renderer that reads them exists.",
@@ -250,6 +254,27 @@ export const en = {
   homeSys02Down:
     "The list is read from /api/systems, and that endpoint did not answer this " +
     "request. No system is shown rather than a list written by hand.",
+
+  // SYS.03's two blocks when their endpoints do not answer, and TWO SENTENCES
+  // rather than one, which is the third time this file makes that call. The
+  // section reads two endpoints; a shared sentence over either empty block would
+  // name neither, and naming the endpoint is the whole point — a reader who can
+  // see it in the caption can check the claim.
+  //
+  // THE CALENDAR'S SENTENCE HAS A SECOND HALF THE OTHERS DO NOT NEED. Its
+  // upstream is not ours: the api answers with the last good calendar and its
+  // age for as long as it has one, so an empty graph is not "GitHub is slow" —
+  // it is "there has never been an answer to keep". Saying that is the
+  // difference between an outage and a cold start, and only one of them is
+  // about us.
+  homeUplinkGraphDown:
+    "The calendar is read from /api/contributions, which serves the last good " +
+    "answer with its age whenever it has one. Nothing is shown because there " +
+    "has not been one yet.",
+
+  homeUplinkStripDown:
+    "The strip is read from /api/systems, and that endpoint did not answer this " +
+    "request. No day is drawn rather than a row of cells that measured nothing.",
 
   /** The accessible name of a row's arrow. The arrow itself is one glyph, and a
    *  link whose whole text is `→` tells a screen-reader user nothing about which

@@ -4,6 +4,8 @@ import { IncidentLog } from "@/components/case/IncidentLog";
 import { OpsGrid } from "@/components/case/OpsGrid";
 import { SpecRail } from "@/components/case/SpecRail";
 import { ModuleCard } from "@/components/home/ModuleCard";
+import { ContributionGraph } from "@/components/home/ContributionGraph";
+import { OpsStrip } from "@/components/home/OpsStrip";
 import { Systems } from "@/components/home/Systems";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
@@ -18,13 +20,14 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { MetricTile } from "@/components/ui/MetricTile";
 import { SectionHead } from "@/components/ui/SectionHead";
-import type { Incident, OpsCell, SystemList } from "@/lib/api/systems";
+import type { ContributionLevel, Contributions } from "@/lib/api/contributions";
+import type { Incident, OpsCell, SystemDetail, SystemList } from "@/lib/api/systems";
 import { modules, type ModuleView } from "@/lib/api/training";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
 import { en } from "@/lib/i18n/messages/en";
 import { retryLine } from "@/lib/state/retry";
-import { MARKS, STATE_KEYS, stateLabel, type StateKey } from "@/lib/state/words";
+import { MARKS, STATE_KEYS, stateLabel, type DayState, type StateKey } from "@/lib/state/words";
 
 /**
  * A window with all four kinds of day in it, and an incident to reach.
@@ -118,6 +121,81 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
  * site is in it, and #289 owes it a word in H6. Rendering it here is how the
  * `— NO DATA` branch gets looked at before a system ever reaches that state.
  */
+/**
+ * A calendar the shape production answers with.
+ *
+ * BUILT RATHER THAN TRANSCRIBED, and 367 literal days would be the only other
+ * way. What matters is that the SHAPE is the real one — measured against
+ * https://timseil.dev/api/contributions on 2026-09-01: 53 columns, 367 days, a
+ * last week of three, and all five steps present. A tidier fixture is how H5a's
+ * defect stayed invisible for a phase: `/` has no api in this rig, so this
+ * gallery is the only place any of it is in the document.
+ *
+ * The counts are chosen to land on all five levels the same way GitHub's own
+ * buckets do, so the legend under the graph has something to point at.
+ */
+function calendar(first: string, days: number, ageSec: number): Contributions {
+  const start = Date.parse(`${first}T00:00:00Z`);
+  const weeks: { days: { date: string; count: number; level: ContributionLevel }[] }[] = [];
+  let total = 0;
+
+  for (let index = 0; index < days; index += 1) {
+    const date = new Date(start + index * 86_400_000);
+    const iso = date.toISOString().slice(0, 10);
+    // Deterministic and lumpy: a run of empty days, then a burst, so the picture
+    // reads as work rather than as noise.
+    const count = index % 11 === 0 ? 28 : index % 7 === 0 ? 12 : index % 3 === 0 ? 5 : index % 5 === 0 ? 1 : 0;
+    const level: ContributionLevel =
+      count === 0 ? "l0" : count === 1 ? "l1" : count === 5 ? "l2" : count === 12 ? "l3" : "l4";
+    total += count;
+
+    if (date.getUTCDay() === 0 || weeks.length === 0) weeks.push({ days: [] });
+    weeks[weeks.length - 1].days.push({ date: iso, count, level });
+  }
+
+  return { totalContributions: total, fetchedAt: `${first}T00:00:00Z`, cacheAgeSec: ageSec, weeks };
+}
+
+/** 53 columns from a Sunday, a short last week, 22 minutes old — production. */
+const GALLERY_CALENDAR = calendar("2025-08-31", 367, 1_357);
+
+/** The case no live answer has produced: a first column of four, on rows 4–7. */
+const GALLERY_CALENDAR_OFFSET = calendar("2025-09-03", 364, 90);
+
+/** GitHub has been unreachable for nine hours and the answer says so. */
+const GALLERY_CALENDAR_STALE = calendar("2025-08-31", 367, 33_000);
+
+/**
+ * Thirty days of operation, and two states production has not produced.
+ *
+ * `nodata` twenty times and `ok` ten is what /api/systems/timseil-dev?window=30
+ * answered on 2026-09-01 — the probe is about ten days old, so two thirds of the
+ * real strip is outline. `degraded` and `outage` are added for the reason the
+ * `in_build` row above gives: a state nobody has drawn is a state nobody has
+ * looked at.
+ */
+const GALLERY_STRIP: SystemDetail = {
+  slug: "timseil-dev",
+  systemNo: "02",
+  name: "timseil.dev",
+  state: "live",
+  source: { access: "public", url: "https://github.com/G1NG4R/timseil-dev" },
+  stack: ["Next.js 16.3", "Go 1.26", "PostgreSQL 18.6"],
+  metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
+  window: 30,
+  generatedAt: "2026-09-01T19:21:00Z",
+  incidents: [],
+  deploys: [],
+  days: Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(Date.parse("2026-08-03T00:00:00Z") + index * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const state: DayState =
+      index < 18 ? "nodata" : index === 21 ? "degraded" : index === 24 ? "outage" : "ok";
+    return { d: date, state, downSec: state === "outage" ? 640 : 0 };
+  }),
+};
+
 const GALLERY_SYSTEMS = {
   systems: [
     {
@@ -677,6 +755,71 @@ export default function GalleryPage() {
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
           <Systems body={GALLERY_SYSTEMS} messages={en} />
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">ContributionGraph</h2>
+          <span className="gal-where">homepage `SYS.03` · one picture, one name</span>
+        </div>
+        <p className="gal-states">
+          Fifty-three columns, because that is what production answers: measured
+          on 2026-09-01 the calendar carried 53 weeks and 367 days, the last week
+          three of them. The caption counts what is drawn — the sheet writes
+          `LAST 365 DAYS`, and 365 is a round number about a year rather than
+          this year.
+        </p>
+        <p className="gal-states">
+          All five steps stand in it, which production also does: 322 · 26 · 12 ·
+          4 · 3 on the day this was built. `--l0` to `--l4` have been in all seven
+          palettes since G1 with nothing drawing them, and this is the grid they
+          were cut for.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <ContributionGraph body={GALLERY_CALENDAR} messages={en} />
+        </div>
+        <p className="gal-states">
+          The second one begins on a Wednesday, which no live answer has yet
+          produced. Its first column is four cells and they belong on rows four to
+          seven; placed at the top the whole year would slide up three rows, and
+          nothing on `/` would look wrong enough to notice.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <ContributionGraph body={GALLERY_CALENDAR_OFFSET} messages={en} />
+        </div>
+        <p className="gal-states">
+          The third is old. The api answers with the last good calendar and its
+          age for as long as it has one, so `from cache` is not a panel — it is
+          the same picture wearing a larger number. Only the cold start, where
+          GitHub has never replied, draws the fourth.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <ContributionGraph body={GALLERY_CALENDAR_STALE} messages={en} />
+          <ContributionGraph body={null} messages={en} />
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">OpsStrip</h2>
+          <span className="gal-where">homepage `SYS.03` · thirty days, one row, nothing to press</span>
+        </div>
+        <p className="gal-states">
+          The same four cell states as the case study&apos;s grid and the same
+          derivation, in the shape the sheet gives the homepage: one row, and no
+          notch on the incidents. Production answers 20 `nodata` and 10 `ok`
+          today — the probe has been running about ten days — so two thirds of
+          the real strip is outline, which is the correct picture and not a bug.
+        </p>
+        <p className="gal-states">
+          `degraded` and `outage` are in the fixture and not in production, for
+          the reason the `in_build` row above gives: this is where a state gets
+          looked at before a visitor meets it.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <OpsStrip body={GALLERY_STRIP} messages={en} />
+          <OpsStrip body={null} messages={en} />
         </div>
       </section>
 

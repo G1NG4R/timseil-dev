@@ -99,6 +99,14 @@ const nextConfig: NextConfig = {
     // headers, and folding them into one profile would mean the day the
     // contract moves one, the other moves with it in silence.
     systemList: { stale: 300, revalidate: 300, expire: 1800 },
+    // H5b adds a fifth, and it is the FIRST whose numbers are not 300/1800. The
+    // contract gives GET /api/contributions `CacheControlHour` — `s-maxage=3600,
+    // stale-while-revalidate=7200` — so the reading is an hour before a refresh
+    // is due and two before a stale answer stops being servable. Longer than
+    // anything else here because the upstream is GitHub rather than our own
+    // database, and api/internal/contributions holds an hour as the staleness
+    // line on its side of the wire too.
+    contributions: { stale: 3600, revalidate: 3600, expire: 7200 },
   },
 
   // ONE FILE THE TRACER CANNOT SEE AS A DEPENDENCY, even though it currently
