@@ -99,6 +99,41 @@ Beleg, wenn das Werkzeug, mit dem man blickt, selbst der Defekt sein kann.**
 Erst der Vergleich zweier Browser gegen dieselben Bytes hat die Frage
 entschieden — und die entscheidende Zahl stand im `curl`, nicht im Fenster.
 
+### Nachtrag — der Deploy des Abnahme-PRs selbst
+
+**Dieser Abschnitt beschreibt den Tausch von `50ed96d`. Der Merge der Abnahme
+(`a30e7f3`, #307) hat dann die breitere Messung geliefert**, und weil sie
+dieselbe Behauptung besser stützt, steht sie hier statt in einem dritten
+Doku-PR, der einen dritten Container-Tausch gekostet hätte.
+
+```
+Deploy         12:09:23Z → 12:09:54Z   31 s
+neuer Prozess  12:10:03.691Z
+Zeuge ab       11:59:26Z, drei Pfade
+
+/                   650 Anfragen   650 × 200
+/api/health         650 Anfragen   650 × 200
+/work/timseil-dev   650 Anfragen   650 × 200
+
+✓ every answer was 200
+```
+
+**1 950 Anfragen, sechs der 650 Sekunden ohne Stichprobe.** Zum Vergleich: der
+Lauf oben maß 180 Anfragen mit 3 von 60 Sekunden ohne Probe, der H3-Lauf 269
+Anfragen über 269 Sekunden — und der fand ein Loch. Dieser ist die breiteste
+Messung, die bisher gemacht wurde, und er findet keins. Die zehnte Behauptung
+ebenfalls ein zweites Mal gestellt, gegen `a30e7f3`; der Weg steht in
+`backlog.local.md`.
+
+Zwei Zahlen aus demselben Lauf, beide klein, beide notiert:
+
+- **`e2e` brauchte 10m34s gegen 3m54s im PR-Lauf, bei identischem Code.** Grün,
+  aber die Streuung ist unerklärt. `make e2e` baut seinen Produktionsserver
+  selbst; ein kalter Runner ist die naheliegende, nicht die belegte Erklärung.
+- **`ops.lastDeploy.durationSec` sagt 669 s, der Job lief 31 s.** #242, vierte
+  Sichtung. Die Reihe ist jetzt 284/22 (H3), 309/31 und 669/31 — die Zahl misst
+  die Pipeline, und der Abstand wächst mit der Pipeline, nicht mit dem Tausch.
+
 ## Gefunden — aus der H4-Abnahme
 
 - **Die Abschnitts-Kopfzeile ist bei 390 gequetscht.** `.sec` ist ein Flex mit
