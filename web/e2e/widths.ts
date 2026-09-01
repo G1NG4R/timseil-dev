@@ -138,10 +138,30 @@ export const HOME_DRAWN_WIDTHS = [1440, 390] as const;
  * Where the homepage changes shape. THREE OF THE FOUR, and the missing one is
  * the assertion rather than an omission.
  *
- * 560 turns table rows into cards — `.work-row`, `.sys-row`, `.log-row` — and
- * none of those is on this page until H5 fills SYS.02 and SYS.04. Writing
- * `[...SWITCHES]` here would go red immediately and would report the wrong
- * thing: not "a switch is missing" but "this page has a component it does not
- * have yet".
+ * 560 turns table rows into cards — `.work-row`, `.sys-row`, `.log-row`.
+ *
+ * H3 WROTE THAT NONE OF THOSE WAS ON THIS PAGE "UNTIL H5 FILLS SYS.02 AND
+ * SYS.04", AND H5a FOUND THAT REASON TO BE THE WRONG ONE. SYS.02 is built and
+ * `.sys-row` still never appears here, because this rig runs a production build
+ * with NO API — playwright.config.ts says so — and a system list with no answer
+ * renders an EmptyState rather than rows. The case study's sweep is unaffected
+ * only because its five metric tiles draw `— NO DATA` and stay in the document;
+ * a list has nothing to draw one of.
+ *
+ * AND 560 TURNED OUT NOT TO BE THE ROW'S SWITCH ANYWAY. `.sys-row` resolves at
+ * 1080 — six tracks carry 526px that will not shrink, so below that the
+ * description column collapses and at 560 the row is wider than its container.
+ * That is measured, in layout.css beside the rule. 1080 is already in this list
+ * for the hero, so the homepage's edge count does not move either way.
+ *
+ * SO THE ROW'S SWITCH IS NOT MEASURED ON THE PAGE, IT IS MEASURED WHERE THE
+ * ROWS EXIST. e2e/gallery.systems.spec.ts asks the question at /dev/components,
+ * which is the arrangement `home.sheet.spec.ts` already uses for ten of its
+ * measurements and H2b's finding one page over: a rule about a component has to
+ * be checked where the component is.
+ *
+ * Adding a fourth entry here would not report "a switch is missing". It would
+ * report "there is no api in this rig", which is true, already written down, and
+ * not what a width sweep is for.
  */
 export const HOME_SWITCHES = [1080, 900, 720] as const;

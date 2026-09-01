@@ -58,6 +58,13 @@ export const timseilDev: CaseStudy = {
     "comes out of that API, and every deploy runs through the same pipeline as " +
     "the projects it links to.",
 
+  // The row on the homepage. The sheet writes "This site as a system — React
+  // Router front, Go API, Compose, CI/CD, VPS, monitoring"; correction #1 takes
+  // out the front end that was never built, and the rest is dropped because the
+  // row already carries the stack in its own column, out of stack.yaml. Naming
+  // it twice is how the two copies start disagreeing about the version.
+  blurb: "This site as a system — built, deployed and measured by the pipeline it documents.",
+
   // The one red moment on the page. The design notes card is explicit about it:
   // "Ein Alert-Moment: die rote Zeile im Hero. Sonst nur Signal-Cyan."
   alert: "YOU ARE INSIDE THIS PROJECT",

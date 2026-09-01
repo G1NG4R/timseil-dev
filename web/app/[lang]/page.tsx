@@ -16,22 +16,25 @@
 // row inside the terminal frame — components/home/Live.tsx, which explains why
 // that is its home and not merely its hiding place.
 //
-// TWO SUSPENSE HOLES SINCE H4, AND THE SECOND ONE IS A WHOLE SECTION. The
+// THREE SUSPENSE HOLES SINCE H5a, AND TWO OF THEM ARE WHOLE SECTIONS. The
 // terminal row asks the api one question and puts the answer in one word; the
 // training log asks a second and puts the answer in twenty-two rows, five
-// cards and the counts in its own heading. That is why the region begins at
-// the section head rather than under it — components/home/TrainingLog.tsx has
-// the argument.
+// cards and the counts in its own heading; the system list asks a third and
+// puts its count in its heading too. That is why those regions begin at the
+// section head rather than under it — components/home/TrainingLog.tsx has the
+// argument and components/home/Systems.tsx repeats it.
 //
-// Everything else — the hero, the three remaining shells and their reasons —
-// is in the repository and prerenders whole. The case study has five holes
-// because it has five measured regions; this page now has two.
+// Everything else — the hero, the two remaining shells and their reasons — is
+// in the repository and prerenders whole. The case study has five holes because
+// it has five measured regions; this page now has three.
 
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { Hero } from "@/components/home/Hero";
 import { SysSection } from "@/components/home/SysSection";
+import { Systems } from "@/components/home/Systems";
+import { SystemsLive } from "@/components/home/SystemsLive";
 import { TrainingLive } from "@/components/home/Training";
 import { TrainingLog } from "@/components/home/TrainingLog";
 import { TerminalPanelLive } from "@/components/home/Live";
@@ -95,18 +98,47 @@ export default async function Home() {
           in a page are four markers somebody can reorder without disagreeing
           with anything. K-26 records that happening once already. */}
       {SECTIONS.map((section) => {
-        // SYS.01 IS THE ONE SECTION WITH A COMPONENT OF ITS OWN, and the branch
-        // is on the id rather than on `reasonKey === null` because the id is
-        // what decides WHICH component — the nullable field only says THAT
-        // there is one. H5 adds two more branches and is the phase in which
-        // this probably becomes a lookup; three cases is early for one.
+        // TWO SECTIONS WITH COMPONENTS OF THEIR OWN, and the branch is still on
+        // the id rather than on `reasonKey === null` because the id is what
+        // decides WHICH component — the nullable field only says THAT there is
+        // one.
         //
-        // The head is inside the streamed region here and not above it, because
-        // its meta line carries the answer's own counts. TrainingLog says why.
+        // STILL NOT A LOOKUP TABLE, and H4's own comment here predicted the
+        // wrong thing. It said H5 "is the phase in which this probably becomes a
+        // lookup"; with two entries a table would be a map from a string to a
+        // closure, read once, right beside the two `if`s it replaced. H5c is
+        // where the question is worth asking again, because there the four
+        // branches stand together and the shape of the fourth is known.
+        //
+        // The head is inside each streamed region and not above it, because its
+        // meta line carries that answer's own counts. TrainingLog says why, and
+        // Systems repeats it for its own count.
         if (section.id === "SYS.01") {
           return (
             <Suspense key={section.id} fallback={<TrainingLog body={null} messages={messages} />}>
               <TrainingLive messages={messages} />
+            </Suspense>
+          );
+        }
+
+        if (section.id === "SYS.02") {
+          // The exit comes off the same list the shells read it from, so the
+          // section keeps its way out when /api/systems does not answer. H5a
+          // dropped it once by swapping the component and not the link.
+          const exit =
+            section.exit === null
+              ? null
+              : {
+                  href: localeHref(locale, section.exit.path),
+                  label: messages[section.exit.labelKey],
+                };
+
+          return (
+            <Suspense
+              key={section.id}
+              fallback={<Systems body={null} exit={exit} messages={messages} />}
+            >
+              <SystemsLive exit={exit} messages={messages} />
             </Suspense>
           );
         }

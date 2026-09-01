@@ -1,0 +1,190 @@
+---
+title: 'The column the test rig could not see'
+deck: 'A description column on my homepage computed to zero pixels wide. Seven hundred and forty-three end-to-end assertions were green, and not one of them could have found it — because the page they test has no data in it. Then the test I wrote to catch it turned out to be wrong, and found something worse.'
+published: 2026-09-01
+tags: ['testing', 'frontend', 'css']
+system: 'timseil-dev'
+summary: |
+  My end-to-end rig builds the site in production mode and runs it with no API
+  behind it. That is a deliberate choice and mostly a good one: it is fast, it is
+  hermetic, and it forces every component to have an honest empty state. It also
+  means that any section which renders a list is, in the rig, a panel saying the
+  list could not be loaded — so every rule about how a row looks goes unasked. I
+  had already paid for this twice and written it down both times. The third time
+  it cost me a column that was 0px wide at the width the design is drawn at, and
+  the only thing that found it was pointing a browser at a real database.
+---
+
+## What shipped
+
+The homepage of this site has a section that lists the systems it links to. Each
+system is a row: a number, a name, a sentence about what it is, the stack it runs
+on, its state, and an arrow into the case study where there is one.
+
+The design sheet draws that row as a six-column grid, and I transcribed the track
+list from it almost unchanged — the only edit was wrapping the flexible track in
+`minmax(0, …)`, which is a house rule here because a bare `1fr` has an implicit
+`min-width: auto` and gets burst open by anything that will not wrap:
+
+```css
+grid-template-columns: 52px 240px minmax(0, 1fr) auto 108px 26px;
+```
+
+The `1fr` is the sentence. The `auto` is the stack.
+
+Everything about that is correct, and the row it produces at 1440px is broken:
+the sentence column computes to **zero pixels wide**, and the row stands 334px
+tall next to a neighbour that is 76px.
+
+## Why
+
+`auto` on a grid track means max-content. The sheet's artboard draws five things
+in the stack column — a framework, a language, a container runtime, a CI system,
+a host — and a handful of short words is narrow. The other row on my page is the
+measurement I actually have for that: four items, and its stack column resolves
+to 188px. That is the scale the drawing is sized against.
+
+My API does not answer five. The stack for this system is generated from
+`go.mod`, `package.json` and `compose.yaml` by a step in CI, precisely so that
+nobody ever types a version number into a page again. It answers eleven:
+
+```
+Next.js 16.3 · React 19.2 · Go 1.26 · pgx 5.10 · sqlc 1.30 · goose 3.27 ·
+PostgreSQL 18.6 · Node 24 · Prometheus 3.13 · Loki 3.7 · Alloy 1.18
+```
+
+Max-content of that is 618px. A grid resolves its intrinsic tracks before it
+distributes free space, so the `auto` column takes its 618px first and the `1fr`
+beside it gets what is left, which at that width is nothing.
+
+The obvious fix is one track: cap the stack column at a width the track list
+already uses, and let it wrap inside it. I made that change, watched the row come
+back to 119px with a 378px description, and wrote a test to hold it.
+
+The test was wrong, and being wrong is how it earned its keep.
+
+## The test I got wrong found the bigger half
+
+I asserted that the description column is wider than 200px. That is true at
+1440, and it went red at 1024, 899 and 719 — so I measured the whole band
+instead of only the width the design is drawn at:
+
+```
+1440   description 378px   stack 240px   heights  76 / 119
+1024   description 162px   stack 240px   heights  76 / 119
+ 899   description  37px   stack 240px   heights  76 / 295
+ 719   description   0px   stack  97px   heights 105 / 334
+ 560   description   0px   stack   0px   heights 205 / 579   — and 54px of overflow
+```
+
+Capping the stack column had fixed exactly one width. The real problem is
+arithmetic that has nothing to do with the stack: six tracks carry 526px that
+cannot shrink — a 52px number, a 240px name, the 240px stack, a 108px state, a
+26px arrow, and five 20px gaps. Below about 1080 there is nothing left for the
+description, and at 560 the row is wider than the box it stands in.
+
+There is a shared rule in my layout stylesheet that turns table-like rows into
+stacked cards below 560. For a two-column row that is the right width. For a
+six-column row it is far too late, and I had inherited the number without asking
+whether it fit the thing I was applying it to.
+
+So the row now resolves at 1080 instead — which is not a new number. It is the
+width where every other multi-column layout on this site already collapses, and
+the stylesheet says why in a sentence I had read and not applied: *one switch for
+all two-column rows; no component gets its own value.*
+
+The card keeps all six cells. The row above it in the same file drops its preview
+column at that switch — omit, don't shrink — and that is right for a preview and
+wrong here, because every cell of a system row is a claim.
+
+## The part that is worth writing down
+
+I did not find either half with a test. I could not have.
+
+My Playwright rig builds the site the way production builds it and then runs it
+with **no API container at all**. The config says so in a comment, and the
+comment has been right about the consequences every time:
+
+> this rig runs a production build with no api at all. So every rule about what
+> a measured cell looks like was unassertable on the page that carries it.
+
+On that page, a section that reads a list from an API does not render a list. It
+renders an empty panel that names the endpoint it could not reach — which is the
+correct behaviour, is itself tested, and means there is not a single row in the
+document. Every assertion about how a row lays out has nothing to attach to.
+
+This is the third time I have paid for it, and I had written it down both times
+before.
+
+The first time, a set of tests about an operations grid passed by finding nothing
+to check — four assertions about what a measured cell looks like, on a grid whose
+every cell was unmeasured. The second time, a design-measurement suite could not
+see a training log at all, so five of its measurements had to be pointed at the
+development component gallery instead, where the components are rendered from
+data held in the page.
+
+Both times I fixed the instance. Both times I wrote a paragraph explaining the
+shape. Neither time did I ask the obvious next question, which is: *what else is
+this hiding right now?*
+
+## What actually found it
+
+A browser, pointed at a local production build with a real database behind it,
+reading `getBoundingClientRect()` off the rows at three widths.
+
+Not looking at it — measuring it. That distinction matters here, because at a
+glance the row does not look broken. It looks like a row with a long stack in it.
+The sentence is not clipped or overlapped; it is *absent*, and an absent thing is
+the hardest kind to notice. The number is what says so:
+
+```
+1440   row 01:  76px tall, description 430px
+       row 02: 334px tall, description   0px
+```
+
+Four times the height and no description. In a screenshot that reads the way a
+348px empty terminal frame read to me in an earlier phase, and the way a 200px
+half-empty card read in the one after: not as a component with a lot in it, as a
+component that failed to load.
+
+## What changed besides the CSS
+
+Three things, and only one of them is the track list.
+
+The gallery fixture for that row used to carry three stack items, because three
+is enough to see that a stack renders. It now carries the real eleven,
+transcribed from the generated file. A fixture that is easier than production is
+a fixture that agrees with you.
+
+There are now three tests, all in the gallery, because that is the only place in
+the rig where the row exists: the description column is wider than 200px, the row
+is less than twice the height of its neighbour, and no row is wider than the
+container it stands in. The last one is the overflow check the page already has
+and could never apply here.
+
+And the divergences from the sheet are recorded with their reasons, so that the
+next person to read `auto` in the artboard and `minmax(0, 240px)` in the
+stylesheet finds out why in the file rather than by changing it back.
+
+The sheet, for its part, draws this page at 1440 and at 390 and at nothing in
+between, with a note saying the homepage is the simplest rebuild of all — the
+terminal moves under the hero text and the order stays. That was true of the page
+it described. It stopped being true the moment the page grew a six-column row,
+and no drawing existed to say so.
+
+## The thing I would tell myself
+
+A hermetic test rig does not have fewer blind spots than a wired one. It has
+*different* ones, and it has them in exactly the places where the product is
+about data — which, on a site whose entire argument is that every number comes
+out of a running system, is most places.
+
+The rig is still right to run without an API. What was wrong was treating "743
+green" as coverage of the page, when what it covers is the page as the rig can
+render it. Those are two documents. On this site, the second one has no rows in
+it at all.
+
+And the smaller lesson, which I did not expect to be writing: a test with a
+threshold picked at one width is not a bad test. It is a question asked at every
+width, and mine came back with an answer about three widths I had not thought to
+look at. I nearly loosened the threshold to make it pass.

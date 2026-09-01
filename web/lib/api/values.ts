@@ -1,4 +1,5 @@
-// The two guards every reader of an api answer needs, in one place.
+// The guards every reader of an api answer needs, in one place — and, since
+// H5a, the one piece of formatting that had the same problem.
 //
 // They were written in lib/api/health.ts in G4 with a reason that has not
 // changed: "The generated type is a statement about the contract, not about the
@@ -28,4 +29,26 @@ export function nonEmpty(value: unknown): string | null {
  */
 export function finiteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Two digits, the way every ordinal on this site is written.
+ *
+ * `SYS.01`, `02 TIMSEIL-DEV`, `01 SYSTEM`, `02 SYSTEMS` — the padding is the
+ * house style and the sheets use it in the same lines.
+ *
+ * IT IS NOT A GUARD, WHICH IS WHY THE HEADER OF THIS FILE HAD TO CHANGE. It
+ * decides how a number LOOKS, not what it MEANS, and by that line it does not
+ * belong beside the other two. It is here anyway because the header's argument
+ * is about copies rather than about categories: H5a needed it in
+ * lib/api/systems.ts, training.ts already had it, and the alternative was either
+ * an import between two endpoint readers with nothing else to say to each other
+ * or a third module holding one line. The two copies had already drifted before
+ * they were merged — one clamped a negative number, the other did not.
+ *
+ * NEGATIVE NUMBERS ARE NOT PADDED. `-1` is not an ordinal, and `0-1` is worse
+ * than the thing it was given.
+ */
+export function padTwo(value: number): string {
+  return value >= 0 && value < 10 ? `0${String(value)}` : String(value);
 }

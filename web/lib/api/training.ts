@@ -27,7 +27,7 @@
 import { NO_DATA, TRACK_MARKS, isTrackState, type TrackState } from "../state/words.ts";
 
 import type { GetBody } from "./client.ts";
-import { finiteNumber, nonEmpty } from "./values.ts";
+import { finiteNumber, nonEmpty, padTwo } from "./values.ts";
 
 /** The whole log, as the contract answers it. */
 export type Training = GetBody<"/api/training">;
@@ -254,20 +254,10 @@ export function trainingMeta(body: Training | null): string {
   parts.push(
     systems === null
       ? `EVIDENCE: ${NO_DATA}`
-      : `EVIDENCE: ${pad(systems)} ${systems === 1 ? "SYSTEM" : "SYSTEMS"}`,
+      : `EVIDENCE: ${padTwo(systems)} ${systems === 1 ? "SYSTEM" : "SYSTEMS"}`,
   );
   parts.push("SOURCE: /api/training");
 
   return parts.join(" · ");
 }
 
-/**
- * Two digits, the way every identifier on this site is written.
- *
- * `SYS.01`, `02 TIMSEIL-DEV`, `01 SYSTEM` — the padding is the house style and
- * the sheet uses it in the same line. It stops at two on purpose: a hundredth
- * system is a nicer problem than a mis-aligned column.
- */
-function pad(value: number): string {
-  return value < 10 && value >= 0 ? `0${String(value)}` : String(value);
-}

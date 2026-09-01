@@ -104,6 +104,27 @@ export interface CaseStudy {
   /** The `<h1>`. One sentence, not the system's name — the eyebrow says that. */
   readonly headline: string;
   readonly lead: string;
+  /**
+   * One line about the system, for a list that has room for a line.
+   *
+   * NOT `lead`, AND H5 IS WHY THE FIELD EXISTS. The homepage's system list draws
+   * one row per system with a single descriptive column; `lead` is four
+   * sentences written for a hero. Truncating it in the component would have been
+   * the same defect as a second, shorter copy of the words (#293) with the
+   * additional flaw that nobody could read the result before it shipped.
+   *
+   * SO IT LIVES HERE AND NOT IN THE DATABASE. `systems` holds slug, number,
+   * name, state, source, stack and metrics — what a machine writes. A sentence
+   * about what the system IS is prose, and migration 00002 keeps the table to
+   * what a machine writes.
+   *
+   * A SYSTEM WITHOUT A CASE STUDY THEREFORE HAS NO BLURB, and that is the honest
+   * shape rather than a gap to fill: `vat-check` is queued, has no repository and
+   * nothing written about it. The row renders no description cell at all — ADR
+   * 0055 made the same call about the hop latencies, where `— NO DATA` would have
+   * promised a number that nobody is going to measure.
+   */
+  readonly blurb: string;
   /** The one red line on the page. */
   readonly alert: string;
 

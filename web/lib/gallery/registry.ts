@@ -120,12 +120,38 @@ export const PARTS: readonly Part[] = [
   {
     id: "SystemRow",
     where: "SYS.02, work",
+    // Verbatim from the inventory, and two of the four are not what got built.
+    // The transcription is not edited to agree with us — SkillRow set that rule
+    // in H4 — so `note` carries the disagreement instead.
     states: ["rest", "hover (brackets + preview)", "aktiv", "disabled (queued)"],
     origin: "inventory",
-    module: null,
-    owedBy: "H5",
-    preview: false,
-    note: null,
+    module: "components/home/SystemRow.tsx",
+    owedBy: null,
+    preview: true,
+    note:
+      "Built with two of the four states. There is no `aktiv`: a row is not a " +
+      "control that stays pressed, and the Homepage sheet draws no such state " +
+      "for it either. `disabled (queued)` is built as an ABSENT exit rather " +
+      "than a greyed-out one — STATE.05 refuses a dead control, and the state " +
+      "column already says QUEUED beside it. The hover has no preview: the " +
+      "inventory's brackets belong to the Work Index in H6, where a row has " +
+      "somewhere to preview from.",
+  },
+  {
+    id: "ModuleCard",
+    where: "SYS.01",
+    // NOT FROM THE INVENTORY, and that is the whole reason this entry took a
+    // phase to appear. The handoff lists `SkillRow` and no card around it, so
+    // H4 built one — five modules are five boxes, and a grid of rows with
+    // headings between them would have been a card with the box left off.
+    // The backlog carried it as "gebaut, aber nicht inventarisiert" from
+    // 01.09.2026 until H5a, which is the file this phase had open anyway.
+    origin: "foundations",
+    states: ["mit tracks", "leer (0 tracks)"],
+    module: "components/home/ModuleCard.tsx",
+    owedBy: null,
+    preview: true,
+    note: "Not in the handoff inventory; H4 built it and H5a recorded it.",
   },
   {
     id: "OperationGrid",

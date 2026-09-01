@@ -102,6 +102,19 @@ const DIVERGENCE = {
     'read as a component waiting for a later phase, it reads as one that ' +
     'failed to load. `.st-wait` holds a height for two seconds; this stands ' +
     'for four phases, which is a different question with the same shape.',
+  // ── H5a ──────────────────────────────────────────────────────────────────
+  'stack-column-bounded':
+    'The sheet gives the stack column `auto` and draws five items in it — ' +
+    '"REACT ROUTER · GO · DOCKER · ACTIONS · VPS". stack.yaml answers ELEVEN ' +
+    'for this system, `auto` is max-content, and max-content of eleven items ' +
+    'is 618px at 1440 — taken from the `1fr` beside it, so the description ' +
+    'column computed to zero and the sentence the row exists to carry was not ' +
+    'drawn at all. The row stood 334px against the other row\'s 76. Bounded at ' +
+    'the width the name column already uses, so no new number enters the track ' +
+    'list and the stack wraps inside it. Found by measuring the page against a ' +
+    'real api: this rig has none, so `/` carries no row at all and the gallery ' +
+    'fixture carried three stack items where production answers eleven. Both ' +
+    'were changed, and gallery.systems.spec.ts holds the case now.',
   'path-stacks':
     'At 390 the sheet keeps the request path horizontal inside a swipe ' +
     'container and captions it "REQUEST PATH — SWIPE →": five 146px boxes and ' +
@@ -776,6 +789,101 @@ const HOME_MAP = [
   },
 
   // ── 390 · Homepage, artboard 1b ──────────────────────────────────────────
+  // ── 1440 · Homepage, artboard 1a · SYS.02 the system list ────────────────
+  //
+  // ALL OF THESE ARE MEASURED IN THE GALLERY, and it is the same wall SYS.01
+  // hit one block up with a sharper edge. There the module grid is absent
+  // because the api did not answer; here the ROW is absent for the same reason,
+  // and a list has no `— NO DATA` shape of its own to leave standing the way
+  // the five metric tiles do on the case study. e2e/widths.ts carries the
+  // consequence for the width sweep.
+  {
+    id: 'home-sys-row-columns',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 173,
+    decl: 'grid-template-columns', says: '52px 240px 1fr auto 108px 26px',
+    reading: 'six columns: the number, the name, what it is, what it runs on, where it stands, and the way in',
+    measure: { kind: 'track-count', selector: '.sys-row' }, expect: 6,
+    on: '/dev/components',
+  },
+  {
+    id: 'home-sys-stack-track',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 173,
+    decl: 'grid-template-columns', says: '52px 240px 1fr auto 108px 26px',
+    reading: 'the stack column is capped rather than max-content, because this system runs eleven things and the sheet drew five',
+    // The cap and not the resolved track list: `1fr` resolves against whatever
+    // container the measurement stands in, and this one stands in the gallery.
+    // What the correction actually fixes is the ceiling on this one column.
+    measure: { kind: 'box-width', selector: '.sys-meta' }, expect: 240,
+    on: '/dev/components',
+    diverges: { class: 'stack-column-bounded' },
+  },
+  {
+    id: 'home-sys-row-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 173,
+    decl: 'gap', says: '20px',
+    reading: 'with 20px between them, the same gap the module grid uses',
+    measure: { kind: 'computed', selector: '.sys-row', prop: 'column-gap' }, expect: '20px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-sys-row-pad',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 173,
+    decl: 'padding', says: '22px 8px',
+    reading: 'a row breathes 20px above and below, and bleeds 8px sideways so a lit row reads as a band',
+    measure: { kind: 'computed', selector: '.sys-row', prop: 'padding-top' }, expect: '20px',
+    on: '/dev/components',
+    diverges: { class: 'spacing-scale' },
+  },
+  {
+    id: 'home-sys-no',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 174,
+    decl: 'font', says: "500 12px 'JetBrains Mono',monospace",
+    reading: 'the display number is the largest mono step, in the accent at its edge weight',
+    measure: { kind: 'computed', selector: '.sys-no', prop: 'font-size' }, expect: '12px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-sys-name',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 175,
+    decl: 'font', says: "500 19px 'Chakra Petch',sans-serif",
+    reading: 'the name is 19px of the display face — a literal, because the display scale starts at 26 and there is no step under it to round to',
+    measure: { kind: 'computed', selector: '.sys-name', prop: 'font-size' }, expect: '19px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-sys-blurb',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 176,
+    decl: 'font', says: "400 13px 'Geist',sans-serif",
+    reading: 'and the sentence beside it is the body face at 13, which is a step',
+    measure: { kind: 'computed', selector: '.sys-blurb', prop: 'font-size' }, expect: '13px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-sys-meta-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 177,
+    decl: 'gap', says: '6px',
+    reading: 'the stack and the source stand 6px apart in one column',
+    measure: { kind: 'computed', selector: '.sys-meta', prop: 'row-gap' }, expect: '6px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-sys-state',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 178,
+    decl: 'font', says: "600 10px 'JetBrains Mono',monospace",
+    reading: 'the state word is a step smaller than the number and a step larger than the stack',
+    measure: { kind: 'computed', selector: '.sys-state', prop: 'font-size' }, expect: '10px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-sys-exit',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 179,
+    decl: 'font', says: "400 14px 'JetBrains Mono',monospace",
+    reading: 'the arrow is drawn at 14, and the mono scale ends at 13',
+    measure: { kind: 'computed', selector: '.sys-exit a', prop: 'font-size' }, expect: '13px',
+    on: '/dev/components',
+    diverges: { class: 'mono-scale' },
+  },
+
   {
     id: 'home-mobile-h1',
     sheet: 'homepage', artboard: '1b', width: 390, line: 317,

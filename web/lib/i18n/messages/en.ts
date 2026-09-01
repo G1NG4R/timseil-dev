@@ -201,29 +201,27 @@ export const en = {
     "the page can already ask the API, and takes no input until it can answer " +
     "one.",
 
-  // THREE SHELLS, NOT FOUR. `homeSys01Why` stood here until H4 and is gone
-  // rather than kept: it said the training log's rows "arrive with the endpoint
-  // that derives them", and the endpoint has arrived. A sentence that explains
-  // an absence which has ended is not harmless — it compiles, it reads as
-  // current, and it is the same class of quietly-false line as #284.
+  // TWO SHELLS, NOT FOUR. `homeSys01Why` stood here until H4 and `homeSys02Why`
+  // until H5a. Both were deleted rather than kept: the first said the training
+  // log's rows "arrive with the endpoint that derives them" and the second said
+  // the system list "stays empty until the API answers", and both endpoints have
+  // arrived. A sentence that explains an absence which has ended is not harmless
+  // — it compiles, it reads as current, and it is the same class of quietly-false
+  // line as #284.
   //
-  // What replaced it is `homeSys01Down`, one entry further on: a different
-  // claim about a different emptiness. That one is about the api not answering
-  // now, not about a component that does not exist yet.
+  // What replaced each is a `homeSys0NDown` entry further on: a different claim
+  // about a different emptiness. Those are about the api not answering now, not
+  // about a component that does not exist yet.
   //
-  // Every one of the three says WHAT is missing and WHY it is missing rather
-  // than being greyed out, which is what EmptyState requires of its caller and
-  // what STATE.05 requires of the page.
+  // Both of the two left say WHAT is missing and WHY it is missing rather than
+  // being greyed out, which is what EmptyState requires of its caller and what
+  // STATE.05 requires of the page.
   //
-  // NOT ONE OF THEM CARRIES A COUNT. The sheet writes `02 SYSTEMS` and
-  // `LATEST 03` into the section metas; those are numbers their phases have not
-  // been given, and a sentence that mentioned them would be an invented figure
-  // on a site built to argue against them. SYS.01 now carries its counts
-  // because the answer carries them — lib/api/training.ts, `trainingMeta`.
-  homeSys02Why:
-    "The systems the log points at, and the way into each case study. This " +
-    "list is read from the API rather than written here, so it stays empty " +
-    "until the API answers.",
+  // NEITHER CARRIES A COUNT. The sheet writes `LATEST 03` into the SYS.04 meta;
+  // that is a number its phase has not been given, and a sentence that mentioned
+  // it would be an invented figure on a site built to argue against them. SYS.01
+  // and SYS.02 now carry their counts because the answers carry them —
+  // `trainingMeta` and `systemsMeta` in lib/api/.
   homeSys03Why:
     "Activity and operation — two blocks, each naming its own source. Neither " +
     "is drawn before its source has answered.",
@@ -243,6 +241,20 @@ export const en = {
   homeSys01Down:
     "The log is read from /api/training, and that endpoint did not answer this " +
     "request. Nothing is shown rather than a list assembled from somewhere else.",
+
+  // SYS.02 when the api does not answer, and a SECOND SENTENCE rather than a
+  // shared one. It is a different endpoint, and the whole point of naming the
+  // endpoint is that a reader can check the claim — "the api did not answer"
+  // over a section whose head says /api/systems would be the vaguer of two
+  // available truths.
+  homeSys02Down:
+    "The list is read from /api/systems, and that endpoint did not answer this " +
+    "request. No system is shown rather than a list written by hand.",
+
+  /** The accessible name of a row's arrow. The arrow itself is one glyph, and a
+   *  link whose whole text is `→` tells a screen-reader user nothing about which
+   *  of two rows it belongs to. */
+  homeSystemsExit: "Read the case study",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",

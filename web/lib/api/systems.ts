@@ -18,8 +18,8 @@
 // start puts a real case behind the difference.
 
 import type { Messages } from "../i18n/messages/en.ts";
-import { dayState } from "../state/derive.ts";
-import { NO_DATA, type DayState } from "../state/words.ts";
+import { dayState, systemStateWord } from "../state/derive.ts";
+import { NO_DATA, type DayState, type StateWord } from "../state/words.ts";
 
 import type { GetBody } from "./client.ts";
 // The generated declarations, by name and without an extension, as
@@ -27,10 +27,23 @@ import type { GetBody } from "./client.ts";
 // contract declares it, and CLAUDE.md's rule has no exception for a small
 // object.
 import type { components } from "./schema";
-import { finiteNumber, nonEmpty } from "./values.ts";
+import { finiteNumber, nonEmpty, padTwo } from "./values.ts";
 
 /** One system in full, as the contract answers it. */
 export type SystemDetail = GetBody<"/api/systems/{slug}">;
+
+/** Every system, as the contract answers the list. */
+export type SystemList = GetBody<"/api/systems">;
+
+/**
+ * The half of a system both answers carry.
+ *
+ * `SystemDetail` is `allOf: [System, {window, generatedAt, days, incidents,
+ * deploys}]` in the contract, so this is the supertype and not a second
+ * transcription of it. Taking it from the generated declarations rather than
+ * writing it out is the same rule CLAUDE.md states for `Incident`.
+ */
+export type System = components["schemas"]["System"];
 
 /** How much of the window carries a measurement at all. */
 export interface Coverage {
@@ -242,8 +255,16 @@ export function coverageNote(cover: Coverage): string {
   return `${String(cover.measured)} of ${String(cover.window)} days measured`;
 }
 
-/** The stack as the spec rail prints it, or nothing. */
-export function stackLine(body: SystemDetail | null): string | null {
+/**
+ * The stack as the spec rail and the system row print it, or nothing.
+ *
+ * IT TAKES `System` AND NOT `SystemDetail` SINCE H5a, which is a widening rather
+ * than a change: the body was already read through `Record<string, unknown>`, so
+ * the list answer always worked and only the signature said otherwise. Copying
+ * it for the list would have been the `finiteNumber` mistake of H4 a second
+ * time — two copies of one small judgement are how the copies begin to disagree.
+ */
+export function stackLine(body: System | null): string | null {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
   if (!Array.isArray(raw.stack)) return null;
 
@@ -258,8 +279,10 @@ export function stackLine(body: SystemDetail | null): string | null {
  * the contract's `oneOf` is a promise about the document and this is the value
  * that arrived: a `public` arm with no url would render a link to nowhere, and
  * `<> PRIVATE` with no reason is the excuse the schema was written to refuse.
+ *
+ * Widened to `System` in H5a for the reason `stackLine` above gives.
  */
-export function sourceView(body: SystemDetail | null): SourceView {
+export function sourceView(body: System | null): SourceView {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
   const source = raw.source as Record<string, unknown> | undefined;
 
@@ -415,4 +438,126 @@ export function downtimeLabel(downSec: unknown): string | null {
   const seconds = finiteNumber(downSec);
   if (seconds === null || seconds < 0) return null;
   return seconds < 60 ? `${String(seconds)} s` : `${String(Math.round(seconds / 60))} min`;
+}
+
+// ── SYS.02 · SELECTED WORK ──────────────────────────────────────────────────
+//
+// H5a. The homepage's system list reads `/api/systems`, which is the same
+// `System` object the case study already reads one of — so everything below
+// either reuses a judgement from above or is new because a LIST has questions a
+// single system does not: how many are there, and in what order do they stand.
+
+/** One row of SYS.02, with every judgement already made. */
+export interface SystemRowView {
+  /** The identifier the route uses. Never rendered — it decides the link. */
+  readonly slug: string;
+  /** The two-digit display number, as the answer sends it. */
+  readonly no: string;
+  /** The system's name. `timseil.dev`, with the dot the slug does not carry. */
+  readonly name: string;
+  /**
+   * The state word, or `null` when this page has none for it.
+   *
+   * `in_build` IS THE `null` CASE AND IT IS NOT A BUG. lib/state/derive.ts
+   * carries the argument in full: the vocabulary has eight entries and none of
+   * them means "being built", the label IN BUILD is drawn on the Work Index
+   * sheet, and H6 is the phase where all three system states stand next to each
+   * other. #289. Until then a row for such a system reads `— NO DATA`, which is
+   * the true statement "this page cannot say".
+   */
+  readonly state: StateWord | null;
+  /** The stack, joined, or nothing. */
+  readonly stack: string | null;
+  /** How the code can be reached. The axis that is not `state` — K-21. */
+  readonly source: SourceView;
+}
+
+/**
+ * The rows of SYS.02, in the order the answer sends them.
+ *
+ * THE ORDER IS THE API'S, and that is a decision rather than a default. `ListSystems`
+ * ends with `ORDER BY s.system_no`, so the list arrives 01, 02, and the display
+ * number a reader sees is the position they read it in. Sorting again here would
+ * be a second opinion about an order that is already decided, and it would be
+ * the opinion that goes stale — the same argument lib/home/sections.ts makes
+ * about HOME.01 from the other direction.
+ *
+ * A ROW WITH NO SLUG IS DROPPED, not rendered with an empty link. That is the
+ * only row this function refuses, and it refuses it because the slug is what
+ * decides whether the row leads anywhere; a row that cannot answer that question
+ * has nothing to draw.
+ *
+ * EVERY OTHER FIELD MAY BE ABSENT AND THE ROW SURVIVES. The file header says why
+ * the reading is defensive though the type is generated, and ADR 0035's
+ * overlapping start is the case behind it: for a few seconds after a deploy the
+ * answer can come from the previous build.
+ */
+export function systemRows(body: SystemList | null): readonly SystemRowView[] {
+  const raw = (body ?? {}) as unknown as Record<string, unknown>;
+  if (!Array.isArray(raw.systems)) return [];
+
+  const rows: SystemRowView[] = [];
+
+  for (const entry of raw.systems as unknown[]) {
+    const system = (entry ?? {}) as Record<string, unknown>;
+
+    const slug = nonEmpty(system.slug);
+    if (slug === null) continue;
+
+    rows.push({
+      slug,
+      // The number is the answer's, padded there and not here. A system whose
+      // row lost it reads `--` rather than borrowing its position in the list:
+      // the position is where it stands, the number is what it is called.
+      no: nonEmpty(system.systemNo) ?? "--",
+      // And the name falls back to the slug rather than to nothing. H4 found
+      // this pair the other way round — the evidence line carries a slug where
+      // the sheet draws a name — and a row with neither would be a link with no
+      // text on it.
+      name: nonEmpty(system.name) ?? slug,
+      state: systemStateWord(system.state),
+      stack: stackLine(system as System),
+      source: sourceView(system as System),
+    });
+  }
+
+  return rows;
+}
+
+/**
+ * The line in the section head of SYS.02.
+ *
+ * `02 SYSTEMS` IS `rows.length`, NEVER A CONSTANT. The sheet writes the figure
+ * into the head and the seed happens to hold two, which is exactly the
+ * coincidence that makes a typed number survive being wrong. `trainingMeta`
+ * settled the shape for SYS.01 one section up, and this is the same shape with
+ * one count instead of two.
+ *
+ * IT NAMES ITS SOURCE, AND THE SHEET DOES NOT ASK IT TO. `02 SYSTEMS` is the
+ * whole meta there; `SOURCE: /api/training` appears only in SYS.01's. Added
+ * anyway, for the reason the sentence this section used to carry gave before it
+ * was deleted — "this list is read from the API rather than written here" — and
+ * HOME.01 makes it the rule one section further on: "jeder nennt seine Quelle".
+ * A claim about where a number comes from is worth nothing if the reader cannot
+ * see where to check it. Recorded as an addition to the sheet, not a reading.
+ *
+ * `null` IS THE FALLBACK'S BODY and it produces `— NO DATA SYSTEMS`, keeping the
+ * source line. The head that is still waiting names what it is waiting for —
+ * TrainingLog.tsx's arrangement, and the reason the head is inside the streamed
+ * region at all.
+ */
+export function systemsMeta(body: SystemList | null): string {
+  const raw = (body ?? {}) as unknown as Record<string, unknown>;
+
+  // THREE CASES AND NOT TWO. No body at all, a body with no readable list, and
+  // a body with an empty one — and only the third is `00`. `00 SYSTEMS` is a
+  // measurement: it says the api answered and there are none. An answer whose
+  // `systems` is missing or is not an array did not say that, and printing a
+  // zero for it would be invariant 1 in a section head.
+  const count = Array.isArray(raw.systems) ? systemRows(body).length : null;
+
+  const label = count === null ? NO_DATA : padTwo(count);
+  const noun = count === 1 ? "SYSTEM" : "SYSTEMS";
+
+  return `${label} ${noun} · SOURCE: /api/systems`;
 }

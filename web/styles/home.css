@@ -468,3 +468,166 @@
   letter-spacing: .06em;
   color: var(--dim);
 }
+
+/* ── SYS.02 · SELECTED WORK ─────────────────────────────────────────────────
+   H5a. One row per system, and the row is a grid rather than a table because
+   the sheet draws it as one: `grid-template-columns: 52px 240px 1fr auto 108px
+   26px` with `align-items: center`, on a `<li>` inside an `<ol>`.
+
+   WHY NOT A `<table>`. H2a asked the same question of `.decision-table` and
+   answered it the other way, so the difference is worth stating: that one has a
+   header row and two cells that mean the same thing in every row, this one has
+   six cells of six different kinds and no header. A table with no `<th>` is a
+   grid that has told a screen reader it is a table.
+
+   THE WIDTH SWITCH IS NOT HERE. `layout.css` has carried the rule since G1 —
+   `.work-row, .sys-row, .log-row { flex-direction: column }` below 560 — and
+   this is the first of the three to arrive. That file owns every switch on this
+   page; this one owns none.
+
+   THE LITERALS ARE THE SHEET'S FOUR COLUMN WIDTHS AND ONE TYPE SIZE. The
+   widths are the same class as the `620px` above and the `3px` in the training
+   log: measurements of one component, which check-tokens.sh does not police and
+   invariant 8 does not cover.
+
+   The type size needs its own sentence, because type sizes ARE tokenised. The
+   sheet draws the system name at 19px in the display face, and the display
+   scale is 26 · 34 · 52 · 62 · 108 — there is no step under it to round down
+   to, which is what `half-pixel` and `mono-scale` do everywhere else. Rounding
+   UP to 26 would make a row title larger than the section head above it.
+   `chrome.css` reached the same wall twice already and wrote the literal both
+   times (25px in the mobile menu, 21px on its mail link), so this is the third
+   consumer of a decision the shipped stylesheet has been making since G3 rather
+   than a new one. Recorded as a sheet reading in the oracle, not as a
+   divergence: 19 is what we draw and 19 is what the sheet says.              */
+
+.sys-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* THE FOURTH TRACK IS BOUNDED AND THE SHEET SAYS `auto`, WHICH IS THE ONE
+   CORRECTION THIS ROW NEEDED AND THE ONLY WAY TO SEE IT WAS TO MEASURE IT.
+
+   The sheet draws five stack items — `REACT ROUTER · GO · DOCKER · ACTIONS ·
+   VPS` — and `auto` is the right track for five. `stack.yaml` answers eleven for
+   this system, `auto` is max-content, and max-content of eleven items is 618px
+   at 1440. It takes that width from the `1fr` beside it, so the DESCRIPTION
+   COLUMN COMPUTES TO ZERO and the sentence the row exists to carry is not drawn
+   at all. The row grows to 334px against the other row's 76 — which in a
+   screenshot is the shape H4 found on the module cards and H3 on the terminal
+   body: not a row with a lot in it, a row that failed.
+
+   Bounded at the width the name column already uses, so no new number enters
+   the track list, and the stack wraps inside it. `minmax(0, …)` rather than a
+   bare maximum: the track may still be narrower when its content is.
+
+   NOT FOUND BY A TEST, AND NOT FINDABLE BY ONE AS THE RIG STOOD. There is no
+   api there, so no row is in the document on `/`; the gallery fixture now
+   carries the real eleven-item stack for exactly this reason.                 */
+.sys-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 240px) minmax(0, 1fr) minmax(0, 240px) 108px 26px;
+  gap: var(--s-20);
+  align-items: center;
+  padding: var(--s-20) var(--s-8);
+  border-block-end: 1px solid var(--line-soft);
+}
+
+/* THE HOVER IS TWO MARKS AND NOT ONE, which is the rule the state language
+   states for colour and holds for emphasis too: the inset bar is what a reader
+   sees at a glance and the panel fill is what confirms it. Neither carries
+   information the row does not already print — every value in the row is
+   readable at rest, which is the finding SkillRow was rebuilt around in H4.
+
+   `background-color` AND NOT `background`. The shorthand resets
+   `background-image`, which on a `marks` box erases the eight gradients. This
+   row is not one, and the declaration is written the safe way anyway: the next
+   person to add `marks` to it should not have to find that out.             */
+.sys-row:hover {
+  background-color: var(--panel-active);
+  box-shadow: inset 2px 0 0 var(--acc);
+}
+
+/* THE SHEET DRAWS THE NUMBER AT rgba(0,229,255,.55) AND WE DRAW IT AT FULL
+   ACCENT, which is a correction rather than a preference. `--acc-edge` is that
+   exact value and it is a BORDER colour: composited over `--bg` it reads 4.37:1,
+   under the 4.5 that WCAG asks of text and under the 5.41 that tokens.css marks
+   as "Untergrenze für Text" beside `--dim`. Built the sheet's way first, and
+   axe found it on /dev/components at every width — which is H4's reason for
+   putting the gallery under axe at all, paying for itself one phase later.
+
+   `--acc` is 12.57:1 and is what `.sec-id` already uses for the marker three
+   lines above this row. Recorded as a divergence. */
+.sys-no {
+  font: 500 var(--t-mono-12)/1 var(--mono);
+  color: var(--acc);
+}
+
+/* UPPERCASED HERE AND NOT IN THE DATA. The sheet writes `TIMSEIL.DEV` and the
+   api answers `timseil.dev`; the answer is the name of the system and the case
+   is a drawing decision. One declaration, and `.trn-evi` already makes the same
+   split one section up. */
+.sys-name {
+  font: 500 19px/1.2 var(--display);
+  letter-spacing: .02em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.sys-blurb {
+  font: 400 var(--t-body-13)/1.5 var(--body);
+  color: var(--ink-2);
+}
+
+/* The fourth column is two lines, which is the sheet's own construction:
+   `display:flex; flex-direction:column; gap:6px` around the stack and the
+   source. It is `auto` in the track list, so it is as wide as the longer of
+   the two. */
+.sys-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+/* 9.5px in the sheet, and `half-pixel` is the class: thirteen steps, no halves,
+   round down. The tracking is .1em, which is not one of the two tracking tokens
+   either — `.trn-evi` set .06em one section up and this follows it rather than
+   opening a third value. */
+.sys-stack,
+.sys-source {
+  font: 500 var(--t-mono-9)/1.6 var(--mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.sys-stack  { color: var(--dim); }
+/* Brighter than the stack above it, because it is the one line in the column a
+   reader is meant to act on — the sheet gives it #C6D1DB against #7C8996. */
+.sys-source { color: var(--ink-3); }
+
+.sys-state {
+  font: 600 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  white-space: nowrap;
+}
+
+/* The arrow is the whole link, so it gets the row's colour at rest and the
+   accent on hover — and the hover is on the ROW, not on the anchor, because the
+   sheet lights the whole row and a target that only answers to its own 26px
+   would be a smaller thing than the thing that appears to react. */
+/* 14px in the sheet. The mono scale is 9 · 10 · 11 · 12 · 13 and there is no
+   fourteen, so it rounds down — `mono-scale`, the class H3 opened for the hero
+   subline at exactly this size. */
+.sys-exit a {
+  font: 400 var(--t-mono-13)/1 var(--mono);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.sys-row:hover .sys-exit a,
+.sys-exit a:hover,
+.sys-exit a:focus-visible {
+  color: var(--acc);
+}
