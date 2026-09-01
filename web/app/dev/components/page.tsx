@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { IncidentLog } from "@/components/case/IncidentLog";
 import { OpsGrid } from "@/components/case/OpsGrid";
 import { SpecRail } from "@/components/case/SpecRail";
+import { ModuleCard } from "@/components/home/ModuleCard";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
 import { EmptyState } from "@/components/state/EmptyState";
@@ -17,6 +18,7 @@ import { Field } from "@/components/ui/Field";
 import { MetricTile } from "@/components/ui/MetricTile";
 import { SectionHead } from "@/components/ui/SectionHead";
 import type { Incident, OpsCell } from "@/lib/api/systems";
+import { modules, type ModuleView } from "@/lib/api/training";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
 import { en } from "@/lib/i18n/messages/en";
@@ -42,6 +44,63 @@ const GALLERY_DAYS: OpsCell[] = Array.from({ length: 91 }, (_, i): OpsCell => {
   if (i === 87) return { date, state: "degraded", downSec: 1080, incidentId: "INC-002" };
   return { date, state: i < 78 ? "nodata" : "ok", downSec: 0, incidentId: null };
 });
+
+/**
+ * Two module cards: the four states the contract declares, and the one it does
+ * not.
+ *
+ * BUILT THROUGH `modules()` RATHER THAN AS LITERALS, which is the difference
+ * between a gallery and a picture of one. The shape below is what the api
+ * actually sends — `state` as a lowercase word, `evidence` as an array, `note`
+ * only where the array is empty — so what this page renders went through the
+ * same reader the homepage uses. Hand-written `ModuleView`s would keep looking
+ * right on the day that reader stopped producing them.
+ *
+ * `mastered` IS NOT A TYPO. ADR 0035's overlapping start lets a container talk
+ * to a contract one deploy newer than itself, and a fifth state word is what
+ * that looks like from here. Production cannot produce this row; that is
+ * precisely why it is in a gallery.
+ *
+ * The two systems in the `core` row are not this site's — `core` needs two live
+ * systems and there is one. The row draws a rule, and it says so by naming
+ * systems that do not exist yet rather than by inventing evidence for this one.
+ *
+ * THE SECOND CARD IS EMPTY ON PURPOSE. ADR 0018 keeps a module with no tracks
+ * in the answer, because "das Modul ist leer" is a different statement from
+ * "das Modul gibt es nicht" — and a card that has nothing in it is a state
+ * somebody has to have looked at once.
+ */
+const GALLERY_MODULES: readonly ModuleView[] = modules({
+  modules: [
+    {
+      no: "01",
+      title: "Languages",
+      tracks: [
+        {
+          name: "Go",
+          state: "core",
+          evidence: [
+            { systemNo: "02", systemId: "relay", detail: "api" },
+            { systemNo: "04", systemId: "timseil-dev", detail: "api, health endpoint" },
+          ],
+        },
+        {
+          name: "CI/CD (GitHub Actions)",
+          state: "applied",
+          evidence: [{ systemNo: "02", systemId: "timseil-dev", detail: "build + deploy" }],
+        },
+        {
+          name: "Kubernetes",
+          state: "learning",
+          evidence: [{ systemNo: "05", systemId: "foundry", detail: "k3s on the vps" }],
+        },
+        { name: "Pub/sub (RabbitMQ)", state: "queued", evidence: [], note: "self-study" },
+        { name: "Rust", state: "mastered", evidence: [] },
+      ],
+    },
+    { no: "02", title: "Backend", tracks: [] },
+  ],
+} as never);
 
 const GALLERY_INCIDENT: Incident[] = [
   {
@@ -483,6 +542,43 @@ export default function GalleryPage() {
             messages={en}
           />
           <IncidentLog incidents={GALLERY_INCIDENT} messages={en} />
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">SkillRow</h2>
+          <span className="gal-where">homepage `SYS.01` · the state is derived, never typed</span>
+        </div>
+        <p className="gal-states">
+          Five rows for four states, because the fifth is the one production
+          cannot make: a word from a contract newer than this container. Two of
+          the four cannot be reached either — `core` needs two live systems and
+          `learning` needs one in build, and this site has one system, live. They
+          are drawn here because the contract declares them, which is the whole
+          use of a gallery.
+        </p>
+        <p className="gal-states">
+          The inventory column beside this part says `rest 28 %` and
+          `hover 100 % + beleg`, and none of these rows does that. The SYS.01
+          sheet overrules it — the evidence line is always readable, and the
+          hover carries nothing it does not. lib/gallery/registry.ts holds the
+          disagreement rather than editing the transcription.
+        </p>
+        <p className="gal-states">
+          Rendered inside a real `.trn-grid` and real `ModuleCard`s rather than
+          on their own, because this is also the only place the rig can measure
+          the card geometry the sheet draws: `/` has no api here, so SYS.01 is
+          an outage panel there and the grid is not in the document at all.
+          e2e/sheet.ts explains what that costs and what the `on` field does
+          about it.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <div className="trn-grid">
+            {GALLERY_MODULES.map((module) => (
+              <ModuleCard key={module.no} module={module} messages={en} />
+            ))}
+          </div>
         </div>
       </section>
 

@@ -59,8 +59,9 @@ void test("the numbers ascend, without a gap and without a repeat", () => {
   );
 });
 
-void test("every section says why it is empty, and the sentence exists", () => {
+void test("every section that is still empty says why, and the sentence exists", () => {
   for (const section of SECTIONS) {
+    if (section.reasonKey === null) continue;
     const sentence = en[section.reasonKey];
     assert.equal(typeof sentence, "string", `${section.id} has no reason`);
     // A present-but-empty string is the same defect as a missing one, and
@@ -71,13 +72,41 @@ void test("every section says why it is empty, and the sentence exists", () => {
 });
 
 // Not decoration: the emptiness has to have an end, and the end has to be a
-// phase somebody can look up. A shell owed by H3 would be one this phase was
+// phase somebody can look up. A shell owed by H4 would be one this phase was
 // supposed to fill and did not.
 void test("every shell names a later phase that fills it", () => {
   for (const section of SECTIONS) {
+    if (section.owedBy === null) continue;
     assert.match(section.owedBy, /^H\d+$/, `${section.id} owes itself to nothing`);
-    assert.notEqual(section.owedBy, "H3", `${section.id} is owed by the phase that built it`);
+    assert.notEqual(section.owedBy, "H4", `${section.id} is owed by the phase that built it`);
   }
+});
+
+// THE PAIR, AND WHY IT IS A TEST RATHER THAN A TYPE. `reasonKey` and `owedBy`
+// are independently nullable, so the compiler is happy with a section that is
+// both filled and owed, or with one that is neither — and both of those are the
+// same defect the gallery registry names for components: a row nobody answers
+// for. H4 is the phase that made the pair possible, so it is the phase that
+// closes it.
+void test("a section is either filled or owed, never both and never neither", () => {
+  for (const section of SECTIONS) {
+    const filled = section.owedBy === null;
+    assert.equal(
+      section.reasonKey === null,
+      filled,
+      `${section.id} says one thing with owedBy and another with reasonKey`,
+    );
+  }
+});
+
+// The counterpart to the sheet's order test, and the reason it is written as a
+// list rather than a count: after H5 this reads all four, and the diff that
+// makes it read all four is the diff that has to prove it.
+void test("SYS.01 is the one section built so far", () => {
+  assert.deepEqual(
+    SECTIONS.filter((section) => section.owedBy === null).map((section) => section.id),
+    ["SYS.01"],
+  );
 });
 
 void test("markerNumber refuses what is not a marker", () => {

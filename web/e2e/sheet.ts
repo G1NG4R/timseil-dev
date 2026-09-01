@@ -41,6 +41,26 @@ export interface Entry {
   measure: Measure;
   expect: number | string;
   diverges?: { class: string; sheet: string };
+  /**
+   * A route to measure this one entry on, instead of the page's own.
+   *
+   * H4 IS WHY THIS EXISTS, and the reason is the hole H2b already fell into
+   * once: this rig runs a production build with NO API, so a component that
+   * only exists when an answer arrives has nothing to measure on the page that
+   * carries it. `case-study.ops.spec.ts` had three tests that "passed by
+   * finding nothing to check"; SYS.01 is the same shape — without an api the
+   * homepage shows the outage panel and the module grid is not in the document.
+   *
+   * The gallery is the answer G7 built and H2b already reached for: every
+   * component in every state, rendered from data in the page. So an entry may
+   * name it, and the sheet's numbers get held against the component either way
+   * rather than being dropped for the ones an outage hides.
+   *
+   * An entry with `on` does NOT wait for streaming: the route it names is the
+   * one that has nothing to wait for, which is the property that makes it
+   * usable here at all.
+   */
+  on?: string;
 }
 
 export interface Oracle {
@@ -121,8 +141,11 @@ export function runSheetOracle({
         const excused = entry.diverges === undefined ? "" : ` — diverges: ${entry.diverges.class}`;
 
         test(`${entry.id}: ${entry.reading}${excused}`, async ({ page }) => {
-          await page.goto(route);
-          await ready(page);
+          await page.goto(entry.on ?? route);
+          // Only the page's own route streams; a borrowed route is chosen for
+          // having nothing to wait for, and `ready` would look there for
+          // regions it does not have.
+          if (entry.on === undefined) await ready(page);
 
           const got = await take(page, entry.measure);
 

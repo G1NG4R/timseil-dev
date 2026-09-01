@@ -85,19 +85,37 @@ export const PARTS: readonly Part[] = [
     states: ["loading (skeleton)", "ok", "error (cache)", "no-data"],
     origin: "inventory",
     module: null,
-    owedBy: "H4",
+    // H4 UNTIL THIS PHASE READ ITS OWN NAME AND FOUND IT WRONG. H4 is SYS.01,
+    // the training log; the contribution graph belongs to SYS.03 UPLINK, which
+    // the build plan gives to H5 and the Homepage sheet draws there. The `where`
+    // column says "hero" because the handoff inventory put it there before
+    // HOME.01 existed — that is the sheet's word and stays, but the phase that
+    // owes it is not a transcription and was simply wrong.
+    owedBy: "H5",
     preview: false,
     note: null,
   },
   {
     id: "SkillRow",
     where: "SYS.01",
+    // Verbatim from SYS.00.04.04, and the built component does NOT match the
+    // first of them. The inventory says the evidence line rests at 28% opacity
+    // and only reaches full on hover; the SYS.01 sheet this phase was built
+    // from says the opposite in as many words — "Nachweis-Zeile ist immer voll
+    // lesbar; beim Hover hebt sich die Zeile an" — and lists the hidden variant
+    // among the options it did not take. The transcription is not edited to
+    // agree with us: the disagreement is the point, and `note` carries it.
     states: ["rest 28 %", "hover 100 % + beleg"],
     origin: "inventory",
-    module: null,
-    owedBy: "H4",
-    preview: false,
-    note: null,
+    module: "components/home/SkillRow.tsx",
+    owedBy: null,
+    preview: true,
+    note:
+      "Built with the evidence line always readable, against the ZUSTÄNDE column " +
+      "beside it: the SYS.01 sheet overrules the inventory here, and the build " +
+      "plan's own next sentence overrules it twice — information may never live " +
+      "in opacity alone. So there is no 28% state to render, and the hover state " +
+      "carries nothing the resting one does not.",
   },
   {
     id: "SystemRow",

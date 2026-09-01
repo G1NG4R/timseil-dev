@@ -8,8 +8,12 @@ import {
   MARKS,
   NO_DATA,
   STATE_KEYS,
+  TRACK_MARKS,
+  TRACK_STATES,
   isStateKey,
+  isTrackState,
   stateLabel,
+  trackLabel,
   type StateKey,
 } from "./words.ts";
 
@@ -150,5 +154,108 @@ describe("the seven words of STATE.05", () => {
       "nodata",
     ];
     assert.deepEqual([...STATE_KEYS].sort(), [...expected].sort());
+  });
+});
+
+// ── The training log's four ─────────────────────────────────────────────────
+//
+// The block above is G6's acceptance for the seven words a SYSTEM can be in.
+// This one asks the same question of the four a TRACK can be in, because H4 is
+// the phase that put a second scale on the same page and the failure mode is
+// identical: a state that can only be told apart by its colour.
+describe("no track state is carried by its colour either", () => {
+  const tracks = TRACK_STATES.map((state) => [state, TRACK_MARKS[state]] as const);
+
+  it("gives every state a word, and no two states the same word", () => {
+    const labels = tracks.map(([, mark]) => mark.label);
+
+    for (const [state, mark] of tracks) {
+      assert.notEqual(mark.label, "", `${state} has no word`);
+    }
+    assert.equal(new Set(labels).size, labels.length, "two track states share a word");
+  });
+
+  it("gives every state its own bar length", () => {
+    // THE LOAD-BEARING ONE. The bar is the feature that survives a greyscale
+    // screenshot and a palette swap, and it only is one while the four lengths
+    // are four. Give two states the same fill and the bar stops being a second
+    // feature and becomes decoration beside the word.
+    const steps = tracks.map(([, mark]) => mark.steps);
+    assert.equal(new Set(steps).size, steps.length, "two track states fill the bar alike");
+  });
+
+  it("orders the bar the way the evidence orders the states", () => {
+    // core runs in two systems, applied in one, learning in something being
+    // built, queued in nothing. The bar has to read in that order or it says
+    // something the contract does not.
+    assert.ok(
+      TRACK_MARKS.core.steps > TRACK_MARKS.applied.steps &&
+        TRACK_MARKS.applied.steps > TRACK_MARKS.learning.steps &&
+        TRACK_MARKS.learning.steps > TRACK_MARKS.queued.steps,
+      "the bar does not follow the evidence",
+    );
+  });
+
+  it("leaves the bar empty for the state with no evidence at all", () => {
+    // Not one segment short — empty. A first step would be a claim, and nine of
+    // the twenty-two tracks are in this state at launch: an eighth of a bar
+    // times nine is a log that looks fuller than the systems behind it.
+    assert.equal(TRACK_MARKS.queued.steps, 0);
+  });
+});
+
+describe("QUEUED is one word at both scales", () => {
+  it("reads its label off MARKS rather than repeating it", () => {
+    // The whole reason the two tables may sit in one file. `dayLabel` makes the
+    // same move with `degraded`; if this ever fails, someone has written the
+    // word a second time and the two copies are free to drift.
+    assert.equal(TRACK_MARKS.queued.label, MARKS.queued.label);
+  });
+
+  it("shares the dictionary key too, so it is translated once", () => {
+    assert.equal(TRACK_MARKS.queued.messageKey, MARKS.queued.messageKey);
+    assert.equal(trackLabel("queued", en), stateLabel("queued", en));
+  });
+});
+
+describe("the track word is prose, the value is not", () => {
+  it("keeps the dictionary and the fallback labels in step", () => {
+    for (const state of TRACK_STATES) {
+      const mark = TRACK_MARKS[state];
+      assert.equal(en[mark.messageKey], mark.label, `${state} says one thing in two files`);
+    }
+  });
+
+  it("translates all four — none of them is in LANG.01's English set", () => {
+    // `messageKey` is not nullable here, unlike StateMark's, and this is the
+    // assertion that says the difference was a decision. ONLINE is the only
+    // state word the sheet keeps English, and it is not one of these.
+    for (const state of TRACK_STATES) {
+      assert.notEqual(TRACK_MARKS[state].messageKey, null);
+    }
+  });
+});
+
+describe("isTrackState", () => {
+  it("holds the four the contract enumerates", () => {
+    // Transcribed from `TrackState` in contract/openapi.yaml. The type makes a
+    // missing key a compile error; this makes an extra one a failing test.
+    assert.deepEqual([...TRACK_STATES].sort(), ["applied", "core", "learning", "queued"]);
+
+    for (const state of TRACK_STATES) {
+      assert.ok(isTrackState(state));
+    }
+  });
+
+  it("refuses a system's word, an uppercase label and a borrowed name", () => {
+    // `live` is what a SYSTEM is. A track is never live, and a caller that got
+    // true here could put a system state into a track row and the two scales
+    // would start meaning each other.
+    assert.equal(isTrackState("live"), false);
+    assert.equal(isTrackState("CORE"), false);
+    assert.equal(isTrackState("toString"), false);
+    assert.equal(isTrackState(""), false);
+    assert.equal(isTrackState(null), false);
+    assert.equal(isTrackState(7), false);
   });
 });

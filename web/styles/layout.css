@@ -331,3 +331,46 @@
 @media (max-width: 559px) {
   .pipeline { grid-template-columns: 1fr }
 }
+
+/* ── SYS.01 · the module grid ──────────────────────────────────────────────
+   Build plan H4. Three cards across at 1440, one at 390, and the sheet draws
+   nothing in between — the Intermediate Widths register says why in the same
+   breath as it draws the case study a third time: "DIE STARTSEITE FEHLT
+   ABSICHTLICH: ihr Umbau ist der einfachste von allen." So the two steps are
+   reasoned rather than copied, and they are reasoned the way this file has
+   reasoned every other one: from the arithmetic of the column, at a width some
+   other component already switches at.
+
+   NO NEW WIDTH. `HOME_SWITCHES` is [1080, 900, 720] and the grid uses two of
+   them, because "Kein Bauteil bekommt seinen eigenen Wert" is the rule at the
+   head of this file and a fourth number on this page would be one more edge for
+   the sweep to find and one more line for a reader to hold.
+
+   THE ARITHMETIC. A card's head is a name and a count on one line, and the
+   longest name is `05 FOUNDATIONS` at fourteen mono characters — about 100px at
+   the 11px step, plus `6 TRACKS` and the gap. Below roughly 140px of card the
+   two wrap and every card in the row grows a line. At 1079 the column is 999px:
+   three cards is 320 each, which is fine, and two is 490 — so the switch is not
+   forced here by the head. It is forced by the ROW: `HTTP servers & JSON APIs
+   (Go/TS)` is 31 characters at the 12px step, about 223px, and at 320 it shares
+   the line with `APPLIED`. Two columns is where that stops being tight.
+
+   At 719 the column is 639px: two cards is 310 each, which is where the longest
+   track name wraps against its state word again, so one column from there. The
+   step to one is also what the mobile artboard draws.                        */
+
+/* ---- < 1080: three across becomes two ------------------------------------ */
+@media (max-width: 1079px) {
+  .trn-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) }
+}
+
+/* ---- < 720: and two becomes one ------------------------------------------ */
+@media (max-width: 719px) {
+  .trn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+
+  /* The card head stops fitting on one line before the cards do: at 346px of
+     content a card is the whole column, and `05 FOUNDATIONS` plus `3 TRACKS`
+     plus the gap is wider than it looks in mono. It wraps and the count goes
+     under the name rather than being pushed off the edge. */
+  .trn-mod-head { flex-wrap: wrap; row-gap: var(--s-4) }
+}

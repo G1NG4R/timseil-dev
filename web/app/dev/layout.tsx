@@ -38,6 +38,14 @@ import "../../styles/chrome.css";
 import "../../styles/state.css";
 import "../../styles/ui.css";
 import "../../styles/case.css";
+// H4. The gallery renders SkillRow and ModuleCard, so it needs the stylesheet
+// that draws them — and it needs it in the site's own position in the order,
+// which is between case.css and layout.css. The comment above already stated
+// the rule this line obeys: "a preview that renders under a shorter cascade
+// than the page is a preview of something else." It was found the way that
+// sentence predicts, by a sheet-oracle entry reading `display: block` off a
+// grid.
+import "../../styles/home.css";
 import "../../styles/gallery.css";
 import "../../styles/layout.css";
 
@@ -47,6 +55,13 @@ import "../../styles/layout.css";
 // somewhere reachable.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
+  // A `<title>` because axe asks for one, and H4 is the phase that put this
+  // route under axe at all — SYS.01's rows exist nowhere else in the rig, so
+  // the workbench had to come into the run, and it arrived with one violation
+  // of its own. `document-title`, serious: a page with no title is a tab and a
+  // history entry that nobody can tell apart. It was never a finding before
+  // because nothing had ever looked.
+  title: "Component gallery",
 };
 
 export default function DevLayout({ children }: LayoutProps<"/dev">) {

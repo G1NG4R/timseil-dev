@@ -43,7 +43,7 @@ export function TerminalPanel({
   messages: Messages;
 }) {
   return (
-    <div className="term">
+    <div className="term marks">
       <div className="term-bar">
         {/* Three window lights and a shell prompt: nomenclature, not prose, so
             neither is in the dictionary. LANG.01. */}

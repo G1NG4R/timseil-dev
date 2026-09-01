@@ -113,23 +113,15 @@
    `.spec` — one box, no extra nodes, and nothing to keep in step when the
    panel resizes.                                                            */
 
+/* The eight gradients are `.marks` in ui.css since H4 — this was the second of
+   three copies, and the third is the module card below. What was ever specific
+   to this box is the pair of values. `background-color` and not `background`:
+   the shorthand resets `background-image` and would erase the marks. */
 .term {
-  background: var(--panel);
+  background-color: var(--panel);
   border: 1px solid var(--line);
-  background-image:
-    linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge));
-  background-repeat: no-repeat;
-  background-size: 14px 1px, 1px 14px, 14px 1px, 1px 14px,
-                   14px 1px, 1px 14px, 14px 1px, 1px 14px;
-  background-position: 0 0, 0 0, 100% 0, 100% 0,
-                       0 100%, 0 100%, 100% 100%, 100% 100%;
+  --mark-color: var(--acc-edge);
+  --mark-len: 14px;
 }
 
 .term-bar {
@@ -220,4 +212,259 @@
 .home-exit a {
   display: inline-flex;
   align-items: center;
+}
+
+/* ── SYS.01 · Training log ─────────────────────────────────────────────────
+   Build plan H4. Five module cards, 22 track rows, one scale.
+
+   NO NEW TOKENS, WHICH IS THE SECOND PHASE IN A ROW. Every colour below was
+   already in tokens.css and most of them were already the sheet's, once the
+   sheet's literals are read as the tokens they round to:
+
+     bar, core          #00E5FF                --acc
+     bar, applied       #B9C6D4                --ink-3
+     bar, learning      #8B98A6                --steel
+     bar, unfilled      rgba(139,152,166,.15)  --line       (.16)
+     row hover          rgba(0,229,255,.05)    --panel-active
+     card corner marks  rgba(139,152,166,.5)   --rule-major (steel 35%)
+
+   THE ONE COLOUR THAT DID NOT SURVIVE IS THE CORE GLOW. The sheet puts
+   `box-shadow: 0 0 6px rgba(0,229,255,.4)` on a full bar, and no token is that
+   shadow — `--glow` is 28px at 45%, for a different job. It is not built, and
+   the reason it costs nothing to leave out is that NO TRACK IS `core` TODAY:
+   the seed is 13 applied and 9 queued, and `core` needs two live systems where
+   this site has one. Recorded as a divergence rather than tokenised for a row
+   nobody can see. The day the second system ships, this comment is the note
+   that says what is missing.
+
+   THE HOVER IS DECORATION, ALL OF IT. The evidence line, the state word and the
+   bar are in the resting state; hover lifts the row's ground and brightens the
+   system names. That is the sheet's own instruction ("Nachweis-Zeile ist immer
+   voll lesbar") against the handoff inventory's "rest 28 %", and it is what
+   makes the touch question moot — there is nothing behind the hover to reach.
+   Behind `hover: hover` like every other hover on this site, because a
+   coarse pointer emulates one and then leaves it stuck on.
+
+   SPACING IS ROUNDED TO THE SCALE. The sheet draws 22px of card padding, 18px
+   under a card head and 7px under a track name; the nearest steps are 20, 16
+   and 6. All three are inside the eight-pixel band `spacing-scale` already
+   covers, so none of them gets a class of its own — `hero-rhythm` is what
+   happens when a difference does not fit, and twelve was where that line got
+   drawn in H3.
+
+   THE THREE LITERALS ARE `3px`, `3px` AND `140px`: the bar's segment height,
+   the gap between segments, and the width at which a card head stops fitting
+   on one line. Measurements of one component each, the class `620px` and
+   `348px` are already in — check-tokens.sh polices colour, radius and duration
+   rather than geometry, and a 3px rule is not a spacing decision.            */
+
+.trn-grid {
+  display: grid;
+  /* Six columns and cards spanning two, which is the sheet's arithmetic and not
+     `repeat(3, 1fr)`. The difference shows at the switch: five cards over three
+     columns leaves a two-card row, and a card that wanted to span the gap would
+     have somewhere to do it. Nothing does today; the grid keeps the shape the
+     sheet drew so that H5 does not have to rediscover it. */
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--s-20);
+
+  /* EACH CARD IS AS TALL AS ITS TRACKS, and this is what D5 costs paid in one
+     declaration. The sheet draws the modules `01 · 02 · 04 · 03 · 05` — DevOps
+     pulled up beside Languages and Backend — and that order is not information,
+     it is balancing: six tracks next to five and five, then three next to
+     three. We render the server's order, because on this page the number is the
+     order; so `03 DATA` with three tracks lands beside `04 DEVOPS` with six.
+     Stretched, that leaves 200px of empty card, which in a screenshot reads
+     exactly like the sheet's 348px terminal body did in H3 — not a card with
+     little in it, a card that failed to load.
+
+     Seen in a screenshot, which is again the only way this kind of difference
+     shows up: nothing about `align-items: stretch` is wrong in the markup. */
+  align-items: start;
+}
+
+.trn-mod {
+  grid-column: span 2;
+  background-color: var(--panel);
+  border: 1px solid var(--line-soft);
+  padding: var(--s-20);
+  --mark-color: var(--rule-major);
+  --mark-len: 12px;
+}
+
+.trn-mod-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-8);
+  margin: 0 0 var(--s-16);
+}
+
+.trn-mod-name {
+  font: 600 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--ink);
+}
+
+.trn-mod-no { color: var(--acc); }
+
+.trn-mod-count {
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--dim);
+  /* The one column on this page where digits line up under each other. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* `.st-log` draws a `> ` before every line and this list must not, so it is a
+   plain list with the markers removed here rather than a borrowed class. */
+.trn-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* The negative inline margin is the sheet's: the hover ground reaches past the
+   text into the card's padding, so a lit row reads as a band rather than as a
+   floating rectangle. */
+.trn-row {
+  margin: 0 calc(var(--s-8) * -1) var(--s-4);
+  padding: var(--s-6) var(--s-8);
+}
+
+.trn-row:last-child { margin-block-end: 0; }
+
+.trn-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-10);
+  margin: 0 0 var(--s-6);
+}
+
+.trn-name {
+  font: 400 var(--t-mono-12)/1.3 var(--mono);
+  color: var(--ink-2);
+}
+
+/* `margin-inline-start: auto` and not `flex: 1` on a spacer span, which is what
+   the sheet does — a spacer is a node with nothing to say, and `.sec-meta`
+   above already pushes itself. */
+.trn-state {
+  margin-inline-start: auto;
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--st-track, var(--dim));
+  white-space: nowrap;
+}
+
+/* THE STATE COLOURS, AND THE REASON THEY ARE ONE PROPERTY. Every part of a row
+   that carries the state — the word and the filled segments — reads
+   `--st-track`, so a state cannot be cyan in one half of the row and steel in
+   the other. Set on the row, inherited by both.
+
+   `queued` HAS NO ENTRY, deliberately: the fallback in the declarations above
+   IS its colour — `--dim`, which is the sheet's `#7C8996` and also the tone
+   `MARKS.queued` already carries, so the word looks the same in the training
+   log as it does in the terminal frame two sections up. An empty bar has
+   nothing to fill, so the fallback is only ever read by the word. */
+.trn-row[data-track-state="core"]     { --st-track: var(--acc); }
+.trn-row[data-track-state="applied"]  { --st-track: var(--ink-3); }
+.trn-row[data-track-state="learning"] { --st-track: var(--steel); }
+
+.trn-bar {
+  display: flex;
+  gap: 3px;
+  margin-block-end: var(--s-6);
+}
+
+.trn-seg {
+  flex: 1;
+  block-size: 3px;
+  background: var(--line);
+}
+
+.trn-seg[data-on] { background: var(--st-track, var(--dim)); }
+
+.trn-evi {
+  margin: 0;
+  font: 400 var(--t-mono-9)/1.6 var(--mono);
+  letter-spacing: .06em;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+/* The arrow belongs to the target, so `NO SYSTEM YET` with nothing after it
+   does not point into the void. In CSS rather than in the string: out of the
+   accessibility tree, out of anything a visitor copies, and in one declaration
+   instead of in every producer — `.st-log`'s argument for its own `> `. */
+.trn-sys {
+  color: var(--ink-3);
+  transition: color var(--d-glow) var(--e-out);
+}
+
+/* The space before the arrow is in the content and not between the two spans:
+   JSX puts no whitespace between adjacent elements, so `SHIPPED IN` and the
+   arrow were touching. Seen in a screenshot, not in the markup. */
+.trn-sys::before {
+  content: " → ";
+  color: var(--dim);
+}
+
+.trn-pre { transition: color var(--d-glow) var(--e-out); }
+
+@media (hover: hover) {
+  .trn-row:hover { background: var(--panel-active); }
+  .trn-row:hover .trn-pre { color: var(--acc); }
+  .trn-row:hover .trn-sys { color: var(--ink); }
+}
+
+/* ── The scale ─────────────────────────────────────────────────────────────
+   Four words and what each of them is a claim about. It is the derivation in
+   prose, so it stands under the log rather than beside a card.              */
+
+.trn-scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-26);
+  margin-block-start: var(--s-26);
+  padding-block-start: var(--s-16);
+  border-block-start: 1px solid var(--line-soft);
+}
+
+.trn-scale-head {
+  margin: 0;
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.trn-scale-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-26);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trn-scale-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-6);
+}
+
+/* The legend's word is not pushed to a right edge — there is no column here to
+   push it to, and `.trn-state` was written for a row that has one. */
+.trn-scale-row .trn-state { margin-inline-start: 0; }
+
+.trn-scale-row[data-track-state="core"]     { --st-track: var(--acc); }
+.trn-scale-row[data-track-state="applied"]  { --st-track: var(--ink-3); }
+.trn-scale-row[data-track-state="learning"] { --st-track: var(--steel); }
+
+.trn-scale-why {
+  font: 400 var(--t-mono-9)/1.6 var(--mono);
+  letter-spacing: .06em;
+  color: var(--dim);
 }

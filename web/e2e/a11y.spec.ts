@@ -64,7 +64,23 @@ test("no carried accessibility rule is past its date", () => {
   ).toEqual([]);
 });
 
-for (const route of ROUTES) {
+/**
+ * The site's routes, plus the workbench.
+ *
+ * H4 ADDED THE SECOND HALF AND THE REASON IS THE ONE H2b ALREADY PAID FOR.
+ * SYS.01's twenty-two rows exist only where an api answered, and this rig runs
+ * a production build with none — so on `/` axe sees an outage panel where the
+ * training log should be, and every rule about a row it might have broken goes
+ * unasked. The gallery renders those rows from data in the page, which makes it
+ * the only place in this suite where axe can look at them at all.
+ *
+ * It is not part of the shipped site and does not need to be for this to be
+ * worth doing: what is being checked is the COMPONENT, and the component is the
+ * same one `/` renders when the api is up.
+ */
+const AXE_ROUTES = [...ROUTES, "/dev/components"];
+
+for (const route of AXE_ROUTES) {
   test(`axe finds nothing on ${route}`, async ({ page }, testInfo) => {
     await page.goto(route);
     await expect(page.locator("body")).toBeVisible();

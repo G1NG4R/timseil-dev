@@ -35,20 +35,29 @@ export interface Section {
   /** The section's name. Nomenclature, so it is not a dictionary key. */
   readonly title: string;
   /**
-   * Which sentence says why the section is empty today.
+   * Which sentence says why the section is empty today, or `null` once it is
+   * not empty any more.
    *
-   * REQUIRED, and that is STATE.05 as a type: "DISABLED SAGT WARUM: 'queued'
-   * oder '0 treffer' statt einfach ausgegraut. Ein toter Zustand ohne
-   * Begründung ist ein Bug." A shell that could be rendered without one
-   * eventually would be.
+   * REQUIRED WHILE THE SECTION IS A SHELL, and that is STATE.05 as a type:
+   * "DISABLED SAGT WARUM: 'queued' oder '0 treffer' statt einfach ausgegraut.
+   * Ein toter Zustand ohne Begründung ist ein Bug." A shell that could be
+   * rendered without one eventually would be.
+   *
+   * H4 IS WHY IT BECAME NULLABLE. SYS.01 is the first of the four to be filled,
+   * and an excuse a section no longer needs is worse than no field at all: the
+   * sentence would stay in the dictionary, keep compiling, and go on explaining
+   * an absence that has ended. So `reasonKey` and `owedBy` are now the pair
+   * lib/gallery/registry.ts already carries — EXACTLY ONE OF THEM IS SET, and
+   * sections.test.ts holds that. A section that is both built and owed is a
+   * bookkeeping error; one that is neither is a shell nobody answers for.
    */
-  readonly reasonKey: keyof Messages;
+  readonly reasonKey: keyof Messages | null;
   /**
-   * The phase that fills it. Not rendered — it is why the emptiness has an end,
-   * and it is what makes this list reviewable against the build plan rather
-   * than against anybody's memory.
+   * The phase that fills it, or `null` once one has. Not rendered — it is why
+   * the emptiness has an end, and it is what makes this list reviewable against
+   * the build plan rather than against anybody's memory.
    */
-  readonly owedBy: string;
+  readonly owedBy: string | null;
   /**
    * The way out of the empty state, or `null` where there is none.
    *
@@ -82,8 +91,15 @@ export const SECTIONS: readonly Section[] = [
   {
     id: "SYS.01",
     title: "TRAINING LOG",
-    reasonKey: "homeSys01Why",
-    owedBy: "H4",
+    // Filled by H4. The first of the four to lose its excuse — 22 tracks in
+    // five modules, read from /api/training, and the derivation of every state
+    // in v_track_states rather than in this repository.
+    reasonKey: null,
+    owedBy: null,
+    // Still none, and now for a stronger reason than "not built yet": the
+    // training log HAS no index of its own. The systems it points at are
+    // SYS.02's, one section down, and inventing a destination for the log
+    // itself would be worse than admitting there is none.
     exit: null,
   },
   {

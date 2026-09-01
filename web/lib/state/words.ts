@@ -28,6 +28,17 @@ import type { Messages } from "../i18n/messages/en.ts";
 export type DayState = components["schemas"]["DayState"];
 
 /**
+ * What a track of the training log is in, as the contract enumerates it.
+ *
+ * TAKEN, NOT WRITTEN, for `DayState`'s reason. And derived rather than stored,
+ * which is invariant 2: two live systems make a track `core`, one makes it
+ * `applied`, a system in build makes it `learning`, nothing makes it `queued`.
+ * The derivation lives in `v_track_states` and nothing on this side of the wire
+ * gets an opinion about it — ADR 0018: "H4 rendert den Baum, wie er kommt."
+ */
+export type TrackState = components["schemas"]["TrackState"];
+
+/**
  * The seven words, with exactly one meaning each.
  *
  * The two pairs that get confused, both settled by the sheet:
@@ -287,4 +298,83 @@ export function dayLabel(state: DayState, messages: Messages): string {
   if (state === "outage") return messages.csOutage;
   if (state === "ok") return messages.csNoIncident;
   return NO_DATA;
+}
+
+/**
+ * What a track of the training log is in, and how far its bar is filled.
+ *
+ * A THIRD TABLE, AND IT HAS TO BE — `dayLabel` above makes the same argument
+ * one scale down. `MARKS` is the state a SYSTEM is in; these are the four
+ * things a TRACK can be, and only one word appears in both:
+ *
+ *   queued   means the same thing at both scales — planned, nothing to point
+ *            at — so it is READ FROM `MARKS` rather than written a second time.
+ *            Two spellings of one word is how the two start disagreeing.
+ *   core     the vocabulary has no word for "runs in more than one system".
+ *   applied  nor for "shipped once". LIVE is what a system is; a skill is not
+ *            live, it is demonstrated by something that is.
+ *   learning the one state with no system to point at yet that still claims
+ *            movement. QUEUED is its resting twin, and the difference between
+ *            them is exactly one system in `in_build`.
+ *
+ * `steps` IS THE FEATURE THAT IS NOT COLOUR, the same job `dot` does in
+ * `MARKS`: four segments, filled from the left, so the ordering survives a
+ * greyscale screenshot and a palette swap. It is in the table rather than in
+ * the component for `dayLabel`'s reason — a judgement with no test is the shape
+ * of every finding this repository has had.
+ *
+ * THERE IS NO `tone` HERE, deliberately. `MARKS` carries one because half a
+ * dozen components pass `data-tone` into state.css's shared rules; these four
+ * are drawn by one stylesheet off `[data-track-state]`, so a tone would be a
+ * second way to say what the state attribute already says.
+ *
+ * TWO OF THE FOUR ARE UNREACHABLE TODAY and are built anyway: the seed has
+ * 13 x applied and 9 x queued, no system is `in_build`, and none of the 22
+ * tracks runs in two live systems. The contract declares all four, and a table
+ * that only held what production currently produces would be a table that
+ * breaks on the day the site gets its second system. ADR 0018 counted this.
+ */
+export interface TrackMark {
+  /** The English word. Uppercased by the stylesheet, never in the string. */
+  readonly label: string;
+  /** The dictionary key. Prose, like every other state word — STATE.05. */
+  readonly messageKey: keyof Messages;
+  /** How many of the four bar segments are filled. */
+  readonly steps: 0 | 1 | 2 | 3 | 4;
+}
+
+export const TRACK_MARKS: Record<TrackState, TrackMark> = {
+  // Runs in two or more live systems. The contract says why the bar is full
+  // only here: "building something once means getting it to run once; running
+  // it twice means having met the cases that were luck the first time."
+  core: { label: "CORE", messageKey: "trackCore", steps: 4 },
+
+  // Shipped in exactly one live system.
+  applied: { label: "APPLIED", messageKey: "trackApplied", steps: 3 },
+
+  // Something is being built with it. Not "I am reading about it".
+  learning: { label: "LEARNING", messageKey: "trackLearning", steps: 2 },
+
+  // Planned, and nothing to point at. THE BAR IS EMPTY RATHER THAN ONE STEP
+  // SHORT: the sheet draws all four segments unfilled, and it is right to —
+  // a first step would be a claim, and this state is the absence of one.
+  queued: { label: MARKS.queued.label, messageKey: "stateQueued", steps: 0 },
+};
+
+/** Every state of the table, in a fixed order — the gallery in G7 renders this. */
+export const TRACK_STATES = Object.keys(TRACK_MARKS) as TrackState[];
+
+export function isTrackState(value: unknown): value is TrackState {
+  return typeof value === "string" && Object.hasOwn(TRACK_MARKS, value);
+}
+
+/**
+ * The track's word, in the language the page resolved to.
+ *
+ * The twin of `stateLabel`, and it has no `null` branch because none of these
+ * four is in LANG.01's English-only set. `queued` reaches the same key
+ * `stateLabel("queued")` reaches, which is the whole of why it is shared.
+ */
+export function trackLabel(state: TrackState, messages: Messages): string {
+  return messages[TRACK_MARKS[state].messageKey];
 }
