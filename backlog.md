@@ -12,7 +12,85 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 01.09.2026, H3 abgenommen: die Startseite steht, und der Tausch war nicht sauber
+## Wo wir stehen — 01.09.2026, Triage nach H3: fünf Phasen eingeräumt
+
+**Sechzehn Issues angelegt, vier Kommentare an bestehende, drei bewusst
+verworfen, der Rest erledigt.** Die drei Tabellen am Dateiende waren seit der
+G-Triage leer, während H1a, H1b, H2a, H2b und H3 sie gefüllt hätten — der
+Notizblock war die eine Hälfte des Gedächtnisses und stand seit fünf Phasen
+offen.
+
+Das ist nicht das Ende der Stufe H — die geht bis H13. Es ist das Nachholen
+einer Triage, die fällig war, weil ein Notizblock, den niemand einräumt, Dinge
+ein zweites Mal finden lässt.
+
+### Angelegt
+
+| # | Woher | Was |
+|---|---|---|
+| #289 | H1a | `in_build` hat kein Zustandswort — fällig mit H6 |
+| #290 | H1a | `uptime90d` ohne Abdeckungszahl, `Metrics.measuredDays` — fällig mit H5 |
+| #291 | H1b | `selftest` flackert an `witness.sh`, einer von fünf |
+| #292 | H2a | `.decision-table` hat keinen Konsumenten und kann so keinen bekommen |
+| #293 | H2a | Das Mobil-Artboard führt eine zweite, kürzere Textfassung |
+| #294 | H2a | Der Anfrageweg swipt bei 390 und versteckt vier Fünftel |
+| #295 | H2a | Zwei Blattkorrekturen sind UI-Text, und die Korrekturtabelle sagt es nicht |
+| #296 | H2a | Der Deploy-Gate prüft die Anwendung, nicht die Beobachtungsdienste |
+| #297 | H2b | Rot steht ab dem ersten Ausfall zweimal auf der Fallstudie — M2 |
+| #298 | H2b | Der Post-Mortem-Eintrag ist ein Name, kein Link — H9 |
+| #299 | H2b | `prune-registry` hat die Bestandsaufnahme verweigert, niemand hat nachgezählt |
+| #300 | H2b | Zwei Pins hinter der Welt, und kein Ökosystem hebt sie |
+| #301 | H3 | `--st-dot` ist eine Größe und liegt außerhalb `tokens.css` |
+| #302 | H3 | `bundle-size.sh` kann einen gemischten Chunk nicht zuordnen — ADR 0050 |
+| #303 | H3 | Das 88px-Seitenraster ist Chrome, und die Chrome zeichnet es nicht |
+| #304 | H3 | Ein Container-Tausch verliert manchmal eine Anfrage |
+
+### Kommentiert, nicht geschlossen — der Tracker gehört dir
+
+**#242** hat seine Phase überlebt: „decide with H2", H2 ist abgenommen, die
+Entscheidung ist nicht gefallen. Vierte und fünfte Bestätigung dazu (284 s gegen
+einen 22-s-Job). **#243** ist zweimal beantwortet und die Reparatur zweimal nicht
+gebaut. **#257** ist in H3 erledigt — Vorschlag schließen. **#237** hat eine neue
+Zahl: 143 580 B, ein Byte weniger als vor der Seite.
+
+### Bewusst verworfen, mit Begründung
+
+- **`scrollWidth` 417 gegen `clientWidth` 390 im coarse-Projekt.** Die Fallstudie
+  meldet dieselben Zahlen wie die Startseite, also ist es die Viewport-Emulation
+  des Rigs und kein Inhalt. Die Überlauf-Prüfung sitzt deshalb in den
+  Breiten-Projekten mit feinem Zeiger, wo die Zahlen sauber sind. Kein Produkt-
+  Fehler, kein Issue.
+- **`.sec` trägt im Blatt 38px, gebaut sind 34.** Das ist kein offener Punkt,
+  sondern eine eingetragene Orakel-Abweichung mit Grund — die Klasse
+  `spacing-scale`. Ein Issue daneben wäre eine zweite Buchführung über dieselbe
+  Entscheidung.
+- **Die zwei Acht-Pixel-Abweichungen aus H2b.** H3 hat den Fall beantwortet, statt
+  ihn zu dehnen: der Text von `spacing-scale` sagt jetzt acht und nennt die
+  Stelle, an der die Linie gezogen wurde, und drei neue Klassen tragen den Rest.
+
+### Erledigt
+
+`.cs-hero` (H3 entfernt, nach drei Verschiebungen) · `settled()` wartet auf alle
+Regionen (#279, und H3 hat die Blatt-Prüfung nachgezogen) · das Sitemap-Datum
+(#282) · die Abnahme-Praxis gegen den lokalen Produktionsbuild (seit H2b gelebt,
+in H3 wieder) · die Galerie im Testlauf (benannt statt bemerkt) · `.deploy-strip`
+und die zwei Bildplatzhalter (H5 bzw. K2 zugeordnet) · die sieben Verschiebungen
+aus H3 (jede mit Phase).
+
+### Was die Triage selbst ergeben hat
+
+**Der zweite Zeugenlauf war sauber, und das ändert einen Fund.** Nach `0ad050f`
+hatte `/` eine Anfrage ohne Verbindung; nach `5be5180`, vierzig Minuten später,
+242 von 242 auf beiden Pfaden. Ein Lauf hätte „der Tausch hat ein Loch" gesagt,
+zwei sagen „manchmal". Das ist ADR 0056 von der anderen Seite, und #304 ist
+entsprechend als Messaufgabe formuliert und nicht als Reparatur.
+
+**Zwei Pins sind seit dem 31.08. unverändert hinten.** Der Fund war nicht
+verfallen, er war nur nicht aufgeschrieben, wo jemand ihn wiederfindet.
+
+---
+
+## Vorher — 01.09.2026, H3 abgenommen: die Startseite steht, und der Tausch war nicht sauber
 
 **#287 gemergt, `0ad050f` in Produktion.** `/` trägt Hero, Terminal-Rahmen und
 die vier Marker. Die Entwicklungs-Schale aus F1b ist weg — auch aus dem
@@ -202,7 +280,7 @@ und `placeholder-height` tragen, was er nicht mehr trägt.
 
 ---
 
-## Verschoben — mit Phase und Begründung
+## Verschoben aus H3 — eingeräumt in der Triage nach H3
 
 - **`cvHint` pro Route → J2.** Das Blatt will auf `/` `CV → TERMINAL cv` statt
   `CV → TERMINAL ON / : cv`. **Beide Fassungen behaupten bis J1 ein Terminal,
@@ -4411,23 +4489,24 @@ sie neu. CLAUDE.md hat dafür jetzt eine Zeile, mit diesem Vorfall als Auslöser
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
 
-*Leer seit der Triage der Stufe G.*
+*Leer seit der Triage nach H3, 01.09.2026.*
 
 ## Gefunden — Bug oder Unklarheit
 
-Vorherige Triage: **Stufe G (Frontend-Fundament), 29.08.2026** — siehe unten.
+Vorherige Triage: **nach H3, 01.09.2026** — sechzehn Issues, vier Kommentare,
+drei bewusst verworfen. Sie steht oben, nicht unten: sie ist die jüngste.
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
 
-*Leer seit der Triage der Stufe G.*
+*Leer seit der Triage nach H3, 01.09.2026.*
 
 ## Idee — noch nicht entschieden
 
 | Datum | Aus Phase | Was | Status |
 |---|---|---|---|
 
-*Leer seit der Triage der Stufe G.*
+*Leer seit der Triage nach H3, 01.09.2026.*
 
 ---
 
