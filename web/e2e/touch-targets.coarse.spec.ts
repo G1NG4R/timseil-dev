@@ -138,15 +138,22 @@ test.describe("targets a finger has to hit", () => {
   // description list, and there was nothing in it a finger could meet.
   //
   // A COUNT IS ASSERTED HERE AND NOT IN THE FOOTER, because the difference is
-  // knowable: the homepage carries the two ways back out of the empty section
-  // shells, SYS.02 and SYS.04, and lib/home/sections.test.ts holds that there
-  // are exactly two. A run that measured nothing would otherwise be green — the
-  // shape H2b found four times in one file.
+  // knowable. A run that measured nothing would otherwise be green — the shape
+  // H2b found four times in one file, and the shape that let H5a ship a section
+  // which had silently dropped its link.
+  //
+  // THREE SINCE H5c, AND THE THREE ARE NOT WHAT THEY WERE. Until this phase the
+  // two were the ways back out of the SYS.02 and SYS.04 shells. There are no
+  // shells left: SYS.02's way back is still here because this rig has no api and
+  // its panel is therefore the empty one, SYS.04's is not — a section that drew
+  // its rows offers no way back, which is Systems.tsx's rule — and the two that
+  // replace it are the log head's link to the case study and `ABOUT →` in the
+  // foot, both of which are on the page whether anything answered or not.
   test("the homepage's own controls are at least 44 x 44", async ({ page }) => {
     await page.goto("/");
     const targets = await measure(page, "main");
 
-    expect(targets.length, "no interactive element found on the homepage").toBe(2);
+    expect(targets.length, "no interactive element found on the homepage").toBe(3);
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
 });

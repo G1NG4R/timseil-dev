@@ -1,0 +1,132 @@
+---
+title: 'The run was green, and it had tested a server I started by hand'
+deck: 'Nine hundred and thirty-one end-to-end assertions passed. An earlier run of the same command reported six hundred and thirty-three passing and nothing failing, against a build missing a flag the config sets — and the only thing that gave it away was a two-phase-old number in my notes.'
+published: 2026-09-02
+tags: ['testing', 'tooling', 'measurement']
+system: 'timseil-dev'
+summary: |
+  My Playwright config builds and starts its own server, and sets one
+  environment variable while doing it. It also sets `reuseExistingServer` for
+  local runs, because rebuilding between two runs of one spec is a minute nobody
+  wants. Earlier that afternoon I had started a production server by hand, on a
+  port I picked without looking — and it was the port the config uses. Every
+  Playwright run after that talked to my server instead of building its own. The
+  suite came back green. It was green about a build that did not have the flag,
+  on a page the config had never rendered, and it ran two hundred and ninety-eight
+  fewer assertions than the same command does with the port free. Nothing in the
+  output said so.
+---
+
+## What I was doing
+
+I was finishing a section of my homepage that reads Markdown files out of the
+repository. Halfway through I wanted to look at the real page rather than at a
+test, so I built it and started it:
+
+```
+npx next start -p 3100
+```
+
+3100 was not a considered choice. It was a port I was fairly sure nothing else
+was on, typed once, in the middle of something else.
+
+Some time later I ran the end-to-end suite.
+
+## What the suite is configured to do
+
+The relevant part of `playwright.config.ts` is four lines long:
+
+```ts
+const PORT = Number(process.env.E2E_PORT ?? 3100);
+
+webServer: {
+  command: `npm run build && npm run start -- --port ${String(PORT)}`,
+  url: `${BASE_URL}/healthz`,
+  reuseExistingServer: !process.env.CI,
+  env: { DEV_GALLERY: "1" },
+},
+```
+
+Both halves of the accident are in there. The default port is 3100 — the same
+number I had typed by hand. And `reuseExistingServer` is true everywhere except
+CI, which is the right setting and the reason iterating on one spec does not cost
+a build each time.
+
+So Playwright checked whether something was answering on 3100, found my server,
+and used it. It did not build. It did not set `DEV_GALLERY=1`. It printed one
+line saying it was reusing an existing server, in a scroll of build output I was
+not reading, because I was waiting for a number at the bottom.
+
+`DEV_GALLERY` matters here more than it sounds like it should. It gates a
+development-only route that renders every component in every documented state,
+and about a quarter of this suite measures things there rather than on the real
+pages — because the rig runs the site with no API behind it, so a section that
+lists anything is, on the real page, a panel saying the list could not be
+loaded. The gallery is where those components actually exist.
+
+## What came back
+
+```
+3 skipped
+633 passed (8.1m)
+```
+
+Green. No failures. And the specs that could not possibly have passed did not
+fail — they skipped, or they never ran at all, because a spec that cannot reach
+its route contributes nothing rather than contributing a red line.
+
+I only noticed because 633 looked small. My notes record this suite's size at
+the end of a phase, and the last number in them was 765 — written down two
+phases ago, because the phase in between recorded its unit tests and its design
+measurements and forgot this one. A stale number I had kept for an unrelated
+reason was the entire alarm.
+
+After killing my server and running the identical command:
+
+```
+3 skipped
+931 passed (4.1m)
+```
+
+Two hundred and ninety-eight assertions had not run. The command was the same.
+The exit code was the same. The word at the end of both was `passed`.
+
+## The part that is not about ports
+
+I could stop here and call it a footgun: two defaults that agree, an
+undistinguished log line, an easy fix. Pick a different port. That is true and I
+have done it, and it is the least interesting thing I learned.
+
+The interesting part is that **a green run is not evidence of anything until you
+know what it ran.** I have written that sentence about this project before in
+other clothes. Two tests were once green because the grid they iterated over was
+empty. A component gallery was once correct about eight stylesheets and silent
+about the ninth. Both of those were the same shape as this: an instrument
+reporting success for a question it had not been asked.
+
+What is different this time is that the instrument was *configured correctly*.
+There is no bug in that config. `reuseExistingServer` is a deliberate
+convenience, and it did exactly what it says. The failure came from the outside —
+from me, putting a process on a port an hour earlier for a reason I had already
+forgotten by the time it mattered.
+
+## What I actually changed
+
+Almost nothing, and deliberately.
+
+The suite now reports a count I write down at the end of every phase, next to
+the bundle size and the number of oracle measurements. That is not a new
+mechanism; it is the same notebook that caught this, used on purpose instead of
+by luck. A count that only exists in a terminal is a measurement nobody can
+compare against anything.
+
+I did not add a check that refuses to reuse a foreign server. It is tempting —
+compare a header, stamp a build id, fail loudly. But this repository has a rule
+that a new check needs an incident it can name, and I have exactly one, and its
+cause was a port I typed without thinking. The cheaper fix is to not do that, and
+the honest record is this page.
+
+The thing I want to remember is narrower than "be careful with ports". It is
+that the most convincing output I saw all day was a green suite, and it was
+convincing because it was green, not because I knew what it had touched. The
+number that saved me was three digits in a file I keep for a different reason.

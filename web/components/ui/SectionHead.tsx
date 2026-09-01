@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 /**
  * `SYS.NN` · title · optional meta, over a hairline.
  *
@@ -17,6 +19,13 @@
  * The caller puts the id here and `aria-labelledby` on its own `<section>`, so
  * the region is announced by the title already on the screen.
  *
+ * `action` IS THE SECOND RIGHT-HAND SLOT, AND SO FAR ONLY SYS.04 HAS ONE. Every
+ * other head on this site puts one thing on the right; the LOG head puts a link
+ * out and then its count, in that order, at both drawn widths. It is a `ReactNode`
+ * and not a `{href,label}` pair because a head has no business knowing about
+ * locales — the page resolves the link, exactly as it does for a section's
+ * `exit`.
+ *
  * WHY NOT AN `<h2>`. globals.css sets `h2` to the 34px display step, and
  * `.sec-title` is mono 12 — the same collision `.cs-spec h1` had to resolve with
  * `:where()` in H1, and resolving it again here would put a second exception in
@@ -27,11 +36,13 @@ export function SectionHead({
   id,
   title,
   meta,
+  action,
   titleId,
 }: {
   id: string;
   title: string;
   meta?: string;
+  action?: ReactNode;
   titleId?: string;
 }) {
   return (
@@ -40,6 +51,7 @@ export function SectionHead({
       <span className="sec-title" id={titleId}>
         {title}
       </span>
+      {action === undefined ? null : <span className="sec-action">{action}</span>}
       {meta === undefined ? null : <span className="sec-meta">{meta}</span>}
     </div>
   );

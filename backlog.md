@@ -12,6 +12,231 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 02.09.2026, H5c gebaut: die Startseite ist vollständig
+
+**Branch `phase/h5c-homepage-log-and-footer`, nicht gepusht.** `/` zeichnet
+`SYS.04 LOG` — die drei neuesten Beiträge aus `web/content/posts/`, mit Datum,
+Titel und Deck — und darunter den Fuß-Block mit Bio und `ABOUT →`. Vier Marker,
+vier gefüllte Abschnitte, keine Schale mehr.
+
+**Der erste Commit des Branches ist `44ae7f4`**, der Nachtrag zur H5b-Abnahme.
+Er fährt mit, wie der H4-Nachtrag mit `fb3330b` mitgefahren ist; ein dritter
+Doku-PR hätte einen dritten Container-Tausch für zwei Absätze gekostet.
+
+### Keine API-Arbeit, und diesmal auch keine, die es hätte geben können
+
+`contract/openapi.yaml` führt 13 Operationen, alle implementiert. **Ein
+Posts-Endpunkt ist keine Lücke, sondern ADR 0002s Entscheidung:** die Beiträge
+sind MDX im Repository. Der Log liest sie von dort — vierzehn Dateien, drei von
+sechs Frontmatter-Schlüsseln, kein `gray-matter`, keine neue Abhängigkeit.
+**#192 bleibt unberührt:** H5c liest das Schema, H9 entscheidet es.
+
+### Der stärkste Fund: ein grüner Lauf gegen einen Server, den ich selbst gestartet hatte
+
+**`npx playwright test` meldete 633 bestanden, 0 rot — und hatte einen Build
+geprüft, den es nie gebaut hat.** `playwright.config.ts` baut und startet seinen
+eigenen Server auf Port **3100** und setzt dabei `DEV_GALLERY=1`; es setzt
+außerdem `reuseExistingServer: !CI`. Eine Stunde vorher hatte ich von Hand einen
+Produktionsserver auf 3100 gestartet, um mir die Seite anzusehen. Jeder Lauf
+danach hat meinen benutzt.
+
+Damit war `/dev/components` ein 404, und **rund ein Viertel dieser Suite misst
+dort** statt auf den echten Seiten — die Bauteile der API-Abschnitte existieren
+im Rig nur in der Galerie. Diese Specs sind nicht rot geworden, sie sind gar
+nicht gelaufen.
+
+```
+mit meinem Server    633 bestanden, 3 übersprungen, 0 rot   8,1 min
+Port frei            931 bestanden, 3 übersprungen, 0 rot   4,1 min
+                     ---
+                     298 Zusicherungen, die nie liefen
+```
+
+**Aufgefallen ist es an einer Zahl im Notizblock, die zwei Phasen alt war.** Der
+letzte notierte e2e-Stand ist H5as `765`; H5b hat `make check`, `npm test` und
+das Orakel aufgeschrieben und diesen einen vergessen. 633 sah nach zu wenig aus,
+und das war der ganze Alarm. Aufgeschrieben als
+`015-the-run-was-green-and-it-reused-my-own-server.mdx`.
+
+**Keine neue Prüfregel dafür.** Der Auslöser ist ein Port, den ich ohne
+Nachdenken getippt habe, und eine Regel, die einen fremden Server abweist, wäre
+ein Werkzeug gegen genau einen Vorfall. Was bleibt, ist die Zahl im Notizblock —
+diesmal absichtlich statt aus Versehen.
+
+### Der zweite Fund: die Reparatur, die nichts repariert — beide Wege gemessen
+
+`lib/content/posts.ts` liest ein Verzeichnis mit `readdirSync`/`readFileSync`,
+und **`output: "standalone"` kopiert, was der Modulgraph erreicht.** Ein
+`readFileSync` ist kein Import, also bekam `next.config.ts` einen
+`outputFileTracingIncludes`-Eintrag — und der Kommentar darüber behauptete, das
+sei diesmal die Reparatur und nicht bloß eine Deklaration.
+
+**Ohne den Eintrag gebaut liegen alle vierzehn Dateien trotzdem im Baum** — und
+nur dieses Verzeichnis: `content/case-studies` und `content/generated` fehlen
+dort, weil sie importiert und damit gebündelt statt kopiert werden. Der Tracer
+folgt also dem *Lesen*. Das ist etwas, das dieser Bundler tut, und nichts, das
+diesem Repository zugesichert ist — die Zeile bleibt deshalb, mit dem ehrlichen
+Kommentar statt dem falschen. **Dieselbe Bewegung, die G4 für `tokens.css`
+schon gemacht hat**, und ich habe sie beim Schreiben nicht wiedererkannt,
+sondern erst beim Messen.
+
+### Der dritte Fund: das Datum ist keine totale Ordnung
+
+**Vier der vierzehn Beiträge tragen `published: 2026-09-01`.** Eine Sortierung
+allein nach dem Datum überlässt die Reihenfolge der drei gezeigten Zeilen dem,
+was `readdirSync` zurückgibt: zwei Builds, zwei Seiten, keine Änderung dazwischen.
+Der Tiebreak ist der Slug, dessen drei Ziffern sagen, was nach was geschrieben
+wurde. Gefunden beim Ansehen der Daten, nicht beim Lesen des Schemas.
+
+### Der vierte Fund: zwei Tests wären grün geworden, weil nichts mehr da ist
+
+`sections.test.ts` lief über die Schalen: jede muss eine Begründung haben, jede
+muss eine spätere Phase nennen. **Mit SYS.04 gefüllt gibt es keine Schale mehr**,
+beide Schleifen laufen null Mal und beide melden grün — dieselbe Form wie
+`010-two-tests-were-green-because-nothing-was-there.mdx`, nur aus der anderen
+Richtung: nicht „noch nichts da", sondern „nichts mehr da". Ersetzt durch die
+Tatsache, die sie bewacht haben: *keine Sektion ist mehr eine Schale.* Kommt eine
+zurück, geht die Zeile rot und die beiden Zusicherungen stehen im Kommentar
+darüber.
+
+### Vier Entscheidungen, und drei davon weichen vom Blatt ab
+
+| Frage | Gebaut | Grund |
+|---|---|---|
+| Zeile verlinkt? | **nein**, kein `→`, kein Hover, kein Tab-Stop | `/blog/<slug>` ist bis H9 ein 404. Invariante 5, wie `IncidentLog` und `feed.ts` |
+| `SYSTEM 02 · CASE STUDY →` | **`CASE STUDY →`** | Die `02` kommt aus `/api/systems`, das dieser Abschnitt nicht liest |
+| `LATEST 03 · PLACEHOLDER TOPICS` | **`LATEST 03 · SOURCE: content/posts`** | Die 03 ist gezählt; „PLACEHOLDER TOPICS" ist eine Notiz an den Entwickler und würde ausgeliefert |
+| `[PORTRAIT]` 92×92 | **entfällt** | ADR 0055 §3, Bilder sind K2 |
+
+Alles in ADR 0062.
+
+### Der Kopf bei 390: gewickelt, nicht gequetscht und nicht gekürzt
+
+**Gemessen wie gebaut war `CASE STUDY →` auf 58px zusammengedrückt und brach
+über zwei Zeilen, mitten durch die Unterstreichung.** Das Blatt löst das, indem
+es `LATEST 03 · SOURCE` auf dem Telefon **weglässt** — eine zweite, kürzere
+Wortfassung für eine Breite, also #293, das diese Seite jetzt dreimal abgelehnt
+hat. Eine Deklaration (`flex-wrap: wrap`) gibt beiden rechten Teilen eine eigene
+Zeile in eigener Größe: nachgemessen 73×10 und 201×9, keiner umgebrochen, der
+Kopf 51px statt 35. Nichts weggelassen, nichts umgeschrieben.
+
+### Die Zeile selbst, an allen sieben Prüfbreiten gemessen
+
+`getBoundingClientRect` am gebauten Produktionsbuild, nicht am Stylesheet
+gelesen — die H5b-Lehre:
+
+```
+        Spalte    Zeile   Datum   Text     Form   Überlauf
+1440      1160     1160     110    1008     grid      0
+1081      1001     1001     110     849     grid      0
+1079       999      999     110     847     grid      0
+1024       944      944     110     792     grid      0
+ 899       819      819     110     667     grid      0
+ 719       639      639     110     487     grid      0
+ 390       346      346      70     346     flex      0
+```
+
+**Die vierte Sweep-Kante ist damit zum ersten Mal sichtbar.** `layout.css`
+deklariert den 560er-Schalter seit G1 für `.work-row`, `.sys-row` und
+`.log-row`; H3 sagte, er werde mit H5 auftauchen, H5a fand die Begründung falsch
+(`.sys-row` löst bei 1080 auf, und im Rig gibt es ohnehin keine Zeilen ohne API).
+`.log-row` ist die einzige Zeile dieser Seite, die keine API braucht — also steht
+sie in jedem Lauf da, und `HOME_SWITCHES` hat jetzt vier Einträge.
+
+### Lokal gemessen
+
+```
+make check   grün
+npm test     474   (von 449)
+e2e          931 grün, 3 übersprungen, 0 rot   (von 765, H5as Stand)
+Orakel       66 Messungen Startseite (von 53), 18 abweichend — die dreizehn
+             neuen tragen als erste seit H3 KEIN `on: '/dev/components'`
+Bundle       143 580 B über 7 Dateien — Byte für Byte wie nach H3, H4, H5a, H5b
+```
+
+**Das Byte ist zum vierten Mal der Punkt.** Kein `'use client'` unter
+`components/home/`, und `make bundle-size` läuft auf dieser Maschine weiter nicht
+(`rm -rf .next` gegen root-eigenes `.next/dev`) — von Hand aus derselben Liste
+gezählt, wie in H3, H4 und H5a. Das Skript stirbt davor ohnehin an #301.
+
+### Im Container geprüft, nicht nur im Build
+
+Der Fund, den diese Phase **nicht** hatte, ist der, gegen den sie gebaut wurde:
+ein Image ohne seinen eigenen Inhalt wäre nur dort sichtbar. Also nachgesehen —
+`docker build` aus `web/Dockerfile`, Container gestartet, `/` gelesen:
+
+```
+/app/content/posts        14 Dateien
+/                         LATEST 03 · SOURCE: content/posts
+                          3 Zeilen, 014 · 013 · 012
+```
+
+**Vierzehn und nicht fünfzehn, und das ist das Datum der Messung.** Der
+Container-Lauf liegt vor dem Schreiben von `015`; der Beitrag dieser Phase ist
+danach dazugekommen. Nachgezählt statt fortgeschrieben — die gebaute Seite zeigt
+seitdem `015 · 014 · 013`, und das ist die lokale Messung, nicht die im Image.
+
+### Was diese Phase nicht behauptet
+
+**Gegen Produktion ist nichts davon gemessen.** Alle Zahlen oben stammen vom
+lokalen Produktionsbuild und aus einem lokal gebauten Image. Der Zeuge, die
+Abnahme und `check-deployed` kommen nach dem Merge.
+
+## Gefunden — aus H5c
+
+- **`reuseExistingServer` plus ein Default-Port macht jeden lokalen e2e-Lauf zu
+  einer Wette darauf, was gerade auf 3100 lauscht.** Oben beschrieben. Kein
+  Werkzeug dagegen, aber der e2e-Stand steht ab jetzt neben `npm test` und dem
+  Bundle im Notizblock. *(02.09.2026, H5c)*
+- **`declarationsOn` in `gen-sheet-oracle.mjs` liest nur das ERSTE
+  `style`-Attribut einer Zeile.** Das Blatt setzt Titel und Deck der Log-Zeile in
+  zwei Spans auf **eine** Zeile (242), also ist das Deck bei 1440 nicht
+  zitierbar. Umgangen (bei 390 zitiert, wo jeder Teil seine eigene Zeile hat),
+  nicht repariert: einen Extraktor für einen Eintrag zu ändern wäre eine neue
+  Regel ohne Vorfall. *(02.09.2026, H5c)*
+- **Die Rundungstabelle des `Foundations`-Blatts und die gelieferte Regel sagen
+  Verschiedenes.** Das Blatt rundet `11.5 → 12`; `half-pixel` im Orakel sagt
+  „every mono size rounds DOWN to the nearest step", also `11.5 → 11`. Gebaut ist
+  die gelieferte Regel — ADR 0055: widersprechen sich Blatt und ausgeliefertes
+  Stylesheet, hat das Stylesheet recht. Notiert, weil H6 und H9 dieselbe Tabelle
+  lesen werden. *(02.09.2026, H5c)*
+- **`lib/log.ts` und ein geplantes `lib/home/log.ts` hätten denselben
+  Basisnamen getragen.** Umbenannt zu `lib/home/posts.ts`, bevor es entstand —
+  dieselbe Paarung wie `lib/api/systems.ts` / `lib/home/systems.ts`.
+  *(02.09.2026, H5c)*
+- **ADR 0002 schreibt den Frontmatter-Schlüssel `systemId`, die fünfzehn Dateien
+  schreiben `system`.** Auch `docs/design/README.md` schreibt `post.systemId`.
+  Eine Abweichung zwischen Entscheidung und Bestand, die H9 sonst erbt. H5c liest
+  den Schlüssel nicht und hat sie deshalb nur gefunden, nicht entschieden.
+  *(02.09.2026, H5c)*
+- **Der Kommentar in `api/migrations/00004_operations.sql` verspricht einen
+  CI-Job, den es nicht gibt** — „checking that the file exists is a CI job (stage
+  E)". `#32` ist offen und ist genau dieser Job. Der Slug-Constraint ist jetzt
+  ein zweites Mal abgeschrieben, in `lib/content/posts.ts`, damit der Leser keine
+  Datei annimmt, die kein Vorfall zitieren könnte. *(02.09.2026, H5c)*
+
+## Verschoben aus H5c
+
+- **`LogRow` bekommt keinen Registry-Eintrag → bewusst so.**
+  `lib/gallery/registry.ts` ist die Abschrift des Handoff-Inventars, dessen
+  sechzehn Namen für den Blog `PostCard` führen; ein `origin` für „von uns
+  erfunden, nicht im Blatt" gibt es nicht, und einen anzulegen wäre eine
+  Änderung an der Bedeutung der Liste. Die drei Zustände, die `/` nicht zeigen
+  kann, stehen trotzdem in der Galerie — ohne Zeile in der Registry.
+  *(02.09.2026, H5c)*
+- **`.work-row` hat weiter eine 560er-Regel ohne Zeichner → offen bis H6.**
+  `.log-row` hat ihre jetzt gemessen; die andere Hälfte derselben Regel wartet
+  weiter. *(02.09.2026, H5c)*
+- **Der Fuß-Block hat keine zweite Spalte → wartet auf K2.** Ohne Porträt ist
+  `.bio` einspaltig; ob daraus wieder das gezeichnete Paar wird, entscheidet die
+  Phase, die ein Bild hat. *(02.09.2026, H5c)*
+- **`homeSys04Empty` ist nur in der Galerie erreichbar → so gebaut.** Ein
+  Repository mit null Beiträgen ist der Zustand, in dem dieser Log angefangen
+  hat; der Satz ist für den Tag geschrieben, an dem er wieder eintritt.
+  *(02.09.2026, H5c)*
+
+---
+
 ## Wo wir stehen — 01.09.2026, H5b abgenommen: 10 von 10, gegen Produktion
 
 `f05ad28` / `v0.22.0` läuft. Merge 21:35:55Z, Deploy-Job 21:42:09Z–21:42:37Z

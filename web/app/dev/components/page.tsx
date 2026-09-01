@@ -23,6 +23,8 @@ import { SectionHead } from "@/components/ui/SectionHead";
 import type { ContributionLevel, Contributions } from "@/lib/api/contributions";
 import type { Incident, OpsCell, SystemDetail, SystemList } from "@/lib/api/systems";
 import { modules, type ModuleView } from "@/lib/api/training";
+import { Log } from "@/components/home/Log";
+import type { PostRead } from "@/lib/content/posts";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
 import { en } from "@/lib/i18n/messages/en";
@@ -134,6 +136,50 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
  * The counts are chosen to land on all five levels the same way GitHub's own
  * buckets do, so the legend under the graph has something to point at.
  */
+/**
+ * Three states of SYS.04 that `/` cannot show, and one it can.
+ *
+ * THIS SECTION IS THE OPPOSITE OF EVERY OTHER HOMEPAGE ENTRY IN THIS FILE. The
+ * others are here because the rig has no api and the real page therefore draws
+ * an outage panel where the component belongs. SYS.04 reads content/posts out of
+ * the repository, so the real page draws real rows and e2e/home.spec.ts asserts
+ * them there. What is left for the gallery is what the repository cannot be made
+ * to contain: a directory with nothing in it, a directory that cannot be read,
+ * and a file the reader had to skip.
+ */
+const GALLERY_LOG: PostRead = {
+  posts: [
+    {
+      slug: "014-eighty-pixels-that-were-never-mine",
+      title: "Eighty pixels that were never mine",
+      deck: "A contribution graph was drawn eighty pixels narrower than the column it sits in.",
+      published: "2026-09-01",
+    },
+    {
+      slug: "013-the-column-the-test-rig-could-not-see",
+      title: "The column the test rig could not see",
+      deck: "A description column on my homepage computed to zero pixels wide.",
+      published: "2026-09-01",
+    },
+    {
+      slug: "001-zero-downtime-measured-not-claimed",
+      title: "Zero-downtime, measured instead of claimed",
+      deck: "My build plan promised about three seconds and no 5xx.",
+      published: "2026-08-23",
+    },
+  ],
+  skipped: [],
+};
+
+/** Read, and holding nothing. `LATEST 00` is a measurement; `— NO DATA` is not. */
+const GALLERY_LOG_EMPTY: PostRead = { posts: [], skipped: [] };
+
+/** Read, and one file in it could not be used. The row count is what changes. */
+const GALLERY_LOG_SKIPPED: PostRead = {
+  posts: GALLERY_LOG.posts.slice(0, 2),
+  skipped: ["015-a-post-with-no-frontmatter.mdx"],
+};
+
 function calendar(first: string, days: number, ageSec: number): Contributions {
   const start = Date.parse(`${first}T00:00:00Z`);
   const weeks: { days: { date: string; count: number; level: ContributionLevel }[] }[] = [];
@@ -755,6 +801,55 @@ export default function GalleryPage() {
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
           <Systems body={GALLERY_SYSTEMS} messages={en} />
+        </div>
+      </section>
+
+      {/* ── SYS.04, and the only three states of it that are not on `/` ────── */}
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">Log</h2>
+          <span className="gal-where">homepage `SYS.04` · the states the repository cannot hold</span>
+        </div>
+        <p className="gal-states">
+          NOT IN THE HANDOFF INVENTORY, and deliberately not added to it. The
+          sheet&apos;s sixteen names carry `PostCard` for the blog, which H9
+          builds; the homepage log row is a different component and
+          lib/gallery/registry.ts is a transcription of that sheet rather than a
+          list of everything we ship. So this section has no registry row, and
+          the inventory count above is unchanged.
+        </p>
+        <p className="gal-states">
+          The first block is the shape, rendered through the real section so the
+          head is the real `logMeta` counting the rows under it. No row is a
+          link: `/blog/&lt;slug&gt;` is a 404 until H9, and a row that lit up
+          under the pointer and did nothing would be the dead control STATE.05
+          refuses. The one link is in the head.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <Log read={GALLERY_LOG} caseStudyHref="/work/timseil-dev" messages={en} />
+        </div>
+        <p className="gal-states">
+          Then the two emptinesses, and they are two claims rather than one.
+          `LATEST 00` says the directory was read and holds nothing — the
+          statement `00 SYSTEMS` makes one section up. `— NO DATA` says it could
+          not be read at all, which on this site means an image that shipped
+          without its own content.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <Log read={GALLERY_LOG_EMPTY} exit={{ href: "/blog", label: en.navLog }} messages={en} />
+        </div>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <Log read={null} exit={{ href: "/blog", label: en.navLog }} messages={en} />
+        </div>
+        <p className="gal-states">
+          And a read that had to skip a file. Nothing on the page says so — a
+          reader is owed entries, not the reader&apos;s bookkeeping — so the only
+          visible difference is the count, which is the point: the skipped file
+          is a WARN in the build log, and lib/content/posts.ts explains why it is
+          not silence and not a throw.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <Log read={GALLERY_LOG_SKIPPED} caseStudyHref="/work/timseil-dev" messages={en} />
         </div>
       </section>
 

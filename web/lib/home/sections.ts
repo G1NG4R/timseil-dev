@@ -131,8 +131,12 @@ export const SECTIONS: readonly Section[] = [
   {
     id: "SYS.04",
     title: "LOG",
-    reasonKey: "homeSys04Why",
-    owedBy: "H5",
+    // Built in H5c, and the last of the four to lose its excuse. The one section
+    // on this page whose source is not an endpoint: fourteen files in
+    // content/posts, three rows, and a head that names the directory the way the
+    // others name their path — components/home/Log.tsx has the argument.
+    reasonKey: null,
+    owedBy: null,
     // LOG points at /blog, and that is not a typo — K-20 unified the label and
     // left the path alone because it is in other people's bookmarks. lib/chrome.ts
     // carries the same split for the navigation.

@@ -810,3 +810,103 @@
   gap: var(--s-4);
   margin-block-start: var(--s-12);
 }
+
+/* ── SYS.04 · LOG, H5c ──────────────────────────────────────────────────────
+   Three entries out of content/posts. The sheet draws the row as a grid —
+   `grid-template-columns: 110px 1fr 24px` with `align-items: baseline` — and
+   what is built has TWO tracks, because the third held a `→` this phase does
+   not ship. components/home/LogRow.tsx carries that argument: `/blog/<slug>` is
+   a 404 until H9, and invariant 5 is that evidence never points into nothing.
+
+   THE HOVER GOES WITH THE ARROW. The sheet fills the row with `--panel` under
+   the pointer and sets `cursor: pointer`. Both are promises about a click that
+   does not happen here, and a row that lights up and does nothing is the dead
+   control STATE.05 refuses — worse than one that never lit up, because it asked
+   first. `.sys-row` one section up keeps its hover BECAUSE it has a link.
+
+   THE 110 IS THE SHEET'S AND IT IS A DATE COLUMN, not a share of the row. That
+   distinction is what the header of layout.css warns about in its own words:
+   the 560 switch "rechnet mit gleich breiten Spalten", and this row has one
+   fixed track and one that takes the rest. Measured across the seven widths
+   rather than inherited — H5a's zero-pixel column was exactly this mistake.
+
+   THE TYPE SIZES ROUND DOWN. The sheet draws the date at 11.5px mono and the
+   title at 14.5px; the scale is 9 · 10 · 11 · 12 · 13 and G1's "keine halben
+   Pixel" applies to a scale with no fourteen as much as to an eleven and a half.
+   Both are recorded in the oracle, as `half-pixel` and `mono-scale`.
+
+   THE DEK IS THE BODY FACE AND THE TITLE IS NOT, which is the sheet's own split
+   and worth keeping: the title is a name, in the same face as the marker above
+   it, and the sentence under it is prose.                                    */
+
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.log-row {
+  display: grid;
+  /* The date column is the sheet's 110px. It holds `2026-09-01` at mono 11 with
+     room to spare, which is the point of a fixed track here: every date is the
+     same ten characters, so the column cannot be surprised by its content. */
+  grid-template-columns: 110px 1fr;
+  gap: var(--s-26);
+  align-items: baseline;
+  padding: var(--s-20) var(--s-8);
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.log-date {
+  font: 400 var(--t-mono-11)/1 var(--mono);
+  color: var(--dim);
+  /* Ten characters that must not dance between rows. The same declaration the
+     case study puts on every measured figure. */
+  font-variant-numeric: tabular-nums;
+}
+
+.log-text {
+  display: block;
+}
+
+.log-title {
+  display: block;
+  font: 500 var(--t-mono-13)/1.3 var(--mono);
+  color: var(--ink);
+}
+
+.log-deck {
+  display: block;
+  font: 400 var(--t-body-13)/1.5 var(--body);
+  color: var(--steel);
+  margin-block-start: var(--s-6);
+}
+
+/* ── The foot of the page, H5c ──────────────────────────────────────────────
+   Bio and the way to the long version. Everything below it in the drawing —
+   `OPEN A CHANNEL`, the address, the profiles, the meta bar — is the chrome's
+   long footer and has been in chrome.css since G3.
+
+   NO PORTRAIT COLUMN. The sheet draws a 92x92 dashed `[PORTRAIT]` box beside
+   this text; ADR 0055 turned down the case study's two image placeholders with
+   the argument that applies here unchanged, and images are K2. So this is one
+   column, and K2 decides whether it becomes two.
+
+   THE 560 IS A MEASURE AND NOT THE SWITCH OF THE SAME NAME. layout.css warns in
+   its own header that the 560 breakpoint "ist keine Zusicherung, sondern ein
+   Ergebnis"; this one is a line length for prose — about 75 characters at this
+   size, inside the 68-to-80 the Blog Post sheet asks of body text. The two
+   numbers being equal is a coincidence, and building on it would be the H5a
+   mistake in a different file.                                               */
+
+.bio {
+  border-block-start: 1px solid var(--line);
+  padding-block-start: var(--s-56);
+}
+
+.bio-text {
+  max-width: 560px;
+  margin: 0;
+  font: 400 var(--t-body-13)/1.6 var(--body);
+  color: var(--steel);
+}

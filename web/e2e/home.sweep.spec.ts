@@ -23,6 +23,10 @@ const PROBES: readonly Probe[] = [
   { key: "head", kind: "computed", selector: ".head", prop: "height" },
   { key: "nav", kind: "computed", selector: ".nav-desktop", prop: "display" },
   { key: "button", kind: "computed", selector: ".nav-button", prop: "display" },
+  // H5c. The first probe on this page that reads a ROW rather than the chrome or
+  // the hero, and the first that can: SYS.04's rows come out of the repository,
+  // so they are here in a rig that has no api.
+  { key: "logRow", kind: "computed", selector: ".log-row", prop: "display" },
 ];
 
 /**
@@ -45,10 +49,16 @@ const SWITCH_MOVES: Record<number, string[]> = {
   // The display step falls to 34, and the terminal frame drops its body — which
   // IS the mobile artboard's strip, drawn from one component instead of two.
   720: ["h1", "term"],
+  // The log row stops being a grid and becomes a stack. ONE COMPONENT, and the
+  // sheet's rule for the switch says that is allowed — "EIN SCHALTER FÜR ALLE
+  // ZWEISPALTER … Kein Bauteil bekommt seinen eigenen Wert." What arrives at 560
+  // is the value `.work-row` and `.log-row` have shared in layout.css since G1;
+  // this is the phase in which something finally moves across it.
+  560: ["logRow"],
 };
 
 test.describe("the homepage changes shape only where it is allowed to", () => {
-  test("every edge between 1440 and 390 is one of the three", async ({ page }) => {
+  test("every edge between 1440 and 390 is one of the four", async ({ page }) => {
     await page.goto(HOME);
 
     const found = await edges(page, PROBES);

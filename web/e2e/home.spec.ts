@@ -51,39 +51,36 @@ test.describe("HOME.01, on the page rather than in the list", () => {
   // Every empty panel says WHY it is empty. STATE.05: a dead state without a
   // reason is a bug, and four grey rectangles would satisfy the test above.
   //
-  // ONE SHELL AND FOUR OUTAGES SINCE H5b, and the difference between the two
-  // headings is the whole state language rather than bookkeeping. `[SOON]` is a
-  // component that does not exist yet; `— NO DATA` is one that exists and whose
-  // source did not answer. This rig runs a production build with NO API —
-  // playwright.config.ts says so — so every built section stands here in its
-  // outage panel, every run.
+  // FOUR PANELS AND NO SHELL SINCE H5c, and the `[SOON]` that stood at the end
+  // of this list is gone rather than moved. The line it was on said what it was
+  // for — "the day it is built this line goes red, which is what it is for" —
+  // and SYS.04 is that day. What is left is one heading repeated four times,
+  // which is the whole state language: `— NO DATA` is a component that exists
+  // and whose source did not answer. This rig runs a production build with NO
+  // API — playwright.config.ts says so — so every API-backed section stands in
+  // its outage panel, every run.
   //
-  // That makes this test the one place the rig sees those failure paths without
-  // arranging anything, which is why the assertion names them rather than
-  // widening to "one of two headings".
-  //
-  // FIVE PANELS FOR FOUR SECTIONS, and the fifth is the point rather than an
+  // FOUR PANELS FOR THREE SECTIONS, and the fourth is the point rather than an
   // off-by-one: SYS.03 reads TWO endpoints, and each of its blocks fails on its
   // own. A section that answered for one and not the other would look exactly
   // like this test expects, which is what having two panels is for.
-  test("every shell says what is missing and why", async ({ page }) => {
+  //
+  // That makes this test the one place the rig sees those failure paths without
+  // arranging anything, which is why the assertion spells the heading out four
+  // times rather than widening to "each one says something".
+  //
+  // AND SYS.04 IS NOT HERE AT ALL, which is the thing that changed. Its source
+  // is content/posts in this repository, so it is the one section on this page
+  // the rig can see with real data in it — the assertions further down are
+  // about the rows themselves rather than about a panel standing in for them.
+  test("every empty panel says what is missing and why", async ({ page }) => {
     const panels = page.locator("main .st-empty-panel");
-    await expect(panels).toHaveCount(5);
+    await expect(panels).toHaveCount(4);
 
-    // FOUR AND ONE SINCE H5b. SYS.01, SYS.02 and both blocks of SYS.03 are
-    // built and their endpoints are unreachable here; SYS.04 does not exist yet.
-    // The day it is built this line goes red — which is what it is for, and it
-    // will have nothing left to say afterwards.
     const headings = panels.locator(".st-empty-head");
-    await expect(headings).toHaveText([
-      "— NO DATA",
-      "— NO DATA",
-      "— NO DATA",
-      "— NO DATA",
-      "[SOON]",
-    ]);
+    await expect(headings).toHaveText(["— NO DATA", "— NO DATA", "— NO DATA", "— NO DATA"]);
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
       const reason = await panels.nth(i).locator(".st-empty-reason").innerText();
       expect(reason.trim().length, `panel ${String(i)} has no reason`).toBeGreaterThan(30);
     }
@@ -130,6 +127,88 @@ test.describe("HOME.01, on the page rather than in the list", () => {
     // `00 SYSTEMS` would say the api answered and there are none. It did not
     // answer, and those are two different claims.
     await expect(meta).toContainText("— NO DATA SYSTEMS");
+  });
+});
+
+// THE FIRST SECTION OF THIS PAGE THE RIG CAN SEE SINCE H3, and that is why this
+// block exists rather than a fifth gallery spec. H4, H5a and H5b each wrote the
+// same limit down: this rig builds the site in production mode with NO api, so
+// every section that reads an endpoint stands here as an outage panel and not
+// one row, cell or column of it is in the document — every measurement had to
+// move to /dev/components.
+//
+// SYS.04 reads content/posts out of the repository, which the rig has. So its
+// rows are real rows, its count is a real count, and both are asserted where
+// they ship instead of in a gallery that frames its own components.
+test.describe("SYS.04, the log", () => {
+  test("draws the three newest entries, newest first", async ({ page }) => {
+    const rows = page.locator(".log-row");
+    await expect(rows).toHaveCount(3);
+
+    const dates = await page.locator(".log-date").allInnerTexts();
+    expect(dates).toHaveLength(3);
+    for (const date of dates) expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Descending, and the tie-break matters: several posts share a day, so a
+    // sort on the date alone would leave these three to readdir order.
+    expect(dates).toEqual([...dates].sort().reverse());
+
+    // Every cell the row draws has something in it. H5a's finding was a column
+    // that computed to zero pixels wide, and the reason nothing caught it was
+    // that nothing looked at a row at all.
+    for (let i = 0; i < 3; i++) {
+      const row = rows.nth(i);
+      await expect(row.locator(".log-title")).not.toBeEmpty();
+      await expect(row.locator(".log-deck")).not.toBeEmpty();
+    }
+  });
+
+  test("names its source and counts the rows it drew", async ({ page }) => {
+    const meta = page.locator(".log .sec-meta");
+    // The count is `logEntries().length`, not the sheet's drawn `LATEST 03`.
+    await expect(meta).toHaveText("LATEST 03 · SOURCE: content/posts");
+  });
+
+  // THE DoD TEST OF THIS PHASE, and it is written as a count because a missing
+  // link is invisible and an extra one is not. `/blog/<slug>` is a 404 until H9,
+  // so a row that linked would be evidence pointing into nothing — invariant 5,
+  // and the decision components/home/LogRow.tsx carries.
+  test("no row is a link, and the section's one link is in its head", async ({ page }) => {
+    await expect(page.locator(".log-row a")).toHaveCount(0);
+    await expect(page.locator(".log a")).toHaveCount(1);
+    await expect(page.locator(".log .sec-action a")).toHaveAttribute(
+      "href",
+      "/work/timseil-dev",
+    );
+  });
+
+  // The sheet writes `SYSTEM 02 · CASE STUDY →` and the 02 comes from
+  // /api/systems, which this section does not read. Typing it here is the
+  // failure `systemsMeta` names in its own comment.
+  test("the head's link carries no number it did not read", async ({ page }) => {
+    await expect(page.locator(".log .sec-action")).toHaveText("CASE STUDY →");
+  });
+
+  // The one section on this page that is in the static shell rather than behind
+  // a boundary, and the raw document is the only witness that can say so: an
+  // interactive browser has already run the swap by the time anyone looks.
+  test("its rows are in the document before anything streams", async ({ page }) => {
+    const html = await (await page.request.get("/")).text();
+    expect(html).toContain("LATEST 03 · SOURCE: content/posts");
+    expect(html.match(/class="log-row"/g) ?? []).toHaveLength(3);
+  });
+});
+
+test.describe("the foot of the page", () => {
+  test("carries the bio and the way to the long version", async ({ page }) => {
+    await expect(page.locator(".bio-text")).not.toBeEmpty();
+    await expect(page.locator(".bio a")).toHaveAttribute("href", "/about");
+  });
+
+  // ADR 0055: images are K2's, and an invented picture is the picture version of
+  // an invented number. The sheet draws a 92x92 `[PORTRAIT]` box here.
+  test("draws no portrait placeholder", async ({ page }) => {
+    await expect(page.locator("main")).not.toContainText("[PORTRAIT]");
+    await expect(page.locator("main img")).toHaveCount(0);
   });
 });
 

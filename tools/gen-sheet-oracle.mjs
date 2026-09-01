@@ -89,6 +89,15 @@ const DIVERGENCE = {
     'of up to eight and this is not one; folding it in would have turned a ' +
     'reason into a habit. The rhythm is --s-72 over --s-96, which is the same ' +
     'pair `.cs-head` uses, so the two heroes on this site breathe alike.',
+  'no-link-until-h9':
+    'The sheet gives the log row a third column holding a `→`, a pointer cursor ' +
+    'and a hover fill — three promises about a click. `/blog/<slug>` is a 404 ' +
+    'until H9 builds the renderer, and invariant 5 is that evidence never ' +
+    'points into nothing. components/case/IncidentLog.tsx prints a post_slug as ' +
+    'text for the same reason and lib/seo/feed.ts serves an empty feed rather ' +
+    'than links to pages that do not exist. The hover goes with the arrow: a row ' +
+    'that lights up and does nothing is the dead control STATE.05 refuses, with ' +
+    'an invitation attached. The section keeps one link, in its head.',
   'mono-scale':
     'The sheet sets the hero subline at 14px mono and tracks AVAILABLE at ' +
     '.18em. The mono scale has 9 · 10 · 11 · 12 · 13 and the tracking tokens ' +
@@ -1045,6 +1054,135 @@ const HOME_MAP = [
     decl: 'font', says: "500 34px/1.1 'Chakra Petch',sans-serif",
     reading: 'the display step falls to 34 on a phone. The artboard draws an h2 there; a crop is not a document outline, and this page keeps its one h1',
     measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '34px',
+  },
+
+  // ── 1440 · Homepage, artboard 1a · SYS.04 the log ────────────────────────
+  //
+  // NONE OF THESE CARRIES AN `on`, AND THAT IS THE FIRST TIME SINCE H3. SYS.01's
+  // grid, SYS.02's rows and both of SYS.03's pictures are measured at
+  // /dev/components because this rig has no api and none of them is in the
+  // document on `/`. SYS.04 reads content/posts out of the repository, which the
+  // rig has — so the rows are on the page, and a rule about them is checked
+  // where it ships.
+  {
+    id: 'home-log-row-tracks',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 240,
+    decl: 'grid-template-columns', says: '110px 1fr 24px',
+    reading: 'a fixed date column, the text taking the rest, and a column for the arrow',
+    // TWO TRACKS AND THE SHEET DRAWS THREE. The third holds a `→` to
+    // /blog/<slug>, which is a 404 until H9 — invariant 5, and the decision
+    // components/home/LogRow.tsx carries. The divergence is the arrow, not the
+    // measure: what is left of the sheet's row is its first two tracks.
+    measure: { kind: 'track-count', selector: '.log-row' }, expect: 2,
+    diverges: { class: 'no-link-until-h9', sheet: '110px 1fr 24px' },
+  },
+  {
+    id: 'home-log-date-column',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 240,
+    decl: 'align-items', says: 'baseline',
+    reading: 'the date, the title and the dek sit on one baseline rather than on a box',
+    measure: { kind: 'computed', selector: '.log-row', prop: 'align-items' }, expect: 'baseline',
+  },
+  {
+    id: 'home-log-date-size',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 241,
+    decl: 'font', says: "400 11.5px 'JetBrains Mono',monospace",
+    reading: 'the date is mono and smaller than the title it stands beside',
+    measure: { kind: 'computed', selector: '.log-date', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+  {
+    id: 'home-log-date-figures',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 241,
+    decl: 'font-variant-numeric', says: 'tabular-nums',
+    reading: 'ten characters that must not dance between three rows',
+    measure: {
+      kind: 'computed', selector: '.log-date', prop: 'font-variant-numeric',
+    }, expect: 'tabular-nums',
+  },
+  {
+    id: 'home-log-title-size',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 242,
+    decl: 'font', says: "500 14.5px 'JetBrains Mono',monospace",
+    reading: 'the title is a name, in the same face as the marker above it',
+    // The mono scale is 9 · 10 · 11 · 12 · 13. There is no fourteen to round to
+    // and no fifteen to round down from — the same wall the hero subline hit.
+    measure: { kind: 'computed', selector: '.log-title', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'mono-scale', sheet: '14.5px' },
+  },
+  // THE DEK HAS NO ENTRY AT 1440, and the reason is the extractor rather than
+  // the drawing. The sheet puts the title and the dek in two spans on ONE line
+  // (242), and `declarationsOn` reads the FIRST style attribute on a line —
+  // last-one-wins within a style, not across two. So the dek's `400 13px
+  // 'Geist',sans-serif` cannot be cited at this artboard. It is asserted at 390
+  // below, where each part of the row has a line of its own, and its 13px at
+  // 1440 is `--t-body-13` exactly in any case. Changing the extractor for one
+  // entry would be a new rule without an incident.
+
+  // ── 1440 · Homepage, artboard 1a · the foot ──────────────────────────────
+  {
+    id: 'home-bio-rule',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 257,
+    decl: 'padding-top', says: '56px',
+    reading: 'the foot opens under a hairline, a full step below the last section',
+    measure: { kind: 'computed', selector: '.bio', prop: 'padding-top' }, expect: '56px',
+  },
+  {
+    id: 'home-bio-measure',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 260,
+    decl: 'max-width', says: '560px',
+    reading: 'the bio is prose and gets a line length rather than a column',
+    measure: { kind: 'box-width', selector: '.bio-text' }, expect: 560,
+  },
+
+  // ── 390 · Homepage, artboard 1b · SYS.04 ─────────────────────────────────
+  {
+    id: 'home-log-row-mobile',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 431,
+    decl: 'padding', says: '14px 0',
+    reading: 'the row loses its side inset with its columns: 8px of inset belongs to a cell in a grid, and at this width there are none',
+    measure: { kind: 'computed', selector: '.log-row', prop: 'padding' }, expect: '14px 0px',
+  },
+  {
+    id: 'home-log-date-mobile',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 432,
+    decl: 'font', says: "400 10px 'JetBrains Mono',monospace",
+    reading: 'the date drops a step on a phone, and ten IS a step — nothing is rounded here',
+    measure: { kind: 'computed', selector: '.log-date', prop: 'font-size' }, expect: '10px',
+  },
+  {
+    id: 'home-log-deck-gap-mobile',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 434,
+    decl: 'margin-top', says: '4px',
+    reading: 'and the dek sits closer under the title, at a step rather than near one',
+    measure: { kind: 'computed', selector: '.log-deck', prop: 'margin-top' }, expect: '4px',
+  },
+  {
+    id: 'home-log-title-mobile',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 433,
+    decl: 'font', says: "500 13.5px 'JetBrains Mono',monospace",
+    reading: 'the title keeps its face and drops a step on a phone',
+    measure: { kind: 'computed', selector: '.log-title', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'half-pixel', sheet: '13.5px' },
+  },
+  {
+    id: 'home-log-action-touch',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 429,
+    decl: 'min-height', says: '44px',
+    reading: 'the one link this section has is a touch target, and the sheet says so itself',
+    // K-27's rule, and the reason `.sec-action a` is `inline-flex`: a min-height
+    // does nothing to a non-replaced inline box. Measured under a coarse
+    // pointer in e2e/touch-targets.coarse.spec.ts, which is where the 44 is
+    // actually enforced; here it is the declaration.
+    measure: { kind: 'computed', selector: '.sec-action a', prop: 'display' }, expect: 'inline-flex',
+  },
+  {
+    id: 'home-bio-mobile',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 448,
+    decl: 'padding', says: '40px 0 0',
+    reading: 'the foot opens tighter on a phone, and the rule above it stays',
+    measure: { kind: 'computed', selector: '.bio', prop: 'padding-top' }, expect: '44px',
+    diverges: { class: 'spacing-scale', sheet: '40px' },
   },
 ];
 

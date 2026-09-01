@@ -201,43 +201,33 @@ export const en = {
     "the page can already ask the API, and takes no input until it can answer " +
     "one.",
 
-  // TWO SHELLS, NOT FOUR. `homeSys01Why` stood here until H4 and `homeSys02Why`
-  // until H5a. Both were deleted rather than kept: the first said the training
-  // log's rows "arrive with the endpoint that derives them" and the second said
-  // the system list "stays empty until the API answers", and both endpoints have
-  // arrived. A sentence that explains an absence which has ended is not harmless
-  // — it compiles, it reads as current, and it is the same class of quietly-false
-  // line as #284.
+  // FOUR SHELLS, AND NOW NONE. `homeSys01Why` stood here until H4,
+  // `homeSys02Why` until H5a, `homeSys03Why` until H5b, and `homeSys04Why` until
+  // this phase. All four were deleted rather than kept, and the argument has not
+  // changed once: a sentence that explains an absence which has ended is not
+  // harmless — it compiles, it reads as current, and it is the same class of
+  // quietly-false line as #284.
+  //
+  // WHAT THE LAST ONE SAID IS WORTH ONE LINE, because it was wrong in a way the
+  // phase had to decide about rather than merely outgrow. "Entries appear once
+  // the renderer that reads them exists" pointed at H9 — and H5c shows the
+  // entries WITHOUT the renderer, as rows that name a post rather than link to
+  // one. The sentence was a prediction about how this would be built, and it
+  // predicted the other option; ADR 0062 records which was taken and why.
   //
   // What replaced each is a `homeSys0NDown` entry further on: a different claim
-  // about a different emptiness. Those are about the api not answering now, not
+  // about a different emptiness. Those are about a source not answering now, not
   // about a component that does not exist yet.
   //
-  // `homeSys03Why` JOINED THEM IN H5b, for the same reason and with one more
-  // thing to say for itself: its sentence was the specification. "Two blocks,
-  // each naming its own source. Neither is drawn before its source has answered"
-  // is why SYS.03 has two Suspense boundaries rather than one, why its head sits
-  // outside both, and why the calendar and the strip each carry a source line.
-  // The section was built to the sentence, and then the sentence was deleted.
-  //
-  // The one left says WHAT is missing and WHY it is missing rather than being
-  // greyed out, which is what EmptyState requires of its caller and what
-  // STATE.05 requires of the page.
-  //
-  // IT CARRIES NO COUNT. The sheet writes `LATEST 03` into the SYS.04 meta; that
-  // is a number its phase has not been given, and a sentence that mentioned it
-  // would be an invented figure on a site built to argue against them. SYS.01,
-  // SYS.02 and SYS.03 now carry their counts because the answers carry them —
-  // `trainingMeta`, `systemsMeta` and `contributionsMeta` in lib/api/.
-  homeSys04Why:
-    "The running part of this site rather than the proving part. Entries " +
-    "appear once the renderer that reads them exists.",
+  // AND SYS.04 NEEDED A SECOND ONE. It is the only section whose source is this
+  // repository rather than an endpoint, so its two emptinesses are not the two
+  // the others have — see `homeSys04Empty` and `homeSys04Down` below.
 
-  // SYS.01 when the api does not answer. A DIFFERENT SENTENCE FROM THE THREE
-  // ABOVE, and the difference is the whole state language: there a component
-  // does not exist yet, here one exists and its source is unreachable. Saying
-  // "coming in a later phase" about a live section that is briefly down would
-  // be a lie with a deploy-shaped cause.
+  // SYS.01 when the api does not answer. A DIFFERENT SENTENCE FROM THE FOUR THE
+  // BLOCK ABOVE BURIED, and the difference is the whole state language: those
+  // said a component did not exist yet, these say one exists and its source is
+  // unreachable. Saying "coming in a later phase" about a live section that is
+  // briefly down would be a lie with a deploy-shaped cause.
   //
   // It names the endpoint rather than apologising, because the endpoint is the
   // answer to "why is this empty" — and because a reader who can see
@@ -276,10 +266,45 @@ export const en = {
     "The strip is read from /api/systems, and that endpoint did not answer this " +
     "request. No day is drawn rather than a row of cells that measured nothing.",
 
+  // SYS.04's two emptinesses, and they are the first pair on this page that is
+  // not "the api answered" against "it did not". The log's source is a directory
+  // in this repository, so the two states are: it was read and holds nothing,
+  // and it could not be read at all.
+  //
+  // `homeSys04Empty` IS REACHABLE ONLY IN THE GALLERY TODAY, and it is written
+  // for the day it is not — a repository with no post is the state this log
+  // started in, and it says the honest thing about it rather than apologising:
+  // the first entry arrives when something has happened that is worth the words.
+  homeSys04Empty:
+    "No entry has been written yet. The log starts empty and fills when " +
+    "something happens here that is worth writing down, not before.",
+
+  // AND THIS ONE NAMES A FAILURE THAT IS OURS, which is why it does not read
+  // like the three above it. The others describe an endpoint that did not
+  // answer — a thing that can happen to a healthy deploy. A missing directory
+  // cannot: the posts are files in the image, so this sentence appears only in a
+  // build that shipped without its own content, and it says so.
+  homeSys04Down:
+    "The entries are read from content/posts in this repository, and that " +
+    "directory could not be read in this build. Nothing is shown rather than a " +
+    "list assembled from somewhere else.",
+
   /** The accessible name of a row's arrow. The arrow itself is one glyph, and a
    *  link whose whole text is `→` tells a screen-reader user nothing about which
    *  of two rows it belongs to. */
   homeSystemsExit: "Read the case study",
+
+  // The foot of the homepage, and the only prose on this page about the person
+  // rather than the machine. THE SHEET DRAWS A BRIEF, NOT A TEXT — "[BIO — 2–3
+  // lines: self-taught systems engineer in Luxembourg; what he runs, how it is
+  // hosted, why it is built this way]" — so this is written to that brief, and
+  // every clause in it is something the repository can be held to: one host
+  // (ADR 0008), GitHub Actions as the only thing that builds and deploys
+  // (compose.yaml carries no `build:`), and the rule at the top of CLAUDE.md.
+  homeBio:
+    "Self-taught backend and infrastructure engineer in Luxembourg. This site " +
+    "and its API run on one VPS I administer myself, built and deployed by " +
+    "GitHub Actions. Every claim on it is bound to a system you can check.",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
