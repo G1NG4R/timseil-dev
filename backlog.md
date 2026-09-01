@@ -118,6 +118,14 @@ gemessen; geschlossen wird er von dir.**
   `box-shadow: 0 0 6px rgba(0,229,255,.4)` ist die einzige Blattfarbe ohne
   Token, und kein Track ist `core`, solange es ein System gibt. Ein Token für
   eine unsichtbare Zeile wäre die falsche Reihenfolge. *(01.09.2026, H4)*
+- **Die Drei-Spalten-Fassung bei 1440 im Browser ansehen → heute Abend
+  (01.09.2026).** Das Fenster kommt auf dieser Maschine nicht über 1048 px, also
+  ist das Modulraster bei 1440 nur im Rig belegt: `.trn-grid` mit sechs Spalten,
+  Karten über je zwei, drei Karten pro Reihe, `03 DATA` neben `04 DEVOPS` in
+  eigener Höhe. **Abnahmekriterium:** ein Blick bei 1440 auf `/`, der bestätigt,
+  dass die drei Karten nebeneinander stehen, die Kopfzeilen-Meta rechts bündig
+  bleibt und keine Karte Totraum unter sich hat. Kein Issue, weil der Eintrag
+  heute Abend stirbt — der Notizblock ist für Sessionnahes. *(01.09.2026, H4)*
 - **`.trn-mod` hat keinen Eintrag im Inventar → offen.** `ModuleCard` steht in
   keinem Blatt; das Inventar kennt nur `SkillRow`. Gebaut ist sie trotzdem, weil
   eine Karte ohne Bauteil eine Karte in der Seite wäre. *(01.09.2026, H4)*
