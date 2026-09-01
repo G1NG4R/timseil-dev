@@ -119,6 +119,26 @@ export interface StateMark {
 export const NO_DATA = "— NO DATA";
 
 /**
+ * What a surface says when the component that fills it belongs to a later
+ * phase. The one definition, for the same reason NO_DATA has one.
+ *
+ * NOT A DICTIONARY KEY. Design-correction #6 unified four spellings into this
+ * one token across all three languages, so it is a placeholder rather than a
+ * word — the same class as `— NO DATA`, and the reason neither is in en.ts.
+ *
+ * IT LIVES HERE BECAUSE H3 NEEDED IT FIVE TIMES. Until now every `[SOON]` on
+ * this site was a literal in the page that printed it, which was fine while
+ * there were six of them in six files that their own phases delete. The
+ * homepage prints it in four section shells and a terminal frame, and five
+ * literals of one token are four chances to edit one of them alone.
+ *
+ * The six route stubs still carry their own; they are deleted by H6 to H12
+ * rather than maintained, and rewriting them would be churn in files that
+ * are on their way out.
+ */
+export const SOON = "[SOON]";
+
+/**
  * Which fill belongs to which class of answer.
  *
  * Written as its own table so `words.test.ts` can hold MARKS against it. Nobody

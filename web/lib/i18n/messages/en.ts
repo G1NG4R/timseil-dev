@@ -143,6 +143,62 @@ export const en = {
   csWhatIdChange: "WHAT I WOULD CHANGE",
   csNextSystem: "NEXT SYSTEM",
 
+  // H3 · the homepage: the hero's sentences and the four reasons a section is
+  // still empty.
+  //
+  // WHAT IS NOT HERE IS AGAIN THE INTERESTING HALF, and every omission is
+  // LANG.01's set. `SYS.INIT` is named in it word for word. `SYS.01` to
+  // `SYS.04` and the four section names are nomenclature — a German homepage
+  // still reads SYS.02 SELECTED WORK, and they live in lib/home/sections.ts
+  // where a test can hold their order. `Go · TypeScript · Docker · Postgres`
+  // names technologies, exactly the case the sheet uses to state the rule.
+  // `tim@vps: ~ — ssh` is a shell prompt, not a sentence. `[SOON]` is a
+  // placeholder token and has one definition in lib/state/words.ts.
+  //
+  // `AVAILABLE` is absent too, and for a third reason: it is already a state
+  // word (`stateAvailable`), and a second key for one word is how the two
+  // start disagreeing about what it means.
+  //
+  // ONE COPY OF EVERY SENTENCE. The mobile artboard writes a shorter eyebrow
+  // ("BACKEND & DEVOPS · LUX") and breaks the subline over two lines. We carry
+  // the full one at both widths: H2a already found what a second, shorter set
+  // of words costs — it exists only to be forgotten when the first is
+  // corrected. The abbreviation is recorded as a sheet divergence instead.
+  homeEyebrow: "BACKEND & DEVOPS ENGINEER · LUXEMBOURG",
+  homeHeadline: "I build the systems behind the screen.",
+  homeTagline: "self-taught, self-hosted.",
+  homeAvailability: "Open to backend and infrastructure work",
+
+  // The terminal frame. It says what it is instead of standing there greyed
+  // out — STATE.05, and the reason it has no input at all until stage J.
+  homeTerminalWhy:
+    "The command register belongs to a later stage. This frame reports what " +
+    "the page can already ask the API, and takes no input until it can answer " +
+    "one.",
+
+  // The four shells. Every one of them says WHAT is missing and WHY it is
+  // missing rather than being greyed out, which is what EmptyState requires of
+  // its caller and what STATE.05 requires of the page.
+  //
+  // NOT ONE OF THEM CARRIES A COUNT. The sheet writes `22 TRACKS`, `02
+  // SYSTEMS` and `LATEST 03` into the section metas; those are numbers this
+  // phase has not been given, and a sentence that mentioned them would be the
+  // first invented figure on a site built to argue against them.
+  homeSys01Why:
+    "A track becomes a skill here only when a running system backs it. The " +
+    "rows are derived from that evidence rather than typed, and they arrive " +
+    "with the endpoint that derives them.",
+  homeSys02Why:
+    "The systems the log points at, and the way into each case study. This " +
+    "list is read from the API rather than written here, so it stays empty " +
+    "until the API answers.",
+  homeSys03Why:
+    "Activity and operation — two blocks, each naming its own source. Neither " +
+    "is drawn before its source has answered.",
+  homeSys04Why:
+    "The running part of this site rather than the proving part. Entries " +
+    "appear once the renderer that reads them exists.",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

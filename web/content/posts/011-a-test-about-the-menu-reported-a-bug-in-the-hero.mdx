@@ -1,0 +1,159 @@
+---
+title: 'A test about the menu reported a bug in the hero'
+deck: 'One CSS declaration on a state chip, a sentence that could not wrap, and a close button that ended up outside the visible width. Three levels between the cause and the only test that noticed — and the reason it noticed at all was that the page had finally got long enough to scroll.'
+published: 2026-09-01
+tags: ['testing', 'frontend', 'css']
+system: 'timseil-dev'
+summary: |
+  Building the homepage turned one test red: the mobile menu's close button
+  could no longer be clicked. Nothing in that commit touched the menu. The cause
+  was `white-space: nowrap` on a component built for a one-word state chip,
+  which the new hero had put a whole sentence into — so at 390px the line could
+  not break, the page overflowed sideways, the layout viewport grew, the modal
+  dialog grew with it, and the close button landed at x=391 in a 390px window.
+  The interesting part is not the bug. It is that the assertion which caught it
+  was three components away from the cause, and that it only became reachable
+  because this was the first page long enough to have a scrollbar.
+---
+
+## What broke
+
+The homepage had a hero, four empty section shells and a terminal frame. Every
+check was green except one, in a file I had not opened:
+
+```
+mobile-menu.coarse.spec.ts › opening locks the document and closing releases it
+  Test timeout of 30000ms exceeded.
+  - <div class="menu-bar">…</div> intercepts pointer events
+```
+
+The mobile menu is chrome. It was built two stages earlier, it is rendered by
+the root layout, and the commit that broke it added a stylesheet whose every
+selector begins with `.hero-` or `.term-`. So the first job was not to fix
+anything. It was to find out whether it was mine at all.
+
+That is two commands. Check out `main`, run the one test, watch it pass. Check
+the branch out again, run it, watch it fail three times out of three. It was
+mine, it was deterministic, and it was not a flake — which is worth establishing
+before touching anything, because the repair for "flaky" and the repair for
+"broken" are different repairs and the first one is always more tempting.
+
+## Following it backwards
+
+Removing the new stylesheet made it green. But no selector in that file can
+reach `.menu-bar`, so the effect had to be indirect, and guessing at indirect
+effects is how an afternoon disappears. I wrote a throwaway spec that opened the
+menu and printed boxes.
+
+```
+BEFORE {"clientWidth":390,"innerWidth":485,"canScroll":true}
+AFTER  close: { x: 390.98, width: 82 }   bar: { x: 0, width: 485 }
+```
+
+There it is. The window is 390 wide. The dialog is 485 wide. The close button
+starts at 391 — one pixel past the right edge of everything a person can see.
+Playwright scrolls it into view, the page shifts, the hit test lands on the bar
+behind it, and it retries for thirty seconds.
+
+`innerWidth` being 485 in a 390px viewport is the tell. Under mobile emulation
+the layout viewport grows to fit content that overflows horizontally, and
+everything sized in percentages grows with it — including a modal dialog at
+`width: 100%`. So the question stopped being "what is wrong with the menu" and
+became "what is 95 pixels too wide on the homepage".
+
+The same probe against the case study, a long page this commit had not touched,
+answered that: `innerWidth` 417 there, and no overflow. One page, not the site.
+
+## The declaration
+
+This site has a small state vocabulary — seven words, each with a mark that
+carries the same information without colour. The component that renders one is
+about the size of a chip:
+
+```css
+.st {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-8);
+  white-space: nowrap;
+}
+```
+
+Every one of those five lines is right for the thing it was written for. `LIVE`
+must not break across two lines in a table cell. `DEGRADED` must not wrap in a
+footer bar. `nowrap` is not a defect; it is the whole point.
+
+Then the hero put this next to it:
+
+> ● AVAILABLE — OPEN TO BACKEND AND INFRASTRUCTURE WORK
+
+I had reached for the state component because the word `AVAILABLE` genuinely is
+one of the seven, and reusing the vocabulary was the right instinct. What I had
+not noticed is that I was also putting a forty-character sentence inside a box
+that had been told never to break a line. At 1440 it fits and nothing shows. At
+390 it cannot fit and cannot wrap, so it does the only thing left: it makes the
+page wider.
+
+The fix is two declarations and no argument.
+
+```css
+.hero-avail {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+```
+
+## The part worth keeping
+
+Four things sat between the cause and the failure: a declaration on a shared
+component, a page that overflowed, a layout viewport that grew, and a dialog
+that sized itself from it. The test that failed was about none of them. It was
+about whether closing a menu releases the scroll lock.
+
+That is not a criticism of the test. A suite finds what it finds, and a symptom
+three levels from its cause is still a symptom worth having. But it is a bad
+place to *learn* the fact from, because the failure message points at the menu
+and the repair is in the hero. If the only signal had been slightly weaker — one
+flake in five instead of three in three — the honest reading would have been
+"the menu test is unreliable", and that reading would have been wrong.
+
+So the assertion that belongs in the codebase is not the one that failed. It is
+the one that names the cause directly:
+
+```ts
+test("nothing pushes the page wider than the window", async ({ page }) => {
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+});
+```
+
+Seven lines, runs at every width, and when it fails it says the true thing.
+Reverting the two-line fix turns it red at 390 and leaves it green at 1440 —
+which is exactly the shape the defect had, and is the reason to keep both the
+fix and the check rather than only the fix.
+
+## And the reason it had never happened before
+
+The scroll lock is a single CSS rule:
+
+```css
+html:has(dialog.menu[open]) { overflow: hidden; }
+```
+
+The stylesheet that carries it already wrote down the neighbouring hazard, in a
+comment, months before this: setting `overflow: hidden` reclaims the width of a
+classic scrollbar, and content shifts sideways when it does. The note ends by
+reasoning that it does not matter where the menu lives, because touch scrollbars
+are overlays with no width.
+
+Which is true of phones and not of a headless browser pretending to be one. The
+condition was there the whole time; it needed a page long enough to have a
+scrollbar in the first place, and until this commit the homepage was a heading,
+a sentence and two rows of a description list.
+
+That is the quiet lesson under the loud one. The comment was not wrong about
+anything it had been able to check. It was right about the world it could see,
+and a page grew.

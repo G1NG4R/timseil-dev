@@ -28,12 +28,21 @@
   .col { width: calc(100% - 44px); }   /* Mobil-Entwürfe: Rand 22 */
 }
 
+/* `.cs-hero` STOOD HERE AND IS GONE, H3. It was the second of the two hero
+   geometries the handoff's layout.css carries — 420px with `align-items: end`,
+   the row Case Study 02 draws — against `.cs-spec`'s 400px and `start` from the
+   Template. H1 built the Template and left the question open; H2a and H2b did
+   not need it and said so; H3 built the last hero this site has, and it is
+   `.hero`. Three phases deferred a decision that has no candidate left, and a
+   rule nobody can reach is not a spare part, it is a claim that something
+   exists. docs/design/code/layout.css keeps its copy — that folder is
+   read-only and is the drawing, not the build.                               */
+
 /* ---- >= 1080: zweispaltig, wie gezeichnet -------------------------------- */
 /* minmax(0,1fr) statt 1fr: eine 1fr-Spalte hat implizit min-width:auto und
    wird von einem <pre>, das nicht umbricht, aufgesprengt.                    */
 @media (min-width: 1080px) {
   .hero     { display: grid; grid-template-columns: minmax(0,1fr) 480px; gap: 72px; align-items: center }
-  .cs-hero  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 80px; align-items: end }
   .cs-spec  { display: grid; grid-template-columns: minmax(0,1fr) 400px; gap: 80px; align-items: start }
   .cs-prob  { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 80px; align-items: start }
   .cs-arch  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 60px; align-items: start }
@@ -43,7 +52,7 @@
 
 /* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
 @media (max-width: 1079px) {
-  .hero, .cs-hero, .cs-spec, .cs-prob, .cs-arch {
+  .hero, .cs-spec, .cs-prob, .cs-arch {
     display: flex; flex-direction: column; gap: 44px;
   }
   .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
@@ -86,6 +95,51 @@
   .deploy-strip { overflow-x: auto }
   /* Das Betriebsraster braucht hier nichts: 91 Tage sind 13 Spalten
      a 15px plus 12 Abstaende a 4px = 243px.                                  */
+}
+
+/* ---- Homepage, H3 -------------------------------------------------------
+   The width-dependent half of styles/home.css, here for the reason the head of
+   this file gives: the four switches are meant to be readable in one place.
+
+   ONE RULE, AND IT USES A SWITCH THAT ALREADY EXISTS. Below 720 the terminal
+   frame loses its body and keeps its bar. That IS the mobile artboard, which
+   draws a single strip where the desktop draws a window — built from one
+   component instead of two, and without the strip's "TAP TO OPEN — DOCKS AS
+   DRAWER": nothing opens until stage J, and an instruction that cannot be
+   carried out is the dead control STATE.05 refuses. Recorded as a divergence
+   in the oracle and as a line in the backlog, owed by J2.
+
+   NO NEW SWITCH. The register on the Intermediate Widths sheet computes 1012
+   for this row and then says the homepage schalts at 1080 with every other
+   two-column component anyway — "Kein Bauteil bekommt seinen eigenen Wert."
+   720 is where the display step already falls, and a frame that keeps a 348px
+   body under a 34px headline is a box with more air than page.               */
+@media (max-width: 719px) {
+  .term-body { display: none }
+}
+
+/* ---- Der feine Zeiger hat auch ein Mindestmass, H3 ----------------------
+   #257: the seven theme swatches are 44 x 44 to a finger and 11 x 11 to a
+   mouse, at every width. The project rule is right where it applies —
+   CLAUDE.md hangs 44px on `pointer: coarse` and not on the viewport — but it
+   stops one step short of a standard it is otherwise stricter than. WCAG 2.2
+   AA 2.5.8 asks 24 x 24 of every pointer input, a mouse included.
+
+   IT IS THE SPACING EXCEPTION AND NOT THE SIZE, which is why nothing is
+   redrawn. 2.5.8 lets a target stay under 24 when its centre is at least 24
+   from every adjacent target's. At 11px wide with 8px of gap the centres are
+   19 apart; at 14 they are 25. So the swatches keep the size the Chrome sheet
+   draws them at, and only the air between them grows — the smallest change
+   that satisfies the rule, and the only one that is not a design correction.
+
+   --s-14 rather than 13, because 13 is not a step and the difference is one
+   pixel of margin over the standard.
+
+   COARSE IS UNTOUCHED. There the buttons are already 44 and their centres 52
+   apart, and a wider gap would push the row past a 346px column at 390. The
+   pointer decides, as it does above.                                        */
+@media (pointer: fine) {
+  .theme-row { gap: var(--s-14) }
 }
 
 /* ---- Touch haengt am Zeiger, nicht an der Breite ------------------------- */

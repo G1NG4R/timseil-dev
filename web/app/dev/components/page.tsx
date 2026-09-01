@@ -10,6 +10,7 @@ import { ErrorPanel } from "@/components/state/ErrorPanel";
 import { LoadingLines } from "@/components/state/LoadingLines";
 import { NoData } from "@/components/state/NoData";
 import { StateWord, StatusDot } from "@/components/state/StatusDot";
+import { FooterLead } from "@/components/FooterLead";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -429,6 +430,24 @@ export default function GalleryPage() {
         <div className="gal-demo" style={{ display: "block" }}>
           <SectionHead id="SYS.01" title="Training log" meta="22 tracks" />
           <SectionHead id="SYS.02" title="Systems" />
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">CTA E-Mail</h2>
+          <span className="gal-where">footer, long version · homepage, about</span>
+        </div>
+        <p className="gal-states">
+          Three of its four states are things a pointer does, so they are not
+          drawn here — they are reachable. Hover it for the glow, tab to it for
+          the ring globals.css gives every focusable element, hold it for the
+          pressed colour. The block is the real component, not a copy of its
+          markup: a second `.foot-mail` in this file would be the thing that
+          drifts.
+        </p>
+        <div className="gal-demo">
+          <FooterLead channel={en.channel} respond={en.respond} />
         </div>
       </section>
 

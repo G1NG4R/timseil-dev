@@ -452,16 +452,18 @@ startet.
 
 ### Was du danach im Browser siehst — und was nicht
 
-**Nicht die Seite.** `web/app/page.tsx` ist heute eine Entwicklungshülle:
+**Seit H3 eine Startseite**, und bis dahin stand hier eine Entwicklungshülle mit
+dem Satz „Development shell. The site itself is built in stage H." Sie ist weg;
+`/` trägt jetzt den Hero und die vier Marker `SYS.01` bis `SYS.04`, deren Inhalte
+H4 und H5 füllen.
 
-> **timseil.dev**
-> Development shell. The site itself is built in stage H.
-
-Das ist richtig so und kein Fehler. D3 verbindet den Stack mit der Welt; die
-Seite selbst entsteht in den Stufen G und H. Was hier zählt, ist, dass ein
-Zertifikat kommt, dass `/api/health` den Commit nennt, den du gepusht hast, und
-dass `/api/docs` die Contract-Oberfläche zeigt — **das** ist die Abnahme, nicht
-das Aussehen der Startseite.
+**Das ändert an dieser Abnahme nichts.** D3 verbindet den Stack mit der Welt, und
+was hier zählt, ist, dass ein Zertifikat kommt, dass `/api/health` den Commit
+nennt, den du gepusht hast, und dass `/api/docs` die Contract-Oberfläche zeigt —
+**das** ist die Abnahme, nicht das Aussehen der Startseite. Eine Seite, die
+`— NO DATA` zeigt, ist hier ebenfalls kein Fehler: ohne erreichbare API ist das
+die richtige Antwort, und die Startseite gibt sie in der `api`-Zeile ihres
+Terminal-Rahmens.
 
 ### Wo du die docker-Kommandos ausführst
 

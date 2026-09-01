@@ -27,7 +27,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { STREAMED_REGIONS, settled } from "./streaming";
+import { CASE_REGIONS, settled } from "./streaming";
 import { CASE_STUDY, RAIL_BREAKPOINT } from "./widths";
 
 const NO_DATA = "— NO DATA";
@@ -160,7 +160,7 @@ test("the breadcrumb goes back to the work index", async ({ page }) => {
 // under its own name, instead of turning all 30-odd tests in this file into a
 // setup error nobody can read.
 test("nothing is left over from the streaming", async ({ page }) => {
-  for (const selector of STREAMED_REGIONS) {
+  for (const selector of CASE_REGIONS) {
     await expect(page.locator(selector), selector).toHaveCount(1);
   }
 });

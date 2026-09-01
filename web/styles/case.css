@@ -8,10 +8,11 @@
    ALLE ZWEISPALTER" on the Intermediate Widths sheet. Nothing in here carries a
    media query.
 
-   THE GRID IS ALREADY BUILT. `.cs-hero`, `.cs-spec`, `.cs-prob` and `.rail`
-   were copied into layout.css in G1 and have had no consumer since. H1 is the
-   first page to use them, so this file adds the surfaces inside them and not a
-   second opinion about their columns.
+   THE GRID IS ALREADY BUILT. `.cs-spec`, `.cs-prob` and `.rail` were copied
+   into layout.css in G1 and have had no consumer since. H1 is the first page to
+   use them, so this file adds the surfaces inside them and not a second opinion
+   about their columns. (`.cs-hero` was in that list too; H3 removed it — the
+   note below says why.)
 
    SPACING IS ROUNDED TO THE SCALE. The sheet draws 22/24px padding and 100px
    between sections; Foundations defines the scale those come from and G1 made
@@ -46,9 +47,11 @@
    `align-items: end` — Case Study 02, whose rail is a 2×N pair block.
    `.cs-spec` is 400px with `align-items: start` — the Case Study Template,
    whose rail is the bordered plate with the corner brackets. H1 builds the
-   Template, so it builds `.cs-spec`; `.cs-hero` keeps its consumer for the day
-   the two are reconciled. The register on the Intermediate Widths sheet lists
-   both rows separately for the same reason.
+   Template, so it builds `.cs-spec`. `.cs-hero` waited three phases for the day
+   the two would be reconciled and H3 ended the wait by building the last hero
+   this site has — a different one, `.hero`. The register on the Intermediate
+   Widths sheet still lists both rows; the drawing keeps them, the stylesheet
+   does not carry a rule with no possible consumer.
 
    The padding is a second class because `.cs-spec` is a grid above 1080 and a
    flex column below it, and the vertical rhythm is the same either way. */

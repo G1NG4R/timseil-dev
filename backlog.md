@@ -12,7 +12,203 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 31.08.2026, H2b abgenommen: 10 von 10, zum ersten Mal seit Stufe F
+## Wo wir stehen — 01.09.2026, H3 gebaut: die Startseite hat einen Inhalt
+
+**Branch `phase/h3-homepage-hero`, zwölf Commits, nicht gepusht.** `/` trägt
+Hero, Verfügbarkeits-Zeile, Terminal-Platzhalter und die vier Marker `SYS.01`
+bis `SYS.04`. Die Entwicklungs-Schale aus F1b ist weg.
+
+### Lokal gemessen, gegen Produktion noch nicht
+
+```
+make check   grün
+npm test     354   (von 347)
+e2e          592 grün, 3 übersprungen, 0 rot   (von 479)
+Orakel       zwei Dateien: 50 Messungen Fallstudie · 21 Startseite, 6 abweichend
+Bundle       143 580 B — ein Byte WENIGER als H2b
+```
+
+Das Byte ist der Punkt: die ganze Seite bringt **kein Client-Bauteil** mit.
+Kein `'use client'` unter `components/home/`, keine Abhängigkeit, und der
+einzige Aufruf an die API steht in einer Server Component.
+
+Die drei Übersprungenen sind einer: die Nav-Prüfung „kein Eintrag ist die
+aktuelle Seite" unterhalb von 900, wo die Desktop-Nav gar nicht gerendert wird.
+Sie sagt das im Testnamen.
+
+**Was noch aussteht:** die Abnahme gegen Produktion als eigener PR — Zeuge vor
+dem Tausch, `check-deployed`, Seite geklickt statt gelesen, `QUICKSTART_ORIGIN`
+auf den Branch, Uhrzeit mit `date -u`. Und **nur** die Ansprüche, die von außen
+kommen müssen; das Rig läuft gegen den lokalen Produktionsbuild.
+
+### Der stärkste Fund: ein Test über das Menü hat einen Fehler im Hero gemeldet
+
+`mobile-menu.coarse.spec.ts` fiel deterministisch, drei Läufe von drei, in einem
+Commit, der die Chrome nicht angefasst hat. Gegen `main` gegengeprüft: dort grün.
+
+Die Kette hat vier Glieder. `.st` trägt `white-space: nowrap` — richtig für ein
+Zustandswort, und der Hero hat einen ganzen Satz in dieselbe Box gestellt. Bei
+390 konnte er nicht umbrechen, also lief die Seite waagerecht über. Ein
+waagerechter Überlauf verbreitert unter Mobil-Emulation den Layout-Viewport, der
+modale Dialog ist `width: 100%`, und der Schließen-Knopf landete bei x = 391 in
+einem 390px-Fenster.
+
+```
+BEFORE  clientWidth 390   innerWidth 485   canScroll true
+AFTER   close.x 390.98    bar.width 485
+```
+
+Reparatur: zwei Deklarationen. Der Fund ist aber nicht die Reparatur, sondern
+**wo die Zusicherung sitzt**. Die, die rot wurde, war drei Bauteile von der
+Ursache entfernt und zeigte auf das Menü. Wäre das Signal schwächer gewesen —
+einer von fünf statt drei von drei —, hätte die ehrliche Lesart „der Menü-Test
+ist unzuverlässig" gelautet, und sie wäre falsch gewesen. `home.spec.ts` hat
+jetzt die Zusicherung, die die Ursache benennt: `scrollWidth <= clientWidth`, an
+allen sieben Breiten. Nimmt man die Reparatur zurück, wird sie bei 390 rot und
+bleibt bei 1440 grün — genau die Form, die der Fehler hatte. Post 011, ADR 0058.
+
+**Und der Grund, warum es nie vorher passiert ist:** `chrome.css` beschreibt den
+Nachbarfall seit G3 in einem Kommentar — die Sperre fordert die Breite einer
+klassischen Bildlaufleiste zurück, „unsichtbar dort, wo das Menü lebt", weil
+Touch-Leisten Overlays ohne Breite sind. Im Rig sind sie es nicht, und bis H3
+war `/` zu kurz zum Scrollen. **Die Startseite ist die erste Seite, die diese
+Bedingung überhaupt herstellt.** Der Kommentar war nicht falsch über das, was er
+prüfen konnte.
+
+### Am Bild gefunden, nicht am Quelltext
+
+**Die 348 px des Blattes für den Terminal-Körper sind gebaut und wieder
+entfernt worden.** Die Begründung fürs Behalten war `.st-wait`s eigene Regel —
+eine Wartefläche hält die Höhe, die die Antwort brauchen wird. Sie trägt nicht:
+`.st-wait` hält zwei Sekunden, dieser Rahmen steht vier Phasen. Im Screenshot
+sind 348 px leerer Kasten kein wartendes Bauteil, sondern eine Fläche, die
+aussieht, als sei sie nicht geladen.
+
+**Und `.st-word` erbt seine Type.** In der Meta-Leiste richtig, wo der Block
+ringsum die Größe setzt; in einem Absatz nicht — `AVAILABLE` stand in der
+Textschrift bei 15px, wo das Blatt Mono 11 zeichnet. Gefunden beim **Schreiben**
+des Orakel-Eintrags für Zeile 74.
+
+**Der Ausgang aus dem Leerzustand war 50,86 × 15.** `layout.css` hebt jedes `a`
+unter `pointer: coarse` auf 44 × 44, und `min-height` gilt nicht für eine
+nicht-ersetzte Inline-Box. Die Regel war da, hat das Element getroffen und nichts
+getan. Das ist K-27 von der anderen Seite: dort fehlte die Deklaration und der
+Grep sah sie nicht, hier ist sie da und die Box nimmt sie nicht an. **Ein Grep
+hätte einen Durchgang gemeldet.**
+
+### Drei Entscheidungen, die sonst wiederkommen — ADR 0058
+
+1. **Ein Bauteil einer späteren Stufe wird als Fläche gebaut, nicht als
+   abgeschaltetes Bedienelement.** Kein `<input>`, kein Prompt, keine
+   Boot-Zeilen — die acht des Blattes sind vier erfundene Zahlen. Die Frage
+   kommt in H5, H6, H10 und J1 wieder.
+2. **Der große Punkt im Hero ist Dekoration.** K-14 verlangt ihn,
+   `words.test.ts` verbietet ihn („gives a dot to every state that makes a
+   claim, and to no other" — niemand misst, ob ich verfügbar bin). Aufgelöst
+   über die Naht, die `state.css` ohnehin zieht: `.st-dot` ist Geometrie,
+   `data-dot` ist die Behauptung. `MARKS` bleibt unberührt.
+3. **Die korrelierte Insel zieht um, statt zu sterben.** Sie ist jetzt die
+   `api`-Zeile des Terminal-Rahmens — „simulierte Oberfläche, echte Daten" ist
+   die Definition, die der Bauplan für J1 aufschreibt.
+
+### `spacing-scale` hat seinen Text korrigiert bekommen, nicht seine Reichweite
+
+Die Klasse behauptete wörtlich „The largest single difference is 4px". H2b hatte
+sie längst auf acht gedehnt, und das Hero-Padding liegt zwölf daneben. Der Satz
+wäre still falsch geworden — dieselbe Klasse wie #284. Jetzt sagt er acht und
+nennt die Stelle, an der die Linie gezogen wurde; `hero-rhythm`, `mono-scale`
+und `placeholder-height` tragen, was er nicht mehr trägt.
+
+---
+
+## Verschoben — mit Phase und Begründung
+
+- **`cvHint` pro Route → J2.** Das Blatt will auf `/` `CV → TERMINAL cv` statt
+  `CV → TERMINAL ON / : cv`. **Beide Fassungen behaupten bis J1 ein Terminal,
+  das Eingaben annimmt** — die heutige Langfassung genauso. Kürzen kostete eine
+  zweite Client-Insel (`usePathname`) und machte die Zeile nicht wahrer; mobil
+  verlangt das Blatt zusätzlich `CV → cv.pdf`, und die PDF liefert K2. Die ganze
+  Zeile gehört dorthin, wo `cv`, die PDF und das read-only-Terminal
+  zusammenliegen. *(01.09.2026, H3)*
+- **Mobil-Schublade des Terminals → J2.** Das Blatt zeichnet bei 390
+  `▸ TS://TERMINAL — TAP TO OPEN — DOCKS AS DRAWER`. In H3 öffnet sie nichts.
+  Gebaut ist stattdessen dasselbe Panel, das bei 720 seinen Körper verliert: ein
+  Bauteil statt zweier, kein neuer Schalter. *(01.09.2026, H3)*
+- **Ambient-Punktraster → I3.** Der Bauplan führt es dort, das Blatt stellt es
+  selbst hinter `<sc-if ambientOn>`. Dazu drei harte Gründe: `tn-drift 90s` wäre
+  eine Dauer und `rgba(0,229,255,.5)` eine Farbe außerhalb `tokens.css`
+  (Invariante 8), und `left:-140px; right:-140px` reißen ab 1240 abwärts 100 px
+  Überhang pro Seite auf — das Artboard hat `overflow:hidden`, die Seite nicht.
+  Ohne die Ebene braucht H3 **null neue Tokens**. *(01.09.2026, H3)*
+- **`data-decode` / Scramble der Headline → I1.** Mit der Falle, die I1 selbst
+  notiert: der dekodierte Text muss der Komponente gehören, die ihn anzeigt. H3
+  rendert den Endzustand, und der ist der Ruhezustand. *(01.09.2026, H3)*
+- **Vierte Sweep-Kante auf `/` → H5.** 560 bewegt auf der Startseite nichts;
+  `.sys-row` und `.log-row` kommen mit SYS.02 und SYS.04. `HOME_SWITCHES` ist
+  `[1080, 900, 720]` und sagt im Kommentar, welche Phase die vierte bringt.
+  *(01.09.2026, H3)*
+- **Sektions-Metas mit Zahlen → H4 / H5.** `22 TRACKS`, `02 SYSTEMS`,
+  `LATEST 03`, `SOURCE: /api/training`, `UPDATED [DATE]`. Zahlen, die diese
+  Phase nicht hat; H2a hat die Regel schon geschrieben. *(01.09.2026, H3)*
+- **Das 88px-Seitenraster → offen, vermutlich G3-Nachzug.** Die Blätter zeichnen
+  es hinter jeder Seite, nicht nur hinter der Startseite. Es ist Chrome, G3 hat
+  es ausgelassen, und `--grid` hat seit G1 einen Token und keinen Konsumenten.
+  Nicht in H3 gebaut, weil es alle zehn Seiten ändert. *(01.09.2026, H3)*
+
+## Gefunden
+
+- **`bundle-size.sh` verweigert die Klassifizierung, und es hat den Fall
+  vorhergesagt.** Der Kommentar sagt seit G7: „Stage H can produce one by
+  putting a page component next to a framework import; better loud here than a
+  quietly wrong total." Genau das ist eingetreten: ein Chunk hält jetzt
+  `next/link` **und** unsere sieben Client-Bauteile der Chrome. Ursache ist
+  benannt und nicht vermutet — eine Server Component, die `<Link>` rendert,
+  macht `next/link` zu einem Client-Reference-Eintrag *dieser Seite*, und
+  Turbopack legt ihn zu den vorhandenen. Die Fallstudie tut dasselbe seit H1
+  (`CaseCrumb`, `NextSystem`); das Werkzeug misst nur `/`, deshalb fällt es erst
+  jetzt auf. **Nicht umgangen und das Markup nicht danach geformt** — ein
+  Produkt nach einem Messwerkzeug zu biegen ist die falsche Richtung. Die
+  Gesamtzahl ist von Hand gemessen (143 580 B über 7 Dateien), weil sie von der
+  Klassifizierung nicht abhängt. Zu entscheiden gehört sie zu ADR 0050: wie wird
+  ein gemischter Chunk zugeordnet, wenn Turbopack ihn so legt? *(01.09.2026, H3)*
+- **Die Blatt-Prüfung wartete auf eine von fünf Suspense-Grenzen.**
+  `case-study.sheet.spec.ts` prüfte `.cs-crumb` auf `toHaveCount(1)` inline,
+  während `streaming.ts` seit #279 alle fünf hält — dieselbe Familie, das dritte
+  Mal. Repariert beim Parametrisieren von `settled()`. *(01.09.2026, H3)*
+- **Beide Routen melden bei 390 im coarse-Projekt `scrollWidth` 417 gegen
+  `clientWidth` 390** — die Fallstudie genauso wie die Startseite, also
+  Emulation des Rigs und nicht Inhalt. Von keinem Test je gefragt. Die
+  Überlauf-Prüfung sitzt deshalb in den Breiten-Projekten mit feinem Zeiger.
+  *(01.09.2026, H3)*
+- **`--st-dot: 7px` steht in `state.css`, nicht in `tokens.css`.** Invariante 8
+  sagt, keine Größe außerhalb `tokens.css`. Bestandsaufnahme aus G6, nicht von
+  H3 verursacht — der Hero-Punkt reicht die Variable durch, statt eine zweite 7
+  zu schreiben. Kandidat für die H-Triage. *(01.09.2026, H3)*
+- **Ein Inline-Style schlägt jede Media Query.** Die `gap`-Regel für die
+  Theme-Felder war korrekt und wurde nie angewendet, weil `gap` als
+  `style={{...}}` auf dem Element stand. Der Test sagte 19 mit der Regel im
+  Stylesheet. Der Basiswert liegt jetzt in `chrome.css`. Beantwortet **#257**
+  über die Abstands-Ausnahme in WCAG 2.5.8, ohne etwas umzuzeichnen.
+  *(01.09.2026, H3)*
+- **`.cs-hero` ist entfernt.** Dreimal verschoben (H1a, H2a, H2b). H3 baut den
+  letzten Hero dieser Seite, und der ist `.hero` — es gibt keinen Kandidaten
+  mehr für eine dritte Hero-Geometrie. Der Sweep bleibt bei 79 Zusicherungen,
+  was belegt, dass die Regel wirklich keinen Konsumenten hatte.
+  *(01.09.2026, H3)*
+- **Ohne Konsumenten, benannt statt bemerkt:** `.terminal-input`
+  (`layout.css`, J2) · `.sys-row`, `.log-row` (H5) · `.deploy-strip` (H5,
+  unverändert aus H2b) · `.decision-table` (Issue-Kandidat, unverändert aus
+  H2a). *(01.09.2026, H3)*
+- **#242 hat seine Phase überlebt.** „decide with H2" — H2 ist abgenommen, die
+  Entscheidung ist nicht gefallen. *(01.09.2026, H3)*
+- **Die H-Triage steht weiter aus.** Die drei Tabellen am Dateiende sind seit
+  der G-Triage leer, während H1a bis H3 jetzt fünf Session-Abschnitte gefüllt
+  haben. Genau die Lage, vor der diese Datei im Kopf warnt.
+  *(01.09.2026, H3)*
+
+---
+
+## Vorher — 31.08.2026, H2b abgenommen: 10 von 10, zum ersten Mal seit Stufe F
 
 **#285 gemergt, `761f357` / `v0.18.0` in Produktion.** `/work/timseil-dev` trägt
 `.01` bis `.05`. Die Fallstudie ist vollständig.

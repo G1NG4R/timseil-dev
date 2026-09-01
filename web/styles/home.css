@@ -1,0 +1,223 @@
+/* The homepage's own surfaces. Build plan H3. ADR 0058.
+
+   WHAT IS HERE AND WHAT IS NOT, the same split case.css makes: this file draws,
+   layout.css switches. Every width-dependent rule for these components lives in
+   layout.css beside the four switches it already owns — one file where a reader
+   sees all of them at once, which is the whole argument of "EIN SCHALTER FÜR
+   ALLE ZWEISPALTER" on the Intermediate Widths sheet. Nothing in here carries a
+   media query.
+
+   THE GRID IS ALREADY BUILT, AND THIS IS ITS FIRST CONSUMER. `.hero` — one
+   flexible column, a 480px rail and 72px between them — was copied into
+   layout.css in G1 and has had none since. So this file adds the surfaces
+   inside the row and not a second opinion about its columns.
+
+   NO NEW TOKENS. Every colour, duration and radius below is one that already
+   exists; the phase needed none, which is what moving the ambient dot layer to
+   I3 bought. The three literals are `620px`, `348px` and `88px`: they are
+   measurements of one component each, in the same class as case.css's `660px`
+   h1 cap, and check-tokens.sh polices colour, radius and duration rather than
+   geometry.
+
+   SPACING IS ROUNDED TO THE SCALE, as everywhere else. The sheet draws 84px of
+   padding above the hero; Foundations fixes the scale and G1 made it binding,
+   so this reads --s-72. That difference is twelve pixels rather than the usual
+   four, so it is recorded as its own divergence class in the oracle instead of
+   being folded into `spacing-scale` — a reason that stretches far enough stops
+   being a reason.                                                             */
+
+/* ── Hero ──────────────────────────────────────────────────────────────────
+   The row itself is layout.css's. `.hero-head` is the vertical rhythm, which is
+   the same whether the row is a grid or a flex column — the same reason
+   `.cs-head` is a second class on the case study.                            */
+
+.hero-head { padding-block: var(--s-72) var(--s-96); }
+
+.hero-eyebrow {
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+  text-transform: uppercase;
+  margin-block-end: var(--s-26);
+}
+
+.hero-init { color: var(--acc); }
+
+/* K-08 gives the homepage and About the 62px step, and globals.css already sets
+   it on `h1`; layout.css already drops it to 34 below 720. So the size is not
+   written here at all — only the measure, which is the sheet's own 620px cap
+   and the reason the sentence breaks where it breaks. The case study needed a
+   `:where()` to win its 52 back from globals; the homepage is the page globals
+   was written for. */
+.hero-headline {
+  max-width: 620px;
+  text-wrap: pretty;
+}
+
+.hero-sub {
+  margin-block-start: var(--s-26);
+  font: 400 var(--t-mono-13)/1.7 var(--mono);
+  color: var(--steel);
+}
+
+.hero-stack { color: var(--echo); }
+
+/* --s-30 is read a second time here, and its comment in tokens.css says it is
+   "one component's measurement". It is now two, and both are the sheet's: the
+   nav gap and the space above this line. The token keeps its name and its
+   value; only the note beside it grows. */
+/* `.st` is built for a state chip and says `white-space: nowrap`, which is
+   right for one word and wrong for the sentence beside it: at 390 this line
+   could not break and pushed the whole page sideways. Found by the rig rather
+   than by reading — the mobile menu's close button ended up outside the visible
+   width, because a horizontally overflowing page widens the layout viewport and
+   the dialog with it. So the box wraps and the sentence wraps inside it; the
+   dot and the word are separate flex items and stay on one line either way. */
+.hero-avail {
+  margin-block-start: var(--s-30);
+  gap: var(--s-10);
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+/* The one declaration this dot needs. `.st-dot` gave it the size, the radius
+   and `flex: none`; `[data-pulse]` gave it the animation and the two shadow
+   colours; `data-tone` on the paragraph gave it --st-color. Without a
+   `data-dot` it has no fill of its own, which is the whole point. */
+.hero-dot { background: var(--st-color); }
+
+/* `.st-word` carries only the colour and inherits its type, which state.css
+   argues for and which is right in the meta bar: the block around it sets the
+   size. Here the block is a paragraph, so AVAILABLE inherited the body face at
+   15px where the sheet draws mono 11. Found by writing the oracle entry for
+   line 74, not by looking at it — the difference is one step of one scale. */
+.hero-avail .st-word {
+  font: 600 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+}
+
+.hero-avail-note {
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--steel);
+  text-transform: uppercase;
+}
+
+/* ── Terminal frame ────────────────────────────────────────────────────────
+   The placeholder, not the component: no input, no prompt, no boot lines.
+   ADR 0058 and the header of components/home/TerminalPanel.tsx carry the
+   argument; this file only draws it.
+
+   THE CORNER MARKS ARE THE SPEC RAIL'S, in accent rather than steel. Eight
+   gradients rather than eight pseudo-elements, which is how case.css draws
+   `.spec` — one box, no extra nodes, and nothing to keep in step when the
+   panel resizes.                                                            */
+
+.term {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  background-image:
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge)),
+    linear-gradient(var(--acc-edge), var(--acc-edge));
+  background-repeat: no-repeat;
+  background-size: 14px 1px, 1px 14px, 14px 1px, 1px 14px,
+                   14px 1px, 1px 14px, 14px 1px, 1px 14px;
+  background-position: 0 0, 0 0, 100% 0, 100% 0,
+                       0 100%, 0 100%, 100% 100%, 100% 100%;
+}
+
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  padding: var(--s-12) var(--s-16);
+  border-block-end: 1px solid var(--line);
+}
+
+.term-lights { display: flex; gap: var(--s-6); }
+
+.term-light {
+  inline-size: var(--st-dot, 7px);
+  block-size: var(--st-dot, 7px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-dot);
+}
+
+.term-title {
+  flex: 1;
+  text-align: center;
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.term-soon {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--acc);
+}
+
+/* NO HEIGHT, AND THE SHEET'S 348px IS THE FIRST THING THIS PHASE MEASURED AND
+   THEN DROPPED. The argument for keeping it was `.st-wait`'s — "a wait holds
+   the height the answer will need, so nothing below it moves when the answer
+   arrives" — and it does not carry here. That rule is about a hole that fills
+   in two seconds. This frame stands for four phases, and 348px of it is empty
+   in a screenshot: a visitor does not see a box waiting for stage J, a visitor
+   sees a panel that failed to load. Built it the sheet's way first and looked
+   at it, which is the only way that difference shows up.
+
+   So the body is as tall as what it says. Recorded as a divergence: J1 gives
+   the terminal its height back when there is a session to scroll.
+
+   The scanline is the sheet's; it is a token because G2 derived one. */
+.term-body {
+  padding: var(--s-16);
+  background-image: repeating-linear-gradient(
+    0deg, var(--scanline) 0 1px, transparent 1px 3px
+  );
+}
+
+.term-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-10);
+}
+
+.term-key { color: var(--steel); }
+
+.term-why {
+  margin-block-start: var(--s-16);
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+  max-width: none;
+}
+
+/* ── Section shells ────────────────────────────────────────────────────────
+   Four markers, four empty states. The sheet puts 104px between sections and
+   the scale's nearest step is 96 — eight pixels, the class case.css already
+   carries and the oracle already names.                                     */
+
+.home-section { margin-block-end: var(--s-96); }
+
+.home-exit {
+  margin-block-start: var(--s-12);
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+}
+
+/* `inline-flex` AND NOT `inline`, WHICH IS THE WHOLE OF K-27 IN ONE RULE.
+   layout.css raises every `a` to 44 x 44 under `pointer: coarse`, and
+   `min-height` does not apply to a non-replaced inline box — so the rule was
+   there, matched this link, and did nothing. Measured at 50.86 x 15 before this
+   line. The chrome's own targets are flex for the same reason; this one had to
+   learn it separately, which is why the measurement is a test and not a grep. */
+.home-exit a {
+  display: inline-flex;
+  align-items: center;
+}

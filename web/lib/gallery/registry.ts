@@ -177,9 +177,12 @@ export const PARTS: readonly Part[] = [
     where: "homepage, about",
     states: ["rest", "hover (glow)", "focus", "active"],
     origin: "inventory",
-    module: null,
-    owedBy: "H3",
-    preview: false,
+    // Built in G3 as `.foot-mail` and rendered in every long footer; H3 is the
+    // phase that owed it the other three states, and the gallery shows the
+    // component itself rather than a copy of its markup.
+    module: "components/FooterLead.tsx",
+    owedBy: null,
+    preview: true,
     note: null,
   },
   {
