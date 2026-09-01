@@ -736,6 +736,16 @@ const HOME_MAP = [
     on: '/dev/components',
   },
   {
+    id: 'home-trn-card-marks',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 114,
+    decl: 'background-size',
+    says: '12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px',
+    reading: 'four corner brackets 12px long, drawn as eight gradients on one box rather than as eight extra nodes',
+    measure: { kind: 'computed', selector: '.trn-mod', prop: 'background-size' },
+    expect: '12px 1px, 1px 12px, 12px 1px, 1px 12px, 12px 1px, 1px 12px, 12px 1px, 1px 12px',
+    on: '/dev/components',
+  },
+  {
     id: 'home-trn-row-bleed',
     sheet: 'homepage', artboard: '1a', width: 1440, line: 116,
     decl: 'margin', says: '0 -8px 4px',

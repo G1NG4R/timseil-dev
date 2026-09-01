@@ -22,7 +22,7 @@ runSheetOracle({
   route: HOME,
   ready: (page) => settled(page, HOME_REGIONS),
   drawnWidths: HOME_DRAWN_WIDTHS,
-  // 21 in H3, 29 in H4. It moves up with each phase that adds measurements to
+  // 21 in H3, 30 in H4. It moves up with each phase that adds measurements to
   // this page, and never down without someone saying why.
   //
   // FIVE OF THE EIGHT H4 ADDED ARE MEASURED ON ANOTHER ROUTE. The oracle now
@@ -30,5 +30,5 @@ runSheetOracle({
   // api SYS.01 is an outage panel here, so the module grid the sheet draws is
   // not in the document and an entry pointed at `/` would assert against
   // nothing. That is H2b's finding, one page over.
-  minimumEntries: 29,
+  minimumEntries: 30,
 });

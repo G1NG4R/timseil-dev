@@ -402,6 +402,22 @@
       "on": "/dev/components"
     },
     {
+      "id": "home-trn-card-marks",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 114,
+      "width": 1440,
+      "says": "background-size: 12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px,12px 1px,1px 12px",
+      "reading": "four corner brackets 12px long, drawn as eight gradients on one box rather than as eight extra nodes",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-mod",
+        "prop": "background-size"
+      },
+      "expect": "12px 1px, 1px 12px, 12px 1px, 1px 12px, 12px 1px, 1px 12px, 12px 1px, 1px 12px",
+      "on": "/dev/components"
+    },
+    {
       "id": "home-trn-row-bleed",
       "sheet": "docs/design/Homepage - timseil.dev.dc.html",
       "artboard": "1a",

@@ -27,7 +27,7 @@
 import { NO_DATA, TRACK_MARKS, isTrackState, type TrackState } from "../state/words.ts";
 
 import type { GetBody } from "./client.ts";
-import { nonEmpty } from "./values.ts";
+import { finiteNumber, nonEmpty } from "./values.ts";
 
 /** The whole log, as the contract answers it. */
 export type Training = GetBody<"/api/training">;
@@ -242,12 +242,12 @@ export function modules(body: Training | null): readonly ModuleView[] {
 export function trainingMeta(body: Training | null): string {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
 
-  const tracks = typeof raw.trackCount === "number" && Number.isFinite(raw.trackCount)
-    ? raw.trackCount
-    : null;
-  const systems = typeof raw.evidenceSystems === "number" && Number.isFinite(raw.evidenceSystems)
-    ? raw.evidenceSystems
-    : null;
+  // `finiteNumber` and not a guard written here: lib/api/values.ts exists
+  // because two copies of a guard this small are how the copies start
+  // disagreeing, and the day somebody tightens it for the case study is the day
+  // this one would keep the old rule.
+  const tracks = finiteNumber(raw.trackCount);
+  const systems = finiteNumber(raw.evidenceSystems);
 
   const parts = ["SELF-TRACKED"];
   parts.push(tracks === null ? `${NO_DATA} TRACKS` : `${String(tracks)} TRACKS`);

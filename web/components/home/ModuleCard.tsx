@@ -28,7 +28,11 @@ export function ModuleCard({ module, messages }: { module: ModuleView; messages:
   const count = module.tracks.length;
 
   return (
-    <div className="trn-mod">
+    // `marks` draws the four corner brackets; `.trn-mod` sets the two values
+    // they differ by. Both are needed — home.css carrying the values without
+    // this class is a card with no corners at all, which is how it shipped for
+    // an hour.
+    <div className="trn-mod marks">
       <p className="trn-mod-head">
         <span className="trn-mod-name" id={titleId}>
           <span className="trn-mod-no">{module.no}</span> {module.title.toUpperCase()}
