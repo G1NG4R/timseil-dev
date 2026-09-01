@@ -65,6 +65,31 @@ export const en = {
   stateQueued: "QUEUED",
   stateAvailable: "AVAILABLE",
 
+  // H4 · the three words a TRACK can be that a SYSTEM cannot. They follow
+  // STATE.05's rule with the six above and are named apart from them on
+  // purpose: `TRACK_MARKS` is a second table because it describes a second
+  // scale, and two prefixes keep a reader from reaching for the wrong one.
+  //
+  // THERE IS NO `trackQueued`. QUEUED means the same thing at both scales —
+  // planned, nothing to point at — so the track table reads `stateQueued`
+  // rather than carrying a fourth key with an identical value. One word, one
+  // key, one place to translate it.
+  trackCore: "CORE",
+  trackApplied: "APPLIED",
+  trackLearning: "LEARNING",
+
+  // The scale under the log. These four are the rule `v_track_states` applies,
+  // written for a reader — so they are prose in the fullest sense on this page
+  // and the only part of SYS.01 a translation would really have to think about.
+  //
+  // THEY DESCRIBE EVIDENCE, NOT EFFORT. "shipped at least once" is a fact about
+  // a system; "I know this well" would be a fact about nobody's opinion, which
+  // is the claim this whole section is built to replace.
+  scaleCore: "running in several systems",
+  scaleApplied: "shipped at least once",
+  scaleLearning: "in progress",
+  scaleQueued: "planned",
+
   // H1 · case study. The rail's keys and the two section names, plus the two
   // tile labels that are ordinary words rather than identifiers.
   //
@@ -176,18 +201,25 @@ export const en = {
     "the page can already ask the API, and takes no input until it can answer " +
     "one.",
 
-  // The four shells. Every one of them says WHAT is missing and WHY it is
-  // missing rather than being greyed out, which is what EmptyState requires of
-  // its caller and what STATE.05 requires of the page.
+  // THREE SHELLS, NOT FOUR. `homeSys01Why` stood here until H4 and is gone
+  // rather than kept: it said the training log's rows "arrive with the endpoint
+  // that derives them", and the endpoint has arrived. A sentence that explains
+  // an absence which has ended is not harmless — it compiles, it reads as
+  // current, and it is the same class of quietly-false line as #284.
   //
-  // NOT ONE OF THEM CARRIES A COUNT. The sheet writes `22 TRACKS`, `02
-  // SYSTEMS` and `LATEST 03` into the section metas; those are numbers this
-  // phase has not been given, and a sentence that mentioned them would be the
-  // first invented figure on a site built to argue against them.
-  homeSys01Why:
-    "A track becomes a skill here only when a running system backs it. The " +
-    "rows are derived from that evidence rather than typed, and they arrive " +
-    "with the endpoint that derives them.",
+  // What replaced it is `homeSys01Down`, one entry further on: a different
+  // claim about a different emptiness. That one is about the api not answering
+  // now, not about a component that does not exist yet.
+  //
+  // Every one of the three says WHAT is missing and WHY it is missing rather
+  // than being greyed out, which is what EmptyState requires of its caller and
+  // what STATE.05 requires of the page.
+  //
+  // NOT ONE OF THEM CARRIES A COUNT. The sheet writes `02 SYSTEMS` and
+  // `LATEST 03` into the section metas; those are numbers their phases have not
+  // been given, and a sentence that mentioned them would be an invented figure
+  // on a site built to argue against them. SYS.01 now carries its counts
+  // because the answer carries them — lib/api/training.ts, `trainingMeta`.
   homeSys02Why:
     "The systems the log points at, and the way into each case study. This " +
     "list is read from the API rather than written here, so it stays empty " +
@@ -198,6 +230,19 @@ export const en = {
   homeSys04Why:
     "The running part of this site rather than the proving part. Entries " +
     "appear once the renderer that reads them exists.",
+
+  // SYS.01 when the api does not answer. A DIFFERENT SENTENCE FROM THE THREE
+  // ABOVE, and the difference is the whole state language: there a component
+  // does not exist yet, here one exists and its source is unreachable. Saying
+  // "coming in a later phase" about a live section that is briefly down would
+  // be a lie with a deploy-shaped cause.
+  //
+  // It names the endpoint rather than apologising, because the endpoint is the
+  // answer to "why is this empty" — and because a reader who can see
+  // /api/training in the section head can check the claim.
+  homeSys01Down:
+    "The log is read from /api/training, and that endpoint did not answer this " +
+    "request. Nothing is shown rather than a list assembled from somewhere else.",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
