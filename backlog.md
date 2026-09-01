@@ -68,10 +68,21 @@ falsch, im Screenshot sofort.
 
 ### Was diese Abnahme nicht behauptet
 
-**Bei 1440 wurde nicht im Browser geklickt.** Das Fenster ließ sich hier nicht
-über 1048 px aufziehen — dieselbe Grenze wie in H3, andere Richtung. Die
-Drei-Spalten-Fassung ist im Rig gemessen (670 Zusicherungen, Blatt-Orakel bei
-1440 eingeschlossen), gesehen habe ich sie dort nicht.
+**Bei 1440 gesehen, bei 390 nicht — und die Begründung dazwischen war zweimal
+falsch.** Ich hatte behauptet, das Fenster komme auf dieser Maschine nicht über
+1048 px (H3 sagte, es komme nicht darunter). Beides war dieselbe Fehlmessung:
+`resize_window` meldet Erfolg und der Tiling-WM ignoriert es, der Bildschirm ist
+2560 px breit, und die zweite Session bekam einfach ein 1425-px-Fenster
+zugeteilt. **Der Rückmeldung geglaubt, statt `clientWidth` zu lesen** — genau
+die Klasse Fehler, gegen die diese Seite gebaut ist, in meiner eigenen Messung.
+
+Bei 1425 gesehen: drei Karten pro Reihe, sechs Spalten, Meta rechts bündig,
+`03 DATA` (277 px) neben `04 DEVOPS` (446 px) in eigener Höhe, kein Überlauf.
+**Das ist die 1440-Fassung**, weil der Content-Column `min(1160, vw − 80)` ist
+und ab 1240 px konstant 1160 bleibt — nachgemessen, nicht gerechnet.
+
+**390 bleibt ungesehen.** Die Breite ist im Rig belegt (`w390`, `coarse-390`),
+im Browser nicht herstellbar.
 
 **Die Dev-Server-Hängerei ist nicht erklärt.** Unter `make dev` blieb der
 Streaming-Tausch mehrfach aus: beide Grenzen der Seite behielten ihren Fallback,
@@ -118,14 +129,13 @@ gemessen; geschlossen wird er von dir.**
   `box-shadow: 0 0 6px rgba(0,229,255,.4)` ist die einzige Blattfarbe ohne
   Token, und kein Track ist `core`, solange es ein System gibt. Ein Token für
   eine unsichtbare Zeile wäre die falsche Reihenfolge. *(01.09.2026, H4)*
-- **Die Drei-Spalten-Fassung bei 1440 im Browser ansehen → heute Abend
-  (01.09.2026).** Das Fenster kommt auf dieser Maschine nicht über 1048 px, also
-  ist das Modulraster bei 1440 nur im Rig belegt: `.trn-grid` mit sechs Spalten,
-  Karten über je zwei, drei Karten pro Reihe, `03 DATA` neben `04 DEVOPS` in
-  eigener Höhe. **Abnahmekriterium:** ein Blick bei 1440 auf `/`, der bestätigt,
-  dass die drei Karten nebeneinander stehen, die Kopfzeilen-Meta rechts bündig
-  bleibt und keine Karte Totraum unter sich hat. Kein Issue, weil der Eintrag
-  heute Abend stirbt — der Notizblock ist für Sessionnahes. *(01.09.2026, H4)*
+- **Der Blick bei 390 steht aus → heute Abend (01.09.2026).** Die einspaltige
+  Fassung ist nur im Rig belegt (`w390` und `coarse-390`, beide grün). Im
+  Browser ist sie hier nicht herstellbar, siehe die Korrektur unten.
+  **Abnahmekriterium:** ein Blick bei 390 auf `/`, der bestätigt, dass eine
+  Karte pro Reihe steht, die Kartenkopfzeile umbricht statt überzulaufen und die
+  Belegzeilen ohne Hover lesbar sind. Kein Issue, weil der Eintrag heute Abend
+  stirbt — der Notizblock ist für Sessionnahes. *(01.09.2026, H4)*
 - **`.trn-mod` hat keinen Eintrag im Inventar → offen.** `ModuleCard` steht in
   keinem Blatt; das Inventar kennt nur `SkillRow`. Gebaut ist sie trotzdem, weil
   eine Karte ohne Bauteil eine Karte in der Seite wäre. *(01.09.2026, H4)*
