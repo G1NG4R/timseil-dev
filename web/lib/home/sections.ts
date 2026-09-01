@@ -119,8 +119,13 @@ export const SECTIONS: readonly Section[] = [
   {
     id: "SYS.03",
     title: "UPLINK",
-    reasonKey: "homeSys03Why",
-    owedBy: "H5",
+    // Built in H5b. Two blocks with two endpoints and two Suspense boundaries —
+    // components/home/Uplink.tsx says why the head is not inside either.
+    reasonKey: null,
+    owedBy: null,
+    // No exit, and it is the sheet's own answer rather than an omission: the
+    // calendar and the strip both point at systems this site already lists one
+    // section up, and there is no page a reader would rather be on.
     exit: null,
   },
   {

@@ -79,6 +79,18 @@ export const HOME_REGIONS = [
   // own boundary for the same reason SYS.01 is: `02 SYSTEMS` in its head is the
   // answer's count.
   ".sys",
+  // H5b, and the first section to put TWO entries here. SYS.03 reads two
+  // endpoints with two freshnesses, so it has two boundaries rather than one —
+  // components/home/Uplink.tsx carries the argument. The section wrapper `.upl`
+  // is deliberately NOT in this list: it is prerendered with the shell, because
+  // its head says something rather than counting something, and a selector that
+  // is present before the stream begins would assert nothing.
+  //
+  // The FIGURE and not the grid inside it. `.upl-strip` is the `<ol>` of cells,
+  // which does not exist when the read failed; `.upl-ops` is there in both
+  // states, and "the region arrived" is the question this list asks.
+  ".upl-graph",
+  ".upl-ops",
 ] as const;
 
 /**

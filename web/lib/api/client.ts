@@ -32,7 +32,7 @@ import { log } from "../log.ts";
 import { REQUEST_ID_HEADER } from "../reqid.ts";
 import { errorText } from "../scrub.ts";
 
-import { apiTarget, resolvePath } from "../http/url.ts";
+import { apiTarget, buildQuery, resolvePath } from "../http/url.ts";
 // The generated declarations, by name and without an extension: TypeScript
 // resolves `schema.d.ts` from here, and `import type` is erased before Node ever
 // sees a specifier to resolve. Written by `make gen`; never by hand.
@@ -93,6 +93,19 @@ export interface GetOptions {
    * can reach.
    */
   params?: Record<string, string>;
+  /**
+   * Values for the query parameters of a contract path.
+   *
+   * A SECOND FIELD AND NOT A WIDER `params`, and lib/http/url.ts carries the
+   * argument at length: `resolvePath` rejects any key its template does not
+   * declare, which is the guard that keeps a value inside its path segment, and
+   * `?window=30` is not a reason to spend it. `buildQuery` has its own
+   * allow-list, deliberately a different one.
+   *
+   * `/api/systems/{slug}?window=30` is the first call that needs it — H5b, the
+   * homepage's 30-day strip beside the case study's 91.
+   */
+  search?: Record<string, string>;
   /** Headers to add — correlation on the live path, nothing on the cached one. */
   headers?: Record<string, string>;
   /** A validator from an earlier answer, sent as `If-None-Match`. */
@@ -146,7 +159,9 @@ export async function apiGet<P extends GetPath>(
     // would grow a new value per slug — the cardinality mistake that makes a
     // log field useless exactly when there is enough traffic to need it. The
     // route is in the template, and the answer's status is in the same line.
-    const target = options.params === undefined ? path : resolvePath(path, options.params);
+    const resolved = options.params === undefined ? path : resolvePath(path, options.params);
+    const query = options.search === undefined ? "" : buildQuery(options.search);
+    const target = `${resolved}${query}`;
 
     const response = await fetch(apiTarget(target), {
       headers,
@@ -163,6 +178,14 @@ export async function apiGet<P extends GetPath>(
       {
         method: "GET",
         path,
+        // AND THE QUERY BESIDE IT, because the template alone stopped being
+        // enough the moment one path could ask two questions:
+        // `/api/systems/{slug}` answers with 30 days or 91 depending on this
+        // string, and without it the two calls write the same line. It does not
+        // go INTO `path` for that field's own reason — this one is bounded by
+        // buildQuery's allow-list and by the contract's `window` enum, and the
+        // slug is not.
+        query,
         status: response.status,
         duration_ms: Math.round(performance.now() - started),
         upstream_request_id: upstreamRequestId,

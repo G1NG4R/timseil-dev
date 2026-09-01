@@ -217,6 +217,45 @@ describe("apiGet resolves a templated path", () => {
     assert.equal(line.path, "/api/systems/{slug}");
   });
 
+  // H5b is the first phase to ask one path two questions. The homepage wants 30
+  // days of the operation grid and the case study wants 91, and until this the
+  // web could not express either — the contract's default was the only window
+  // it could ask for.
+  it("appends a query without touching the path guard", async () => {
+    answer(() => json({ slug: "timseil-dev" }));
+
+    await apiGet("/api/systems/{slug}", { params: { slug: "timseil-dev" }, search: { window: "30" } });
+
+    assert.match(calls[0].url, /\/api\/systems\/timseil-dev\?window=30$/);
+  });
+
+  // The half the `path` field alone stopped covering: two calls to one template
+  // that come back with differently shaped answers have to be tellable apart.
+  it("writes the query beside the template", async () => {
+    answer(() => json({ slug: "timseil-dev" }));
+
+    await apiGet("/api/systems/{slug}", { params: { slug: "timseil-dev" }, search: { window: "30" } });
+
+    const line = JSON.parse(written[0]) as Record<string, unknown>;
+    assert.equal(line.path, "/api/systems/{slug}");
+    assert.equal(line.query, "?window=30");
+  });
+
+  // Same door as a refused path segment, and it has to be: a page has one
+  // branch for "no answer" and none for a throw.
+  it("never asks at all for a query value the guard refuses", async () => {
+    answer(() => json({}));
+
+    const result = await apiGet("/api/systems/{slug}", {
+      params: { slug: "timseil-dev" },
+      search: { window: "30&admin=1" },
+    });
+
+    assert.equal(result.kind, "fail");
+    assert.equal(result.status, 0);
+    assert.equal(calls.length, 0);
+  });
+
   // A refused value must not reach the network at all, and it must arrive at the
   // caller as the same "no answer" every other failure does — not as a throw
   // that a page has no branch for.

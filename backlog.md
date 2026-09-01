@@ -12,6 +12,172 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 01.09.2026, H5b gebaut: SYS.03 trägt zwei Blöcke
+
+**Branch `phase/h5b-homepage-uplink`, offen als #311, CI grün.** `/` zeichnet
+den Contribution-Graphen aus `/api/contributions` und darunter, unter einer
+Linie, den 30-Tage-Betriebsstreifen aus `/api/systems/{slug}?window=30`. Die
+Abschnitts-Meta liest `TWO BLOCKS · EACH NAMES ITS SOURCE`, und beide tun es.
+
+**Der H5a-Abnahme-Commit lag unter der Bauarbeit und ist herausgelöst worden.**
+Er gehört in seinen eigenen Doku-PR, wie `docs/h4-acceptance` es für H4 getan
+hat: `0301342` ging als #310 zuerst und liegt seit 20:51:46Z als `517d621` auf
+`main` — der Abschnitt darunter. Beide PR-Beschreibungen haben den Konflikt
+angekündigt, den das kostet, und es war genau einer: zwei Einfügungen an
+demselben `---`, eine Datei, keine gemeinsame Zeile. **Der Preis ist bekannt und
+klein, und die Alternative wäre gewesen, eine Abnahme unter einem `feat` zu
+verstecken.**
+
+**Die vier Dinge, die die H5a-Abnahme unter „Als Nächstes" vorhergesagt hat,
+sind die vier, die gebaut wurden** — Query-Strings im Transport, das Fenster im
+Cache-Schlüssel, `contributionsCached` mit eigenem Profil, `SITE_SYSTEM_SLUG` in
+`lib/site.ts`. Der Abschnitt steht jetzt direkt darunter und lässt sich
+gegenlesen. Was die Vorhersage **nicht** hatte, ist der Fund dieser Phase; der
+stand in keiner Zeile davon.
+
+### H5 ist damit zu zwei Dritteln fertig
+
+`SYS.04` steht weiter als `[SOON]` — H5c. Die Schalen-Prüfung in `home.spec.ts`
+zählt jetzt **fünf** Panels statt vier, und die fünfte ist die Aussage: SYS.03
+liest zwei Endpunkte und fällt je Block einzeln aus.
+
+### Gegen zwei laufende APIs gemessen, nicht gegen ein Dokument
+
+Vor der ersten Zeile Code beide Endpunkte gelesen, Methode **GET** (nicht `-I`
+— die H5a-Lehre):
+
+```
+GET /api/contributions                  200  17 218 B  s-maxage=3600, swr=7200
+   652 Beiträge · cacheAgeSec 1357 · 53 Wochen · 367 Tage
+   erste Woche 7 (So 2025-08-31) · letzte 3
+   Stufen l0 322 · l1 26 · l2 12 · l3 4 · l4 3
+GET /api/systems/timseil-dev?window=30  200  window=30 · days=30
+   nodata 20 · ok 10 · incidents 0
+GET …?window=91                         200
+GET …?window=45                         400   kein stiller Rückfall
+```
+
+Vier Dinge, die das entschieden hat und die kein Dokument sagt: der Graph ist
+**53 Spalten**, nicht 13; „LAST 365 DAYS" des Blattes sind **367**; alle fünf
+Stufen kommen vor, `--l0`…`--l4` bekommen also ihren ersten Zeichner *und* alle
+fünf werden gezeichnet; und der Streifen ist heute zu zwei Dritteln leer, was
+das richtige Bild ist und kein Fehler.
+
+### Der stärkste Fund: achtzig Pixel, die nie meine waren
+
+**Der Graph wurde 80px schmaler gezeichnet als die Spalte, in der er steht.**
+Ein `<figure>` trägt `margin: 1em 40px` aus dem Browser-Stylesheet; ich hatte
+`margin-block-end` gesetzt und die andere Hälfte stehenlassen. `.ops-figure`
+eine Datei weiter schreibt `margin: … 0 …` und räumt dieselben zwei Ränder ab,
+ohne es je erwähnen zu müssen — genau deshalb ist es beim Kopieren des Musters
+nicht aufgefallen.
+
+**Bei 1440 sah nichts falsch aus**: der Deckel erlaubte 951px und der Container
+bot 1080, also bekam der Graph seine 951 und die fehlenden 80 waren unsichtbar.
+Der Defekt zeigt sich nur, wo der Deckel nicht mehr greift, und am schlimmsten
+bei der Breite, auf die ich am wenigsten geschaut hätte: **2,1px Zelle bei 390.**
+
+Die zweite Hälfte desselben Defekts: nach der Randreparatur waren es 3,6px statt
+der gerechneten 5,5. **52 Abstände à 3px sind 156px** — auf 346px Telefon fast
+die halbe Zeile. Der Abstand muss mit der Zelle schrumpfen, im 5:1 des Blattes.
+
+Danach, am gebauten Produktionsbuild mit laufender API:
+
+```
+1440   951px  Zelle 15,0      1024   944px  Zelle 14,9      719  639px  10,1
+1081   951px  Zelle 15,0       899   819px  Zelle 12,9      390  346px   5,5
+Überlauf an allen sieben Prüfbreiten: 0 · kein Querscrollen
+```
+
+**Kein Test in diesem Rig hätte es finden können, und die Galerie auch nicht** —
+sie rahmt ihre Bauteile selbst. Gefunden hat es `getBoundingClientRect` auf der
+echten Seite, dieselbe Methode wie H5as Null-Pixel-Spalte. Ein Screenshot nicht:
+2,1px und 15px sehen beide aus wie „ein Contribution-Graph".
+
+### Die Lehre, eine Ebene unter der Reparatur
+
+Ich habe ein Layout aus zwei gemessenen Zahlen abgeleitet — der Spaltenzahl der
+Antwort und der Inhaltsbreite des Stylesheets — und nie geprüft, ob die zweite
+die ist, die mein Element **bekommt**. Nur die erste war eine Messung; die
+zweite war eine Lesung. Sie stimmte über das Stylesheet und nicht über das
+Element. **Jeder Layout-Fund dieser Site hatte bisher diese Form: eine Zahl, die
+irgendwo wahr ist, irgendwo anders benutzt.**
+
+### Das Fenster im Cache-Schlüssel — und der Test, den es dafür nicht gibt
+
+`systemCached(slug, window)`, ohne Default, beide Aufrufstellen schreiben ihr
+Fenster hin. `readers.ts` hat aus dem in seinem Kopf genannten Grund keinen
+Unit-Test und das e2e-Rig hat keine API, **also hat der wahrscheinlichste Fehler
+dieser Phase keinen Test.** Von Hand gemessen, eine Sitzung, beide
+Reihenfolgen:
+
+```
+/                 30 Zellen
+/work/timseil-dev 91 Zellen — "OPERATION · 91 days (13 weeks) · ONE CELL IS ONE DAY"
+/  noch einmal    30 Zellen
+```
+
+### Lokal gemessen
+
+```
+make check   grün
+npm test     449   (von 416)
+Orakel       53 Messungen Startseite (von 40), 13 abweichend — alle dreizehn
+             in der Galerie, weil auf `/` ohne API keine Zelle im Dokument ist
+```
+
+**Für den Graphen brauchte die Messung Daten.** Der lokale `GITHUB_TOKEN`
+antwortet 401, also bleibt der Kalender kalt und der Endpunkt 502 — das ist der
+Leerzustand, und er wurde so auch angesehen. Für den gefüllten wurde die
+Produktionsantwort einmal von Hand in `contributions_cache` geschrieben; die
+Zahlen oben sind daher die echten.
+
+## Gefunden — aus H5b
+
+- **`<figure>` trägt `margin: 1em 40px`, und das kostete 80px.** Oben
+  beschrieben. `.upl-ops` hatte denselben Fehler und wurde mitrepariert.
+  *(01.09.2026, H5b)*
+- **`next start` und `node .next/standalone/server.js` antworten auf `/`
+  verschieden.** Der Standalone-Server liefert `308` mit
+  `x-middleware-rewrite: …/en` und `location: /`, also eine Schleife; `next start`
+  liefert `200`. Das Rig benutzt `next start`, Produktion den Standalone-Server —
+  und Produktion antwortet `200`. Nicht verfolgt, weil der Container es nicht
+  zeigt; notiert, weil eine lokale Messung am falschen der beiden Server eine
+  Stunde kosten kann. *(01.09.2026, H5b)*
+- **`make bundle-size` scheitert weiterhin nach einem `make dev`** — `rm -rf
+  .next` gegen ein root-eigenes `.next/dev`. Zweite Sichtung, umgangen und nicht
+  repariert. *(01.09.2026, H5b)*
+- **Die Meta-Wörter dieser Seite sind kein Dictionary-Eintrag**, und
+  `training.ts` sagt warum („der Grund, aus dem keine Zahl auf dieser Seite je
+  ein Dictionary-Schlüssel war"). `TWO BLOCKS · EACH NAMES ITS SOURCE`,
+  `CONTRIBUTIONS`, `LESS`/`MORE` stehen deshalb im Bauteil. Nur die zwei
+  Ausfall-Sätze sind Prosa und liegen in `en.ts`. *(01.09.2026, H5b)*
+- **`--l0` heißt im Kommentar „l0 ist Text".** Der Wert ist `--ink` bei 5 %,
+  also die leere Stufe — der Kommentar meint die Herkunft und liest sich wie
+  eine Rolle. Nicht geändert, weil `tokens.css` ohne Ansage nicht angefasst
+  wird. *(01.09.2026, H5b)*
+
+## Verschoben aus H5b
+
+- **`.deploy-strip` in `layout.css:127` bleibt verwaist → offen.** Die Zeile ist
+  zweideutig: der Nachbarkommentar spricht vom Betriebsraster, das
+  `Operation Grid`-Blatt kennt daneben aber einen eigenen „Deploy-Streifen auf
+  die letzten zehn". Weder adoptiert noch gelöscht. *(01.09.2026, H5b)*
+- **`csOperation`, `csDays`, `csOneCellOneDay` tragen ein `cs`-Präfix und
+  bedienen jetzt zwei Seiten → offen.** Wiederverwendet statt kopiert, was
+  richtig ist; das Präfix ist damit ungenau. Umbenennen ist eine eigene,
+  langweilige Änderung. *(01.09.2026, H5b)*
+- **`SITE_SYSTEM_SLUG` steht als Konstante im Web und als Env-Variable in der
+  API, und nichts hält sie zusammen → offen.** Aufgeschrieben in `lib/site.ts`
+  statt weggenommen; der Ausfall ist ein 404 und damit ein `— NO DATA`, also
+  eine wahre Aussage. *(01.09.2026, H5b)*
+- **Der Graph ist bei 390 fünfeinhalb Pixel pro Zelle → bewusst so.** Das ist
+  Dichte und keine Liste; wer einen einzelnen Tag ablesen will, kann es dort
+  nicht. Der Name der Figur trägt die Aussage. In ADR 0061 als Preis benannt.
+  *(01.09.2026, H5b)*
+
+---
+
 ## Wo wir stehen — 01.09.2026, H5a abgenommen: 10 von 10, gegen Produktion
 
 `fb3330b` / `v0.21.0` läuft. Merge 18:52:28Z, Deploy-Job 18:57:45Z–18:58:16Z,

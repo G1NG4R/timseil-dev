@@ -43,6 +43,7 @@ import { REQUEST_ID_HEADER } from "../reqid.ts";
 import { TRACEPARENT_HEADER, childSpan, renderTraceparent } from "../trace.ts";
 
 import { apiGet } from "./client.ts";
+import type { Contributions } from "./contributions.ts";
 import { NO_HEALTH, footerHealth, healthOrThrow, type FooterHealth, type Health } from "./health.ts";
 import type { SystemDetail, SystemList } from "./systems.ts";
 import type { Training } from "./training.ts";
@@ -218,7 +219,7 @@ export const SYSTEMS_TAG = "systems";
  * would then be served a shell baked with `— NO DATA` for the length of the
  * expire window. Same line, same reason, as `footerHealthNow` below.
  */
-export async function systemCached(slug: string): Promise<SystemDetail> {
+export async function systemCached(slug: string, window: number): Promise<SystemDetail> {
   "use cache";
   cacheLife("systems");
   cacheTag(SYSTEMS_TAG, `${SYSTEMS_TAG}:${slug}`);
@@ -227,9 +228,25 @@ export async function systemCached(slug: string): Promise<SystemDetail> {
   // different from healthCached: an argument is part of the key, so this is one
   // entry per system rather than one per visitor. With two systems that is two
   // entries; the shape stays right when there are twenty.
-  const result = await apiGet("/api/systems/{slug}", { params: { slug } });
+  //
+  // AND SINCE H5b THE WINDOW IS THE SECOND HALF OF THAT KEY, which is the whole
+  // reason it is an argument instead of a constant in here. The case study asks
+  // for 91 days and the homepage strip for 30, off the same slug; keyed on the
+  // slug alone, whichever of the two rendered first would serve its answer to
+  // the other, and the second page would draw the right number of the wrong
+  // days without anything going red. Nothing in this file is unit tested, so
+  // that failure has no test — the count is checked by hand on both pages in
+  // one session, and lib/api/systems.ts keeps the two windows named.
+  //
+  // IT IS NOT A SECOND TAG. A deploy that changed a system changed both windows
+  // of it, so `systems:<slug>` still names everything that has to go; a tag per
+  // window would make the invalidation finer than the truth it stands for.
+  const result = await apiGet("/api/systems/{slug}", {
+    params: { slug },
+    search: { window: String(window) },
+  });
   if (result.kind !== "ok") {
-    throw new Error(`system unavailable: ${slug} ${String(result.status)}`);
+    throw new Error(`system unavailable: ${slug} ${String(window)} ${String(result.status)}`);
   }
   return result.data;
 }
@@ -243,11 +260,11 @@ export async function systemCached(slug: string): Promise<SystemDetail> {
  * swallows nothing that was not already recorded — lib/api/client.ts wrote the
  * status, the duration and the scrubbed error before it got here.
  */
-export async function systemNow(slug: string): Promise<SystemDetail | null> {
+export async function systemNow(slug: string, window: number): Promise<SystemDetail | null> {
   await connection();
 
   try {
-    return await systemCached(slug);
+    return await systemCached(slug, window);
   } catch {
     return null;
   }
@@ -286,11 +303,11 @@ export async function systemsCached(): Promise<SystemList> {
 /**
  * Every system, or the resting state. Never throws.
  *
- * `connection()` IS INSIDE THIS ONE, the way it is inside `trainingNow` and not
- * inside `systemNow`. The difference is which caller there is: the case study
- * makes five reads of one document and calls `connection()` once for all of
- * them, and the homepage makes this read from one streamed region that has
- * nothing else to wait for.
+ * `connection()` IS INSIDE THIS ONE, the way it is inside `systemNow` and
+ * `trainingNow` — every `*Now` in this file waits for a request, and none of
+ * the `*Cached` ones do. An earlier version of this paragraph said `systemNow`
+ * was the exception; it never was, and components/case/Live.tsx says the
+ * opposite in its own head. Corrected in H5b, which had to read both anyway.
  */
 export async function systemsNow(): Promise<SystemList | null> {
   await connection();
@@ -363,6 +380,62 @@ export async function trainingNow(): Promise<Training | null> {
 
   try {
     return await trainingCached();
+  } catch {
+    return null;
+  }
+}
+
+/** The tag the calendar is filed under. One name, so a reader can grep for it. */
+export const CONTRIBUTIONS_TAG = "contributions";
+
+/**
+ * The contribution calendar, shared between every visitor for the length of one
+ * cache window.
+ *
+ * THE FIFTH READER, AND THE FIRST WHOSE UPSTREAM IS NOT OURS. Everything behind
+ * the other four is a row this site wrote; behind this one is GitHub, and the
+ * api already carries the whole of that difference — a breaker, an hourly
+ * refresher, and an answer that returns the last good calendar WITH ITS AGE
+ * rather than an error. Nothing of that belongs here. This function asks and
+ * hands the answer on.
+ *
+ * ITS PROFILE IS THE LONGEST ON THE SITE AND IT IS STILL A READING. The contract
+ * gives `getContributions` `public, s-maxage=3600, stale-while-revalidate=7200`,
+ * so `cacheLife("contributions")` is those two numbers, twice — the rule the
+ * head of next.config.ts states, for the fifth time and for the first time on a
+ * path whose numbers differ from every other.
+ *
+ * IT THROWS ON THE COLD 502 for the reason this file has now given four times,
+ * and here the window is the one that makes it worst: `use cache` would hold a
+ * stored "no calendar" for two hours after GitHub came back. A cold start is
+ * exactly when that happens, and it is exactly the moment the site would look
+ * broken to somebody arriving for the first time.
+ */
+export async function contributionsCached(): Promise<Contributions> {
+  "use cache";
+  cacheLife("contributions");
+  cacheTag(CONTRIBUTIONS_TAG);
+
+  const result = await apiGet("/api/contributions");
+  if (result.kind !== "ok") {
+    throw new Error(`contributions unavailable: ${String(result.status)}`);
+  }
+  return result.data;
+}
+
+/**
+ * The calendar, or nothing. Never throws.
+ *
+ * `connection()` IS HERE, the way it is in `trainingNow` and `systemsNow`: this
+ * reader has one caller, and without the call the calendar would be rendered
+ * during `next build` — inside `docker build`, where no `api:8080` exists — and
+ * baked into the shell as `— NO DATA` for two hours.
+ */
+export async function contributionsNow(): Promise<Contributions | null> {
+  await connection();
+
+  try {
+    return await contributionsCached();
   } catch {
     return null;
   }

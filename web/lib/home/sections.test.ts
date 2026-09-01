@@ -101,13 +101,13 @@ void test("a section is either filled or owed, never both and never neither", ()
 
 // The counterpart to the sheet's order test, and the reason it is written as a
 // list rather than a count: it names the sections that are built, so the diff
-// that builds one is the diff that has to prove it. H5a is the second such diff
+// that builds one is the diff that has to prove it. H5b is the third such diff
 // and H5c will be the last — after it the list is all four and this test has
 // nothing left to say, which is when it goes.
-void test("SYS.01 and SYS.02 are the sections built so far", () => {
+void test("SYS.01, SYS.02 and SYS.03 are the sections built so far", () => {
   assert.deepEqual(
     SECTIONS.filter((section) => section.owedBy === null).map((section) => section.id),
-    ["SYS.01", "SYS.02"],
+    ["SYS.01", "SYS.02", "SYS.03"],
   );
 });
 

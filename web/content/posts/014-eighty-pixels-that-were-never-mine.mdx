@@ -1,0 +1,141 @@
+---
+title: 'Eighty pixels that were never mine'
+deck: 'A contribution graph on my homepage was drawn eighty pixels narrower than the column it sits in, and the cells came out at two pixels instead of five. The eighty pixels were the browser default margin on a <figure>. The measurement that found it is the same one that found last week bug, and it is the only kind I now trust.'
+published: 2026-09-01
+tags: ['css', 'testing', 'frontend']
+system: 'timseil-dev'
+summary: |
+  I built the UPLINK section of my homepage: a year of commits as a
+  seven-row grid, and thirty days of uptime as a single row of cells. The design
+  sheet draws the calendar as 53 columns of 15px squares. That is 951 pixels,
+  and my content column is 1160 at the widest and `100% - 80px` below that — so
+  the drawing overflows from a 1031px window down, three checked widths before
+  anything on the page is supposed to move. I knew that before I wrote a line,
+  because I did the arithmetic first. What I did not know is that a `<figure>`
+  carries `margin: 1em 40px` from the browser stylesheet, and that my graph was
+  therefore being handed a container eighty pixels narrower than the one I had
+  measured. At 1440 it still looked right. At 390 the cells were 2.1px.
+---
+
+## The arithmetic was right and the page was not
+
+Before writing the component I measured the two endpoints it reads. `GET
+/api/contributions` answered 53 weeks and 367 days, the last week three days
+long, with all five density steps present. `GET /api/systems/timseil-dev?window=30`
+answered exactly thirty days, twenty of them with no measurement at all — the
+probe has only been running about ten days, so two thirds of that strip is
+outline, which is the correct picture and not a bug.
+
+From those two answers the geometry follows. Fifty-three columns of 15 pixels
+with a 3 pixel gap is 951 pixels. My content column is `min(1160px, 100% - 80px)`.
+So the sheet's own drawing fits at 1440 and 1081, and overflows at 1024 by seven
+pixels — long before the 560px breakpoint where the design starts rearranging
+things.
+
+The fix is to stop drawing a fixed size. The columns become `1fr` under a cap of
+exactly the width the sheet's numbers need:
+
+```css
+.upl-cols {
+  --cell: 15px;
+  --gap: min(3px, calc(100% / (var(--cols) * 6 - 1)));
+  grid-template-rows: repeat(7, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--gap);
+  width: min(calc(var(--cols) * var(--cell) + (var(--cols) - 1) * var(--gap)), 100%);
+}
+```
+
+`--cols` is written into the markup from the answer — 53 this year, 52 in a year
+that lines up differently. Above 1031 pixels the cap is not binding and the cells
+resolve to exactly the 15 the sheet drew. Below it they take whatever is left,
+all 53 of them, and the caption goes on counting the same 367 days.
+
+That was the plan, and the plan was correct. Then I measured the built page.
+
+## Two point one
+
+```
+width  container  graph  cell
+1440        1080    951  15.0
+1081        1001    921  14.4
+1024         944    864  13.3
+ 899         819    739  11.0
+ 719         639    559   7.6
+ 390         346    266   2.1
+```
+
+Read the first two columns. At 1440 the content column is 1160 and the container
+my graph was handed is 1080. Eighty pixels, at every width, consistently.
+
+A `<figure>` has `margin: 1em 40px` in the browser's own stylesheet. I had set
+`margin-block-end` on mine and left the inline half alone. The operation grid one
+file over writes `margin: var(--s-34) 0 var(--s-56)` and so zeroes the same two
+margins without ever having to mention it — which is exactly why I did not notice
+the omission when I copied the pattern.
+
+At 1440 nothing looked wrong: the cap allowed 951 and the container offered 1080,
+so the graph got its 951 and the missing eighty pixels were invisible. The defect
+only shows where the cap stops binding, and it shows worst at the width where I
+was least likely to be looking. Two point one pixels is not a small cell. It is a
+smear.
+
+## The second half of the same defect
+
+Fixing the margin gave me 3.6px at 390, not the 5.5 the arithmetic promised.
+Fifty-two gaps of three pixels is 156 pixels — on a 346 pixel phone that is
+nearly half the row spent on air. The gap has to shrink with the cell, at the
+sheet's own 5:1 ratio, which is what the `min()` in `--gap` above is doing: 53
+columns of five units plus 52 gaps of one is `cols × 6 − 1` units across, so a
+gap of `100% / (cols * 6 - 1)` keeps the proportion at every width, and the
+`min(3px, …)` pins it to exactly 3 wherever the cap is not binding.
+
+```
+1440   951px  cell 15.0        899   819px  cell 12.9
+1081   951px  cell 15.0        719   639px  cell 10.1
+1024   944px  cell 14.9        390   346px  cell  5.5
+```
+
+Zero overflow at all seven checked widths, and no horizontal scroll on the body.
+
+## Why no test would have caught it
+
+My end-to-end rig builds the site in production mode and runs it with no API
+behind it. UPLINK reads two endpoints. Neither answers there, so on the homepage
+in the rig there is not one cell of either picture in the document — two outage
+panels, and that is all. Every rule about what this section looks like is
+unassertable on the page that carries it.
+
+This is the third phase in a row where that has been the finding, and I am no
+longer surprised by it. What changed is where the measurement happens: the
+component gallery renders both blocks from data in the page, with the real
+shapes — 53 columns, a short last week, all five steps, and a second calendar
+that starts on a Wednesday so the four-cell first column has to land on rows four
+through seven rather than at the top. No live answer produces that case today.
+The test has to invent it, and it does.
+
+But the gallery would not have caught the eighty pixels either, because the
+gallery lays its components out in its own frame. What caught it was building the
+site in production mode with a real API behind it and reading
+`getBoundingClientRect` on the actual page — the same method that found last
+week's zero-width column. Not a screenshot: a 2.1px cell and a 15px cell both
+look like "a contribution graph" at a glance. The number is what says which one
+you are looking at.
+
+## The bit I keep having to relearn
+
+There is a version of this note that says "check your figure margins", and it
+would be useless. The useful version is narrower.
+
+I derived a layout from two numbers I had measured — the answer's column count
+and the stylesheet's content width — and I never checked that the second number
+was the one my element actually received. The arithmetic was between two
+quantities I trusted for different reasons: one because I had read it off a live
+endpoint, and one because I had read it out of a CSS file. Only the first of
+those was a measurement.
+
+The endpoint number was right. The stylesheet number was right about the
+stylesheet and wrong about my element, because something between the two put
+forty pixels on each side. Every layout bug I have found on this site so far has
+had that shape: a number that is true somewhere, used somewhere else.

@@ -124,6 +124,40 @@ const DIVERGENCE = {
     'and a swipe hides four fifths of the argument on the one device where the ' +
     'reader cannot see there is more. Recorded as a design correction rather ' +
     'than settled here.',
+  // ── H5b ──────────────────────────────────────────────────────────────────
+  'graph-fits-the-column':
+    'The sheet draws the calendar as 53 columns of 15px with a 3px gap, which ' +
+    'is 951px, and the content column is min(1160px, 100% - 80px). It therefore ' +
+    'overflows from a 1031px window down — at the checked width of 1024 by ' +
+    'seven pixels, three switches before anything on this page is allowed to ' +
+    'move. The mobile artboard answers with 26 weeks at 11px and the caption ' +
+    '"LAST 26 WKS SHOWN"; that leaves 1024 overflowing and splits the total in ' +
+    'the caption from the picture it counts. So the columns are `1fr` under a ' +
+    'cap of exactly the width the sheet\'s own numbers need: 15px wherever the ' +
+    'sheet drew it, smaller below, the same 53 columns and the same caption at ' +
+    'every width, and no new switch in layout.css. The gap shrinks with the ' +
+    'cell at the sheet\'s own 5:1, because 52 gaps of 3px is 156px of a 346px ' +
+    'phone.',
+  'source-is-this-api':
+    'The sheet captions the calendar `SOURCE GITHUB API`, which names the ' +
+    'upstream. Every other source line on this site names the endpoint a reader ' +
+    'can open in a second tab — `/api/training`, `/api/systems` — and that is ' +
+    'the promise the line makes. GitHub is what UPLINK and CONTRIBUTIONS ' +
+    'already say. The operation strip has the same correction for a different ' +
+    'reason: the sheet writes `/api/health` there, which is the container that ' +
+    'served systems[].days[] before ADR 0005 split it.',
+  'counted-window':
+    'The sheet writes `LAST 365 DAYS` under the calendar and `365 D` on the ' +
+    'phone. The answer carried 367 on 2026-09-01 — 53 weeks, the last of them ' +
+    'three days — and 365 is a round number about a year rather than about this ' +
+    'picture. Counted from the cells that were actually drawn, which is ' +
+    'invariant 7 applied one page over from the 91 it was written for.',
+  'square-corners':
+    'The sheet gives the calendar cells a 2px radius and the legend swatches ' +
+    'the same. `--radius` is 0 on this site and invariant 8 puts every radius ' +
+    'in tokens.css, so a two here would be a value with no token behind it — ' +
+    'and the operation grid, which is the same grammar at another scale, is ' +
+    'square for that reason already.',
 };
 
 /**
@@ -882,6 +916,127 @@ const HOME_MAP = [
     measure: { kind: 'computed', selector: '.sys-exit a', prop: 'font-size' }, expect: '13px',
     on: '/dev/components',
     diverges: { class: 'mono-scale' },
+  },
+
+  // ── 1440 · Homepage, artboard 1a · SYS.03 UPLINK ─────────────────────────
+  //
+  // ALL OF THESE ARE MEASURED IN THE GALLERY, for the third time and with the
+  // least room for argument yet. SYS.01's grid is absent on `/` here because the
+  // api did not answer and SYS.02's rows are absent for the same reason; UPLINK
+  // has TWO endpoints and neither answers, so what stands on the page in this
+  // rig is two outage panels and not one cell of either picture.
+  {
+    id: 'home-upl-graph-width',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 201,
+    decl: 'gap', says: '3px',
+    reading: 'the 3px gap and the 15px cell together: 53 columns and 52 gaps is 951px, which is the cap the calendar is drawn to',
+    // ONE NUMBER FOR TWO, on purpose. The gap cannot be read back on its own —
+    // it is a `min()` against a percentage, so `getComputedStyle` returns the
+    // expression rather than a length — and the width is what the pair is FOR:
+    // 53 × 15 + 52 × 3. If either moves, this moves.
+    measure: { kind: 'box-width', selector: '.upl-cols' }, expect: 951,
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-cell',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 205,
+    decl: 'width', says: '15px',
+    reading: 'a day is a 15px square, the same square the case study gives an operation day',
+    measure: { kind: 'box-width', selector: '.upl-cell' }, expect: 15,
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-cell-square',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 205,
+    decl: 'border-radius', says: '2px',
+    reading: 'and it is square, because --radius is 0 and every radius on this site comes from tokens.css',
+    measure: { kind: 'computed', selector: '.upl-cell', prop: 'border-radius' }, expect: '0px',
+    on: '/dev/components',
+    diverges: { class: 'square-corners' },
+  },
+  {
+    id: 'home-upl-caption-top',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 210,
+    decl: 'margin-top', says: '16px',
+    reading: 'the count stands 16px under the picture it counts',
+    measure: { kind: 'computed', selector: '.upl-graph .upl-head', prop: 'margin-top' }, expect: '16px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-caption',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 211,
+    decl: 'font', says: "500 11px 'JetBrains Mono',monospace",
+    reading: 'the calendar\'s count is the largest line in this section, a step over the strip\'s',
+    measure: { kind: 'computed', selector: '.upl-graph .upl-label', prop: 'font-size' }, expect: '11px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-scale',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 213,
+    decl: 'font', says: "500 9px 'JetBrains Mono',monospace",
+    reading: 'LESS and MORE are a key rather than a caption, and read a step below one',
+    measure: { kind: 'computed', selector: '.upl-scale', prop: 'font-size' }, expect: '9px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-step',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 214,
+    decl: 'width', says: '10px',
+    reading: 'ten and not fifteen: the key is not a sample of the grid, which is the call .ops-swatch already made at nine',
+    measure: { kind: 'box-width', selector: '.upl-step' }, expect: 10,
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-ops-rule',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 221,
+    decl: 'margin-top', says: '26px',
+    reading: 'the strip is a second block under a rule rather than a second section',
+    measure: { kind: 'computed', selector: '.upl-ops', prop: 'margin-top' }, expect: '26px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-ops-pad',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 221,
+    decl: 'padding-top', says: '20px',
+    reading: 'and 20px of air under that rule before its caption',
+    measure: { kind: 'computed', selector: '.upl-ops', prop: 'padding-top' }, expect: '20px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-upl-ops-caption',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 223,
+    decl: 'font', says: "500 9.5px 'JetBrains Mono',monospace",
+    reading: 'the strip says what its cells mean before a reader meets them, at the key\'s size rather than the count\'s',
+    measure: { kind: 'computed', selector: '.upl-ops .upl-label', prop: 'font-size' }, expect: '9px',
+    on: '/dev/components',
+    diverges: { class: 'half-pixel' },
+  },
+  {
+    id: 'home-upl-strip-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 227,
+    decl: 'gap', says: '4px',
+    reading: 'four between the operation cells and three between the calendar\'s, which is the case study\'s gap and not the graph\'s',
+    measure: { kind: 'computed', selector: '.upl-strip', prop: 'column-gap' }, expect: '4px',
+    on: '/dev/components',
+  },
+
+  // ── 390 · Homepage, artboard 1b · SYS.03 UPLINK ──────────────────────────
+  {
+    id: 'home-mobile-upl-columns',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 407,
+    decl: 'gap', says: '2px',
+    reading: 'the phone keeps all 53 columns and shrinks them AND their gap, rather than drawing the last 26 at 11px and saying so in a second caption',
+    measure: { kind: 'track-count', selector: '.upl-cols' }, expect: 53,
+    on: '/dev/components',
+    diverges: { class: 'graph-fits-the-column' },
+  },
+  {
+    id: 'home-mobile-upl-strip-cell',
+    sheet: 'homepage', artboard: '1b', width: 390, line: 419,
+    decl: 'gap', says: '4px',
+    reading: 'the strip keeps its gap on a phone and wraps instead — the one block on this page that changes shape without changing size',
+    measure: { kind: 'computed', selector: '.upl-strip', prop: 'column-gap' }, expect: '4px',
+    on: '/dev/components',
   },
 
   {

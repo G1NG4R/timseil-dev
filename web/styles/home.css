@@ -631,3 +631,182 @@
 .sys-exit a:focus-visible {
   color: var(--acc);
 }
+
+/* ── SYS.03 UPLINK, H5b ─────────────────────────────────────────────────────
+   Two blocks, two sources, one section — and NO WIDTH-DEPENDENT RULE IN EITHER,
+   which is the thing to read first. layout.css owns the four switches for
+   everything on this site that changes shape; neither of these changes shape.
+   The calendar shrinks continuously and the strip wraps, both out of one
+   declaration, so there is nothing for a media query to switch.                */
+
+/* `margin: … 0 …` AND NOT `margin-block-end`, which is what the first draft
+   wrote. A `<figure>` carries `margin: 1em 40px` from the UA sheet, so the
+   inline half stayed and the graph was measured 80px narrower than the column it
+   sits in — at 1440 the cap allowed 951px and the parent offered 1080, which
+   still looked right, and at 390 the cell came out at 2.1px instead of 5.5.
+   `.ops-figure` zeroes the same two margins one file over, for the same reason
+   and without ever having to say it. Found by measuring the built page against a
+   running api; nothing in the rig would have shown it, because `/` there has no
+   api and neither block is in the document. */
+.upl-graph { margin: 0 0 var(--s-26); }
+
+/* The 15px cell and 3px gap the sheet draws, and the width those columns need.
+   53 × 15 + 52 × 3 is 951px against a content column of `min(1160px, 100% -
+   80px)`, so the drawn geometry overflows from a 1031px viewport down — at the
+   checked width of 1024 by seven pixels, three switches before anything is
+   supposed to move.
+
+   SO THE WIDTH IS THE CAP AND `1fr` IS THE TRACK. Above 1031 the columns resolve
+   to exactly 15px because that is what the cap allows them; below it they take
+   whatever is left, all 53 of them, and the caption keeps counting the same 367
+   days. `--cols` is set inline from the answer — the number of weeks GitHub
+   sent, which is 53 this year and 52 in one that lines up differently.
+
+   The mobile artboard's other answer was to draw the last 26 weeks and label
+   them "LAST 26 WKS SHOWN". Turned down: it splits the total in the caption from
+   the picture underneath it, and it leaves 1024 overflowing.                   */
+.upl-cols {
+  --cell: 15px;
+  /* THE GAP SHRINKS WITH THE CELL, and it has to: three pixels between 53
+     columns is 156px, which at 390 is nearly half the content column and would
+     leave the cells at 3.6px with more air between them than square. So the gap
+     is a fifth of the cell — the sheet's own 15 to 3 — expressed as the unit the
+     row divides into: 53 columns of five units plus 52 gaps of one is
+     `cols × 6 − 1` units across, and the `min` keeps it at exactly 3px wherever
+     the cap is not binding.
+
+     THE `100%` HAS TWO BASES AND STILL AGREES WITH ITSELF, which is worth a line
+     because it looks wrong. In `width` below it resolves against the CONTAINING
+     BLOCK; in `gap` it resolves against this element's own content box. Those
+     are the same number in both of the only two cases there are: either the cap
+     is not binding, and the width IS the containing block; or it is, and the
+     width is the calc, which the calc then reproduces. Measured at all seven
+     checked widths — 15,0 at 1440 and 1081, 14,9 at 1024, 5,5 at 390 — and the
+     cell is exactly the drawn 15 wherever the sheet drew it. */
+  --gap: min(3px, calc(100% / (var(--cols) * 6 - 1)));
+  display: grid;
+  grid-template-rows: repeat(7, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--gap);
+  width: min(calc(var(--cols) * var(--cell) + (var(--cols) - 1) * var(--gap)), 100%);
+}
+
+/* Square by ratio and not by height, because the width is the fluid half. The
+   five steps are `--l0`…`--l4`, which have been in all seven palettes since G1
+   with nothing drawing them; case.css:672 says why the operation grid did not
+   borrow them, and this is the grid they were cut for.
+
+   AND SQUARE-CORNERED, THOUGH THE SHEET DRAWS A 2px RADIUS. `--radius` is 0 on
+   this site and invariant 8 puts every radius in tokens.css, so a two here would
+   be a value with no token behind it — and the operation grid is square for the
+   same reason already. Two pictures of one idea keep one corner. Recorded as the
+   `square-corners` divergence rather than taken. */
+.upl-cell {
+  aspect-ratio: 1;
+  background: var(--l0);
+}
+
+.upl-cell[data-level="l1"] { background: var(--l1) }
+.upl-cell[data-level="l2"] { background: var(--l2) }
+.upl-cell[data-level="l3"] { background: var(--l3) }
+.upl-cell[data-level="l4"] { background: var(--l4) }
+
+/* A step the contract does not declare. NOT `--l0`, which would file "we cannot
+   read this" under "measured, and empty" — the same distinction case.css draws
+   between a filled `ok` cell and the dashed outline of `nodata`, one grid over. */
+.upl-cell:not([data-level]) {
+  background: none;
+  border: 1px dashed var(--line-strong);
+}
+
+/* Caption and legend on one baseline, wrapping rather than compressing — the
+   construction `.ops-head` already uses, and the same reason: at 390 the caption
+   alone is the width of the column. */
+.upl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-8) var(--s-14);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+}
+
+/* Sixteen above the calendar's caption and nothing above the strip's, which is
+   the sheet's own asymmetry: under the calendar the line is a count of the
+   picture over it, above the strip it is what the cells mean before a reader
+   meets them. */
+.upl-graph .upl-head { margin-block-start: var(--s-16) }
+.upl-ops .upl-head { margin-block-end: var(--s-12) }
+
+/* Eleven under the calendar and nine over the strip — the sheet's 11 and 9.5,
+   the second rounded down by `half-pixel`, and the difference is deliberate
+   there too: one is the section's headline number, the other is a key. */
+.upl-graph .upl-label { font: 500 var(--t-mono-11)/1.4 var(--mono) }
+.upl-ops .upl-label { font: 500 var(--t-mono-9)/1.4 var(--mono) }
+
+/* Dimmer than the label beside it, and the sheet separates them with the same
+   two greys: the source is provenance, the count is the claim. */
+.upl-source {
+  font: 500 var(--t-mono-9)/1.4 var(--mono);
+  color: var(--dim);
+}
+
+/* LESS ▢▢▢▢▢ MORE. Ten pixels rather than fifteen for `.ops-swatch`'s reason:
+   a key is not a sample of the grid. */
+.upl-scale {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  color: var(--dim);
+  /* The key's own square, beside `.ops-figure`'s `--swatch` and for its reason:
+     it belongs to this one component, so it lives on it rather than in
+     tokens.css. */
+  --step: 10px;
+}
+
+.upl-step {
+  flex: none;
+  width: var(--step);
+  height: var(--step);
+  background: var(--l0);
+}
+
+.upl-step[data-level="l1"] { background: var(--l1) }
+.upl-step[data-level="l2"] { background: var(--l2) }
+.upl-step[data-level="l3"] { background: var(--l3) }
+.upl-step[data-level="l4"] { background: var(--l4) }
+
+/* The 30-day strip. Its caption sits ABOVE its cells, which is the sheet's order
+   and the opposite of the calendar's — there the picture is the subject and the
+   line under it is the count; here the line says what the cells mean before a
+   reader meets them, the way `.ops-head` does on the case study. */
+.upl-ops {
+  margin: var(--s-26) 0 0;
+  padding-block-start: var(--s-20);
+  border-block-start: 1px solid var(--line-soft);
+}
+
+/* AS MANY 15px COLUMNS AS FIT, AND THE REST WRAP. Both artboards draw exactly
+   this: one row at 1440 and `flex-wrap:wrap` at 390 with the cells still 15px,
+   and the Operation Grid sheet notes "MOBIL: das Raster kippt auf 30 Tage,
+   umbrechend". `auto-fill` is that in one declaration and at every width in
+   between — 30 across in a 1160px column, 18 and 12 in a 346px one — so nothing
+   here answers to a switch and nothing scrolls sideways. #294 is the standing
+   complaint about the alternative.
+
+   `.ops-cell` and its four states come from case.css. Same four words, same four
+   shapes, one derivation: two pictures of one idea rather than two vocabularies. */
+.upl-strip {
+  --cell: 15px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--cell));
+  grid-auto-rows: var(--cell);
+  gap: var(--s-4);
+  margin-block-start: var(--s-12);
+}

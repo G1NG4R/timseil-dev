@@ -45,3 +45,27 @@ export const AUTHOR = {
  *  a stage-H page has a title of its own to put in front of it. */
 export const SITE_DESCRIPTION =
   "Backend and DevOps portfolio — the site is its own reference system.";
+
+/**
+ * Which of the systems in the database is this one.
+ *
+ * A CONSTANT AND NOT AN ENVIRONMENT VARIABLE, for the reason the head of this
+ * file already gives about `SITE_URL`: the answer is not a deployment detail,
+ * it is the site. Every environment that runs this code is this site, and the
+ * one that would differ is a preview — which would then draw somebody else's
+ * operation strip on the homepage and call it ours.
+ *
+ * THE API HOLDS THE SAME ANSWER AND HOLDS IT DIFFERENTLY: `SITE_SYSTEM_SLUG` is
+ * an environment variable there (api/internal/config/config.go), read from
+ * .env, and it decides which row the probe writes into and which system the
+ * health document is about. So the two halves of one fact are a constant on one
+ * side and a variable on the other, and NOTHING CHECKS THAT THEY AGREE. Written
+ * down rather than assumed away, the way next.config.ts writes down that
+ * nothing checks its cacheLife profiles against the contract.
+ *
+ * What a disagreement costs is small and honest: this side asks
+ * `/api/systems/timseil-dev`, the api answers 404, and the strip renders
+ * `— NO DATA` — a true statement about a system that does not exist under that
+ * name. It does not draw a wrong number, which is the failure that would matter.
+ */
+export const SITE_SYSTEM_SLUG = "timseil-dev";
