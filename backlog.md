@@ -24,8 +24,8 @@ SOURCE: /api/training`, und jede dieser Zahlen kommt aus der Antwort.
 ```
 make check   grün
 npm test     389   (von 364)
-e2e          670 grün, 3 übersprungen, 0 rot   (von 599)
-Orakel       29 Messungen Startseite (von 21), 7 abweichend
+e2e          671 grün, 3 übersprungen, 0 rot   (von 599)
+Orakel       30 Messungen Startseite (von 21), 7 abweichend
 Bundle       143 580 B über 7 Dateien — Byte für Byte wie nach H3
 ```
 
@@ -145,6 +145,16 @@ gemessen; geschlossen wird er von dir.**
 - **`registry.ts` schuldete `ContributionGraph` an H4.** Er gehört zu SYS.03,
   also H5. Korrigiert; die `where`-Spalte („hero") bleibt, sie ist die
   Transkription eines Blattes, das älter als HOME.01 ist. *(01.09.2026, H4)*
+- **Die Modulkarten hatten eine Stunde lang keine Ecken.** `home.css` setzt
+  `--mark-color` und `--mark-len` auf `.trn-mod`, das Bauteil trug die Klasse
+  `marks` nicht, die daraus die acht Gradienten zeichnet — Werte ohne Zeichner.
+  Gefunden beim Selbst-Lesen des Diffs, nicht von einem Test: die Kartengeometrie
+  hatte fünf Messungen und keine über die Ecken. Jetzt hat sie eine.
+  *(01.09.2026, H4)*
+- **`trainingMeta` hatte `finiteNumber` neu geschrieben statt importiert** — genau
+  der Fehler, gegen den `lib/api/values.ts` angelegt wurde („zwei Kopien einer so
+  kleinen Prüfung sind der Weg, auf dem die Kopien anfangen sich zu
+  widersprechen"). Ebenfalls beim Diff-Lesen. *(01.09.2026, H4)*
 - **Kein Test hält die `cacheLife`-Profile gegen den Contract.** Die API hält
   ihre vier Direktiven gegen das ausgelieferte Dokument
   (`TestCacheDirectivesMatchTheContract`), `next.config.ts` liest dieselben
