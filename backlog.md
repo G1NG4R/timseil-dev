@@ -12,6 +12,114 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 01.09.2026, H4 abgenommen: gegen Produktion gemessen
+
+`50ed96d` läuft. Der Merge war 11:36:46Z, der Deploy-Job 11:41:30Z–11:42:01Z,
+der neue `web`-Prozess meldet sich um **11:41:46.653Z**. Uhrzeit mit `date -u`
+gelesen, nicht geschätzt; 11:41 UTC liegt weit vom Dokploy-Fenster
+23:45–00:00 UTC.
+
+### Der Tausch hatte kein Loch
+
+Zeuge ab 11:41:24Z, also 22 Sekunden vor dem Start des Deploy-Jobs:
+
+```
+/            60 Anfragen   60 × 200
+/api/health  60 Anfragen   60 × 200
+
+✓ every answer was 200
+```
+
+**Die Einschränkung nennt der Zeuge selbst: drei der sechzig Sekunden tragen
+keine Stichprobe.** Ein Loch von unter einer Sekunde könnte in einer davon
+liegen. Der H3-Lauf maß 269 Anfragen über 269 Sekunden und fand dort eine
+Lücke; dieser Lauf ist kürzer, weil `--until-sha` dreißig Sekunden nach dem
+Fund abbricht. **„Kein Loch gesehen" ist nicht „kein Loch."**
+
+Ein erster Zeuge lief 11:37:47Z–11:41:20Z und wurde ersetzt, weil sein
+900-Sekunden-Fenster vor dem Deploy ausgelaufen wäre. Er sah in seinen dreieinhalb
+Minuten nur 200er.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `50ed96d`. Die neunte und zehnte über die Panel-API wie in H2b
+und H3 — die laufenden Container tragen exakt die veröffentlichten Digests.
+**Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum dritten Mal nicht. Der `--panel`-Zweig
+bleibt die Reparatur und bleibt ungebaut.
+
+### Die Seite geklickt, an beiden gezeichneten Breiten
+
+```
+/ · /de · /fr             200    SYS.01 SYS.02 SYS.03 SYS.04, aufsteigend
+/work/timseil-dev         200
+/api/training             200
+/api/docs                 200
+www → https               308    (das Runbook schreibt 301 — siehe Gefunden)
+http → https              308
+/.well-known/acme-...     404    der ACME-Router gewinnt, das Zertifikat erneuert sich
+
+1440   22 Zeilen · 5 Karten · 6 Spuren · 3 Karten pro Reihe · Überlauf 0
+ 390   22 Zeilen · 5 Karten · 2 Spuren · 1 Karte pro Reihe  · Überlauf 0
+beide  13 × APPLIED · 9 × QUEUED · Belegzeile Deckkraft 1 ohne Hover
+Meta   SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM · SOURCE: /api/training
+```
+
+**Beide Breiten diesmal auch angesehen, nicht nur gemessen** — Screenshots aus
+Produktion bei 1440 und 390. Damit ist der offene Punkt aus der Baunotiz
+erledigt: 390 ist gesehen.
+
+### Der Fund der Abnahme: mein Browser ist kein gültiger Zeuge
+
+**In meinem Chrome bleibt der Suspense-Tausch auf `/` aus** — sichtbar ist der
+Fallback (`— NO DATA`, leeres Panel), die 22 Zeilen liegen in `<div hidden>`.
+Es trifft beide Grenzen der Seite, auch die aus H3, die seit einer Woche läuft.
+Ich hatte das in der Baunotiz als **Dev-Server-Artefakt** notiert. Das war
+falsch: es passiert in Produktion genauso.
+
+Die Messung, die es entscheidet, ist der Rohtext:
+
+```
+versteckte Divs (S:n)   4
+$RC-Tauschskripte       4
+.trn-Sektionen          2
+trn-row im Nutzlast     22
+```
+
+**Der Server liefert zu jedem versteckten Block sein Tauschskript.** Die Antwort
+ist vollständig; ein Browser, der die Skripte ausführt, tauscht. Playwright
+tut es — 671 Zusicherungen im Rig und der Produktionslauf oben, beide mit genau
+einer `.trn` im Dokument. Mein interaktives Chrome tut es nicht, und warum es
+das nicht tut, ist **nicht** beantwortet.
+
+Die Lehre ist die der H3-Fehlmessung, eine Ebene höher: **ein Blick ist kein
+Beleg, wenn das Werkzeug, mit dem man blickt, selbst der Defekt sein kann.**
+Erst der Vergleich zweier Browser gegen dieselben Bytes hat die Frage
+entschieden — und die entscheidende Zahl stand im `curl`, nicht im Fenster.
+
+## Gefunden — aus der H4-Abnahme
+
+- **Die Abschnitts-Kopfzeile ist bei 390 gequetscht.** `.sec` ist ein Flex mit
+  `margin-inline-start: auto` auf der Meta; bei 390 bricht der Titel auf zwei
+  Zeilen und die Meta drängt sich dreizeilig daneben. Das Blatt setzt sie mobil
+  unter den Titel und kürzt sie dort — wir tragen eine Textfassung, also ist sie
+  länger. Betrifft `.sec` und damit auch die Fallstudie, gehört deshalb nicht in
+  eine Phase, die nur die Startseite anfasst. *(01.09.2026, H4-Abnahme)*
+- **Mein Browser führt die `$RC`-Tauschskripte nicht aus.** Ursache offen. Es
+  betrifft jede gestreamte Seite dieser Site und macht meinen interaktiven
+  Browser als Abnahme-Werkzeug für Suspense-Grenzen unbrauchbar, bis es
+  beantwortet ist. Der Produktionslauf über Playwright ist der Ersatz.
+  *(01.09.2026, H4-Abnahme)*
+- **Das Runbook schreibt `301` für `www` und `http`, Produktion antwortet
+  `308`.** Beides ist ein permanenter Redirect, die Zeile in Teil 4 stimmt
+  trotzdem nicht mehr. *(01.09.2026, H4-Abnahme)*
+- **`ops.lastDeploy.durationSec` sagt 309 s, der Deploy-Job lief 31 s.** #242,
+  dritte Sichtung. Bei H3 waren es 284 s gegen 22 s. *(01.09.2026, H4-Abnahme)*
+
+---
+
 ## Wo wir stehen — 01.09.2026, H4 gebaut: SYS.01 trägt seine Belege
 
 **Branch `phase/h4-homepage-training-log`, nicht gepusht.** `/` zeigt 22 Tracks
@@ -129,13 +237,10 @@ gemessen; geschlossen wird er von dir.**
   `box-shadow: 0 0 6px rgba(0,229,255,.4)` ist die einzige Blattfarbe ohne
   Token, und kein Track ist `core`, solange es ein System gibt. Ein Token für
   eine unsichtbare Zeile wäre die falsche Reihenfolge. *(01.09.2026, H4)*
-- **Der Blick bei 390 steht aus → heute Abend (01.09.2026).** Die einspaltige
-  Fassung ist nur im Rig belegt (`w390` und `coarse-390`, beide grün). Im
-  Browser ist sie hier nicht herstellbar, siehe die Korrektur unten.
-  **Abnahmekriterium:** ein Blick bei 390 auf `/`, der bestätigt, dass eine
-  Karte pro Reihe steht, die Kartenkopfzeile umbricht statt überzulaufen und die
-  Belegzeilen ohne Hover lesbar sind. Kein Issue, weil der Eintrag heute Abend
-  stirbt — der Notizblock ist für Sessionnahes. *(01.09.2026, H4)*
+- ~~**Der Blick bei 390 steht aus.**~~ **Erledigt in der Abnahme**: gegen
+  Produktion angesehen, eine Karte pro Reihe, Belegzeilen ohne Hover lesbar,
+  Überlauf 0. Die Kopfzeile ist dabei als eigener Fund aufgefallen.
+  *(01.09.2026, H4)*
 - **`.trn-mod` hat keinen Eintrag im Inventar → offen.** `ModuleCard` steht in
   keinem Blatt; das Inventar kennt nur `SkillRow`. Gebaut ist sie trotzdem, weil
   eine Karte ohne Bauteil eine Karte in der Seite wäre. *(01.09.2026, H4)*
