@@ -79,6 +79,52 @@ statt gegen das Dokument: `s-maxage=3600, stale-while-revalidate=7200` am
 Kalender, `300/1800` am Streifen — genau die Zahlen, die `next.config.ts` von
 Hand aus dem Contract abgelesen hat.
 
+### Nachtrag — der Deploy des Abnahme-PRs selbst
+
+**Der Abschnitt oben beschreibt den Tausch von `f05ad28`. Der Merge der Abnahme
+(`d76c8cd`, #312) hat dann die breitere Messung geliefert**, und weil sie
+dieselbe Behauptung besser stützt, steht sie hier statt in einem dritten
+Doku-PR, der einen dritten Container-Tausch gekostet hätte. Das ist die
+Entscheidung, die die H4-Abnahme schon einmal getroffen hat.
+
+```
+Merge          22:11:51Z
+Deploy         22:17:06Z → 22:17:34Z   28 s
+neuer Prozess  22:17:48.419Z           v0.22.0-1-gd76c8cd
+Zeuge ab       22:12:47Z, VIER Pfade
+
+/                    316 Anfragen   316 × 200
+/api/health          316 Anfragen   316 × 200
+/work/timseil-dev    316 Anfragen   316 × 200
+/api/contributions   316 Anfragen   316 × 200
+
+✓ every answer was 200
+```
+
+**1 264 Anfragen, sieben der 317 Sekunden ohne Stichprobe.** Der vierte Pfad ist
+neu und der Grund, ihn aufzunehmen, ist diese Phase: `/api/contributions` ist
+der Endpunkt, den H5b angeschlossen hat, und er hat seinen ersten
+Container-Tausch ohne eine Antwort überstanden, die keine 200 war.
+
+Die zehnte Behauptung ein zweites Mal gestellt, gegen `d76c8cd`; der Weg steht
+in `backlog.local.md`.
+
+**Zum Vergleich der bisherigen Läufe**, weil die Breite die einzige Eigenschaft
+ist, die diese Messung besser oder schlechter macht:
+
+| Lauf | Anfragen | Fenster | Pfade | Löcher |
+|---|---|---|---|---|
+| H3 | 269 | 269 s | 1 | **eines** |
+| H4-Bau | 180 | 60 s | 2 | keins |
+| H4-Abnahme | 1 950 | 650 s | 3 | keins |
+| H5a | 999 | 333 s | 3 | keins |
+| H5b-Bau | 1 152 | 384 s | 3 | keins |
+| H5b-Abnahme | 1 264 | 317 s | **4** | keins |
+
+Der H3-Lauf ist der einzige, der je eines gefunden hat, und er ist der
+schmalste. Das ist kein Widerspruch, sondern die Erinnerung daran, warum „kein
+Loch gesehen" nicht „kein Loch" heißt.
+
 ### Der Fund der Abnahme: mein Messgerät hat einen Defekt gemeldet, den es selbst hatte
 
 Mein erster Klick-Lauf meldete **„der Pfeil landet auf `/`"**. Er tut es nicht.
