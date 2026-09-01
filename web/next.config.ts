@@ -93,6 +93,12 @@ const nextConfig: NextConfig = {
     health: { stale: 60, revalidate: 60, expire: 600 },
     systems: { stale: 300, revalidate: 300, expire: 1800 },
     training: { stale: 300, revalidate: 300, expire: 1800 },
+    // H5a adds a fourth, and it is the third to carry the same numbers as the
+    // second. The paragraph above is the whole argument: GET /api/systems and
+    // GET /api/systems/{slug} are two paths with two `CacheControlMedium`
+    // headers, and folding them into one profile would mean the day the
+    // contract moves one, the other moves with it in silence.
+    systemList: { stale: 300, revalidate: 300, expire: 1800 },
   },
 
   // ONE FILE THE TRACER CANNOT SEE AS A DEPENDENCY, even though it currently

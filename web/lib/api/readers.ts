@@ -44,7 +44,7 @@ import { TRACEPARENT_HEADER, childSpan, renderTraceparent } from "../trace.ts";
 
 import { apiGet } from "./client.ts";
 import { NO_HEALTH, footerHealth, healthOrThrow, type FooterHealth, type Health } from "./health.ts";
-import type { SystemDetail } from "./systems.ts";
+import type { SystemDetail, SystemList } from "./systems.ts";
 import type { Training } from "./training.ts";
 
 /** The tag this answer is filed under. One name, so a reader can grep for it. */
@@ -248,6 +248,55 @@ export async function systemNow(slug: string): Promise<SystemDetail | null> {
 
   try {
     return await systemCached(slug);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Every system, shared between every visitor for the length of one cache window.
+ *
+ * FILED UNDER THE SAME TAG AS THE DETAIL, and deliberately so. `SYSTEMS_TAG` is
+ * what the deploy invalidates, and a deploy that changed a system changed both
+ * documents — a list that survived an invalidation of the detail beside it would
+ * be the two disagreeing about the same row. The detail carries a second, keyed
+ * tag on top for the case where only one system moves; the list has no key
+ * because it is the whole set.
+ *
+ * IT HAS ITS OWN cacheLife PROFILE THOUGH THE NUMBERS MATCH `systems`. The head
+ * of next.config.ts states the rule and H4 was the second entry to follow it:
+ * each profile is derived from its own path, so the day the contract moves one
+ * `Cache-Control` header the other does not move silently with it.
+ *
+ * It throws, and `connection()` is the caller's job, both for the reasons
+ * `systemCached` above gives at length.
+ */
+export async function systemsCached(): Promise<SystemList> {
+  "use cache";
+  cacheLife("systemList");
+  cacheTag(SYSTEMS_TAG);
+
+  const result = await apiGet("/api/systems");
+  if (result.kind !== "ok") {
+    throw new Error(`systems unavailable: ${String(result.status)}`);
+  }
+  return result.data;
+}
+
+/**
+ * Every system, or the resting state. Never throws.
+ *
+ * `connection()` IS INSIDE THIS ONE, the way it is inside `trainingNow` and not
+ * inside `systemNow`. The difference is which caller there is: the case study
+ * makes five reads of one document and calls `connection()` once for all of
+ * them, and the homepage makes this read from one streamed region that has
+ * nothing else to wait for.
+ */
+export async function systemsNow(): Promise<SystemList | null> {
+  await connection();
+
+  try {
+    return await systemsCached();
   } catch {
     return null;
   }

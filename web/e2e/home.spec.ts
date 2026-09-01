@@ -65,15 +65,29 @@ test.describe("HOME.01, on the page rather than in the list", () => {
     const panels = page.locator("main .st-empty-panel");
     await expect(panels).toHaveCount(4);
 
-    await expect(panels.nth(0).locator(".st-empty-head")).toHaveText("— NO DATA");
-    for (let i = 1; i < 4; i++) {
-      await expect(panels.nth(i).locator(".st-empty-head")).toHaveText("[SOON]");
-    }
+    // TWO OF EACH SINCE H5a, AND THE PAIRING IS THE ASSERTION. SYS.01 and
+    // SYS.02 are built and their endpoints are unreachable here, so both read
+    // `— NO DATA`; SYS.03 and SYS.04 do not exist yet, so both read `[SOON]`.
+    // The day one of the two remaining sections is built, this line goes red —
+    // which is what it is for.
+    const headings = panels.locator(".st-empty-head");
+    await expect(headings).toHaveText(["— NO DATA", "— NO DATA", "[SOON]", "[SOON]"]);
 
     for (let i = 0; i < 4; i++) {
       const reason = await panels.nth(i).locator(".st-empty-reason").innerText();
       expect(reason.trim().length, `panel ${String(i)} has no reason`).toBeGreaterThan(30);
     }
+  });
+
+  // THE TWO OUTAGE SENTENCES ARE NOT ONE SENTENCE, and this is the line that
+  // holds them apart. Both sections are down for the same reason in this rig,
+  // and a reader is told WHICH endpoint did not answer — which is the only part
+  // of the message that lets anyone check it.
+  test("each failed section names its own endpoint", async ({ page }) => {
+    const reasons = page.locator("main .st-empty-panel .st-empty-reason");
+
+    await expect(reasons.nth(0)).toContainText("/api/training");
+    await expect(reasons.nth(1)).toContainText("/api/systems");
   });
 
   // The head is inside the streamed region, so it arrives with the answer — and
@@ -85,6 +99,23 @@ test.describe("HOME.01, on the page rather than in the list", () => {
     await expect(meta).toContainText("SOURCE: /api/training");
     // Invariant 1 where a count belongs: `0 TRACKS` would be a measurement.
     await expect(meta).toContainText("— NO DATA TRACKS");
+  });
+
+  // THE REGRESSION H5a SHIPPED AND A TOUCH TEST CAUGHT BY COUNTING. Swapping the
+  // shell for the real section took the shell's `WORK →` with it, and nothing
+  // asserted the link itself — only that `main` held two tappable things. This
+  // is the assertion the count was standing in for.
+  test("a section that failed still offers the way out it declares", async ({ page }) => {
+    const panel = page.locator("main .st-empty-panel").nth(1);
+    await expect(panel.locator("a")).toHaveAttribute("href", "/work");
+  });
+
+  test("SYS.02 does the same, with its own count and its own source", async ({ page }) => {
+    const meta = page.locator("main .sec-meta").nth(1);
+    await expect(meta).toContainText("SOURCE: /api/systems");
+    // `00 SYSTEMS` would say the api answered and there are none. It did not
+    // answer, and those are two different claims.
+    await expect(meta).toContainText("— NO DATA SYSTEMS");
   });
 });
 

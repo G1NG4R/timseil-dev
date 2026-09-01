@@ -105,8 +105,15 @@ export const SECTIONS: readonly Section[] = [
   {
     id: "SYS.02",
     title: "SELECTED WORK",
-    reasonKey: "homeSys02Why",
-    owedBy: "H5",
+    // Filled by H5a. The second of the four to lose its excuse — both systems
+    // out of /api/systems, each with the state its own row carries, and the
+    // link into the case study only where there is one to read.
+    reasonKey: null,
+    owedBy: null,
+    // Still `/work`, and it is still a `[SOON]` stub until H6. That is the
+    // section's exit and not a row's: a reader who wants the whole list rather
+    // than the two the homepage selects has somewhere to go, and case.css
+    // settled in H1 that a stub is a place.
     exit: { path: "/work", labelKey: "navWork" },
   },
   {

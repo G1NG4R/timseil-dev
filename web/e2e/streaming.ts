@@ -59,9 +59,9 @@ export const CASE_REGIONS = [
  * say so.
  */
 /**
- * The homepage's, since H3. One region, and one is not an oversight: the page
- * has one thing to ask the api and one place to put the answer. Everything else
- * on it is in the repository.
+ * The homepage's, since H3. It began as one region, and one was not an
+ * oversight: the page had one thing to ask the api and one place to put the
+ * answer. Each section that connects to an endpoint adds its own.
  *
  * `.term` rather than the row inside it, because the whole frame is what the
  * fallback and the answer both render — that is the seam ADR 0044 describes,
@@ -75,6 +75,10 @@ export const HOME_REGIONS = [
   // because the head carries the answer's own counts and cannot be rendered
   // before the answer is.
   ".trn",
+  // H5a, and the second time that sentence has been paid. SYS.02 is behind its
+  // own boundary for the same reason SYS.01 is: `02 SYSTEMS` in its head is the
+  // answer's count.
+  ".sys",
 ] as const;
 
 /**

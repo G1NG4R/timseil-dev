@@ -4,6 +4,7 @@ import { IncidentLog } from "@/components/case/IncidentLog";
 import { OpsGrid } from "@/components/case/OpsGrid";
 import { SpecRail } from "@/components/case/SpecRail";
 import { ModuleCard } from "@/components/home/ModuleCard";
+import { Systems } from "@/components/home/Systems";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
 import { EmptyState } from "@/components/state/EmptyState";
@@ -17,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { MetricTile } from "@/components/ui/MetricTile";
 import { SectionHead } from "@/components/ui/SectionHead";
-import type { Incident, OpsCell } from "@/lib/api/systems";
+import type { Incident, OpsCell, SystemList } from "@/lib/api/systems";
 import { modules, type ModuleView } from "@/lib/api/training";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
@@ -101,6 +102,73 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
     { no: "02", title: "Backend", tracks: [] },
   ],
 } as never);
+
+/**
+ * The two systems the seed holds, plus the one it cannot.
+ *
+ * THE FIRST TWO ARE PRODUCTION'S OWN ROWS, transcribed from
+ * api/internal/seed/seed.sql rather than invented — the point of the part below
+ * is the difference between them, and a made-up pair would be a difference
+ * somebody chose. `metrics` is all `null` for the same reason it is null in
+ * production: seed.sql writes no measurements, because a measurement a seed
+ * writes is an invented number (ADR 0013).
+ *
+ * THE THIRD IS THE ONE PRODUCTION CANNOT MAKE, and it is here for the reason
+ * this gallery exists at all: `in_build` is in the contract, no system on this
+ * site is in it, and #289 owes it a word in H6. Rendering it here is how the
+ * `— NO DATA` branch gets looked at before a system ever reaches that state.
+ */
+const GALLERY_SYSTEMS = {
+  systems: [
+    {
+      slug: "vat-check",
+      systemNo: "01",
+      name: "VAT Check API",
+      state: "queued",
+      source: { access: "private", reason: "internal" },
+      stack: ["Python", "FastAPI", "Docker", "SQLite"],
+      metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
+    },
+    {
+      slug: "timseil-dev",
+      systemNo: "02",
+      name: "timseil.dev",
+      state: "live",
+      source: { access: "public", url: "https://github.com/G1NG4R/timseil-dev" },
+      // THE WHOLE STACK AND NOT THREE OF IT, and that is the fixture's most
+      // load-bearing detail. `stack.gen.json` answers eleven items for this
+      // system; a shortened list here would draw a row that production never
+      // draws, and it would hide the defect H5a found by measuring the real
+      // page — `auto` on the fourth track is max-content, max-content of eleven
+      // items is 618px at 1440, and the description column beside it computes to
+      // zero. Transcribed from api/internal/seed/stack.gen.json.
+      stack: [
+        "Next.js 16.3",
+        "React 19.2",
+        "Go 1.26",
+        "pgx 5.10",
+        "sqlc 1.30",
+        "goose 3.27",
+        "PostgreSQL 18.6",
+        "Node 24",
+        "Prometheus 3.13",
+        "Loki 3.7",
+        "Alloy 1.18",
+      ],
+      metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
+    },
+    {
+      slug: "not-a-real-system",
+      systemNo: "03",
+      name: "A system being built",
+      state: "in_build",
+      source: { access: "private", reason: "nda" },
+      stack: ["Go 1.26"],
+      metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
+    },
+  ],
+  generatedAt: "2026-09-01T12:00:00Z",
+} as unknown as SystemList;
 
 const GALLERY_INCIDENT: Incident[] = [
   {
@@ -579,6 +647,36 @@ export default function GalleryPage() {
               <ModuleCard key={module.no} module={module} messages={en} />
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">SystemRow</h2>
+          <span className="gal-where">homepage `SYS.02` · the exit is absent, never greyed out</span>
+        </div>
+        <p className="gal-states">
+          Both rows the seed holds, and the difference between them is the part
+          worth looking at: `timseil.dev` is LIVE and carries an arrow, and
+          `VAT Check API` is QUEUED and carries none. STATE.05 refuses a dead
+          control, so a row with nowhere to go has no control at all — the state
+          column beside it is what says why.
+        </p>
+        <p className="gal-states">
+          A third row stands under them that production cannot produce: a system
+          whose `state` is a word this site has no vocabulary for. The contract
+          declares `in_build`, lib/state/words.ts has eight entries and none of
+          them means it, and issue 289 gives H6 the job of drawing the ninth.
+          Until then the row says `— NO DATA`, which is true.
+        </p>
+        <p className="gal-states">
+          Rendered through the real section, so the head above the rows is the
+          real `systemsMeta` counting the rows under it. `/` has no api in this
+          rig, so SYS.02 there is an outage panel and this is the only place the
+          list is in the document at all.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <Systems body={GALLERY_SYSTEMS} messages={en} />
         </div>
       </section>
 

@@ -12,6 +12,194 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 01.09.2026, H5a gebaut: SYS.02 trägt beide Systeme
+
+**Branch `phase/h5-homepage-systems-and-footer`, nicht gepusht.** `/` listet
+`01 VAT CHECK API` und `02 TIMSEIL.DEV` aus `/api/systems`, jede Zeile mit
+Nummer, Name, Kurztext, Stack, Quelle, Zustandswort und — nur wo es eine
+Fallstudie gibt — einem Pfeil hinein. Die Kopfzeile liest
+`02 SYSTEMS · SOURCE: /api/systems`, und die 02 ist `rows.length`.
+
+### H5 ist in drei Phasen geschnitten
+
+~35 Dateien, drei Datenquellen, ein „fertig wenn", das nicht in einen Satz
+passt — beide Prüffragen aus dem Phasenzuschnitt sagen aufteilen, und ADR 0055
+hat H2 aus demselben Grund geteilt. Der Schnitt folgt der Abschnittsfolge, weil
+die Seite nach jedem Merge ausgeliefert wird: **H5a** SYS.02, **H5b** SYS.03
+(Graph + 30-Tage-Streifen), **H5c** SYS.04 und der Fuß.
+
+**Keine API- und keine DB-Arbeit in ganz H5.** Gemessen, nicht geschätzt:
+`/api/systems`, `/api/systems/{slug}?window=30` und `/api/contributions` sind
+alle drei in Contract, Go und SQL fertig. Die Lücke liegt vollständig in `web/`.
+
+### Lokal gemessen, gegen Produktion noch nicht
+
+```
+make check   grün
+npm test     416   (von 389)
+e2e          765 grün, 3 übersprungen, 0 rot   (von 671)
+Orakel       40 Messungen Startseite (von 30), 10 abweichend — alle zehn neuen
+             stehen in der Galerie, weil auf `/` ohne API keine Zeile im Dokument ist
+Bundle       143 580 B über 7 Dateien — Byte für Byte wie nach H3 und H4
+```
+
+**Das Byte ist zum dritten Mal der Punkt.** Kein `'use client'` unter
+`components/home/`, der Hover liegt in CSS, und die Zahl hat sich über drei
+Phasen um null bewegt.
+
+### Der stärkste Fund: die Spalte, die es im Prüfstand nicht gibt
+
+**Bei 1440 war die Belegzeile der zweiten Systemzeile 0 Pixel breit.** Das Blatt
+gibt der Stack-Spalte `auto` und zeichnet fünf Einträge; `stack.yaml` antwortet
+**elf**, `auto` ist max-content, und max-content von elf Einträgen sind 618px.
+Die nimmt sich die Spalte vom `1fr` daneben — der Satz, für den die Zeile
+existiert, wurde gar nicht gezeichnet, und die Zeile stand **334px gegen 76** der
+Zeile darüber. Das ist dieselbe Form wie H4s 200px-Modulkarte und H3s
+348px-Terminal — keine Zeile mit viel drin, eine, die nicht geladen hat. **Anders
+als dort habe ich sie diesmal nicht gesehen, sondern gerechnet:** die Zahl kam
+aus `getBoundingClientRect`, nicht aus einem Screenshot. Ein 0px-Kasten ist
+nichts, was ein Blick meldet; er sieht aus wie eine Zeile mit langem Stack.
+
+Gedeckelt auf die Breite, die die Namensspalte ohnehin hat. Danach bei 1440
+378px Belegzeile und 119px Zeilenhöhe — **und das war die halbe Reparatur.**
+
+**Der Test, den ich dafür schrieb, war falsch, und er hat den größeren Fund
+gemacht.** Ich prüfte auf „Belegzeile > 200px" und bekam Rot bei 1024, 899 und
+719. Nachgemessen über das ganze Band:
+
+```
+1440  Belegzeile 378  Stack 240  Höhen  76/119    ok
+1024  Belegzeile 162  Stack 240  Höhen  76/119    eng
+ 899  Belegzeile  37  Stack 240  Höhen  76/295    kaputt
+ 719  Belegzeile   0  Stack  97  Höhen 105/334    kaputt
+ 560  Belegzeile   0  Stack   0  Höhen 205/579    kaputt, Zeile 54px zu breit
+```
+
+Sechs Spalten tragen **526px, die nicht schrumpfen** — 52 + 240 Name + 240 Stack
++ 108 Zustand + 26 Pfeil, dazu fünf 20px-Abstände. Unter 1080 geht das nicht auf,
+und bei 560 läuft die Zeile aus ihrem Kasten heraus. Die Kartenregel für
+`.work-row, .sys-row, .log-row` steht bei 560 — für diese Zeile viel zu spät.
+
+`.sys-row` löst sich jetzt bei **1080** auf, dem Schalter, den jeder andere
+Mehrspalter dieser Site benutzt. `layout.css` verlangt genau das: „EIN SCHALTER
+FÜR ALLE ZWEISPALTER … Kein Bauteil bekommt seinen eigenen Wert." Kein neuer
+Wert, und die Karte behält alle sechs Zellen — `.work-row` lässt am selben
+Schalter ihre Vorschau weg, was für Dekoration richtig ist und hier falsch wäre.
+
+Gemessen danach, über dasselbe Band: Überlauf 0 an jeder Breite, Belegzeile
+zwischen 218 und 491px, Zeilenhöhen 76/119 im Raster und 173/265 als Karte.
+
+**Kein Test in diesem Rig hätte das finden können**, und das ist der Punkt: ohne
+API steht auf `/` keine einzige Zeile im Dokument — auch die Überlaufprüfung der
+Seite sieht sie nicht. Gefunden hat es eine Messung gegen den lokalen
+Produktionsbuild mit laufender API. Die Galerie-Vorlage trägt jetzt den echten
+elfteiligen Stack, und drei Tests halten den Fall.
+
+### Der zweite Fund: die Blattfarbe der Systemnummer ist keine Textfarbe
+
+Das Blatt zeichnet die `01`/`02` in `rgba(0,229,255,.55)`. Genau dieser Wert
+liegt als `--acc-edge` in `tokens.css` — und über `--bg` gerechnet sind das
+**4,37:1**. WCAG AA verlangt 4,5, und `tokens.css` schreibt neben `--dim` selbst
+„5,41 — Untergrenze für Text". Die Farbe ist für Kanten gedacht und ich habe sie
+als Text gesetzt, weil das Blatt sie so zeichnet.
+
+**Gefunden hat es axe auf `/dev/components`, an allen sieben Breiten — nicht auf
+`/`.** Dort antwortet im Rig keine API, SYS.02 ist ein Ausfall-Panel, und keine
+einzige Zeile steht im Dokument. Das ist H4s Entscheidung, die Galerie unter axe
+zu stellen, die sich eine Phase später bezahlt macht.
+
+### Der dritte Fund: ein Feld, das seinen Leser verloren hat
+
+`SysSection` rendert `WORK →` im Leerzustand. Ich habe das Bauteil ersetzt und
+den Link nicht mitgenommen — `exit` in `sections.ts` stand danach da und niemand
+las es mehr. **Gefunden von `touch-targets.coarse`, das zählt statt zu prüfen:**
+zwei bedienbare Elemente in `main` erwartet, eines gefunden. Der Test, der die
+Sache benennt statt sie zu zählen, ist jetzt in `home.spec.ts` nachgezogen.
+
+Das ist dieselbe Familie wie H4s Modulkarten ohne Ecken, aus der anderen
+Richtung: dort Werte ohne Zeichner, hier ein Zeichner ohne Wert. Beim
+Diff-Lesen habe ich es **nicht** gesehen.
+
+### Was beim Diff-Lesen doch aufgefallen ist
+
+- **`data-system-state` war ein Attribut ohne Regel.** Bei `SkillRow` hat es
+  einen Zeichner (`--st-track`), hier nicht — entfernt.
+- **`systemsMeta` druckte `00 SYSTEMS` für eine kaputte Antwort.** `00` ist eine
+  Messung: sie sagt, die API habe geantwortet und es gebe keine. Eine Antwort
+  ohne lesbare Liste hat das nicht gesagt. Jetzt drei Fälle statt zwei.
+- **Ich hatte `pad` ein zweites Mal geschrieben**, statt es zu teilen — genau
+  H4s `finiteNumber`-Fund. Und die beiden Kopien waren bereits auseinander:
+  eine klammerte eine negative Zahl ab, die andere nicht. Zusammengeführt als
+  `padTwo` in `values.ts`, mit Test.
+
+### Die vierte Sweep-Kante zieht um, und H3s Grund war falsch
+
+H3 notierte, 560 fehle „bis H5 SYS.02 und SYS.04 füllt". SYS.02 ist gefüllt und
+`.sys-row` erscheint auf `/` trotzdem nie — **weil das Rig keine API hat.** Eine
+Liste ohne Antwort rendert ein Panel, keine Zeilen; die Fallstudie ist davon nur
+verschont, weil ihre fünf Kacheln `— NO DATA` zeichnen und stehen bleiben. Die
+Kante wird jetzt in `gallery.systems.spec.ts` gemessen, wo die Zeilen existieren.
+
+`HOME_SWITCHES` auf vier zu setzen hätte nicht „ein Schalter fehlt" gemeldet,
+sondern „in diesem Rig gibt es keine API".
+
+## Gefunden — aus H5a
+
+- **`--acc-edge` steht weiter als Textfarbe in `chrome.css`** (`.menu-link
+  .index`, seit G3, 10px). Axe sieht es nicht, weil das mobile Menü geschlossen
+  ist. Dieselbe 4,37:1 wie oben, an einer Stelle, die kein Test öffnet.
+  *(01.09.2026, H5a)*
+- **`check-tokens` liest `#289` in JSX-Text als Farbe.** `strip_comments` räumt
+  Kommentare weg, Fließtext in einer Komponente nicht — eine Issue-Nummer in
+  einem gerenderten Absatz ist damit eine dreistellige Hex-Farbe. Umgangen
+  („issue 289"), nicht repariert; eine Prüfregel zu ändern braucht einen
+  Vorfall, und ein umgeschriebener Satz ist keiner. *(01.09.2026, H5a)*
+- **Die Herleitung der 560 in `layout.css` rechnet mit gleich breiten Spalten.**
+  „Sechs Rasterspalten ergäben 60px" gilt für eine Zeile, die ihre Breite
+  verteilen darf; `.sys-row` verteilt nichts. Die Zahl ist für die Zeilen, für
+  die sie geschrieben wurde, richtig — und keine Zusicherung für die nächste.
+  Der Kopf der Datei sagt das jetzt, und H5c (`.log-row`) sowie H6 (`.work-row`)
+  müssen ihre eigenen Zeilen dagegen messen statt die 560 zu erben.
+  *(01.09.2026, H5a)*
+- **`make bundle-size` läuft nach einem `make dev` auf dieser Maschine nicht.**
+  Das Skript beginnt mit `rm -rf .next`, und der Dev-Container hinterlässt
+  `.next/dev` mit root als Eigentümer. Umgangen (von Hand gemessen, aus
+  derselben Liste, die das Skript aufbaut), nicht repariert. *(01.09.2026, H5a)*
+- **Die Phase fasst 29 Dateien an, geplant waren 13.** Der Plan hat die Test-
+  und Orakel-Hälfte einer UI-Phase um mehr als das Doppelte unterschätzt. Für
+  H5b und H5c gilt die gemessene Zahl, nicht die geschätzte.
+  *(01.09.2026, H5a)*
+- **Das Blatt zeichnet zwei Links pro Zeile** — `CASE STUDY →` in der
+  Stack-Spalte und `→` in der letzten, beide auf dieselbe Seite. Gebaut ist
+  einer; zwei Tab-Stopps auf ein Ziel sind die Falle, die `OpsGrid` in H2b
+  abgelehnt hat. Blattabweichung, in ADR 0060. *(01.09.2026, H5a)*
+- **Die Kopfzeile nennt ihre Quelle, das Blatt verlangt das nicht.** Dort steht
+  nur `02 SYSTEMS`; `SOURCE: /api/…` zeichnet es allein an SYS.01. Zugefügt,
+  weil der gelöschte Satz dieses Abschnitts genau das behauptet hat („read from
+  the API rather than written here") und HOME.01 es eine Sektion weiter zur
+  Regel macht. Zusatz zum Blatt, keine Abweichung von einem gezeichneten Wert —
+  das Orakel misst Deklarationen und sieht ihn deshalb nicht. *(01.09.2026, H5a)*
+- **Der Post trug eine Zahl, die ich nicht gemessen hatte** — „fünf kurze Wörter
+  sind etwa 190px" war aus den 188px der Nachbarzeile geschlossen, die vier
+  Einträge hat. Beim Nachzählen vor dem Schreiben gefunden und durch die
+  gemessene Zahl ersetzt. Dieselbe Klasse wie H2bs „drei hohle Tests", die zwei
+  waren. *(01.09.2026, H5a)*
+- **`CaseStudy` hat ein Feld mehr, und H6 erbt es.** `blurb` ist einzeilig, weil
+  `lead` vier Sätze für einen Hero sind. Der Work Index zeichnet dieselbe Zeile.
+  *(01.09.2026, H5a)*
+
+## Verschoben aus H5a
+
+- **`/api/systems` und `/api/systems/{slug}` teilen einen Cache-Tag → offen.**
+  Der Detail-Eintrag trägt zusätzlich einen Schlüssel, die Liste keinen. Ob ein
+  Deploy, der ein System ändert, wirklich immer beide betrifft, ist angenommen
+  und nicht gemessen. *(01.09.2026, H5a)*
+- **`SITE_SYSTEM_SLUG` steht auf beiden Seiten und nichts hält sie zusammen →
+  H5b.** Die API hat ihn in `config.go`, das Web braucht ihn für den
+  30-Tage-Streifen. *(01.09.2026, H5a)*
+
+---
+
 ## Wo wir stehen — 01.09.2026, H4 abgenommen: gegen Produktion gemessen
 
 `50ed96d` läuft. Der Merge war 11:36:46Z, der Deploy-Job 11:41:30Z–11:42:01Z,

@@ -12,9 +12,18 @@
 
    Vier Schalter: 1080 · 900 · 720 · 560
    1080  die fünf Zweispalter lösen sich auf (Spec-Rail 400 + 80 + Lesemaß 517 = 1077)
+         — und seit H5a die Systemzeile, siehe unten
     900  Kopf schaltet auf den Menüknopf (Nav + Umschalter + Uhr brauchen ~520)
     720  H1 auf 34, Tabellen einspaltig (zweite Spalte bliebe unter 300)
     560  Tabellenzeilen werden Karten (sechs Rasterspalten ergäben 60px)
+
+   DIE 560 RECHNET MIT GLEICH BREITEN SPALTEN, und das ist die Annahme, die H5a
+   gebrochen hat. „Sechs Rasterspalten ergäben 60px" gilt für eine Zeile, die
+   ihre Breite verteilen darf. `.sys-row` verteilt nichts: 52 + 240 + 240 + 108
+   + 26 plus fünf 20er-Abstände sind 526px, die nicht schrumpfen, und die Zeile
+   ist schon bei 899 unlesbar und bei 560 breiter als ihr Kasten. Gemessen, nicht
+   hergeleitet. Wer hier eine Zeile mit festen Spalten anlegt, prüft sie gegen
+   diesen Absatz — die 560 ist keine Zusicherung, sondern ein Ergebnis.
 
    Kein Schalter liegt auf einer verbreiteten Gerätebreite: 1080 statt 1024,
    900 statt 768. Ein Gerät soll nie im Grenzfall liegen.                       */
@@ -58,6 +67,26 @@
   .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
   .work-row        { grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px }
   .work-row .prev  { display: none }      /* weglassen, nicht verkleinern */
+
+  /* THE SYSTEM ROW BECOMES A CARD HERE AND NOT AT 560, WHICH IS H5a's
+     MEASUREMENT AND NOT ITS PREFERENCE. Six columns carry 526px that cannot
+     shrink — 52 + 240 name + 240 stack + 108 state + 26 arrow, plus five 20px
+     gaps. Against the content column that is fine at 1080 (234px left for the
+     description) and it is not fine below it: 37px at 899, zero at 719, and at
+     560 the row is 54px wider than the box it stands in.
+
+     Measured, not derived: /dev/components at 1440 · 1024 · 899 · 719 · 560 ·
+     559 · 390 against a real answer. The page could not show it — there is no
+     api in the rig and no row on `/`.
+
+     THE SWITCH IS ONE THAT ALREADY EXISTS, which is this file's rule: "EIN
+     SCHALTER FÜR ALLE ZWEISPALTER … Kein Bauteil bekommt seinen eigenen Wert."
+     1080 is where every other multi-column row on this site resolves, and a
+     six-column row is emphatically one. `.work-row` above drops a column here
+     instead; that works for it because its preview is decoration. Every cell of
+     a system row is a claim, so this one keeps all six and stacks them — which
+     is exactly what the 390 artboard draws.                                  */
+  .sys-row { display: flex; flex-direction: column; gap: 10px }
 }
 
 /* ---- < 900: Kopf schaltet um --------------------------------------------- */
@@ -90,7 +119,10 @@
 
 /* ---- < 560: Zeilen werden Karten ----------------------------------------- */
 @media (max-width: 559px) {
-  .work-row, .sys-row, .log-row { display: flex; flex-direction: column; gap: 10px }
+  /* `.sys-row` is NOT here any more — it resolves at 1080, in the block above,
+     for the reason written there. The other two keep this switch until a phase
+     measures them; `.log-row` is two columns and H5c will look at it. */
+  .work-row, .log-row { display: flex; flex-direction: column; gap: 10px }
   .ops-tiles    { grid-template-columns: repeat(2, minmax(0,1fr)) }
   .deploy-strip { overflow-x: auto }
   /* Das Betriebsraster braucht hier nichts: 91 Tage sind 13 Spalten

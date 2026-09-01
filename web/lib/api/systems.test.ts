@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { en } from "../i18n/messages/en.ts";
+import { NO_DATA } from "../state/words.ts";
 
-import type { SystemDetail } from "./systems.ts";
+import type { SystemDetail, SystemList } from "./systems.ts";
 import {
   coverage,
   coverageNote,
@@ -18,6 +19,8 @@ import {
   p95Value,
   sourceView,
   stackLine,
+  systemRows,
+  systemsMeta,
   uptimeValue,
 } from "./systems.ts";
 
@@ -456,5 +459,169 @@ describe("what a notch says when it is opened", () => {
     assert.equal(downtimeLabel(null), null);
     assert.equal(downtimeLabel(undefined), null);
     assert.equal(downtimeLabel(-1), null);
+  });
+});
+
+// ── SYS.02 · the list ───────────────────────────────────────────────────────
+//
+// H5a. The seed holds exactly these two rows, so `SEEDED` is not a fixture for a
+// convenient case — it is what /api/systems answers against a fresh database.
+
+const SEEDED = {
+  systems: [
+    {
+      slug: "vat-check",
+      systemNo: "01",
+      name: "VAT Check API",
+      state: "queued",
+      source: { access: "private", reason: "internal" },
+      stack: ["Python", "FastAPI", "Docker", "SQLite"],
+      metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
+    },
+    {
+      slug: "timseil-dev",
+      systemNo: "02",
+      name: "timseil.dev",
+      state: "live",
+      source: { access: "public", url: "https://github.com/G1NG4R/timseil-dev" },
+      stack: ["Next.js 16.3", "Go 1.26", "PostgreSQL 18.6"],
+      metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
+    },
+  ],
+  generatedAt: "2026-09-01T12:00:00Z",
+} as unknown as SystemList;
+
+describe("what the system list says when it is broken", () => {
+  // The list has three ways of arriving useless, and each one has to produce an
+  // empty list rather than a row of `undefined`. The section above it draws
+  // EmptyState from `length === 0`, so this is the branch that decides whether a
+  // failed read looks like a failed read.
+  it("has no rows for a body that is missing, empty or the wrong shape", () => {
+    assert.deepEqual(systemRows(null), []);
+    assert.deepEqual(systemRows({ systems: [] } as unknown as SystemList), []);
+    assert.deepEqual(systemRows({} as unknown as SystemList), []);
+    assert.deepEqual(systemRows({ systems: "two" } as unknown as SystemList), []);
+  });
+
+  // The one row the reader refuses. Everything else about a system may be
+  // absent and the row still says something true; without a slug it cannot even
+  // decide whether it leads anywhere.
+  it("drops a row with no slug and keeps the rows around it", () => {
+    const rows = systemRows({
+      systems: [{ systemNo: "01", name: "Nameless" }, SEEDED.systems[1]],
+    } as unknown as SystemList);
+
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].slug, "timseil-dev");
+  });
+
+  // ADR 0035's overlapping start is the case behind this: for a few seconds
+  // after a deploy the answer can come from the previous build, and a field the
+  // contract gained this week is simply absent.
+  it("keeps a row whose every other field is missing", () => {
+    const rows = systemRows({ systems: [{ slug: "vat-check" }] } as unknown as SystemList);
+
+    assert.deepEqual(rows, [
+      { slug: "vat-check", no: "--", name: "vat-check", state: null, stack: null, source: null },
+    ]);
+  });
+
+  // #289. `in_build` is a state the contract declares and this site has no word
+  // for; the row must say so rather than guess. A row that rendered IN BUILD
+  // here would be a word nobody has drawn a tone, a dot or a dictionary key for.
+  it("has no state word for in_build, and does not invent one", () => {
+    const rows = systemRows({
+      systems: [{ slug: "vat-check", state: "in_build" }],
+    } as unknown as SystemList);
+
+    assert.equal(rows[0].state, null);
+  });
+
+  // A public source with no address is a link to nowhere, and a private one with
+  // no reason is the excuse the schema refuses. sourceView already held both;
+  // this is the assertion that the list answer reaches the same judgement.
+  it("refuses a half-written source the way the detail does", () => {
+    const rows = systemRows({
+      systems: [
+        { slug: "a", source: { access: "public" } },
+        { slug: "b", source: { access: "private" } },
+        { slug: "c", source: { access: "private", reason: "because" } },
+      ],
+    } as unknown as SystemList);
+
+    for (const row of rows) assert.equal(row.source, null);
+  });
+});
+
+describe("what the system list says when it answers", () => {
+  it("reads both seeded systems in the order the api sent them", () => {
+    const rows = systemRows(SEEDED);
+
+    assert.deepEqual(
+      rows.map((row) => [row.no, row.name, row.state]),
+      [
+        ["01", "VAT Check API", "queued"],
+        ["02", "timseil.dev", "live"],
+      ],
+    );
+  });
+
+  // The name carries the dot the slug cannot. H4 found the pair the other way
+  // round — the evidence line prints `02 TIMSEIL-DEV` where the sheet draws
+  // `02 TIMSEIL.DEV` — and the difference is that there the answer had no name
+  // to give and here it does.
+  it("prints the name and not the slug", () => {
+    assert.equal(systemRows(SEEDED)[1].name, "timseil.dev");
+    assert.equal(systemRows(SEEDED)[1].slug, "timseil-dev");
+  });
+
+  it("joins the stack the way the spec rail does", () => {
+    assert.equal(systemRows(SEEDED)[0].stack, "Python · FastAPI · Docker · SQLite");
+  });
+
+  it("carries the source axis, which is not the state", () => {
+    assert.deepEqual(systemRows(SEEDED)[0].source, { access: "private", reason: "internal" });
+    assert.deepEqual(systemRows(SEEDED)[1].source, {
+      access: "public",
+      url: "https://github.com/G1NG4R/timseil-dev",
+    });
+  });
+});
+
+describe("the count in the section head", () => {
+  // The number is `rows.length`, and the seed holding two is exactly the
+  // coincidence that lets a typed `02` survive being wrong.
+  it("counts the rows it drew and names the endpoint", () => {
+    assert.equal(systemsMeta(SEEDED), "02 SYSTEMS · SOURCE: /api/systems");
+  });
+
+  it("says — NO DATA rather than zero when there was no answer", () => {
+    assert.equal(systemsMeta(null), `${NO_DATA} SYSTEMS · SOURCE: /api/systems`);
+  });
+
+  // An answer that arrived and held nothing is a different statement from no
+  // answer at all: the api said there are none. `00` is a measurement.
+  it("distinguishes an empty answer from a missing one", () => {
+    assert.equal(
+      systemsMeta({ systems: [] } as unknown as SystemList),
+      "00 SYSTEMS · SOURCE: /api/systems",
+    );
+  });
+
+  // The distinction the three-way branch exists for. A body that arrived and
+  // carries no readable list is not a body that said "none".
+  it("does not print a zero for an answer that said nothing", () => {
+    assert.equal(systemsMeta({} as unknown as SystemList), `${NO_DATA} SYSTEMS · SOURCE: /api/systems`);
+    assert.equal(
+      systemsMeta({ systems: "two" } as unknown as SystemList),
+      `${NO_DATA} SYSTEMS · SOURCE: /api/systems`,
+    );
+  });
+
+  it("makes the noun agree with the count", () => {
+    assert.equal(
+      systemsMeta({ systems: [{ slug: "a" }] } as unknown as SystemList),
+      "01 SYSTEM · SOURCE: /api/systems",
+    );
   });
 });
