@@ -12,6 +12,154 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 01.09.2026, H4 gebaut: SYS.01 trägt seine Belege
+
+**Branch `phase/h4-homepage-training-log`, nicht gepusht.** `/` zeigt 22 Tracks
+in fünf Modulkarten, jede Zeile mit Zustandswort, Balken und Belegzeile, darunter
+die Skala. Die Kopfzeile liest `SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM ·
+SOURCE: /api/training`, und jede dieser Zahlen kommt aus der Antwort.
+
+### Lokal gemessen, gegen Produktion noch nicht
+
+```
+make check   grün
+npm test     389   (von 364)
+e2e          670 grün, 3 übersprungen, 0 rot   (von 599)
+Orakel       29 Messungen Startseite (von 21), 7 abweichend
+Bundle       143 580 B über 7 Dateien — Byte für Byte wie nach H3
+```
+
+**Das Byte ist wieder der Punkt.** Kein `'use client'` unter `components/home/`,
+der Hover liegt in CSS, und die Zahl hat sich gegenüber H3 um null bewegt.
+
+`bundle-size.sh` verweigert weiterhin die Klassifizierung (#301) — die
+Gesamtzahl ist wie in H3 von Hand gemessen, aus derselben Liste, die das Skript
+selbst aufbaut.
+
+### Der stärkste Fund: die Galerie rendert unter einer kürzeren Kaskade als die Seite
+
+`app/dev/layout.tsx` schreibt sich seit G7 selbst die Regel auf — *„a preview
+that renders under a shorter cascade than the page is a preview of something
+else"* — und lud `home.css` nicht, weil bis H4 nichts daraus in der Galerie
+stand. Gefunden nicht beim Lesen, sondern weil eine Orakel-Messung
+`display: block` von einem Grid ablas: `layout.css` war da (die Spaltenregel kam
+an), `home.css` nicht (`display: grid` fehlte). **Der Kommentar war seit einer
+Stufe richtig und hatte niemanden, der ihn brechen konnte.**
+
+Zwei Funde hängen daran: dass das Rig ohne API läuft und SYS.01 dort das
+Ausfall-Panel ist — also fünf der acht neuen Blatt-Messungen und die ganze
+Zustands-Prüfung in die Galerie mussten (H2bs Fund, eine Seite weiter) —, und
+dass die Galerie, einmal unter axe gestellt, mit einem eigenen `document-title`
+ankam. Schwerwiegend, seit G7 da, nie angesehen.
+
+### Am Bild gefunden, nicht am Quelltext
+
+**In Serverreihenfolge steht `03 DATA` mit drei Tracks neben `04 DEVOPS` mit
+sechs.** Gestreckt sind das 200 px leere Karte, und im Screenshot liest sich das
+wie die 348 px Terminal-Körper in H3: nicht als Karte mit wenig darin, sondern
+als eine, die nicht geladen hat. Das Blatt löst es durch Umsortieren
+(`01 · 02 · 04 · 03 · 05`); wir behalten die Reihenfolge, weil auf dieser Seite
+die Nummer die Reihenfolge ist, und geben jeder Karte ihre eigene Höhe.
+`align-items: start`, eine Deklaration.
+
+**Und der Pfeil klebte am Präfix.** `SHIPPED IN→ 02 TIMSEIL-DEV`: JSX setzt
+zwischen zwei benachbarte Elemente kein Leerzeichen. Im Markup ist nichts
+falsch, im Screenshot sofort.
+
+### Was diese Abnahme nicht behauptet
+
+**Bei 1440 wurde nicht im Browser geklickt.** Das Fenster ließ sich hier nicht
+über 1048 px aufziehen — dieselbe Grenze wie in H3, andere Richtung. Die
+Drei-Spalten-Fassung ist im Rig gemessen (670 Zusicherungen, Blatt-Orakel bei
+1440 eingeschlossen), gesehen habe ich sie dort nicht.
+
+**Die Dev-Server-Hängerei ist nicht erklärt.** Unter `make dev` blieb der
+Streaming-Tausch mehrfach aus: beide Grenzen der Seite behielten ihren Fallback,
+der echte Inhalt lag in `<div hidden>`, keine Konsolenmeldung. Es trifft auch die
+H3-Insel, die seit einer Woche grün ist, und im Produktionsbuild passiert es
+nicht — 670 e2e-Zusicherungen über sieben Breiten. Als Dev-Artefakt notiert und
+**nicht weiterverfolgt**; die halbe Stunde aus H3 war die Warnung.
+
+**Und einmal war ich selbst die Fehlmessung.** Der erste Blick zeigte zwei
+`.trn` im Dokument und ich hielt den Tausch für kaputt — es war das Fenster
+zwischen Fallback und Ersatz, das `streaming.ts` seit #279 in seinem Kopf
+beschreibt. Dreimal dieselbe Familie, jetzt viermal.
+
+### #245 gemessen — die ETag-Ersparnis am großen Körper
+
+Gegen den laufenden Dev-Stack, beide Endpunkte, mit und ohne `If-None-Match`:
+
+```
+/api/health     264 B Körper + 295 B Kopf   →  304: 188 B Kopf, 0 B Körper
+/api/training  2719 B Körper + 304 B Kopf   →  304: 188 B Kopf, 0 B Körper
+```
+
+Der große Körper ist das Zehnfache, die Ersparnis 2 835 B statt 371 B — 94 %
+statt 66 %. **Und dieser Seite bringt sie nichts:** `/api/training` wird nie vom
+Browser geholt, sondern einmal je Cache-Fenster vom Web-Container, und ein
+gecachter Leser hat keinen Ort, einen Validator zwischen zwei Füllungen zu
+halten (`readers.ts` sagt, warum). Die Ersparnis ist real für die öffentliche
+API — Badge-Routen, jeder, der sie abruft —, nicht für die Auslieferung der
+Seite. ADR 0009s Satz „das ETag ist die Ersparnis, die tatsächlich auf der
+Leitung ankommt" braucht damit eine zweite Hälfte, keine Streichung. **#245 ist
+gemessen; geschlossen wird er von dir.**
+
+## Verschoben aus H4
+
+- **Die Belegzeile kürzt bei mehreren Systemen nicht → H5/H6.** Das Mobil-Artboard
+  zeichnet `RUNS IN → 02 · 03 · 04`, wo Desktop die Namen ausschreibt. Mit einem
+  System sind beide Fassungen identisch, also gibt es heute nichts zu kürzen und
+  keine Regel, die man an etwas prüfen könnte. Gehört zu #293 (zweite,
+  kürzere Textfassung). *(01.09.2026, H4)*
+- **`SYS.02` verlinkt nicht zurück → H5.** Das Blatt notiert es unter „Try next":
+  welche Tracks laufen in diesem Projekt. Es braucht die Systemliste, die H5
+  baut. *(01.09.2026, H4)*
+- **Der `core`-Glow ist nicht gebaut → wenn das zweite System live geht.**
+  `box-shadow: 0 0 6px rgba(0,229,255,.4)` ist die einzige Blattfarbe ohne
+  Token, und kein Track ist `core`, solange es ein System gibt. Ein Token für
+  eine unsichtbare Zeile wäre die falsche Reihenfolge. *(01.09.2026, H4)*
+- **`.trn-mod` hat keinen Eintrag im Inventar → offen.** `ModuleCard` steht in
+  keinem Blatt; das Inventar kennt nur `SkillRow`. Gebaut ist sie trotzdem, weil
+  eine Karte ohne Bauteil eine Karte in der Seite wäre. *(01.09.2026, H4)*
+
+## Gefunden
+
+- **Das Blatt schreibt für `learning` zwei Präfixe.** `TOUCHED IN → 02 RELAY
+  (TOKEN SIGNING)` und `RUNNING IN → 04 TIMSEIL.DEV (UPTIME MONITOR)`, derselbe
+  Zustand, dieselbe Spalte. `RUNNING IN` ist gewählt: `TOUCHED IN` sagt etwas
+  über den *Anteil* des Systems, den der Track ausmacht, und den trägt keine
+  Spalte. Design-Korrektur. *(01.09.2026, H4)*
+- **Das Blatt zeichnet neun Zeilen `LEARNING`, die API sagt `QUEUED`.** ADR 0018
+  §4 hat das entschieden und ausdrücklich aufgeschrieben, „damit die Zahl nicht
+  in H4 ein drittes Mal auftaucht" — hier ist die Bestätigung, dass sie es nicht
+  getan hat. *(01.09.2026, H4)*
+- **`Evidence` trägt einen Slug, das Blatt zeigt einen Namen.** `02 TIMSEIL-DEV`
+  gegen `02 TIMSEIL.DEV`, ein Zeichen. Der Slug ist, was `/work/timseil-dev`
+  benutzt; den Punkt zu erfinden hieße, Slugs im Browser über einen zweiten
+  Endpunkt auf Namen abzubilden, für Interpunktion. *(01.09.2026, H4)*
+- **Die Kopfzeile des Blattes will `UPDATED [DATE]`, und es gibt keine Spalte
+  dafür.** `generatedAt` ist die Uhrzeit der Antwort, nicht der Stand des
+  Inhalts — `training.go` füllt es nach der ETag-Berechnung. Gestrichen; der
+  Trainings-Log hat keinen Inhaltsstand, und ob er einen bekommen soll, ist eine
+  Entscheidung und kein Rendering. *(01.09.2026, H4)*
+- **`registry.ts` schuldete `ContributionGraph` an H4.** Er gehört zu SYS.03,
+  also H5. Korrigiert; die `where`-Spalte („hero") bleibt, sie ist die
+  Transkription eines Blattes, das älter als HOME.01 ist. *(01.09.2026, H4)*
+- **Kein Test hält die `cacheLife`-Profile gegen den Contract.** Die API hält
+  ihre vier Direktiven gegen das ausgelieferte Dokument
+  (`TestCacheDirectivesMatchTheContract`), `next.config.ts` liest dieselben
+  Zahlen von Hand ab — jetzt an drei Stellen. *(01.09.2026, H4)*
+
+## Idee
+
+- **Ein `align-items`-Blick pro Karten-Raster.** Zweimal in zwei Phasen war eine
+  gestreckte Box der Fund, der nur im Screenshot sichtbar war (348 px Terminal,
+  200 px Modulkarte). Keine Prüfregel — dafür fehlt der Vorfall, der sich
+  benennen ließe —, aber eine Frage, die beim nächsten Raster gestellt wird.
+  *(01.09.2026, H4)*
+
+---
+
 ## Wo wir stehen — 01.09.2026, Triage nach H3: fünf Phasen eingeräumt
 
 **Sechzehn Issues angelegt, vier Kommentare an bestehende, drei bewusst

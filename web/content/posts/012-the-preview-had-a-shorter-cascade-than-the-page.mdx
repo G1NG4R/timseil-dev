@@ -1,0 +1,136 @@
+---
+title: 'The preview had a shorter cascade than the page'
+deck: 'A component gallery loaded eight of the site''s nine stylesheets. For a year that was correct, because nothing it rendered came from the ninth. The comment at the top of the file had described this failure since the day it was written — it just had nobody who could break it yet.'
+published: 2026-09-01
+tags: ['frontend', 'testing', 'css']
+system: 'timseil-dev'
+summary: |
+  Adding a new section to a homepage put two of its components into the
+  development component gallery. The gallery's layout imports the site's
+  stylesheets in the site's order, minus one it had never needed — and the
+  component I had just added was drawn by exactly that one. The result was not a
+  broken-looking page; it was a grid that quietly rendered as a block, which
+  looks like a slightly different layout rather than like a bug. What caught it
+  was a test that reads design measurements off the built page, and the reason
+  it could catch it was that the same test could not run on the real page at
+  all.
+---
+
+## The shape of it
+
+This site has a development-only route that renders every component in every
+documented state. It has its own root layout, because it lives outside the
+route tree the rest of the site lives in, and that layout imports the
+stylesheets by hand:
+
+```tsx
+import "../../styles/tailwind.css";
+import "../../styles/tokens.css";
+import "../../styles/globals.css";
+import "../../styles/chrome.css";
+import "../../styles/state.css";
+import "../../styles/ui.css";
+import "../../styles/case.css";
+import "../../styles/gallery.css";
+import "../../styles/layout.css";
+```
+
+Nine files on the site. Eight here. The missing one draws the homepage's own
+surfaces, and until this week nothing in the gallery came from the homepage — so
+the list was not wrong, it was complete for what it held.
+
+Then a phase added a training log to the homepage: module cards, rows, a small
+four-segment bar per row. Two of those components went into the gallery, for a
+reason worth stating separately: the test rig runs a production build with no
+API behind it, so on the real page that section renders its outage state and
+there are no rows in the document at all. Assertions pointed there would have
+passed by finding nothing to check. The gallery is where the rows exist.
+
+## What it looked like
+
+Not like a bug. The card grid was authored as:
+
+```css
+.trn-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--s-20);
+}
+```
+
+With that file absent, `display` fell back to `block` and every card stacked at
+full width. That is a layout. It is a plausible one. Nothing overflows, nothing
+overlaps, no console message appears, and a screenshot of it looks like a
+component gallery that lists its examples vertically — which is what a component
+gallery often does.
+
+The tell was one property away. The rig reads design measurements off the built
+page and compares them with the declarations in the design sheets, and one of
+those measurements counts grid tracks:
+
+```
+Expected: 6
+Received: 1
+```
+
+The next thing measured said `repeat(4, minmax(0px, 1fr))` — which is a real
+rule of ours, from the stylesheet that holds every width switch on this site.
+So one stylesheet was arriving and another was not, and the pair of readings
+named which one within a minute. A single failing measurement would have been a
+puzzle; two, disagreeing about which of our own files had been loaded, was an
+answer.
+
+## The part that is actually interesting
+
+The file already knew. Its header comment, written when the gallery was built,
+explains why it carries stylesheets it appears not to need:
+
+> Same reason ui.css and case.css are here now that the site loads them both: a
+> preview that renders under a shorter cascade than the page is a preview of
+> something else.
+
+That sentence describes this defect exactly, in advance, in the file the defect
+was in. It did not prevent it, and I do not think a better-worded comment would
+have. The rule it states is conditional — *when a component's stylesheet is
+missing here* — and the condition had never been true. A rule with no instances
+is indistinguishable from a rule being followed.
+
+This is the second time in two phases that a correct, load-bearing comment sat
+in a file and waited. The last one described a scrollbar interaction that
+"cannot happen where the menu lives"; it was right about everything it could
+observe, and it stopped being right the week the page first became long enough
+to scroll. Both comments were accurate. Both were about a case the codebase
+could not yet produce. What changed in each case was not the code the comment
+was attached to — it was that something elsewhere finally satisfied the
+condition.
+
+I do not have a general fix for that. The specific one is cheap: the gallery's
+stylesheet list is now nine files, in the site's order, with a line saying which
+phase added the ninth and why. The general observation is smaller and less
+satisfying — a comment that names a failure mode is documentation, not a guard,
+and the difference only shows up on the day the failure mode becomes reachable.
+
+## What the tests were doing meanwhile
+
+Everything else was green, and that is not a criticism of the suite. There is no
+test for "the gallery loads the same stylesheets as the site", and I have not
+added one, because the rule that would justify it here is that a new check needs
+an incident that can be named. This is now that incident, and it still does not
+warrant a check: the same measurement that caught it will catch it again, for
+free, the next time a phase puts a component into the gallery whose stylesheet
+is not listed. The check exists. It is just not shaped like a check for this.
+
+What did come out of the run was unrelated and worth having. Bringing the
+gallery route under the accessibility pass for the first time — necessary,
+because the components under test are only reachable there — turned up one
+violation that had been sitting in it since the day it was built:
+
+```
+document-title (serious) — Documents must have <title> element
+```
+
+A route nobody had ever pointed a tool at. It took one line. That is the whole
+argument for pointing tools at things: not that they find sophisticated
+problems, but that the unexamined corner has the boring problem in it, and the
+boring problem is still a problem for whoever is using a screen reader to tell
+two tabs apart.
