@@ -151,8 +151,8 @@ Tracks. **Gefunden im Screenshot**, nicht im Markup; am Markup ist an
 - **Das Blatt-Orakel kennt jetzt `on`.** Ohne API ist SYS.01 auf `/` das
   Ausfall-Panel, und das Modulraster steht überhaupt nicht im Dokument — ein
   Eintrag, der dorthin zeigte, prüfte gegen nichts. Das ist H2bs Fund eine
-  Seite weiter, und es ist dieselbe Antwort: die Galerie. Fünf der acht neuen
-  Messungen laufen dort, drei auf `/`.
+  Seite weiter, und es ist dieselbe Antwort: die Galerie. **Sechs der neun**
+  neuen Messungen laufen dort, drei auf `/`.
 - **Die Galerie lädt jetzt `home.css`.** Sie hat es nie gebraucht und ihr
   eigener Kopfkommentar hat den Fall vorhergesagt: „a preview that renders under
   a shorter cascade than the page is a preview of something else." Gefunden, weil

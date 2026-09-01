@@ -47,7 +47,7 @@ an), `home.css` nicht (`display: grid` fehlte). **Der Kommentar war seit einer
 Stufe richtig und hatte niemanden, der ihn brechen konnte.**
 
 Zwei Funde hängen daran: dass das Rig ohne API läuft und SYS.01 dort das
-Ausfall-Panel ist — also fünf der acht neuen Blatt-Messungen und die ganze
+Ausfall-Panel ist — also sechs der neun neuen Blatt-Messungen und die ganze
 Zustands-Prüfung in die Galerie mussten (H2bs Fund, eine Seite weiter) —, und
 dass die Galerie, einmal unter axe gestellt, mit einem eigenen `document-title`
 ankam. Schwerwiegend, seit G7 da, nie angesehen.
