@@ -75,9 +75,24 @@ const nextConfig: NextConfig = {
   // difference is deliberate: the deploy gate polls /api/health, and a case
   // study is a page that changes when a deploy or a probe writes a row. A
   // single profile here would quietly re-declare one of them.
+  //
+  // H4 ADDS A THIRD THAT CARRIES THE SAME NUMBERS AS THE SECOND, and that is
+  // the point rather than an oversight. The contract gives GET /api/training
+  // `CacheControlMedium` too, so both readings land on 300/1800 — but they are
+  // two readings of two paths, not one profile shared by two callers. Folding
+  // them together would mean the day the contract moves one of the headers,
+  // the other one silently moves with it. Each entry here is derived from its
+  // own path.
+  //
+  // NOTHING CHECKS THAT DERIVATION, and this is the third entry to say so. The
+  // api holds its own constants against the served document
+  // (TestCacheDirectivesMatchTheContract, ADR 0018), and these three numbers
+  // are read off the same document by hand. Written down rather than assumed
+  // away; the backlog carries the task.
   cacheLife: {
     health: { stale: 60, revalidate: 60, expire: 600 },
     systems: { stale: 300, revalidate: 300, expire: 1800 },
+    training: { stale: 300, revalidate: 300, expire: 1800 },
   },
 
   // ONE FILE THE TRACER CANNOT SEE AS A DEPENDENCY, even though it currently

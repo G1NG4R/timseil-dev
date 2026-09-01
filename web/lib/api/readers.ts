@@ -45,6 +45,7 @@ import { TRACEPARENT_HEADER, childSpan, renderTraceparent } from "../trace.ts";
 import { apiGet } from "./client.ts";
 import { NO_HEALTH, footerHealth, healthOrThrow, type FooterHealth, type Health } from "./health.ts";
 import type { SystemDetail } from "./systems.ts";
+import type { Training } from "./training.ts";
 
 /** The tag this answer is filed under. One name, so a reader can grep for it. */
 export const HEALTH_TAG = "health";
@@ -247,6 +248,72 @@ export async function systemNow(slug: string): Promise<SystemDetail | null> {
 
   try {
     return await systemCached(slug);
+  } catch {
+    return null;
+  }
+}
+
+/** The tag the training log is filed under. One name, so a reader can grep for it. */
+export const TRAINING_TAG = "training";
+
+/**
+ * The training log, shared between every visitor for the length of one cache
+ * window.
+ *
+ * THE FOURTH READER, AND THE FIRST WITH NO KEY. `systemCached` takes a slug and
+ * is therefore one entry per system; this endpoint takes no parameter at all —
+ * the contract gives `getTraining` nothing to get wrong — so there is exactly
+ * one entry, and it is the same document for everybody who has ever loaded `/`.
+ *
+ * IT TAKES THE CACHED DOOR for `systemCached`'s reason, restated because this is
+ * the page where it matters most: nothing in the training log depends on who is
+ * asking. The visitor's request id may not enter a cached scope anyway (the rule
+ * at the top of this file), and the web to api hop stays findable through
+ * `healthLive`, which the same page makes for its terminal row.
+ *
+ * IT THROWS RATHER THAN RETURNING AN EMPTY LOG, which is the third time this
+ * file makes the same argument and the first time it is about a whole section
+ * of a page. `use cache` stores whatever comes back, including a value meaning
+ * "no data" — and a stored failure here would leave twenty-two rows missing for
+ * the length of the expire window, minutes after the api came back. The only
+ * lever `use cache` offers for not storing something is not returning it.
+ *
+ * THE CONDITIONAL REQUEST IS NOT ON THIS PATH, and #245 is why that is worth a
+ * line: `If-None-Match` is what `healthLive` uses to let the api answer `304`,
+ * and it needs a validator held across calls. A cached reader has no calls to
+ * hold one across — it makes one request per window and the window is what saves
+ * the bytes. The ETag still earns its keep on the wire between a browser and
+ * this container; it does not on the hop this function makes.
+ */
+export async function trainingCached(): Promise<Training> {
+  "use cache";
+  cacheLife("training");
+  cacheTag(TRAINING_TAG);
+
+  const result = await apiGet("/api/training");
+  if (result.kind !== "ok") {
+    throw new Error(`training unavailable: ${String(result.status)}`);
+  }
+  return result.data;
+}
+
+/**
+ * The training log, or nothing. Never throws.
+ *
+ * The twin of `systemNow` and `footerHealthNow`: wait for a request, ask the
+ * shared cache, and let the caller render its empty form rather than an error.
+ *
+ * `connection()` IS HERE AND NOT IN THE PAGE, unlike `systemCached`'s, because
+ * this reader has exactly one caller and no second shape to serve. Without it
+ * these rows are rendered during `next build`, which runs inside `docker build`,
+ * where no `api:8080` exists — and every visitor would be served a shell baked
+ * with an empty log for the length of the expire window.
+ */
+export async function trainingNow(): Promise<Training | null> {
+  await connection();
+
+  try {
+    return await trainingCached();
   } catch {
     return null;
   }
