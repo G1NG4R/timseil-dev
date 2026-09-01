@@ -221,3 +221,43 @@
   color: var(--dim);
   text-transform: uppercase;
 }
+
+/* ── Corner marks ──────────────────────────────────────────────────────────
+   Four brackets drawn on one box, as eight background gradients.
+
+   THIS IS THE THIRD CONSUMER AND THAT IS WHY IT IS A CLASS. `.spec` drew it in
+   H1 and `.term` drew it again in H3 — twelve near-identical declarations in
+   two files, differing in two values — and H4's module cards would have been
+   the third copy. The rule this repository set for itself is that a tool needs
+   an incident before it exists; a THIRD copy of eight gradients is that
+   incident, and the two that came before are the evidence it would keep
+   happening.
+
+   EIGHT GRADIENTS AND NOT EIGHT PSEUDO-ELEMENTS, which is H1's decision kept:
+   one box, no extra nodes, and nothing to keep in step when the panel resizes.
+
+   THE TWO VALUES ARE CUSTOM PROPERTIES because they are the only things the
+   three consumers disagree about — the accent at 14px around the terminal, the
+   accent at 13px around the spec rail, steel at 12px around a module card. A
+   consumer sets the pair and inherits the geometry.
+
+   `background-color` AND NOT `background` IN THE CONSUMERS. The shorthand
+   resets `background-image`, so a consumer that used it would erase these marks
+   or not, depending on which rule the bundler happened to put last. `.spec`
+   used the shorthand until this phase; it now uses the longhand and looks
+   identical, which the case study's own oracle entries are what proves.        */
+
+.marks {
+  background-image:
+    linear-gradient(var(--mark-color), var(--mark-color)), linear-gradient(var(--mark-color), var(--mark-color)),
+    linear-gradient(var(--mark-color), var(--mark-color)), linear-gradient(var(--mark-color), var(--mark-color)),
+    linear-gradient(var(--mark-color), var(--mark-color)), linear-gradient(var(--mark-color), var(--mark-color)),
+    linear-gradient(var(--mark-color), var(--mark-color)), linear-gradient(var(--mark-color), var(--mark-color));
+  background-repeat: no-repeat;
+  background-size:
+    var(--mark-len) 1px, 1px var(--mark-len), var(--mark-len) 1px, 1px var(--mark-len),
+    var(--mark-len) 1px, 1px var(--mark-len), var(--mark-len) 1px, 1px var(--mark-len);
+  background-position:
+    left top, left top, right top, right top,
+    left bottom, left bottom, right bottom, right bottom;
+}

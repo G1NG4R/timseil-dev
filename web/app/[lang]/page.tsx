@@ -16,16 +16,24 @@
 // row inside the terminal frame — components/home/Live.tsx, which explains why
 // that is its home and not merely its hiding place.
 //
-// ONE SUSPENSE HOLE, NOT FIVE. The case study has five because it has five
-// measured regions; this page has one thing to ask and one place to put the
-// answer. Everything else — the hero, the four section shells and their reasons
-// — is in the repository and prerenders whole.
+// TWO SUSPENSE HOLES SINCE H4, AND THE SECOND ONE IS A WHOLE SECTION. The
+// terminal row asks the api one question and puts the answer in one word; the
+// training log asks a second and puts the answer in twenty-two rows, five
+// cards and the counts in its own heading. That is why the region begins at
+// the section head rather than under it — components/home/TrainingLog.tsx has
+// the argument.
+//
+// Everything else — the hero, the three remaining shells and their reasons —
+// is in the repository and prerenders whole. The case study has five holes
+// because it has five measured regions; this page now has two.
 
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { Hero } from "@/components/home/Hero";
 import { SysSection } from "@/components/home/SysSection";
+import { TrainingLive } from "@/components/home/Training";
+import { TrainingLog } from "@/components/home/TrainingLog";
 import { TerminalPanelLive } from "@/components/home/Live";
 import { TerminalPanel } from "@/components/home/TerminalPanel";
 import { JsonLd } from "@/components/JsonLd";
@@ -86,23 +94,46 @@ export default async function Home() {
           transcription of the sheet, because four markers written out by hand
           in a page are four markers somebody can reorder without disagreeing
           with anything. K-26 records that happening once already. */}
-      {SECTIONS.map((section) => (
-        <SysSection
-          key={section.id}
-          id={section.id}
-          title={section.title}
-          titleId={`sec-${section.id.toLowerCase().replace(".", "-")}`}
-          reason={messages[section.reasonKey]}
-          exit={
-            section.exit === null
-              ? null
-              : {
-                  href: localeHref(locale, section.exit.path),
-                  label: messages[section.exit.labelKey],
-                }
-          }
-        />
-      ))}
+      {SECTIONS.map((section) => {
+        // SYS.01 IS THE ONE SECTION WITH A COMPONENT OF ITS OWN, and the branch
+        // is on the id rather than on `reasonKey === null` because the id is
+        // what decides WHICH component — the nullable field only says THAT
+        // there is one. H5 adds two more branches and is the phase in which
+        // this probably becomes a lookup; three cases is early for one.
+        //
+        // The head is inside the streamed region here and not above it, because
+        // its meta line carries the answer's own counts. TrainingLog says why.
+        if (section.id === "SYS.01") {
+          return (
+            <Suspense key={section.id} fallback={<TrainingLog body={null} messages={messages} />}>
+              <TrainingLive messages={messages} />
+            </Suspense>
+          );
+        }
+
+        // Held by sections.test.ts: a section is either filled or owed, never
+        // neither. A shell therefore has a reason, and this is that assertion
+        // in the one place the type cannot make it.
+        if (section.reasonKey === null) return null;
+
+        return (
+          <SysSection
+            key={section.id}
+            id={section.id}
+            title={section.title}
+            titleId={`sec-${section.id.toLowerCase().replace(".", "-")}`}
+            reason={messages[section.reasonKey]}
+            exit={
+              section.exit === null
+                ? null
+                : {
+                    href: localeHref(locale, section.exit.path),
+                    label: messages[section.exit.labelKey],
+                  }
+            }
+          />
+        );
+      })}
     </>
   );
 }

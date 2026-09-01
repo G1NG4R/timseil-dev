@@ -42,7 +42,7 @@ export function SpecRail({
   messages: Messages;
 }) {
   return (
-    <aside className="rail spec" aria-label="SPEC">
+    <aside className="rail spec marks" aria-label="SPEC">
       <p className="spec-label">SPEC</p>
 
       <dl className="spec-body">

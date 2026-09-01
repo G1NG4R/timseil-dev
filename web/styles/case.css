@@ -131,21 +131,17 @@
    measure and not tokens.css's --bracket — that pair is the rest/hover length
    of an interactive bracket and means something else.                        */
 
+/* The eight gradients moved to `.marks` in ui.css when H4 was about to write a
+   third copy of them; the two values that were ever different stayed here. The
+   shorthand became `background-color` in the same edit, because `background:`
+   resets `background-image` and would erase the marks depending on rule order.
+   Same picture, and the sheet oracle's spec entries are what says so. */
 .spec {
-  background: var(--panel);
+  background-color: var(--panel);
   border: 1px solid var(--line-soft);
   padding: var(--s-20) var(--s-26);
-
-  background-image:
-    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge)),
-    linear-gradient(var(--acc-edge), var(--acc-edge)), linear-gradient(var(--acc-edge), var(--acc-edge));
-  background-repeat: no-repeat;
-  background-size: 13px 1px, 1px 13px, 13px 1px, 1px 13px, 13px 1px, 1px 13px, 13px 1px, 1px 13px;
-  background-position:
-    left top, left top, right top, right top,
-    left bottom, left bottom, right bottom, right bottom;
+  --mark-color: var(--acc-edge);
+  --mark-len: 13px;
 }
 
 .spec-label {
