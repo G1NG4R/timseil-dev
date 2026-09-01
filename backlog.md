@@ -12,6 +12,134 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 01.09.2026, H5b abgenommen: 10 von 10, gegen Produktion
+
+`f05ad28` / `v0.22.0` läuft. Merge 21:35:55Z, Deploy-Job 21:42:09Z–21:42:37Z
+(28 s), neuer Prozess **21:42:48.535Z**. Uhrzeit mit `date -u` gelesen; 21:42 UTC
+liegt weit vom Dokploy-Fenster 23:45–00:00 UTC.
+
+**H5 ist damit zu zwei Dritteln fertig, nicht fertig.** `SYS.04` steht weiter als
+`[SOON]` auf der Seite — H5c.
+
+### Der Tausch hatte kein Loch
+
+Zeuge ab 21:36:42Z, also **5:27 vor dem Deploy-Job**, über drei Pfade:
+
+```
+/                   384 Anfragen   384 × 200
+/api/health         384 Anfragen   384 × 200
+/work/timseil-dev   384 Anfragen   384 × 200
+
+✓ every answer was 200
+```
+
+1 152 Anfragen über 384 Sekunden, **5 der 384 Sekunden ohne Stichprobe**. Der
+Tausch um 21:42:48 liegt im Fenster. Die Einschränkung bleibt die aus H3, H4 und
+H5a: „kein Loch gesehen" ist nicht „kein Loch" — der breiteste Lauf, den es
+gibt, ist weiter der H4-Abnahme-Lauf mit 1 950 Anfragen.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `f05ad28`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3, H4 und H5a — die laufenden Container tragen exakt die veröffentlichten
+Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **fünften** Mal nicht. Der
+`--panel`-Zweig bleibt die Reparatur und bleibt ungebaut.
+
+### Die Seite geklickt, an beiden gezeichneten Breiten
+
+```
+/ · /de · /fr             200   SYS.01 SYS.02 SYS.03 SYS.04, aufsteigend, alle drei
+/work/timseil-dev         200
+/api/contributions        200   + 304 auf If-None-Match
+/api/systems/…?window=30  200   + 304 auf If-None-Match
+
+1440   Graph 951px · Zelle 15,0 · Streifen 1 Reihe  · Überlauf 0
+ 390   Graph 346px · Zelle  5,5 · Streifen 2 Reihen · Überlauf 0
+beide  53 Spalten · 7 Reihen · 367 Zellen · alle fünf Stufen l0–l4 gezeichnet
+       30 Streifenzellen · nodata 20 · ok 10 · 0 Vorfälle
+       0 Bedienelemente in der ganzen Sektion — reine Anzeige, wie das Blatt sagt
+       role="img" mit einem Namen statt 367 · ein [SOON] übrig (SYS.04)
+       genau eine .trn, eine .sys, eine .upl — der Tausch ist sauber
+```
+
+**Geklickt, nicht nur gelesen:** der Pfeil aus SYS.02 landet an **beiden**
+Breiten auf `/work/timseil-dev`, Überschrift „This site is the system it
+describes.".
+
+**Und der Cache-Schlüssel steht jetzt gegen Produktion:** dieselbe Sitzung zeigt
+`30` Zellen auf `/` und `91` auf der Fallstudie („OPERATION · 91 days (13 weeks)
+· ONE CELL IS ONE DAY"). Das ist der Beleg für die Sache, für die es in diesem
+Rig keinen Test geben kann.
+
+Die beiden `cacheLife`-Profile sind zum ersten Mal gegen Produktion bestätigt
+statt gegen das Dokument: `s-maxage=3600, stale-while-revalidate=7200` am
+Kalender, `300/1800` am Streifen — genau die Zahlen, die `next.config.ts` von
+Hand aus dem Contract abgelesen hat.
+
+### Der Fund der Abnahme: mein Messgerät hat einen Defekt gemeldet, den es selbst hatte
+
+Mein erster Klick-Lauf meldete **„der Pfeil landet auf `/`"**. Er tut es nicht.
+Das Skript las `page.url()` und die Überschrift, bevor die Navigation
+abgeschlossen war — `waitForLoadState("networkidle")` kam zurück, während die
+Seite noch die alte war. Nachgemessen mit `waitForURL` gegen das Ziel: korrekt,
+an beiden Breiten.
+
+**Das ist die dritte Abnahme in Folge, in der das Werkzeug der Verdächtige war,
+und jedes Mal eine Ebene tiefer.** H4: der Browser führte die `$RC`-Skripte
+nicht aus. H5a: `curl -I` fragte mit HEAD, wo der Besucher GET schickt. Hier:
+die Messung stand vor dem Ereignis, das sie messen sollte.
+
+Der gemeinsame Nenner ist keiner über Browser oder Methoden, sondern über
+**Reihenfolge**: eine Messung ist erst dann eine, wenn feststeht, dass sie nach
+dem steht, was sie behauptet zu sehen. Der Zeuge oben hat genau diese Eigenschaft
+eingebaut — er hört auf einen `sha` und einen neuen Prozess, nicht auf eine Uhr.
+Mein Klick-Lauf hatte sie nicht.
+
+**Beinahe hätte ich es als Fund der Seite aufgeschrieben.** Das ist der teure
+Teil: ein Defekt im Messgerät, der als Defekt im Gemessenen notiert wird,
+kostet die nächste Session eine Suche an einer Stelle, an der nichts ist.
+
+### `ops.lastDeploy.durationSec` sagt 394 s, der Job lief 28 s
+
+#242, **siebte Sichtung**. Die Reihe ist jetzt 284/22 · 309/31 · 669/31 ·
+342/31 · 394/28. Das Issue trägt „decide with H2", und H2 ist seit vier Phasen
+abgenommen.
+
+### Der Konflikt, der angekündigt war
+
+H5b lag in zwei PRs: #310 die H5a-Abnahme, #311 der Bau. Beide PR-Texte sagten
+vorher, dass #310 zuerst gehen muss und #311 danach einen Konflikt in
+`backlog.md` hat. Beides ist eingetreten, und der Konflikt war genau der
+angekündigte: **eine Datei, zwei Einfügungen an demselben `---`, keine
+gemeinsame Zeile.** Rebase, aufgelöst, `--force-with-lease`, CI in allen neun
+Jobs wieder grün.
+
+**Der Preis ist damit gemessen statt geschätzt**, und er ist klein: ein Rebase
+über eine Doku-Kollision. Die Alternative wäre gewesen, eine Abnahme unter einem
+`feat`-Commit zu verstecken.
+
+## Gefunden — aus der H5b-Abnahme
+
+- **Ein Playwright-Klick ohne `waitForURL` misst die Seite vor der Navigation.**
+  Oben beschrieben. `waitForLoadState("networkidle")` nach einem `click()` ist
+  kein Navigationsbeleg; `Promise.all([waitForURL(…), click()])` ist einer.
+  *(01.09.2026, H5b-Abnahme)*
+- **Der Kalender ist zwischen zwei Messungen desselben Tages von 652 auf 656
+  gewachsen**, bei gleichbleibenden 53 Wochen und 367 Tagen. Nichts daran ist
+  falsch — es ist die erste Zahl auf dieser Seite, die sich ohne Deploy bewegt,
+  und `cacheAgeSec` ist der Grund, aus dem sie das darf. *(01.09.2026,
+  H5b-Abnahme)*
+- **Der Streifen zeigt in Produktion nur zwei der vier Zustände** (20 × nodata,
+  10 × ok). `degraded` und `outage` stehen ausschließlich in der Galerie, und
+  das ist die einzige Stelle, an der sie je gezeichnet wurden. Wenn der erste
+  echte Ausfall kommt, ist das die erste Gelegenheit, sie auf der Seite zu
+  sehen. *(01.09.2026, H5b-Abnahme)*
+
+---
+
 ## Wo wir stehen — 01.09.2026, H5b gebaut: SYS.03 trägt zwei Blöcke
 
 **Branch `phase/h5b-homepage-uplink`, offen als #311, CI grün.** `/` zeichnet
