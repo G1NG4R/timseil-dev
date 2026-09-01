@@ -12,6 +12,174 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 01.09.2026, H5a abgenommen: 10 von 10, gegen Produktion
+
+`fb3330b` / `v0.21.0` läuft. Merge 18:52:28Z, Deploy-Job 18:57:45Z–18:58:16Z,
+neuer Prozess **18:58:01.797Z**. Uhrzeit mit `date -u` gelesen; 18:58 UTC liegt
+weit vom Dokploy-Fenster 23:45–00:00 UTC.
+
+**H5 ist damit zu einem Drittel fertig, nicht fertig.** `SYS.03` und `SYS.04`
+stehen weiter als `[SOON]` auf der Seite — H5b und H5c.
+
+### Der Tausch hatte kein Loch
+
+Zeuge ab 18:53:07Z, also **4:38 vor dem Deploy-Job**, über drei Pfade:
+
+```
+/                   333 Anfragen   333 × 200
+/api/health         333 Anfragen   333 × 200
+/work/timseil-dev   333 Anfragen   333 × 200
+
+✓ every answer was 200
+```
+
+999 Anfragen über 333 Sekunden, **6 der 333 Sekunden ohne Stichprobe**. Der
+Tausch um 18:58:01 liegt im Fenster. Die Einschränkung bleibt die aus H3 und H4:
+„kein Loch gesehen" ist nicht „kein Loch" — der breitere H4-Lauf maß 1 950
+Anfragen, dieser 999.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `fb3330b`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3 und H4 — die laufenden Container tragen exakt die veröffentlichten Digests.
+**Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum vierten Mal nicht. Der `--panel`-Zweig
+bleibt die Reparatur und bleibt ungebaut.
+
+### Die Seite geklickt, an beiden gezeichneten Breiten
+
+```
+/ · /de · /fr             200    SYS.01 SYS.02 SYS.03 SYS.04, aufsteigend
+/work/timseil-dev         200
+/api/systems              200    + 304 auf If-None-Match
+/api/training · /api/docs 200
+
+1440   Raster · Belegzeile 378px · Höhen 76/119 · Überlauf 0
+ 390   Karte  · Belegzeile 330px · Höhen 173/265 · Überlauf 0
+beide  02 SYSTEMS · SOURCE: /api/systems — die 02 aus der Antwort
+       QUEUED ohne Pfeil · LIVE mit Pfeil · genau 1 Link in den Zeilen
+       genau eine `.trn` und eine `.sys` im Dokument — der Tausch ist sauber
+```
+
+**Geklickt, nicht nur gelesen:** der Pfeil landet auf `/work/timseil-dev`,
+Überschrift „This site is the system it describes." Die `queued`-Zeile trägt
+**0** Bedienelemente — kein ausgegrauter Pfeil, wie ADR 0060 §2 es entschieden
+hat.
+
+`/api/systems` liefert `s-maxage=300, stale-while-revalidate=1800` — genau die
+Zahlen, die das `systemList`-Profil von Hand aus dem Contract abgelesen hat.
+Zum ersten Mal gegen Produktion bestätigt statt gegen das Dokument.
+
+### Der Fund der Abnahme: GET und HEAD antworten verschieden
+
+```
+http://timseil.dev/        GET 301   HEAD 308
+https://www.timseil.dev/   GET 301   HEAD 308
+```
+
+Dreimal gemessen, beide Hostnamen, stabil. **Das korrigiert den H4-Fund, statt
+ihn zu bestätigen:** dort stand „das Runbook schreibt 301, Produktion antwortet
+308". Produktion antwortet 301 — auf GET, also auf das, was ein Browser tut. Die
+308 kam aus `curl -I`, und ich hatte HEAD für eine billigere Art gehalten,
+dieselbe Frage zu stellen.
+
+RFC 9110 §9.3.2 sagt, HEAD sei identisch zu GET bis auf den Körper. Zwei
+Statuscodes für eine Weiterleitung sind das nicht. Beide sind permanent, also
+merkt es kein Besucher — aber jedes Werkzeug, das mit HEAD misst, bekommt eine
+andere Antwort als jedes, das mit GET misst, und genau das ist in H4 passiert.
+
+**Die Lehre ist die der H4-Abnahme, eine Ebene tiefer:** dort war der Browser
+das ungeeignete Werkzeug, hier die Methode. Ein Messwert ohne die Methode, mit
+der er entstand, ist kein Messwert.
+
+### `ops.lastDeploy.durationSec` sagt 342 s, der Job lief 31 s
+
+#242, **sechste Sichtung**. Die Reihe ist jetzt 284/22 · 309/31 · 669/31 · 342/31.
+Das Issue trägt „decide with H2", und H2 ist seit drei Phasen abgenommen.
+
+## Als Nächstes — H5b, und was dafür schon entschieden ist
+
+**Der ausführliche Plan liegt außerhalb des Repositories**, unter
+`~/.claude/plans/erstelle-einen-professionellen-und-cached-wren.md`. Er trägt
+alle drei Phasen. Was eine frische Session braucht, steht hier, damit sie nichts
+zweimal herleitet:
+
+**Blätter:** `Homepage` (Zeilen 194–230 Desktop, 402–421 Mobil) und
+`Operation Grid`. Nur diese beiden.
+
+**Keine API-Arbeit.** `/api/contributions` und `/api/systems/{slug}?window=30`
+sind in Contract, Go und SQL fertig. Gemessen, nicht vermutet.
+
+**Vier Dinge, die H5b bauen muss:**
+
+1. **Query-Strings im Transport.** `resolvePath` in `lib/http/url.ts` wirft heute
+   auf jeden Schlüssel, den das Template nicht kennt, und `url.test.ts:140` hält
+   das fest. Die Reparatur ist eine **zweite Option** (`buildQuery` +
+   `GetOptions.search`), nicht ein gelockerter Pfad — der SSRF-Schutz des
+   Pfadsegments bleibt unangetastet.
+2. **`systemCached(slug, window)`** — das Fenster **muss** in den Cache-Schlüssel,
+   sonst liefern Fallstudie (91) und Startseite (30) sich gegenseitig die falsche
+   Antwort. Das ist der wahrscheinlichste Fehler dieser Phase.
+3. **`contributionsCached()`** plus `cacheLife`-Profil `contributions`
+   (3600/3600/7200, aus `CacheControlHour` des Contracts abzulesen). **Drei
+   Zustände, nicht zwei:** kalter `502` („GitHub hat nie geantwortet") ist eine
+   andere Aussage als ein alter Cache mit `cacheAgeSec` — der zeigt die Zahl
+   **mit ihrem Alter**.
+4. **`SITE_SYSTEM_SLUG` in `web/lib/site.ts`**, nicht als Env-Variable; die Datei
+   führt das Argument selbst. Die API hält denselben Wert in `config.go`, und
+   nichts prüft, dass beide übereinstimmen — aufschreiben, nicht wegnehmen.
+
+**Blattkorrekturen, die H5b treffen wird:**
+
+- Das Blatt schreibt `SOURCE /api/health` am Betriebsstreifen. Das ist der
+  Health-Container von vor ADR 0005; richtig ist
+  `/api/systems/{slug}?window=30`. **Neue design-correction — Issue anlegen.**
+- `ZWEI BLÖCKE · JEDER NENNT SEINE QUELLE` und beide Streifen-Bildunterschriften
+  sind deutsch im Artboard. Dritte Instanz von #295.
+- `[PLACEHOLDER DATA]` am Graph entfällt beim API-Anschluss (INDEX-Tabelle).
+- Blatt gegen Blatt: die Startseite sagt „ab 30 Tagen wächst er auf 90", das
+  `Operation Grid` sagt „91, nicht 90". Der Startseiten-Streifen ist einreihig
+  und hängt nicht am Sieben-Raster — 30 bleibt 30, die 91 gehört der Fallstudie.
+
+**`--l0`…`--l4` liegen seit G1 in allen sieben Paletten und haben keinen
+Zeichner.** Der Contribution-Graph ist ihr erster. `case.css:706` erklärt, warum
+das Betriebsraster sie *nicht* geborgt hat.
+
+**Nicht wiederverwenden:** `components/case/OpsGrid.tsx` ist ein
+Sieben-Reihen-Raster mit Kerben-Links. Der Streifen ist einreihig und reine
+Anzeige. Geteilt wird `opsGrid()` aus `lib/api/systems.ts` — die Funktion ist
+fensterunabhängig.
+
+**Was H5a gelernt hat und H5b sofort anwenden sollte:**
+
+- **Das Rig hat keine API**, also steht auf `/` keine gestreamte Zeile im
+  Dokument — auch die Überlaufprüfung sieht sie nicht. Jede Messung an einem
+  API-gestützten Bauteil gehört in die Galerie, und die Vorlage dort trägt die
+  **echten** Daten, nicht handliche.
+- **Gegen den lokalen Produktionsbuild mit laufender API messen**, bevor der PR
+  aufgeht. Die zwei größten Funde aus H5a waren dort und nirgends sonst sichtbar.
+- **Die 560er-Kartenregel ist keine Zusicherung.** Ihre Herleitung rechnet mit
+  gleich breiten Spalten; `.log-row` ist zweispaltig und muss eigens gemessen
+  werden.
+- **Methode zum Messwert dazuschreiben.** GET und HEAD antworten auf dieser Site
+  verschieden, und genau daran ist die H4-Notiz gescheitert.
+
+## Gefunden — aus der H5a-Abnahme
+
+- **GET 301 / HEAD 308 auf beiden Weiterleitungen.** Oben beschrieben. Kein
+  Besucher merkt es; jedes HEAD-Messwerkzeug schon. *(01.09.2026, H5a-Abnahme)*
+- **Der H4-Eintrag „Runbook schreibt 301, Produktion 308" war eine
+  Methoden-Verwechslung** und ist hiermit korrigiert, nicht bestätigt.
+  *(01.09.2026, H5a-Abnahme)*
+- **`/work` ist von der Startseite verschwunden, seit SYS.02 antwortet.** Der
+  Ausgang steht nur im Leerzustand — so entschieden, weil die Zeilen selbst der
+  Weg sind. Die Kopfnavigation trägt ihn weiter. Notiert, weil H6 den Work-Index
+  baut und die Frage dann anders aussieht. *(01.09.2026, H5a-Abnahme)*
+
+---
+
 ## Wo wir stehen — 01.09.2026, H5a gebaut: SYS.02 trägt beide Systeme
 
 **Branch `phase/h5-homepage-systems-and-footer`, nicht gepusht.** `/` listet
