@@ -12,7 +12,88 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 01.09.2026, H3 gebaut: die Startseite hat einen Inhalt
+## Wo wir stehen — 01.09.2026, H3 abgenommen: die Startseite steht, und der Tausch war nicht sauber
+
+**#287 gemergt, `0ad050f` in Produktion.** `/` trägt Hero, Terminal-Rahmen und
+die vier Marker. Die Entwicklungs-Schale aus F1b ist weg — auch aus dem
+Dokploy-Runbook, das sie wörtlich zitiert hat.
+
+### Der Zeuge stand vor dem Tausch, und er hat etwas gefunden
+
+```
+05:55:46Z  merge 0ad050f (#287)      06:00:09Z  deploy-Job startet
+05:56:33Z  Zeuge gestartet           06:00:31Z  deploy-Job fertig, 22 s
+                                     06:00:48Z  neuer web-Prozess
+```
+
+269 Sekunden, eine Anfrage pro Sekunde und Pfad:
+
+```
+/            269 Anfragen   268 × 200   1 × keine Verbindung
+/api/health  269 Anfragen   269 × 200
+
+✗ dieser Lauf zeigt keinen sauberen Deploy
+```
+
+**Der Ausfall liegt bei Anfrage 250**, also etwa 06:00:43Z, und die nächste
+Antwort kommt bei 254. Der Container meldet sich als hochgekommen um
+**06:00:48.417Z** — die beiden Messungen decken sich, und damit ist das Loch der
+Tausch des `web`-Containers und nichts anderes. `api` blieb durchgehend oben,
+weil sein Container in diesem Fenster nicht angefasst wurde.
+
+**Das ist kleiner als der Vorfall, für den `witness.sh` gebaut wurde** — der
+Rollback-Drill vom 22.08. maß rund zehn Sekunden 404 —, aber es ist nicht null,
+und der Zeuge sagt es beim Namen statt es zu runden. Die Frage, ob ein
+Container-Tausch ohne Loch möglich ist (zweite Instanz, `start-first`), gehört
+zu #143 und ist nicht in dieser Phase zu beantworten. **Aufgabe notiert, Zustand
+gehört nicht hierher.**
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `0ad050f`. Die neunte und zehnte über die Panel-API, wie in H2b:
+die laufenden Container tragen exakt die veröffentlichten Digests. **Der Weg
+steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg weiterhin nicht — der `--panel`-Zweig aus
+der H2b-Notiz ist nach wie vor die Reparatur und nach wie vor nicht gebaut.
+
+### Die Seite live, geklickt statt gelesen
+
+```
+/ · /de · /fr        200    SYS.01 SYS.02 SYS.03 SYS.04, aufsteigend
+api-Zeile            ● LIVE  (im Rohtext stehen Platzhalter und Antwort, sichtbar ist die Antwort)
+Sitemap              6 URLs — Startseite und Fallstudie, je drei Sprachen
+Unterressourcen      15, davon 0 nicht 200
+WORK → aus SYS.02    landet auf /work
+bei 1048 px          .hero ist kein Grid mehr, Überlauf 0, H1 62, kein Menüknopf
+```
+
+Der 1080-Schalter ist damit **an der Seite** belegt und nicht nur im Rig.
+
+### Was diese Abnahme nicht behauptet
+
+**Bei 390 wurde in Produktion nicht geklickt.** Das Fenster ließ sich hier nicht
+unter 1048 px verkleinern. Die schmalen Breiten sind gegen denselben Build im Rig
+gemessen — 592 Zusicherungen über zehn Projekte, das coarse-Projekt eingeschlossen
+—, und der Digest belegt, dass es dieselben Bytes sind. Aber gesehen habe ich es
+dort nicht.
+
+**Eine halbe Stunde ging an eine Fehlmessung.** `querySelectorAll(".term")`
+liefert nach dem Streaming-Tausch zwei Treffer, und ich habe den falschen für den
+sichtbaren gehalten und daraus geschlossen, die Seite zeige dauerhaft
+`— NO DATA`. Die Fallstudie zeigt dieselben zwei Treffer und rendert seit zwei
+Tagen korrekt; ein Screenshot hat es in einem Zug beantwortet. **Die Lehre ist
+die des Zeugen, eine Ebene höher: eine Zusicherung über den DOM ist kein Ersatz
+für einen Blick, wenn die Frage lautet, was ein Besucher sieht.**
+
+**`ops.lastDeploy.durationSec` sagt 284 s, der `deploy`-Job lief 22 s.** Das ist
+#242, unverändert offen und jetzt zum zweiten Mal sichtbar: die Zahl misst die
+Pipeline, nicht den Tausch.
+
+---
+
+## Vorher — 01.09.2026, H3 gebaut: die Startseite hat einen Inhalt
 
 **Branch `phase/h3-homepage-hero`, zwölf Commits, nicht gepusht.** `/` trägt
 Hero, Verfügbarkeits-Zeile, Terminal-Platzhalter und die vier Marker `SYS.01`
