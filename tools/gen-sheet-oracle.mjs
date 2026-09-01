@@ -692,6 +692,79 @@ const HOME_MAP = [
     measure: { kind: 'computed', selector: '.sec', prop: 'margin-bottom' }, expect: '34px',
   },
 
+  // ── 1440 · Homepage, artboard 1a · SYS.01 the training log ───────────────
+  //
+  // FIVE OF THESE ARE MEASURED IN THE GALLERY AND NOT ON `/`, which is not a
+  // convenience. This rig runs a production build with no api (playwright.config
+  // .ts says so), SYS.01 is then the outage panel, and the module grid is not in
+  // the document at all — so an entry pointed at `/` would be asserting against
+  // something that is not there. H2b hit the same wall on the operation grid and
+  // gave the same answer: app/dev/components renders every component in every
+  // state from data in the page. The three that CAN stand on `/` do, because the
+  // scale and the section meta are drawn whether or not anything answered.
+  {
+    id: 'home-trn-grid-columns',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 113,
+    decl: 'grid-template-columns', says: 'repeat(6,1fr)',
+    reading: 'six columns, so a card can span two and three cards sit across the content width',
+    measure: { kind: 'track-count', selector: '.trn-grid' }, expect: 6,
+    on: '/dev/components',
+  },
+  {
+    id: 'home-trn-grid-gap',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 113,
+    decl: 'gap', says: '20px',
+    reading: 'and 20px between the cards',
+    measure: { kind: 'computed', selector: '.trn-grid', prop: 'column-gap' }, expect: '20px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-trn-card-span',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 114,
+    decl: 'grid-column', says: 'span 2',
+    reading: 'a module card is two of the six columns wide',
+    measure: { kind: 'computed', selector: '.trn-mod', prop: 'grid-column-start' }, expect: 'span 2',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-trn-card-pad-x',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 114,
+    decl: 'padding', says: '20px 22px',
+    reading: 'a card holds its rows 22px off its own edge',
+    measure: { kind: 'computed', selector: '.trn-mod', prop: 'padding-left' }, expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '22px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'home-trn-row-bleed',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 116,
+    decl: 'margin', says: '0 -8px 4px',
+    reading: 'a track row bleeds 8px into the card padding, so a lit row reads as a band rather than a floating rectangle',
+    measure: { kind: 'computed', selector: '.trn-row', prop: 'margin-left' }, expect: '-8px',
+    on: '/dev/components',
+  },
+  {
+    id: 'home-trn-scale-space',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 157,
+    decl: 'margin-top', says: '26px',
+    reading: 'the scale stands 26px under the last card',
+    measure: { kind: 'computed', selector: '.trn-scale', prop: 'margin-top' }, expect: '26px',
+  },
+  {
+    id: 'home-trn-scale-rule',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 157,
+    decl: 'padding-top', says: '16px',
+    reading: 'over a hairline, with 16px between the rule and the words',
+    measure: { kind: 'computed', selector: '.trn-scale', prop: 'padding-top' }, expect: '16px',
+  },
+  {
+    id: 'home-trn-scale-head',
+    sheet: 'homepage', artboard: '1a', width: 1440, line: 158,
+    decl: 'font', says: "500 9px 'JetBrains Mono',monospace",
+    reading: 'SCALE is the smallest mono step, and the one size on this page the sheet does not draw at half a pixel',
+    measure: { kind: 'computed', selector: '.trn-scale-head', prop: 'font-size' }, expect: '9px',
+  },
+
   // ── 390 · Homepage, artboard 1b ──────────────────────────────────────────
   {
     id: 'home-mobile-h1',
@@ -791,6 +864,11 @@ function build(map, target) {
       measure: entry.measure,
       expect: entry.expect,
       ...(entry.diverges === undefined ? {} : { diverges: entry.diverges }),
+      // Where to measure it, when the page that carries the component cannot
+      // show it. e2e/sheet.ts carries the argument; the short version is that
+      // the rig runs with no api, so a component that only exists once an
+      // answer arrives has to be measured in the gallery or not at all.
+      ...(entry.on === undefined ? {} : { on: entry.on }),
     });
   }
 

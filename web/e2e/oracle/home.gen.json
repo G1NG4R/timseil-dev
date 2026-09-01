@@ -335,6 +335,134 @@
       "expect": "34px"
     },
     {
+      "id": "home-trn-grid-columns",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 113,
+      "width": 1440,
+      "says": "grid-template-columns: repeat(6,1fr)",
+      "reading": "six columns, so a card can span two and three cards sit across the content width",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".trn-grid"
+      },
+      "expect": 6,
+      "on": "/dev/components"
+    },
+    {
+      "id": "home-trn-grid-gap",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 113,
+      "width": 1440,
+      "says": "gap: 20px",
+      "reading": "and 20px between the cards",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-grid",
+        "prop": "column-gap"
+      },
+      "expect": "20px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "home-trn-card-span",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 114,
+      "width": 1440,
+      "says": "grid-column: span 2",
+      "reading": "a module card is two of the six columns wide",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-mod",
+        "prop": "grid-column-start"
+      },
+      "expect": "span 2",
+      "on": "/dev/components"
+    },
+    {
+      "id": "home-trn-card-pad-x",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 114,
+      "width": 1440,
+      "says": "padding: 20px 22px",
+      "reading": "a card holds its rows 22px off its own edge",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-mod",
+        "prop": "padding-left"
+      },
+      "expect": "20px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "22px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "home-trn-row-bleed",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 116,
+      "width": 1440,
+      "says": "margin: 0 -8px 4px",
+      "reading": "a track row bleeds 8px into the card padding, so a lit row reads as a band rather than a floating rectangle",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-row",
+        "prop": "margin-left"
+      },
+      "expect": "-8px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "home-trn-scale-space",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 157,
+      "width": 1440,
+      "says": "margin-top: 26px",
+      "reading": "the scale stands 26px under the last card",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-scale",
+        "prop": "margin-top"
+      },
+      "expect": "26px"
+    },
+    {
+      "id": "home-trn-scale-rule",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 157,
+      "width": 1440,
+      "says": "padding-top: 16px",
+      "reading": "over a hairline, with 16px between the rule and the words",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-scale",
+        "prop": "padding-top"
+      },
+      "expect": "16px"
+    },
+    {
+      "id": "home-trn-scale-head",
+      "sheet": "docs/design/Homepage - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 158,
+      "width": 1440,
+      "says": "font: 500 9px 'JetBrains Mono',monospace",
+      "reading": "SCALE is the smallest mono step, and the one size on this page the sheet does not draw at half a pixel",
+      "measure": {
+        "kind": "computed",
+        "selector": ".trn-scale-head",
+        "prop": "font-size"
+      },
+      "expect": "9px"
+    },
+    {
       "id": "home-mobile-h1",
       "sheet": "docs/design/Homepage - timseil.dev.dc.html",
       "artboard": "1b",

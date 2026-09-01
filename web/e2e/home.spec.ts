@@ -48,17 +48,43 @@ test.describe("HOME.01, on the page rather than in the list", () => {
     ]);
   });
 
-  // Every shell says WHY it is empty. STATE.05: a dead state without a reason
-  // is a bug, and four grey rectangles would satisfy the test above.
+  // Every empty panel says WHY it is empty. STATE.05: a dead state without a
+  // reason is a bug, and four grey rectangles would satisfy the test above.
+  //
+  // THREE SHELLS AND ONE OUTAGE SINCE H4, and the difference between the two
+  // headings is the whole state language rather than bookkeeping. `[SOON]` is a
+  // component that does not exist yet; `— NO DATA` is one that exists and whose
+  // source did not answer. SYS.01 is built, and this rig runs a production
+  // build with NO API — playwright.config.ts says so — so what stands in that
+  // section here is the outage panel, every run.
+  //
+  // That makes this test the one place the rig sees SYS.01's failure path
+  // without arranging anything, which is why the assertion names it rather than
+  // widening to "one of two headings".
   test("every shell says what is missing and why", async ({ page }) => {
     const panels = page.locator("main .st-empty-panel");
     await expect(panels).toHaveCount(4);
 
-    for (let i = 0; i < 4; i++) {
+    await expect(panels.nth(0).locator(".st-empty-head")).toHaveText("— NO DATA");
+    for (let i = 1; i < 4; i++) {
       await expect(panels.nth(i).locator(".st-empty-head")).toHaveText("[SOON]");
-      const reason = await panels.nth(i).locator(".st-empty-reason").innerText();
-      expect(reason.trim().length, `shell ${String(i)} has no reason`).toBeGreaterThan(30);
     }
+
+    for (let i = 0; i < 4; i++) {
+      const reason = await panels.nth(i).locator(".st-empty-reason").innerText();
+      expect(reason.trim().length, `panel ${String(i)} has no reason`).toBeGreaterThan(30);
+    }
+  });
+
+  // The head is inside the streamed region, so it arrives with the answer — and
+  // when there is no answer it still has to name what it was reading. A section
+  // that lost its source line during an outage would be an empty panel with no
+  // way for a reader to check the claim.
+  test("SYS.01 names its source even when nothing answered", async ({ page }) => {
+    const meta = page.locator("main .sec-meta").first();
+    await expect(meta).toContainText("SOURCE: /api/training");
+    // Invariant 1 where a count belongs: `0 TRACKS` would be a measurement.
+    await expect(meta).toContainText("— NO DATA TRACKS");
   });
 });
 

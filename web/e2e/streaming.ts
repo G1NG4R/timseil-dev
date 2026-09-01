@@ -67,7 +67,15 @@ export const CASE_REGIONS = [
  * fallback and the answer both render — that is the seam ADR 0044 describes,
  * and it is the boundary React actually swaps.
  */
-export const HOME_REGIONS = [".term"] as const;
+export const HOME_REGIONS = [
+  ".term",
+  // H4, and the line the comment above predicted for the case study — the same
+  // sentence applies here: when a phase puts a section behind its own boundary,
+  // this list is what grows. `.trn` is the whole of SYS.01 including its head,
+  // because the head carries the answer's own counts and cannot be rendered
+  // before the answer is.
+  ".trn",
+] as const;
 
 /**
  * The page after streaming has settled.
