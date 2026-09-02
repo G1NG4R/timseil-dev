@@ -83,20 +83,28 @@ export function systemWord(status: unknown): Extract<StateWord, "live" | "degrad
  * all. A system can be `live` and momentarily degraded, and neither field knows
  * the other's answer.
  *
- * `in_build` HAS NO WORD YET, AND THAT IS DELIBERATE. The vocabulary in
- * lib/state/words.ts holds eight entries and none of them means "being built";
- * the label IN BUILD is drawn on the Work Index sheet, which INDEX.md assigns to
- * H6 — the phase where all three system states stand next to each other and a
- * ninth mark can be given a tone, a dot and a dictionary key with a sheet behind
- * each. Inventing one here would be a state nobody has seen, for a system that
- * does not exist: the seed holds one `live` and one `queued` row.
+ * `in_build` HAS A WORD SINCE H6, AND THE WAIT WAS THE POINT — #289. For five
+ * phases this function answered `null` for the contract's third value and every
+ * row that met one read `— NO DATA`, which was the true statement "this page
+ * cannot say". H6 is the phase where all three system states stand next to each
+ * other on one page under a legend that defines them, so the ninth mark could
+ * be given a tone, a dot and a dictionary key with something behind each
+ * instead of a guess. lib/state/words.ts carries the argument for the mark it
+ * got, which is QUEUED's mark with a different word.
  *
- * `null` is therefore "this page has no word for that", and callers render it
- * the way components/FooterMeta.tsx already renders an unknown status — as
- * `— NO DATA` rather than as a guess.
+ * THIS FUNCTION STILL REFUSES, AND THAT HAS NOT MOVED. It maps the three values
+ * the contract enumerates and nothing else. ADR 0035's overlapping start means
+ * the bytes on the wire can be a build older or newer than this one, so a
+ * fourth value is `null` — "this page has no word for that" — and callers
+ * render it the way components/FooterMeta.tsx already renders an unknown
+ * status: as `— NO DATA` rather than as a guess. What shrank is the set of
+ * values that reach that branch, not the branch.
  */
-export function systemStateWord(state: unknown): Extract<StateWord, "live" | "queued"> | null {
+export function systemStateWord(
+  state: unknown,
+): Extract<StateWord, "live" | "in_build" | "queued"> | null {
   if (state === "live") return "live";
+  if (state === "in_build") return "in_build";
   if (state === "queued") return "queued";
   return null;
 }

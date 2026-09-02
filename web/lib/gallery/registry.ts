@@ -136,9 +136,15 @@ export const PARTS: readonly Part[] = [
       "control that stays pressed, and the Homepage sheet draws no such state " +
       "for it either. `disabled (queued)` is built as an ABSENT exit rather " +
       "than a greyed-out one — STATE.05 refuses a dead control, and the state " +
-      "column already says QUEUED beside it. The hover has no preview: the " +
-      "inventory's brackets belong to the Work Index in H6, where a row has " +
-      "somewhere to preview from.",
+      "column already says QUEUED beside it. The hover has no preview, and H6 " +
+      "settled where that belongs: the Work Index row has the reserved column " +
+      "layout.css has held since G1, and this row does not. " +
+      "THE INVENTORY SAYS `SYS.02, work` AND H6 BUILT TWO COMPONENTS, which is " +
+      "the disagreement this note now carries. The two rows share a judgement " +
+      "and not a grid — six tracks against six different ones, a figure column " +
+      "here and none there — so what is shared lives in lib/api/systems.ts and " +
+      "lib/home/systems.ts, where both read it, rather than in one component " +
+      "with a flag deciding which page it is on.",
   },
   {
     id: "ModuleCard",

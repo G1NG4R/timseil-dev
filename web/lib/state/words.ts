@@ -39,7 +39,7 @@ export type DayState = components["schemas"]["DayState"];
 export type TrackState = components["schemas"]["TrackState"];
 
 /**
- * The seven words, with exactly one meaning each.
+ * The words, with exactly one meaning each.
  *
  * The two pairs that get confused, both settled by the sheet:
  *
@@ -54,9 +54,20 @@ export type TrackState = components["schemas"]["TrackState"];
  * And the one that is not a state: QUEUED means planned and not yet built. It
  * carries `— NO DATA`, never DEGRADED — there nothing runs yet, here something
  * runs badly.
+ *
+ * STATE.05 SAYS SEVEN AND THIS SAYS EIGHT, WHICH IS #289 AND NOT A DRIFT. The
+ * sheet's seven cover what this site can say about a system it is *delivering*;
+ * `in_build` is a third value of the contract's `SystemState`, and until H6 no
+ * page had all three side by side, so `systemStateWord` answered `null` for it
+ * and a row read `— NO DATA`. That was the true statement "this page cannot
+ * say" and it stopped being true the moment the Work Index drew a legend that
+ * defines the word. The eighth is added here rather than in the sheet's
+ * transcription, because the transcription is evidence and this is a decision —
+ * the same split `lib/gallery/registry.ts` keeps between `states` and `note`.
  */
 export type StateWord =
   | "live"
+  | "in_build"
   | "online"
   | "degraded"
   | "offline"
@@ -65,7 +76,7 @@ export type StateWord =
   | "available";
 
 /**
- * `nodata` is in the table but not in the seven, and the distinction is the
+ * `nodata` is in the table but not among the words, and the distinction is the
  * point: it is not a state a system is in, it is what this page says when it
  * cannot tell. Invariant 1 lives in that sentence.
  */
@@ -172,6 +183,37 @@ export const MARKS: Record<StateKey, StateMark> = {
     answer: "measured-good",
     dot: "solid",
     pulse: true,
+  },
+
+  // It runs, and not yet for anyone else. The third value of the contract's
+  // `SystemState`, and the one that had no word until H6 — #289.
+  //
+  // IT SHARES ITS TONE AND ITS FILL WITH QUEUED, AND THAT IS THE DECISION.
+  // Neither is measured — the contract guarantees `null` in every metric field
+  // for anything that is not `live`, in SQL rather than in Go — so `DOT_ANSWER`
+  // leaves exactly one fill available to both. Giving this one a fifth tone to
+  // separate them would have pushed tones and states towards the one-to-one
+  // correspondence that words.test.ts exists to refuse: at that point the
+  // palette IS the vocabulary and every second feature in this file is
+  // decoration.
+  //
+  // What separates them is therefore the word, and a word is a whole feature —
+  // it survives a greyscale screenshot, a palette swap and a screen reader,
+  // which is more than any dot does. The difference between IN BUILD and QUEUED
+  // is not a measurement, it is a plan; nothing measured it, so nothing about
+  // the mark may claim otherwise.
+  //
+  // THE SHEET DISAGREES AND IS RECORDED RATHER THAN FOLLOWED. The Work Index
+  // legend paints BUILD in #B9C6D4, a value that appears nowhere else on the
+  // sheet and in no token. ADR 0055's rule settles it: where the drawing and
+  // the delivered stylesheet disagree, the stylesheet is right.
+  in_build: {
+    label: "IN BUILD",
+    messageKey: "stateInBuild",
+    tone: "dim",
+    answer: "unmeasured",
+    dot: "dash",
+    pulse: false,
   },
 
   // This page is being delivered. The dot in the meta bar of every page.

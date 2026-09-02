@@ -46,6 +46,15 @@ import "../../styles/case.css";
 // sentence predicts, by a sheet-oracle entry reading `display: block` off a
 // grid.
 import "../../styles/home.css";
+// H6, and the rule above caught it a second time within one phase. The gallery
+// draws the whole Work Index — it is the only place in this rig where a row is
+// in the document at all — so it needs work.css, in the site's own position
+// between home.css and layout.css. Built without this line first, and the
+// measurement said `display: list-item` where the page says `grid`: the
+// preview column never appeared, the name column never grew, and every number
+// taken off it would have been a number about a page that does not exist.
+// `012-the-preview-had-a-shorter-cascade-than-the-page.mdx` is that post.
+import "../../styles/work.css";
 import "../../styles/gallery.css";
 import "../../styles/layout.css";
 

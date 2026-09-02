@@ -29,6 +29,7 @@ export const CASE_REGIONS = [
   ".ops-live",
 ] as const;
 
+
 /**
  * The page after streaming has settled.
  *
@@ -98,6 +99,23 @@ export const HOME_REGIONS = [
   // there when the wait begins is a wait that returns immediately and an
   // assertion that holds whatever happened.
 ] as const;
+
+/**
+ * The work index's, since H6. ONE REGION, because the page asks the api one
+ * question and puts the answer in one place.
+ *
+ * `.work-count` AND NOT `.work-list`. The list is the `<ol>`, which does not
+ * exist when the read failed — and in this rig it never does, because there is
+ * no api. The counter is rendered by the same component in both states, so it
+ * is the element that answers "the region arrived" rather than "the region
+ * arrived and had rows in it". That is the same call `.upl-ops` makes one page
+ * over, for the same reason.
+ *
+ * The legend and the contact line are deliberately absent: both are prerendered
+ * into the static shell because neither reads anything, so a wait on either
+ * would return before the stream began.
+ */
+export const WORK_REGIONS = [".work-count"] as const;
 
 /**
  * The page after streaming has settled.

@@ -48,6 +48,9 @@ export const CASE_STUDY = "/work/timseil-dev";
 /** The homepage. H3 — the second route with a spec of its own. */
 export const HOME = "/";
 
+/** The work index. H6 — the third. */
+export const WORK = "/work";
+
 /**
  * Where the two-column rows collapse, from the Intermediate Widths sheet.
  *
@@ -172,3 +175,34 @@ export const HOME_DRAWN_WIDTHS = [1440, 390] as const;
  * the stylesheet and not about the fixture.
  */
 export const HOME_SWITCHES = [1080, 900, 720, 560] as const;
+
+/**
+ * The widths a sheet draws the WORK INDEX at. Three, like the case study and
+ * unlike the homepage: the Work Index sheet draws 1440 and 390, and the
+ * Intermediate Widths sheet adds a 1024 frame of its own — "1024 · Work Index —
+ * Vorschauspalte weg, Name gewinnt 154px", which is the frame that annotates
+ * the five-track rebuild.
+ */
+export const WORK_DRAWN_WIDTHS = [1440, 1024, 390] as const;
+
+/**
+ * Where `/work` changes shape. THREE OF THE FOUR, and the missing one is a fact
+ * about this rig rather than about the page.
+ *
+ * 1080 collapses the header grid — the deck and the four stat tiles stop being
+ * two columns. 900 is the chrome, ADR 0044. 720 drops the display step to 34.
+ *
+ * 560 IS NOT HERE BECAUSE NOTHING ON THIS PAGE ANSWERS TO IT, and that is H5a's
+ * finding for `.sys-row` arriving at the second row on this site: the rig runs
+ * a production build with NO API — playwright.config.ts says so — and a system
+ * list with no answer renders an EmptyState rather than rows. `.work-row` is
+ * therefore never in the document on `/work`, at any width.
+ *
+ * AND THE ROW'S OWN SWITCHES ARE MEASURED WHERE IT EXISTS. H6 moved
+ * `.work-row` off 560 and onto 900 after measuring it — layout.css carries the
+ * arithmetic — so the row has two switches, 1080 and 900, and both are checked
+ * in e2e/gallery.work.spec.ts against the only rows this rig can produce. A
+ * fourth entry in this list would report "there is no api here" and call it a
+ * missing switch.
+ */
+export const WORK_SWITCHES = [1080, 900, 720] as const;

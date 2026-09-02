@@ -75,16 +75,13 @@ describe("the two subjects one answer can be about", () => {
 });
 
 describe("systemStateWord reads a system's own record", () => {
-  it("maps the two states this site holds rows for", () => {
+  it("maps every state the contract enumerates", () => {
+    // Transcribed from `SystemState` in contract/openapi.yaml. The seed holds
+    // rows for two of the three; the third is here because the enum is, and
+    // because H6's legend defines a word the page then has to be able to draw.
     assert.equal(systemStateWord("live"), "live");
+    assert.equal(systemStateWord("in_build"), "in_build");
     assert.equal(systemStateWord("queued"), "queued");
-  });
-
-  // Not an omission. The vocabulary has no word for it, IN BUILD is drawn on
-  // the Work Index sheet, and H6 is the phase that gives it a tone, a dot and a
-  // dictionary key. A ninth mark invented here would be a state nobody has seen.
-  it("has no word for in_build yet, and says so with null", () => {
-    assert.equal(systemStateWord("in_build"), null);
   });
 
   it("guesses at nothing", () => {

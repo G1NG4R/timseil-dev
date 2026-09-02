@@ -526,15 +526,37 @@ describe("what the system list says when it is broken", () => {
     ]);
   });
 
-  // #289. `in_build` is a state the contract declares and this site has no word
-  // for; the row must say so rather than guess. A row that rendered IN BUILD
-  // here would be a word nobody has drawn a tone, a dot or a dictionary key for.
-  it("has no state word for in_build, and does not invent one", () => {
+  // #289, closed in H6. For five phases this asserted `null` — the contract
+  // declared `in_build`, the vocabulary had no word for it, and the row said
+  // `— NO DATA` rather than guessing. The Work Index is the page that draws a
+  // legend defining all three system states, so the word got a tone, a dot and
+  // a dictionary key and the row can carry it.
+  it("carries the state word for in_build now that one exists", () => {
     const rows = systemRows({
       systems: [{ slug: "vat-check", state: "in_build" }],
     } as unknown as SystemList);
 
-    assert.equal(rows[0].state, null);
+    assert.equal(rows[0].state, "in_build");
+  });
+
+  // AND THE REFUSAL IS STILL THE POINT, which is why the test above did not
+  // simply move. What #289 bought was one more mapped value, not permission to
+  // pass a row's state through. ADR 0035's overlapping start means the wire can
+  // carry a build's vocabulary that this one does not have, and a fourth value
+  // is `— NO DATA` rather than a word this page cannot draw.
+  it("still refuses a state the contract does not enumerate", () => {
+    const rows = systemRows({
+      systems: [
+        { slug: "a", state: "building" },
+        { slug: "b", state: "IN_BUILD" },
+        { slug: "c", state: "archived" },
+      ],
+    } as unknown as SystemList);
+
+    assert.deepEqual(
+      rows.map((row) => row.state),
+      [null, null, null],
+    );
   });
 
   // A public source with no address is a link to nowhere, and a private one with

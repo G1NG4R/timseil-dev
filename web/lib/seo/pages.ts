@@ -37,7 +37,7 @@ import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
  *  fills the page and flips the boolean in the same commit. */
 const FIXED_PAGES = [
   { path: "/", indexable: true },
-  { path: "/work", indexable: false }, // H6
+  { path: "/work", indexable: true },
   { path: "/blog", indexable: false }, // H9
   { path: "/about", indexable: false }, // H7
   { path: "/contact", indexable: false }, // H8
@@ -59,11 +59,13 @@ export interface PageEntry {
  * once in content/case-studies — and the second copy is the one that would be
  * forgotten. The registry is therefore the source, and this table reads it.
  *
- * A CASE STUDY IS INDEXABLE AND `/work` IS NOT, which looks backwards for one
- * phase and is not: `/work` is still the `[SOON]` stub H6 replaces, and a
- * crawler that read it would file `WORK [SOON]` as what this site has to say
- * about its work. The case study has something to say, so it says it. The two
- * flip independently because the boolean is per row.
+ * A CASE STUDY WAS INDEXABLE BEFORE `/work` WAS, which looked backwards for
+ * five phases and was not: `/work` was the `[SOON]` stub until H6, and a
+ * crawler that read it would have filed `WORK [SOON]` as what this site has to
+ * say about its work. The case study had something to say, so it said it. The
+ * two flipped independently because the boolean is per row, and H6 flipped the
+ * second of them — app/sitemap.ts picked the page up out of the same boolean
+ * with no edit, which is the whole reason there is one table and not two.
  */
 export const PAGES: readonly PageEntry[] = [
   ...FIXED_PAGES,

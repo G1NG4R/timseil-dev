@@ -8,7 +8,7 @@
 // changes when H9 gives the log a renderer.
 
 import { padTwo } from "../api/values.ts";
-import { POSTS_DIR, readPosts, type PostMeta, type PostRead } from "../content/posts.ts";
+import { postsOrNull, type PostMeta, type PostRead } from "../content/posts.ts";
 import { NO_DATA } from "../state/words.ts";
 
 /**
@@ -73,15 +73,12 @@ export function logMeta(read: PostRead | null): string {
  * since the hero, and the first the end-to-end rig can see with real content in
  * it — components/home/Log.tsx carries what that is worth.
  *
- * THE `catch` IS NOT DECORATION. It is the difference between `LATEST 00` and
- * `— NO DATA`: a directory that is missing from the image reports itself instead
- * of claiming the log is empty. That is the failure `outputFileTracingIncludes`
- * exists to prevent, and this is what the page looks like if it ever happens.
+ * THE `try` MOVED DOWN A LEVEL IN H6 AND THE ARGUMENT DID NOT. `/work` counts
+ * entries per system, so a second page now makes this read; `postsOrNull` in
+ * lib/content/posts.ts is that one judgement, and this stays the homepage's
+ * name for it. What remains here is what is about a SECTION rather than about a
+ * directory — how many rows SYS.04 draws, and what its head says.
  */
 export function homePosts(): PostRead | null {
-  try {
-    return readPosts(POSTS_DIR);
-  } catch {
-    return null;
-  }
+  return postsOrNull();
 }

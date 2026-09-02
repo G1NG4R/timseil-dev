@@ -15,10 +15,10 @@
  * where they are.
  *
  * WHAT IS ASSERTED HERE THAT IS NOT ASSERTED ANYWHERE ELSE: that a row with
- * nowhere to go has NO control rather than a disabled one, and that a state the
- * contract declares and this site has no word for reads `— NO DATA`. Neither is
- * reachable in production — the seed holds one live and one queued system, and
- * nothing is `in_build`.
+ * nowhere to go has NO control rather than a disabled one, and that the third
+ * value of the contract's `SystemState` draws its word and the mark that says
+ * nothing measured it. Neither is reachable in production — the seed holds one
+ * live and one queued system, and nothing is `in_build`.
  */
 import { expect, test } from "@playwright/test";
 
@@ -56,24 +56,27 @@ test("a row with nowhere to go carries no control at all", async ({ page }) => {
 // The state column is what says WHY the row above has no arrow, and it has to
 // say it in a word rather than in the absence of one.
 test("the state column carries a word for every row", async ({ page }) => {
-  await expect(page.locator(`${ROWS} .sys-state`)).toHaveText([
-    "QUEUED",
-    "LIVE",
-    "— NO DATA",
-  ]);
+  await expect(page.locator(`${ROWS} .sys-state`)).toHaveText(["QUEUED", "LIVE", "IN BUILD"]);
 });
 
-// #289, and the reason the third fixture row exists. `in_build` is in the
-// contract, lib/state/words.ts has no word for it, and H6 owes the ninth mark.
-// Inventing IN BUILD here would be a word with no tone, no dot and no
-// dictionary key behind it.
-test("a state this site has no word for reads — NO DATA, not a guess", async ({ page }) => {
+// #289, closed in H6, and the reason the third fixture row has existed since
+// H5a. Until this phase the assertion here was `— NO DATA`: the contract
+// declared `in_build`, the vocabulary had no word for it, and inventing one
+// would have been a word with no tone, no dot and no dictionary key behind it.
+// The Work Index draws a legend that defines all three system states, so the
+// word now has all three and the row carries it.
+test("the state the seed cannot produce is drawn, not excused", async ({ page }) => {
   const row = page.locator(ROWS).nth(2);
 
-  await expect(row.locator(".sys-state")).toHaveText("— NO DATA");
-  // And no dot beside it. `— NO DATA` is the absence of a state rather than one
-  // of them, so there is nothing for a mark to mark.
-  await expect(row.locator(".sys-state .st-dot")).toHaveCount(0);
+  await expect(row.locator(".sys-state")).toHaveText("IN BUILD");
+
+  // AND THE DOT SAYS UNMEASURED, WHICH IS THE HALF WORTH ASSERTING. IN BUILD
+  // and QUEUED carry the same mark on purpose — nothing is measured in either,
+  // so `DOT_ANSWER` leaves one fill open to both and the word is what tells
+  // them apart. A dot that filled in here would be claiming a measurement of a
+  // system that is not running.
+  await expect(row.locator(".sys-state .st-dot")).toHaveAttribute("data-dot", "dash");
+  await expect(row.locator(".sys-state [data-tone]")).toHaveAttribute("data-tone", "dim");
 });
 
 // Every value in the row is readable at rest. This is SkillRow's finding from

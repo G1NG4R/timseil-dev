@@ -1,0 +1,442 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   H6 · /work — the Work Index
+
+   NO MEDIA QUERY IN THIS FILE. `.work-row`'s three switches have been in
+   layout.css since G1 — six tracks at 1080, five below it, a stack at the
+   bottom end — and this is the phase that finally gives them a component to
+   move. That file owns every switch on this site; this one owns none, which is
+   the rule home.css and case.css already follow.
+
+   THE LITERALS ARE THE SHEET'S COLUMN WIDTHS AND TWO TYPE SIZES, the same class
+   home.css names for `.sys-row`: measurements of one component, which
+   check-tokens.sh does not police and invariant 8 does not cover. Colours,
+   radii and durations all come from tokens.css, which is the half it does.
+
+   THE TWO TYPE SIZES NEED THEIR OWN SENTENCE, because type sizes ARE tokenised.
+   The sheet draws the row title at 20px in the display face and the deck at
+   13.5px in the body face; the display scale is 26 · 34 · 52 · 62 · 108 and the
+   body scale is 13 · 15 · 16.5. Neither has a step to round DOWN to — rounding
+   the title up to 26 would make a row title larger than the page's own deck.
+   `.sys-name` hit this exact wall in H5a and wrote 19px, chrome.css hit it
+   twice in G3 (25px, 21px), so this is the fourth and fifth consumer of a
+   decision the shipped stylesheet has been making since G3 rather than a new
+   one.                                                                       */
+
+/* ── The head ────────────────────────────────────────────────────────────── */
+
+/* A rail in the HEAD and nowhere else, which is why `.rail` and its sticky rule
+   are not involved. The Intermediate Widths register lists every two-column row
+   on this site and the work page contributes only `Work-Zeile`; this strip
+   stops where the header stops. */
+.work-head {
+  padding-block: var(--s-56) var(--s-44);
+}
+
+@media (min-width: 1080px) {
+  .work-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: var(--s-72);
+    align-items: end;
+  }
+}
+
+.work-eyebrow {
+  margin: 0 0 var(--s-20);
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+}
+
+/* THE MARKER IS FULL ACCENT AND THE SHEET DRAWS IT AT rgba(0,229,255,.55),
+   which is the correction `.sys-no` already made and axe already found once.
+   `--acc-edge` is that exact value, it is a BORDER colour, and over `--bg` it
+   reads 4.37:1 — under the 4.5 WCAG asks of text. `.sec-id` uses `--acc` for
+   the same marker one page over. */
+.work-marker {
+  color: var(--acc);
+}
+
+/* K-08 AND `:where()` FOR case.css's REASON, which is worth reading before
+   anybody "tidies" this into a class. The two H1 steps are 62 for the homepage
+   and About and 52 everywhere else; globals.css sets 62 on the element and
+   layout.css drops it to 34 below 720. A CLASS here would beat both, and the
+   page would keep 52 on a phone. `:where()` contributes no specificity, so
+   source order decides: globals (62) → work (52) → layout (34 under 720),
+   which is the import order app/[lang]/layout.tsx documents. */
+:where(.work-head) h1 {
+  font-size: var(--t-disp-52);
+  margin: 0 0 var(--s-20);
+  text-wrap: pretty;
+}
+
+/* 58ch is the sheet's, and it is a measure rather than a width: the deck is one
+   paragraph of body text and the reading measure this site uses everywhere else
+   is 68 characters. Narrower here because the paragraph sits beside a 420px
+   rail rather than alone. */
+.work-deck {
+  margin: 0;
+  max-inline-size: 58ch;
+  font: 400 var(--t-body-15)/var(--lh-body) var(--body);
+  color: var(--steel);
+}
+
+/* FOUR TILES WHEN THERE ARE FOUR COUNTS AND ONE WHEN THERE ARE NONE. The
+   component decides which; this only has to stop reserving four tracks for a
+   single `— NO DATA`, which at 390 is 130px of non-wrapping mono in a 76px
+   column. */
+.work-stats {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-16);
+  margin: var(--s-34) 0 0;
+  padding-block-end: var(--s-6);
+}
+
+.work-stats[data-counted] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (min-width: 1080px) {
+  .work-stats {
+    margin-block-start: 0;
+  }
+}
+
+.work-stat {
+  padding-inline-start: var(--s-14);
+  border-inline-start: 1px solid var(--line-strong);
+}
+
+/* The live tile carries the accent on its rule and its number, which is the one
+   place the sheet lets a count be coloured. It is not a state word — the word
+   is in the legend and in the rows — so it takes no dot and makes no claim
+   beyond "this many". */
+.work-stat[data-stat="live"] {
+  border-inline-start-color: var(--acc-line);
+}
+
+.work-stat[data-stat="live"] dd {
+  color: var(--acc);
+}
+
+.work-stat dt {
+  margin: 0 0 var(--s-8);
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.work-stat dd {
+  margin: 0;
+  font: 500 var(--t-disp-26)/1 var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ── The counter ─────────────────────────────────────────────────────────── */
+
+/* EVERY NUMBER ON THIS PAGE IS TABULAR, which is a rule the sheet applies to
+   the clock, the four tiles, the counter and both metric values. It is what
+   keeps a count from shifting sideways as it changes — and in H6b this line
+   changes on every chip press. */
+.work-count {
+  margin: 0;
+  padding-block: var(--s-12) var(--s-6);
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+  border-block-end: 1px solid var(--line);
+}
+
+/* ── The row ─────────────────────────────────────────────────────────────── */
+
+.work-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* The grid itself is layout.css's — six tracks over 1080, five below, a stack
+   under the last switch. What is here is everything that does not change with
+   the width. */
+.work-row {
+  display: grid;
+  gap: var(--s-26);
+  align-items: center;
+  padding: var(--s-26) var(--s-8);
+  border-block-end: 1px solid var(--line-soft);
+}
+
+/* THE HOVER IS TWO MARKS AND NOT ONE, the rule `.sys-row` states and this row
+   inherits: the inset bar is what a reader sees at a glance and the panel fill
+   confirms it. Neither carries information the row does not already print.
+
+   `background-color` AND NOT `background`, because the shorthand would reset
+   `background-image` — written the safe way here for the same reason it is
+   there, so the next person to add a gradient does not have to find out. */
+.work-row:hover {
+  background-color: var(--panel-active);
+  box-shadow: inset 2px 0 0 var(--acc);
+}
+
+.work-no {
+  font: 500 var(--t-mono-12)/1 var(--mono);
+  color: var(--acc);
+}
+
+.work-id {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-inline-size: 0;
+}
+
+.work-namebar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-12);
+}
+
+/* UPPERCASED HERE AND NOT IN THE DATA. The sheet writes `TIMSEIL.DEV` and the
+   api answers `timseil.dev`; the answer is the name of the system and the case
+   is a drawing decision. `.sys-name` makes the same split. */
+.work-name {
+  font: 500 20px/1.2 var(--display);
+  letter-spacing: .02em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+/* THE ONE ALERT-RED MOMENT ON THIS PAGE. STATE.05 allows exactly one per page
+   and the sheet spends it here: "Ein Alert-Moment: die Marke YOU ARE HERE auf
+   Zeile 02". It is a statement about where the reader is standing, not a state
+   of the system, so it is a badge rather than a `StateWord` and carries no dot. */
+.work-here {
+  padding: 2px var(--s-6);
+  font: 600 var(--t-mono-9)/1.4 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--alert);
+  border: 1px solid color-mix(in srgb, var(--alert) 35%, transparent);
+}
+
+.work-blurb {
+  font: 400 var(--t-body-13)/var(--lh-body) var(--body);
+  color: var(--steel);
+}
+
+.work-stack,
+.work-source,
+.work-log {
+  font: 500 var(--t-mono-9)/1.6 var(--mono);
+  letter-spacing: .1em;
+  color: var(--dim);
+}
+
+.work-source {
+  color: var(--ink-2);
+}
+
+/* The log line is the accent at reduced weight, which is what the sheet gives
+   its cross-links — and it is NOT a link. lib/work/log.ts holds the argument:
+   `/blog/<slug>` is a 404 until H9, and evidence never points into nothing. */
+.work-log {
+  color: var(--acc);
+}
+
+/* ── The figure ──────────────────────────────────────────────────────────── */
+
+.work-figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.work-figure-label {
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+/* THE VALUE AND `— NO DATA` SHARE A SIZE AND A FACE, so the column does not
+   jump between a row that has a measurement and one that is waiting for one.
+   The sheet measures the placeholder at 120px in 15px mono, which is where the
+   132px track in layout.css comes from — change the string and that number has
+   to be derived again. 15px is not on the mono scale (9 · 10 · 11 · 12 · 13),
+   so this is the `mono-scale` rounding: down to 13. */
+.work-figure-value {
+  font: 500 var(--t-mono-13)/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ── The state ───────────────────────────────────────────────────────────── */
+
+/* The size is this row's; the COLOUR is the state language's and is not written
+   here. `.st-word` takes `--st-color` from the `[data-tone]` StatusDot sets, so
+   a state cannot be one colour in a row and another in the legend under it. */
+.work-state .st,
+.work-state .st-nodata-text {
+  font: 600 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+}
+
+/* ── The preview ─────────────────────────────────────────────────────────── */
+
+/* A FRAME, NOT A PICTURE, and ADR 0058 is why it is built at all rather than
+   left as an empty reserved track — "a component of a later stage is built as a
+   surface". K2 replaces the contents; the column does not move.
+
+   THE OPACITY MAY CARRY THE HOVER because there is no information in here.
+   H4's rule is that INFORMATION never lives in opacity alone, and every fact
+   about the system is in the five cells beside this one. layout.css says the
+   same in three words: "its preview is decoration". */
+.prev {
+  position: relative;
+  display: block;
+  block-size: 76px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  opacity: .28;
+  transition: opacity var(--d-color) linear;
+}
+
+.work-row:hover .prev {
+  opacity: 1;
+}
+
+/* A coarse pointer has no hover, so there is nothing to reveal and .28 would be
+   a permanent dimming with no way out of it. layout.css hides this column below
+   1080 and under `pointer: coarse` outright; this covers the case neither
+   catches — a touch screen wider than 1080. */
+@media (pointer: coarse) {
+  .prev {
+    opacity: 1;
+  }
+}
+
+.prev-hatch {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--acc-pulse-2) 0 1px,
+    transparent 1px 7px
+  );
+}
+
+.prev-bar {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  block-size: 13px;
+  padding-inline-start: 5px;
+  border-block-end: 1px solid var(--line);
+}
+
+.prev-bar span {
+  inline-size: 3px;
+  block-size: 3px;
+  border-radius: var(--radius-dot);
+  background: var(--line-strong);
+}
+
+.prev-label {
+  position: absolute;
+  inset-block-end: var(--s-14);
+  inset-inline: 0;
+  text-align: center;
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: .1em;
+  color: var(--steel);
+}
+
+/* ── The exit ────────────────────────────────────────────────────────────── */
+
+/* A row with nowhere to go carries no control at all — the cell stays so the
+   grid keeps its track, and it is empty. STATE.05 refuses a dead control and
+   the state column beside it already says why. */
+.work-exit a {
+  font: 400 var(--t-mono-13)/1 var(--mono);
+  color: var(--steel);
+  text-decoration: none;
+  transition: color var(--d-color) linear;
+}
+
+.work-exit a:hover {
+  color: var(--acc);
+}
+
+/* ── The legend ──────────────────────────────────────────────────────────── */
+
+.work-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--s-26);
+  flex-wrap: wrap;
+  margin-block-start: var(--s-72);
+  padding: var(--s-26);
+  background-color: var(--panel);
+  border: 1px solid var(--line-soft);
+}
+
+.work-legend-body {
+  flex: 1 1 20rem;
+}
+
+.work-legend-kicker {
+  margin: 0 0 var(--s-8);
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+}
+
+/* 64ch, the sheet's, and under the 68 this site reads at elsewhere: the block
+   is a definition rather than prose to be read at length. */
+.work-legend-text {
+  margin: 0;
+  max-inline-size: 64ch;
+  font: 400 var(--t-body-13)/1.6 var(--body);
+  color: var(--ink-2);
+}
+
+.work-legend-exit {
+  padding: var(--s-10) var(--s-16);
+  font: 600 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+  text-decoration: none;
+  border: 1px solid var(--acc-line);
+  transition: background-color var(--d-color) linear;
+}
+
+.work-legend-exit:hover {
+  background-color: var(--acc-pulse-2);
+}
+
+/* ── The way to a conversation ───────────────────────────────────────────── */
+
+/* Routes gap #06. The sheet draws this sentence with no link; the Routes matrix
+   records the cross-reference as existing. components/work/WorkContact.tsx
+   carries the argument for building what the matrix says. */
+.work-contact {
+  margin-block: var(--s-44) 0;
+  max-inline-size: 52ch;
+  font: 400 var(--t-body-13)/1.65 var(--body);
+  color: var(--ink-2);
+}
+
+.work-contact a {
+  color: var(--acc);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--d-color) linear;
+}
+
+.work-contact a:hover {
+  color: var(--acc-hi);
+}

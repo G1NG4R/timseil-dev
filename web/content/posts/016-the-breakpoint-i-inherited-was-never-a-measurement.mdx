@@ -1,0 +1,127 @@
+---
+title: 'The breakpoint I inherited was never a measurement'
+deck: 'A stylesheet had held a rule for one row since the first styling phase. Nobody had ever held it against the row — and when I finally did, it was wrong by 220 pixels and hiding a second bug on a page I had already shipped.'
+published: 2026-09-02
+tags: ['css', 'layout', 'testing']
+systemId: 'timseil-dev'
+summary: |
+  My layout stylesheet declared four breakpoints and one rule for a table row
+  that no component had ever rendered. Building that component was supposed to
+  be the easy half of the phase. Measuring it moved the rule two switches, and
+  the same measurement found the neighbouring row — live on my homepage for two
+  phases — drawing centred cards on a phone.
+---
+
+Nine months ago I wrote a stylesheet for a page that did not exist yet.
+
+Not carelessly. The design handoff draws ten pages, and the phase that turned
+its foundations into CSS wrote down every switch the whole site would need in
+one file, so that no component could later invent a fifth. That file has carried
+this rule ever since:
+
+```css
+@media (max-width: 559px) {
+  .work-row, .log-row { display: flex; flex-direction: column; gap: 10px }
+}
+```
+
+`.log-row` got its component two phases ago and was measured then. `.work-row`
+waited. This phase is the one that finally builds the row it names — and the
+first thing I owed it was a number I had never checked.
+
+## What the rule was worth
+
+The row is five fixed columns under 1080: a display number, an operating
+figure, a state word, an exit arrow, and one flexible column carrying the
+system's name, its description and its stack line. Add the gaps and **400
+pixels of every width is chrome**. The design register states the minimum for
+the flexible column and says what sets it — the stack line is the longest string
+in the list — at **300 pixels**.
+
+So the row needs a 700px content column, which is a 780px viewport. Below that,
+the column the row exists to carry starts eating itself.
+
+Then I measured the built page instead of the arithmetic:
+
+```
+viewport   name column
+     899        403px
+     719        223px
+     560         64px
+```
+
+At 560 — the width the stylesheet had been pointing at since the beginning — the
+column that holds the name, the description and eleven stack entries is **64
+pixels wide**.
+
+That rule had never been wrong, exactly. It had never been anything. It was a
+plausible number written down before there was a thing to hold it against, and
+it sat in a file everybody trusted for nine months looking exactly like a
+measurement.
+
+## The switch it should have been
+
+The site has four declared switches — 1080, 900, 720, 560 — and one rule about
+them: no component gets its own value. So the question was not "where does this
+row break" but "which of the four is the first one above where it breaks".
+
+780 sits between 900 and 720. Taking 720 would leave sixty pixels of viewport in
+which the row is drawn under a minimum the design itself states. Taking 900
+collapses the row into a card slightly earlier than strictly necessary.
+
+I took 900, and the precedent decided it rather than my taste: one phase
+earlier, the *system* row on my homepage had faced the identical question, and
+the note left in the stylesheet reads *"Every cell of a system row is a claim,
+so this one keeps all six and stacks them."* A row where every cell is a claim
+does not get to draw one of them at 64 pixels for sixty pixels of viewport.
+
+## The bug underneath
+
+Moving the switch meant looking at what the row does once it becomes a card. So
+I measured that too — and found this, at 390:
+
+```
+row left edge     22px
+name left edge   128px
+```
+
+The card's contents were centred. Not the row I had just written — the *system*
+row, the one that has been live on my homepage since two phases ago.
+
+The cause is one declaration doing two jobs. The grid needs `align-items:
+center` to line five cells up against a tall one. When the row becomes a
+`flex-direction: column` stack, the cross axis turns ninety degrees and the same
+declaration centres every line of the card. Correct in one mode, wrong in the
+other, and nothing in between to notice the difference.
+
+Nothing had noticed for two phases, and the reason is worth more than the fix.
+My end-to-end rig runs a production build **with no API**. On the homepage a
+system list with no answer renders an empty panel, so `.sys-row` is never in the
+document — the tests that sweep that page at seven widths have never once seen
+the component they were sweeping past. The only place it exists is my component
+gallery, and the gallery tests assert what the row *says*, not where it sits.
+
+In production, where there is an API and the rows are real, every visitor on a
+phone got centred cards.
+
+## What I changed, and what I did not
+
+The switch moved from 560 to 900, with the arithmetic and the three measured
+figures written into the stylesheet above it, so the next person to wonder about
+that number finds a measurement rather than another plausible-looking constant.
+Both rows got `align-items: stretch` in their stacked state. The new page's
+tests assert the alignment at every width under the switch, in the gallery,
+because that is the only place the rig can see a row at all.
+
+What I did not do is add a rule that all four breakpoints must be justified.
+This project has a standing constraint: no new check without an incident that
+can be named. The incident here is one rule, in one file, for one component, and
+a check that policed every breakpoint would be tooling written to look thorough
+against a defect that already has a fix.
+
+What I will keep is smaller and harder. **A number in a stylesheet is not a
+measurement just because it is in a stylesheet.** The rule I inherited was
+written by me, in good faith, in a phase whose whole purpose was to stop
+components inventing their own values — and it was still a guess, because at the
+time there was nothing to guess about. The tell was not that it looked wrong. It
+was that nothing had ever rendered under it.

@@ -47,6 +47,12 @@ const SHEETS = {
   // Intermediate Widths sheet says so and gives the reason: "DIE STARTSEITE
   // FEHLT ABSICHTLICH: ihr Umbau ist der einfachste von allen."
   homepage: 'docs/design/Homepage - timseil.dev.dc.html',
+  // H6. The Work Index draws itself at 1440 and 390, and the Intermediate
+  // Widths sheet adds a third frame at 1024 — "1024 · Work Index —
+  // Vorschauspalte weg, Name gewinnt 154px" — which is the one that annotates
+  // the five-track rebuild. So this page has three drawings, like the case
+  // study and unlike the homepage.
+  workIndex: 'docs/design/Work Index - timseil.dev.dc.html',
 };
 
 // ONE DECISION MOVES MANY MEASUREMENTS, so the reasons are named once and
@@ -1186,9 +1192,249 @@ const HOME_MAP = [
   },
 ];
 
+
+/**
+ * The Work Index's map. Build plan H6.
+ *
+ * MOST OF IT IS MEASURED IN THE GALLERY, and that share is higher here than on
+ * any page so far. The rig runs a production build with no api, so `/work`
+ * renders an outage panel and no `.work-row` is ever in its document — every
+ * entry about a row therefore carries `on: '/dev/components'`. H5c's homepage
+ * additions were the first since H3 to carry none, because SYS.04 reads files
+ * out of the repository; this page reads an endpoint for everything it lists,
+ * so the pendulum swings all the way back.
+ *
+ * WHAT IS STILL MEASURED ON THE PAGE ITSELF: the header, the counter and the
+ * legend. All three are drawn whether or not an answer arrives, which is the
+ * half of this page a visitor meets during an outage.
+ */
+const WORK_MAP = [
+  // ── 1440 · Work Index, artboard 1a · the head ────────────────────────────
+  {
+    id: 'work-head-rail',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 62,
+    decl: 'grid-template-columns', says: '1fr 420px',
+    reading: 'the head is one flexible column and a 420px stat rail',
+    measure: { kind: 'box-width', selector: '.work-stats' }, expect: 420,
+  },
+  {
+    id: 'work-head-gap',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 62,
+    decl: 'gap', says: '80px',
+    reading: 'with 80px of air between the deck and the rail',
+    measure: { kind: 'gap-x', from: '.work-intro', to: '.work-stats' }, expect: 72,
+    diverges: { class: 'spacing-scale', sheet: '80px' },
+  },
+  {
+    id: 'work-eyebrow-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 64,
+    decl: 'font', says: "500 11.5px 'JetBrains Mono',monospace",
+    reading: 'the eyebrow is mono at the step under the half pixel the sheet draws',
+    measure: { kind: 'computed', selector: '.work-eyebrow', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+  {
+    id: 'work-h1-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 65,
+    decl: 'font', says: "500 52px/1.05 'Chakra Petch',sans-serif",
+    reading: 'the work index headline is the 52px display step — K-08 keeps 62 for the homepage and About',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '52px',
+  },
+  {
+    id: 'work-deck-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 66,
+    decl: 'font', says: "400 15px/1.7 'Geist',sans-serif",
+    reading: 'and the deck under it is the 15px body step',
+    measure: { kind: 'computed', selector: '.work-deck', prop: 'font-size' }, expect: '15px',
+  },
+  {
+    id: 'work-stats-columns',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 68,
+    decl: 'grid-template-columns', says: 'repeat(4,1fr)',
+    reading: 'four tiles, one per state the contract declares plus the total',
+    measure: { kind: 'track-count', selector: '.work-stats' }, expect: 4,
+    // IN THE GALLERY, because the rail on `/work` has nothing to count. With no
+    // api the four tiles collapse to one — four repetitions of `— NO DATA` are
+    // four statements where there is one fact, and 130px of non-wrapping mono
+    // does not fit a quarter of a 346px column either.
+    on: '/dev/components',
+  },
+  {
+    id: 'work-stats-gap',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 68,
+    decl: 'gap', says: '16px',
+    reading: 'set 16px apart',
+    measure: { kind: 'computed', selector: '.work-stats', prop: 'column-gap' }, expect: '16px',
+  },
+  {
+    id: 'work-stat-inset',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 69,
+    decl: 'padding-left', says: '14px',
+    reading: 'each tile stands 14px off the rule that separates it',
+    measure: { kind: 'computed', selector: '.work-stat', prop: 'padding-left' }, expect: '14px',
+  },
+
+  // ── 1440 · the counter ───────────────────────────────────────────────────
+  {
+    id: 'work-count-padding',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 98,
+    decl: 'padding', says: '12px 0 6px',
+    reading: 'the counter sits 12px under the filter block',
+    measure: { kind: 'computed', selector: '.work-count', prop: 'padding-top' }, expect: '12px',
+  },
+  {
+    id: 'work-count-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 98,
+    decl: 'font', says: "500 9.5px 'JetBrains Mono',monospace",
+    reading: 'and reads at the smallest mono step',
+    measure: { kind: 'computed', selector: '.work-count', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+
+  // ── 1440 · the row. Every one of these is measured in the gallery ────────
+  {
+    id: 'work-row-tracks',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 102,
+    decl: 'grid-template-columns', says: '40px 1fr 132px 104px 130px 20px',
+    reading: 'six columns: number, identity, figure, state, preview, exit',
+    measure: { kind: 'track-count', selector: '.work-row' }, expect: 6,
+    on: '/dev/components',
+  },
+  {
+    id: 'work-row-gap',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 102,
+    decl: 'gap', says: '24px',
+    reading: 'with 24px between them — the nearest step is 26',
+    measure: { kind: 'computed', selector: '.work-row', prop: 'column-gap' }, expect: '26px',
+    diverges: { class: 'spacing-scale', sheet: '24px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'work-row-padding',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 102,
+    decl: 'padding', says: '24px 8px',
+    reading: 'and 24px of vertical breath, 8px of inset',
+    measure: { kind: 'computed', selector: '.work-row', prop: 'padding-top' }, expect: '26px',
+    diverges: { class: 'spacing-scale', sheet: '24px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'work-no-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 103,
+    decl: 'font', says: "500 12px 'JetBrains Mono',monospace",
+    reading: 'the display number is the 12px mono step',
+    measure: { kind: 'computed', selector: '.work-no', prop: 'font-size' }, expect: '12px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-name-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 105,
+    decl: 'font', says: "500 20px 'Chakra Petch',sans-serif",
+    reading: 'the system name is 20px display — off the scale, like every other row title on this site',
+    measure: { kind: 'computed', selector: '.work-name', prop: 'font-size' }, expect: '20px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-blurb-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 106,
+    decl: 'font', says: "400 13.5px 'Geist',sans-serif",
+    reading: 'the one line about the system is body text at the step under the half pixel',
+    measure: { kind: 'computed', selector: '.work-blurb', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'half-pixel', sheet: '13.5px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'work-stack-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 107,
+    decl: 'font', says: "500 9.5px 'JetBrains Mono',monospace",
+    reading: 'and the stack line under it is the smallest mono step',
+    measure: { kind: 'computed', selector: '.work-stack', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'work-figure-label-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 110,
+    decl: 'font', says: "500 8.5px 'JetBrains Mono',monospace",
+    reading: 'the figure label is drawn under the smallest step the scale has, so it rounds up rather than down',
+    measure: { kind: 'computed', selector: '.work-figure-label', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '8.5px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'work-state-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 111,
+    decl: 'font', says: "600 10px 'JetBrains Mono',monospace",
+    reading: 'the state word is the 10px mono step',
+    measure: { kind: 'computed', selector: '.work-state .st-word', prop: 'font-size' }, expect: '10px',
+    on: '/dev/components',
+  },
+
+  // ── 390 · Work Index, artboard 1b ────────────────────────────────────────
+  //
+  // ONE ENTRY, AND THE PHONE ARTBOARD OFFERS MANY MORE. Most of what it draws
+  // differently is a second, shorter set of words — a deck with its last clause
+  // cut, a stack line with items removed, stat labels abbreviated to `SYS` and
+  // `QUEUE` — and this site has refused that four times (#293). Measuring a
+  // rhythm here while refusing the copy it belongs to would be quoting half a
+  // drawing. The headline step is the exception: K-08 states it as a rule for
+  // every page, and layout.css already switches it.
+  {
+    id: 'work-h1-size-390',
+    sheet: 'workIndex', artboard: '1b', width: 390, line: 193,
+    decl: 'font', says: "500 34px/1.05 'Chakra Petch',sans-serif",
+    reading: 'the headline drops to the 34px display step on a phone — K-08s third rung',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '34px',
+  },
+  {
+    id: 'work-prev-height',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 112,
+    decl: 'height', says: '76px',
+    reading: 'the reserved preview is 76px tall — a frame, not a picture, until K2 has an image',
+    measure: { kind: 'computed', selector: '.prev', prop: 'height' }, expect: '76px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-prev-rest',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 112,
+    decl: 'opacity', says: '.28',
+    reading: 'and it rests at 28% — decoration, so the opacity may carry the hover',
+    measure: { kind: 'computed', selector: '.prev', prop: 'opacity' }, expect: '0.28',
+    on: '/dev/components',
+  },
+
+  // ── 1440 · the legend ────────────────────────────────────────────────────
+  {
+    id: 'work-legend-rhythm',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 144,
+    decl: 'margin-top', says: '72px',
+    reading: 'the legend stands 72px under the last row',
+    measure: { kind: 'computed', selector: '.work-legend', prop: 'margin-top' }, expect: '72px',
+  },
+  {
+    id: 'work-legend-padding',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 144,
+    decl: 'padding', says: '24px 26px',
+    reading: 'and holds its text off the panel edge — 24 rounds to the 26 the other axis already uses',
+    measure: { kind: 'computed', selector: '.work-legend', prop: 'padding-top' }, expect: '26px',
+    diverges: { class: 'spacing-scale', sheet: '24px' },
+  },
+
+  // ── 1024 · Intermediate Widths, artboard 1d ──────────────────────────────
+  {
+    id: 'work-row-tracks-1024',
+    sheet: 'widths', artboard: '1d', width: 1024, line: 507,
+    decl: 'grid-template-columns', says: '40px minmax(0,1fr) 132px 104px 20px',
+    reading: 'below 1080 the preview column is dropped, never shrunk — five tracks, not six at 60px',
+    measure: { kind: 'track-count', selector: '.work-row' }, expect: 5,
+    on: '/dev/components',
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
+  { map: WORK_MAP, target: 'web/e2e/oracle/work.gen.json' },
 ];
 
 // ---------------------------------------------------------------- extraction

@@ -69,9 +69,9 @@ export interface Section {
    * none.
    *
    * The paths are the navigation's, held against lib/chrome.ts by the test.
-   * Both are still `[SOON]` stubs, and that is deliberately fine: case.css
+   * `/blog` is still a `[SOON]` stub and that is deliberately fine: case.css
    * settled it for the breadcrumb in H1 — "a stub is a place, an absent link is
-   * not."
+   * not." `/work` stopped being one in H6.
    */
   readonly exit: { readonly path: string; readonly labelKey: keyof Messages } | null;
 }
@@ -110,10 +110,11 @@ export const SECTIONS: readonly Section[] = [
     // link into the case study only where there is one to read.
     reasonKey: null,
     owedBy: null,
-    // Still `/work`, and it is still a `[SOON]` stub until H6. That is the
+    // Still `/work`, and since H6 it is the page it always named. That is the
     // section's exit and not a row's: a reader who wants the whole list rather
-    // than the two the homepage selects has somewhere to go, and case.css
-    // settled in H1 that a stub is a place.
+    // than the two the homepage selects has somewhere to go — and now the
+    // somewhere has filters, a legend and every system, which is more than this
+    // section can hold.
     exit: { path: "/work", labelKey: "navWork" },
   },
   {

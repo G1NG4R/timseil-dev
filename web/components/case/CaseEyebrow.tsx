@@ -13,8 +13,10 @@ import { type StateKey, stateLabel } from "@/lib/state/words";
  *
  * EVERY PROP MAY BE ABSENT, and the same component draws the resting state and
  * the answer — the seam ADR 0044 described, unchanged. A system whose state has
- * no word renders `— NO DATA` rather than a guess; today only `in_build` reaches
- * that branch, and lib/state/derive.ts says why the word is owed by H6.
+ * no word renders `— NO DATA` rather than a guess. Since H6 closed #289 all
+ * three of the contract's values have a word, so nothing the api answers today
+ * reaches that branch; it is kept for the value a newer build might send, which
+ * is ADR 0035's overlapping start rather than a hypothetical.
  */
 export function CaseEyebrow({
   systemNo,

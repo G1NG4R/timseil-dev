@@ -107,13 +107,29 @@ void test("every part names at least one documented state", () => {
   }
 });
 
-// The gallery renders StatusDot and StateWord across STATE_KEYS. If a ninth key
+// The gallery renders StatusDot and StateWord across STATE_KEYS. If a tenth key
 // is ever added, this is what says so — the alternative is a page that keeps
-// rendering eight cells and looks entirely correct while doing it.
-void test("the state language has exactly the eight keys the gallery renders", () => {
+// rendering nine cells and looks entirely correct while doing it.
+//
+// IT ALREADY DID ITS JOB ONCE. H6 added `in_build` for #289 and this test went
+// red in the same run, which is the whole reason it was written as a literal
+// list rather than a count: a length check would have passed at eight and gone
+// on rendering the old set. The order is the declared one, not sorted, because
+// that is the order the gallery walks.
+void test("the state language has exactly the nine keys the gallery renders", () => {
   assert.deepEqual(
     [...STATE_KEYS],
-    ["live", "online", "degraded", "offline", "empty", "queued", "available", "nodata"],
+    [
+      "live",
+      "in_build",
+      "online",
+      "degraded",
+      "offline",
+      "empty",
+      "queued",
+      "available",
+      "nodata",
+    ],
   );
 });
 

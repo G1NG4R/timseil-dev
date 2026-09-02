@@ -7,6 +7,7 @@ import { ModuleCard } from "@/components/home/ModuleCard";
 import { ContributionGraph } from "@/components/home/ContributionGraph";
 import { OpsStrip } from "@/components/home/OpsStrip";
 import { Systems } from "@/components/home/Systems";
+import { WorkList } from "@/components/work/WorkList";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
 import { EmptyState } from "@/components/state/EmptyState";
@@ -119,9 +120,10 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
  * writes is an invented number (ADR 0013).
  *
  * THE THIRD IS THE ONE PRODUCTION CANNOT MAKE, and it is here for the reason
- * this gallery exists at all: `in_build` is in the contract, no system on this
- * site is in it, and #289 owes it a word in H6. Rendering it here is how the
- * `— NO DATA` branch gets looked at before a system ever reaches that state.
+ * this gallery exists at all: `in_build` is in the contract and no system on
+ * this site is in it. It carried the `— NO DATA` branch until H6 closed #289;
+ * now it carries the word itself, and this is still the only place anybody can
+ * look at it before a system ever reaches that state.
  */
 /**
  * A calendar the shape production answers with.
@@ -154,18 +156,21 @@ const GALLERY_LOG: PostRead = {
       title: "Eighty pixels that were never mine",
       deck: "A contribution graph was drawn eighty pixels narrower than the column it sits in.",
       published: "2026-09-01",
+      systemId: "timseil-dev",
     },
     {
       slug: "013-the-column-the-test-rig-could-not-see",
       title: "The column the test rig could not see",
       deck: "A description column on my homepage computed to zero pixels wide.",
       published: "2026-09-01",
+      systemId: "timseil-dev",
     },
     {
       slug: "001-zero-downtime-measured-not-claimed",
       title: "Zero-downtime, measured instead of claimed",
       deck: "My build plan promised about three seconds and no 5xx.",
       published: "2026-08-23",
+      systemId: "timseil-dev",
     },
   ],
   skipped: [],
@@ -788,10 +793,12 @@ export default function GalleryPage() {
         </p>
         <p className="gal-states">
           A third row stands under them that production cannot produce: a system
-          whose `state` is a word this site has no vocabulary for. The contract
-          declares `in_build`, lib/state/words.ts has eight entries and none of
-          them means it, and issue 289 gives H6 the job of drawing the ninth.
-          Until then the row says `— NO DATA`, which is true.
+          the contract calls `in_build`, which the seed has never held. It read
+          `— NO DATA` for five phases because the vocabulary had no word that
+          meant it; H6 closed issue 289 and it now reads IN BUILD, carrying the
+          same tone and the same dash as QUEUED. That sameness is the decision
+          rather than an oversight — nothing is measured in either state, so the
+          fill cannot separate them and the word is what does.
         </p>
         <p className="gal-states">
           Rendered through the real section, so the head above the rows is the
@@ -801,6 +808,42 @@ export default function GalleryPage() {
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
           <Systems body={GALLERY_SYSTEMS} messages={en} />
+        </div>
+      </section>
+
+      {/* ── /work, and the whole page rather than a row ────────────────────── */}
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">WorkList</h2>
+          <span className="gal-where">`/work` · the only place this rig can see a row</span>
+        </div>
+        <p className="gal-states">
+          THE WHOLE SECTION, NOT A ROW, and that is what this entry is for. There
+          is no api in this rig, so `/work` itself renders an outage panel — the
+          head, the counter and every row live here or nowhere. e2e/work.spec.ts
+          asserts the page; e2e/gallery.work.spec.ts asserts what is under this
+          heading, and between them they cover a page that cannot be seen whole
+          in one place.
+        </p>
+        <p className="gal-states">
+          Three rows, from the same fixture SystemRow uses: `vat-check` is QUEUED
+          and carries no operating figure at all — nobody measures the uptime of
+          a system that is not running, and ADR 0055 says that gets no cell
+          rather than `— NO DATA`. `timseil.dev` is LIVE and carries the label
+          with an empty value, because that measurement was attempted and has not
+          arrived. The third is IN BUILD, which production cannot produce.
+        </p>
+        <p className="gal-states">
+          The fourth row under it is the same component with `body={null}`: the
+          resting state, which is also what a failed read looks like. Its four
+          tiles say `— NO DATA` rather than `00`, and the two are different
+          claims — `00` means the api answered and there are none.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <WorkList body={GALLERY_SYSTEMS} posts={GALLERY_LOG.posts} messages={en} />
+        </div>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <WorkList body={null} posts={[]} messages={en} />
         </div>
       </section>
 

@@ -86,7 +86,15 @@
      instead; that works for it because its preview is decoration. Every cell of
      a system row is a claim, so this one keeps all six and stacks them — which
      is exactly what the 390 artboard draws.                                  */
-  .sys-row { display: flex; flex-direction: column; gap: 10px }
+  /* `align-items` IS RESET AND THAT IS A BUG H6 FOUND IN THIS ROW, not a
+     tidy-up. home.css sets `align-items: center` for the GRID, where it centres
+     five cells against a tall one; the declaration survives into the stack,
+     where the cross axis is horizontal and it centres every line of the card
+     instead. Measured at 390 on the built page: the name sat 106px in from the
+     row's own left edge. `.log-row` never had it, which is why nothing had ever
+     shown it — and this row is on the homepage in production, where there IS an
+     api, so it has been drawing centred cards on a phone since H5a. */
+  .sys-row { display: flex; flex-direction: column; align-items: stretch; gap: 10px }
 }
 
 /* ---- < 900: Kopf schaltet um --------------------------------------------- */
@@ -95,6 +103,32 @@
   .nav-button   { display: inline-flex }
   .foot-meta    { grid-template-columns: 1fr }   /* zwei Zeilen -> drei */
   .sys-pin      { display: none }
+
+  /* THE WORK ROW BECOMES A CARD HERE AND NOT AT 560, WHICH IS H6's MEASUREMENT
+     AND NOT ITS PREFERENCE — the same sentence H5a had to write about
+     `.sys-row`, one switch down, and the second time this file has found the
+     560 it was handed to be a number nobody had held against a row.
+
+     THE ARITHMETIC. Below 1080 the row is five tracks: 40 + 132 + 104 + 20 is
+     296px that cannot shrink, plus four 26px gaps, so 400px of every width is
+     chrome. The Intermediate Widths register states the content minimum for
+     this row and says what sets it — "Name, Untertitel und Stack-Zeile brauchen
+     300 — die Stack-Zeile ist die längste". 300 + 400 is a 700px column, which
+     is a 780px viewport.
+
+     THE MEASUREMENT, taken on the built page at /dev/components because there
+     is no api in the rig and no row on /work: the name column is 403px at 899,
+     223px at 719 and 64px at 560. So the row is honest at 899, and at 719 it is
+     already 77px under a minimum the sheet names.
+
+     780 IS NOT A SWITCH AND DOES NOT BECOME ONE. The declared four are 1080,
+     900, 720 and 560, and the rule this file states is that no component gets
+     its own value. 900 is the nearest of them above 780; 720 would leave sixty
+     pixels of viewport in which the row is drawn under its own stated minimum,
+     which is the state H5a refused for `.sys-row` in the same words. Every cell
+     of this row is a claim, so it keeps all five and stacks them — and that is
+     what the 390 artboard draws.                                             */
+  .work-row { display: flex; flex-direction: column; align-items: stretch; gap: var(--s-10) }
 }
 
 /* ---- < 900, G3 --------------------------------------------------------------
@@ -119,9 +153,10 @@
 
 /* ---- < 560: Zeilen werden Karten ----------------------------------------- */
 @media (max-width: 559px) {
-  /* `.sys-row` is NOT here any more — it resolves at 1080, in the block above,
-     for the reason written there. `.work-row` keeps this switch until H6
-     measures it.
+  /* `.sys-row` is NOT here any more — it resolves at 1080, in the block above.
+     `.work-row` IS NOT HERE EITHER SINCE H6, and that phase measured it rather
+     than inheriting it: it resolves at 900, in the block above. The 560 it was
+     given in G1 was never a reading of this row.
 
      `.log-row` STAYS HERE, AND THIS IS THE ARITHMETIC RATHER THAN THE
      MEASUREMENT — the distinction H5b paid for and wrote down: "nur die erste
@@ -136,7 +171,7 @@
 
      What the element actually GETS is checked on the built page at all seven
      widths; the figure that survives that check is in the phase's notes. */
-  .work-row, .log-row { display: flex; flex-direction: column; gap: 10px }
+  .log-row { display: flex; flex-direction: column; gap: 10px }
 
   /* The row loses its side padding with its columns: 8px of inset belongs to a
      cell in a grid, and there are no cells here. The sheet's phone artboard
