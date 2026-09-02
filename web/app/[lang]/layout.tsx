@@ -61,6 +61,11 @@ import "../../styles/case.css";
 // override the chrome or the state language, and layout.css's media queries
 // have to win over it. H3.
 import "../../styles/home.css";
+// work.css joins them on the same condition, and it is the third page-scoped
+// sheet rather than a new kind of file. H6. It declares no media query at all:
+// `.work-row`'s three switches have been in layout.css since G1, waiting for a
+// component to answer to them.
+import "../../styles/work.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root

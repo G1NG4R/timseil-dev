@@ -15,17 +15,34 @@
 // What this file may NOT do is pretend to be YAML — it reads the shapes that are
 // in the fourteen files and refuses everything else, rather than guessing.
 //
-// IT DOES NOT DECIDE THE SCHEMA. #192 says the frontmatter of the first post was
-// read off a design sheet and that H9 decides what it means when it builds the
-// renderer. This reads three of the six keys and leaves that open: `tags`,
-// `system` and `summary` are stepped over, not modelled.
+// IT STILL DOES NOT DECIDE THE SCHEMA. #192 says the frontmatter of the first
+// post was read off a design sheet and that H9 decides what it means when it
+// builds the renderer. This reads four of the six keys and leaves that open:
+// `tags` and `summary` are stepped over, not modelled.
+//
+// THE FOURTH KEY IS H6's, AND IT SETTLED #314 ON THE WAY IN. ADR 0002 names
+// `systemId` and `docs/design/README.md` writes `post.systemId`; all fifteen
+// files wrote `system`. Nothing read the key, so the disagreement survived from
+// the first post — and H5c found it here, writing this reader, without having
+// to pick a side.
+//
+// THE CORPUS MOVED, NOT THE DECISION, and `docs/design/` is why. That folder is
+// read-only, so of the three names the issue asks to agree, exactly one could
+// change: not the design README, and not the ADR that the README already
+// agrees with. Fifteen frontmatter keys were renamed instead — mechanical,
+// because nothing read them, and now something does.
+
+// NOTE ON #192's EDGE, since this is the second reader and no longer the first:
+// H9 inherits two callers of this schema rather than one. That is the price of
+// the Work Index counting entries per system, and it is written down here so
+// the phase that changes the schema knows where to look.
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { log } from "../log.ts";
 
-/** What the homepage draws for one entry. Three keys of six, plus the slug. */
+/** What the homepage and the Work Index read. Four keys of six, plus the slug. */
 export interface PostMeta {
   /** The filename without `.mdx` — the same string incidents.post_slug holds. */
   readonly slug: string;
@@ -34,6 +51,21 @@ export interface PostMeta {
   readonly deck: string;
   /** `YYYY-MM-DD`, kept as text: nothing here does arithmetic on a date. */
   readonly published: string;
+  /**
+   * The `systems.slug` this entry is about, or nothing.
+   *
+   * NULLABLE WHERE THE OTHER THREE ARE REQUIRED, and the asymmetry is the
+   * point. The three above are what the homepage row DRAWS, so a file missing
+   * one of them would render a hole and is left out instead. This one is not
+   * drawn anywhere: the Work Index counts by it, and a post that names no
+   * system simply counts towards no system. Requiring it would drop a readable
+   * entry off the homepage over a key that page never shows.
+   *
+   * NOT VALIDATED AGAINST THE SYSTEM LIST HERE. This file reads text and knows
+   * nothing about the api; whether the string is a slug anything answers to is
+   * lib/work/log.ts's question, and it counts only what matches.
+   */
+  readonly systemId: string | null;
 }
 
 /** A read of the directory, and what it could not use. */
@@ -158,11 +190,16 @@ export function postMeta(file: string, raw: string): PostMeta | null {
   const title = unquote(keys.get("title") ?? "");
   const deck = unquote(keys.get("deck") ?? "");
   const published = unquote(keys.get("published") ?? "");
+  const systemId = unquote(keys.get("systemId") ?? "");
 
   if (title === "" || deck === "") return null;
   if (!isDate(published)) return null;
 
-  return { slug: name[1], title, deck, published };
+  // An absent key and an empty one are one answer here — "this entry names no
+  // system" — because neither can be counted towards anything. That is not the
+  // rule above it, where an empty `title` makes the file unusable; a row with
+  // no headline is broken, a post about no particular system is ordinary.
+  return { slug: name[1], title, deck, published, systemId: systemId === "" ? null : systemId };
 }
 
 /**
@@ -243,3 +280,27 @@ const nodeReader: DirReader = {
   list: (dir) => readdirSync(dir),
   text: (dir, file) => readFileSync(join(dir, file), "utf8"),
 };
+
+/**
+ * The read a page makes, with the one failure it can have folded into `null`.
+ *
+ * IT LIVES HERE BECAUSE TWO PAGES MAKE IT. `homePosts` was this function under
+ * another name while SYS.04 was the only caller; H6 gave `/work` a per-system
+ * entry count, and a second copy of a five-line `try` is how two copies of one
+ * judgement start disagreeing — the `finiteNumber` mistake H4 made and wrote
+ * down. `lib/home/posts.ts` now delegates and keeps only what is about a
+ * SECTION: how many rows it draws and what its head says.
+ *
+ * THE `catch` IS NOT DECORATION. It is the difference between "the log is
+ * empty" and "the log could not be read": a directory missing from the image
+ * reports itself instead of claiming nobody has written anything. That is the
+ * failure `outputFileTracingIncludes` exists to prevent, and this is what a
+ * page looks like if it ever happens.
+ */
+export function postsOrNull(): PostRead | null {
+  try {
+    return readPosts(POSTS_DIR);
+  } catch {
+    return null;
+  }
+}

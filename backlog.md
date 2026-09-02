@@ -12,6 +12,203 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 02.09.2026, H6a gebaut: `/work` ist eine Seite, kein Stub mehr
+
+**Zweig `phase/h6a-work-index`.** `/work` zeichnet Kopf, Statistikleiste,
+Zählzeile, Systemliste, Legende und den Weg zum Kontakt. Der `[SOON]`-Stub aus
+G3 ist gelöscht, `lib/seo/pages.ts` führt die Route als `indexable: true`, und
+`app/sitemap.ts` hat sie ohne eine Zeile Änderung aufgenommen — das ist der
+ganze Zweck der einen Tabelle.
+
+**Die Filterreihen sind nicht drin.** Der Schnitt liegt an der Client-Grenze:
+H6a ist die Seite und kostet das Bundle null Byte, H6b bringt `FilterChip`, die
+Insel, den Leerzustand bei null Treffern und die Messung gegen #237.
+
+### Der stärkste Fund: der Schalter, den ich geerbt hatte, war nie eine Messung
+
+`layout.css` führt seit G1 `@media (max-width: 559px) { .work-row, .log-row }`.
+`.log-row` hat H5c gemessen; `.work-row` hatte nie einen Zeichner, also hatte die
+Zahl nie etwas, wogegen sie hätte falsch sein können.
+
+Gemessen am gebauten Produktionsbuild, in der Galerie, weil das Rig keine API
+hat und auf `/work` deshalb keine Zeile im Dokument steht:
+
+```
+Breite   Namensspalte
+   899        403px
+   719        223px
+   560         64px
+```
+
+Fünf feste Spuren und vier Abstände sind **400px Rahmen bei jeder Breite**; das
+Intermediate-Widths-Register nennt das Inhaltsminimum dieser Zeile mit **300**
+und sagt, was es setzt („die Stack-Zeile ist die längste"). Das Kreuzen liegt
+damit bei einem 780px-Viewport. **Der Schalter ist 900** — der erste der vier
+darüber; 720 ließe sechzig Pixel stehen, in denen die Zeile unter ihrem eigenen
+Minimum gezeichnet wird, und das ist der Zustand, den H5a für `.sys-row` in
+denselben Worten abgelehnt hat. Kein fünfter Wert.
+
+Als `016-the-breakpoint-i-inherited-was-never-a-measurement.mdx` aufgeschrieben.
+
+### Der zweite Fund: die Startseite zeichnet auf dem Telefon zentrierte Karten
+
+Beim Messen desselben Umbruchs mitgefallen, und es ist **kein Fund an meinem
+Code**: `.sys-row` steht seit H5a auf `/` und trägt aus `home.css`
+`align-items: center`. Im Raster richtet das fünf Zellen gegen eine hohe aus; im
+Stapel dreht sich die Querachse und dieselbe Deklaration zentriert **jede Zeile
+der Karte**.
+
+```
+390   Zeile links 22px   ·   Name links 128px
+```
+
+**Zwei Phasen unbemerkt, und der Grund ist die Lehre.** Das e2e-Rig fährt einen
+Produktionsbuild **ohne API**: auf `/` rendert die Systemliste ein Ausfallpanel,
+`.sys-row` steht dort also in keinem Dokument, und der Sweep über sieben Breiten
+ist an einem Bauteil vorbeigelaufen, das er nie gesehen hat. In Produktion gibt
+es eine API. Beide Zeilen bekommen jetzt `align-items: stretch` im Stapel, und
+`gallery.work.spec.ts` prüft die Ausrichtung unter dem Schalter.
+
+### Der dritte Fund: vier Kacheln behaupteten eine Messung, die niemand gemacht hatte
+
+Ohne API las die Statistikleiste `00 SYSTEMS · 00 LIVE · 00 IN BUILD ·
+00 QUEUED`, während die Zählzeile darunter `— NO DATA` las. Zwei Behauptungen
+über dieselbe Antwort, und die Kacheln waren die, die logen: `00` heißt „die API
+hat geantwortet und es gibt keine". Beim ersten Öffnen der gebauten Seite
+gesehen. `listed()` ist jetzt die eine Wache, die beide lesen.
+
+**Und die Absenz ist eine Kachel, nicht vier.** Vier Wiederholungen von
+`— NO DATA` sind vier Aussagen für eine Tatsache — und passen nicht: der
+Platzhalter ist 130px umbruchfreies Mono, ein Viertel einer 346px-Spalte ist 76.
+Bei 390 hat das Dokument 49px über die Fensterbreite hinausgeragt.
+
+### Der vierte Fund: die Galerie hatte wieder eine kürzere Kaskade als die Seite
+
+`app/dev/layout.tsx` führt die Stylesheets der Site selbst. `work.css` fehlte,
+also war `.work-row` dort `display: list-item` statt `grid`: keine Vorschau,
+keine wachsende Namensspalte, und jede Zahl, die ich dort genommen hätte, wäre
+eine Zahl über eine Seite gewesen, die es nicht gibt. **Genau der Vorfall aus
+`012-the-preview-had-a-shorter-cascade-than-the-page.mdx`**, ein zweites Mal, in
+derselben Datei, mit derselben Regel darüber.
+
+### #289 geschlossen, und drei Prüfungen sind dafür rot geworden
+
+`in_build` hat ein Wort: `IN BUILD`, mit QUEUEDs Ton und QUEUEDs Strich. Beide
+Zustände sind unmessbar — der Contract garantiert `null` in jedem Metrikfeld für
+alles, was nicht `live` ist — also lässt `DOT_ANSWER` beiden genau eine Füllung,
+und das Wort ist, was sie trennt. Ein fünfter Ton hätte Töne und Zustände auf
+eins zu eins zugetrieben, was `words.test.ts` seit G6 verweigert. ADR 0063.
+
+Die drei, die rot gingen, waren alle drei dafür geschrieben:
+
+| Prüfung | Was sie sagte |
+|---|---|
+| `registry.test.ts` | „if a ninth key is ever added, this is what says so" |
+| `systems.test.ts` | `in_build` liest `— NO DATA` und erfindet nichts |
+| `gallery.systems.spec.ts` | die Zustandsspalte der dritten Fixture-Zeile |
+
+**Das Blatt malt BUILD in `#B9C6D4`** — das ist `--ink-3`, eine *Text*-Farbe, im
+Blatt wie ein Signal benutzt. Notiert, nicht befolgt (ADR 0055).
+
+### #314 entschieden, statt weitergereicht
+
+ADR 0002 und `docs/design/README.md` schreiben `systemId`, die fünfzehn Dateien
+schrieben `system`. **`docs/design/` ist read-only**, also konnte von den drei
+Namen genau einer umziehen: der Bestand. Fünfzehn Frontmatter-Schlüssel
+umbenannt, und `lib/content/posts.ts` liest den Schlüssel jetzt — was die
+Bedingung des Issues war („und etwas liest ihn").
+
+**#192 bekommt einen Nachtrag:** H9 erbt damit *zwei* Leser dieses vorläufigen
+Schemas statt einem. Steht im Kopf von `posts.ts`, damit die Phase, die das
+Schema ändert, weiß, wo sie suchen muss.
+
+### Die Betriebszahl: zwei von drei werden nicht gebaut
+
+Die Blattnotiz bestellt „Uptime bei LIVE, letzter Commit bei BUILD, Spec-Zustand
+bei QUEUED". **Commit und Spec-Zustand gibt es im Contract nicht** — und das
+Blatt widerspricht sich selbst: beide gezeichneten Nicht-LIVE-Zeilen tragen
+`— NO DATA`. Gebaut ist: `live` bekommt `UPTIME · 91 D`, alles andere bekommt
+**keine Zelle** statt eines Gedankenstrichs (ADR 0055s Schnitt, zum dritten Mal).
+
+Die 91 ist **nicht** `OPS_WINDOW_CASE`. Die ist das Fenster, das diese Site vom
+Detail-Endpunkt *anfordert*; `/api/systems` nimmt keinen Parameter, also ist die
+91 hier eine Eigenschaft des Feldes, festgelegt in dessen eigener Beschreibung.
+Gleich aus Übereinstimmung, nicht aus Identität.
+
+### Lokal gemessen
+
+```
+make check   grün
+npm test     533   (von 474)
+e2e          1134 grün, 3 übersprungen, 0 rot   (von 931, H5cs Stand)
+Orakel       25 Messungen /work, 9 abweichend — 13 davon mit `on: /dev/components`
+```
+
+**Der Galerie-Anteil des Orakels ist der höchste der drei Seiten**, und das ist
+eine Tatsache über die Seite: `/work` listet, was ein Endpunkt antwortet, und im
+Rig gibt es keinen. H5cs dreizehn Ergänzungen trugen keinen einzigen, weil
+SYS.04 Dateien aus dem Repository liest.
+
+Port 3100 war vor jedem Lauf frei — die H5c-Lehre. Der Handstart lief auf 3200.
+
+### Was diese Phase nicht behauptet
+
+**Gegen Produktion ist nichts davon gemessen.** Alle Zahlen stammen vom lokalen
+Produktionsbuild. Zeuge, Abnahme und `check-deployed` kommen nach dem Merge.
+
+**Die Seite ist nicht im Container geprüft.** H5c hat das getan und einen Grund
+dafür gehabt (ein Verzeichnis, das nur gelesen wird); diese Phase fügt keinen
+neuen Lesepfad hinzu — `postsOrNull` liest dasselbe Verzeichnis wie SYS.04 — und
+der Container-Lauf gehört damit in die Abnahme statt hierher.
+
+## Gefunden — aus H6a
+
+- **Ein Wert in einem Stylesheet ist keine Messung, nur weil er in einem
+  Stylesheet steht.** Die 560 für `.work-row` stand seit G1 in der Datei, deren
+  ganzer Zweck es ist, erfundene Bauteilwerte zu verhindern. Sie war trotzdem
+  geraten, weil es zur Zeit des Ratens nichts zu raten gab. Das Anzeichen war
+  nicht, dass sie falsch aussah — es war, dass nie etwas darunter gerendert hat.
+  *(02.09.2026, H6a)*
+- **Ein Sweep über sieben Breiten kann an einem Bauteil vorbeilaufen, das er nie
+  sieht.** `.sys-row` steht im Rig in keinem Dokument, weil es dort keine API
+  gibt; die zentrierten Karten bei 390 sind zwei Phasen lang durch einen grünen
+  Lauf gegangen. Wo ein Bauteil nur in der Galerie existiert, muss die
+  Geometrie auch dort geprüft werden — nicht nur der Text. *(02.09.2026, H6a)*
+- **`app/dev/layout.tsx` ist zum zweiten Mal die Datei, die eine Kaskade
+  verkürzt hat.** Die Regel steht seit H4 im Kopf derselben Datei. Sie zu lesen
+  hätte gereicht; gefunden hat es die Messung. *(02.09.2026, H6a)*
+- **Das Blatt bestellt in einer Notiz drei Zahlen und zeichnet zwei davon als
+  `— NO DATA`.** Wo Notiz und Zeichnung auseinandergehen, ist die Zeichnung die
+  Messung. *(02.09.2026, H6a)*
+- **Die Stack-Chips des Blatts hätten zu drei toten Bedienelementen geführt.**
+  `TYPESCRIPT` steht in keinem der beiden Stacks, `POSTGRES` heißt
+  `PostgreSQL 18.6`. Abgeleitet statt abgeschrieben — mit einer Zusicherung, dass
+  kein Chip ins Leere trifft. Gilt für H6b. *(02.09.2026, H6a)*
+- **Bei zwei Systemen wählt jeder Stack-Chip eine Zeile aus, statt zu filtern.**
+  Gemessen, nicht behoben: der Bauplan streicht nur den `source`-Filter, und die
+  Form ist bei zehn Systemen richtig. Notiert, damit die Zahl nicht als Erfolg
+  gelesen wird. *(02.09.2026, H6a)*
+
+## Verschoben aus H6a
+
+- **`FilterChip`, die Insel und der 0-Treffer-Leerzustand → H6b.** Mit der
+  Bundle-Messung gegen #237: 6 725 B für sechs Bauteile, und dies ist das erste
+  Client-Bauteil der Stufe H.
+- **Zähler und Leerzustand fehlen im 390er-Artboard → H6b entwirft sie.** Beide
+  erklären, warum eine Liste kurz ist, und beide kosten eine Zeile.
+- **Kein JSON-LD auf `/work` → offen.** `/` trägt `Person` und `WebSite`, weil
+  die sechs Stubs `noindex` waren. `/work` ist die erste indizierbare Seite, die
+  keine Fallstudie ist; ein `CollectionPage`/`ItemList` wäre die naheliegende
+  Form. Nicht gebaut und nicht begründet abgelehnt — also offen.
+- **`/work` bekommt kein `lastModified` in der Sitemap → so entschieden.** Es
+  gibt keine Inhaltsquelle dafür, und `new Date()` wäre eine erfundene Zahl. Der
+  Kopf von `sitemap.ts` sagt das bereits.
+- **Der `[PREVIEW]`-Rahmen bekommt seinen Inhalt in K2 → so gebaut.** Als Fläche
+  gezeichnet, nicht als Bild (ADR 0058), damit der 1080er-Schalter einen
+  Zeichner hat. K2 tauscht den Inhalt, nicht die Spalte.
+
+---
+
 ## Wo wir stehen — 02.09.2026, H5c abgenommen: 10 von 10, und der Tausch hatte ein Loch
 
 `34196ae` / `v0.23.0` läuft. Merge 08:40:01Z, Deploy-Job 08:46:35Z–08:47:01Z

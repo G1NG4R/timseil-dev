@@ -6,7 +6,7 @@ import type { PostMeta, PostRead } from "../content/posts.ts";
 import { LOG_ROWS, logEntries, logMeta } from "./posts.ts";
 
 function post(slug: string, published: string): PostMeta {
-  return { slug, title: `Title ${slug}`, deck: "One line.", published };
+  return { slug, title: `Title ${slug}`, deck: "One line.", published, systemId: "timseil-dev" };
 }
 
 const FOURTEEN: PostRead = {

@@ -1,0 +1,442 @@
+{
+  "comment": "Generated from the design handoff by tools/gen-sheet-oracle.mjs — do not edit by hand.",
+  "divergenceReasons": {
+    "half-pixel": "The sheets draw 9.5, 10.5 and 11.5px. tokens.css has thirteen steps and \"keine halben Pixel\" (G1) — every mono size rounds down to the nearest step. One decision, many places.",
+    "spacing-scale": "The sheets draw spacing off the 4px grid (22, 24, 13, 38, 100px). Foundations fixes the scale and G1 made it binding, so the stylesheets read the nearest step. Differences of up to 8px, and no further: where the gap grew past that it got a class of its own rather than a wider excuse. H3 is where that line was drawn — see `hero-rhythm`.",
+    "adr-0052": "Decided in ADR 0052 with its sources: Case Study 02, the Intermediate Widths register and Consistency Check K-29 all say five tiles; the template draws three.",
+    "one-copy-set": "The sheet carries two sets of words for the architecture section — full sentences at 1440 and abbreviations at 390 (\"Same origin, no CDN\" against \"Same origin, no CDN — nothing third-party in the path\"), and it drops the POST-MORTEM lane on the phone. content/case-studies carries ONE set, because a second exists only to be forgotten when the first is corrected. The full sentences then need a column each below 560, where the sheet still draws two.",
+    "divider-is-the-gap": "The sheet divides the pipeline with a border on each box — vertical at 1440 (line 244), horizontal at 390 (line 511). Two rules for one picture, and which one applies depends on where the row wraps. case.css draws both with a 1px gap over the container line instead, so the divider follows the column count with no rule to keep in step. Built the sheet's way first, and a screenshot at 390 showed seven stages reading as one paragraph.",
+    "hero-rhythm": "The homepage hero is drawn with 84px above it, twelve pixels off the nearest step of a scale G1 made binding. `spacing-scale` covers roundings of up to eight and this is not one; folding it in would have turned a reason into a habit. The rhythm is --s-72 over --s-96, which is the same pair `.cs-head` uses, so the two heroes on this site breathe alike.",
+    "no-link-until-h9": "The sheet gives the log row a third column holding a `→`, a pointer cursor and a hover fill — three promises about a click. `/blog/<slug>` is a 404 until H9 builds the renderer, and invariant 5 is that evidence never points into nothing. components/case/IncidentLog.tsx prints a post_slug as text for the same reason and lib/seo/feed.ts serves an empty feed rather than links to pages that do not exist. The hover goes with the arrow: a row that lights up and does nothing is the dead control STATE.05 refuses, with an invitation attached. The section keeps one link, in its head.",
+    "mono-scale": "The sheet sets the hero subline at 14px mono and tracks AVAILABLE at .18em. The mono scale has 9 · 10 · 11 · 12 · 13 and the tracking tokens are .14em and .16em — neither value is a step, and G1's \"keine halben Pixel\" applies to a scale with no fourteen just as much as to a 11.5. Rounded down, as `half-pixel` rounds.",
+    "placeholder-height": "The sheet gives the terminal body 348px and a scrollbar, because there it is a session. Here it is a frame stage J will fill, and it is as tall as what it says. Built the sheet's way first: 348px of empty box does not read as a component waiting for a later phase, it reads as one that failed to load. `.st-wait` holds a height for two seconds; this stands for four phases, which is a different question with the same shape.",
+    "stack-column-bounded": "The sheet gives the stack column `auto` and draws five items in it — \"REACT ROUTER · GO · DOCKER · ACTIONS · VPS\". stack.yaml answers ELEVEN for this system, `auto` is max-content, and max-content of eleven items is 618px at 1440 — taken from the `1fr` beside it, so the description column computed to zero and the sentence the row exists to carry was not drawn at all. The row stood 334px against the other row's 76. Bounded at the width the name column already uses, so no new number enters the track list and the stack wraps inside it. Found by measuring the page against a real api: this rig has none, so `/` carries no row at all and the gallery fixture carried three stack items where production answers eleven. Both were changed, and gallery.systems.spec.ts holds the case now.",
+    "path-stacks": "At 390 the sheet keeps the request path horizontal inside a swipe container and captions it \"REQUEST PATH — SWIPE →\": five 146px boxes and four arrows, 898px of content behind 346px of screen. It stacks here instead, at the 1080 switch every other two-column row already uses — layout.css states the rule (\"Kein Bauteil bekommt seinen eigenen Wert\"), and a swipe hides four fifths of the argument on the one device where the reader cannot see there is more. Recorded as a design correction rather than settled here.",
+    "graph-fits-the-column": "The sheet draws the calendar as 53 columns of 15px with a 3px gap, which is 951px, and the content column is min(1160px, 100% - 80px). It therefore overflows from a 1031px window down — at the checked width of 1024 by seven pixels, three switches before anything on this page is allowed to move. The mobile artboard answers with 26 weeks at 11px and the caption \"LAST 26 WKS SHOWN\"; that leaves 1024 overflowing and splits the total in the caption from the picture it counts. So the columns are `1fr` under a cap of exactly the width the sheet's own numbers need: 15px wherever the sheet drew it, smaller below, the same 53 columns and the same caption at every width, and no new switch in layout.css. The gap shrinks with the cell at the sheet's own 5:1, because 52 gaps of 3px is 156px of a 346px phone.",
+    "source-is-this-api": "The sheet captions the calendar `SOURCE GITHUB API`, which names the upstream. Every other source line on this site names the endpoint a reader can open in a second tab — `/api/training`, `/api/systems` — and that is the promise the line makes. GitHub is what UPLINK and CONTRIBUTIONS already say. The operation strip has the same correction for a different reason: the sheet writes `/api/health` there, which is the container that served systems[].days[] before ADR 0005 split it.",
+    "counted-window": "The sheet writes `LAST 365 DAYS` under the calendar and `365 D` on the phone. The answer carried 367 on 2026-09-01 — 53 weeks, the last of them three days — and 365 is a round number about a year rather than about this picture. Counted from the cells that were actually drawn, which is invariant 7 applied one page over from the 91 it was written for.",
+    "square-corners": "The sheet gives the calendar cells a 2px radius and the legend swatches the same. `--radius` is 0 on this site and invariant 8 puts every radius in tokens.css, so a two here would be a value with no token behind it — and the operation grid, which is the same grammar at another scale, is square for that reason already."
+  },
+  "entries": [
+    {
+      "id": "work-head-rail",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 62,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 420px",
+      "reading": "the head is one flexible column and a 420px stat rail",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".work-stats"
+      },
+      "expect": 420
+    },
+    {
+      "id": "work-head-gap",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 62,
+      "width": 1440,
+      "says": "gap: 80px",
+      "reading": "with 80px of air between the deck and the rail",
+      "measure": {
+        "kind": "gap-x",
+        "from": ".work-intro",
+        "to": ".work-stats"
+      },
+      "expect": 72,
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "80px"
+      }
+    },
+    {
+      "id": "work-eyebrow-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 64,
+      "width": 1440,
+      "says": "font: 500 11.5px 'JetBrains Mono',monospace",
+      "reading": "the eyebrow is mono at the step under the half pixel the sheet draws",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-eyebrow",
+        "prop": "font-size"
+      },
+      "expect": "11px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "11.5px"
+      }
+    },
+    {
+      "id": "work-h1-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 65,
+      "width": 1440,
+      "says": "font: 500 52px/1.05 'Chakra Petch',sans-serif",
+      "reading": "the work index headline is the 52px display step — K-08 keeps 62 for the homepage and About",
+      "measure": {
+        "kind": "computed",
+        "selector": "main h1",
+        "prop": "font-size"
+      },
+      "expect": "52px"
+    },
+    {
+      "id": "work-deck-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 66,
+      "width": 1440,
+      "says": "font: 400 15px/1.7 'Geist',sans-serif",
+      "reading": "and the deck under it is the 15px body step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-deck",
+        "prop": "font-size"
+      },
+      "expect": "15px"
+    },
+    {
+      "id": "work-stats-columns",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 68,
+      "width": 1440,
+      "says": "grid-template-columns: repeat(4,1fr)",
+      "reading": "four tiles, one per state the contract declares plus the total",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".work-stats"
+      },
+      "expect": 4,
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-stats-gap",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 68,
+      "width": 1440,
+      "says": "gap: 16px",
+      "reading": "set 16px apart",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-stats",
+        "prop": "column-gap"
+      },
+      "expect": "16px"
+    },
+    {
+      "id": "work-stat-inset",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 69,
+      "width": 1440,
+      "says": "padding-left: 14px",
+      "reading": "each tile stands 14px off the rule that separates it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-stat",
+        "prop": "padding-left"
+      },
+      "expect": "14px"
+    },
+    {
+      "id": "work-count-padding",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 98,
+      "width": 1440,
+      "says": "padding: 12px 0 6px",
+      "reading": "the counter sits 12px under the filter block",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-count",
+        "prop": "padding-top"
+      },
+      "expect": "12px"
+    },
+    {
+      "id": "work-count-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 98,
+      "width": 1440,
+      "says": "font: 500 9.5px 'JetBrains Mono',monospace",
+      "reading": "and reads at the smallest mono step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-count",
+        "prop": "font-size"
+      },
+      "expect": "9px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "9.5px"
+      }
+    },
+    {
+      "id": "work-row-tracks",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 102,
+      "width": 1440,
+      "says": "grid-template-columns: 40px 1fr 132px 104px 130px 20px",
+      "reading": "six columns: number, identity, figure, state, preview, exit",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".work-row"
+      },
+      "expect": 6,
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-row-gap",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 102,
+      "width": 1440,
+      "says": "gap: 24px",
+      "reading": "with 24px between them — the nearest step is 26",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-row",
+        "prop": "column-gap"
+      },
+      "expect": "26px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "24px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-row-padding",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 102,
+      "width": 1440,
+      "says": "padding: 24px 8px",
+      "reading": "and 24px of vertical breath, 8px of inset",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-row",
+        "prop": "padding-top"
+      },
+      "expect": "26px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "24px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-no-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 103,
+      "width": 1440,
+      "says": "font: 500 12px 'JetBrains Mono',monospace",
+      "reading": "the display number is the 12px mono step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-no",
+        "prop": "font-size"
+      },
+      "expect": "12px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-name-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 105,
+      "width": 1440,
+      "says": "font: 500 20px 'Chakra Petch',sans-serif",
+      "reading": "the system name is 20px display — off the scale, like every other row title on this site",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-name",
+        "prop": "font-size"
+      },
+      "expect": "20px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-blurb-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 106,
+      "width": 1440,
+      "says": "font: 400 13.5px 'Geist',sans-serif",
+      "reading": "the one line about the system is body text at the step under the half pixel",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-blurb",
+        "prop": "font-size"
+      },
+      "expect": "13px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "13.5px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-stack-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 107,
+      "width": 1440,
+      "says": "font: 500 9.5px 'JetBrains Mono',monospace",
+      "reading": "and the stack line under it is the smallest mono step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-stack",
+        "prop": "font-size"
+      },
+      "expect": "9px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "9.5px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-figure-label-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 110,
+      "width": 1440,
+      "says": "font: 500 8.5px 'JetBrains Mono',monospace",
+      "reading": "the figure label is drawn under the smallest step the scale has, so it rounds up rather than down",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-figure-label",
+        "prop": "font-size"
+      },
+      "expect": "9px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "8.5px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-state-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 111,
+      "width": 1440,
+      "says": "font: 600 10px 'JetBrains Mono',monospace",
+      "reading": "the state word is the 10px mono step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-state .st-word",
+        "prop": "font-size"
+      },
+      "expect": "10px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-h1-size-390",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 193,
+      "width": 390,
+      "says": "font: 500 34px/1.05 'Chakra Petch',sans-serif",
+      "reading": "the headline drops to the 34px display step on a phone — K-08s third rung",
+      "measure": {
+        "kind": "computed",
+        "selector": "main h1",
+        "prop": "font-size"
+      },
+      "expect": "34px"
+    },
+    {
+      "id": "work-prev-height",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 112,
+      "width": 1440,
+      "says": "height: 76px",
+      "reading": "the reserved preview is 76px tall — a frame, not a picture, until K2 has an image",
+      "measure": {
+        "kind": "computed",
+        "selector": ".prev",
+        "prop": "height"
+      },
+      "expect": "76px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-prev-rest",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 112,
+      "width": 1440,
+      "says": "opacity: .28",
+      "reading": "and it rests at 28% — decoration, so the opacity may carry the hover",
+      "measure": {
+        "kind": "computed",
+        "selector": ".prev",
+        "prop": "opacity"
+      },
+      "expect": "0.28",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-legend-rhythm",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 144,
+      "width": 1440,
+      "says": "margin-top: 72px",
+      "reading": "the legend stands 72px under the last row",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-legend",
+        "prop": "margin-top"
+      },
+      "expect": "72px"
+    },
+    {
+      "id": "work-legend-padding",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 144,
+      "width": 1440,
+      "says": "padding: 24px 26px",
+      "reading": "and holds its text off the panel edge — 24 rounds to the 26 the other axis already uses",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-legend",
+        "prop": "padding-top"
+      },
+      "expect": "26px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "24px"
+      }
+    },
+    {
+      "id": "work-row-tracks-1024",
+      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
+      "artboard": "1d",
+      "line": 507,
+      "width": 1024,
+      "says": "grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px",
+      "reading": "below 1080 the preview column is dropped, never shrunk — five tracks, not six at 60px",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".work-row"
+      },
+      "expect": 5,
+      "on": "/dev/components"
+    }
+  ]
+}

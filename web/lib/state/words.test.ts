@@ -139,12 +139,21 @@ describe("isStateKey", () => {
 });
 
 describe("the seven words of STATE.05", () => {
-  it("holds them, plus the one that is not a state", () => {
+  it("holds them, plus the one that is not a state and the one the contract added", () => {
     // The sheet: "DAMIT SIND ES SIEBEN: LIVE · DEGRADED · OFFLINE · EMPTY ·
     // QUEUED · ONLINE · AVAILABLE". `nodata` rides along because it is what the
     // page says when it cannot tell — not a state a system is in.
+    //
+    // AND `in_build` MAKES NINE, WHICH IS #289 AND NOT A DRIFT. The sheet's
+    // seven are what this site can say about a system it delivers; `in_build`
+    // is the third value of the contract's `SystemState` and had no word until
+    // H6 drew a legend that defines it. The sheet's sentence is transcribed
+    // above rather than edited to agree — the rule `lib/gallery/registry.ts`
+    // set for the inventory: evidence is quoted, disagreement is written beside
+    // it.
     const expected: StateKey[] = [
       "live",
+      "in_build",
       "online",
       "degraded",
       "offline",
@@ -154,6 +163,22 @@ describe("the seven words of STATE.05", () => {
       "nodata",
     ];
     assert.deepEqual([...STATE_KEYS].sort(), [...expected].sort());
+  });
+
+  it("separates IN BUILD from QUEUED by its word and by nothing else", () => {
+    // THE BROKEN CASE THIS GUARDS IS A FIFTH TONE. Both states are unmeasured —
+    // the contract puts `null` in every metric field for anything that is not
+    // `live` — so `DOT_ANSWER` leaves one fill open to both, and the obvious
+    // way to tell them apart on screen is a new colour. That is exactly the
+    // move "has fewer tones than states" exists to refuse: at one tone per
+    // state the palette becomes the vocabulary.
+    //
+    // So the sameness is asserted rather than tolerated. Whoever wants to break
+    // it has to change this line, and changing it means reading why.
+    assert.equal(MARKS.in_build.tone, MARKS.queued.tone);
+    assert.equal(MARKS.in_build.dot, MARKS.queued.dot);
+    assert.equal(MARKS.in_build.answer, MARKS.queued.answer);
+    assert.notEqual(MARKS.in_build.label, MARKS.queued.label);
   });
 });
 

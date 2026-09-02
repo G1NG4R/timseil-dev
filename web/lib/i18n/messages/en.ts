@@ -56,9 +56,16 @@ export const en = {
   // `— NO DATA`, which is a placeholder token like `[SOON]` — one string across
   // all three languages since design-correction #6.
   //
-  // lib/state/words.ts holds the same six English words as its fallback labels,
+  // lib/state/words.ts holds the same English words as its fallback labels,
   // and messages.test.ts refuses the two copies drifting apart.
   stateLive: "LIVE",
+  // H6 · #289. The seventh key here and the eighth word there, because ONLINE
+  // and `— NO DATA` are the two the paragraph above keeps out of this file.
+  // One word for one state at every size: the sheet writes `IN BUILD` in the
+  // stat tile and `BUILD` in the chip and the legend, and a control that says
+  // one thing while the row beside it says another is the drift this whole
+  // block exists to stop.
+  stateInBuild: "IN BUILD",
   stateDegraded: "DEGRADED",
   stateOffline: "OFFLINE",
   stateEmpty: "EMPTY",
@@ -305,6 +312,57 @@ export const en = {
     "Self-taught backend and infrastructure engineer in Luxembourg. This site " +
     "and its API run on one VPS I administer myself, built and deployed by " +
     "GitHub Actions. Every claim on it is bound to a system you can check.",
+
+  // ── H6 · /work ──────────────────────────────────────────────────────────
+  //
+  // WHAT IS HERE AND WHAT IS NOT, by LANG.01's rule rather than by feel. The
+  // eyebrow `SYS.02 — SYSTEMS`, the stat-rail label `SYSTEMS`, the counter's
+  // `SHOWING nn OF nn · FIGURES FROM /api/systems` and the three state words
+  // are all absent: the first three are nomenclature, which stays English and
+  // stays where it is rendered — `systemsMeta` already writes `SYSTEMS` inline
+  // one page over — and the state words come from `MARKS`, which is the one
+  // table allowed to spell them.
+  workTitle: "Selected work",
+
+  // THE SHEET'S DECK, ONE SET OF WORDS. Its phone artboard drops the final
+  // clause ("— nothing here is a screenshot of an idea") and shortens the deck
+  // to two sentences, which is #293 for the fifth time: a second, shorter copy
+  // exists only to be forgotten when the first is corrected. The full sentence
+  // is what ships at both widths.
+  workDeck:
+    "Every system below runs, ran, or is specified to run. Status and " +
+    "operating figures come from the same API that serves this page — nothing " +
+    "here is a screenshot of an idea.",
+
+  // The list when /api/systems does not answer. `homeSys02Down` says the same
+  // thing about the same endpoint on the homepage and is deliberately NOT
+  // reused: that one explains a section of a page that has three others, this
+  // one explains a page that has nothing else on it.
+  workListDown:
+    "The list is read from /api/systems, and that endpoint did not answer this " +
+    "request. No system is shown rather than a list written by hand.",
+
+  // THE LEGEND, AS FOUR PROSE FRAGMENTS AND NOT ONE SENTENCE. The three words
+  // it defines come from `MARKS` — the component puts them in front of these —
+  // so a state cannot be spelled one way in a row and another in the paragraph
+  // that explains the row. The sheet's own note is the reason the block exists
+  // at all: "Statuswörter sind nur so viel wert wie ihre Definition."
+  workLegendKicker: "HOW TO READ THIS",
+  workLegendLive: "means a public address and a health check.",
+  workLegendInBuild: "means it runs, but not yet for anyone else.",
+  workLegendQueued: "means specified, not written.",
+  workLegendRule: "Nothing is promoted without the figure to back it.",
+  workTrainingLog: "TRAINING LOG",
+
+  // ROUTES GAP #06, AND THE SHEET CLOSED IT WITH THE WRONG TWO THINGS. The
+  // Routes matrix marks `/work → /contact` as a content cross-reference that
+  // EXISTS; the Work Index draws a sentence in that place that is German and
+  // carries no link. Both cannot be right. What the gap asks for is "ein Satz
+  // mit Link", so this is that sentence in English, and the component gives it
+  // the link the drawing forgot.
+  workContact:
+    "Nothing here quite what you are looking for? I am happy to walk you " +
+    "through how one of these systems is built.",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",

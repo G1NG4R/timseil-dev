@@ -482,12 +482,17 @@ export interface SystemRowView {
   /**
    * The state word, or `null` when this page has none for it.
    *
-   * `in_build` IS THE `null` CASE AND IT IS NOT A BUG. lib/state/derive.ts
-   * carries the argument in full: the vocabulary has eight entries and none of
-   * them means "being built", the label IN BUILD is drawn on the Work Index
-   * sheet, and H6 is the phase where all three system states stand next to each
-   * other. #289. Until then a row for such a system reads `— NO DATA`, which is
-   * the true statement "this page cannot say".
+   * ALL THREE OF THE CONTRACT'S VALUES MAP SINCE H6 — #289. `in_build` was the
+   * `null` case for five phases and was not a bug: the vocabulary had no word
+   * that meant "being built", and a row for such a system read `— NO DATA`,
+   * which is the true statement "this page cannot say". The Work Index is the
+   * page where all three states stand next to each other under a legend that
+   * defines them, so the word could be given a tone, a dot and a dictionary key
+   * with something behind each. lib/state/words.ts carries that argument.
+   *
+   * `null` HAS NOT GONE, it has got rarer. A value the contract does not
+   * enumerate still lands here, because ADR 0035's overlapping start means the
+   * wire can carry a vocabulary this build does not have.
    */
   readonly state: StateWord | null;
   /** The stack, joined, or nothing. */
