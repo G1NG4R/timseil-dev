@@ -134,6 +134,101 @@
   color: var(--ink);
 }
 
+/* ── The filters ─────────────────────────────────────────────────────────── */
+
+/* Two rows over one grid, so the chip columns line up without anyone typing the
+   width of the longer label. The sheet gives the label `width:52px` and gets the
+   same result from a number that goes stale the day a word changes.
+
+   THE ROWS DO NOT SCROLL SIDEWAYS AT 390, AND THE SHEET DRAWS THEM SCROLLING —
+   `overflow-x:auto; width:max-content; scrollbar-width:none`. Two reasons. The
+   sheet's stack row is six chips it typed; ours is however many the answer
+   holds, and three systems already yield fifteen. And a hidden scrollbar at the one
+   width where the reader cannot see there is more is the shape #294 already
+   holds open against the request path. The sheet wraps its own stack row at
+   1440; this wraps both at every width. */
+.work-filters {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--s-16);
+  row-gap: var(--s-14);
+  padding-block: var(--s-16);
+  border-block: 1px solid var(--line);
+}
+
+.work-filter-label {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+}
+
+.work-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+}
+
+/* One chip. The sheet draws 6 × 11 padding and 9.5px type; `--s-12` and
+   `--t-mono-9` are the nearest steps of scales G1 made so that no component
+   invents its own — the same two divergences the oracle already records as
+   `spacing-scale` and `half-pixel`.
+
+   NO RADIUS AND NO TRANSITION HERE. `--radius` is 0, and a duration would have
+   to come from a token; the chip changes on a press, which is not a moment that
+   needs easing. */
+.chip {
+  padding: var(--s-6) var(--s-12);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--steel);
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* The sentinel at rest is the accent in outline — the sheet's own third state,
+   which only its script draws: `any ? "#00E5FF" : "#8B98A6"`. It reads as the
+   way out of the axis while an ordinary chip reads as a way in. */
+.chip[data-sentinel] {
+  border-color: var(--acc-edge);
+  color: var(--acc);
+}
+
+/* Set = inverted. The one place on this page where the accent is a fill behind
+   text, so the text takes the token that exists for exactly that and is defined
+   in all seven palettes. */
+.chip[aria-pressed="true"],
+.chip[data-sentinel][aria-pressed="true"] {
+  border-color: var(--acc);
+  background: var(--acc);
+  color: var(--on-cyan);
+}
+
+/* Every number on this page is tabular, the chips included — a count that
+   shifts sideways as it changes moves the chip beside it. */
+.chip-n {
+  margin-inline-start: var(--s-6);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.chip[aria-pressed="true"] .chip-n {
+  color: var(--on-cyan);
+}
+
+/* Hover is a pointer statement, so it is behind `hover: hover` — ui.css states
+   the rule and the State Language sheet is where it comes from: touch gets the
+   rest state. The matrix draws hover as an accent edge with brighter text, and
+   a set chip has nowhere brighter to go. */
+@media (hover: hover) {
+  .chip:hover:not([aria-pressed="true"]) {
+    border-color: var(--acc-edge);
+    color: var(--ink);
+  }
+}
+
 /* ── The counter ─────────────────────────────────────────────────────────── */
 
 /* EVERY NUMBER ON THIS PAGE IS TABULAR, which is a rule the sheet applies to
@@ -142,6 +237,13 @@
    changes on every chip press. */
 .work-count {
   margin: 0;
+  /* OUT OF THE READING MEASURE, AND H6b FOUND THAT BY DRAWING A RULE ABOVE IT.
+     globals.css caps every `p` at 68ch, which is right for prose and wrong for
+     this: at 9px mono 68ch is 367px, so the border under this line has been
+     just over a third of the width of the row separators since H6a — visible
+     only once the filter block put a full-width rule immediately above it.
+     This line is a label, not a sentence; the cap belongs to the sentences. */
+  max-inline-size: none;
   padding-block: var(--s-12) var(--s-6);
   font: 500 var(--t-mono-9)/1 var(--mono);
   letter-spacing: var(--ls-label);

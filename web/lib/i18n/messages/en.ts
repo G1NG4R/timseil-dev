@@ -342,6 +342,45 @@ export const en = {
     "The list is read from /api/systems, and that endpoint did not answer this " +
     "request. No system is shown rather than a list written by hand.",
 
+  // The list when /api/systems answered and listed nothing. NOT `workListDown`,
+  // and H6b split the two because one component was saying both: a body of
+  // `{"systems": []}` is a measurement — the rail reads `00 SYSTEMS` and the
+  // counter reads `SHOWING 00 OF 00` — while "the endpoint did not answer" is a
+  // claim about the api that nothing observed. Three statements about one
+  // answer, and the panel was the one that was wrong.
+  workListNone:
+    "The API answered and listed no systems. This is the answer, not a failure " +
+    "to reach it.",
+
+  // ── H6b · the two filter rows ───────────────────────────────────────────
+  //
+  // FOUR WORDS ARE NOT HERE, and LANG.01 is why: `STATUS`, `STACK`, `ALL` and
+  // `ANY` are nomenclature on a control, the class the sheet keeps English
+  // beside SYS.INIT and BUILD, and `WorkHeader` already writes `SYSTEMS` inline
+  // one component over for the same reason. The state words on the status chips
+  // are not here either — they come from `MARKS`, the one table allowed to
+  // spell them, so a chip can never say BUILD while the row beside it says
+  // IN BUILD (ADR 0063).
+  //
+  // NOR IS THERE AN ACCESSIBLE NAME FOR EITHER ROW. `STATUS` and `STACK` are
+  // whole words standing on the page, so each chip group is named by the label
+  // beside it through `aria-labelledby` — one sentence for every reader instead
+  // of a second one only some of them get.
+
+  // The panel for a combination nothing matches. The sheet draws one line —
+  // "no systems match this combination — reset filters" — and State Language
+  // requires more of an empty state than that: "Leer heißt: erklären, warum
+  // leer, und einen Weg zurück anbieten", and sharper, "ein toter Zustand ohne
+  // Begründung ist ein Bug". `EmptyState` makes the reason mandatory, so the
+  // sheet's sentence becomes the heading and the reason says what the reader
+  // cannot otherwise know: that the two rows narrow TOGETHER, and that nothing
+  // is missing from the list itself.
+  workNoMatchHead: "NO SYSTEMS MATCH THIS COMBINATION",
+  workNoMatchReason:
+    "The two rows narrow together, and no system carries both of these. " +
+    "Nothing is missing from the list — drop one of them to see it again.",
+  workReset: "RESET FILTERS",
+
   // THE LEGEND, AS FOUR PROSE FRAGMENTS AND NOT ONE SENTENCE. The three words
   // it defines come from `MARKS` — the component puts them in front of these —
   // so a state cannot be spelled one way in a row and another in the paragraph

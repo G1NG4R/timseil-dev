@@ -3,6 +3,7 @@
   "divergenceReasons": {
     "half-pixel": "The sheets draw 9.5, 10.5 and 11.5px. tokens.css has thirteen steps and \"keine halben Pixel\" (G1) — every mono size rounds down to the nearest step. One decision, many places.",
     "spacing-scale": "The sheets draw spacing off the 4px grid (22, 24, 13, 38, 100px). Foundations fixes the scale and G1 made it binding, so the stylesheets read the nearest step. Differences of up to 8px, and no further: where the gap grew past that it got a class of its own rather than a wider excuse. H3 is where that line was drawn — see `hero-rhythm`.",
+    "chips-wrap": "At 390 the sheet puts both chip rows in a swipe container — `overflow-x:auto; width:max-content; scrollbar-width:none` — and drops their STATUS and STACK labels. Two reasons not to. The sheet types six stack chips; this row draws whatever `stackTags` derives from the answer, which is fifteen names from three systems, so the hidden part grows with the data rather than being a fixed six. And a scrollbar suppressed at the one width where the reader cannot otherwise see there is more is the shape #294 already holds open against the request path. The sheet wraps its own stack row at 1440; both rows wrap at every width here, and the labels stay at both — one set of words, which is #293.",
     "adr-0052": "Decided in ADR 0052 with its sources: Case Study 02, the Intermediate Widths register and Consistency Check K-29 all say five tiles; the template draws three.",
     "one-copy-set": "The sheet carries two sets of words for the architecture section — full sentences at 1440 and abbreviations at 390 (\"Same origin, no CDN\" against \"Same origin, no CDN — nothing third-party in the path\"), and it drops the POST-MORTEM lane on the phone. content/case-studies carries ONE set, because a second exists only to be forgotten when the first is corrected. The full sentences then need a column each below 560, where the sheet still draws two.",
     "divider-is-the-gap": "The sheet divides the pipeline with a border on each box — vertical at 1440 (line 244), horizontal at 390 (line 511). Two rules for one picture, and which one applies depends on where the row wraps. case.css draws both with a 1px gap over the container line instead, so the divider follows the column count with no rule to keep in step. Built the sheet's way first, and a screenshot at 390 showed seven stages reading as one paragraph.",
@@ -144,6 +145,194 @@
         "prop": "padding-left"
       },
       "expect": "14px"
+    },
+    {
+      "id": "work-filters-rule",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 76,
+      "width": 1440,
+      "says": "border-top: 1px solid rgba(139,152,166,.16)",
+      "reading": "the filter block is fenced off above and below by the hairline",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-filters",
+        "prop": "border-top-width"
+      },
+      "expect": "1px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-filters-padding",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 76,
+      "width": 1440,
+      "says": "padding: 16px 0",
+      "reading": "and holds its rows 16px off both rules",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-filters",
+        "prop": "padding-top"
+      },
+      "expect": "16px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-filters-label-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 78,
+      "width": 1440,
+      "says": "font: 600 9px 'JetBrains Mono',monospace",
+      "reading": "STATUS and STACK name their rows at the smallest mono step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-filter-label",
+        "prop": "font-size"
+      },
+      "expect": "9px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-filters-label-tracking",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 78,
+      "width": 1440,
+      "says": "letter-spacing: .16em",
+      "reading": "tracked like every other label of its size",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-filter-label",
+        "prop": "letter-spacing"
+      },
+      "expect": "1.44px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-chip-gap",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 79,
+      "width": 1440,
+      "says": "gap: 8px",
+      "reading": "8px between two chips",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-chips",
+        "prop": "column-gap"
+      },
+      "expect": "8px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-chip-wrap",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 88,
+      "width": 1440,
+      "says": "flex-wrap: wrap",
+      "reading": "and the row wraps rather than running off its column",
+      "measure": {
+        "kind": "computed",
+        "selector": ".work-chips",
+        "prop": "flex-wrap"
+      },
+      "expect": "wrap",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-chip-padding",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 80,
+      "width": 1440,
+      "says": "padding: 6px 11px",
+      "reading": "a chip is Foundations' chip: 6 by 11",
+      "measure": {
+        "kind": "computed",
+        "selector": ".chip",
+        "prop": "padding-left"
+      },
+      "expect": "12px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "11px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-chip-size",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 80,
+      "width": 1440,
+      "says": "font: 600 9.5px 'JetBrains Mono',monospace",
+      "reading": "and reads at the smallest mono step, like the label over it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".chip",
+        "prop": "font-size"
+      },
+      "expect": "9px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "9.5px"
+      },
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-chip-radius",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 81,
+      "width": 1440,
+      "says": "border: 1px solid rgba(139,152,166,.25)",
+      "reading": "a chip at rest is a hairline box with square corners",
+      "measure": {
+        "kind": "computed",
+        "selector": ".chip",
+        "prop": "border-top-left-radius"
+      },
+      "expect": "0px",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-chip-set",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 80,
+      "width": 1440,
+      "says": "background: #00E5FF",
+      "reading": "and a chip that is set is inverted — the accent as a fill, not a shade of it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".chip[aria-pressed=\"true\"]",
+        "prop": "background-color"
+      },
+      "expect": "rgb(0, 229, 255)",
+      "on": "/dev/components"
+    },
+    {
+      "id": "work-empty-padding",
+      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 142,
+      "width": 1440,
+      "says": "padding: 44px 8px",
+      "reading": "the panel for a combination nothing matches stands well clear of the rows",
+      "measure": {
+        "kind": "computed",
+        "selector": ".st-empty-panel",
+        "prop": "padding-top"
+      },
+      "expect": "20px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "44px"
+      },
+      "on": "/dev/components"
     },
     {
       "id": "work-count-padding",

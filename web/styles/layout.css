@@ -129,6 +129,20 @@
      of this row is a claim, so it keeps all five and stacks them — and that is
      what the 390 artboard draws.                                             */
   .work-row { display: flex; flex-direction: column; align-items: stretch; gap: var(--s-10) }
+
+  /* THE SAME SWITCH, AND DELIBERATELY NOT A FIFTH. The filter block is two
+     columns — label, then chips — and under this width the label goes above its
+     row instead of beside it, which is the same move the row itself makes one
+     line up. The sheet drops the labels entirely at 390 and scrolls the chips
+     sideways; keeping them is #293's rule (one set of words, not a shorter
+     second one), and the chips wrap for the reason work.css gives. */
+  .work-filters { grid-template-columns: 1fr; row-gap: var(--s-6) }
+
+  /* One column puts every gap in the block flow, so the space between a label
+     and its own chips would equal the space between the two groups and the
+     grouping would stop being visible. The second label — and only the second —
+     opens the distance again. */
+  .work-filter-label ~ .work-filter-label { margin-block-start: var(--s-8) }
 }
 
 /* ---- < 900, G3 --------------------------------------------------------------

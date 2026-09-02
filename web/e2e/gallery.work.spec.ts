@@ -197,3 +197,231 @@ test("nothing in the gallery's work section overflows the window", async ({ page
 
   expect(over).toBeLessThanOrEqual(1);
 });
+
+/* ── The filters, H6b ──────────────────────────────────────────────────────
+   THE ONLY PLACE THEY CAN BE PRESSED IN THIS RIG, for the reason at the top of
+   this file: `/work` renders an outage panel, and a chip row over no rows is
+   not what a reader gets. `mobile-menu.coarse.spec.ts` is the model for the
+   shape of these — a premise first, then the computed value rather than the
+   successful click.                                                         */
+
+/** The two rows, and the list they narrow. Scoped to the fixture with rows. */
+const FILTERS = `${PART} .work-filters`;
+const CHIPS = `${FILTERS} .chip`;
+
+/** One chip by its visible word, which is how a reader picks it too. */
+function chip(page: Page, label: string) {
+  return page.locator(CHIPS).filter({ hasText: label }).first();
+}
+
+test("the premise: both rows are drawn and nothing is narrowed yet", async ({ page }) => {
+  // If the island ever stopped rendering, every assertion below would pass by
+  // finding nothing. This is the one that fails instead.
+  await expect(page.locator(`${FILTERS} .work-filter-label`)).toHaveText(["STATUS", "STACK"]);
+
+  // Four status chips: the sentinel and the contract's three states. The
+  // vocabulary is the enum, so it does not move with the fixture.
+  await expect(page.locator(`${FILTERS} .work-chips`).first().locator(".chip")).toHaveText([
+    "ALL03",
+    "LIVE01",
+    "IN BUILD01",
+    "QUEUED01",
+  ]);
+
+  // Both sentinels are the pressed pair a page loads in.
+  await expect(page.locator(`${CHIPS}[data-sentinel][aria-pressed="true"]`)).toHaveCount(2);
+});
+
+test("the chip counts are the rail's numbers in the rail's notation", async ({ page }) => {
+  // `03` above and `3` below would be one count in two notations. Both go
+  // through `padTwo`, and the sheet's rule is that every number on this page is
+  // two digits and tabular.
+  const rail = await page.locator(`${PART} .work-stats[data-counted] .work-stat dd`).allTextContents();
+  const chips = await page.locator(`${FILTERS} .work-chips`).first().locator(".chip .chip-n").allTextContents();
+
+  expect(chips).toEqual(rail);
+});
+
+test("the stack row is derived from the answer, so no chip matches nothing", async ({ page }) => {
+  // The sheet types five chips — ANY · GO · TYPESCRIPT · PYTHON · POSTGRES ·
+  // DOCKER — against stacks that contain neither `TypeScript` nor anything
+  // spelled `POSTGRES`. Three of them would have emptied the list every time
+  // they were pressed. These come out of `stackTags`, sorted by key.
+  const stack = page.locator(`${FILTERS} .work-chips`).nth(1).locator(".chip");
+
+  await expect(stack.first()).toHaveText("ANY");
+  await expect(stack.filter({ hasText: "TYPESCRIPT" })).toHaveCount(0);
+  await expect(stack.filter({ hasText: "PostgreSQL" })).toHaveCount(1);
+
+  // Every chip that is not the sentinel selects at least one row.
+  const labels = await stack.allTextContents();
+  for (const label of labels.slice(1)) {
+    await chip(page, label).click();
+    await expect(page.locator(ROWS)).not.toHaveCount(0);
+  }
+});
+
+test("a status chip narrows the list and the counter says by how much", async ({ page }) => {
+  await chip(page, "LIVE").click();
+
+  await expect(page.locator(ROWS)).toHaveCount(1);
+  await expect(page.locator(ROWS).locator(".work-name")).toHaveText("timseil.dev");
+  await expect(page.locator(`${PART} .work-count`).first()).toHaveText(
+    "SHOWING 01 OF 03 · FIGURES FROM /api/systems",
+  );
+
+  // The total does not move. It is what the answer held, not what survived.
+  await chip(page, "QUEUED").click();
+  await expect(page.locator(`${PART} .work-count`).first()).toContainText("OF 03");
+});
+
+test("pressing a chip presses exactly one on its own row and leaves the other alone", async ({
+  page,
+}) => {
+  await chip(page, "LIVE").click();
+
+  const status = page.locator(`${FILTERS} .work-chips`).first().locator(".chip");
+  await expect(status.filter({ has: page.locator('[aria-pressed="true"]') })).toHaveCount(0);
+  await expect(page.locator(`${CHIPS}[aria-pressed="true"]`)).toHaveCount(2);
+  await expect(chip(page, "LIVE")).toHaveAttribute("aria-pressed", "true");
+  await expect(chip(page, "ALL")).toHaveAttribute("aria-pressed", "false");
+  // The other axis is untouched: its sentinel is still the pressed one.
+  await expect(chip(page, "ANY")).toHaveAttribute("aria-pressed", "true");
+});
+
+test("set is inverted, and the difference is a fill rather than a shade", async ({ page }) => {
+  // "gesetzt = invertiert" is the inventory's word for this state. Read as a
+  // computed value rather than trusted from a class, because a click that works
+  // says nothing about what it drew.
+  const read = (label: string) =>
+    chip(page, label).evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { background: s.backgroundColor, color: s.color };
+    });
+
+  const rest = await read("QUEUED");
+  await chip(page, "QUEUED").click();
+  const set = await read("QUEUED");
+
+  // Read off the token rather than written down here — invariant 8 applies to a
+  // test as much as to a stylesheet, and an assertion carrying its own copy of
+  // the accent would keep passing after the palette moved under it.
+  const accent = await page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--acc)";
+    document.body.append(probe);
+    const value = getComputedStyle(probe).color;
+    probe.remove();
+    return value;
+  });
+
+  expect(set.background).toBe(accent);
+  expect(set.background).not.toBe(rest.background);
+  expect(set.color).not.toBe(rest.color);
+});
+
+test("the two axes narrow together, and the panel says which two", async ({ page }) => {
+  // The combination neither chip reaches alone: one row is LIVE, one is Python,
+  // and no row is both. This is the only way `/work` reaches nought, because a
+  // derived stack chip can never be empty on its own.
+  await chip(page, "LIVE").click();
+  await chip(page, "Python").click();
+
+  await expect(page.locator(ROWS)).toHaveCount(0);
+  await expect(page.locator(`${PART} .work-count`).first()).toHaveText(
+    "SHOWING 00 OF 03 · FIGURES FROM /api/systems",
+  );
+
+  const panel = page.locator(`${PART} .st-empty-panel`).first();
+  await expect(panel.locator(".st-empty-head")).toHaveText("NO SYSTEMS MATCH THIS COMBINATION");
+  // STATE.05: a dead state without a reason is a bug. The sheet's own line
+  // carries none, so `EmptyState` requires one and this is it.
+  await expect(panel.locator(".st-empty-reason")).toContainText("narrow together");
+  // And it echoes back what is narrowing, so the cause is read rather than
+  // inferred — both of them, in the order the rows are drawn.
+  await expect(panel.locator(".st-empty-filters span")).toHaveText(["LIVE", "Python"]);
+});
+
+test("the way back puts both axes on their sentinel", async ({ page }) => {
+  await chip(page, "LIVE").click();
+  await chip(page, "Python").click();
+
+  await page.locator(`${PART} .st-empty-panel .btn`).first().click();
+
+  await expect(page.locator(ROWS)).toHaveCount(3);
+  await expect(chip(page, "ALL")).toHaveAttribute("aria-pressed", "true");
+  await expect(chip(page, "ANY")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(`${PART} .work-count`).first()).toHaveText(
+    "SHOWING 03 OF 03 · FIGURES FROM /api/systems",
+  );
+});
+
+test("every chip is a button, and the keyboard works one", async ({ page }) => {
+  // The sheet draws `<span onClick>` with no role, no tabindex and no key
+  // handler, and has no keyboard note anywhere. State Language allows no
+  // exception — "gleiche form für alle elemente" — so these are buttons, which
+  // answer Enter and Space without this page owning a handler for either.
+  await expect(page.locator(`${CHIPS}:not(button)`)).toHaveCount(0);
+
+  await chip(page, "LIVE").focus();
+  await expect(chip(page, "LIVE")).toBeFocused();
+
+  await page.keyboard.press("Enter");
+  await expect(page.locator(ROWS)).toHaveCount(1);
+
+  await chip(page, "ALL").focus();
+  await page.keyboard.press("Space");
+  await expect(page.locator(ROWS)).toHaveCount(3);
+});
+
+test("each row of chips is a group named by the label beside it", async ({ page }) => {
+  const groups = page.locator(`${FILTERS} .work-chips[role="group"]`);
+
+  await expect(groups).toHaveCount(2);
+
+  for (const [index, word] of ["STATUS", "STACK"].entries()) {
+    const id = await groups.nth(index).getAttribute("aria-labelledby");
+    expect(id).not.toBeNull();
+    await expect(page.locator(`#${id ?? ""}`)).toHaveText(word);
+  }
+});
+
+test("the row carries what the chip selects it by", async ({ page }) => {
+  // Nothing in the site's own code reads these — the filter runs in React, not
+  // over the DOM. They exist so this assertion can be made at all: that the
+  // element a chip claims is the element that carries the claim.
+  const rows = page.locator(ROWS);
+
+  await expect(rows.nth(0)).toHaveAttribute("data-st", "queued");
+  await expect(rows.nth(1)).toHaveAttribute("data-st", "live");
+  await expect(rows.nth(2)).toHaveAttribute("data-st", "in_build");
+
+  const sk = await rows.nth(2).getAttribute("data-sk");
+  expect(sk?.split(" ")).toContain("go");
+});
+
+test("the filter block reshapes only at the switch the row already uses", async ({ page }) => {
+  // 900, and not a fifth number: the label sits beside its chips above it and
+  // above them below it. `.work-row` becomes a card at the same width.
+  const columns = await page
+    .locator(FILTERS)
+    .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
+
+  expect(columns).toBe(widthOf(page) >= 900 ? 2 : 1);
+});
+
+test("the chips wrap rather than hiding themselves behind a swipe", async ({ page }) => {
+  // The 390 artboard puts both rows in `overflow-x:auto` with the scrollbar
+  // suppressed. It draws six stack chips it typed; this row holds however many
+  // the answer named, which is sixteen in this fixture — and a hidden scrollbar
+  // at the one width where the reader cannot see there is more is the shape
+  // #294 already holds open against the request path.
+  const box = await page.locator(`${FILTERS} .work-chips`).nth(1).evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { wrap: s.flexWrap, overflow: s.overflowX, scroll: el.scrollWidth - el.clientWidth };
+  });
+
+  expect(box.wrap).toBe("wrap");
+  expect(box.overflow).toBe("visible");
+  expect(box.scroll).toBeLessThanOrEqual(1);
+});

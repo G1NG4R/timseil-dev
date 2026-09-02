@@ -198,9 +198,17 @@ export const PARTS: readonly Part[] = [
     where: "work, blog",
     states: ["rest", "hover", "focus", "gesetzt (invertiert)", "leer (0 treffer)"],
     origin: "inventory",
-    module: null,
-    owedBy: "H6",
-    preview: false,
+    // H6b. The fifth state is the one this page cannot reach on a chip: the
+    // State Language matrix draws DISABLED as a struck-through `RUST` annotated
+    // "0 treffer", which is a chip out of a FIXED vocabulary that today matches
+    // nothing. `/work`'s stack chips are derived from the answer (lib/work/
+    // stacks.ts), so a chip that matches nothing is never drawn in the first
+    // place — the emptiness is a property of a COMBINATION, and it is the empty
+    // panel that carries it. The gallery shows the state on the component that
+    // owns it rather than faking it on a chip.
+    module: "components/work/FilterChip.tsx",
+    owedBy: null,
+    preview: true,
     note: null,
   },
   {

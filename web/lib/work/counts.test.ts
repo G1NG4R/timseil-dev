@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import type { SystemList } from "../api/systems.ts";
 
-import { listed, statusCounts, workMeta } from "./counts.ts";
+import { listed, statusCounts, workCount, workMeta } from "./counts.ts";
 
 /** The two rows the seed produces, in the answer's order. */
 const SEEDED = {
@@ -66,13 +66,27 @@ describe("the counter counts the rows and not the array", () => {
     assert.equal(workMeta(body), "SHOWING 01 OF 01 · FIGURES FROM /api/systems");
   });
 
-  it("narrows the first number and keeps the second when a filter is on", () => {
-    assert.equal(workMeta(SEEDED, 1), "SHOWING 01 OF 02 · FIGURES FROM /api/systems");
-    assert.equal(workMeta(SEEDED, 0), "SHOWING 00 OF 02 · FIGURES FROM /api/systems");
+  it("pads to two digits, as every number on this page does", () => {
+    assert.match(workMeta({ systems: [], generatedAt: "x" }), /SHOWING 00 OF 00/);
+  });
+});
+
+describe("the counter line the island writes", () => {
+  // H6b. `workCount` is the same sentence from two numbers instead of from an
+  // answer, because the island has the rows and no body. Both callers going
+  // through it is what stops `FIGURES FROM` becoming `SOURCE:` on one of them.
+  it("narrows the first number and keeps the second", () => {
+    assert.equal(workCount(2, 1), "SHOWING 01 OF 02 · FIGURES FROM /api/systems");
   });
 
-  it("pads to two digits, as every number on this page does", () => {
-    assert.match(workMeta(SEEDED, 0), /SHOWING 00 OF 02/);
+  it("says nought without saying nothing", () => {
+    // A filter that matched nothing is a measurement over an answer that
+    // exists — which is why this is a different sentence from `— NO DATA`.
+    assert.equal(workCount(2, 0), "SHOWING 00 OF 02 · FIGURES FROM /api/systems");
+  });
+
+  it("pads both numbers past nine", () => {
+    assert.equal(workCount(12, 10), "SHOWING 10 OF 12 · FIGURES FROM /api/systems");
   });
 });
 

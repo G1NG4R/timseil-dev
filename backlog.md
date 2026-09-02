@@ -12,6 +12,156 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 02.09.2026, H6b gebaut: der Filter läuft und kostet 1 635 B
+
+**Zweig `phase/h6b-work-filters`.** Zwei Chip-Reihen, der mitlaufende Zähler und
+das Panel für die Kombination, die nichts trifft. Damit ist H6 fertig und
+`/work` die zweite Seite dieser Site, auf der ein Leser etwas *tun* kann.
+
+**Gegen Produktion ist nichts davon gemessen.** Alle Zahlen unten stammen vom
+lokalen Produktionsbuild. Zeuge, Abnahme und `check-deployed` kommen nach dem
+Merge.
+
+### Die Zahl der Phase: die Liste hat die Client-Grenze nie überquert
+
+| | vorher (`a8e1a9c`) | nachher |
+|---|---|---|
+| `/` gesamt, gzip | 143 580 B, 7 Dateien | **143 580 B, 7 Dateien** |
+| `/work` gesamt, gzip | 143 580 B, 7 Dateien | 145 215 B, 8 Dateien |
+| die Insel | — | **1 635 B** |
+
+Die Zeilen kommen als **fertig gerenderte Knoten** in die Insel, nicht als
+Daten. `WorkRow`, `WorkPreview`, `StatusDot`, `NoData` und `SourceLine` stehen
+deshalb nicht im Client-Manifest der Route — nachgesehen, nicht gehofft. Der
+Leitfaden im Bild dieser Next-Version sagt die Ausnahme ausdrücklich: was als
+`children` **oder als anderes Prop** hereingereicht wird, ist gerendertes
+Ergebnis und kein Import. ADR 0064.
+
+Von den 6 725 B Luft im eigenen Budget (ADR 0050) sind damit **24 % weg**, und
+zwölf Seiten stehen noch aus.
+
+### Der stärkste Fund: die Linie unter dem Zähler war ein Drittel breit
+
+`.work-count` ist ein `<p>`, und `globals.css` deckelt jedes `p` bei 68ch —
+richtig für Fließtext. Bei 9px Mono sind 68ch **367px**, und die Zeile trägt
+einen `border-block-end`. Diese Linie stand seit H6a unter einer 968px-Spalte.
+
+Gefunden, weil H6b **direkt darüber** eine Regel über die volle Breite gezogen
+hat. Vorher sah sie aus wie eine Entscheidung. Als `017-the-filter-that-never-
+crossed-the-boundary.mdx` aufgeschrieben.
+
+### Der zweite Fund: ein leeres Panel gab der API die Schuld für ihre Antwort
+
+`WorkList` verzweigte auf `entries.length === 0` und schrieb dann „that endpoint
+did not answer this request". Antwortet `/api/systems` mit `{"systems": []}`,
+liest die Kachelreihe `00 SYSTEMS` und der Zähler `SHOWING 00 OF 00` — beides
+Messungen — über einem Panel, das behauptet, es habe keine Antwort gegeben.
+**Drei Aussagen über eine Antwort, und das Panel war die falsche.**
+
+Genau die Form, die H6a vier Elemente weiter oben in den Kacheln gefunden und
+mit `listed()` beantwortet hat. Die Wache wurde geschrieben, an zwei Stellen
+gelesen — und die dritte zählte weiter Zeilen. **Eine Wache ist keine
+Entscheidung, sondern eine, an die man sich erinnern muss.** `workListNone` ist
+jetzt der zweite Satz.
+
+### Der dritte Fund: die Chips waren nie an einem Finger gemessen worden
+
+`touch-targets.coarse.spec.ts` besucht ausschließlich `/`. `.chip` steht seit G1
+in der 44px-Regel von `layout.css` und hatte bis heute keinen Zeichner — das
+erste Bedienelement dieser Site, das weder Chrome noch Startseite ist, wäre also
+ungemessen durchgelaufen, während die Datei grün blieb. Dieselbe Klasse wie der
+Sweep, der in H6a an `.sys-row` vorbeigelaufen ist. Jetzt gemessen: 20 Chips,
+alle ≥ 44px bei `pointer: coarse`.
+
+### Was vom Blatt abweicht, und warum
+
+- **Kein `×` am gesetzten Chip** und **kein durchgestrichener 0-Treffer-Chip**.
+  Beides zeichnet die `FILTER CHIP`-Zeile der State-Language-Matrix, und beides
+  gilt für ein *festes* Vokabular. Die Stack-Chips sind aus der Antwort
+  abgeleitet, also ist ein einzelner Chip nie leer; leer ist eine Eigenschaft
+  der **Kombination**, und die trägt das Panel. ADR 0064.
+- **Chips sind `<button>`**, das Blatt zeichnet `<span onClick>` ohne `role`,
+  ohne `tabindex` und ohne eine einzige Tastaturnotiz. State Language erlaubt
+  keine Ausnahme.
+- **Die Reihen brechen um, sie scrollen nicht.** Das 390er-Artboard legt beide
+  in einen Swipe mit `scrollbar-width: none`. Es zeichnet sechs getippte
+  Stack-Chips; diese Reihe zeichnet **fünfzehn abgeleitete**. Im Orakel als
+  `chips-wrap` festgehalten, mit #294 als Grund.
+- **Kein fünfter Schalter.** Der Block kippt bei 900, wo `.work-row` schon zur
+  Karte wird.
+
+### Lokal gemessen
+
+```
+make check   grün
+npm test     550   (von 533)
+e2e          1244 grün, 3 übersprungen, 0 rot   (von 1134)
+Orakel       36 Messungen /work (von 25), alle 11 neuen in der Galerie
+390          Chips umgebrochen, kein verborgener Scroll, Überlauf 0
+```
+
+Port 3100 gehört dem Rig; der Handstart lief auf 3200.
+
+## Gefunden — aus H6b
+
+- **Eine Wache ist keine Entscheidung, sondern eine, an die man sich erinnern
+  muss.** `listed()` entstand in H6a genau für „die API hat geantwortet und es
+  gibt keine" gegen „es kam nichts". Zwei Leser bekamen sie, der dritte zählte
+  weiter Zeilen und log deshalb. Wo eine Unterscheidung eine Funktion bekommt,
+  muss die *alte* Bedingung verschwinden, nicht nur die neue dazukommen.
+  *(02.09.2026, H6b)*
+- **Ein Fehler kann eine Phase lang sichtbar und trotzdem unlesbar sein.** Die
+  367px-Linie unter dem Zähler sah aus wie Absicht, bis eine Regel über die
+  volle Breite danebenstand. Nicht das Hinsehen hat gefehlt, sondern der
+  Vergleich. *(02.09.2026, H6b)*
+- **Eine globale Leseregel trifft auch das, was kein Satz ist.** `p { max-width:
+  68ch }` ist für Fließtext richtig und für eine Label-Zeile falsch. Wer eine
+  Regel an ein *Element* hängt statt an eine *Rolle*, bekommt sie irgendwann auf
+  etwas, das die Rolle nicht hat. *(02.09.2026, H6b)*
+- **Eine Prüfdatei, die nur eine Route besucht, wächst nicht mit der Site.**
+  `touch-targets.coarse.spec.ts` ging fünfmal nach `/`. Die 44px-Regel nennt
+  `.chip` seit G1; das erste gezeichnete `.chip` wäre ungemessen geblieben.
+  *(02.09.2026, H6b)*
+- **`make bundle-size` misst eine Route und die Site hat sieben.** Das Werkzeug
+  liest `en.html` und das Client-Manifest von `app/[lang]/page`. Eine Insel auf
+  `/work` ist darin unsichtbar — es meldet wahrheitsgemäß und nutzlos „keine
+  Änderung". Von Hand mit derselben Methode gemessen. *(02.09.2026, H6b)*
+- **`make bundle-size` bricht auf `main` ohnehin ab.** Der H3-Chunk hält
+  Rahmenwerk und eigenen Code, das Skript verweigert die Zuordnung statt zu
+  raten. Das ist #301, und es heißt: die Gesamtzahl bleibt messbar, die
+  Aufteilung nicht — solange #301 offen ist, ist das eigene Budget nicht
+  ablesbar. *(02.09.2026, H6b)*
+- **`.next/dev` gehört `root` und blockiert jeden `rm -rf .next`.** Der
+  Dev-Container legt es als root an; danach scheitert `make bundle-size` mit
+  einer Wand aus „Permission denied" und meldet „npm run build failed". Dreimal
+  notiert, diesmal mit dem Ausweg: über einen Container derselben Herkunft
+  löschen, nicht mit `sudo`. *(02.09.2026, H6b)*
+- **`EmptyState.filters` hat in H6b seinen ersten Konsumenten bekommen, und die
+  Chips stehen ohne Trenner nebeneinander.** „LIVE Python" liest sich als zwei
+  Wörter, nicht als zwei Filter. State Language zeichnet sie als Chips mit `×`.
+  Gemessen, nicht geändert — das Bauteil ist G6s, und eine Umgestaltung ohne
+  zweiten Konsumenten wäre geraten. *(02.09.2026, H6b)*
+
+## Verschoben aus H6b
+
+- **`bundle-size.sh` kennt nur eine Route → Issue.** Die Aufgabe: das Skript
+  nimmt eine Route entgegen und liest deren Dokument und Client-Manifest.
+  Abnahmekriterium: die Insel auf `/work` erscheint in seiner Ausgabe. Braucht
+  eine Antwort auf „ein Budget je Route oder eines für alle" und hängt an #301,
+  das die Aufteilung heute verweigert.
+- **Kein JSON-LD auf `/work` → weiter offen.** H6a hat es notiert, H6b hat es
+  nicht angefasst. `CollectionPage`/`ItemList` bleibt die naheliegende Form.
+- **Der Filterzustand steht nicht in der URL → so entschieden, mit Verfallsdatum.**
+  ADR 0064 §3. Bei zwei Systemen ist ein teilbarer Filter nichts wert und die
+  vorgerenderte Schale etwas; bei zehn dreht sich das um. Die Notiz existiert,
+  damit die Frage dann einmal gestellt wird statt zweimal.
+- **Der Sweep sieht das Filterfeld nicht.** `work.sweep.spec.ts` läuft gegen
+  `/work`, und dort steht ohne API kein Chip. Der 900er-Wechsel ist stattdessen
+  in `gallery.work.spec.ts` an beiden Seiten geprüft (899 und 1024). Notiert,
+  weil die Sweep-Datei den Anschein erweckt, sie decke die Seite ganz ab.
+
+---
+
 ## Wo wir stehen — 02.09.2026, H6a abgenommen: 10 von 10, und der Tausch war sauber
 
 `7d3f1c5` läuft. Merge 15:12:22Z, Deploy-Job 15:19:57Z–15:20:35Z (**38 s**),
