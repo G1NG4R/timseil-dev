@@ -12,6 +12,140 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 02.09.2026, H6a abgenommen: 10 von 10, und der Tausch war sauber
+
+`7d3f1c5` läuft. Merge 15:12:22Z, Deploy-Job 15:19:57Z–15:20:35Z (**38 s**),
+Container laufen seit **15:20:42.633819639Z**. Uhrzeit mit `date -u` gelesen;
+15:20 UTC liegt weit vom Dokploy-Fenster 23:45–00:00 UTC.
+
+**`/work` ist die zweite vollständige Seite dieser Site** und die erste
+indizierbare, die keine Fallstudie ist.
+
+### Der Tausch hatte kein Loch — über vier Pfade
+
+Zeuge ab 15:13:08Z, also **6:49 vor dem Deploy-Job**, über die Aufteilung, die
+H5c als Lehre hinterlassen hat — zwei Pfade `web`, zwei Pfade `api`:
+
+```
+/                    462 Anfragen   462 × 200
+/work                462 Anfragen   462 × 200
+/api/health          462 Anfragen   462 × 200
+/api/systems         462 Anfragen   462 × 200
+
+✓ every answer was 200
+```
+
+**1 848 Anfragen über 462 Sekunden**, 7 der 462 Sekunden ohne Stichprobe. Der
+breiteste Lauf, den es bisher gab, bleibt der H4-Abnahme-Lauf mit 1 950
+Anfragen; dieser ist der zweitbreiteste und der erste mit vier Pfaden **ohne**
+Fund.
+
+**Was das über #304 sagt und was nicht.** Neun Tausche, zwei mit Loch. Dieser
+war sauber, und „kein Loch gesehen" ist weiter nicht „kein Loch" — bei 7
+ungemessenen Sekunden von 462 ist die Aussage genau so breit wie die Messung.
+Als vierte Stichprobe an #304, mit derselben Einschränkung wie die drei davor.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `7d3f1c5`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3, H4, H5a, H5b und H5c — die laufenden Container tragen exakt die
+veröffentlichten Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **siebten** Mal nicht. Der
+`--panel`-Zweig bleibt die Reparatur und bleibt ungebaut.
+
+### Die Seite geklickt, an beiden gezeichneten Breiten
+
+```
+/ · /de · /fr · /work · /de/work · /fr/work · /work/timseil-dev    alle 200
+/work                    kein robots-Meta — indizierbar
+sitemap.xml              9 Einträge (von 6), /work in allen drei Sprachen,
+                         ohne eine Zeile Codeänderung
+/api/systems             200 + 304 auf If-None-Match   s-maxage=300, swr=1800
+/api/health              200 + 304 auf If-None-Match   s-maxage=60,  swr=600
+```
+
+**Geklickt, nicht nur gelesen**, an 1440 und 390, jeweils mit `waitForURL`:
+
+```
+Kopf WORK        → /work                 h1 "Selected work"
+Zeile 02 →       → /work/timseil-dev     h1 "This site is the system it describes."
+                   aria "Read the case study: timseil.dev"   ·  1 Ausgang in der Liste
+TRAINING LOG →   → /
+Kontaktsatz →    → /contact
+```
+
+Bei 390 liegt die Navigation hinter dem 44px-Knopf; die drei Ausgänge der Seite
+selbst wurden dort genauso geklickt.
+
+### Die Geometrie an allen sieben Prüfbreiten, gegen Produktion
+
+`getBoundingClientRect` am ausgelieferten Build, `clientWidth` je Zeile
+mitgemessen statt der Rückmeldung geglaubt:
+
+```
+Breite  client  h1    Kopf   Zeile  Vorschau  Zeile   Namensspalte  Einzug  Überlauf
+ 1440    1440   52px  grid   grid   block     1160        588         74       0
+ 1081    1081   52px  grid   grid   block     1001        429         74       0
+ 1079    1079   52px  block  grid   none       999        583         74       0
+ 1024    1024   52px  block  grid   none       944        528         74       0
+  899     899   52px  block  flex   none       819        803          8       0
+  719     719   34px  block  flex   none       639        623          8       0
+  390     390   34px  block  flex   none       346        330          8       0
+```
+
+**Alle drei Schalter sitzen, wo sie sollen**, beidseitig geprüft: 1080 nimmt dem
+Kopf die zweite Spalte und der Zeile die Vorschau, 900 macht aus der Zeile eine
+Karte, 720 setzt die Anzeigestufe auf 34. **Überlauf null an jeder Breite.**
+
+Der Einzug von 8px unter 900 ist die eigene Polsterung der Zeile — die
+gemessene Bestätigung, dass die zentrierten Karten weg sind.
+
+### Zum ersten Mal trägt die Work-Zeile eine echte Zahl
+
+```
+/api/systems   02 timseil.dev   live   uptime90d=100   measuredAt=2026-09-02T15:25:42.635Z
+/work          UPTIME · 91 D    100.00%
+```
+
+Lokal war jede Messung `null`. Die Seite druckt, was die API antwortet — und
+damit steht **#290 jetzt auf einer zweiten Fläche**: `uptime90d` trägt keine
+Abdeckungszahl, und anders als die Fallstudie *kann* diese Zeile keine zeigen —
+der Listen-Endpunkt sendet kein `days[]`, also gibt es hier nichts, woraus
+`coverage()` eine Abdeckung rechnen könnte. 100 % über 91 Tage, bei einer Sonde,
+die seit gut zehn Tagen läuft. An #290 geschrieben.
+
+### `ops.lastDeploy.durationSec` sagt 486 s, der Job lief 38 s
+
+Zum fünften Mal notiert, #242. Der Wert misst die Pipeline und nicht den Deploy.
+
+## Gefunden — aus der H6a-Abnahme
+
+- **Nach einer Navigation im Browser stehen zwei `<h1>` im Dokument, und das ist
+  richtig so.** Unter Cache Components hält Next die zuletzt besuchte Route über
+  `<Activity>` montiert; der Hero der Startseite steht nach dem Klick auf WORK
+  weiter in demselben `<main>`. Die Vorfahrenkette gemessen: `div.hero` trägt
+  `display: none`, also ist der alte Titel weder sichtbar noch im
+  Accessibility-Baum. **Die Lehre ist die Zusicherung, nicht der Befund:** „genau
+  eine `<h1>`" gilt nach einem frischen Laden und nach einer Navigation nur
+  gefiltert auf sichtbar. `e2e/work.spec.ts` lädt frisch und ist damit richtig —
+  aber wer die Zeile liest, hält sie für allgemeiner, als sie ist.
+  *(02.09.2026, H6a-Abnahme)*
+- **`newPage({ viewportSize })` gibt es nicht, und Playwright meldet es nicht.**
+  Der erste Messlauf gegen Produktion hat für 1440 und 390 identische Zahlen
+  geliefert — beide liefen im Standardfenster. Aufgefallen, weil `h1` bei 390
+  52px las statt 34. Seitdem wird `clientWidth` in jeder Zeile mitgemessen; eine
+  Breite, die man nicht misst, ist eine Breite, die man annimmt. Dieselbe Klasse
+  wie die Fenstergrößen-Notiz aus der H5b-Abnahme. *(02.09.2026, H6a-Abnahme)*
+- **Der vierte Pfad hat diesmal nichts gefunden, und er bleibt trotzdem.** Die
+  Aufteilung zwei `web` / zwei `api` hat in H5c die Frage nach dem fallenden
+  Container beantwortet. Ein Instrument, das einmal etwas gefunden hat und beim
+  nächsten Mal schweigt, hat nicht aufgehört zu messen. *(02.09.2026,
+  H6a-Abnahme)*
+
+---
+
 ## Wo wir stehen — 02.09.2026, H6a gebaut: `/work` ist eine Seite, kein Stub mehr
 
 **Zweig `phase/h6a-work-index`.** `/work` zeichnet Kopf, Statistikleiste,
