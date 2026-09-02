@@ -12,6 +12,123 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 02.09.2026, H5c abgenommen: 10 von 10, und der Tausch hatte ein Loch
+
+`34196ae` / `v0.23.0` läuft. Merge 08:40:01Z, Deploy-Job 08:46:35Z–08:47:01Z
+(26 s), neuer API-Prozess **08:47:13.505Z**. Uhrzeit mit `date -u` gelesen;
+08:47 UTC liegt weit vom Dokploy-Fenster 23:45–00:00 UTC.
+
+**Damit ist H5 fertig — und die Startseite ist die erste vollständige Seite
+dieser Site.** Vier Marker, vier gefüllte Abschnitte, ein Fuß, kein `[SOON]` mehr
+in einer Sektion.
+
+### Der Tausch hatte ein Loch, und es ist das erste seit H3
+
+Zeuge ab 08:41:23Z, also **5:12 vor dem Deploy-Job**, über vier Pfade:
+
+```
+/                    372 Anfragen   371 × 200   1 × 503
+/work/timseil-dev    372 Anfragen   371 × 200   1 × 503
+/api/health          372 Anfragen   372 × 200
+/api/contributions   372 Anfragen   372 × 200
+
+✗ dieser Lauf zeigt keinen sauberen Tausch
+```
+
+1 488 Anfragen über 372 Sekunden, 4 der 372 Sekunden ohne Stichprobe.
+
+**Der vierte Pfad war der Grund, ihn aufzunehmen, und der dritte hat die Frage
+beantwortet, die seit H3 offen war.** Die zwei Pfade, die gefallen sind, werden
+beide von `web` bedient; die zwei, die gehalten haben, beide von `api`. Der
+H3-Fund war „der `web`-Tausch und nichts sonst" — geschlossen aus einer
+Zeitangabe, mit einem Pfad und einem Health-Check. Hier fällt die Trennung
+**innerhalb eines Laufes** genau auf die Container-Grenze.
+
+Drei Dinge, die zwei Pfade nicht hätten sagen können:
+
+1. **Es ist `web`.** Gemessen, nicht erschlossen.
+2. **Beide Web-Pfade fielen in derselben Sekunde.** Nicht eine Anfrage
+   irgendwo, sondern ein *Moment* ohne bereites Backend, gleichzeitig auf zwei
+   Routen. Das ist eine Eigenschaft des Backends, nicht einer Route.
+3. **Es war eine 503, das H3-Loch war „keine Verbindung".** Ein Unterschied mit
+   Folgen: eine 503 heißt, Traefik war da und hatte nichts Gesundes; eine
+   abgewiesene Verbindung heißt, es lauschte nichts. Sind beide dieselbe Ursache,
+   hat der Proxy sie zweimal verschieden behandelt — sind sie es nicht, sind es
+   zwei Fehler.
+
+**Die zwei Container tauschen unabhängig, mit Abstand.** `/api/health` meldet den
+neuen API-Prozess um 08:47:13.505Z und hat nie geblinzelt; die Web-503 liegen
+rund zwanzig Sekunden später.
+
+Als dritte Stichprobe an **#304** geschrieben, mit der Tabelle aller Läufe. Acht
+Tausche, zwei mit Loch, und die zwei sehen einander nicht ähnlich.
+
+**Was diese Abnahme deshalb nicht behauptet:** dass der Tausch sauber war. Er war
+es nicht, es ist aufgeschrieben, und die Ursache ist weiter unbekannt — zwei
+Stichproben können eine Wettlaufsituation im Proxy nicht von einer im Tausch
+unterscheiden, und drei auch nicht.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `34196ae`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3, H4, H5a und H5b — die laufenden Container tragen exakt die veröffentlichten
+Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **sechsten** Mal nicht. Der
+`--panel`-Zweig bleibt die Reparatur und bleibt ungebaut.
+
+### Die Seite geklickt, an beiden gezeichneten Breiten
+
+```
+/ · /de · /fr             200   SYS.01 SYS.02 SYS.03 SYS.04, aufsteigend, alle drei
+/work/timseil-dev         200
+/api/contributions        200   + 304 auf If-None-Match   s-maxage=3600, swr=7200
+/api/systems/…?window=30  200   + 304 auf If-None-Match   s-maxage=300,  swr=1800
+
+1440   Zeile 1160 = 110 + 1008, grid   ·  Bio 560px  ·  Überlauf 0
+ 390   Zeile  346, gestapelt (flex)    ·  Bio 346px  ·  Überlauf 0
+beide  3 Zeilen · Daten absteigend 2026-09-02 · 2026-09-01 · 2026-09-01
+       LATEST 03 · SOURCE: content/posts
+       CASE STUDY →  (ohne die 02, die aus /api/systems käme)
+       0 Links in den Zeilen · 1 Link in der Sektion · 3 Bedienelemente in main
+       kein [PORTRAIT] · 0 Bilder in main · 0 × [SOON] in einer Sektion
+```
+
+**Geklickt, nicht nur gelesen:** der Kopf-Link landet an **beiden** Breiten auf
+`/work/timseil-dev` mit der Überschrift „This site is the system it describes.",
+und `ABOUT →` auf `/about`. Beide mit `waitForURL` statt `networkidle` — die
+H5b-Abnahme-Lehre.
+
+**Und der Tiebreak steht gegen Produktion.** Die drei Daten sind `2026-09-02`,
+`2026-09-01`, `2026-09-01`: der Beitrag dieser Phase steht oben, und darunter
+stehen zwei Beiträge desselben Tages in der Reihenfolge ihrer Nummern. Das ist
+der Beleg für die Sache, für die es in diesem Rig keinen Test geben kann — die
+Sortierung allein nach Datum hätte diese beiden vertauschen dürfen.
+
+### `ops.lastDeploy.durationSec` sagt 414 s, der Job lief 26 s
+
+Zum vierten Mal notiert, #242. Der Wert misst die Pipeline und nicht den Deploy.
+
+## Gefunden — aus der H5c-Abnahme
+
+- **Der `web`-Container ist der, der fällt — jetzt gemessen statt erschlossen.**
+  Oben beschrieben, an #304 geschrieben. Die Lehre für die nächste Abnahme: vier
+  Pfade behalten, zwei davon `web` und zwei `api`, denn genau diese Aufteilung
+  hat die Frage beantwortet. *(02.09.2026, H5c-Abnahme)*
+- **Eine 503 und eine abgewiesene Verbindung sind nicht dasselbe Loch.** Der
+  H3-Fund und dieser sehen in der Zusammenfassung gleich aus („ein Loch") und
+  sind es auf der Leitung nicht. Eine Tabelle, die nur „Löcher" zählt, verliert
+  genau die Unterscheidung, die die Ursache eingrenzt. *(02.09.2026,
+  H5c-Abnahme)*
+- **Die Datums-Spalte ist bei 390 nicht 70px breit, sondern 60.** Lokal 70,
+  gegen Produktion 60 — die Spalte ist unterhalb von 560 ein Flex-Kind und damit
+  inhaltsbreit, also ist keine der beiden Zahlen zugesichert. Notiert, weil eine
+  Messung, die zweimal verschieden ausfällt, keine Regression ist, sondern eine
+  Zahl ohne Regel dahinter. *(02.09.2026, H5c-Abnahme)*
+
+---
+
 ## Wo wir stehen — 02.09.2026, H5c gebaut: die Startseite ist vollständig
 
 **Branch `phase/h5c-homepage-log-and-footer`, nicht gepusht.** `/` zeichnet
