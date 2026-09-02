@@ -12,6 +12,139 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 02.09.2026, H6b abgenommen: 10 von 10, und 3 600 saubere Antworten
+
+`6f203e0` läuft. Merge 21:53:19Z, Deploy-Job 22:01:40Z–22:02:13Z (**33 s**),
+Container laufen seit **22:02:23.381591772Z**. Uhrzeit mit `date -u` gelesen;
+22:02 UTC liegt weit vom Dokploy-Fenster 23:45–00:00 UTC.
+
+**Damit ist H6 fertig, und `/work` ist die erste Seite dieser Site, auf der ein
+Leser etwas tun kann statt nur zu lesen.**
+
+### Der breiteste Zeugenlauf, den es hier gegeben hat — und ohne Loch
+
+Zeuge ab 21:54:03Z, also **44 Sekunden nach dem Merge** und 7:37 vor dem
+Deploy-Job. Vier Pfade, zwei `web`, zwei `api`:
+
+```
+/                    900 Anfragen   900 × 200
+/work                900 Anfragen   900 × 200
+/api/health          900 Anfragen   900 × 200
+/api/systems         900 Anfragen   900 × 200
+
+✓ every answer was 200
+```
+
+**3 600 Anfragen über 900 Sekunden**, 11 der 900 Sekunden ohne Stichprobe. Der
+bisherige Rekord war der H4-Abnahmelauf mit 1 950; dieser ist fast doppelt so
+breit und der zweite in Folge ohne Fund.
+
+**Was das über #304 sagt und was nicht.** Zehn Tausche, zwei mit Loch. Dieser
+war sauber über die längste Messung bisher — und „kein Loch gesehen" ist
+weiterhin nicht „kein Loch". Als **fünfte** Stichprobe an #304, mit derselben
+Einschränkung wie die vier davor, nur mit einem breiteren Fenster.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `6f203e0`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3, H4, H5a, H5b, H5c und H6a — die laufenden Container tragen exakt die
+veröffentlichten Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **achten** Mal nicht. Der
+`--panel`-Zweig bleibt die Reparatur und bleibt ungebaut.
+
+### Geklickt, nicht nur gelesen — an beiden gezeichneten Breiten
+
+```
+/ · /de · /fr · /work · /de/work · /fr/work · /work/timseil-dev · /contact   alle 200
+/work                    kein robots-Meta — indizierbar
+sitemap.xml              9 Einträge, /work in allen drei Sprachen
+/api/systems             200 + 304 auf If-None-Match   s-maxage=300, swr=1800
+/api/health              200 + 304 auf If-None-Match   s-maxage=60,  swr=600
+```
+
+Der Filter, an 1440 **und** 390, jeweils mit echten Klicks:
+
+```
+Ruhe          SHOWING 02 OF 02   VAT Check API · timseil.dev   ALL 02 · ANY gesetzt
+LIVE          SHOWING 01 OF 02   timseil.dev
+LIVE+PYTHON   SHOWING 00 OF 02   NO SYSTEMS MATCH THIS COMBINATION   LIVE · Python
+RESET         SHOWING 02 OF 02   beide Achsen zurück auf ALL · ANY
+Tastatur      QUEUED fokussiert, Enter → SHOWING 01 OF 02, VAT Check API
+```
+
+**Beide Breiten antworten identisch**, und die Tastatur führt genauso weit wie
+der Zeiger — die Entscheidung gegen die `<span onClick>` des Blatts, gegen
+Produktion nachgemessen.
+
+### Die Geometrie an allen sieben Prüfbreiten, gegen Produktion
+
+`getBoundingClientRect` am ausgelieferten Build, `clientWidth` je Zeile
+mitgemessen statt der Rückmeldung geglaubt:
+
+```
+Breite  client  Spalten  Chips  wrap  verborgener Scroll  Zähler   Liste  Überlauf
+ 1440    1440      2       20   wrap          0            1160    1160      0
+ 1081    1081      2       20   wrap          0            1001    1001      0
+ 1079    1079      2       20   wrap          0             999     999      0
+ 1024    1024      2       20   wrap          0             944     944      0
+  899     899      1       20   wrap          0             819     819      0
+  719     719      1       20   wrap          0             639     639      0
+  390     390      1       20   wrap          0             346     346      0
+```
+
+**Der 900er-Schalter sitzt, beidseitig geprüft** (1024 zwei Spalten, 899 eine),
+und es ist kein fünfter dazugekommen. **Zwanzig Chips bei jeder Breite,
+umgebrochen, verborgener Scroll null** — die Entscheidung gegen den Swipe des
+390er-Artboards steht damit gemessen da und nicht nur begründet.
+
+### Die Zähler-Linie ist jetzt so breit wie die Liste
+
+```
+Breite    Zähler   Liste
+ 1440      1160    1160
+  390       346     346
+```
+
+Vor dieser Phase war sie an jeder Breite 367px — `p { max-width: 68ch }` bei
+9px Mono. **Gleich an allen sieben Breiten**, also ist die Reparatur keine
+Zahl, die zufällig einmal passt.
+
+### Die Betriebszahl steht, und #290 steht daneben
+
+```
+/api/systems   02 timseil.dev   live   uptime90d=100   measuredAt=2026-09-02T22:07:23.384Z
+/work          UPTIME · 91 D    100.00%
+```
+
+100 % über 91 Tage, bei einer Sonde, die seit gut zehn Tagen läuft — der
+Listen-Endpunkt sendet kein `days[]`, also kann diese Zeile keine Abdeckung
+zeigen. Zum zweiten Mal an #290 geschrieben, unverändert.
+
+## Gefunden — aus der H6b-Abnahme
+
+- **Ein Zeuge, der 44 Sekunden nach dem Merge startet, misst den ganzen Deploy
+  statt eines Ausschnitts.** H6a lag 6:49 vor dem Deploy-Job und maß 462
+  Sekunden; dieser lag 7:37 davor und maß 900. Der Unterschied ist nicht
+  Sorgfalt, sondern Reihenfolge: erst starten, dann alles andere prüfen.
+  *(02.09.2026, H6b-Abnahme)*
+- **Eine Reparatur, die an sieben Breiten dieselbe Zahl liefert, ist eine
+  Reparatur; an einer wäre sie ein Zufall.** Zähler und Liste sind an allen
+  sieben gleich breit. *(02.09.2026, H6b-Abnahme)*
+- **Das Lab hat den Tausch nicht messen können, weil sein Traefik im falschen
+  Netz hing.** `503 no available server`, während alle Container `healthy`
+  meldeten — das ist #207, und es kostet jedes Mal die Zeit, bis man es
+  wiedererkennt. Aufgabe: der Lab-Traefik gehört ins selbe Netz wie api und web,
+  ohne dass jemand das von Hand nachreicht. *(02.09.2026, H6b-Abnahme)*
+
+## Verschoben aus der H6b-Abnahme
+
+- **Der `--panel`-Zweig von `check-deployed.sh` → zum achten Mal offen.** Die
+  Aufgabe steht seit G3 hier, der Weg in `backlog.local.md`.
+
+---
+
 ## Wo wir stehen — 02.09.2026, H6b gebaut: der Filter läuft und kostet 1 635 B
 
 **Zweig `phase/h6b-work-filters`.** Zwei Chip-Reihen, der mitlaufende Zähler und
