@@ -69,6 +69,17 @@ const DIVERGENCE = {
     'the nearest step. Differences of up to 8px, and no further: where the gap ' +
     'grew past that it got a class of its own rather than a wider excuse. H3 is ' +
     'where that line was drawn — see `hero-rhythm`.',
+  'chips-wrap':
+    'At 390 the sheet puts both chip rows in a swipe container — ' +
+    '`overflow-x:auto; width:max-content; scrollbar-width:none` — and drops ' +
+    'their STATUS and STACK labels. Two reasons not to. The sheet types six ' +
+    'stack chips; this row draws whatever `stackTags` derives from the answer, ' +
+    'which is fifteen names from three systems, so the hidden part grows with ' +
+    'the data rather than being a fixed six. And a scrollbar suppressed at the ' +
+    'one width where the reader cannot otherwise see there is more is the shape ' +
+    '#294 already holds open against the request path. The sheet wraps its own ' +
+    'stack row at 1440; both rows wrap at every width here, and the labels stay ' +
+    'at both — one set of words, which is #293.',
   'adr-0052':
     'Decided in ADR 0052 with its sources: Case Study 02, the Intermediate ' +
     'Widths register and Consistency Check K-29 all say five tiles; the ' +
@@ -1272,6 +1283,115 @@ const WORK_MAP = [
     decl: 'padding-left', says: '14px',
     reading: 'each tile stands 14px off the rule that separates it',
     measure: { kind: 'computed', selector: '.work-stat', prop: 'padding-left' }, expect: '14px',
+  },
+
+  // ── 1440 · the two filter rows. Measured in the gallery, because `/work`
+  //          draws no chip without an answer to derive one from ─────────────
+  {
+    id: 'work-filters-rule',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 76,
+    decl: 'border-top', says: '1px solid rgba(139,152,166,.16)',
+    reading: 'the filter block is fenced off above and below by the hairline',
+    measure: { kind: 'computed', selector: '.work-filters', prop: 'border-top-width' },
+    expect: '1px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-filters-padding',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 76,
+    decl: 'padding', says: '16px 0',
+    reading: 'and holds its rows 16px off both rules',
+    measure: { kind: 'computed', selector: '.work-filters', prop: 'padding-top' },
+    expect: '16px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-filters-label-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 78,
+    decl: 'font', says: "600 9px 'JetBrains Mono',monospace",
+    reading: 'STATUS and STACK name their rows at the smallest mono step',
+    measure: { kind: 'computed', selector: '.work-filter-label', prop: 'font-size' },
+    expect: '9px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-filters-label-tracking',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 78,
+    decl: 'letter-spacing', says: '.16em',
+    reading: 'tracked like every other label of its size',
+    measure: { kind: 'computed', selector: '.work-filter-label', prop: 'letter-spacing' },
+    expect: '1.44px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-chip-gap',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 79,
+    decl: 'gap', says: '8px',
+    reading: '8px between two chips',
+    measure: { kind: 'computed', selector: '.work-chips', prop: 'column-gap' },
+    expect: '8px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-chip-wrap',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 88,
+    decl: 'flex-wrap', says: 'wrap',
+    reading: 'and the row wraps rather than running off its column',
+    measure: { kind: 'computed', selector: '.work-chips', prop: 'flex-wrap' },
+    expect: 'wrap',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-chip-padding',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 80,
+    decl: 'padding', says: '6px 11px',
+    reading: 'a chip is Foundations\' chip: 6 by 11',
+    measure: { kind: 'computed', selector: '.chip', prop: 'padding-left' },
+    expect: '12px',
+    diverges: { class: 'spacing-scale', sheet: '11px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'work-chip-size',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 80,
+    decl: 'font', says: "600 9.5px 'JetBrains Mono',monospace",
+    reading: 'and reads at the smallest mono step, like the label over it',
+    measure: { kind: 'computed', selector: '.chip', prop: 'font-size' },
+    expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+    on: '/dev/components',
+  },
+  {
+    id: 'work-chip-radius',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 81,
+    decl: 'border', says: '1px solid rgba(139,152,166,.25)',
+    reading: 'a chip at rest is a hairline box with square corners',
+    measure: { kind: 'computed', selector: '.chip', prop: 'border-top-left-radius' },
+    expect: '0px',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-chip-set',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 80,
+    decl: 'background', says: '#00E5FF',
+    reading: 'and a chip that is set is inverted — the accent as a fill, not a shade of it',
+    measure: {
+      kind: 'computed',
+      selector: '.chip[aria-pressed="true"]',
+      prop: 'background-color',
+    },
+    expect: 'rgb(0, 229, 255)',
+    on: '/dev/components',
+  },
+  {
+    id: 'work-empty-padding',
+    sheet: 'workIndex', artboard: '1a', width: 1440, line: 142,
+    decl: 'padding', says: '44px 8px',
+    reading: 'the panel for a combination nothing matches stands well clear of the rows',
+    measure: { kind: 'computed', selector: '.st-empty-panel', prop: 'padding-top' },
+    expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '44px' },
+    on: '/dev/components',
   },
 
   // ── 1440 · the counter ───────────────────────────────────────────────────

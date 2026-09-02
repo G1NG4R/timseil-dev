@@ -66,6 +66,18 @@ export function listed(body: SystemList | null): boolean {
 }
 
 /**
+ * The counter line itself, from two numbers.
+ *
+ * SPLIT OUT IN H6b SO THAT ONE SENTENCE HAS ONE AUTHOR. `workMeta` renders it
+ * from an answer; the client island renders it from what survived the two axes
+ * and has no answer to hand. Two call sites building the same string out of the
+ * same four words is how `FIGURES FROM` becomes `SOURCE:` on one of them.
+ */
+export function workCount(total: number, shown: number): string {
+  return `SHOWING ${padTwo(shown)} OF ${padTwo(total)} · FIGURES FROM /api/systems`;
+}
+
+/**
  * The counter line over the list.
  *
  * THREE CASES AND NOT TWO, which is `systemsMeta`'s rule one page over and the
@@ -75,11 +87,11 @@ export function listed(body: SystemList | null): boolean {
  * systems. An answer whose `systems` is missing or is not an array did not say
  * that, and printing zeroes for it would be invariant 1 in a counter.
  *
- * `shown` IS THE FILTERED COUNT AND IT IS OPTIONAL. Nothing filters in H6a, so
- * the page passes nothing and both numbers are the total; the client island in
- * H6b passes what survived the two axes. Written this way round so the server
- * renders the honest line on its own and the island narrows it, rather than the
- * line existing only where JavaScript ran.
+ * IT TAKES NO FILTERED COUNT ANY MORE. H6a gave it an optional `shown` for the
+ * island to pass through, and H6b did not need it: the island holds the rows,
+ * so it knows both numbers without being told either, and it calls `workCount`
+ * directly. A parameter whose only caller is the test that covers it is a
+ * claim about a design that was not built.
  *
  * `FIGURES FROM`, NOT `SOURCE:`, and the difference is deliberate. SYS.02's
  * head names the endpoint the LIST came from; this line stands over rows whose
@@ -89,10 +101,10 @@ export function listed(body: SystemList | null): boolean {
  * says the same about the contribution graph's: it "entfällt beim
  * API-Anschluss".
  */
-export function workMeta(body: SystemList | null, shown?: number): string {
+export function workMeta(body: SystemList | null): string {
   if (!listed(body)) return `${NO_DATA} · FIGURES FROM /api/systems`;
 
   const total = systemRows(body).length;
 
-  return `SHOWING ${padTwo(shown ?? total)} OF ${padTwo(total)} · FIGURES FROM /api/systems`;
+  return workCount(total, total);
 }

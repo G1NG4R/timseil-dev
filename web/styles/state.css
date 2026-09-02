@@ -172,6 +172,15 @@
   max-inline-size: 68ch;
 }
 
+/* The way back is a control, not a banner. The panel is a column and stretches
+   its children, so a button handed in as `children` spanned the full width and
+   put its label in the middle of the page. H6b is this component's first
+   consumer — the state existed with nobody in it since G6 — so the default is
+   settled here rather than worked around by the caller. */
+.st-empty-panel > .btn {
+  align-self: start;
+}
+
 .st-empty-filters {
   display: flex;
   flex-wrap: wrap;

@@ -8,6 +8,7 @@ import { ContributionGraph } from "@/components/home/ContributionGraph";
 import { OpsStrip } from "@/components/home/OpsStrip";
 import { Systems } from "@/components/home/Systems";
 import { WorkList } from "@/components/work/WorkList";
+import { ChipStates } from "@/components/dev/ChipStates";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
 import { EmptyState } from "@/components/state/EmptyState";
@@ -844,6 +845,34 @@ export default function GalleryPage() {
         </div>
         <div className="gal-demo" style={{ display: "block" }}>
           <WorkList body={null} posts={[]} messages={en} />
+        </div>
+      </section>
+
+      {/* ── The chip, on its own, in the states the inventory names ───────── */}
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">FilterChip</h2>
+          <span className="gal-where">`/work` · the two rows above the list</span>
+        </div>
+        <p className="gal-states">
+          rest · hover · focus · gesetzt (invertiert) · leer (0 treffer). The
+          first four are here; the fifth is not, and the reason is in the
+          registry entry. State Language draws DISABLED as a struck-through
+          `RUST` annotated &quot;0 treffer&quot; — a chip out of a fixed
+          vocabulary that today matches nothing. This page derives its stack
+          chips from the answer, so a chip that matches nothing is never drawn.
+          What is empty here is a COMBINATION, and the panel under the list is
+          where that state lives. Press LIVE and PYTHON in the section above to
+          see it.
+        </p>
+        <p className="gal-states">
+          The sentinel is a third resting state the sheet only draws in its own
+          script: `ANY` at rest is the accent in outline, an ordinary chip is
+          steel. Hover is behind `hover: hover`, so a touch screen gets the rest
+          state; focus is the one ring globals.css draws for everything.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <ChipStates />
         </div>
       </section>
 

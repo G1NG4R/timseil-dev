@@ -156,4 +156,27 @@ test.describe("targets a finger has to hit", () => {
     expect(targets.length, "no interactive element found on the homepage").toBe(3);
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
+
+  // H6b, AND THE ROUTE IS THE POINT OF THE TEST. Every block above goes to `/`,
+  // so the first control this site drew that is not chrome and not on the
+  // homepage would have gone unmeasured while this file stayed green — the
+  // shape H6a wrote down as "a sweep over seven widths can walk past a
+  // component it never sees". layout.css has named `.chip` in the coarse rule
+  // since G1 and nothing had ever rendered one.
+  //
+  // THE GALLERY, BECAUSE `/work` HAS NO ROWS IN THIS RIG. There is no api here,
+  // so the page renders an outage panel and draws no chips at all; the only
+  // place a finger can meet one is the fixture.
+  test("the filter chips are at least 44 x 44", async ({ page }) => {
+    await page.goto("/dev/components");
+    const targets = await measure(page, ".work-filters");
+
+    // Twenty in this fixture: four status chips, the stack sentinel and the
+    // fifteen names `stackTags` derives from three systems. A floor rather than
+    // that exact number, because the number is the fixture's and this test is
+    // not about the fixture — what it must never do is pass having measured
+    // nothing, which is the failure the assertion names.
+    expect(targets.length, "no chip was measured").toBeGreaterThan(10);
+    expect(tooSmall(targets), report(targets)).toEqual([]);
+  });
 });

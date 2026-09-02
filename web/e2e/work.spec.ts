@@ -86,6 +86,19 @@ test("the failed list explains itself and names the endpoint", async ({ page }) 
   expect(reason).toContain("/api/systems");
 });
 
+test("no answer means no filter, because there is no vocabulary to filter by", async ({
+  page,
+}) => {
+  // H6b. The chip rows are not drawn at all here, and that is the same judgement
+  // the rail one element up makes with `— NO DATA` instead of `00`: the two
+  // axes are derived from an answer — the counts on the status chips and every
+  // word on the stack row — so with no answer there is nothing to draw them
+  // from. A row of chips over an outage panel would be four controls that
+  // narrow nothing, which is the dead control STATE.05 refuses.
+  await expect(page.locator(".work-filters")).toHaveCount(0);
+  await expect(page.locator(".chip")).toHaveCount(0);
+});
+
 test("the legend defines every state word the rows can carry", async ({ page }) => {
   // THE REASON #289 HAD TO BE CLOSED IN THIS PHASE. A legend cannot define a
   // word the page has no way to draw, and this page draws all three of the

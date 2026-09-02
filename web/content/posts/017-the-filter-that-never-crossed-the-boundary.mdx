@@ -1,0 +1,151 @@
+---
+title: 'The filter that never crossed the boundary'
+deck: 'Adding two rows of filter chips to a server-rendered list should have put the whole list into the browser bundle. It cost 1,635 bytes, because the rows went across as rendered output instead of as data — and the same change exposed two things the page had been getting wrong since the phase before.'
+published: 2026-09-02
+tags: ['react', 'performance', 'design-systems']
+systemId: 'timseil-dev'
+summary: |
+  My work index is a server-rendered list, and it had no filter. Adding one
+  meant a client component, and the obvious shape would have dragged five more
+  components and a router link into the initial bundle with it. Passing the
+  already-rendered rows in as props instead cost 1,635 bytes gzip and left the
+  homepage byte-for-byte unchanged. Drawing a full-width rule above the counter
+  then revealed that the counter's own rule had been a third of the page wide
+  since the phase before, and that an empty list had been blaming the API for
+  an answer the API had given.
+---
+
+My work index lists the systems I have built. It is a server component: the rows
+are rendered on the server, the browser gets HTML, and the page costs the
+JavaScript bundle nothing at all. That was the point of shipping it that way.
+
+Then I added filters.
+
+## The obvious shape is the expensive one
+
+Two rows of chips — one for status, one for technology — that narrow the list as
+you press them. That needs state in the browser, so it needs a client component.
+The obvious way to write it is to hand the client component the data:
+
+```tsx
+<WorkFilters entries={entries} />   // and it draws the list
+```
+
+This works, and it quietly moves the entire list into the browser bundle. Not
+just the filter: every component the row is made of. My row imports a status
+dot, a placeholder for missing measurements, a source line, a preview cell and
+the framework's router link. A module imported by a client module is compiled
+for the client — that is the rule, and it is transitive. One prop, six
+components.
+
+I have 6,725 bytes of headroom in my own-code budget, and twelve more pages to
+build.
+
+## Rendered output is not data
+
+The framework's own guide has the exception written down. The bundling rule
+applies to a client component's *module graph* — what it imports — and not to
+components handed to it as `children` **or as any other prop**. Those are
+rendered on the server and arrive as output.
+
+So the row goes in as output:
+
+```tsx
+rows={entries.map((entry) => ({
+  key: entry.slug,
+  st: entry.state,                       // what the status axis reads
+  sk: entry.tags.map((tag) => tag.key),  // what the technology axis reads
+  node: <WorkRow entry={entry} messages={messages} />,
+}))}
+```
+
+Two scalars and a rendered node. The island filters on the scalars and never
+looks inside the node — it decides which of them get into the tree, and that is
+all. What crosses the boundary is the filter, the chip and the empty panel:
+markup with no imports of its own.
+
+Measured on the built output, every `<script src>` in the prerendered document
+minus the polyfill a modern browser never fetches, each file gzipped
+separately:
+
+| | before | after |
+|---|---|---|
+| homepage, total | 143,580 B | **143,580 B** |
+| work index, total | 143,580 B | 145,215 B |
+| the island | — | **1,635 B** |
+
+The homepage did not move by a byte, because the island is not on it. The work
+index gained exactly one chunk. The route's client manifest lists the filter and
+the router link; the row, the status dot, the preview and the placeholder are
+not in it.
+
+The design handoff, incidentally, solves this by walking the DOM and setting
+`display: none` on the rows that do not match. That is right for a canvas
+prototype and wrong here — the DOM belongs to React. Returning fewer children is
+the same result in the framework's own terms, and it makes the empty state a
+branch rather than an element permanently sitting in the document waiting to be
+shown.
+
+## The rule that had been a third of the page wide
+
+The filter block is fenced above and below by a hairline. I built it, looked at
+the page, and the rule under the counter beneath it stopped a third of the way
+across.
+
+The counter is a `<p>`. My global stylesheet caps every paragraph at 68
+characters, because that is a readable line length for prose. The counter is
+9px monospace, so 68 characters is 367 pixels — and it has a bottom border. That
+border had been 367 pixels wide under a 968-pixel column since the phase that
+built the page.
+
+Nothing was wrong with the reading measure. It was applied to something that is
+not a sentence. `SHOWING 03 OF 03 · FIGURES FROM /api/systems` is a label, and
+the cap belongs to the paragraphs.
+
+What makes this worth writing down is *why I had not seen it*. A short rule
+under a line of small text looks like a design decision. It only looked wrong
+once there was a full-width rule directly above it to compare against. The
+defect had been visible for a phase and legible for about four seconds.
+
+## And a panel that blamed the wrong thing
+
+The same component had one branch for an empty list:
+
+```tsx
+entries.length === 0
+  ? <EmptyState reason="…that endpoint did not answer this request." />
+  : <ol>…</ol>
+```
+
+Two different things reach that branch. The endpoint did not answer — or it
+answered, with an empty list. In the second case the page drew a rail reading
+`00 SYSTEMS` and a counter reading `SHOWING 00 OF 00`, both of which are
+measurements, above a panel saying the endpoint had not replied. Three
+statements about one answer, and the panel was the one that was wrong.
+
+I had found and fixed exactly this shape one phase earlier, in the stat tiles
+four elements up, where a missing answer was printing `00` instead of saying it
+had nothing. I fixed the tiles, wrote a guard function for telling the two cases
+apart, used it in two places — and left the third reading a row count.
+
+A guard is not a decision. It is a decision you have to remember to consult.
+
+## What the filter does not do
+
+The state lives in the component, not in the URL. Putting it in the query string
+would make the filter shareable and reload-proof, and it would make the route
+dynamic — which costs the prerendered shell, the part of the page that still
+stands when the API is down. With two systems in production, a shareable filter
+is worth nothing and the shell is worth something. At ten, that trade turns
+over, and I would rather find this paragraph then than have the argument twice.
+
+The measurement tool cannot see this phase either. It reads one route — the
+homepage — because that is where the initial bundle was defined when I wrote it.
+The island is on a different route, so the tool reports no change, truthfully
+and uselessly. The 1,635 bytes above are hand-measured with the tool's own
+method. Teaching it a second route is a change to the tooling, and this was a
+phase about the page.
+
+Three findings, and the shape is the same in all three: I built something new,
+and the new thing stood next to something old and made it legible. The filter
+did not break the counter. It gave me something to hold it against.

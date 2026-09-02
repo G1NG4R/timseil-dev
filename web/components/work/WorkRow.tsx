@@ -39,7 +39,20 @@ import type { WorkEntry } from "@/lib/work/entries";
  */
 export function WorkRow({ entry, messages }: { entry: WorkEntry; messages: Messages }) {
   return (
-    <li className="work-row" data-here={entry.here ? "" : undefined}>
+    <li
+      className="work-row"
+      data-here={entry.here ? "" : undefined}
+      // WHAT THE TWO AXES OF `/work` READ, ON THE ELEMENT THEY SELECT. H6b
+      // filters in React rather than by walking the DOM as the sheet's script
+      // does, so nothing in this site's own code needs these — they are here so
+      // that a test can hold the rendered row against the chip that claims it,
+      // which is the one assertion neither the filter's unit test nor a
+      // screenshot can make. `undefined` rather than an empty string for a
+      // state this build cannot name: an attribute reading `data-st=""` would
+      // be a row claiming a state, and there is none.
+      data-st={entry.state ?? undefined}
+      data-sk={entry.tags.length === 0 ? undefined : entry.tags.map((tag) => tag.key).join(" ")}
+    >
       <span className="work-no">{entry.no}</span>
 
       <span className="work-id">

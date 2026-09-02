@@ -22,15 +22,21 @@ runSheetOracle({
   route: WORK,
   ready: (page) => settled(page, WORK_REGIONS),
   drawnWidths: WORK_DRAWN_WIDTHS,
-  // 25 in H6, and MORE THAN HALF OF THEM STAND IN THE GALLERY — thirteen of the
-  // twenty-five carry `on: '/dev/components'`. That share is the highest of the
-  // three pages with an oracle, and it is a fact about this page rather than
-  // about the rig's mood: `/work` lists what an endpoint answers, and there is
-  // no api here, so every measurement of a row has to be taken where a row
-  // exists.
+  // 36 AFTER H6b, AND MORE THAN HALF OF THEM STAND IN THE GALLERY — twenty-four
+  // of the thirty-six carry `on: '/dev/components'`. That share is the highest
+  // of the three pages with an oracle, and it is a fact about this page rather
+  // than about the rig's mood: `/work` lists what an endpoint answers, and
+  // there is no api here, so every measurement of a row has to be taken where a
+  // row exists.
+  //
+  // H6b RAISED THE SHARE RATHER THAN THE COUNT ALONE. All eleven of its entries
+  // are gallery entries, and for a sharper reason than the rows': the two chip
+  // rows are DERIVED from the answer — the counts on the status chips, every
+  // word on the stack row — so without one the page draws no filter block at
+  // all. There is nothing to measure on `/work` itself, by design.
   //
   // H5c's thirteen additions carried none of these, because SYS.04 reads files
   // out of the repository. The share follows what a section is made of, and
   // this page is made entirely of the answer.
-  minimumEntries: 25,
+  minimumEntries: 36,
 });
