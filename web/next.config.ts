@@ -129,8 +129,39 @@ const nextConfig: NextConfig = {
   // tokens.css directly, the OG route would start throwing in production and
   // only in production — `next dev` has the whole project on disk. Three lines
   // to make the coupling say its own name.
+  //
+  // H5c ADDS A SECOND, AND IT IS THE SAME KIND OF LINE AS THE FIRST — INCLUDING
+  // THE PART WHERE IT CHANGES NOTHING TODAY.
+  //
+  // SYS.04 reads content/posts/*.mdx with `readdirSync` and `readFileSync`
+  // (lib/content/posts.ts), and NOTHING imports those files: no `import`, no
+  // stylesheet, no loader, no generated JSON. By the paragraph above that should
+  // make this the line that puts them in the image rather than a declaration of
+  // a coupling that already holds.
+  //
+  // MEASURED BOTH WAYS, AND IT IS NOT. Built without this entry,
+  // `.next/standalone/content/posts` holds all fourteen files anyway — and only
+  // that directory: `content/case-studies` and `content/generated` are absent
+  // from the tree because they are imported, and imports are bundled rather than
+  // copied. So the tracer is following the READ itself, which is a thing this
+  // bundler does and not a thing this repository is promised.
+  //
+  // WHICH IS EXACTLY WHY THE LINE STAYS. The dependency is real either way; what
+  // differs is whether it is written down or inferred by a tool across a version
+  // bump nobody will connect to it. The failure it would prevent is invisible
+  // everywhere but the container — `next build`, `next start`, `make e2e` and
+  // the oracle all run with the whole project on disk, so a homepage that had
+  // lost its source would say `— NO DATA` in production and nowhere else. The
+  // phase's acceptance therefore looks at the built IMAGE and not only at the
+  // built page.
+  //
+  // THE KEY IS ESCAPED BECAUSE IT IS A GLOB, NOT A PATH. Keys are matched with
+  // picomatch against the route, and `/[lang]` unescaped is a character class
+  // that matches `/a`, `/l`, `/n` and `/g` — four routes that do not exist, and
+  // not the one that does.
   outputFileTracingIncludes: {
     "/og.png": ["./styles/tokens.css"],
+    "/\\[lang\\]": ["./content/posts/*.mdx"],
   },
 };
 

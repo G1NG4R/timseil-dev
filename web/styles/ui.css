@@ -222,6 +222,36 @@
   text-transform: uppercase;
 }
 
+/* ── The second right-hand slot, H5c ────────────────────────────────────────
+   SYS.04 is the only head on this site with two things on its right, and the
+   sheet draws them adjacent: the link out first, then the count. Every other
+   section puts one thing there, so `.sec-meta` has carried the push since G6.
+
+   THE PUSH MOVES TO WHICHEVER IS FIRST, and the override below is the whole
+   reason this needs a rule at all: two `auto` inline-start margins in one flex
+   row do not stack, they SPLIT the free space — which would put half the head's
+   width between two labels the sheet draws with the same 16px gap as the rest.
+
+   No colour here. The link takes the one globals.css gives every `a`, which is
+   the decision ADR 0060 forced: a translucent accent is a fill, not a text
+   colour, and `--acc-edge` reads 4.37:1 where this would sit.                */
+.sec-action {
+  margin-inline-start: auto;
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.sec-action ~ .sec-meta { margin-inline-start: 0; }
+
+/* `inline-flex` for K-27's reason, written out at `.home-exit a` in home.css:
+   layout.css raises every `a` to 44px under `pointer: coarse`, and a min-height
+   does nothing to an inline box. This link is a touch target at 390.          */
+.sec-action a {
+  display: inline-flex;
+  align-items: center;
+}
+
 /* ── Corner marks ──────────────────────────────────────────────────────────
    Four brackets drawn on one box, as eight background gradients.
 

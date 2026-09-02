@@ -91,6 +91,12 @@ export const HOME_REGIONS = [
   // states, and "the region arrived" is the question this list asks.
   ".upl-graph",
   ".upl-ops",
+  // H5c ADDED NOTHING HERE, and that is worth a line so the question is not
+  // asked a third time. SYS.04 reads files that are in the image rather than an
+  // endpoint, so `.log` is in the static shell before anything streams — the
+  // same reason `.upl` is absent one comment up. A selector that is already
+  // there when the wait begins is a wait that returns immediately and an
+  // assertion that holds whatever happened.
 ] as const;
 
 /**

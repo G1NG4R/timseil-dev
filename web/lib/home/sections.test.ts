@@ -59,27 +59,25 @@ void test("the numbers ascend, without a gap and without a repeat", () => {
   );
 });
 
-void test("every section that is still empty says why, and the sentence exists", () => {
-  for (const section of SECTIONS) {
-    if (section.reasonKey === null) continue;
-    const sentence = en[section.reasonKey];
-    assert.equal(typeof sentence, "string", `${section.id} has no reason`);
-    // A present-but-empty string is the same defect as a missing one, and
-    // messages.ts already counts it as missing for a whole language. STATE.05:
-    // a dead state without a reason is a bug.
-    assert.ok(sentence.length > 0, `${section.id} has an empty reason`);
-  }
-});
-
-// Not decoration: the emptiness has to have an end, and the end has to be a
-// phase somebody can look up. A shell owed by H4 would be one this phase was
-// supposed to fill and did not.
-void test("every shell names a later phase that fills it", () => {
-  for (const section of SECTIONS) {
-    if (section.owedBy === null) continue;
-    assert.match(section.owedBy, /^H\d+$/, `${section.id} owes itself to nothing`);
-    assert.notEqual(section.owedBy, "H4", `${section.id} is owed by the phase that built it`);
-  }
+// TWO TESTS STOOD HERE UNTIL H5c AND BOTH WOULD NOW LOOP OVER NOTHING.
+//
+// One walked the shells and asserted each had a non-empty sentence in `en`; the
+// other asserted each named a later phase, in the shape `H<n>`, that was not the
+// phase doing the building. With SYS.04 filled there is no shell, so both bodies
+// would run zero times and both would report green — which is exactly
+// 014's neighbour, `010-two-tests-were-green-because-nothing-was-there.mdx`, and
+// the one line that post says would have saved it: something that says there
+// should be anything here at all.
+//
+// So they are replaced by the fact they were guarding. If a shell ever comes
+// back — a fifth marker, or a section that has to be emptied again — this goes
+// red, and the two assertions above come back with it.
+void test("no section is a shell any more", () => {
+  assert.deepEqual(
+    SECTIONS.filter((section) => section.owedBy !== null).map((section) => section.id),
+    [],
+    "a shell is back, and the assertions that held one are in the comment above",
+  );
 });
 
 // THE PAIR, AND WHY IT IS A TEST RATHER THAN A TYPE. `reasonKey` and `owedBy`
@@ -99,17 +97,17 @@ void test("a section is either filled or owed, never both and never neither", ()
   }
 });
 
-// The counterpart to the sheet's order test, and the reason it is written as a
-// list rather than a count: it names the sections that are built, so the diff
-// that builds one is the diff that has to prove it. H5b is the third such diff
-// and H5c will be the last — after it the list is all four and this test has
-// nothing left to say, which is when it goes.
-void test("SYS.01, SYS.02 and SYS.03 are the sections built so far", () => {
-  assert.deepEqual(
-    SECTIONS.filter((section) => section.owedBy === null).map((section) => section.id),
-    ["SYS.01", "SYS.02", "SYS.03"],
-  );
-});
+// WHAT STOOD HERE UNTIL H5c, and why it is gone rather than updated. The test
+// named the sections that were built — `["SYS.01","SYS.02","SYS.03"]` after H5b
+// — so that the diff which built one was the diff that had to prove it. Its own
+// comment said H5c would be the last and that it would then have nothing left to
+// say. It does not: with all four filled, the list it asserted and the list the
+// test above already derives from `owedBy` are the same list, and a second
+// transcription of it is a line that can only ever go wrong on its own.
+//
+// The assertion that survives is the pair test above. It held every phase of
+// this stage, and it holds the state H5c leaves behind: four sections, four
+// times `reasonKey: null` and `owedBy: null`, none of them owed to anybody.
 
 void test("markerNumber refuses what is not a marker", () => {
   // The reason the parser exists rather than an index lookup: it has to be able

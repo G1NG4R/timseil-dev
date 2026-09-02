@@ -120,9 +120,58 @@
 /* ---- < 560: Zeilen werden Karten ----------------------------------------- */
 @media (max-width: 559px) {
   /* `.sys-row` is NOT here any more — it resolves at 1080, in the block above,
-     for the reason written there. The other two keep this switch until a phase
-     measures them; `.log-row` is two columns and H5c will look at it. */
+     for the reason written there. `.work-row` keeps this switch until H6
+     measures it.
+
+     `.log-row` STAYS HERE, AND THIS IS THE ARITHMETIC RATHER THAN THE
+     MEASUREMENT — the distinction H5b paid for and wrote down: "nur die erste
+     war eine Messung; die zweite war eine Lesung." The row is `110px 1fr` with
+     a 26px gap, so 136px of it is chrome at every width. Read off this
+     stylesheet, the column is 480 at 560 and 346 at 390 — so a grid that ran on
+     below this switch would hand the dek 344 and then 210, and 210 is about
+     twenty characters a line for a sentence written to be one. That is the
+     figure this rule exists to prevent, not one the page has: below 560 the row
+     is a stack and the dek gets the whole column. 560 is the declared switch
+     nearest to where a row stops being one, and no fifth number was invented.
+
+     What the element actually GETS is checked on the built page at all seven
+     widths; the figure that survives that check is in the phase's notes. */
   .work-row, .log-row { display: flex; flex-direction: column; gap: 10px }
+
+  /* The row loses its side padding with its columns: 8px of inset belongs to a
+     cell in a grid, and there are no cells here. The sheet's phone artboard
+     draws the same thing — `padding: 14px 0`. */
+  .log-row { gap: var(--s-6); padding: var(--s-14) 0 }
+
+  /* The phone artboard drops the date a step and tightens the gap under the
+     title — 10px mono and 4px, both of which ARE steps, so neither is a
+     rounding. The title goes from 14.5 to 13.5 and lands on the same 13 it has
+     at 1440, which is why it is not here: the mono scale has no fourteen and no
+     thirteen and a half, so both widths round to the one step under them. */
+  .log-date { font-size: var(--t-mono-10) }
+  .log-deck { margin-block-start: var(--s-4) }
+
+  /* And the foot opens tighter under the last row. The sheet draws 40 and the
+     scale has 34 · 44 · 56, so this is the nearest step and not the drawn value
+     — `spacing-scale` in the oracle. It rides the row's switch rather than
+     getting one of its own: the sheet's rule for these is "EIN SCHALTER FÜR
+     ALLE ZWEISPALTER … Kein Bauteil bekommt seinen eigenen Wert." */
+  .bio { padding-block-start: var(--s-44) }
+
+  /* SYS.04's head is the only one with two things on its right, and at 346px
+     they do not fit beside the marker: measured as built, `CASE STUDY →` was
+     squeezed to 58px and broke across two lines with the underline running
+     through the break.
+
+     WRAPPING IS THE THIRD ANSWER, and the sheet's own is the first two. Its
+     phone artboard DROPS `LATEST 03 · SOURCE` and keeps only the link — a
+     second, shorter set of words for one width, which is #293 and the thing
+     this page has refused three times now. Squeezing keeps the words and makes
+     them unreadable. One declaration lets both right-hand items take their own
+     line at their own size: measured after, 73x10 and 201x9, neither broken,
+     and the head 51px instead of 35. Nothing is dropped and nothing is
+     rewritten for a phone. */
+  .log .sec { flex-wrap: wrap }
   .ops-tiles    { grid-template-columns: repeat(2, minmax(0,1fr)) }
   .deploy-strip { overflow-x: auto }
   /* Das Betriebsraster braucht hier nichts: 91 Tage sind 13 Spalten
