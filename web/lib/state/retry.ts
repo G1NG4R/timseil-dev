@@ -38,3 +38,29 @@ export function retryLine(seconds: number, attempt: number, max: number): string
 
   return `retry in ${String(Math.floor(seconds))}s · ${String(attempt)}/${String(max)}`;
 }
+
+/**
+ * `retry in 412s` — the same line without the counter.
+ *
+ * IT EXISTS BECAUSE H8 TURNED OUT TO BE THE CALLER THAT CANNOT COUNT, and the
+ * reason is measured rather than assumed. Two limiters answer `POST
+ * /api/contact` with a 429: the token bucket in front of every `/api/*` route
+ * (`middleware/ratelimit.go`, and `Except` skips only `/healthz` and
+ * `/readyz`), and the contact floor of three messages per ten minutes
+ * (`contact/policy.go`). Both write it through `httpx.WriteRateLimitProblem`,
+ * so both documents carry the same `type` and the same title, and `detail`
+ * differs only in the number of seconds. A page that printed `2/3` beside a 429
+ * would be naming which of the two refused it, and it cannot see that.
+ *
+ * What both DO carry is `Retry-After`, and ADR 0021 §3 derives it from
+ * `min(received_at)` precisely so that it is a measurement. So the wait is
+ * printed and the counter is not — the same shape `errorLines` already has,
+ * where the third line appears only if it is true.
+ *
+ * Floored for `retryLine`'s reason: a wait that ends early is a promise kept.
+ */
+export function waitLine(seconds: number): string | null {
+  if (!Number.isFinite(seconds) || seconds < 0) return null;
+
+  return `retry in ${String(Math.floor(seconds))}s`;
+}

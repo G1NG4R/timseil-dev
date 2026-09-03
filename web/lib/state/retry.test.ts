@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { retryLine } from "./retry.ts";
+import { retryLine, waitLine } from "./retry.ts";
 
 describe("retryLine", () => {
   it("writes the line the sheet draws", () => {
@@ -41,5 +41,22 @@ describe("what would print a lie prints nothing", () => {
     assert.equal(retryLine(30, 1.5, 5), null);
     assert.equal(retryLine(30, 1, 5.5), null);
     assert.equal(retryLine(30, Number.NaN, 5), null);
+  });
+});
+
+describe("the same line without a counter", () => {
+  it("prints the wait on its own", () => {
+    assert.equal(waitLine(412), "retry in 412s");
+    assert.equal(waitLine(0), "retry in 0s");
+  });
+
+  it("floors rather than rounds, like the counted form", () => {
+    assert.equal(waitLine(29.9), "retry in 29s");
+  });
+
+  it("prints nothing rather than a countdown that runs backwards", () => {
+    assert.equal(waitLine(-1), null);
+    assert.equal(waitLine(Number.NaN), null);
+    assert.equal(waitLine(Number.POSITIVE_INFINITY), null);
   });
 });
