@@ -1,0 +1,215 @@
+/* `/contact`'s own surfaces. Build plan H8.
+
+   WHAT IS HERE AND WHAT IS NOT, the same split case.css, home.css, work.css and
+   about.css make: this file draws, layout.css switches. Nothing below carries a
+   media query. The page answers to two of the four declared switches and
+   layout.css owns both — 1080, where the form and the TX trace stop standing
+   beside each other, and 720, where the display step falls to 34.
+
+   NO NEW TOKENS AND NO COLOUR THAT IS NOT ONE. Every colour, radius and
+   duration below already exists. The geometry literals are the sheet's own
+   measures — `16ch` for the headline and `56ch` for the lede — plus two
+   component dimensions: `640px`, the cap the sheet puts on the form column, and
+   `1px` for the trace's own hairline.
+
+   THE FIELDS ARE NOT DRAWN HERE. `.field`, `.field-top`, `.field-label`,
+   `.field-aside`, `.field-input` and `.field-error` have been in ui.css since
+   G7, written for this page and unused until it. This file adds nothing to
+   them; if a field looks wrong, ui.css is where it is wrong.                 */
+
+/* ── The page ───────────────────────────────────────────────────────────── */
+
+.contact {
+  padding-block: var(--s-72) var(--s-96);
+}
+
+/* K-08 AND `:where()` FOR case.css's REASON, and this page is the third to need
+   it. The two H1 steps are 62 for the homepage and About and 52 everywhere
+   else; globals.css sets 62 on the element and layout.css drops it to 34 below
+   720. A CLASS here would beat both, and the page would keep 52 on a phone —
+   which is exactly what it did until the sheet oracle measured 390 and found
+   52 where the artboard draws 34. `:where()` contributes no specificity, so
+   source order decides: globals (62) → contact (52) → layout (34 under 720).
+
+   The `16ch` cap is the sheet's own, and it is a measure rather than a box —
+   the same kind of number as About's `14ch`. "Open a channel." sets in one line
+   at every drawn width, which is the point: the shortest headline on this site
+   is the one on the page where somebody has something to do. */
+:where(.contact) h1 {
+  font-size: var(--t-disp-52);
+}
+
+.contact-headline {
+  margin: var(--s-26) 0 var(--s-20);
+  font-family: var(--display);
+  font-weight: 500;
+  line-height: var(--lh-disp);
+  letter-spacing: var(--ls-disp);
+  color: var(--ink);
+  max-width: 16ch;
+  text-wrap: pretty;
+}
+
+.contact-lede {
+  margin: 0 0 var(--s-44);
+  max-width: 56ch;
+  font: 400 var(--t-body-15)/var(--lh-body) var(--body);
+  color: var(--ink-2);
+}
+
+/* The address is a link and looks like one. For a visitor without JavaScript it
+   is not a footnote, it is the page — ContactForm.tsx carries that argument —
+   so it gets the accent rather than being folded into the sentence. */
+.contact-address {
+  font: 400 var(--t-mono-13)/1 var(--mono);
+  color: var(--acc);
+}
+
+/* What the page stores, said before it is stored. Quiet, because it is not a
+   warning; a visitor who wants it finds it under the button, and one who does
+   not is not being shouted at. */
+.contact-notice {
+  margin: var(--s-44) 0 0;
+  max-width: 56ch;
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+}
+
+/* ── The form beside its trace ──────────────────────────────────────────── */
+
+/* A grid at every width. layout.css gives it two columns above 1080 and one
+   below, and it stays a grid across the switch for the reason `.tl-panel`
+   does — the column count is the switch's to state, not this file's.        */
+.cf {
+  display: grid;
+}
+
+.cf-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-20);
+  max-width: 640px;
+}
+
+.cf-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-20);
+  margin-top: var(--s-6);
+}
+
+/* THE HONEYPOT, AND THE WHOLE RULE IS IN THE FIRST DECLARATION IT DOES NOT
+   MAKE. No `display: none`, and no `visibility: hidden` either — the sheet says
+   so twice and the handbook explains it: a bot parses the stylesheet, and a
+   field it can see is hidden is a field it leaves alone. What is left is a box
+   moved out of the flow and clipped to nothing, which a form filler walks into
+   and a person never reaches.
+
+   `left: -9999px` AND NOT `clip-path`, because the two say different things to
+   a form filler. A clipped box is still laid out where it was and some fillers
+   check that; a box parked off the canvas reads as ordinary positioning.
+
+   THE ACCESSIBILITY HALF IS IN THE MARKUP, not here — `aria-hidden` and
+   `tabIndex={-1}` on the input. CSS alone would leave a screen reader walking
+   into a field with no purpose and being discarded as a bot, which is the one
+   way this technique can harm a person instead of a script.                 */
+.cf-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ── The status line ────────────────────────────────────────────────────── */
+
+/* One line, four states, and never a state that is only a colour. The word
+   changes, the border changes, and in the failure case the sentence carries
+   what happened — STATE.05's rule, and the sheet's: "wie in einem Log, nicht
+   wie in einer Entschuldigung."                                             */
+.cf-status {
+  margin: var(--s-6) 0 0;
+  min-height: var(--s-20);
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+}
+
+.cf-status[data-phase="sending"] { color: var(--ink-2); }
+.cf-status[data-phase="accepted"] { color: var(--acc); }
+.cf-status[data-phase="invalid"] { color: var(--amber); }
+.cf-status[data-phase="failed"] { color: var(--amber); }
+
+/* The receipt. Quotable is the whole point, so it is selectable, monospaced and
+   the brightest thing in the sentence. */
+.cf-receipt {
+  color: var(--ink);
+  font-weight: 600;
+  user-select: all;
+}
+
+/* ── The TX trace ───────────────────────────────────────────────────────── */
+
+.tx {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.tx-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-10);
+  padding: var(--s-12) var(--s-16);
+  border-bottom: 1px solid var(--line);
+  font: 600 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+}
+
+.tx-dot {
+  width: var(--s-6);
+  height: var(--s-6);
+  border-radius: var(--radius-dot);
+  background: var(--acc);
+}
+
+.tx-name { color: var(--ink-2); }
+
+/* Pushed to the right so the two readouts sit together, away from the label. */
+.tx-state {
+  margin-inline-start: auto;
+  font-size: var(--t-mono-9);
+}
+
+.tx-bytes {
+  color: var(--dim);
+  font-size: var(--t-mono-9);
+}
+
+/* THE ONE PLACE ON THIS SITE THAT SCROLLS SIDEWAYS ON PURPOSE. A message is up
+   to 4000 characters on one JSON line, so the trace has a width nothing can cap
+   without either wrapping it — which would stop it being a line of JSON — or
+   truncating it, which would make it a drawing of the request rather than the
+   request. It scrolls inside its own box; the page does not.                */
+.tx-body {
+  margin: 0;
+  padding: var(--s-16);
+  overflow-x: auto;
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--ink-3);
+}
+
+.tx-line { display: block; white-space: pre; }
+
+/* The empty line between the headers and the body. It is a block with nothing
+   in it, so it has no height of its own — and the height it needs is one line
+   of this panel's own type, which is these two tokens multiplied. Written here
+   rather than as a `\n` in the markup: a newline would be invisible on screen
+   (a browser drops a line break at the end of a block box) and would double in
+   every copy, selection and text extraction of the request. */
+.tx-line[data-kind="blank"] { height: calc(var(--t-mono-11) * var(--lh-mono)); }
+.tx-line[data-kind="request"] { color: var(--acc); }
+.tx-line[data-kind="header"] { color: var(--steel); }
+
+/* The note beside the honeypot. Dim, because it is an annotation on the drawing
+   and not part of the request — the one line in the block that is not bytes. */
+.tx-note { color: var(--dim); }

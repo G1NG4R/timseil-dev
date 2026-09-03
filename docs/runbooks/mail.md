@@ -227,10 +227,26 @@ und `DMARC` müssen einzeln grün sein.
    (`web-…@srv1.mail-tester.com`). Sie verfällt.
 2. In Dokploy **nur `MAIL_TO`** auf diese Adresse setzen → **Redeploy**.
    Nicht das `email`-Feld im Formular — siehe die zweite Falle oben.
-3. Eine Nachricht abschicken. **Es gibt bis H8 kein Formular** — `web/app` hat
-   zwei Dateien, und der Endpoint ist trotzdem von außen erreichbar. Also
-   `curl` gegen die **öffentliche** Adresse, nicht gegen `localhost`: die
-   Abnahme gilt dem Weg durch Traefik und den Container.
+3. Eine Nachricht abschicken. **Seit H8 gibt es dafür ein Formular** — vorher
+   stand hier, dass es keins gibt und `web/app` zwei Dateien hat. Beide Wege
+   sind gültig und messen verschiedene Dinge:
+
+   - **Über `https://timseil.dev/contact`** — der ganze Weg, wie ein Besucher
+     ihn nimmt: Browser, Origin-Kopf, Traefiks `PathPrefix(/api)`, Container.
+     Das ist der Weg, den eine Abnahme ab H8 nehmen sollte, weil er als
+     einziger auch die Origin-Liste der Umgebung prüft.
+   - **Mit `curl`**, unverändert unten. Er hat einen `Origin`-Kopf **nicht**,
+     und der Handler lässt Anfragen ohne Origin durch (ADR 0021 §9) — er misst
+     also den Endpoint und nicht die Konfiguration davor. Bleibt der Weg, wenn
+     das Formular selbst der Verdächtige ist.
+
+   In beiden Fällen gegen die **öffentliche** Adresse, nicht gegen `localhost`:
+   die Abnahme gilt dem Weg durch Traefik und den Container.
+
+   **Und das Limit zählt mit, in beiden Formen.** Drei Sendungen je Adresse in
+   zehn Minuten, jeder Versuch — auch ein verworfener — zählt. Ein Formular
+   einmal auszuprobieren und dann `curl` dreimal zu rufen ist bereits ein
+   `429`.
 
    ```bash
    curl -i -sS https://timseil.dev/api/contact \

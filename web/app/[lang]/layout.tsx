@@ -72,6 +72,12 @@ import "../../styles/work.css";
 // grids, 720 for the display step — and layout.css owns every one of them, as
 // it owns every switch on this site.
 import "../../styles/about.css";
+// contact.css is the fifth page-scoped sheet and joins on the same condition.
+// H8. Like work.css and about.css it declares no media query: the page answers
+// to two of the four declared switches — 1080, where the form and its TX trace
+// stop standing beside each other, and 720 for the display step — and
+// layout.css owns both.
+import "../../styles/contact.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root

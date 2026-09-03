@@ -31,12 +31,22 @@ void test("a path the table does not know throws instead of guessing", () => {
 //
 // THE ORDER IS THE TABLE'S AND NOT ALPHABETICAL: `/about` sits where README's
 // route table puts it, after `/blog`, so this list reads the way the file does.
-void test("the homepage, the work index, about and the case studies are indexable, and nothing else", () => {
-  assert.deepEqual(indexablePaths(), ["/", "/work", "/about", "/work/timseil-dev"]);
+// THIS TEST IS SUPPOSED TO GO RED WHEN A PHASE DOES ITS WORK, and it has four
+// times now: H1 for the case study, H6 for `/work`, H7 for `/about`, H8 for
+// `/contact`. The list is the point — a page that starts being indexed without
+// anybody writing the line here is a page that started being indexed by
+// accident.
+void test("the homepage, the work index, about, contact and the case studies are indexable, and nothing else", () => {
+  assert.deepEqual(indexablePaths(), ["/", "/work", "/about", "/contact", "/work/timseil-dev"]);
   assert.equal(seoFor("en", "/").robots, undefined);
   assert.equal(seoFor("en", "/work/timseil-dev").robots, undefined);
   assert.equal(seoFor("en", "/work").robots, undefined);
   assert.equal(seoFor("en", "/about").robots, undefined);
+  assert.equal(seoFor("en", "/contact").robots, undefined);
+  // And the three that are still stubs still refuse. `/privacy` is the one that
+  // matters most right now: H8 put a form on this site, and the page that will
+  // explain it says `[SOON]` until H12.
+  assert.deepEqual(seoFor("en", "/privacy").robots, { index: false });
 });
 
 // The drift this table was restructured to make impossible: a case study that

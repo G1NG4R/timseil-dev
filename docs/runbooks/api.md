@@ -653,9 +653,11 @@ Für eine echte Zustellbarkeitsmessung wird also `MAIL_TO` vorübergehend auf di
 Adresse von mail-tester gesetzt (in Dokploy: ändern, redeployen, danach wieder
 zurück), und dann eine Nachricht gegen die **öffentliche** Adresse geschickt —
 `https://timseil.dev/api/contact`, nicht `localhost`, weil die Abnahme dem Weg
-durch Traefik und den Container gilt. **Ein Formular gibt es dafür bis H8
-nicht**, der Endpoint ist aber von außen erreichbar. Der Ablauf steht Schritt
-für Schritt in `docs/runbooks/mail.md`, Teil 3.
+durch Traefik und den Container gilt. **Seit H8 gibt es dafür ein Formular** —
+`https://timseil.dev/contact` —, und es ist der bessere Weg, weil ein Browser
+einen `Origin` schickt und `curl` keinen: nur der erste prüft also auch
+`CORS_ALLOWED_ORIGINS` der laufenden Umgebung mit. Der Ablauf steht Schritt für
+Schritt in `docs/runbooks/mail.md`, Teil 3.
 
 Abnahme ist L1s: **mail-tester ≥ 9/10**, und `SPF`, `DKIM` und `DMARC` mit
 `p=none` müssen alle drei grün sein.

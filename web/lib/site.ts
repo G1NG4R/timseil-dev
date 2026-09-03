@@ -16,8 +16,15 @@ export const SITE_URL = "https://timseil.dev";
 
 export const SITE_NAME = "timseil.dev";
 
-/** The one human. Used by the JSON-LD `Person` in G5b and by nothing else —
- *  the visible chrome takes its words from lib/i18n/messages/. */
+/** The one human. The JSON-LD `Person` reads it, and since H8 so does
+ *  `/contact` — the address there is the fallback for a visitor with no
+ *  JavaScript, so it is a load-bearing string rather than decoration.
+ *
+ *  THE CHROME STILL WRITES IT OUT BY HAND, in FooterLead, MobileMenu and
+ *  lib/about/content.ts. Three copies of one address, and this phase did not
+ *  make them four — it also did not fix them, because a page phase that edits
+ *  the chrome is a page phase that breaks chrome.test.ts for a reason nobody
+ *  asked for. Noted in the backlog instead. */
 export const AUTHOR = {
   name: "Tim Seil",
   email: "contact@timseil.dev",

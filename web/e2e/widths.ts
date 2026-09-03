@@ -51,6 +51,22 @@ export const HOME = "/";
 /** The work index. H6 — the third. */
 export const WORK = "/work";
 
+/** `/contact`. H8 — the fifth page with a spec of its own, and the only route
+ *  on this site that a browser POSTs to. */
+export const CONTACT = "/contact";
+
+/**
+ * The two widths the Contact sheet draws.
+ *
+ * Two, like About and the homepage, and the Intermediate Widths sheet declines
+ * a third IN WRITING rather than by omission: "Fliesstext, Blog, About, Contact
+ * und Legal fliessen, dort ist nichts zu entscheiden." The 1024 frames exist
+ * for pages with a fixed column to rebuild, and the one fixed column on this
+ * page — the 520px TX trace — is drawn at 1440 and gone below 1080, which is a
+ * switch this file already lists rather than a frame the sheet owes.
+ */
+export const CONTACT_DRAWN_WIDTHS = [1440, 390] as const;
+
 /**
  * Where the two-column rows collapse, from the Intermediate Widths sheet.
  *

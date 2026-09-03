@@ -12,6 +12,240 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 03.09.2026, H8a gebaut: die Seite, die als Erste fragt
+
+**Zweig `phase/h8a-contact`.** `/contact` ist die vierte vollständige Seite und
+die erste, von der aus ein **Browser** dieser Site die API anspricht.
+`lib/http/url.ts` hält den Zweig seit G4 offen und nennt H8 beim Namen; der
+Backlog zählt seit fünf Stufen „Anfragen des Browsers an /api: 0".
+
+**Gegen Produktion ist nichts davon gemessen.** Alle Zahlen unten stammen vom
+lokalen Produktionsbuild.
+
+### Die Zahl der Phase: ein Formular kostet 4 873 Byte
+
+| | `/` | `/about` | `/work` | `/contact` |
+|---|---|---|---|---|
+| gesamt, gzip | 143 580 | 143 580 | 145 215 | **148 453** |
+| Dateien | 7 | 7 | 8 | **8** |
+| eigene Insel | — | 0 | 1 635 | **4 873** |
+
+Dreimal die Filterinsel von `/work` und das größte Stück Client-Code, das diese
+Site hat. ADR 0050 ließ 6 725 Byte für sechs Bauteile; drei davon liegen auf
+anderen Routen, und **dass das Gate das nicht sieht, ist #320 von der anderen
+Seite gelesen**.
+
+`resolvePath`, `buildQuery`, `upstreamUrl` und `API_INTERNAL_URL` kommen im
+ausgelieferten Chunk **nicht** vor — der Schnitt zwischen `client.ts` und
+`post.ts` hat sich also bezahlt gemacht, nachgemessen statt gehofft.
+
+### Der stärkste Fund: eine Millisekunde, die eine Nachricht verschluckt hätte
+
+ADR 0021 §2 beantwortet alles unter 3 000 ms mit einem `202`, das nirgends
+hinführt. Das Formular wartet deshalb die Differenz ab, bevor es sendet — und
+genau das ging schief:
+
+```
+setTimeout(2957)  weckt bei 2956,8
+Ablesung          2999,7
+Math.floor        2999          ← unter der Schwelle
+```
+
+Etwa jeder dritte e2e-Lauf. Zu früh aufzuwachen ist eine Eigenschaft von
+Timern; die Reparatur ist, **nach dem Aufwachen erneut zu messen**, nicht dem
+Schlaf zu trauen. Aufrunden wäre die naheliegende Reparatur gewesen und wäre
+genau die erfundene Zahl, gegen die der ganze Rest gebaut ist.
+
+Als `020-the-millisecond-that-would-have-vanished.mdx` aufgeschrieben.
+
+### Drei weitere Funde derselben Sitzung, alle vier in der Fehlerbehandlung
+
+- **Ein `disabled`-Feld nimmt keinen Fokus.** Der Sprung auf das erste
+  Fehlerfeld nach einem `400` tat nichts — lautlos, in dem Zweig, der da ist,
+  um zu helfen. Das Blatt wollte ohnehin `readOnly`: „felder gesperrt, nicht
+  ausgegraut".
+- **Ein `400` hat zwei Bedeutungen.** Mit Feldern, wenn ein Feld falsch ist;
+  ohne Felder, wenn der Origin abgelehnt wird (`writeError`, ausdrücklich). Die
+  Seite hatte einen Satz für beides, und der zeigte auf Felder, die alle
+  stimmten.
+
+- **Eine Fehlermeldung nannte eine Ursache, die die Seite nicht kennt.** „No
+  answer within eight seconds" stand auch dann da, wenn die Verbindung nach
+  einer Millisekunde abgelehnt wurde — und auch bei einem `404` von etwas, das
+  nicht unsere API ist. Die Seite weiß, dass nichts zurückkam; warum, weiß sie
+  nicht. Ein unbekannter Status wird jetzt **gedruckt** statt beschrieben, was
+  die Anweisung des Blatts für diesen Zustand ist: „wie in einem Log, nicht wie
+  in einer Entschuldigung."
+
+**Keiner der vier war durch Lesen zu finden.** Alle vier liegen im Fehlerpfad,
+keiner ist im Glücksfall sichtbar.
+
+### Die Geometrie an allen sieben Prüfbreiten, am gebauten Build
+
+```
+Breite  client  h1     Spalten  Spur  Formular  Feld  Überlauf  h1n  Honigtopf
+ 1440    1440   52px      2      520     560     560      0      1    -9999
+ 1081    1081   52px      2      520     401     401      0      1    -9999
+ 1079    1079   52px      1      999     640     640      0      1    -9999
+ 1024    1024   52px      1      944     640     640      0      1    -9999
+  899     899   52px      1      819     640     640      0      1    -9999
+  719     719   34px      1      639     639     639      0      1    -9999
+  390     390   34px      1      346     346     346      0      1    -9999
+```
+
+Beide Schalter sitzen beidseitig: 1080 nimmt der Spur ihre Spalte, 720 setzt die
+Anzeigestufe auf 34. Überlauf null, genau eine `<h1>`, der Honigtopf an jeder
+Breite außerhalb der Leinwand.
+
+### Die fünf Antworten, gegen den echten Handler gefahren
+
+`compose.dev.yaml`, `MAIL_TRANSPORT=log`:
+
+```
+202  {"id":"msg_01M1MC99PFBQMRBJ","ok":true}
+400  invalidParams: name, email        — in der Reihenfolge des Formulars
+400  fremder Origin, invalidParams leer
+429  Retry-After: 200                   — gemessen, nicht pauschal
+```
+
+**Die 200 sind der Fund an der Antwort.** ADR 0021 §3 leitet die Wartezeit aus
+`min(received_at)` ab; eine Seite, die pauschal zehn Minuten druckte, läge für
+jeden falsch, der vor neun Minuten geschrieben hat. Die Seite druckt die Zahl der
+API.
+
+### Lokal gemessen
+
+```
+make check   grün
+npm test     624    (von 615)
+e2e          contact.spec 133 grün · contact.sheet 37 grün · axe 70 grün
+Orakel       22 Messungen /contact, 8 abweichend
+```
+
+## Gefunden — aus H8a
+
+- **Eine `ch`-Kappe kann keine Orakelzahl sein.** `getComputedStyle` liefert
+  einen benutzten Wert, also Pixel, und die Pixel hängen an der geladenen
+  Schrift: **529,152 im Browser mit Chakra Petch, 512 im Playwright-Rig** — 17
+  Pixel für eine Deklaration, die niemand geändert hat. Die beiden Kappen des
+  Blatts stehen deshalb nicht im Orakel; wofür sie da sind, steht in
+  `contact.spec.ts`. *(03.09.2026, H8a)*
+- **Eine Klasse schlägt eine Media Query, und das Blatt hat es gemerkt.**
+  `.contact-headline` hielt 52px auf dem Telefon, wo das Artboard 34 zeichnet —
+  `layout.css` setzt die Stufe über einen nackten `h1`-Selektor. `:where()` ist
+  die Antwort und steht seit H1 in `case.css`. **Das Orakel hat es gefunden, ein
+  Blick auf die Seite nicht.** *(03.09.2026, H8a)*
+- **Der Honigtopf war dekorativ, bis er zurückgelesen wurde.** `buildBody`
+  schickte `company: ""` fest verdrahtet. Eine Falle, deren Wert nie vom Feld
+  kommt, fängt niemanden: der einzige Einsender, den sie fangen könnte, ist der,
+  der das versteckte Feld ausfüllt — und dessen Sendung sähe sauber aus.
+  *(03.09.2026, H8a)*
+- **Ein Zeilenumbruch in einem Block-Element ist unsichtbar und verdoppelt sich
+  beim Kopieren.** Die Spur trug ein `\n` je Zeile; auf dem Schirm fiel es weg
+  (ein Browser verwirft den Umbruch am Ende einer Block-Box), in jedem
+  `innerText`, jeder Auswahl und jedem Test stand es doppelt. Die Leerzeile
+  bekommt ihre Höhe jetzt aus zwei Tokens. *(03.09.2026, H8a)*
+- **Ein Kommentar über fremden Code ist eine Behauptung.** In `post.ts` stand,
+  die API vergleiche `content-type` strikt und ein `; charset=utf-8` werde
+  abgelehnt. `isJSON` schneidet am Semikolon. Nachgesehen statt geglaubt — und
+  es war mein eigener Kommentar, drei Stunden alt. *(03.09.2026, H8a)*
+- **Die Adresse steht viermal im Repository** — `FooterLead`, `MobileMenu`,
+  `lib/about/content.ts`, `lib/site.ts` —, und das erste, was der e2e-Lauf tat,
+  war über die falsche zu stolpern: `.first()` traf die versteckte `.menu-mail`
+  im Kopf. Diese Phase hat keine fünfte gemacht und die vier nicht angefasst.
+  *(03.09.2026, H8a)*
+
+## Verschoben aus H8a
+
+- **`make bundle-size` bricht ab → #301**, und zwar am Chrome-Chunk mit den
+  sieben Kopfbauteilen plus `next/dist/client/app-dir/link.js`. Nichts aus H8
+  liegt darin; nachgesehen, nicht angenommen. Das Gate misst deshalb gerade
+  **gar nichts**, was mehr ist als „es misst eine Route" — an #301 vermerkt.
+- **Die vier Adresskopien → eigene Aufgabe.** Eine Seitenphase, die das Chrome
+  anfasst, ist eine Seitenphase, die `chrome.test.ts` bricht.
+- **Ohne JavaScript gibt es kein Formular → M2.** #244 zählt bereits einen
+  Platzhalter ohne Skript; das hier ist der zweite Eintrag und der größere.
+- **Der Datenhinweis am Formular → H12 und L7.** `/privacy` ist bis H12 eine
+  Schale, und L7 muss einhalten, was der Satz am Formular verspricht.
+- **`CORS_ALLOWED_ORIGINS` gegen die laufende Umgebung geprüft, Ergebnis nicht
+  hier.** Ein Browser schickt bei einem POST einen `Origin`; steht er nicht auf
+  der Liste, ist jede Einsendung ein `400` **ohne Feldangabe** — von außen
+  ununterscheidbar von einem kaputten Formular. Bis H8 war die Liste nie im
+  Anfrageweg, weil `curl` keinen Origin schickt und der Handler Anfragen ohne
+  Origin durchlässt (ADR 0021 §9).
+
+  Die Prüfung braucht keine Zugangsdaten und keinen Merge: die Origin-Prüfung
+  läuft **vor** der Validierung, also sagt die Form der `400`-Antwort, welche
+  der beiden zugeschlagen hat — mit `invalidParams` war der Origin durch, ohne
+  nicht. Ein absichtlich ungültiger Rumpf schreibt dabei keine Zeile und sendet
+  keine Mail. Eine Kontrollprobe mit fremdem Origin gehört dazu, sonst ist ein
+  `400` mit Feldern auch mit abgeschalteter Prüfung erklärbar. **Gelaufen am
+  03.09.2026, beide Proben; das Ergebnis steht in `backlog.local.md`.**
+
+  Kostet zwei der drei Sendungen für zehn Minuten — jeder Versuch zählt mit,
+  auch ein abgewiesener.
+
+---
+
+## Nachtrag zur H7b-Abnahme — der Zeuge kam nach, und er hat etwas gefunden
+
+Die Abnahme unten sagt, der Zeuge über den Tausch von `c070a85` fehle und die
+zwölfte Stichprobe komme vom Tausch des Abnahme-PRs. Sie ist gekommen, und sie
+ist die schärfste bisher.
+
+`69e0ef9`, Merge 18:36:49Z. Zeuge ab **18:36:53Z** — vier Sekunden nach dem
+Merge, vier Pfade, zwei `web`, zwei `api`:
+
+```
+/                619 Anfragen   618 × 200, 1 × 503
+/about           619 Anfragen   618 × 200, 1 × 503
+/api/health      619 Anfragen   619 × 200
+/api/systems     619 Anfragen   619 × 200
+```
+
+**Beide web-Pfade in derselben Sekunde, beide api-Pfade sauber.** Genau dafür
+gibt es die Aufteilung seit H5c: wäre der Ursprung weg gewesen oder das Netz,
+wären alle vier ausgefallen.
+
+### Wo die Sekunde liegt — zum ersten Mal an einem Container festgemacht
+
+Container-Startzeiten aus der Panel-API, die Zeugen-Sekunden dagegen gerechnet:
+
+```
+Deploy-Job (Actions)   18:46:21Z → 18:46:46Z     Sekunde 569 … 594
+api gestartet          18:46:58.043Z            Sekunde 606
+web gestartet          18:47:04.034Z            Sekunde 612   (+5,99 s nach api)
+503 auf / und /about   18:47:10Z                Sekunde 618   (+6,0 s nach web)
+Zeuge endet            18:47:11Z                Sekunde 619   (+7,0 s nach web)
+```
+
+Das Loch liegt **sechs Sekunden nach dem Start des web-Containers**. 503 heißt,
+dass Traefik in dieser Sekunde kein gesundes Backend für web hatte — der alte
+war weg, der neue noch nicht bereit. Der überlappende Start (ADR 0035)
+überlappt für web also nicht genug.
+
+**Der Abstand api → web ist 5,99 s** und bestätigt die 5,9 s aus der
+H5c-Abnahme fast auf die Hundertstel. Die „rund zwanzig Sekunden" der
+ursprünglichen H5c-Notiz waren aus Anfragenummern hergeleitet und sind damit
+zum zweiten Mal widerlegt.
+
+**Zwölf Tausche gemessen, drei mit Loch.** Der erste, bei dem die Sekunde einem
+einzelnen Container zugeordnet werden kann statt nur einem Zeitraum. An #304
+geschrieben.
+
+### Was die Messung nicht sagt, und die Aufgabe daraus
+
+**Der Zeuge endet 7,0 s nach dem web-Start.** `--until-sha` stoppt am neuen
+**api**-Prozess plus Nachlauf, und web kommt danach. Die Einschränkung steht
+seit H5c und ist hier zum ersten Mal in Zahlen sichtbar: das Fenster deckt den
+*Anfang* von webs Startphase ab, nicht ihr Ende. Ob nach 18:47:11Z noch eine
+Sekunde rot war, weiß ich nicht.
+
+**Aufgabe:** der Nachlauf gehört an den **web**-Container, nicht an den
+api-Prozess. Abnahmekriterium: der Zeuge läuft nachweislich über den Start
+beider Container hinaus. Solange das nicht so ist, misst er systematisch genau
+den Container nicht zu Ende, der alle drei bekannten Löcher erzeugt hat.
+
 ## Wo wir stehen — 03.09.2026, H7b abgenommen: 10 von 10, und ein Zeuge, der fehlt
 
 `c070a85` läuft. Merge 14:08:47Z, Deploy-Job 14:18:21Z–14:18:56Z (**35 s**),

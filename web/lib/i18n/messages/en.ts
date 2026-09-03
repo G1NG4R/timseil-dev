@@ -470,6 +470,117 @@ export const en = {
     "on me.",
   aboutCaseStudy: "READ THE CASE STUDY",
 
+  // ── H8 · /contact ───────────────────────────────────────────────────────
+  //
+  // WHAT IS NOT HERE: `SYS.06`, `CHANNEL`, `NAME`, `E-MAIL`, `MESSAGE`, `TX`,
+  // `SEND`, `POST /api/contact` and the three status numbers. All nomenclature
+  // — LANG.01 — and a German contact page would still read SYS.06 and still
+  // print `202`. The field labels live in lib/contact/fields.ts, where a test
+  // holds their order against the one the api reports errors in.
+  //
+  // AND ONE WORD IS ABSENT ON PURPOSE: "delivered". ADR 0021 §1 has the handler
+  // try to send ONCE and hand anything it could not send to a dispatcher, so a
+  // `202` means "accepted for delivery" and nothing stronger. Every sentence
+  // below is written so that it stays true if the message leaves an hour later
+  // — and so that it does not become a lie if it never leaves at all.
+  contactHeadline: "Open a channel.",
+
+  // The sheet's paragraph, in English, minus one clause. It draws "kein
+  // Mailprogramm, kein Umweg" — no mail client, no detour — which is the
+  // argument for the form and is true. What follows it in the sheet is the
+  // address, and the address is the fallback rather than a footnote: without
+  // JavaScript there is no form on this page, and a visitor who reads that
+  // sentence has somewhere to go.
+  contactLede:
+    "This form posts straight to my mailbox — no mail client, no detour. If " +
+    "you would rather write from your own, the address is below and it reaches " +
+    "the same place.",
+
+  // Under the address field before anything has been typed. The sheet's
+  // "wohin soll die antwort?" — a question, because the field is not asking who
+  // you are, it is asking where the reply goes. It becomes the `Reply-To`
+  // header and nothing else.
+  contactEmailHint: "where should the reply go?",
+
+  // The one thing this page stores that a visitor cannot see, said plainly and
+  // BEFORE they send rather than in a policy they will not open.
+  //
+  // IT IS HERE AND NOT ON /privacy BECAUSE /privacy IS A STUB UNTIL H12. A form
+  // that collects a name, an address and a message while the only page that
+  // could explain it says `PRIVACY [SOON]` would be this site breaking its own
+  // rule on the one page where it is not a style question. H12 writes the full
+  // text and L7 automates the retention; this sentence is what is true today,
+  // and it is true whatever those two decide.
+  contactNotice:
+    "What is stored: your name, address, message, the time, and a hashed form " +
+    "of your IP address for the rate limit. The message goes to my mailbox and " +
+    "nowhere else. No tracking, no cookie, no third party.",
+
+  // While the request is out. Not "sending…" with a spinner — the request is on
+  // the right, being written, and the sheet is explicit that the trace is the
+  // progress indicator.
+  contactSending: "Sending. The request on the right is the one in flight.",
+
+  // The `202`. ACCEPTED, NOT DELIVERED, and the second sentence says why the
+  // distinction is not pedantry: the id is quotable, and it is quotable
+  // precisely because it names a row that exists whether or not the mail has
+  // left yet.
+  contactAccepted:
+    "Accepted. The id below is the receipt — it names this message, and you can " +
+    "quote it back to me. Your text is still in the field; nothing was cleared.",
+
+  // The `400`. The fields carry their own reasons, so this line says only what
+  // happened and where to look.
+  contactInvalid: "Nothing was sent. The fields below say what to change.",
+
+  // A `400` THAT NAMES NO FIELD, which is a real answer and not a theoretical
+  // one: `writeError` in api/internal/contact/contact.go sends exactly this for
+  // a refused Origin, with `invalidParams` empty on purpose — "ADR 0009 says
+  // that array is one entry per rejected *field*, and an Origin is not one".
+  // The visitor typed nothing wrong, and telling them to look at the fields
+  // would send them hunting for a mistake that is not theirs. In practice this
+  // means the deployment's origin allowlist is wrong, which is my problem.
+  contactRefused:
+    "The request was refused before it reached my mailbox, and none of the " +
+    "fields is at fault — this one is on me. The address below still works.",
+
+  // The `429`. The wait is the api's measured number, from `Retry-After`, and
+  // the component prints it — so this sentence must not contain one.
+  contactRateLimited:
+    "Too many messages from here in the last ten minutes. Your text is safe in " +
+    "the field.",
+
+  // The `502`. This is the sentence ADR 0021 warns about in "Was das kostet":
+  // the sender reads "not delivered" and the dispatcher may deliver it ten
+  // minutes later. So it does not say "not delivered" — it says what is true at
+  // the moment it is printed and what happens next.
+  contactProviderDown:
+    "The mail relay did not answer. The message is stored and goes out as soon " +
+    "as it does — you do not need to send it again.",
+
+  // No answer at all: the deadline ran out, or the connection never opened, or
+  // the visitor's network went away mid-request. The one failure where nobody
+  // here knows whether anything arrived, and the sentence says so rather than
+  // guessing in either direction.
+  //
+  // IT DOES NOT NAME A CAUSE, and an earlier draft did — "No answer within
+  // eight seconds", which is a claim about WHICH failure it was. A refused
+  // connection fails in a millisecond and would have been described as a
+  // timeout. The page knows that nothing came back; it does not know why.
+  contactNoAnswer:
+    "No answer came back, and I cannot tell from here whether the message got " +
+    "through. The address below always works.",
+
+  // A STATUS THIS PAGE WAS NEVER TOLD ABOUT — not 202, 400, 429 or 502. In
+  // practice something between the browser and the api answered instead of the
+  // api: a proxy, a maintenance page, an edge that is not ours.
+  //
+  // The number is printed, which is this site's voice everywhere else and the
+  // sheet's own instruction for this state: "wie in einem Log, nicht wie in
+  // einer Entschuldigung." A visitor who quotes it to me has told me more than
+  // any sentence I could write in advance.
+  contactUnexpected: "The reply was not one this page knows how to read",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",
