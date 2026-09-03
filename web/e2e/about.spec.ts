@@ -82,19 +82,20 @@ test("no bracketed placeholder reaches the document", async ({ page }) => {
   expect([...text.matchAll(/\[[^\]]*\]/g)].map((m) => m[0]), "a placeholder shipped").toEqual([]);
 });
 
-test("the two sections that are not built say so, and say why", async ({ page }) => {
-  // STATE.05: "ein toter Zustand ohne Begründung ist ein Bug." Two of the four
-  // sections are shells on the day this page ships — the rail is H7b's and the
-  // one human line is nobody's to derive — and a shell that only said `[SOON]`
-  // would be the dead state the sheet refuses.
+test("the section that is not built says so, and says why", async ({ page }) => {
+  // STATE.05: "ein toter Zustand ohne Begründung ist ein Bug." A shell that
+  // only said `[SOON]` would be the dead state the sheet refuses.
+  //
+  // IT WAS TWO IN H7a AND IS ONE NOW, and this line going red is what a test
+  // like this is for: SYS.05.01 stopped being a shell when H7b built the rail,
+  // so the count had to move with it. What is left is SYS.05.04, whose one
+  // human sentence is nobody's to derive — K2 writes it.
   const panels = page.locator("main .st-empty-panel");
-  await expect(panels).toHaveCount(2);
+  await expect(panels).toHaveCount(1);
 
-  for (const index of [0, 1]) {
-    await expect(panels.nth(index).locator(".st-empty-head")).toHaveText("[SOON]");
-    const reason = await panels.nth(index).locator(".st-empty-reason").innerText();
-    expect(reason.length, "an empty panel with no reason").toBeGreaterThan(40);
-  }
+  await expect(panels.locator(".st-empty-head")).toHaveText("[SOON]");
+  const reason = await panels.locator(".st-empty-reason").innerText();
+  expect(reason.length, "an empty panel with no reason").toBeGreaterThan(40);
 });
 
 test("the way to the evidence is a link, and it goes to the case study", async ({ page }) => {
@@ -134,6 +135,150 @@ test("no section title is squeezed into two lines by its own meta", async ({ pag
   );
 
   expect(wrapped, "a section title broke over two lines").toEqual([]);
+});
+
+test.describe("the trajectory rail", () => {
+  test("six stations, resting on NOW, with one panel open", async ({ page }) => {
+    await expect(page.locator(".tl-item")).toHaveCount(6);
+    await expect(page.locator(".tl-input").nth(5)).toBeChecked();
+    await expect(page.locator(".tl-panel:visible")).toHaveCount(1);
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Platform work");
+  });
+
+  test("no label is a year, and the last one is NOW", async ({ page }) => {
+    // The rail is a timeline and this repository has no dates. The label is the
+    // position; lib/about/trajectory.ts carries the argument and holds the
+    // table, and this holds the DOCUMENT — a year typed into markup would pass
+    // the table's test untouched.
+    const labels = await page.locator(".tl-label").allInnerTexts();
+
+    expect(labels).toEqual(["01", "02", "03", "04", "05", "NOW"]);
+    for (const label of labels) expect(label).not.toMatch(/\d{4}/);
+  });
+
+  test("the whole group is one tab stop, and the arrows step through it", async ({ page }) => {
+    // THE REASON THIS IS A RADIO GROUP. The sheet gives every station
+    // `tabindex="0"` and rebuilds the arrows in an `onKeyDown`; six tab stops in
+    // a row is the keyboard trap H6a refused under OpsGrid's name, and the
+    // handwritten arrows are a client component this page does not have.
+    await page.locator(".tl-input").nth(5).focus();
+
+    await page.keyboard.press("ArrowLeft");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own infrastructure");
+
+    await page.keyboard.press("ArrowLeft");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
+      "Go, and the container habit",
+    );
+
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own infrastructure");
+
+    // Up and down move too, and that is the platform's answer rather than ours:
+    // a radio group is one control on both axes, which is what the rail needs
+    // when it stands up below 720.
+    await page.keyboard.press("ArrowUp");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
+      "Go, and the container habit",
+    );
+
+    // One stop for the group: tabbing again leaves it.
+    await page.keyboard.press("Tab");
+    const stillInside = await page.evaluate(() =>
+      (document.activeElement?.className ?? "").includes("tl-input"),
+    );
+    expect(stillInside, "the rail holds more than one tab stop").toBe(false);
+  });
+
+  test("the arrows wrap at the ends, which the sheet's script does not", async ({ page }) => {
+    // A DIVERGENCE, ASSERTED SO IT STAYS ONE. The sheet clamps —
+    // `Math.max(0, Math.min(TL.length - 1, i))` — and a native radio group
+    // wraps, which is also what the WAI-ARIA radio group pattern specifies.
+    // Clamping would mean taking the keys back off the browser and writing
+    // them again in a client component, which is the whole cost this phase
+    // avoided. A reader who has met a radio group anywhere else gets the
+    // behaviour they already know.
+    await page.locator(".tl-input").nth(0).focus();
+    await page.keyboard.press("ArrowLeft");
+
+    await expect(page.locator(".tl-input").nth(5)).toBeChecked();
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Platform work");
+  });
+
+  test("the fill line ends under the chosen dot, not past it", async ({ page }) => {
+    // `(index + 0.5) / 6`, which lib/about/trajectory.ts holds under test. Here
+    // it is measured on the rendered rail, because a percentage in a stylesheet
+    // and a percentage of the right box are two different claims.
+    await page.locator(".tl-item").nth(2).click();
+    await expect(page.locator(".tl-panel:visible .tl-head-no")).toHaveText("03");
+
+    // POLLED, BECAUSE THE LINE IS IN MOTION WHEN THE PANEL IS ALREADY THERE. The
+    // panel swaps on `display`, which is instant; the fill transitions over
+    // `--d-wipe`. Reading it on the next tick measures a frame of the animation
+    // — the first version of this assertion read 46.5% on its way from 91.7 to
+    // 41.7 and called it a wrong number. The measurement is the value it comes
+    // to rest at.
+    await expect
+      .poll(async () =>
+        page.locator(".tl-rail").evaluate((rail) => {
+          const fill = rail.querySelector(".tl-fill");
+          if (fill === null) throw new Error("no fill");
+          const across = getComputedStyle(rail).gridTemplateColumns.split(/\s+/).length === 6;
+          const r = rail.getBoundingClientRect();
+          const f = fill.getBoundingClientRect();
+          return Math.round(across ? (f.width / r.width) * 100 : (f.height / r.height) * 100);
+        }),
+      )
+      .toBe(42);
+  });
+
+  test("a station with nothing shipped draws no shipped cell", async ({ page }) => {
+    await page.locator(".tl-item").nth(0).click();
+    await expect(page.locator(".tl-panel:visible .tl-shipped")).toHaveCount(0);
+
+    await page.locator(".tl-item").nth(4).click();
+    const shipped = page.locator(".tl-panel:visible .tl-shipped a");
+    await expect(shipped).toHaveText("02 timseil.dev");
+
+    // Invariant 5: it goes somewhere. The station numbers and the system
+    // numbers share a notation, so the cell carries the NAME as well — a bare
+    // `02` would be indistinguishable from the station two rows up.
+    await shipped.click();
+    await page.waitForURL("**/work/timseil-dev");
+  });
+});
+
+// THE ASSERTION THE WHOLE PHASE STANDS ON, and the only one a hand-written
+// keyboard handler could not pass. ADR 0066 trades the sheet's script for a
+// radio group and claims two things in exchange: zero bytes, and a control that
+// works when scripts do not. The first is measured in the phase notes; this is
+// the second, and without it the trade is an assertion rather than a fact.
+//
+// #244 IS WHY IT MATTERS ON THIS PAGE IN PARTICULAR: under `cacheComponents` a
+// streamed placeholder stays put without JavaScript. A rail that also stopped
+// would be the second thing on this site that does not work, on the page whose
+// argument is that it only says what it can back.
+test("the rail works with JavaScript turned off", async ({ browser }, testInfo) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    viewport: testInfo.project.use.viewport ?? { width: 1440, height: 900 },
+  });
+  const page = await context.newPage();
+  await page.goto("/about");
+
+  await expect(page.locator(".tl-item")).toHaveCount(6);
+  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Platform work");
+
+  await page.locator(".tl-item").nth(4).click();
+  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own infrastructure");
+
+  await page.locator(".tl-input").nth(4).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
+    "Go, and the container habit",
+  );
+
+  await context.close();
 });
 
 test("nothing on this page is wider than the window", async ({ page }) => {

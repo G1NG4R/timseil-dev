@@ -14,11 +14,10 @@
 // out loud because the last four pages all needed one, and a reader of this file
 // would otherwise look for the hole.
 //
-// THE TRAJECTORY RAIL IS H7b. The cut is at the operable boundary, the same one
-// H6a and H6b made: this half is all Server Components and costs the initial
-// bundle nothing, so the one control on the page lands in the phase where the
-// #237 budget is the question. SYS.05.01 is drawn here as a shell that says so
-// rather than left out of the order — lib/about/sections.ts carries the pair.
+// AND THE ONE CONTROL ON THE PAGE STILL COSTS NOTHING. H7a cut at the operable
+// boundary the way H6a did, expecting H7b to spend the budget on an island.
+// H7b did not: the rail is a radio group, so this route is Server Components
+// end to end and `/about` stays byte-identical to `/`. ADR 0066.
 
 import type { Metadata } from "next";
 
@@ -26,11 +25,14 @@ import { AboutHero } from "@/components/about/AboutHero";
 import { OperatorCard } from "@/components/about/OperatorCard";
 import { Principles } from "@/components/about/Principles";
 import { StackTiles } from "@/components/about/StackTiles";
+import { TrajectoryPanel } from "@/components/about/TrajectoryPanel";
+import { TrajectoryRail } from "@/components/about/TrajectoryRail";
 import { JsonLd } from "@/components/JsonLd";
 import { EmptyState } from "@/components/state/EmptyState";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
 import { SECTIONS } from "@/lib/about/sections";
+import { STATIONS } from "@/lib/about/trajectory";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { aboutLd } from "@/lib/seo/jsonld";
@@ -48,6 +50,12 @@ import type { ReactNode } from "react";
 export async function generateMetadata({ params }: PageProps<"/[lang]/about">): Promise<Metadata> {
   const { lang } = await params;
   return seoFor(asLocale(lang), "/about");
+}
+
+/** The id of the head that names a section, so a landmark and a control can
+ *  both point at the one title already on the screen. */
+function titleIdFor(id: string): string {
+  return `about-${id.replaceAll(".", "-")}`;
 }
 
 export default async function Page() {
@@ -69,10 +77,32 @@ export default async function Page() {
   // a missing key would drop a section silently — which e2e/about.spec.ts
   // catches by reading the markers back off the rendered page and holding them
   // against the sheet's order, exactly as home.spec.ts does for HOME.01.
+  // THE PANELS ARE BUILT HERE AND HANDED TO THE RAIL AS NODES. The rail owns
+  // the selection, the stylesheet owns which panel that reveals, and neither
+  // knows what a panel contains — the seam ADR 0064 drew for the work index,
+  // kept in a phase that needed no island to keep it.
+  //
+  // `caseStudyFor` GATES THE ONE LINK, and it is the same question `/work/[slug]`
+  // asks: a station whose system has no page gets no shipped cell rather than a
+  // link into a 404. Invariant 5.
+  const panels = STATIONS.map((station) => {
+    const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug);
+    return (
+      <TrajectoryPanel
+        key={station.key}
+        station={station}
+        soon={messages.aboutStationSoon}
+        pickedUp="PICKED UP"
+        shippedLabel="SHIPPED"
+        href={study === null ? null : localeHref(locale, caseStudyPath(study))}
+      />
+    );
+  });
+
   const drawn: Record<string, ReactNode> = {
-    // H7b. Nothing is drawn rather than a row of years that does not answer a
-    // key — see `aboutTrajectorySoon`.
-    "SYS.05.01": null,
+    "SYS.05.01": (
+      <TrajectoryRail name="tl" labelledBy={titleIdFor("SYS.05.01")} panels={panels} />
+    ),
     "SYS.05.02": (
       <StackTiles
         note={messages.aboutStackNote}
@@ -114,7 +144,7 @@ export default async function Page() {
         // so `titleId` plus `aria-labelledby` is how a landmark gets a name
         // without a second sentence only some readers get. H2a is where three
         // unnamed `<section>`s turned out to be worse than none.
-        const titleId = `about-${section.id.replaceAll(".", "-")}`;
+        const titleId = titleIdFor(section.id);
         return (
           <section className="about-section" key={section.id} aria-labelledby={titleId}>
             <SectionHead

@@ -57,11 +57,16 @@ export const SECTIONS: readonly Section[] = [
   {
     id: "SYS.05.01",
     title: "TRAJECTORY",
-    // The rail is the one control on this page, and H7b builds it. Until then
-    // the head carries no invitation to step through anything.
-    meta: null,
-    reasonKey: "aboutTrajectorySoon",
-    owedBy: "H7b",
+    // BUILT IN H7b, AND THE META ARRIVED WITH THE CONTROL IT DESCRIBES. H7a
+    // carried none because the sheet's line — "SELECT A YEAR · ← → TO STEP ·
+    // DATES ARE PLACEHOLDERS" — was three statements about a rail that did not
+    // exist. Two of the three are now true and the third is not: there are no
+    // dates to be placeholders FOR, so the line says what the control does and
+    // stops. The arrows are the sheet's own and they are literal — a radio
+    // group answers them natively.
+    meta: "SELECT A STATION · ← → TO STEP",
+    reasonKey: null,
+    owedBy: null,
   },
   {
     id: "SYS.05.02",

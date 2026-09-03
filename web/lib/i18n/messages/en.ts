@@ -438,14 +438,21 @@ export const en = {
     "practice means every service I describe here is one I also have to keep " +
     "running.",
 
-  // The rail is the one control on this page and H7b builds it. The sentence
-  // names the phase rather than apologising, which is what separates a shell
-  // from a dead state: STATE.05, "ein toter Zustand ohne Begründung ist ein
-  // Bug."
-  aboutTrajectorySoon:
-    "The rail is the one thing on this page you can operate, and it is built " +
-    "in the next phase. Nothing is drawn here rather than a row of years that " +
-    "does not answer a key.",
+  // ── H7b · the trajectory rail ───────────────────────────────────────────
+  //
+  // `PICKED UP` and `SHIPPED` are the sheet's own labels and they are
+  // nomenclature, so they are not here — TrajectoryRail takes them as props
+  // already resolved, for the reason WorkFilters gives about `STATUS` and
+  // `STACK`: they name a group on the screen, and a second table for them is
+  // how two spellings of one word start.
+  //
+  // THIS IS THE SENTENCE FIVE OF SIX STATIONS PRINT, and it is one sentence
+  // rather than five because the absence has one cause. A station with no prose
+  // is not a station that failed to load; it is one whose paragraph is written
+  // in the content phase, by me, and the panel says exactly that.
+  aboutStationSoon:
+    "This station is a place on the path, not a paragraph yet — the words are " +
+    "written in the content phase rather than guessed here.",
 
   // AND THIS ONE ADMITS A DIFFERENT KIND OF ABSENCE. The section above is owed
   // by a phase; this one is owed by me. The sheet draws a bracketed German

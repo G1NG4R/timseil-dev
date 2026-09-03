@@ -57,6 +57,14 @@
   .cs-arch  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 60px; align-items: start }
   .rail     { position: sticky; top: 90px }
   .work-row { grid-template-columns: 40px minmax(0,1fr) 132px 104px 130px 20px }
+
+  /* H7b · the trajectory panel, and it is the SIXTH consumer of this switch
+     rather than a seventh geometry. The About sheet draws it `1fr 380px` with a
+     64px gap, which is `.cs-prob`'s columns and a different gap; the panel takes
+     `.cs-prob`'s pair whole, for the reason ADR 0065 gives about the hero — a
+     rule that exists so one page can be sixteen pixels different is a rule
+     nobody can reach twice. Recorded in the oracle as `one-panel-geometry`. */
+  .tl-panel { grid-template-columns: minmax(0,1fr) 380px; gap: 80px }
 }
 
 /* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
@@ -64,6 +72,13 @@
   .hero, .cs-spec, .cs-prob, .cs-arch {
     display: flex; flex-direction: column; gap: 44px;
   }
+
+  /* The panel stacks with them. It stays a GRID rather than joining the flex
+     rule above, because `display: grid` is what reveals it — the six `:has()`
+     rules in about.css set exactly that, and a panel that switched to `flex`
+     here would be a panel the selector no longer opens. One column, and the
+     aside falls under the prose. */
+  .tl-panel { grid-template-columns: minmax(0,1fr); gap: var(--s-34) }
   .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
   .work-row        { grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px }
   .work-row .prev  { display: none }      /* weglassen, nicht verkleinern */
@@ -231,6 +246,65 @@
   .ruler      { display: none }                 /* 5px unter einem 52er Kopf */
 }
 
+/* ---- < 720: die Rail steht auf ---------------------------------------------
+   H7b · THE RAIL TURNS NINETY DEGREES HERE, AND 720 IS MEASURED. Six captions
+   share a row, and the longest of them is "Go, and the container habit". On the
+   built page, bisected: a caption takes THREE lines up to and including 715 and
+   two or fewer from 716. Two lines is a phrase that wrapped; three in a
+   six-column row is six paragraphs standing where six stations should be.
+
+   720 is the nearest declared switch above 716, so no width is drawn under the
+   minimum — at 720 the rail is still across and still reads. The other crossing
+   is 1148, where captions stop wrapping at all; that one is not a minimum, it
+   is a preference, and a switch for it would be a fifth number.
+
+   IT IS ALSO THE SWITCH THIS PAGE ALREADY TAKES. The display step falls to 34
+   here, so the phone gets one change of shape rather than two. The sheet draws
+   the vertical rail on its 390 artboard and nowhere else; where it turns was
+   left to be measured, and this is the measurement.                          */
+@media (max-width: 719px) {
+  /* One column, and room on the left for the line the dots hang off. */
+  .tl-rail { grid-template-columns: minmax(0,1fr); padding-inline-start: var(--s-20) }
+
+  /* The row becomes a row: label, then caption, with the dot pulled out onto
+     the track. `min-height` is the sheet's own 44 for EVERY pointer here, not
+     only a coarse one — at this width a station is a tap target whatever the
+     device says about itself. */
+  .tl-item {
+    position: relative;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--s-14);
+    min-height: 44px;
+    padding-block: var(--s-4);
+    padding-inline-end: 0;
+  }
+
+  .tl-label { inline-size: 40px; block-size: auto }
+  .tl-cap   { margin-block-start: 0; font-size: var(--t-mono-11) }
+
+  /* Out of the flow and onto the line. -20px is the padding above it, so the
+     dot sits ON the track rather than beside it, and the negative half-width
+     centres an 11px dot over a 1px rule. */
+  .tl-dot {
+    position: absolute;
+    inset-inline-start: -20px;
+    inset-block-start: var(--s-8);
+    margin-inline-start: -5px;
+  }
+
+  /* The track and the fill swap axes. The six `--fill` rules in about.css do
+     not change: they say how far along, and this says which way. */
+  .tl-track, .tl-fill {
+    inset-block-start: var(--s-6);
+    inset-inline-start: 5px;
+    inline-size: 1px;
+  }
+
+  .tl-track { inset-block-end: var(--s-6); inset-inline-end: auto; block-size: auto }
+  .tl-fill  { block-size: var(--fill) }
+}
+
 /* ---- < 720: Typo und Tabellen -------------------------------------------- */
 @media (max-width: 719px) {
   h1              { font-size: var(--t-disp-34) }
@@ -348,7 +422,14 @@
 
 /* ---- Touch haengt am Zeiger, nicht an der Breite ------------------------- */
 @media (pointer: coarse) {
-  a, button, [role="button"], .chip, .tag { min-height: 44px; min-width: 44px }
+  /* `.tl-item` JOINED IN H7b, AND IT IS THE FIRST LABEL IN THIS LIST. The rule
+     has held links, buttons, chips and tags; a `<label>` bound to a radio is a
+     control by every measure that matters — it takes the click, it takes the
+     tap, and it is the only thing a finger can reach on this rail, because the
+     radio itself is a 1px box off the side of the layout. `.chip` came within a
+     phase of shipping unmeasured in H6b for want of a drawer; this one has one
+     from its first commit. */
+  a, button, [role="button"], .chip, .tag, .tl-item { min-height: 44px; min-width: 44px }
   .terminal-input { pointer-events: none }   /* read-only, kein Fake-Prompt */
   .work-row .prev { display: none }          /* es gibt kein Hover */
 }

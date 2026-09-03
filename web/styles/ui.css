@@ -291,3 +291,37 @@
     left top, left top, right top, right top,
     left bottom, left bottom, right bottom, right bottom;
 }
+
+/* ── Tag ────────────────────────────────────────────────────────────────────
+   A word that names something, in a box, and NOT a control.
+
+   THIS CLASS HAS BEEN REFERENCED SINCE G1 AND DRAWN SINCE NEVER. layout.css
+   lists `.tag` in the 44px rule for coarse pointers and chrome.css carries
+   `.menu-section .tag { letter-spacing: .06em; font-weight: 400 }` — a modifier
+   for a base that did not exist, so it has been modifying nothing for four
+   stages. H7b is its first consumer, and the first thing that consumer showed
+   was three tags running together as one line of body text.
+
+   That is the same shape H6a found in `.work-row`: a value in a stylesheet is
+   not a decision just because it is in a stylesheet. A class NAMED in two rules
+   and drawn in none had nothing it could be wrong against until something
+   rendered it.
+
+   IT IS NOT `.chip`, AND THE DIFFERENCE IS THE POINT. A chip carries
+   `aria-pressed` and changes what a reader sees; a tag says what something is.
+   Same family, different sentence — and a tag that looked like a chip would be
+   the dead control STATE.05 calls a bug, because a reader would press it.
+
+   The values are the About sheet's, at the steps this site has: 9.5px rounds to
+   the mono 9, .1em to the label tracking, and the padding to the scale.       */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--s-4) var(--s-10);
+  border: 1px solid var(--line-strong);
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--ink-2);
+  white-space: nowrap;
+}

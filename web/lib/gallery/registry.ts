@@ -216,10 +216,23 @@ export const PARTS: readonly Part[] = [
     where: "about",
     states: ["jahr aktiv", "inaktiv", "tastatur ← →"],
     origin: "inventory",
-    module: null,
-    owedBy: "H7",
-    preview: false,
-    note: null,
+    module: "components/about/TrajectoryRail.tsx",
+    owedBy: null,
+    preview: true,
+    // THE FIRST STATE IS NAMED FOR A THING THIS RAIL DOES NOT HAVE. "jahr aktiv"
+    // is the inventory's word, and there are no years: nothing in this
+    // repository carries a date for a station, so the label is the position and
+    // `NOW` for the last. lib/about/trajectory.ts carries that argument. The
+    // state itself is built and drawn — it is the ACTIVE station — and the
+    // transcription is left alone, because the inventory is a second reading of
+    // the handoff and not a description of what shipped.
+    //
+    // "tastatur ← →" IS BUILT AND IS NOT A COMPONENT STATE. It is a radio
+    // group, so the arrows are the browser's; there is no class, no attribute
+    // and nothing for the gallery to draw. What CAN be shown is what the keys
+    // move between, which is the other two states — and e2e/about.spec.ts
+    // presses them, which is the only place that assertion can live.
+    note: "no years: the label is the position. arrows are the platform's, not a state.",
   },
   {
     id: "SpecRail",

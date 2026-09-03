@@ -29,6 +29,27 @@ const PROBES: readonly Probe[] = [
   { key: "run", kind: "tracks", selector: ".run-grid" },
   { key: "prin", kind: "tracks", selector: ".prin-grid" },
   { key: "h1", kind: "computed", selector: "main h1", prop: "font-size" },
+  // H7b · the rail turns ninety degrees at 720. Six tracks above it, one below.
+  { key: "rail", kind: "tracks", selector: ".tl-rail" },
+  // And the panel it opens joins the 1080 two-column switch.
+  // `:nth-child(6)` AND NOT `.tl-panel`, AND NOT `:visible` EITHER — two traps,
+  // one probe.
+  //
+  // Not `.tl-panel`: five of the six are `display: none`, and a computed track
+  // list on a box that was never laid out reads back the SPECIFIED value —
+  // `minmax(0, 1fr) 380px` splits into three tokens where the used value is
+  // two. The oracle avoids that with `:visible`, which works there because
+  // `take()` measures through a LOCATOR.
+  //
+  // Not `:visible`: this file measures through `page.evaluate`, so the selector
+  // reaches `document.querySelector` and `:visible` is a Playwright engine
+  // selector rather than CSS — it throws. `gallery.work.spec.ts` wrote that
+  // trap down for `:has()` and `:text-is()`; this is the third member of the
+  // family, and the first to be met from the other direction.
+  //
+  // The sixth panel is the one the rail rests on and nothing here clicks, so
+  // naming it by position is plain CSS and always the open one.
+  { key: "panel", kind: "tracks", selector: ".tl-panel:nth-child(6)" },
   { key: "chromeHead", kind: "computed", selector: ".head", prop: "height" },
   { key: "nav", kind: "computed", selector: ".nav-desktop", prop: "display" },
   { key: "button", kind: "computed", selector: ".nav-button", prop: "display" },
@@ -44,14 +65,17 @@ const PROBES: readonly Probe[] = [
  * gave them one switch instead of the two the arithmetic offered.
  */
 const SWITCH_MOVES: Record<number, string[]> = {
-  // The hero stops being two columns. It is layout.css's rule and not this
-  // page's — one hero geometry on this site since G1, and H3 deleted the second.
-  1080: ["hero"],
+  // The hero stops being two columns, and the trajectory panel with it — the
+  // sixth consumer of a switch layout.css has owned since G1, rather than a
+  // seventh geometry. ADR 0066.
+  1080: ["hero", "panel"],
   // The chrome switches to the menu button, ADR 0044 — and both of this page's
   // own grids drop at the same width.
   900: ["button", "chromeHead", "nav", "prin", "run"],
-  // The display step falls to 34. K-08.
-  720: ["h1"],
+  // The display step falls to 34 (K-08), and the rail stands up — measured at
+  // 716, so 720 is the nearest declared switch above it. One change of shape on
+  // a phone rather than two.
+  720: ["h1", "rail"],
 };
 
 test.describe("about changes shape only where it is allowed to", () => {

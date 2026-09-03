@@ -26,14 +26,15 @@ runSheetOracle({
   oracle: generated as unknown as Oracle,
   route: ABOUT,
   drawnWidths: ABOUT_DRAWN_WIDTHS,
-  // 42 AFTER H7a, AND NOT ONE OF THEM CARRIES AN `on:`. That is the first time
+  // 61 AFTER H7b, AND NOT ONE OF THEM CARRIES AN `on:`. That is the first time
   // since H3, and it is the same fact as the missing `ready` above: `/work` has
   // to take twenty-four of its thirty-six measurements in the gallery because
   // the rig has no api and no row stands on the page. Nothing on this page is
   // an answer, so the page in this rig is the page in production.
   //
-  // H7b RAISES IT. The trajectory rail is the one component this page has that
-  // could be measured in either place, and it will also be measurable here —
-  // it reads nothing either.
-  minimumEntries: 42,
+  // H7b RAISED IT FROM 42 AND KEPT THE PROPERTY. The trajectory rail is the one
+  // component this page has that a rig without an api could have hidden, and it
+  // does not: it reads nothing either, so its nineteen measurements are taken
+  // where a visitor meets it rather than in the gallery.
+  minimumEntries: 61,
 });

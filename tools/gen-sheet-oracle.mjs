@@ -116,6 +116,21 @@ const DIVERGENCE = {
     'Adding a third two-column geometry so that one page can be eighty pixels ' +
     'different would be that claim made on purpose. The 1080 switch is the ' +
     'same switch either way, which is the thing a reader can actually see.',
+  'one-panel-geometry':
+    'The About sheet draws the trajectory panel `1fr 380px` with a 64px gap. ' +
+    '`.cs-prob` in layout.css is `1fr 380px` with 80, and has been since G1. ' +
+    'The columns already agree; a rule that existed so one page could have a ' +
+    'gap sixteen pixels narrower would be the spare part H3 deleted when it ' +
+    'removed `.cs-hero` — "eine Regel, die niemand erreichen kann, ist kein ' +
+    'Ersatzteil, sondern die Behauptung, dass es etwas gibt." The panel takes ' +
+    'the pair whole and the 1080 switch stays one switch.',
+  'rail-wraps-at-720':
+    'The sheet draws the rail across at 1440 and down at 390 and says nothing ' +
+    'about where it turns. Measured on the built page: a caption takes three ' +
+    'lines up to and including 715 and two or fewer from 716, so 720 is the ' +
+    'nearest declared switch above the crossing and no width is drawn under ' +
+    'the minimum. The other crossing, 1148, is where captions stop wrapping ' +
+    'at all — a preference rather than a minimum, and a fifth switch.',
   // ── H3 ───────────────────────────────────────────────────────────────────
   'hero-rhythm':
     'The homepage hero is drawn with 84px above it, twelve pixels off the ' +
@@ -1882,6 +1897,158 @@ const ABOUT_MAP = [
     diverges: { class: 'mono-scale', sheet: '17px' },
   },
 
+  // ── 1440 · SYS.05.01 TRAJECTORY, built in H7b ────────────────────────────
+  {
+    id: 'about-rail-columns',
+    sheet: 'about', artboard: '1a', width: 1440, line: 116,
+    decl: 'grid-template-columns', says: 'repeat(6,1fr)',
+    reading: 'six stations across, one column each',
+    measure: { kind: 'track-count', selector: '.tl-rail' }, expect: 6,
+  },
+  {
+    id: 'about-rail-space',
+    sheet: 'about', artboard: '1a', width: 1440, line: 113,
+    decl: 'margin-bottom', says: '40px',
+    reading: 'forty under the rail before the panel it opens, at the nearest step',
+    measure: { kind: 'computed', selector: '.tl-rail', prop: 'margin-bottom' }, expect: '34px',
+    diverges: { class: 'spacing-scale', sheet: '40px' },
+  },
+  {
+    id: 'about-rail-track',
+    sheet: 'about', artboard: '1a', width: 1440, line: 114,
+    decl: 'height', says: '1px',
+    reading: 'the stations stand on a hairline, and it runs the whole width',
+    measure: { kind: 'computed', selector: '.tl-track', prop: 'height' }, expect: '1px',
+  },
+  {
+    id: 'about-rail-label',
+    sheet: 'about', artboard: '1a', width: 1440, line: 118,
+    decl: 'font', says: "500 10px 'JetBrains Mono',monospace",
+    reading: 'the station label is mono 10, exactly as drawn — and it is the position, because no date exists to put there',
+    measure: { kind: 'computed', selector: '.tl-label', prop: 'font-size' }, expect: '10px',
+  },
+  {
+    id: 'about-rail-label-box',
+    sheet: 'about', artboard: '1a', width: 1440, line: 118,
+    decl: 'height', says: '28px',
+    reading: 'in a box that holds the line off the track, at the nearest step',
+    measure: { kind: 'computed', selector: '.tl-label', prop: 'height' }, expect: '26px',
+    diverges: { class: 'spacing-scale', sheet: '28px' },
+  },
+  {
+    id: 'about-rail-dot',
+    sheet: 'about', artboard: '1a', width: 1440, line: 119,
+    decl: 'width', says: '11px',
+    reading: 'the station mark is eleven across — not a `.st-dot`, because a station makes no claim',
+    measure: { kind: 'computed', selector: '.tl-dot', prop: 'width' }, expect: '11px',
+  },
+  {
+    id: 'about-rail-cap-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 120,
+    decl: 'font', says: "400 10.5px/1.5 'JetBrains Mono',monospace",
+    reading: 'the caption is mono at the step under the half pixel',
+    measure: { kind: 'computed', selector: '.tl-cap', prop: 'font-size' }, expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '10.5px' },
+  },
+  {
+    id: 'about-rail-cap-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 120,
+    decl: 'margin-top', says: '14px',
+    reading: 'fourteen under the mark, exactly as drawn',
+    measure: { kind: 'computed', selector: '.tl-cap', prop: 'margin-top' }, expect: '14px',
+  },
+
+  // ── 1440 · the panel the rail opens ──────────────────────────────────────
+  {
+    id: 'about-panel-columns',
+    sheet: 'about', artboard: '1a', width: 1440, line: 150,
+    decl: 'grid-template-columns', says: '1fr 380px',
+    reading: 'the panel is the prose and an aside, and it is the rail this site already has',
+    // `:visible` AND NOT `.tl-panel`. Five of the six are `display: none` at
+    // rest, and a computed `grid-template-columns` on a box that was never laid
+    // out reads back the SPECIFIED value — `minmax(0, 1fr) 380px`, which counts
+    // as three tracks rather than two. The number would have been wrong for a
+    // reason that has nothing to do with the drawing.
+    measure: { kind: 'track-count', selector: '.tl-panel:visible' }, expect: 2,
+  },
+  {
+    id: 'about-panel-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 150,
+    decl: 'gap', says: '64px',
+    reading: 'set apart by `.cs-prob`\u2019s own gap rather than a seventh two-column rule',
+    measure: { kind: 'computed', selector: '.tl-panel', prop: 'column-gap' }, expect: '80px',
+    diverges: { class: 'one-panel-geometry', sheet: '64px' },
+  },
+  {
+    id: 'about-panel-head-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 152,
+    decl: 'gap', says: '14px',
+    reading: 'the label sits fourteen off the title it belongs to',
+    measure: { kind: 'computed', selector: '.tl-head', prop: 'column-gap' }, expect: '14px',
+  },
+  {
+    id: 'about-panel-no',
+    sheet: 'about', artboard: '1a', width: 1440, line: 153,
+    decl: 'font', says: "600 11px 'JetBrains Mono',monospace",
+    reading: 'the panel repeats the station label at mono 11, so a panel read on its own says which station it is',
+    measure: { kind: 'computed', selector: '.tl-head-no', prop: 'font-size' }, expect: '11px',
+  },
+  {
+    id: 'about-panel-title',
+    sheet: 'about', artboard: '1a', width: 1440, line: 154,
+    decl: 'font', says: "500 19px 'Chakra Petch',sans-serif",
+    reading: 'and the title is the display face at the step above nineteen — the scale has 26, and no nineteen',
+    measure: { kind: 'computed', selector: '.tl-head-title', prop: 'font-size' }, expect: '26px',
+    diverges: { class: 'mono-scale', sheet: '19px' },
+  },
+  {
+    id: 'about-panel-body',
+    sheet: 'about', artboard: '1a', width: 1440, line: 156,
+    decl: 'font', says: "400 15.5px/1.75 'Geist',sans-serif",
+    reading: 'the prose is the 15px body step under the half pixel',
+    measure: { kind: 'computed', selector: '.tl-body', prop: 'font-size' }, expect: '15px',
+    diverges: { class: 'half-pixel', sheet: '15.5px' },
+  },
+  {
+    id: 'about-panel-aside-label',
+    sheet: 'about', artboard: '1a', width: 1440, line: 160,
+    decl: 'font', says: "600 9.5px 'JetBrains Mono',monospace",
+    reading: 'PICKED UP and SHIPPED sit at the bottom of the mono scale',
+    measure: { kind: 'computed', selector: '.tl-aside-label', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  {
+    id: 'about-panel-tag-border',
+    sheet: 'about', artboard: '1a', width: 1440, line: 163,
+    decl: 'border', says: '1px solid rgba(139,152,166,.25)',
+    reading: 'a tag is a word in a box, and the box is what stops three of them reading as one sentence',
+    measure: { kind: 'computed', selector: '.tag', prop: 'border-top-width' }, expect: '1px',
+  },
+  {
+    id: 'about-panel-tag-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 163,
+    decl: 'font', says: "500 9.5px 'JetBrains Mono',monospace",
+    reading: 'at the mono step under the half pixel',
+    measure: { kind: 'computed', selector: '.tag', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+
+  // ── 390 · the rail stands up ─────────────────────────────────────────────
+  {
+    id: 'about-mobile-rail-column',
+    sheet: 'about', artboard: '1b', width: 390, line: 323,
+    decl: 'padding-left', says: '20px',
+    reading: 'the rail turns ninety degrees and leaves twenty on the left for the line the marks hang off',
+    measure: { kind: 'computed', selector: '.tl-rail', prop: 'padding-left' }, expect: '20px',
+  },
+  {
+    id: 'about-mobile-rail-tracks',
+    sheet: 'about', artboard: '1b', width: 390, line: 323,
+    decl: 'position', says: 'relative',
+    reading: 'one column, not six — and where it turns was measured rather than drawn',
+    measure: { kind: 'track-count', selector: '.tl-rail' }, expect: 1,
+    diverges: { class: 'rail-wraps-at-720' },
+  },
   // ── 390 · About, artboard 1b ─────────────────────────────────────────────
   {
     id: 'about-mobile-h1',

@@ -444,7 +444,18 @@ html:has(dialog.menu[open]) { overflow: hidden; }
   color: var(--dim);
 }
 .menu-section .bar { flex: 1; height: 1px; background: var(--line); }
-.menu-section .tag { letter-spacing: .06em; font-weight: 400; }
+
+/* `.menu-section .tag` STOOD HERE AND IS GONE, H7b. It was a modifier for a
+   base class that did not exist — `.tag` was named in layout.css's 44px rule
+   from G1 and drawn in no stylesheet at all until this phase — applied to an
+   element this menu stopped rendering in G5. MobileMenu.tsx says so in its own
+   comment: "Until G5 these were <li>s with a [SOON] tag beside the heading."
+   So the rule modified nothing, twice over, for four stages.
+
+   Checked before deleting rather than assumed: `.tag` appears in exactly one
+   piece of markup on this site, and it is components/about/TrajectoryPanel.tsx.
+   A rule nobody can reach is not a spare part, it is the claim that something
+   exists — H3's argument when it deleted `.cs-hero`.                          */
 
 .menu-langs { display: flex; gap: var(--s-10); margin-top: var(--s-12); }
 .menu-lang {

@@ -12,6 +12,205 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 03.09.2026, H7b gebaut: die Rail läuft, und sie kostet null Byte
+
+**Zweig `phase/h7b-trajectory`.** Sechs Stationen, Tastatur, Fülllinie,
+Detail-Panel. Damit ist H7 fertig und `/about` die dritte Seite dieser Site, auf
+der ein Leser etwas *tun* kann.
+
+**Gegen Produktion ist nichts davon gemessen.** Alle Zahlen unten stammen vom
+lokalen Produktionsbuild.
+
+### Die Zahl der Phase: der interaktive Moment kostet nichts
+
+| | `/` | `/work` | `/about` |
+|---|---|---|---|
+| gesamt, gzip | 143 856 B | 145 482 B | **143 856 B** |
+| Dateien | 7 | 8 | **7** |
+
+**Byte-gleich mit der Startseite, mit gebauter Rail.** `/work`s Insel kostet zum
+Vergleich 1 626 B. Die Rail ist eine **Radiogruppe**: ← → ↑ ↓, ein Tabstopp für
+sechs Stationen, Klick über `<label for>`, Zustand über `:checked`. ADR 0066.
+
+### Der stärkste Fund: die Zusicherung, die ein Skript nicht bestehen kann
+
+Nicht die Bytes sind das Argument, sondern #244 — unter `cacheComponents` bleibt
+ein Stream-Platzhalter ohne JavaScript stehen. Es gibt also **schon ein** Ding
+auf dieser Site, das ohne Skript nicht funktioniert. Ein handgeschriebener
+Tastatur-Handler hätte das zweite daraus gemacht, auf der Seite, deren ganzes
+Argument ist, dass sie nur sagt, was sie belegen kann.
+
+```ts
+test("the rail works with JavaScript turned off", …)
+  javaScriptEnabled: false
+  klicken  → Panel wechselt
+  ← →      → Panel wechselt
+```
+
+Als `019-the-arrow-keys-i-did-not-write.mdx` aufgeschrieben.
+
+### Der zweite Fund: `.tag` wurde seit G1 genannt und nie gezeichnet
+
+`layout.css` führt die Klasse seit G1 in der 44px-Regel. `chrome.css` trägt seit
+G3 `.menu-section .tag { letter-spacing: .06em; font-weight: 400 }` — einen
+**Modifikator für eine Basis, die es nicht gab**. Vier Stufen lang hat er nichts
+modifiziert.
+
+Das erste Bauteil, das ein `.tag` rendert, ist das Panel dieser Phase, und es
+hat drei Tags als eine Zeile Fließtext gezeichnet. **Dieselbe Form wie H6as Fund
+an `.work-row`:** ein Wert in einem Stylesheet ist keine Entscheidung, nur weil
+er in einem Stylesheet steht — eine Klasse, die in zwei Regeln *genannt* und in
+keiner *gezeichnet* wird, hat nichts, wogegen sie falsch sein könnte. `ui.css`
+zeichnet sie jetzt.
+
+### Der dritte Fund: die Pfeile laufen um, das Blatt klemmt
+
+Das Blatt-Skript klemmt (`Math.max(0, Math.min(TL.length - 1, i))`), eine native
+Radiogruppe **läuft um**, und das WAI-ARIA-Muster schreibt das Umlaufen vor.
+
+**Gefunden durch Drücken, nicht durch Lesen** — und die erste Messung hat aus dem
+richtigen Grund das Falsche gesagt: sechs Tastendrücke in einer
+Sechser-Gruppe landen wieder am Ausgangspunkt, ein Umlauf sieht also exakt aus
+wie eine Klemmung, bis man mitzählt. Das Umlaufen bleibt; Klemmen hieße, dem
+Browser die Tasten wieder abzunehmen.
+
+### Die Beschriftung ist die Position, weil es keine Daten gibt
+
+`seed.sql` erklärt zwei Systeme, keines mit Datum; `caseStudyPaths()` liefert
+einen Pfad. Eine Zeitleiste behauptet **wann** und **in welcher Reihenfolge** —
+das erste ist nicht belegbar, das zweite ist der Zweck des Bauteils. Also
+`01`–`05 · NOW`, die Notation, die diese Seite ohnehin spricht.
+
+**Die Kollision mit den Systemnummern wird durch die Form aufgelöst:** eine
+nackte Zahl ist eine Station, eine Zahl **mit Namen** ist ein System
+(`02 timseil.dev`). Ein Test hält das auseinander. K2 tauscht Ordinale gegen
+Jahre, indem es eine Datei ändert.
+
+### Der Schalter der Rail ist 720, bisektiert
+
+```
+eine Beschriftung nimmt drei Zeilen   bis einschließlich 715
+zwei oder weniger                     ab 716
+```
+
+720 ist der nächste erklärte Schalter darüber, also wird keine Breite unter dem
+Minimum gezeichnet — und es ist der Schalter, den die Seite ohnehin nimmt (K-08,
+62 → 34), das Telefon bekommt also **eine** Formänderung statt zweier. Die
+zweite Kreuzung liegt bei 1148, wo Beschriftungen überhaupt aufhören
+umzubrechen; das ist kein Minimum, sondern eine Vorliebe, und ein Schalter dafür
+wäre der fünfte.
+
+### Gemessen am gebauten Build
+
+```
+Breite  client  Rail    Item   Kappen  Füllung  Panel-Spalten  Überlauf
+ 1440    1440   quer     193     1        91,7        2            0
+ 1081    1081   quer     167     2        91,7        2            0
+ 1079    1079   quer     167     2        91,7        1            0
+ 1024    1024   quer     157     2        91,7        1            0
+  899     899   quer     137     2        91,7        1            0
+  720     720   quer     107     2        91,7        1            0
+  719     719   senkr.   619     1        91,7        1            0
+  560     560   senkr.   460     1        91,7        1            0
+  390     390   senkr.   326     1        91,7        1            0
+```
+
+Der Schalter sitzt beidseitig, die Füllung steht in beiden Lagen auf 91,7 %
+(= `NOW`), Überlauf null.
+
+### Was vom Blatt abweicht, und warum
+
+- **Kein Klemmen an den Enden** — siehe oben, ADR 0066 §4.
+- **Keine Jahre** — ADR 0066 §5.
+- **`[LANGUAGE]` und `AWS` gestrichen.** Das erste ist eine Klammer. Das zweite
+  nennt eine Cloud, die in diesem Repository nicht vorkommt — diese Site läuft
+  auf einem VPS bei OVH, ADR 0008. Das ist `4 containers` in klein.
+- **Fünf von sechs Panels haben keine Prosa.** Die Bodys des Blatts sind
+  geklammerte deutsche Briefings. Die eine Station, für die dieses Repository
+  geradesteht, ist die Seite selbst — und ihre Belegzeile ist ein Link.
+- **Der Panel-Zweispalter nimmt `.cs-prob`s Paar ganz** (380px, gap 80) statt
+  einer siebten Geometrie für sechzehn Pixel. Im Orakel als
+  `one-panel-geometry`.
+- **Die Füllung ist Arithmetik**, `(index + 0.5) / 6`, statt
+  `getBoundingClientRect()` bei jedem `paint()`.
+
+### Lokal gemessen
+
+```
+make check   grün
+npm test     580    (von 569)
+e2e          1 462 grün, 3 übersprungen, 0 rot   (von 1 359)
+Orakel       61 Messungen /about (von 42), 25 abweichend — weiter kein `on:`
+Bündel       /about byte-gleich mit /
+```
+
+Der Handstart lief auf 3200, und zwischen Änderung und Lauf lag kein
+`npm run build` — die Lehre vom Vormittag.
+
+## Gefunden — aus H7b
+
+- **Die Frage war die falsche, und sie stand in einem ADR.** ADR 0064 hat H7 die
+  Insel zugewiesen und dabei nach Analogie entschieden. Die Frage, die die
+  Analogie gerettet hätte, ist enger: *gibt es ein Formularelement, das diesen
+  Zustand schon hält?* Für eine gefilterte Liste gibt es keins; für „eines von
+  sechs" gibt es eins, und es ist älter als jedes Rahmenwerk hier.
+  *(03.09.2026, H7b)*
+- **Ein Umlauf sieht aus wie eine Klemmung, bis man mitzählt.** Sechs
+  Tastendrücke in einer Sechser-Gruppe landen wieder am Ausgangspunkt. Der erste
+  Test war grün aus dem falschen Grund. Verhalten wird gedrückt, nicht gelesen.
+  *(03.09.2026, H7b)*
+- **`track-count` auf einem `display:none`-Element liest den spezifizierten
+  statt den benutzten Wert.** `minmax(0, 1fr) 380px` zählt als drei Spuren statt
+  zwei, weil die Box nie gelayoutet wurde. Fünf der sechs Panels sind
+  ausgeblendet. *(03.09.2026, H7b)*
+- **Und die Reparatur dafür geht nur an einer der beiden Stellen.** Das Orakel
+  misst über einen **Locator**, dort greift `:visible`. Der Sweep misst über
+  `page.evaluate`, dort landet der Selektor in `document.querySelector` — und
+  `:visible` ist ein Playwright-Selektor, kein CSS. Er wirft. Das ist die Falle,
+  die `gallery.work.spec.ts` für `:has()` und `:text-is()` aufgeschrieben hat,
+  zum dritten Mal und zum ersten Mal von der anderen Seite. Der Sweep nennt das
+  Panel jetzt über `:nth-child(6)` — die Station, auf der die Rail ruht, und im
+  Sweep klickt nichts. *(03.09.2026, H7b)*
+- **Der Geschwister-Kombinator reicht nur vorwärts, und das entscheidet, welcher
+  Zustand der Default ist.** Die Labels *vor* dem gewählten sind nicht
+  benennbar, also ist „past" keine Regel, sondern das, was ein Label ist, wenn
+  niemand es benannt hat. *(03.09.2026, H7b)*
+- **Eine Klasse in zwei Regeln und in keinem Bauteil ist eine Behauptung.**
+  `.tag` seit G1 in der 44px-Regel, seit G3 mit einem Modifikator, nie
+  gezeichnet. *(03.09.2026, H7b)*
+- **Eine Eigenschaft mit Übergang direkt nach dem Zustandswechsel zu messen,
+  misst ein Einzelbild der Animation.** Das Panel wechselt über `display`, also
+  sofort; die Fülllinie läuft über `--d-wipe`. Dreimal an einem Tag darauf
+  hereingefallen — zweimal von Hand, einmal in einem Test, der 46,5 % las auf
+  dem Weg von 91,7 nach 41,7 und das eine falsche Zahl nannte. Die Messung ist
+  der Wert, auf dem die Eigenschaft **zur Ruhe kommt**: `expect.poll`, nicht
+  `evaluate`. *(03.09.2026, H7b)*
+- **Ein Test, der eine Anzahl zusichert, geht rot, wenn die Phase ihre Arbeit
+  tut — und das ist der Sinn.** „Zwei Abschnitte sind Schalen" stimmte in H7a
+  und stimmt seit dieser Phase nicht mehr, weil SYS.05.01 gebaut ist. Die Zahl
+  musste mitwandern, und sie hat sich selbst dazu aufgefordert.
+  *(03.09.2026, H7b)*
+
+## Verschoben aus H7b
+
+- **Fünf Stationsabsätze und der OFF-SYSTEM-Satz → K2.** Alle sechs stehen als
+  Schale mit Begründung da.
+- **Echte Jahreszahlen statt Ordinale → K2**, und es ist eine Zeile in
+  `lib/about/trajectory.ts`.
+- **Der Galerie-Eintrag weicht in beiden Zustandsnamen vom Inventar ab.** „jahr
+  aktiv" nennt eine Sache, die es nicht gibt; „tastatur ← →" ist gebaut und ist
+  kein Bauteil-Zustand, weil die Pfeile dem Browser gehören. Als `note` notiert,
+  die Transkription unangetastet.
+- **`.menu-section .tag` war doppelt tot und ist gelöscht.** Nachgesehen statt
+  vermutet: `MobileMenu.tsx` sagt im eigenen Kommentar, dass der `[SOON]`-Tag
+  neben der Überschrift **in G5** verschwunden ist, und `.tag` kam in genau
+  einem Stück Markup dieser Site vor — dem Panel dieser Phase. Der Modifikator
+  hat also einen Zustand modifiziert, den es nicht gab, an einem Element, das
+  nicht mehr gerendert wird. Eine Regel, die niemand erreichen kann, ist kein
+  Ersatzteil (H3s Argument beim Löschen von `.cs-hero`).
+
+---
+
 ## Wo wir stehen — 03.09.2026, H7a abgenommen: 10 von 10, und ein Loch außerhalb des Tauschs
 
 `a813cca` läuft. Merge 11:57:11Z, Deploy-Job 12:06:30Z–12:07:04Z (**34 s**),
