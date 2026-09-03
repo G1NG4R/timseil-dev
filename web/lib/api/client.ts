@@ -36,10 +36,17 @@ import { apiTarget, buildQuery, resolvePath } from "../http/url.ts";
 // The generated declarations, by name and without an extension: TypeScript
 // resolves `schema.d.ts` from here, and `import type` is erased before Node ever
 // sees a specifier to resolve. Written by `make gen`; never by hand.
-import type { components, paths } from "./schema";
+import type { paths } from "./schema";
+import { asProblem, type ApiResult, type Problem, readJson } from "./problem.ts";
 
-/** An RFC 9457 problem document, as the contract declares it. */
-export type Problem = components["schemas"]["Problem"];
+// `Problem` and `ApiResult` MOVED TO ./problem.ts IN H8 and are re-exported
+// here, so no caller changed. The move is the contact form's: apiPost runs in
+// the BROWSER, this file imports the logger, and the logger imports the
+// scrubber — three modules a page with 6 725 bytes of headroom would be paying
+// for in order to write a line into a visitor's console that nothing collects.
+// The seam is the same one this file's own header drew for `next/*`, one layer
+// further out.
+export type { ApiResult, Problem } from "./problem.ts";
 
 /** Every path the contract serves with a GET. */
 export type GetPath = {
@@ -58,30 +65,6 @@ export type GetBody<P extends GetPath> = paths[P] extends {
 }
   ? B
   : never;
-
-export type ApiResult<T> =
-  | {
-      kind: "ok";
-      status: number;
-      data: T;
-      /** The validator to send back as `If-None-Match`, when there was one. */
-      etag: string | null;
-      upstreamRequestId: string | null;
-    }
-  | {
-      kind: "not-modified";
-      status: 304;
-      etag: string | null;
-      upstreamRequestId: string | null;
-    }
-  | {
-      kind: "fail";
-      /** The HTTP status, or 0 when there was no answer at all. */
-      status: number;
-      /** The problem document, when the api sent one that parses. */
-      problem: Problem | null;
-      upstreamRequestId: string | null;
-    };
 
 export interface GetOptions {
   /**
@@ -201,14 +184,22 @@ export async function apiGet<P extends GetPath>(
     const body = await readJson(response);
 
     if (!response.ok) {
-      return { kind: "fail", status: response.status, problem: asProblem(body), upstreamRequestId };
+      return {
+        kind: "fail",
+        status: response.status,
+        problem: asProblem(body),
+        // A GET never asks anybody to come back later. The field exists for
+        // `/api/contact`, and null here is "the api said nothing", not zero.
+        retryAfterSec: null,
+        upstreamRequestId,
+      };
     }
 
     // A `200` whose body is not an object is not a body this contract describes.
     // Calling it data would push the lie one layer down, to whoever reads a
     // field off it.
     if (typeof body !== "object" || body === null) {
-      return { kind: "fail", status: response.status, problem: null, upstreamRequestId };
+      return { kind: "fail", status: response.status, problem: null, retryAfterSec: null, upstreamRequestId };
     }
 
     return { kind: "ok", status: response.status, data: body as GetBody<P>, etag, upstreamRequestId };
@@ -230,43 +221,6 @@ export async function apiGet<P extends GetPath>(
       ids,
     );
 
-    return { kind: "fail", status: 0, problem: null, upstreamRequestId: null };
+    return { kind: "fail", status: 0, problem: null, retryAfterSec: null, upstreamRequestId: null };
   }
-}
-
-/**
- * Reads the body as JSON, or gives up quietly.
- *
- * A body that will not parse is not an error worth its own line: the status
- * already says what happened, and the caller's answer to both is the same.
- */
-async function readJson(response: Response): Promise<unknown> {
-  try {
-    const text = await response.text();
-    if (text === "") return null;
-    return JSON.parse(text) as unknown;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Recognises a problem document, or admits it did not.
- *
- * Checks the three fields the contract marks required and nothing else. A looser
- * check would let an error page from something that is not our api arrive at a
- * component as a `title` to render; a stricter one would drop a valid document
- * over an optional field.
- *
- * Deliberately no media-type check. `Content-Type` is what the sender claims,
- * and this is the shape the reader needs — a correct document with a wrong
- * header is still readable, and a wrong document with the right header is not.
- */
-function asProblem(body: unknown): Problem | null {
-  if (typeof body !== "object" || body === null) return null;
-  const p = body as Record<string, unknown>;
-  if (typeof p.type !== "string") return null;
-  if (typeof p.title !== "string") return null;
-  if (typeof p.status !== "number") return null;
-  return body as Problem;
 }

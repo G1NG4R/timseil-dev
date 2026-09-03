@@ -120,8 +120,8 @@ describe("healthOrThrow keeps a failure out of the cache", () => {
   // the window, which is exactly the failure compose.yaml:583 refuses to allow.
   it("throws on every shape of refusal", () => {
     const cases: ApiResult<Health>[] = [
-      { kind: "fail", status: 0, problem: null, upstreamRequestId: null },
-      { kind: "fail", status: 503, problem: null, upstreamRequestId: null },
+      { kind: "fail", status: 0, problem: null, retryAfterSec: null, upstreamRequestId: null },
+      { kind: "fail", status: 503, problem: null, retryAfterSec: null, upstreamRequestId: null },
       { kind: "not-modified", status: 304, etag: null, upstreamRequestId: null },
     ];
     for (const c of cases) {
