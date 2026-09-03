@@ -58,7 +58,7 @@ genau die erfundene Zahl, gegen die der ganze Rest gebaut ist.
 
 Als `020-the-millisecond-that-would-have-vanished.mdx` aufgeschrieben.
 
-### Zwei weitere Funde derselben Sitzung, alle drei in der Fehlerbehandlung
+### Drei weitere Funde derselben Sitzung, alle vier in der Fehlerbehandlung
 
 - **Ein `disabled`-Feld nimmt keinen Fokus.** Der Sprung auf das erste
   Fehlerfeld nach einem `400` tat nichts — lautlos, in dem Zweig, der da ist,
@@ -69,7 +69,15 @@ Als `020-the-millisecond-that-would-have-vanished.mdx` aufgeschrieben.
   Seite hatte einen Satz für beides, und der zeigte auf Felder, die alle
   stimmten.
 
-**Keiner der drei war durch Lesen zu finden.** Alle drei liegen im Fehlerpfad,
+- **Eine Fehlermeldung nannte eine Ursache, die die Seite nicht kennt.** „No
+  answer within eight seconds" stand auch dann da, wenn die Verbindung nach
+  einer Millisekunde abgelehnt wurde — und auch bei einem `404` von etwas, das
+  nicht unsere API ist. Die Seite weiß, dass nichts zurückkam; warum, weiß sie
+  nicht. Ein unbekannter Status wird jetzt **gedruckt** statt beschrieben, was
+  die Anweisung des Blatts für diesen Zustand ist: „wie in einem Log, nicht wie
+  in einer Entschuldigung."
+
+**Keiner der vier war durch Lesen zu finden.** Alle vier liegen im Fehlerpfad,
 keiner ist im Glücksfall sichtbar.
 
 ### Die Geometrie an allen sieben Prüfbreiten, am gebauten Build

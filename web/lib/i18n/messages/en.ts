@@ -558,12 +558,28 @@ export const en = {
     "The mail relay did not answer. The message is stored and goes out as soon " +
     "as it does — you do not need to send it again.",
 
-  // No answer at all: the eight seconds ran out, or the connection never
-  // opened. The one failure where we genuinely do not know whether anything
-  // arrived, and the sentence says so rather than guessing in either direction.
+  // No answer at all: the deadline ran out, or the connection never opened, or
+  // the visitor's network went away mid-request. The one failure where nobody
+  // here knows whether anything arrived, and the sentence says so rather than
+  // guessing in either direction.
+  //
+  // IT DOES NOT NAME A CAUSE, and an earlier draft did — "No answer within
+  // eight seconds", which is a claim about WHICH failure it was. A refused
+  // connection fails in a millisecond and would have been described as a
+  // timeout. The page knows that nothing came back; it does not know why.
   contactNoAnswer:
-    "No answer within eight seconds. I cannot tell from here whether it got " +
-    "through — the address below always works.",
+    "No answer came back, and I cannot tell from here whether the message got " +
+    "through. The address below always works.",
+
+  // A STATUS THIS PAGE WAS NEVER TOLD ABOUT — not 202, 400, 429 or 502. In
+  // practice something between the browser and the api answered instead of the
+  // api: a proxy, a maintenance page, an edge that is not ours.
+  //
+  // The number is printed, which is this site's voice everywhere else and the
+  // sheet's own instruction for this state: "wie in einem Log, nicht wie in
+  // einer Entschuldigung." A visitor who quotes it to me has told me more than
+  // any sentence I could write in advance.
+  contactUnexpected: "The reply was not one this page knows how to read",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",

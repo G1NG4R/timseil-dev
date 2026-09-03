@@ -381,7 +381,7 @@ test("a 502 says stored, not lost, and not delivered either", async ({ page }) =
   await expect(page.locator("#message")).toHaveValue(GOOD.message);
 });
 
-test("no answer at all admits it does not know", async ({ page }) => {
+test("no answer at all admits it does not know, and names no cause", async ({ page }) => {
   await page.route("**/api/contact", (route) => route.abort("connectionrefused"));
   await fill(page);
   await send(page);
@@ -390,6 +390,25 @@ test("no answer at all admits it does not know", async ({ page }) => {
   // page says so rather than guessing in either direction.
   await expect(page.locator(".cf-status")).toContainText("cannot tell");
   await expect(page.locator(".cf-status")).toContainText("address below");
+  // AND IT DOES NOT NAME A TIMEOUT. A refused connection fails in a
+  // millisecond; an earlier draft called it "No answer within eight seconds",
+  // which is a claim about which failure it was.
+  await expect(page.locator(".cf-status")).not.toContainText("eight seconds");
+});
+
+test("a status nobody expected is printed rather than described", async ({ page }) => {
+  // Something between the browser and the api answered instead of the api — a
+  // proxy, a maintenance page, an edge that is not ours. The page does not know
+  // what it was, so it quotes the number: a visitor who sends me that has told
+  // me more than any sentence written in advance could.
+  await page.route("**/api/contact", (route) =>
+    route.fulfill({ status: 503, headers: { "content-type": "text/html" }, body: "<h1>maintenance</h1>" }),
+  );
+  await fill(page);
+  await send(page);
+
+  await expect(page.locator(".cf-status")).toContainText("503");
+  await expect(page.locator(".cf-status")).toContainText("cannot tell");
 });
 
 /* ── Without JavaScript ────────────────────────────────────────────────── */

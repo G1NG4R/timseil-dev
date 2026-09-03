@@ -62,6 +62,7 @@ export interface ContactCopy {
   accepted: string;
   invalid: string;
   refused: string;
+  unexpected: string;
   rateLimited: string;
   providerDown: string;
   noAnswer: string;
@@ -382,8 +383,16 @@ function StatusText({
 
   if (failure.status === 502) return <>{copy.providerDown}</>;
 
-  // 0 is no answer at all, and anything else is a status this page was not told
-  // about. Both get the sentence that admits it, because guessing between "it
-  // arrived" and "it did not" is the one thing this page must not do.
-  return <>{copy.noAnswer}</>;
+  // 0 IS NO ANSWER AT ALL AND ANYTHING ELSE IS AN ANSWER NOBODY EXPECTED, and
+  // they are different sentences because they are different facts. A refused
+  // connection and a 404 from something that is not our api both used to print
+  // "No answer within eight seconds" — a claim about which failure it was, and
+  // wrong in both cases.
+  if (failure.status === 0) return <>{copy.noAnswer}</>;
+
+  return (
+    <>
+      {copy.unexpected} <span className="cf-receipt">{failure.status}</span>. {copy.noAnswer}
+    </>
+  );
 }
