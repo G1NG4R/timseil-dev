@@ -1,0 +1,250 @@
+/* `/about`'s own surfaces. Build plan H7. ADR 0065.
+
+   WHAT IS HERE AND WHAT IS NOT, the same split case.css, home.css and work.css
+   make: this file draws, layout.css switches. Nothing below carries a media
+   query. `/about` answers to three of the four declared switches and layout.css
+   owns all of them — 1080, where `.hero` stops being two columns and which this
+   page inherits rather than declares; 900, which this phase adds for the two
+   grids of its own and for a section head whose meta is long; and 720, where
+   the display step falls to 34 and nothing else moves.
+
+   NO NEW TOKENS, AND NO COLOUR THAT IS NOT ONE. Every colour, radius and
+   duration below already exists. The geometry literals are the four measures
+   the sheet gives — `14ch`, `64ch`, `62ch`, `52ch` — plus three component
+   dimensions: `80px` for the label column of the operator card, `30px` for the
+   numeral column of a principle, `5px` for the mark on a tile, and `13px` for
+   the corner arms `.marks` asks a consumer to name. Each is one component's own
+   size, in the same class as home.css's 620px cap and case.css's 660px, and
+   check-tokens.sh polices colour, radius and duration rather than geometry.
+
+   WHAT THIS FILE DOES NOT DRAW: the hero's eyebrow, its availability line and
+   the vertical rhythm above and below it. Those are home.css's `.hero-*`, and
+   the two heroes share them because they are the same six rules and not because
+   About is the homepage — components/about/AboutHero.tsx carries the argument.
+   The one hero rule About does NOT inherit is `.hero-headline`, whose 620px cap
+   is the homepage sentence's own measure.
+
+   SPACING IS ROUNDED TO THE SCALE. The sheet draws 104px between sections, 22
+   and 24 inside the operator card, 18 and 20 inside a tile, and 80 between the
+   principle columns. Foundations fixes the scale and G1 made it binding, so
+   each reads the nearest step; every one of those roundings is four to eight
+   pixels and is recorded in the oracle as `spacing-scale`. The 80px column gap
+   is the exception and it is not rounded: it is `.hero`'s own gap one file over
+   and rounding it would make two adjacent grids on one page disagree by eight
+   pixels for no reason a reader could see.                                    */
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+
+/* The sheet's own cap, and it is a measure rather than a box. The homepage caps
+   the same display step at 620px because that is where ITS sentence breaks;
+   this one is the About sheet's `14ch`, which is a different sentence and a
+   different measure, and neither is a layout decision.
+
+   WHAT `14ch` ACTUALLY RESOLVES TO, measured rather than assumed: 546px at the
+   62px step and 294px at 34. The sentence sets in two lines at 1440, 1024, 899,
+   719 and 390, and in three at 1081 — where the left column of the hero grid is
+   narrower than the cap and the cap stops being what decides. A `ch` is the
+   advance of the display face's zero, so this number moves if the face does,
+   which is the reason it is written as the sheet wrote it rather than as the
+   pixels it happens to make today. */
+.about-headline {
+  max-width: 14ch;
+  text-wrap: pretty;
+  margin-block-end: var(--s-26);
+}
+
+/* The lede is body prose and the homepage's subline is mono, which is the one
+   real difference between the two heroes. globals.css caps every `p` at 68ch
+   for reading; the sheet asks for 64 and the narrower of the two wins by being
+   written here — H6b is why that sentence is in this comment, because the same
+   global rule silently cut a label row to a third of its width. */
+.about-lede {
+  max-width: 64ch;
+  font: 400 var(--t-body-17)/var(--lh-body) var(--body);
+  color: var(--ink-2);
+}
+
+/* ── Operator card ──────────────────────────────────────────────────────── */
+
+/* The fourth consumer of `.marks`, and it sets the pair the class asks for:
+   steel at 13px, which is the sheet's own arm length. ui.css explains why the
+   eight corner gradients are a class rather than a fifth copy.
+
+   `background-color` AND NOT `background`, for the reason ui.css gives: the
+   shorthand resets `background-image` and would erase the marks depending on
+   which rule the bundler happened to put last. */
+.op-card {
+  --mark-color: var(--steel);
+  --mark-len: 13px;
+  background-color: var(--panel);
+  border: 1px solid var(--line-soft);
+  padding: var(--s-20) var(--s-26);
+}
+
+.op-kicker {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+  margin-block-end: var(--s-16);
+}
+
+/* 80px for the label column is the sheet's, and it is the width of the longest
+   label plus air rather than a round number: `LANGUAGES` was the longest and it
+   is not a row any more, so `PRIMARY` sets it now with room to spare. Left as
+   drawn — narrowing it would be a change nobody asked for that the next label
+   could undo. */
+.op-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: var(--s-12) var(--s-16);
+  font: 400 var(--t-mono-11)/1.55 var(--mono);
+  margin: 0;
+}
+
+.op-label {
+  color: var(--dim);
+  letter-spacing: var(--ls-label);
+}
+
+.op-value {
+  color: var(--ink-2);
+  margin: 0;
+}
+
+/* The one value the sheet draws in signal. It is an attribute rather than a
+   second class because the flag lives in the data — lib/about/content.ts — and
+   a class would put the same decision in two files. */
+.op-value[data-accent] {
+  color: var(--acc);
+}
+
+/* ── Sections ───────────────────────────────────────────────────────────── */
+
+/* 104px in the sheet, --s-96 here. The homepage's `.home-section` reads the
+   same token for the same drawing, so the two pages breathe alike. */
+.about-section {
+  margin-block-end: var(--s-96);
+}
+
+/* ── SYS.05.02 · WHAT I RUN ─────────────────────────────────────────────── */
+
+.run-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-20);
+  margin: 0 0 var(--s-20);
+  padding: 0;
+  list-style: none;
+}
+
+.run-tile {
+  border: 1px solid var(--line);
+  padding: var(--s-16) var(--s-20);
+}
+
+.run-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  margin: 0 0 var(--s-12);
+}
+
+/* NOT A `.st-dot`, and the difference is the point. state.css's dot is the
+   geometry of a STATE and takes its fill from a claim; these four axes make no
+   claim, so this is a 5px circle that means "here is an axis" and nothing more.
+   `--radius-dot` is the token either way. */
+.run-mark {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-dot);
+  background: var(--acc);
+}
+
+.run-title {
+  font: 500 var(--t-mono-12)/1.3 var(--mono);
+  color: var(--ink);
+  margin: 0;
+}
+
+.run-detail {
+  font: 400 var(--t-mono-11)/1.6 var(--mono);
+  color: var(--steel);
+  margin: var(--s-6) 0 0;
+}
+
+/* The closing strip: the sentence on the left, the way to the evidence on the
+   right. It wraps rather than scrolls, and the gap is the only thing holding
+   the two apart — the sheet uses a `flex:1` spacer element, which is a node
+   that exists to be empty. */
+.run-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-14);
+  padding: var(--s-16) var(--s-20);
+  border: 1px solid var(--line-soft);
+  background-color: var(--panel);
+  margin: 0;
+}
+
+.run-note-text {
+  font: 400 var(--t-body-13)/1.6 var(--body);
+  color: var(--steel);
+  max-width: 62ch;
+}
+
+.run-note-exit {
+  font: 600 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  white-space: nowrap;
+}
+
+/* ── SYS.05.03 · HOW I WORK ─────────────────────────────────────────────── */
+
+.prin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-44) 80px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 30px for the numeral column is the sheet's own, and it is the width of two
+   mono digits plus air. `--s-16` between it and the body against the sheet's
+   18: two pixels, and the scale is binding. */
+.prin {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: var(--s-16);
+}
+
+.prin-no {
+  font: 600 var(--t-mono-11)/1 var(--mono);
+  /* THE SHEET FADES IT TO 75% AND THIS DOES NOT. tokens.css has no accent at
+     that alpha, and the two it does have are named for a line and for a pulse
+     shadow — borrowing either would put a shadow colour on a glyph. A
+     translucent text colour is also a contrast figure nobody has measured, and
+     the numeral is `aria-hidden` decoration whose whole job is to be quiet
+     without disappearing. Full accent, recorded as a divergence. */
+  color: var(--acc);
+  padding-block-start: var(--s-6);
+}
+
+.prin-title {
+  font: 500 var(--t-mono-13)/1.35 var(--mono);
+  color: var(--ink);
+  margin: 0 0 var(--s-10);
+}
+
+.prin-detail {
+  max-width: 52ch;
+  font: 400 var(--t-body-15)/1.7 var(--body);
+  color: var(--steel);
+  margin: 0;
+}

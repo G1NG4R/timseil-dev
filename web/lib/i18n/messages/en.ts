@@ -199,7 +199,13 @@ export const en = {
   homeEyebrow: "BACKEND & DEVOPS ENGINEER · LUXEMBOURG",
   homeHeadline: "I build the systems behind the screen.",
   homeTagline: "self-taught, self-hosted.",
-  homeAvailability: "Open to backend and infrastructure work",
+  // THE KEY LOST ITS `home` PREFIX IN H7, AND THAT IS THE POINT OF THE RENAME.
+  // The About sheet draws this sentence too, word for word, beside the same dot
+  // and the same state word. H2a already measured what a second, shorter set of
+  // words costs — it exists only to be forgotten when the first is corrected —
+  // so there is one sentence and it is no longer named after the first page
+  // that happened to print it. ADR 0055 is the same move on a class name.
+  availability: "Open to backend and infrastructure work",
 
   // The terminal frame. It says what it is instead of standing there greyed
   // out — STATE.05, and the reason it has no input at all until stage J.
@@ -402,6 +408,60 @@ export const en = {
   workContact:
     "Nothing here quite what you are looking for? I am happy to walk you " +
     "through how one of these systems is built.",
+
+  // ── H7 · /about ─────────────────────────────────────────────────────────
+  //
+  // WHAT IS NOT HERE, and it is most of the sheet. `SYS.05`, `OPERATOR`,
+  // `TRAJECTORY`, `WHAT I RUN`, `HOW I WORK`, `OFF-SYSTEM`, `NAME`, `ROLE`,
+  // `BASE`, `PRIMARY`, `ROUTE`, `MAIL`, `EDGE`, `SERVICES`, `PIPELINE` and
+  // `WATCH` are nomenclature — LANG.01, "Übersetzt wird Prosa, nicht
+  // Nomenklatur" — and a German About page would still read SYS.05.02 WHAT I
+  // RUN. So they live in lib/about/, where a test can hold their order, and the
+  // prose lives here.
+  //
+  // `AVAILABLE` IS ABSENT FOR THE THIRD REASON THE HOMEPAGE BLOCK GIVES: it is
+  // already a state word (`stateAvailable`), and a second key for one word is
+  // how the two start disagreeing about what it means. The sentence beside it
+  // is `availability`, one block up, and it is the SAME sentence on both pages
+  // rather than a second copy — see the note there.
+  aboutHeadline: "I learn systems by running them.",
+
+  // ONE PARAGRAPH WHERE THE SHEET DRAWS TWO. The second is
+  // "[BIO — 2–3 Sätze in deiner Stimme: …]", a bracket asking for a voice, and
+  // ADR 0055 refused two image placeholders on the case study with the argument
+  // that carries here unchanged. The first paragraph is the sheet's own English
+  // and says the whole thing; a page is not improved by a second one that says
+  // nothing.
+  aboutLede:
+    "Backend and DevOps engineer in Luxembourg, working in Go and TypeScript. " +
+    "Self-taught, from systems fundamentals through to deployment — which in " +
+    "practice means every service I describe here is one I also have to keep " +
+    "running.",
+
+  // The rail is the one control on this page and H7b builds it. The sentence
+  // names the phase rather than apologising, which is what separates a shell
+  // from a dead state: STATE.05, "ein toter Zustand ohne Begründung ist ein
+  // Bug."
+  aboutTrajectorySoon:
+    "The rail is the one thing on this page you can operate, and it is built " +
+    "in the next phase. Nothing is drawn here rather than a row of years that " +
+    "does not answer a key.",
+
+  // AND THIS ONE ADMITS A DIFFERENT KIND OF ABSENCE. The section above is owed
+  // by a phase; this one is owed by me. The sheet draws a bracketed German
+  // paragraph and three rows of which two are brackets and the third names a
+  // system that does not exist — so there is nothing to render, and the honest
+  // sentence says whose turn it is.
+  aboutOffSystemSoon:
+    "The one line on this page that is not about a system is the one line " +
+    "nobody can derive. It is written in the content phase, not guessed here.",
+
+  // The closing strip of SYS.05.02. It is the whole argument of the section in
+  // two sentences, and the link beside it is the evidence.
+  aboutStackNote:
+    "The page you are reading is served by that stack. If it is slow, that is " +
+    "on me.",
+  aboutCaseStudy: "READ THE CASE STUDY",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",

@@ -53,6 +53,13 @@ const SHEETS = {
   // the five-track rebuild. So this page has three drawings, like the case
   // study and unlike the homepage.
   workIndex: 'docs/design/Work Index - timseil.dev.dc.html',
+  // H7. About draws itself at 1440 and 390 and nowhere else, and unlike the
+  // homepage that is not an omission the Intermediate Widths sheet apologises
+  // for — it names this page in the list of the ones with nothing to decide:
+  // "Fliesstext, Blog, About, Contact und Legal fliessen, dort ist nichts zu
+  // entscheiden." So two artboards, and the one switch this page's own grids
+  // need was derived rather than drawn.
+  about: 'docs/design/About - timseil.dev.dc.html',
 };
 
 // ONE DECISION MOVES MANY MEASUREMENTS, so the reasons are named once and
@@ -99,6 +106,16 @@ const DIVERGENCE = {
     'with a 1px gap over the container line instead, so the divider follows the ' +
     'column count with no rule to keep in step. Built the sheet\'s way first, ' +
     'and a screenshot at 390 showed seven stages reading as one paragraph.',
+  // ── H7 ──────────────────────────────────────────────────────────────────────
+  'one-hero-geometry':
+    'The About sheet draws its hero as `1fr 400px` with an 80px gap; the ' +
+    'homepage draws `1fr 480px` with 72. layout.css carries ONE hero row and ' +
+    'has since G1, and H3 deleted the second one it inherited with the ' +
+    'argument that applies here in reverse: "eine Regel, die niemand erreichen ' +
+    'kann, ist kein Ersatzteil, sondern die Behauptung, dass es etwas gibt." ' +
+    'Adding a third two-column geometry so that one page can be eighty pixels ' +
+    'different would be that claim made on purpose. The 1080 switch is the ' +
+    'same switch either way, which is the thing a reader can actually see.',
   // ── H3 ───────────────────────────────────────────────────────────────────
   'hero-rhythm':
     'The homepage hero is drawn with 84px above it, twelve pixels off the ' +
@@ -1551,10 +1568,356 @@ const WORK_MAP = [
   },
 ];
 
+/**
+ * `/about`'s map. Build plan H7.
+ *
+ * NOT ONE `on:` IN THE WHOLE LIST, and it is the first page of stage H that can
+ * say so. The rig runs a production build with NO api, which is why 24 of the
+ * work index's 36 entries and every SYS.01 entry are measured in the gallery
+ * instead of on their own page. `/about` reads nothing: every word comes out of
+ * lib/about/ and lib/i18n/, so the page in the rig is the page in production
+ * and there is nothing to wait for and nothing to route around.
+ *
+ * TWO ARTBOARDS AND SEVEN CHECKED WIDTHS. The five between them have no
+ * drawing here, and about.sweep.spec.ts covers what happens across them.
+ */
+const ABOUT_MAP = [
+  // ── 1440 · About, artboard 1a · the hero ─────────────────────────────────
+  {
+    id: 'about-hero-columns',
+    sheet: 'about', artboard: '1a', width: 1440, line: 64,
+    decl: 'grid-template-columns', says: '1fr 400px',
+    reading: 'the hero is two columns, the sentence and the card',
+    measure: { kind: 'track-count', selector: '.hero' }, expect: 2,
+  },
+  {
+    id: 'about-hero-rail-width',
+    sheet: 'about', artboard: '1a', width: 1440, line: 64,
+    decl: 'grid-template-columns', says: '1fr 400px',
+    reading: 'and the card is the rail this site already has, not a second one eighty pixels narrower',
+    measure: { kind: 'box-width', selector: '.op-card' }, expect: 480,
+    diverges: { class: 'one-hero-geometry', sheet: '400px' },
+  },
+  {
+    id: 'about-hero-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 64,
+    decl: 'gap', says: '80px',
+    reading: 'set apart by the same gap the other hero uses',
+    measure: { kind: 'computed', selector: '.hero', prop: 'column-gap' }, expect: '72px',
+    diverges: { class: 'one-hero-geometry', sheet: '80px' },
+  },
+  {
+    id: 'about-hero-padding',
+    sheet: 'about', artboard: '1a', width: 1440, line: 64,
+    decl: 'padding', says: '72px 0 88px',
+    reading: 'seventy-two above the eyebrow, exactly as drawn and exactly as the homepage',
+    measure: { kind: 'computed', selector: '.hero-head', prop: 'padding-top' }, expect: '72px',
+  },
+  {
+    id: 'about-hero-padding-end',
+    sheet: 'about', artboard: '1a', width: 1440, line: 64,
+    decl: 'padding', says: '72px 0 88px',
+    reading: 'and the step above 88 below it — the pair --s-72 over --s-96 that both heroes breathe on',
+    measure: { kind: 'computed', selector: '.hero-head', prop: 'padding-bottom' }, expect: '96px',
+    diverges: { class: 'spacing-scale', sheet: '88px' },
+  },
+  {
+    id: 'about-eyebrow-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 66,
+    decl: 'font', says: "500 11.5px 'JetBrains Mono',monospace",
+    reading: 'the eyebrow is mono at the step under the half pixel the sheet draws',
+    measure: { kind: 'computed', selector: '.hero-eyebrow', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+  {
+    id: 'about-eyebrow-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 66,
+    decl: 'margin-bottom', says: '26px',
+    reading: 'twenty-six under it, on the scale as drawn',
+    measure: { kind: 'computed', selector: '.hero-eyebrow', prop: 'margin-bottom' }, expect: '26px',
+  },
+  {
+    id: 'about-h1-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 67,
+    decl: 'font', says: "500 62px/1.06 'Chakra Petch',sans-serif",
+    reading: 'the About headline is the 62px display step — K-08 gives it to exactly two pages, this one and the homepage',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '62px',
+  },
+  {
+    id: 'about-h1-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 67,
+    decl: 'margin', says: '0 0 28px',
+    reading: 'and twenty-eight under it, at the nearest step',
+    measure: { kind: 'computed', selector: '.about-headline', prop: 'margin-bottom' }, expect: '26px',
+    diverges: { class: 'spacing-scale', sheet: '28px' },
+  },
+  {
+    id: 'about-lede-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 68,
+    decl: 'font', says: "400 16.5px/1.75 'Geist',sans-serif",
+    reading: 'the lede is the 16.5px body step, which is the one place this hero is not the homepage - there the subline is mono',
+    measure: { kind: 'computed', selector: '.about-lede', prop: 'font-size' }, expect: '16.5px',
+  },
+  // THE 7px DOT ON LINE 71 HAS NO ENTRY, AND IT CANNOT HAVE ONE. This oracle
+  // measures elements; it has no kind that means "and this one is absent", and
+  // every measure throws on a selector that matches nothing. The dot is absent
+  // on purpose — the Consistency Check files this artboard under K-14
+  // ("Statuspunkt ONLINE nur auf Startseite und About") and resolves it the
+  // other way, "Punkt in der Meta-Leiste jeder Seite, gross im Hero nur auf der
+  // Startseite". e2e/home.spec.ts has asserted exactly that since H3, by
+  // walking to this page, and it is what caught the dot being built here.
+  {
+    id: 'about-avail-word',
+    sheet: 'about', artboard: '1a', width: 1440, line: 72,
+    decl: 'font', says: "600 11px 'JetBrains Mono',monospace",
+    reading: 'and the state word beside it is mono 11, which the paragraph around it would otherwise have set to the body face',
+    measure: { kind: 'computed', selector: '.hero-avail .st-word', prop: 'font-size' }, expect: '11px',
+  },
+
+  // ── 1440 · the operator card ─────────────────────────────────────────────
+  {
+    id: 'about-card-border',
+    sheet: 'about', artboard: '1a', width: 1440, line: 90,
+    decl: 'border', says: '1px solid rgba(139,152,166,.12)',
+    reading: 'the card is a plate with one hairline, like the spec rail on the case study',
+    measure: { kind: 'computed', selector: '.op-card', prop: 'border-top-width' }, expect: '1px',
+  },
+  {
+    id: 'about-card-padding',
+    sheet: 'about', artboard: '1a', width: 1440, line: 90,
+    decl: 'padding', says: '22px 24px',
+    reading: 'padded to the nearest steps either way',
+    measure: { kind: 'computed', selector: '.op-card', prop: 'padding-top' }, expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '22px' },
+  },
+  {
+    id: 'about-card-kicker',
+    sheet: 'about', artboard: '1a', width: 1440, line: 91,
+    decl: 'font', says: "600 9.5px 'JetBrains Mono',monospace",
+    reading: 'OPERATOR sits at the bottom of the mono scale, under the half pixel drawn',
+    measure: { kind: 'computed', selector: '.op-kicker', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  {
+    id: 'about-card-columns',
+    sheet: 'about', artboard: '1a', width: 1440, line: 92,
+    decl: 'grid-template-columns', says: '80px 1fr',
+    reading: 'a label column and a value column — a description list, drawn as the grid it is',
+    measure: { kind: 'track-count', selector: '.op-grid' }, expect: 2,
+  },
+  {
+    id: 'about-card-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 92,
+    decl: 'gap', says: '11px 16px',
+    reading: 'sixteen between the two columns, exactly as drawn',
+    measure: { kind: 'computed', selector: '.op-grid', prop: 'column-gap' }, expect: '16px',
+  },
+  {
+    id: 'about-card-row-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 92,
+    decl: 'gap', says: '11px 16px',
+    reading: 'and eleven between rows, at the nearest step',
+    measure: { kind: 'computed', selector: '.op-grid', prop: 'row-gap' }, expect: '12px',
+    diverges: { class: 'spacing-scale', sheet: '11px' },
+  },
+  {
+    id: 'about-card-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 92,
+    decl: 'font', says: "400 11.5px/1.55 'JetBrains Mono',monospace",
+    reading: 'the card reads at the mono step under the half pixel',
+    measure: { kind: 'computed', selector: '.op-grid', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+
+  // ── 1440 · the section heads and the rhythm between them ─────────────────
+  {
+    id: 'about-sec-rule',
+    sheet: 'about', artboard: '1a', width: 1440, line: 173,
+    decl: 'border-bottom', says: '1px solid rgba(139,152,166,.16)',
+    reading: 'every section head stands on the hairline, and that head is ui.css’s rather than this page’s',
+    measure: { kind: 'computed', selector: '.sec', prop: 'border-bottom-width' }, expect: '1px',
+  },
+  {
+    id: 'about-sec-space',
+    sheet: 'about', artboard: '1a', width: 1440, line: 173,
+    decl: 'margin-bottom', says: '36px',
+    reading: 'thirty-six between a head and what it opens',
+    measure: { kind: 'computed', selector: '.sec', prop: 'margin-bottom' }, expect: '34px',
+    diverges: { class: 'spacing-scale', sheet: '36px' },
+  },
+  {
+    id: 'about-section-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 172,
+    decl: 'margin-bottom', says: '104px',
+    reading: 'and 104 between sections, at the step the homepage already reads for the same drawing',
+    measure: { kind: 'computed', selector: '.about-section', prop: 'margin-bottom' }, expect: '96px',
+    diverges: { class: 'spacing-scale', sheet: '104px' },
+  },
+
+  // ── 1440 · SYS.05.02 WHAT I RUN ──────────────────────────────────────────
+  {
+    id: 'about-run-columns',
+    sheet: 'about', artboard: '1a', width: 1440, line: 179,
+    decl: 'grid-template-columns', says: 'repeat(4,1fr)',
+    reading: 'four tiles, one per axis of the machine this page is served by',
+    measure: { kind: 'track-count', selector: '.run-grid' }, expect: 4,
+  },
+  {
+    id: 'about-run-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 179,
+    decl: 'gap', says: '20px',
+    reading: 'set twenty apart, on the scale as drawn',
+    measure: { kind: 'computed', selector: '.run-grid', prop: 'column-gap' }, expect: '20px',
+  },
+  {
+    id: 'about-run-tile-border',
+    sheet: 'about', artboard: '1a', width: 1440, line: 180,
+    decl: 'border', says: '1px solid rgba(139,152,166,.16)',
+    reading: 'each tile is fenced by the hairline rather than filled',
+    measure: { kind: 'computed', selector: '.run-tile', prop: 'border-top-width' }, expect: '1px',
+  },
+  {
+    id: 'about-run-tile-padding',
+    sheet: 'about', artboard: '1a', width: 1440, line: 180,
+    decl: 'padding', says: '18px 20px',
+    reading: 'twenty inside it on the sides, exactly as drawn',
+    measure: { kind: 'computed', selector: '.run-tile', prop: 'padding-left' }, expect: '20px',
+  },
+  {
+    id: 'about-run-label-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 181,
+    decl: 'gap', says: '8px',
+    reading: 'the mark sits eight off its label — and it is not a .st-dot, because an axis makes no claim',
+    measure: { kind: 'computed', selector: '.run-label', prop: 'column-gap' }, expect: '8px',
+  },
+  {
+    id: 'about-run-title-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 182,
+    decl: 'font', says: "500 12.5px 'JetBrains Mono',monospace",
+    reading: 'the tile title is mono at the step under the half pixel',
+    measure: { kind: 'computed', selector: '.run-title', prop: 'font-size' }, expect: '12px',
+    diverges: { class: 'half-pixel', sheet: '12.5px' },
+  },
+  {
+    id: 'about-run-detail-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 183,
+    decl: 'font', says: "400 11px/1.6 'JetBrains Mono',monospace",
+    reading: 'and the sentence under it is mono 11, exactly as drawn',
+    measure: { kind: 'computed', selector: '.run-detail', prop: 'font-size' }, expect: '11px',
+  },
+  {
+    id: 'about-run-note-padding',
+    sheet: 'about', artboard: '1a', width: 1440, line: 201,
+    decl: 'padding', says: '16px 20px',
+    reading: 'the closing strip is padded as drawn, and it is the one panel fill on this page',
+    measure: { kind: 'computed', selector: '.run-note', prop: 'padding-top' }, expect: '16px',
+  },
+  {
+    id: 'about-run-note-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 202,
+    decl: 'font', says: "400 13.5px/1.6 'Geist',sans-serif",
+    reading: 'its sentence is the 13px body step under the half pixel',
+    measure: { kind: 'computed', selector: '.run-note-text', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'half-pixel', sheet: '13.5px' },
+  },
+  {
+    id: 'about-run-exit-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 204,
+    decl: 'font', says: "600 10.5px 'JetBrains Mono',monospace",
+    reading: 'and the way to the evidence is mono 10 — a link, where the sheet draws a span with a pointer cursor',
+    measure: { kind: 'computed', selector: '.run-note-exit', prop: 'font-size' }, expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '10.5px' },
+  },
+
+  // ── 1440 · SYS.05.03 HOW I WORK ──────────────────────────────────────────
+  {
+    id: 'about-prin-columns',
+    sheet: 'about', artboard: '1a', width: 1440, line: 213,
+    decl: 'grid-template-columns', says: 'repeat(2,1fr)',
+    reading: 'four principles in two columns',
+    measure: { kind: 'track-count', selector: '.prin-grid' }, expect: 2,
+  },
+  {
+    id: 'about-prin-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 213,
+    decl: 'gap', says: '44px 80px',
+    reading: 'eighty between the columns — the hero’s own gap one section up, left unrounded so two grids on one page do not disagree by eight pixels',
+    measure: { kind: 'computed', selector: '.prin-grid', prop: 'column-gap' }, expect: '80px',
+  },
+  {
+    id: 'about-prin-row-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 213,
+    decl: 'gap', says: '44px 80px',
+    reading: 'and forty-four between the rows, on the scale as drawn',
+    measure: { kind: 'computed', selector: '.prin-grid', prop: 'row-gap' }, expect: '44px',
+  },
+  {
+    id: 'about-prin-tracks',
+    sheet: 'about', artboard: '1a', width: 1440, line: 214,
+    decl: 'grid-template-columns', says: '30px 1fr',
+    reading: 'each one is a numeral and a body',
+    measure: { kind: 'track-count', selector: '.prin' }, expect: 2,
+  },
+  {
+    id: 'about-prin-inner-gap',
+    sheet: 'about', artboard: '1a', width: 1440, line: 214,
+    decl: 'gap', says: '18px',
+    reading: 'eighteen between them, at the nearest step',
+    measure: { kind: 'computed', selector: '.prin', prop: 'column-gap' }, expect: '16px',
+    diverges: { class: 'spacing-scale', sheet: '18px' },
+  },
+  {
+    id: 'about-prin-no-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 215,
+    decl: 'font', says: "600 11px 'JetBrains Mono',monospace",
+    reading: 'the numeral is mono 11 as drawn, and it is the position rather than a field',
+    measure: { kind: 'computed', selector: '.prin-no', prop: 'font-size' }, expect: '11px',
+  },
+  {
+    id: 'about-prin-title-size',
+    sheet: 'about', artboard: '1a', width: 1440, line: 216,
+    decl: 'font', says: "500 17px 'JetBrains Mono',monospace",
+    reading: 'the principle title is the top of the mono scale — the sheet draws seventeen and the scale stops at thirteen',
+    measure: { kind: 'computed', selector: '.prin-title', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'mono-scale', sheet: '17px' },
+  },
+
+  // ── 390 · About, artboard 1b ─────────────────────────────────────────────
+  {
+    id: 'about-mobile-h1',
+    sheet: 'about', artboard: '1b', width: 390, line: 288,
+    decl: 'font', says: "500 34px/1.1 'Chakra Petch',sans-serif",
+    reading: 'the display step falls to 34 on a phone. The artboard draws an h2 there; a crop is not a document outline, and this page keeps its one h1',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '34px',
+  },
+  {
+    id: 'about-mobile-run-columns',
+    sheet: 'about', artboard: '1b', width: 390, line: 380,
+    decl: 'grid-template-columns', says: '1fr 1fr',
+    reading: 'four tiles become two columns on a phone, which is the sheet’s own pair and the switch this phase had to derive',
+    measure: { kind: 'track-count', selector: '.run-grid' }, expect: 2,
+  },
+  {
+    id: 'about-mobile-prin-column',
+    sheet: 'about', artboard: '1b', width: 390, line: 397,
+    decl: 'gap', says: '26px',
+    reading: 'and the principles become one column, twenty-six apart, exactly as drawn',
+    measure: { kind: 'computed', selector: '.prin-grid', prop: 'row-gap' }, expect: '26px',
+  },
+  {
+    id: 'about-mobile-prin-tracks',
+    sheet: 'about', artboard: '1b', width: 390, line: 397,
+    decl: 'flex-direction', says: 'column',
+    reading: 'one track, not two — the same switch the tiles take, one section down',
+    measure: { kind: 'track-count', selector: '.prin-grid' }, expect: 1,
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
   { map: WORK_MAP, target: 'web/e2e/oracle/work.gen.json' },
+  { map: ABOUT_MAP, target: 'web/e2e/oracle/about.gen.json' },
 ];
 
 // ---------------------------------------------------------------- extraction

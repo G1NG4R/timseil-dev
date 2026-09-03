@@ -24,16 +24,19 @@ void test("a path the table does not know throws instead of guessing", () => {
   assert.throws(() => seoFor("en", "/about/"), /no page entry/);
 });
 
-// The three routes that say something today. It was one until H1, two until
-// H6, and the third is `/work` itself — the index stopped being a [SOON] stub
-// in that phase, so the crawler that reads it now finds the list rather than a
-// placeholder. The other five stay out until the phase named beside each fills
-// them.
-void test("the homepage, the work index and the case studies are indexable, and nothing else", () => {
-  assert.deepEqual(indexablePaths(), ["/", "/work", "/work/timseil-dev"]);
+// The four routes that say something today. It was one until H1, two until H6,
+// three when `/work` itself stopped being a [SOON] stub in that same phase, and
+// four since H7 filled `/about`. The other four stay out until the phase named
+// beside each fills them.
+//
+// THE ORDER IS THE TABLE'S AND NOT ALPHABETICAL: `/about` sits where README's
+// route table puts it, after `/blog`, so this list reads the way the file does.
+void test("the homepage, the work index, about and the case studies are indexable, and nothing else", () => {
+  assert.deepEqual(indexablePaths(), ["/", "/work", "/about", "/work/timseil-dev"]);
   assert.equal(seoFor("en", "/").robots, undefined);
   assert.equal(seoFor("en", "/work/timseil-dev").robots, undefined);
   assert.equal(seoFor("en", "/work").robots, undefined);
+  assert.equal(seoFor("en", "/about").robots, undefined);
 });
 
 // The drift this table was restructured to make impossible: a case study that

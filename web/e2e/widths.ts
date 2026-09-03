@@ -206,3 +206,38 @@ export const WORK_DRAWN_WIDTHS = [1440, 1024, 390] as const;
  * missing switch.
  */
 export const WORK_SWITCHES = [1080, 900, 720] as const;
+
+/** `/about`. */
+export const ABOUT = "/about";
+
+/**
+ * The widths a sheet draws ABOUT at. TWO, like the homepage and unlike the
+ * other two pages — and here it is not an omission the Intermediate Widths
+ * sheet leaves unexplained but one it states: "Fliesstext, Blog, About,
+ * Contact und Legal fliessen, dort ist nichts zu entscheiden." The 1024 frame
+ * exists for pages with a fixed column to rebuild; this page has none.
+ */
+export const ABOUT_DRAWN_WIDTHS = [1440, 390] as const;
+
+/**
+ * Where `/about` changes shape. TWO OF THE FOUR, and unlike `/work` neither
+ * absence is a fact about the rig — this page reads no endpoint, so everything
+ * it draws is in the document at every width.
+ *
+ * 1080 is `.hero`, which this page inherits rather than declares: layout.css
+ * has carried one hero row since G1, and H3 deleted the second geometry it was
+ * handed rather than keep a rule nobody could reach.
+ *
+ * 900 IS THIS PAGE'S OWN AND IT WAS DERIVED, NOT DRAWN. The sheet draws four
+ * tiles at 1440 and two at 390 and says nothing about where they swap;
+ * layout.css carries the arithmetic and the measurement. The principle grid
+ * takes the same switch, which the same comment argues for rather than assumes.
+ *
+ * 720 is the display step, K-08 — `h1` goes 62 to 34, which the sheet draws at
+ * both of its widths.
+ *
+ * 560 IS NOT HERE AND NOTHING ON THIS PAGE ANSWERS TO IT. `.col` narrows its
+ * margin there for every page at once, and layout.sweep.spec.ts checks that
+ * once against the sheet's table rather than eleven times.
+ */
+export const ABOUT_SWITCHES = [1080, 900, 720] as const;
