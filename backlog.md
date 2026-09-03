@@ -169,7 +169,21 @@ Orakel       22 Messungen /contact, 8 abweichend
   Schale, und L7 muss einhalten, was der Satz am Formular verspricht.
 - **`CORS_ALLOWED_ORIGINS` gegen die laufende Umgebung geprüft, Ergebnis nicht
   hier.** Ein Browser schickt bei einem POST einen `Origin`; steht er nicht auf
-  der Liste, ist jede Einsendung ein `400`. Gehört vor den Merge geprüft.
+  der Liste, ist jede Einsendung ein `400` **ohne Feldangabe** — von außen
+  ununterscheidbar von einem kaputten Formular. Bis H8 war die Liste nie im
+  Anfrageweg, weil `curl` keinen Origin schickt und der Handler Anfragen ohne
+  Origin durchlässt (ADR 0021 §9).
+
+  Die Prüfung braucht keine Zugangsdaten und keinen Merge: die Origin-Prüfung
+  läuft **vor** der Validierung, also sagt die Form der `400`-Antwort, welche
+  der beiden zugeschlagen hat — mit `invalidParams` war der Origin durch, ohne
+  nicht. Ein absichtlich ungültiger Rumpf schreibt dabei keine Zeile und sendet
+  keine Mail. Eine Kontrollprobe mit fremdem Origin gehört dazu, sonst ist ein
+  `400` mit Feldern auch mit abgeschalteter Prüfung erklärbar. **Gelaufen am
+  03.09.2026, beide Proben; das Ergebnis steht in `backlog.local.md`.**
+
+  Kostet zwei der drei Sendungen für zehn Minuten — jeder Versuch zählt mit,
+  auch ein abgewiesener.
 
 ---
 
