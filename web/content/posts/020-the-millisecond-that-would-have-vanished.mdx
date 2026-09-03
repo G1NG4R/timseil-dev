@@ -1,0 +1,141 @@
+---
+title: 'The millisecond that would have vanished'
+deck: 'My contact endpoint answers a submission that spent under three seconds on the form with a 202 that goes nowhere — no row, no mail, a receipt that means nothing. My form waited out the difference before sending. A timer woke 0.2ms early, the reading floored to 2999, and the request would have disappeared into exactly the hole the wait exists to avoid.'
+published: 2026-09-03
+tags: ['forms', 'javascript', 'testing', 'api']
+systemId: 'timseil-dev'
+summary: |
+  The contact form on this site has to send a duration it measured itself, and
+  the API discards anything under three seconds without saying so. Rather than
+  send a doomed request, the form waits out the remainder first. That was
+  correct and still wrong: one setTimeout is allowed to wake early, and an
+  end-to-end run caught it reporting 2999 where 3000 was the floor. The repair
+  is to re-measure after waking instead of trusting the sleep — and emphatically
+  not to round the number up, which would have made every early send look legal
+  and hidden the loss from both ends.
+---
+
+The contact endpoint on this site has been live since long before it had a form.
+It validates, it hashes the sender's address rather than storing it, it holds
+three submissions per address per ten minutes, and it has a fifth answer that
+does not look like an answer at all: a submission whose `dwellMs` field is under
+three seconds gets a `202 Accepted` with a well-formed receipt, and then nothing
+happens. No database row. No mail. The receipt names nothing.
+
+That is deliberate. The field is an anti-spam measure, and a `400` telling a bot
+which rule caught it is an education it needs exactly once. But the decision
+record that introduced it also wrote down who else pays:
+
+> A person who pastes a prepared message and sends it in 2.5 seconds lands in a
+> black hole with a worthless receipt. That is the price, it is not small, and
+> the only place it becomes visible is a WARN line.
+
+And it said where the repair belongs — not in the rule, but in the form: build
+it so that it measures the time honestly.
+
+## What honest means here
+
+There are two ways a form can put a number in that field, and only one of them
+is a measurement.
+
+The dishonest one is to send whatever the clock says and, if it is short, round
+it up to the floor. The request then always succeeds and the number is always at
+least 3000, and both of those facts are lies. Worse, they are invisible lies: the
+sender sees a receipt, the log is green, and the only thing that would ever
+reveal the problem — the gap between what someone did and what was recorded —
+has been paved over.
+
+The honest one is to send the real number, and to not send at all until the real
+number clears the floor. So the form waits:
+
+```js
+const wait = remainingDwellMs(openedAt, performance.now());
+if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+
+const spent = performance.now() - openedAt;
+```
+
+Someone who pastes and sends immediately waits two and a half seconds. Nothing is
+discarded, nothing is invented, and the number in the request is a reading.
+
+I wrote that, tested it by hand, and it worked.
+
+## Then an end-to-end run said 2999
+
+The test drives the real form in a real browser, fills three fields, presses the
+button, and inspects the request the page actually sent:
+
+```js
+expect(sent.dwellMs).toBeGreaterThanOrEqual(3000);
+```
+
+It failed. Not always — roughly one run in three.
+
+```
+Expected: >= 3000
+Received:    2999
+```
+
+One millisecond. And one millisecond, on this endpoint, is the difference between
+a message that arrives and a message that vanishes with a receipt.
+
+Two things had to line up for it. `setTimeout(2957)` is not a promise to sleep
+2957 milliseconds; it is a promise not to run the callback *before* then, and
+browsers are allowed to be a fraction early against their own internal clock. So
+the reading came back as 2999.7. Then `Math.floor` — which is there because the
+database column is an integer and a fractional millisecond is not a thing you can
+store — turned 2999.7 into 2999.
+
+Both steps are individually reasonable. Together they produce a request that the
+server throws away in silence, from the one code path written specifically to
+stop that happening.
+
+## The fix is not to round
+
+The tempting repair is `Math.round`, or `Math.max(3000, …)`. It makes the test
+green immediately.
+
+It also reintroduces exactly the failure the wait was built to prevent, one layer
+lower. A form that guarantees the number by adjusting the number has stopped
+measuring anything; the field would say 3000 whether the sender spent 2999
+milliseconds on the page or none at all.
+
+What was actually wrong is the assumption that one sleep lands where you asked.
+So the form stops assuming, and asks again after it wakes:
+
+```js
+for (let attempt = 0; attempt < 8; attempt += 1) {
+  const wait = remainingDwellMs(openedAt, performance.now());
+  if (wait <= 0) break;
+  await new Promise((resolve) => setTimeout(resolve, wait));
+}
+```
+
+The loop cannot exit while the reading is short, because the reading is what it
+checks. `performance.now()` is monotonic and every sleep is at least a
+millisecond, so it terminates; the bound is there so that a clock which somehow
+stopped produces a request rather than a page that never answers.
+
+The number that goes out is still `Math.floor` of a real reading. It is simply
+never taken too early.
+
+## What found it
+
+Not review. I had read that code several times, and its comment already argued
+correctly about why the wait exists.
+
+What found it was a test that drove the form the way a person does and then
+looked at the bytes on the wire — and a threshold sitting exactly where an
+off-by-one becomes invisible rather than loud. Had the floor been 2000 with the
+form waiting to 3000, the same bug would have shipped and never once fired.
+
+The same run found two more things in the same afternoon. Fields disabled while
+sending cannot take focus, so moving the cursor to the first invalid field after
+a rejection did nothing at all — silently, in the branch that exists to be
+helpful. And a `400` from this endpoint has two meanings: it carries a list of
+fields when a field is wrong, and carries none when it refuses the request's
+origin. The page had one sentence for both, and the one it used pointed at fields
+that were all correct.
+
+Three defects, all of them in error handling, none of them visible in the happy
+path, and none of them found by reading.
