@@ -158,6 +158,30 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
   // When the api's measured `Retry-After` runs out, as wall-clock milliseconds.
   // `null` whenever nothing is being waited out, which is almost always.
   const [freeAt, setFreeAt] = useState<number | null>(null);
+  // THE DWELL THAT ACTUALLY LEFT, which is not the one the trace draws. The
+  // request body above is the state of the last keystroke — ADR 0067 says so and
+  // means it, because a live-ticking preview would re-render once a second for a
+  // number nobody reads. What is SENT is measured fresh at submit, after the
+  // floor has been waited out, and the log is a record of the departure rather
+  // than of the draft. Driving the form with three fields filled in seven
+  // milliseconds is what showed the difference: the panel logged `dwell 7ms`
+  // for a request that carried 3000.
+  const [sentDwellMs, setSentDwellMs] = useState<number | null>(null);
+  // THE REQUEST THAT ACTUALLY LEFT, drawn from the moment it leaves.
+  //
+  // The panel's whole claim is that it is the request — not a drawing of one —
+  // and until the log stood underneath it, the one field where that was untrue
+  // could not be seen. `dwellMs` in the preview is the state of the last
+  // keystroke by design (ADR 0067: a live-ticking number would cost a re-render
+  // a second for something nobody reads), but the value that travels is
+  // measured fresh after the floor has been waited out. On screen those were
+  // `"dwellMs": 6` in the body and `dwell 7255ms` in the log, two lines apart,
+  // both about the same field.
+  //
+  // So the drawing switches to the sent body when there is one. Everything on
+  // the screen after a send — the sentence, the receipt, the log and now the
+  // body — describes that send, until the next one starts and clears this.
+  const [sentBody, setSentBody] = useState<ContactRequest | null>(null);
 
   const [clock, setClock] = useState<Clock | null>(null);
 
@@ -223,7 +247,7 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     state,
     invalidCount: invalid.length,
     honeypotEmpty: honeypot === "",
-    dwellMs: preview?.dwellMs ?? null,
+    dwellMs: sentDwellMs,
     status: answer?.status ?? null,
     statusText: answer?.statusText ?? null,
     durationMs: answer?.durationMs ?? null,
@@ -264,6 +288,11 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
       setInvalid(local);
       setAnswer(null);
       setReceipt(null);
+      // Back to the draft. This branch spends no request, so what the panel
+      // should be drawing is the one the visitor is being asked to fix — not
+      // whatever last went out.
+      setSentBody(null);
+      setSentDwellMs(null);
       setPhase("invalid");
       focusFirst(local);
       return;
@@ -271,6 +300,8 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
 
     setInvalid([]);
     setAnswer(null);
+    setSentDwellMs(null);
+    setSentBody(null);
     setPhase("sending");
 
     // THE WAIT THAT MAKES THE DWELL HONEST. ADR 0021 §2 answers anything under
@@ -306,6 +337,9 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     }
 
     const spent = performance.now() - openedAt;
+    // The log may name it from here on: it is the number in the body that is
+    // about to go, not the one the preview was holding.
+    setSentDwellMs(Math.floor(spent));
 
     // MEASURED HERE AND NOT IN `apiPost`, deliberately. The round trip is a
     // fact of this page — it is what the panel prints — and `apiPost` is the
@@ -317,7 +351,9 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     // mid-request would otherwise produce a negative duration, and the log
     // would print it.
     const departedAt = performance.now();
-    const result = await apiPost("/api/contact", buildBody(draft, honeypot, spent, new Date()));
+    const body = buildBody(draft, honeypot, spent, new Date());
+    setSentBody(body);
+    const result = await apiPost("/api/contact", body);
     const durationMs = performance.now() - departedAt;
     const answeredAt = Date.now();
 
@@ -452,7 +488,7 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
         </p>
       </form>
 
-      <TxTrace body={preview} lines={log} state={state} />
+      <TxTrace body={sentBody ?? preview} lines={log} state={state} />
     </div>
   );
 }

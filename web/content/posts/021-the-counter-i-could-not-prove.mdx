@@ -1,0 +1,181 @@
+---
+title: 'The counter I could not prove'
+deck: 'My design sheet draws a rate-limit line as `retry in 6s · 1/3`. Building it meant asking which limiter the 429 came from — and the answer is that two of them write the same document, so the page cannot know. The wait is measured and printed. The counter is not.'
+published: 2026-09-04
+tags: ['api', 'rate-limiting', 'design', 'honesty']
+systemId: 'timseil-dev'
+summary: |
+  The contact form on this site had to grow a retry line. The design sheet draws
+  a countdown and an attempt counter, and the counter looked like the easy half:
+  the API allows three messages per address per ten minutes, so `2/3` is just
+  arithmetic. It is not. Two independent limiters guard that route, both answer
+  with 429, and both write it through the same helper — same type, same title,
+  a detail that differs only in a number of seconds. A counter beside that
+  answer would be naming which of the two refused the request, and nothing in
+  the response says. So the page prints the wait, which is measured, and holds
+  it: the button locks and releases itself. The counter stays unbuilt, and the
+  issue that asked for it stays open with a measurement attached instead of an
+  assumption.
+---
+
+The contact form on this site is the only place a stranger can reach me without
+opening a mail client, so it is also the only place where being wrong costs
+somebody else something. It grew a rate-limit line this week, and the line turned
+out to be two claims wearing one sentence.
+
+The design handoff draws it on the failure card:
+
+> `versuch 1/3 · retry in 6s`
+
+An attempt counter and a countdown. The countdown is a number the API sends; the
+counter looked like the half I already had. My endpoint allows three submissions
+per address per ten minutes. If a visitor gets a 429, they have used their three.
+`3/3`. Arithmetic.
+
+## The first question was which three
+
+The limit is not enforced against requests. It is enforced against rows:
+
+```sql
+SELECT count(*)                     AS recent,
+       min(received_at)::timestamptz AS oldest
+  FROM contact_messages
+ WHERE ip_hash = $1
+   AND received_at > now() - $2::interval;
+```
+
+That distinction is load-bearing and it is good news for a counter. A submission
+my page refuses locally never reaches the API. A `400` writes no row. A
+submission caught by the spam floor — an empty dwell time, a filled honeypot —
+returns a `202` and is deliberately never stored. What the query counts is
+exactly what my page gets a real receipt for, which means the page can count the
+same events without asking.
+
+The `Retry-After` is measured from the same row:
+
+```go
+wait := row.Oldest.Time.Add(RateLimitWindow).Sub(now)
+```
+
+Not a flat ten minutes. A flat ten minutes is wrong for everybody who wrote nine
+minutes ago, which is most of the people who ever see it.
+
+So far this is a good story: two honest numbers, both derived from the same
+place, both printable.
+
+## The second question ended it
+
+Then I went looking for where that 429 is written, and found it is written in
+two places.
+
+There is a token bucket in front of every `/api/*` route — a general
+per-address limiter with nothing to do with contact forms. It exempts exactly
+two paths, the container's health probes, and the contact endpoint is not one of
+them. And there is the contact floor, three per ten minutes, the one I had been
+reasoning about.
+
+Both of them refuse the same way:
+
+```go
+writeProblem(w, r, Problem{
+    Type:   TypeRateLimited,
+    Title:  "Too many requests",
+    Status: http.StatusTooManyRequests,
+    Detail: optional("Slow down and try again in " + strconv.Itoa(seconds) + " seconds."),
+})
+```
+
+Same type. Same title. A `detail` that differs only in the number of seconds,
+and the seconds are the one thing that is genuinely different between the two
+cases anyway. There is nothing in that response that says which limiter produced
+it.
+
+Which makes `2/3` a claim about something my page cannot see. Not usually wrong
+— a person filling in a form will trip the contact floor and never the bucket,
+which needs sixty requests in a burst — but *unverifiable*, and printed in
+monospace directly under the status code, where it reads as an explanation of
+that status code rather than as a guess about it.
+
+## What shipped instead
+
+The wait, and only the wait:
+
+```
+< 429 too many requests · 84ms
+  retry in 412s
+  contact@timseil.dev
+```
+
+And the page now *holds* that wait rather than describing it. The submit button
+locks while the seconds run down, and the same second that empties the countdown
+releases the button and removes the line. Before, the page printed a duration
+and then sat there with a live button, inviting the visitor to spend a request
+discovering what it had already been told.
+
+That is the part I would keep if I could only keep one. A number that tells you
+to wait, next to a control that lets you not wait, is a number the interface does
+not believe.
+
+## The line that was easy to write and wrong
+
+There is a smaller version of the same mistake three lines up in the same panel.
+
+The sheet's own prototype logs this while a message is in flight:
+
+```
+> validating … ok
+> spam checks … ok (honeypot empty, dwell 3.2s)
+> handing to provider …
+```
+
+Every one of those is a sentence about something happening somewhere else. The
+spam checks run inside the API; my page knows what it put in the honeypot field
+and how long the visitor spent typing, and it does not know the verdict. There
+is no provider in my browser — there is an address I post to, and a mail relay
+somewhere past it that the page will never see.
+
+So the log says what it watched:
+
+```
+> honeypot empty · dwell 3247ms
+> POST /api/contact
+< 202 accepted · 1120ms
+  msg_01M1MGN4V2DX7ZPP · 14:22:07 UTC
+```
+
+`accepted`, never `delivered` — the handler tries the relay once and hands
+anything it could not send to a dispatcher, so a message can leave an hour later
+or never, and a sentence claiming delivery would be false in a way nobody could
+correct.
+
+## The millisecond, again
+
+That `1120ms` is the reason the log exists at all.
+
+My endpoint answers a submission caught by the spam floor with the same
+well-formed `202` a real one gets: same shape, same plausible receipt, no row and
+no mail behind it. That is deliberate — telling a bot which rule caught it is an
+education it needs exactly once — but it means the status code cannot tell a
+delivered message from one that vanished.
+
+The duration can. A discarded submission short-circuits before the database and
+the relay and comes back in milliseconds. A real one carries an SMTP round trip.
+When I accepted the previous phase I had to measure that by hand, in a browser
+console, to believe my own receipt — and then that method existed nowhere except
+in my head.
+
+Now the page prints it. Not as instrumentation for me: as the one number on the
+screen that distinguishes a message that went somewhere from a message that
+did not.
+
+## What I did not do
+
+I did not make the form retry. It was the obvious way to give the counter
+something true to count, and it is wrong on every branch: a `502` means the
+message is already stored and a second attempt duplicates it; no answer at all
+means nobody knows whether it arrived, and a second attempt might duplicate it;
+a `429` means waiting minutes, which no page does on a visitor's behalf.
+
+The issue that asked for a retry counter is still open. It is open with a
+measured reason now instead of an assumption, which is the only improvement I
+had available.
