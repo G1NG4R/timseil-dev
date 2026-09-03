@@ -67,6 +67,17 @@ export type PostAccepted<P extends PostPath> = paths[P] extends {
  */
 export const POST_TIMEOUT_MS = 8000;
 
+/**
+ * What a POST can answer with.
+ *
+ * `ApiResult` minus the `304` arm, because a POST has no validator to send and
+ * no cached copy to be told about. Leaving it in would make every caller narrow
+ * past a case that cannot happen — and, worse, the one that matters would slip
+ * through: `retryAfterSec` lives on the failure arm, and a union that still
+ * carried `not-modified` hides it behind a check nobody can satisfy.
+ */
+export type PostResult<T> = Exclude<ApiResult<T>, { kind: "not-modified" }>;
+
 export interface PostOptions {
   timeoutMs?: number;
   /** The abort signal of whatever owns the attempt, when there is one. */
@@ -119,7 +130,7 @@ export async function apiPost<P extends PostPath>(
   path: P,
   body: PostBody<P>,
   options: PostOptions = {},
-): Promise<ApiResult<PostAccepted<P>>> {
+): Promise<PostResult<PostAccepted<P>>> {
   // Two reasons to stop: the deadline and the caller. `AbortSignal.any` fires on
   // whichever comes first, so a visitor who navigates away does not leave a
   // request running against a rate limit they will want back.

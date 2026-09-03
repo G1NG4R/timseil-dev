@@ -110,6 +110,40 @@ export function aboutLd(inLanguage: Locale, path: string): Record<string, unknow
 }
 
 /**
+ * `/contact`, as a `ContactPage` whose subject is the one person.
+ *
+ * THE SAME SHAPE AS `aboutLd` AND A DIFFERENT `@type`, which is the whole of
+ * the decision. schema.org has one type for "this page is how you reach the
+ * subject", and a crawler that already read the `Person` off `/about` gets the
+ * same `@id` here rather than a second person with the same name.
+ *
+ * NO `ContactPoint`, AND NO `email` ON THIS BLOCK. The address is already on
+ * the `Person` that this page points at, and repeating it would be the same
+ * fact in two places in one document — the first thing to disagree with itself
+ * the day the address changes. The visible `mailto:` on the page is not a
+ * second copy for a machine; it is the fallback for a visitor without
+ * JavaScript, which is a different reader entirely.
+ */
+export function contactLd(inLanguage: Locale, path: string): Record<string, unknown> {
+  const url = `${SITE_URL}${path}`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      personLd(),
+      {
+        "@type": "ContactPage",
+        "@id": `${url}#contact`,
+        url,
+        name: SITE_NAME,
+        inLanguage,
+        mainEntity: { "@id": PERSON_ID },
+        isPartOf: { "@id": WEBSITE_ID },
+      },
+    ],
+  };
+}
+
+/**
  * JSON for a `<script>` element, which is not the same thing as JSON.
  *
  * An HTML parser looks for the literal characters `</script` inside a script

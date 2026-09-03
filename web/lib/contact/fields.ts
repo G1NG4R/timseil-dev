@@ -105,7 +105,14 @@ export const FIELDS: readonly FieldSpec[] = [
  */
 export function lengthOf(value: string, unit: Unit): number {
   if (unit === "bytes") return new TextEncoder().encode(value).length;
-  return [...value].length;
+  // `Array.from` AND NOT `Intl.Segmenter`. Both walk a string; they disagree
+  // about what one unit is. A segmenter counts what a PERSON would call a
+  // character and holds an emoji with a skin tone together as one; `Array.from`
+  // walks the string iterator, which yields code points — and a code point is
+  // exactly what `utf8.RuneCountInString` counts on the other side of the wire.
+  // This bound is not about people. It is about agreeing with Go, and a
+  // segmenter here would refuse a message the api accepts.
+  return Array.from(value).length;
 }
 
 /**

@@ -101,7 +101,8 @@ describe("the request", () => {
   it("carries the honeypot as it was built, empty and untouched", async () => {
     answer(() => json({ ok: true, id: "msg_1" }, { status: 202 }));
     await apiPost("/api/contact", BODY);
-    assert.equal(JSON.parse(String(calls[0].init.body)).company, "");
+    const sent = JSON.parse(calls[0].init.body as string) as { company: string };
+    assert.equal(sent.company, "");
   });
 });
 
@@ -115,7 +116,6 @@ describe("the five answers stay apart", () => {
 
     assert.equal(result.kind, "ok");
     assert.equal(result.status, 202);
-    if (result.kind !== "ok") return;
     assert.equal(result.data.id, "msg_01K3F9QX7A");
     assert.equal(result.upstreamRequestId, "r".repeat(32));
   });
@@ -136,7 +136,6 @@ describe("the five answers stay apart", () => {
     const result = await apiPost("/api/contact", BODY);
 
     assert.equal(result.kind, "fail");
-    if (result.kind !== "fail") return;
     assert.equal(result.status, 400);
     assert.deepEqual(result.problem?.invalidParams?.map((p) => p.name), ["name", "email"]);
   });
@@ -147,7 +146,6 @@ describe("the five answers stay apart", () => {
     const result = await apiPost("/api/contact", BODY);
 
     assert.equal(result.kind, "fail");
-    if (result.kind !== "fail") return;
     assert.equal(result.status, 429);
     // 418 and not 600: ADR 0021 §3 derives it from min(received_at), so a page
     // that printed a flat ten minutes would be wrong for everyone who wrote
@@ -161,19 +159,17 @@ describe("the five answers stay apart", () => {
     const result = await apiPost("/api/contact", BODY);
 
     assert.equal(result.kind, "fail");
-    if (result.kind !== "fail") return;
     assert.equal(result.status, 502);
     assert.equal(result.problem?.type, "https://timseil.dev/problems/mail-provider-unavailable");
     assert.equal(result.retryAfterSec, null);
   });
 
   it("no answer at all is status 0, not an exception", async () => {
-    globalThis.fetch = (() => Promise.reject(new TypeError("fetch failed"))) as unknown as typeof fetch;
+    globalThis.fetch = () => Promise.reject(new TypeError("fetch failed"));
 
     const result = await apiPost("/api/contact", BODY);
 
     assert.equal(result.kind, "fail");
-    if (result.kind !== "fail") return;
     assert.equal(result.status, 0);
     assert.equal(result.problem, null);
   });
@@ -229,7 +225,6 @@ describe("the deadline", () => {
     const result = await apiPost("/api/contact", BODY, { timeoutMs: 20 });
 
     assert.equal(result.kind, "fail");
-    if (result.kind !== "fail") return;
     assert.equal(result.status, 0);
   });
 });

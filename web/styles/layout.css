@@ -65,6 +65,21 @@
      rule that exists so one page can be sixteen pixels different is a rule
      nobody can reach twice. Recorded in the oracle as `one-panel-geometry`. */
   .tl-panel { grid-template-columns: minmax(0,1fr) 380px; gap: 80px }
+
+  /* H8 · das Kontaktformular und seine TX-Spur. Der SIEBTE Verbraucher dieses
+     Schalters, und der erste seit H1, der eine eigene Zahl bekommt statt ein
+     bestehendes Paar zu übernehmen.
+
+     WARUM NICHT `.hero`s 480/72, wie `.tl-panel` `.cs-prob`s Paar genommen hat:
+     die vier bestehenden Zweispalter tragen rechts Prosa, eine Rail oder eine
+     Kachelspalte — Inhalt, dessen Breite eine Vorliebe ist. Die TX-Spur trägt
+     Zeilen, deren Breite der Inhalt IST: `  "email": "anna.keller@firma.lu",`
+     ist so lang, wie sie ist, und was nicht hineinpasst, scrollt. H7bs Argument
+     war „eine Regel, damit eine Seite sechzehn Pixel anders sein kann"; hier
+     sind es vierzig Pixel Spalte und acht Abstand an einem Element, das als
+     einziges auf dieser Seite eine Mindestbreite hat, die kein Geschmack ist.
+     Als `one-trace-geometry` im Orakel. */
+  .cf { grid-template-columns: minmax(0,1fr) 520px; gap: 80px; align-items: start }
 }
 
 /* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
@@ -79,6 +94,11 @@
      here would be a panel the selector no longer opens. One column, and the
      aside falls under the prose. */
   .tl-panel { grid-template-columns: minmax(0,1fr); gap: var(--s-34) }
+
+  /* Die Spur fällt unter das Formular. Sie bleibt ein Grid aus demselben Grund
+     wie `.tl-panel`: contact.css öffnet sie über `display: grid`, und ein
+     Wechsel auf `flex` wäre eine Spur, die die Regel nicht mehr erreicht. */
+  .cf { grid-template-columns: minmax(0,1fr); gap: var(--s-44) }
   .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
   .work-row        { grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px }
   .work-row .prev  { display: none }      /* weglassen, nicht verkleinern */

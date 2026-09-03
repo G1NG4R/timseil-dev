@@ -31,18 +31,18 @@ import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
  *  them.
  *
  *  `indexable` is "does this page say anything yet", not "is it allowed to
- *  exist". Four of the seven are still `[SOON]` stubs, and a crawler that finds
+ *  exist". Three of the seven are still `[SOON]` stubs, and a crawler that finds
  *  `BLOG [SOON]` files that away as what this site has to say on the subject
  *  and takes a while to be talked out of it. The phase named in each comment
  *  fills the page and flips the boolean in the same commit — H6 did it for
- *  `/work` and H7 for `/about`, and both times app/sitemap.ts picked the page
- *  up out of this boolean with no edit of its own. */
+ *  `/work`, H7 for `/about` and H8 for `/contact`, and every time app/sitemap.ts
+ *  picked the page up out of this boolean with no edit of its own. */
 const FIXED_PAGES = [
   { path: "/", indexable: true },
   { path: "/work", indexable: true },
   { path: "/blog", indexable: false }, // H9
   { path: "/about", indexable: true }, // filled by H7
-  { path: "/contact", indexable: false }, // H8
+  { path: "/contact", indexable: true }, // filled by H8
   { path: "/imprint", indexable: false }, // H12
   { path: "/privacy", indexable: false }, // H12
 ] as const;

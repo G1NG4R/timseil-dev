@@ -31,15 +31,20 @@ void test("the floor is the contract's floor", () => {
   assert.equal(MIN_DWELL_MS, Number.parseInt(stated[1], 10));
 });
 
-void test("the honeypot is the empty string and nothing else", () => {
-  // Untrimmed on the other side: validate.go compares `body.Company != ""`
-  // exactly, because "a browser that sends a space to a hidden input is doing
-  // something worth refusing". There is no path here that puts a value in it.
-  assert.equal(buildBody(DRAFT, 4200, new Date()).company, "");
+void test("the honeypot travels exactly as it was found", () => {
+  // Empty for a visitor, because nothing puts a value in a field CSS has moved
+  // off the screen. Not empty for whatever filled it — and THAT is the case
+  // worth a test: a form that hardcoded "" would send a clean-looking body for
+  // a submitter it was built to catch.
+  assert.equal(buildBody(DRAFT, "", 4200, new Date()).company, "");
+  assert.equal(buildBody(DRAFT, "Acme Ltd", 4200, new Date()).company, "Acme Ltd");
+  // Untrimmed. validate.go compares `body.Company != ""` exactly, and a single
+  // space is a submitter doing something worth refusing.
+  assert.equal(buildBody(DRAFT, " ", 4200, new Date()).company, " ");
 });
 
 void test("every typed field arrives trimmed", () => {
-  const body = buildBody(DRAFT, 4200, new Date("2026-09-03T19:22:07.000Z"));
+  const body = buildBody(DRAFT, "", 4200, new Date("2026-09-03T19:22:07.000Z"));
   assert.equal(body.name, "Anna Keller");
   assert.equal(body.email, "anna.keller@firma.lu");
   assert.equal(body.message.startsWith("Hi Tim"), true);
@@ -47,7 +52,7 @@ void test("every typed field arrives trimmed", () => {
 });
 
 void test("ts is the send moment, in the form the contract asks for", () => {
-  const body = buildBody(DRAFT, 4200, new Date("2026-09-03T19:22:07.000Z"));
+  const body = buildBody(DRAFT, "", 4200, new Date("2026-09-03T19:22:07.000Z"));
   assert.equal(body.ts, "2026-09-03T19:22:07.000Z");
 });
 
@@ -55,8 +60,8 @@ void test("dwellMs is reported, not repaired", () => {
   // The assertion this file exists for. 2500 goes out as 2500 and is discarded
   // by the api; it does not go out as 3000 and quietly succeed. Waiting is the
   // caller's job, and remainingDwellMs is how it knows how long.
-  assert.equal(buildBody(DRAFT, 2500, new Date()).dwellMs, 2500);
-  assert.equal(buildBody(DRAFT, 4200.7, new Date()).dwellMs, 4200);
+  assert.equal(buildBody(DRAFT, "", 2500, new Date()).dwellMs, 2500);
+  assert.equal(buildBody(DRAFT, "", 4200.7, new Date()).dwellMs, 4200);
 });
 
 void test("the wait is zero once the floor is cleared", () => {

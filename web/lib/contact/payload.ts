@@ -2,11 +2,11 @@
 // not.
 //
 // THE THREE FIELDS NOBODY TYPES ARE THE INTERESTING ONES. `company` is the
-// honeypot and is always the empty string — untrimmed, because validate.go
-// compares it untrimmed and "a browser that sends a space to a hidden input is
-// doing something worth refusing". `ts` is the idempotency key together with the
-// address and a hash of the message, so a double click delivers once. `dwellMs`
-// is how long the form has been on the screen.
+// honeypot: a real input, hidden by CSS, whose value is read back and sent as it
+// was found — empty for every visitor and not empty for whatever filled it.
+// `ts` is the idempotency key together with the address and a hash of the
+// message, so a double click delivers once. `dwellMs` is how long the form has
+// been on the screen.
 //
 // AND `dwellMs` IS WHY THIS FILE IS NOT INSIDE THE COMPONENT. ADR 0021 §2 says a
 // submission under three seconds is answered with a `202` that leads nowhere —
@@ -72,14 +72,24 @@ export function remainingDwellMs(openedAt: number, now: number): number {
  * be true. Waiting is the caller's job, and `remainingDwellMs` is how it knows
  * how long.
  */
-export function buildBody(draft: Draft, dwellMs: number, at: Date): ContactRequest {
+export function buildBody(
+  draft: Draft,
+  honeypot: string,
+  dwellMs: number,
+  at: Date,
+): ContactRequest {
   return {
     name: draft.name.trim(),
     email: draft.email.trim(),
     message: draft.message.trim(),
-    // Never a value, never trimmed, never bound to an input the visitor can
-    // reach. The one field on this form whose correct content is nothing.
-    company: "",
+    // READ BACK OFF THE FIELD, NOT HARDCODED TO "", and the difference is
+    // whether the trap is a trap. A form that always sends the empty string
+    // catches nothing: the only submitter it could ever have caught is one that
+    // filled the hidden input, and that submission would arrive looking clean.
+    // The value travels exactly as typed and is compared untrimmed on the other
+    // side — validate.go: "a browser that sends a space to a hidden input is
+    // doing something worth refusing".
+    company: honeypot,
     dwellMs: Math.floor(dwellMs),
     ts: at.toISOString(),
   };

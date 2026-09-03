@@ -37,7 +37,7 @@ import { apiTarget, buildQuery, resolvePath } from "../http/url.ts";
 // resolves `schema.d.ts` from here, and `import type` is erased before Node ever
 // sees a specifier to resolve. Written by `make gen`; never by hand.
 import type { paths } from "./schema";
-import { asProblem, type ApiResult, type Problem, readJson } from "./problem.ts";
+import { asProblem, type ApiResult, readJson } from "./problem.ts";
 
 // `Problem` and `ApiResult` MOVED TO ./problem.ts IN H8 and are re-exported
 // here, so no caller changed. The move is the contact form's: apiPost runs in
