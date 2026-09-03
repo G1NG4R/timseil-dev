@@ -109,10 +109,19 @@ export interface SheetRun {
   oracle: Oracle;
   /** The route to measure. */
   route: string;
-  /** Wait until the streamed regions have swapped — during the swap both the
-   *  fallback and its replacement are in the document and every locator here
-   *  would see two of everything. */
-  ready: (page: Page) => Promise<void>;
+  /**
+   * Wait until the streamed regions have swapped — during the swap both the
+   * fallback and its replacement are in the document and every locator here
+   * would see two of everything.
+   *
+   * OPTIONAL SINCE H7, AND THE ABSENCE IS A CLAIM RATHER THAN A DEFAULT. Three
+   * pages had one because three pages read an endpoint. `/about` reads none, so
+   * there is no region, no fallback, and nothing that could be measured in the
+   * wrong state — passing a function that waits for nothing would say the same
+   * thing less clearly, and passing one that waits for a region this page does
+   * not have would time out on a page that is already correct.
+   */
+  ready?: (page: Page) => Promise<void>;
   /** The widths a sheet actually draws this page at. Asserted, so a shrinking
    *  oracle is a failure rather than a quieter run. */
   drawnWidths: readonly number[];
@@ -145,7 +154,7 @@ export function runSheetOracle({
           // Only the page's own route streams; a borrowed route is chosen for
           // having nothing to wait for, and `ready` would look there for
           // regions it does not have.
-          if (entry.on === undefined) await ready(page);
+          if (entry.on === undefined && ready !== undefined) await ready(page);
 
           const got = await take(page, entry.measure);
 

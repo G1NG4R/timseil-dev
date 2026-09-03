@@ -1,0 +1,174 @@
+---
+title: 'The section that was supposed to prove'
+deck: 'My about page has a block whose stated job is to demonstrate what I run instead of asserting it. When I built it from the design, three of its four statements turned out to be things nothing in the repository could back — and the honest fix for one of them was to say nothing at all.'
+published: 2026-09-03
+tags: ['design-systems', 'documentation', 'honesty']
+systemId: 'timseil-dev'
+summary: |
+  The design for my about page carries a four-tile block called WHAT I RUN,
+  annotated in the handoff as the version of the architecture plate that proves
+  the positioning instead of claiming it. Building it meant checking each tile
+  against the repository, and three did not survive: a container count that was
+  off by six, a backup sentence describing work two stages away, and a bracket
+  asking for the host's specification. Two of those got corrected. The third
+  could not be corrected out loud, because "backups: coming soon" on a public
+  page is a sentence about an open flank — so the tile says what is measured
+  and the gap lives in a file that is not in the repository.
+---
+
+My about page has a block called `WHAT I RUN`. Four tiles: the edge, the
+services, the pipeline, the thing that watches it. The design handoff annotates
+it in one line, and the line is the whole reason the block exists:
+
+> WHAT I RUN ist die About-Version der Architektur-Platte — belegt die
+> Positionierung, statt sie zu behaupten.
+
+*Proves the positioning instead of claiming it.* That is a high bar for four
+tiles of twelve-pixel monospace, and it is the correct bar: this site's one rule
+is that every claim is tied to a piece of evidence, and the evidence is a
+running system.
+
+So I built it by checking each tile against the repository rather than by
+transcribing it. Three of the four did not survive.
+
+## `4 containers`
+
+The SERVICES tile says `4 containers`, and under it, "Web, API, database, proxy.
+Compose, health-gated."
+
+`compose.yaml` defines ten services. Two of them are one-shot jobs that run and
+exit, so the number of *containers* depends on when you count, which is already
+a bad sign for a number printed as a fact. But four is not a rounding of ten in
+either direction. It is a different number, written at a time when the file it
+describes had not been written yet.
+
+The tempting fix is to change the 4 to an 8. That fix has the same defect as the
+original: it is a number a person typed about a file, and the next service added
+to that file will not come back and edit it. This site has a tool for exactly
+this shape — `tools/gen-compose-excerpt.mjs` reads `compose.yaml` and writes a
+JSON artefact that the case study quotes, with a checksum gate that turns a
+compose change the page has not followed into a red build. But that tool quotes
+**one** service by design, and extending it to count all of them is building a
+tool in a phase whose job is writing content.
+
+So the tile lost its number. It says `Compose, health-gated`, and the detail
+line names what runs. The arrangement is the claim, and the arrangement is true.
+
+## `The restore has been tested`
+
+The WATCH tile says `Probe · logs · backups`, and under it: "Nightly dump off the
+box. The restore has been tested."
+
+Both sentences are false. The nightly dump is stage L of my build plan. The
+restore drill is stage L and stage M. Neither has run. The observability side —
+a probe measuring this address on a schedule, logs and metrics kept and
+queryable — is stage F, and that is built and running.
+
+This is the same defect I wrote an ADR about two phases ago, when the homepage
+design wanted a terminal frame containing eight boot lines with four invented
+numbers in them. Decorative log output is still output. A reassuring sentence in
+a tile is still a claim.
+
+What made this one different is what happened when I tried to correct it the way
+I correct everything else.
+
+## The correction that could not be spoken
+
+Everywhere else on this site, an absent thing announces itself and names the
+phase that ends it. The terminal frame says `[SOON]` and explains that the
+command register belongs to a later stage. Two sections of this very page say
+`[SOON]` with a sentence about why. The component inventory carries an `owedBy`
+field, and a test refuses any row that is neither built nor owed. The pattern is
+deliberate: a dead state without a reason is a bug, and an absence with a name is
+not a hole, it is a plan.
+
+So the obvious tile was:
+
+> **WATCH** — Probe · logs · `[SOON]` backups
+> A probe measures this address on a schedule. Off-box backups come with the
+> hardening stage.
+
+And that is a sentence, on a public page, telling a reader that the machine
+serving it is not backed up yet.
+
+My own project rules have a line about this that I wrote after publishing three
+sentences of exactly this kind and catching them before they were pushed: never
+publish the current state of a security question about this host. Not in the
+README, not in an ADR, not in a commit message. Describe the *work* and its
+acceptance criterion; never the open flank. The state goes in a file that is
+gitignored and that a check refuses to let into the repository even with `git
+add -f`.
+
+An unattended backup gap is that kind of state. It is not the most severe one
+imaginable, but the shape is identical: a stranger reading the page learns
+something about this machine that is useful only to someone who wants to act
+against it, and learns it on a timeline I published myself.
+
+So the correction to a false claim about a host is **silence**, not `[SOON]`.
+The tile says what is measured today. What is missing is written down in the
+file that does not travel.
+
+That distinction was worth the paragraph, because it cuts against a habit this
+project spent five stages building. `[SOON]` is a good default. It is not a
+universal one, and the exception is not "sensitive" in some vague sense — it is
+specifically: does naming this absence hand somebody a direction?
+
+## `[SPEC]`
+
+The third one is the section's meta line: `ONE VPS · [SPEC] · ADMINISTERED BY
+ME`. The bracket wants the machine's size — cores, memory, disk.
+
+Same rule, shorter answer. The shape of the arrangement is already public: one
+host, one architecture decision record explaining why, a case study with the
+request path drawn out. The *capacity* of that host is not architecture, it is
+inventory. The line reads `ONE VPS · ADMINISTERED BY ME`.
+
+## What holds it
+
+Three corrections made from judgement are worth as much as the next person's
+judgement, which on this repository is usually mine in six weeks. So there are
+two tests.
+
+The first is on the constants:
+
+```ts
+void test("no tile in WHAT I RUN claims a count or a backup", () => {
+  const tiles = STACK.flatMap((tile) => [tile.title, tile.detail]).join(" ");
+  assert.equal(/\d+\s+containers?/i.test(tiles), false, tiles);
+  assert.equal(/backup|dump|restore/i.test(tiles), false, tiles);
+});
+```
+
+It is scoped to the tiles on purpose, and the reason is one section further down
+the same page. Principle 02 says a project on a public address "teaches you
+timeouts, certificates, backups, and your own blind spots." That is a sentence
+about learning, not a claim about this host, and a guard broad enough to catch it
+would be a guard somebody eventually deletes.
+
+The second is on the document, because the whole design carries eleven bracketed
+placeholders and a constant that never gets rendered is not the failure mode I
+am worried about:
+
+```ts
+const text = (await page.locator("main").innerText()).replaceAll("[SOON]", "");
+expect([...text.matchAll(/\[[^\]]*\]/g)].map((m) => m[0])).toEqual([]);
+```
+
+`[SOON]` is excluded **by name** rather than by shape. It is this site's word for
+a named absence and the opposite of a placeholder: it says that nothing is there,
+rather than standing in for something that is.
+
+## The thing I keep relearning
+
+A design is a proposal about what a page should say. Every phase of this build
+has found at least one place where the proposal was written before the system
+existed, and where following it faithfully would have meant publishing a small
+fiction in very careful typography.
+
+What made this one instructive is that the block's own annotation stated the
+standard it failed. *Proves instead of claims.* The person who wrote that line
+and the person who typed `4 containers` under it were the same person, four tiles
+apart, and neither noticed — because nothing at that stage could have.
+
+The tiles are true now. The section is one number and one sentence shorter than
+it was drawn, and that is what proving instead of claiming costs.

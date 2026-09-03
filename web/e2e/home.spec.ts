@@ -241,9 +241,41 @@ test.describe("the hero", () => {
     await expect(page.locator(".foot-meta")).not.toContainText("AVAILABLE");
   });
 
-  // The large dot is the homepage's alone. A rule that landed in chrome.css
-  // instead of home.css would put it on all ten pages and nothing else here
-  // would notice.
+  // The large dot is the homepage's alone — K-14, resolved as "Punkt in der
+  // Meta-Leiste jeder Seite, gross im Hero nur auf der Startseite". A rule that
+  // landed in chrome.css instead of home.css would put it on all ten pages and
+  // nothing else here would notice.
+  //
+  // IT WALKS TO `/about` AND THAT STOPPED BEING A FORMALITY IN H7. When this
+  // was written the target was a `[SOON]` stub, so the assertion could only
+  // ever have failed through a stylesheet. It is a page now, and it is the very
+  // artboard K-14 was filed against: the About sheet draws this dot in its own
+  // hero. H7a built it from the drawing, and this line went red on the first
+  // full run. Where a canvas artefact and the correction table disagree, the
+  // table is the decision — ADR 0055 — and this is what says so out loud.
+  // FOUND IN H7, ON THIS PAGE, BY MEASURING A DIFFERENT ONE. `/about` gave a
+  // section head a seven-word meta and its title broke in half at 390. Bisecting
+  // that showed SYS.01 doing the same thing here, from 560 up to and including
+  // 744 — a 185px band of widths, in production since H4. Nothing caught it
+  // because no test read a head's line count, and when a title wraps nothing
+  // else in the row moves: no overflow, no changed switch, no failing sweep.
+  //
+  // layout.css puts the meta on its own line from 900 down, and 900 rather than
+  // 720 because 720 would leave twenty-four pixels in which this head is still
+  // drawn under its own minimum.
+  test("no section title is squeezed into two lines by its own meta", async ({ page }) => {
+    const wrapped = await page.evaluate(() =>
+      [...document.querySelectorAll("main .sec .sec-title")]
+        .filter((title) => {
+          const lh = Number.parseFloat(getComputedStyle(title).lineHeight);
+          return title.getBoundingClientRect().height / lh > 1.5;
+        })
+        .map((title) => title.textContent),
+    );
+
+    expect(wrapped, "a section title broke over two lines").toEqual([]);
+  });
+
   test("the large dot appears on this page and on no other", async ({ page }) => {
     await expect(page.locator(".hero-dot")).toHaveCount(1);
     await page.goto("/about");

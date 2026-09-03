@@ -194,7 +194,7 @@ export default async function Home() {
           headline={messages.homeHeadline}
           tagline={messages.homeTagline}
           available={stateLabel("available", messages)}
-          availability={messages.homeAvailability}
+          availability={messages.availability}
         />
 
         {/* The fallback is the same frame with `status={null}`, which renders

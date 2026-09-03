@@ -12,6 +12,214 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 03.09.2026, H7a gebaut: `/about` liest nichts, und das ist die Zahl
+
+**Zweig `phase/h7a-about`.** Hero, Operator-Karte, `WHAT I RUN`, `HOW I WORK`
+und die zwei Schalen. Der `[SOON]`-Stub aus G3 ist gelöscht, `lib/seo/pages.ts`
+führt die Route als `indexable: true`, und `app/sitemap.ts` hat sie ohne eine
+Zeile Änderung aufgenommen — **12 Einträge statt 9**.
+
+**Die Rail ist H7b.** Der Schnitt liegt an der Bedien-Grenze wie bei H6a/H6b.
+
+**Gegen Produktion ist nichts davon gemessen.** Alle Zahlen unten stammen vom
+lokalen Produktionsbuild. Zeuge, Abnahme und `check-deployed` kommen nach dem
+Merge.
+
+### Die Zahl der Phase: die Seite kostet null Byte
+
+| | `/` | `/work` | `/about` |
+|---|---|---|---|
+| gesamt, gzip | 143 856 B | 145 482 B | **143 856 B** |
+| Dateien | 7 | 8 | **7** |
+
+**Byte-gleich mit der Startseite**, im selben Build und mit ADR 0064s Methode
+von Hand gemessen. H7b hat damit das ganze verbliebene Budget für die Rail.
+
+### Der stärkste Fund: der Abschnitt, der belegen soll, hat drei Mal behauptet
+
+Die Entwurfsnotiz zu `SYS.05.02` ist der Grund, warum es den Abschnitt gibt —
+„belegt die Positionierung, statt sie zu behaupten". Gegen das Repository
+gehalten trugen drei seiner vier Aussagen nichts:
+
+```
+SERVICES · 4 containers        compose.yaml definiert zehn Dienste
+WATCH · nightly dump,
+        restore has been tested Sicherung ist L6, Restore-Drill L6 und M5
+ONE VPS · [SPEC]                die Klammer will die Größe dieses Hosts
+```
+
+**Und die Korrektur zur zweiten ist Schweigen, nicht `[SOON]`.** Eine Kachel mit
+„backups [SOON]" sagte auf einer öffentlichen Seite, dass dieser Host noch nicht
+gesichert ist — genau der Satz, den CLAUDE.md von jeder Außenfläche fernhält.
+Die Kachel nennt jetzt, was gemessen wird; der Rest steht nicht hier. Als
+`018-the-section-that-was-supposed-to-prove.mdx` aufgeschrieben.
+
+### Der zweite Fund: fünf Systeme im Blatt, zwei im Seed
+
+Die Rail des Blatts schreibt in ihre `shipped`-Spalte `01 VAT Check API`,
+`02 Relay · 03 Feedhound`, `04 timseil.dev`, `05 Foundry`. `seed.sql` kennt
+**zwei** Systeme, und die Nummern der beiden stimmen mit dem Blatt nicht
+überein — `01 vat-check` ist `queued`, `02 timseil-dev` ist `live`.
+`caseStudyPaths()` liefert genau einen Pfad. Für H7a hieß das: `SYS.05.04`
+verliert die Zeile `NEXT UP — 05 Foundry`. Für H7b heißt es: genau **eine**
+Station trägt eine Belegzeile, und sie ist ein Link.
+
+### Der dritte Fund: ein Test aus H3 hat den Punkt im Hero abgefangen
+
+`e2e/home.spec.ts` sichert seit H3 zu, dass der große Punkt der Startseite
+gehört — und beweist es, indem er nach `/about` geht. Bis zu dieser Phase war
+das ein Stub, also konnte die Zeile nur über ein Stylesheet rot werden. Das
+About-Blatt zeichnet denselben Punkt, ich habe ihn gebaut, und der erste volle
+Lauf war rot.
+
+Nachgelesen: der Konsistenz-Check führt **genau dieses Artboard** als K-14 —
+„Statuspunkt ONLINE nur auf Startseite und About" — und löst ihn andersherum
+auf: „Punkt in der Meta-Leiste jeder Seite, **groß im Hero nur auf der
+Startseite**", `BEHOBEN`. Das Blatt ist die Zeichnung *vor* der Korrektur.
+Verloren geht nichts: der Punkt trug `.st-dot` ohne `data-dot`, war also ein
+Kreis ohne Behauptung (ADR 0058 §2).
+
+### Der vierte Fund: die Startseite bricht seit H4 einen Abschnittstitel
+
+`SYS.05.02` hat ein siebenwortiges Meta, und bei 390 wurde `WHAT I RUN` von 94px
+auf 84 gedrückt und brach zweizeilig. Bisektiert: bricht bis 418, eine Zeile ab
+419. Für sich genommen wäre der Schalter 560 gewesen.
+
+Beim Nachmessen fiel derselbe Fehler **auf `/`** an:
+
+```
+/     SYS.01 TRAINING LOG    bricht 560 … 744    eine Zeile ab 745
+```
+
+**185 Pixel Fensterbreite, in Produktion seit H4.** Niemand hat es gesehen, weil
+kein Test die Zeilenzahl eines Kopfes liest — bricht ein Titel um, bewegt sich
+sonst nichts in der Zeile. Der Schalter ist deshalb **900**, nicht 720: 720
+ließe vierundzwanzig Pixel stehen, in denen der Kopf der Startseite unter seinem
+Minimum gezeichnet wird. Beide Seiten haben jetzt eine Zusicherung darüber.
+
+Nach der Reparatur an neun Breiten gemessen (die sieben plus 560 und 559):
+**jeder Kopf beider Seiten einzeilig, Überlauf null.**
+
+### Der fünfte Fund: elf Klammern, und die Wache muss zweistufig sein
+
+Das About-Blatt ist das platzhalterdichteste des Handoffs. `placeholders()`
+prüft die Konstanten, `e2e/about.spec.ts` prüft das ausgelieferte Dokument —
+eine Konstante, die niemand rendert, ist nicht der Fehlerfall, um den es geht.
+`[SOON]` ist **namentlich** ausgenommen, nicht der Form nach.
+
+### Der 900er-Schalter ist gerechnet und dann gemessen
+
+Das Blatt zeichnet vier Kacheln bei 1440 und zwei bei 390 und sagt nichts über
+das Dazwischen. Gerechnet: eine Kachel braucht bei drei Zeilen ihrer längsten
+Detailzeile rund 194px, vier davon plus drei Abstände sind ein 916px-Fenster;
+bei 899 wäre sie 190px breit. Das Prinzipien-Raster hätte für sich bei 720
+tauschen dürfen und tauscht trotzdem bei 900 — 180px, in denen die Seite
+gleichzeitig vier Kacheln und ein Prinzip breit ist, sind eine Zerrissenheit,
+die niemand bestellt hat.
+
+Gemessen am gebauten Produktionsbuild, `clientWidth` je Zeile mitgelesen:
+
+```
+Breite  client  h1    hero   Karte  Kachelraster  Prinzipraster  Überlauf  h1
+ 1440    1440   62px  grid    480        4              2            0      1
+ 1081    1081   62px  grid    480        4              2            0      1
+ 1079    1079   62px  flex    999        4              2            0      1
+ 1024    1024   62px  flex    944        4              2            0      1
+  899     899   62px  flex    819        2              1            0      1
+  719     719   34px  flex    639        2              1            0      1
+  390     390   34px  flex    346        2              1            0      1
+```
+
+**Beide Schalter sitzen beidseitig**, kein Bauteil ist an einer Breite geclippt
+(`scrollWidth > clientWidth` an keinem Element unter `main`), und die
+Kachel-Detailzeile läuft über 2 bis 4 Zeilen.
+
+### Das Orakel dieser Seite trägt keinen einzigen `on:`
+
+43 Messungen, 16 abweichend, **alle auf `/about` selbst** — zum ersten Mal seit
+H3. `/work` muss 24 von 36 in die Galerie verlegen, weil das Rig keine API hat;
+diese Seite liest nichts, also ist die Seite im Rig die Seite in Produktion.
+`runSheetOracle` bekommt aus demselben Grund kein `ready` mehr — das Feld ist
+seit dieser Phase optional, und die Abwesenheit ist eine Aussage.
+
+### Lokal gemessen
+
+```
+make check   grün
+npm test     569    (von 550)
+e2e          1 359 grün, 3 übersprungen, 0 rot   (von 1 244)
+Orakel       42 Messungen /about, 16 abweichend, kein einziger `on:`
+```
+
+Der Handstart lief auf 3200; Port 3100 gehört dem Rig — und diesmal war die
+Lehre eine neue: **während ein Rig läuft, darf kein `npm run build` laufen.**
+Ein Rebuild tauscht ihm `.next` unter den Füßen weg; der Lauf davor hatte 223
+Fehlschläge, die nichts über den Code sagten.
+
+## Gefunden — aus H7a
+
+- **Die honest correction zu einer falschen Aussage über einen Host ist
+  Schweigen, nicht `[SOON]`.** Fünf Stufen lang war „eine Abwesenheit sagt sich
+  an und nennt die Phase" die richtige Voreinstellung. Sie ist keine universelle:
+  die Ausnahme ist nicht „heikel" im vagen Sinn, sondern genau — *gibt das
+  Benennen dieser Abwesenheit jemandem eine Richtung?* *(03.09.2026, H7a)*
+- **Ein Blatt kann in einer Notiz den Maßstab nennen, den es zwei Zeilen weiter
+  reißt.** „Belegt statt behauptet" und `4 containers` stehen vier Kacheln
+  auseinander, von derselben Hand, und zum Zeitpunkt des Zeichnens konnte es
+  niemand merken. *(03.09.2026, H7a)*
+- **Eine Wache auf Konstanten ist nicht dieselbe Wache wie eine auf dem
+  Dokument.** Eine Konstante, die niemand rendert, ist harmlos; eine Klammer,
+  die in Markup zurückkommt, sieht keine Konstanten-Prüfung. Beide, oder keine.
+  *(03.09.2026, H7a)*
+- **`innerText` auf einem `<script>` ist immer leer, und `JSON.parse` sagt es
+  nicht.** Der erste JSON-LD-Test lief dreißig Sekunden in einen Timeout, weil
+  der Block gar nicht im `<head>` steht: React hebt nur Skripte hoch, die es
+  deduplizieren kann, und dieses trägt `dangerouslySetInnerHTML`.
+  *(03.09.2026, H7a)*
+- **Ein relativer Pfad und eine absolute URL sind dieselbe Form.** `aboutLd`
+  lieferte zuerst `"url": "/about"`. Next löst einen relativen Canonical gegen
+  `metadataBase` auf; ein JSON-LD-Dokument löst niemand auf. Der Compiler kann
+  das nicht sehen — gefunden am gerenderten Block. *(03.09.2026, H7a)*
+- **`moved()` gibt alphabetisch zurück, nicht in Prüfreihenfolge.** Zehn Minuten
+  an einem Sweep-Test, der inhaltlich grün war. *(03.09.2026, H7a)*
+- **Ein Test, der zu einer anderen Seite geht, wird an dem Tag scharf, an dem
+  diese Seite existiert.** Die `.hero-dot`-Zusicherung aus H3 lief zwei Stufen
+  lang gegen einen Stub und konnte nur über ein Stylesheet fehlschlagen. Kaum
+  war `/about` eine Seite, hat sie gemessen, wofür sie geschrieben war. Ein
+  Grep über Klassennamen hätte das nie gefunden. *(03.09.2026, H7a)*
+- **Das Orakel kann keine Abwesenheit ausdrücken.** Jede Messart wirft auf einen
+  Selektor, der nichts trifft; „und dieses Element steht hier nicht" hat keine
+  Form. Solche Aussagen gehören in den Seiten-Spec, und im Orakel steht an ihrer
+  Stelle ein Kommentar, der sagt, wo sie stattdessen lebt. *(03.09.2026, H7a)*
+- **Ein Fehler, der nichts anderes bewegt, wird von keinem Sweep gefunden.**
+  Bricht ein Abschnittstitel um, ändert sich kein Schalter, kein Überlauf und
+  keine Kante — der Fund lebte 185 Pixel breit und zwei Stufen lang in
+  Produktion. Der Sweep misst, *wo* sich etwas ändert, nie *ob* es gut aussieht.
+  *(03.09.2026, H7a)*
+- **`npm run build` während ein Playwright-Rig läuft macht den Lauf wertlos.**
+  Das Rig serviert aus `.next`; ein Rebuild tauscht ihm den Boden unter den
+  Füßen weg, und die 223 Fehlschläge danach sagen nichts über den Code.
+  *(03.09.2026, H7a)*
+- **Zwei Playwright-Läufe gleichzeitig teilen sich stillschweigend Port 3100.**
+  Der zweite übernimmt den Server des ersten und stirbt mit
+  `ERR_CONNECTION_REFUSED`, sobald der erste abräumt. Die Notiz stand schon da;
+  diesmal war es kein Handstart, sondern ein zweiter Rig-Lauf.
+  *(03.09.2026, H7a)*
+
+## Verschoben aus H7a
+
+- **Der eine menschliche Satz in `SYS.05.04` → K2.** Steht als Schale mit
+  Begründung da. Braucht zwei Sätze, die niemand ableiten kann.
+- **Die Jahreszahlen der Trajectory-Rail → H7b, mit derselben Einschränkung.**
+  Struktur voll, Prosa nur wo belegt.
+- **`SERVICES` nennt keine Zahl, und eine abgeleitete wäre besser.**
+  `gen-compose-excerpt.mjs` zitiert genau einen Dienst, absichtlich. Ein
+  Dienst-Zähler wäre Werkzeug in einer Inhaltsphase; die Aufgabe ist notiert,
+  das Abnahmekriterium ist „die Kachel nennt eine Zahl, die `make gen` schreibt".
+- **Der `--panel`-Zweig von `check-deployed.sh` → zum neunten Mal offen.**
+
+---
+
 ## Wo wir stehen — 02.09.2026, H6b abgenommen: 10 von 10, und 3 600 saubere Antworten
 
 `6f203e0` läuft. Merge 21:53:19Z, Deploy-Job 22:01:40Z–22:02:13Z (**33 s**),

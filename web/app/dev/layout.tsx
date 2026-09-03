@@ -55,6 +55,12 @@ import "../../styles/home.css";
 // taken off it would have been a number about a page that does not exist.
 // `012-the-preview-had-a-shorter-cascade-than-the-page.mdx` is that post.
 import "../../styles/work.css";
+// H7, and the line is here on the FIRST commit of the phase rather than after a
+// measurement said `display: block`. Twice is a coincidence to argue with;
+// three times would be a habit. The gallery gets about.css in the site's own
+// position — after work.css, before layout.css — because H7b puts the
+// trajectory rail in this page and the rail is a grid.
+import "../../styles/about.css";
 import "../../styles/gallery.css";
 import "../../styles/layout.css";
 

@@ -66,6 +66,12 @@ import "../../styles/home.css";
 // `.work-row`'s three switches have been in layout.css since G1, waiting for a
 // component to answer to them.
 import "../../styles/work.css";
+// about.css is the fourth page-scoped sheet and joins on the same condition.
+// H7. Like work.css it declares no media query: the page answers to three of
+// the four declared switches — 1080 for the hero it inherits, 900 for its two
+// grids, 720 for the display step — and layout.css owns every one of them, as
+// it owns every switch on this site.
+import "../../styles/about.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root

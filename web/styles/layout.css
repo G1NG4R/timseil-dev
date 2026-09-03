@@ -143,6 +143,79 @@
      grouping would stop being visible. The second label — and only the second —
      opens the distance again. */
   .work-filter-label ~ .work-filter-label { margin-block-start: var(--s-8) }
+
+  /* H7 · A SECTION HEAD PUTS ITS META ON ITS OWN LINE FROM HERE DOWN, AND THE
+     SWITCH IS THE HOMEPAGE'S RATHER THAN /about's.
+
+     `.sec` is one flex row — marker, title, spacer, meta — and it carried five
+     heads without complaint because a meta is normally two or three words.
+     `/about` gives SYS.05.02 a seven-word one, and at 390 the title `WHAT I
+     RUN` was squeezed from 94px to 84 and broke over two lines. Bisected on the
+     built page: that head wraps up to and including 418 and is one line from
+     419, which on its own would have made 560 the switch.
+
+     MEASURING IT TURNED UP THE SAME DEFECT ON A PAGE THIS PHASE DID NOT TOUCH.
+     `SYS.01 TRAINING LOG` carries a meta too, and on `/` it wraps from 560 up
+     to and including 744 — a 185px band of widths, in production since H4,
+     that nobody had looked at because no test reads a head's line count and
+     nothing else on that row moves. Bisected the same way: one line from 745.
+
+     SO THE SWITCH IS 900 AND NOT 720. 720 would leave twenty-four pixels in
+     which the homepage head is still drawn under its own minimum, which is the
+     state H5a refused for `.sys-row` and H6 refused for `.work-row`, in the
+     same words. No fifth number.
+
+     IT IS THE SHEET'S OWN ANSWER TOO. The About artboard at 390 does not
+     squeeze the meta beside the title; it puts it on a line of its own under
+     the rule, at the mono step below (line 379).
+
+     AND IT IS ON `.sec` RATHER THAN ON ONE PAGE'S HEADS. The defect belongs to
+     the component — a head whose meta is long — not to the route that wrote the
+     first long one; the homepage is the proof of that, since it had the defect
+     first. */
+  .sec      { flex-wrap: wrap; row-gap: var(--s-4) }
+  .sec-meta { flex-basis: 100%; margin-inline-start: 0 }
+
+  /* H7 · /about — THE TWO GRIDS OF THAT PAGE, AT THE SAME SWITCH AND NOT AT TWO.
+     Both are drawn multi-column at 1440 and the mobile artboard drops them, so
+     the only question is where. This file's rule decides the rest: no component
+     gets its own value, and there are four declared switches.
+
+     WHAT I RUN — four tiles, 20px apart, 40px of padding each. Held against the
+     detail line, which is the longest text in a tile: "A probe measures this
+     address on a schedule, and the answers are kept." is 70 characters, and at
+     the 11px mono step three lines of it want about 154px of text plus the
+     padding. Four of those and three gaps is an 836px column, which is a 916px
+     viewport. 900 is the nearest declared switch below that and 1080 the
+     nearest above; 1080 would take the fourth column away at 1079 where all
+     four still read, so the switch is 900 and the 16px band above it is the
+     price. The sheet's own pair is four and two, and that is what this is.
+
+     HOW I WORK — two principle columns, 80px apart, each carrying a 52ch
+     paragraph behind a 30px numeral. A prose column stops being a prose column
+     long before it overflows: at 30 characters of the 15px body step the text
+     wants about 222px, plus 46px of numeral and gap, which is a 616px column
+     and a 696px viewport. 720 is the nearest declared switch above that — so
+     these two grids would not have shared a switch on arithmetic alone.
+
+     THEY SHARE ONE ANYWAY, AND THAT IS A DECISION RATHER THAN A ROUNDING. The
+     two sit one section apart on a page with no other structure between them,
+     and switching them 180px apart means a band of widths in which the page is
+     four tiles wide and one principle wide at the same time. What makes the
+     earlier switch free rather than merely tidier is the arithmetic in the band
+     it gives up: two principle columns at 899 would be 369px each and the body
+     inside one 323px, against the 222 it needs — so the grid that could have
+     run to 720 loses nothing a reader could see by stopping at 900.
+
+     THE ARITHMETIC ABOVE IS ARITHMETIC AND THE SWITCH IS MEASURED, and the two
+     are not the same claim. Taken on the built page at the seven checked
+     widths: the tile grid is four tracks at 1440 · 1081 · 1079 · 1024 and two
+     at 899 · 719 · 390, the principle grid two and then one at the same width,
+     and the document overflows by zero at every one of them. A four-track tile
+     at 899 would have been 190px against the 194 it wants, which is what makes
+     900 the switch rather than the next one down. */
+  .run-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .prin-grid { grid-template-columns: minmax(0, 1fr); gap: var(--s-26) }
 }
 
 /* ---- < 900, G3 --------------------------------------------------------------
@@ -206,6 +279,7 @@
      getting one of its own: the sheet's rule for these is "EIN SCHALTER FÜR
      ALLE ZWEISPALTER … Kein Bauteil bekommt seinen eigenen Wert." */
   .bio { padding-block-start: var(--s-44) }
+
 
   /* SYS.04's head is the only one with two things on its right, and at 346px
      they do not fit beside the marker: measured as built, `CASE STUDY →` was

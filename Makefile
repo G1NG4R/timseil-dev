@@ -165,6 +165,7 @@ GENERATED := contract/openapi.public.yaml api/internal/httpx/assets/openapi.yaml
              web/e2e/oracle/case-study.gen.json \
              web/e2e/oracle/home.gen.json \
              web/e2e/oracle/work.gen.json \
+             web/e2e/oracle/about.gen.json \
              api/internal/store/db.go api/internal/store/models.go \
              api/internal/store/health.sql.go api/internal/store/systems.sql.go \
              api/internal/store/training.sql.go api/internal/store/ops.sql.go \
