@@ -75,6 +75,7 @@ export default async function Page() {
             sending: messages.contactSending,
             accepted: messages.contactAccepted,
             invalid: messages.contactInvalid,
+            refused: messages.contactRefused,
             rateLimited: messages.contactRateLimited,
             providerDown: messages.contactProviderDown,
             noAnswer: messages.contactNoAnswer,

@@ -61,14 +61,26 @@ export interface ContactCopy {
   sending: string;
   accepted: string;
   invalid: string;
+  refused: string;
   rateLimited: string;
   providerDown: string;
   noAnswer: string;
 }
 
-/** Where the form is. Four, not six: the sheet's "focus" and "field error" are
- *  states of a FIELD, and Field already draws both from its own props. */
-type Phase = "rest" | "sending" | "accepted" | "failed";
+/**
+ * Where the form is. Five, not the sheet's six: "focus" and "typing" are states
+ * of a FIELD, and `Field` already draws both from its own props.
+ *
+ * `invalid` AND `failed` ARE BOTH REFUSALS AND THEY ARE NOT THE SAME EVENT. One
+ * is this page refusing to send, the other is the api refusing what was sent.
+ * They print the same sentence — nothing was stored either way, and the fields
+ * carry the reasons — but they are reached differently and only one of them
+ * spent a request. Collapsing them would mean either claiming the api answered
+ * when it was never asked, or leaving the local refusal silent, which is what
+ * this component did until it was driven with a bad address and the status line
+ * said nothing.
+ */
+type Phase = "rest" | "invalid" | "sending" | "accepted" | "failed";
 
 interface Failure {
   status: number;
@@ -162,7 +174,7 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
       setInvalid(local);
       setFailure(null);
       setReceipt(null);
-      setPhase("rest");
+      setPhase("invalid");
       focusFirst(local);
       return;
     }
@@ -185,8 +197,23 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     // being sent with a duration nobody measured.
     const openedAt = clock?.openedAt ?? performance.now();
 
-    const wait = remainingDwellMs(openedAt, performance.now());
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    // A LOOP AND NOT ONE `setTimeout`, and the difference is one millisecond
+    // that this form sent in production terms before an e2e run caught it.
+    // `setTimeout(2957)` may wake at 2956.8; the reading is then 2999.7, which
+    // floors to 2999, which is under the floor — and the api answers that with
+    // ADR 0021 §2's receipt that leads nowhere. Waking early is a property of
+    // timers, so the repair is to re-measure after waking rather than to trust
+    // the sleep or to round the number up afterwards. Rounding it up would be
+    // the invented number this whole file is arranged to avoid.
+    //
+    // It terminates because `performance.now()` is monotonic and every sleep is
+    // at least a millisecond; the bound is there so that a clock that somehow
+    // stopped produces a request rather than a page that never answers.
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const wait = remainingDwellMs(openedAt, performance.now());
+      if (wait <= 0) break;
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
 
     const spent = performance.now() - openedAt;
     const result = await apiPost("/api/contact", buildBody(draft, honeypot, spent, new Date()));
@@ -221,7 +248,6 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
           <Field
             autoComplete={field.autoComplete}
             counter={counterFor(field, draft[field.name]) ?? undefined}
-            disabled={phase === "sending"}
             error={reasonFor(invalid, field.name)}
             hint={field.name === "email" ? copy.emailHint : undefined}
             key={field.name}
@@ -231,6 +257,13 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
             onChange={(event) => {
               set(field.name, event.target.value, performance.now());
             }}
+            // `readOnly` AND NOT `disabled` WHILE SENDING, and the sheet asked
+            // for exactly this — "felder gesperrt, nicht ausgegraut". It is
+            // also the difference between a working focus and a silent one: a
+            // disabled input cannot be focused, so moving the cursor to the
+            // first wrong field after a 400 did nothing at all. Found by
+            // driving the form rather than by reading it.
+            readOnly={phase === "sending"}
             rows={field.multiline ? 8 : undefined}
             value={draft[field.name]}
           />
@@ -271,7 +304,13 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
             screen reader never hears, and `polite` rather than `assertive`
             because none of these interrupt anything the visitor is doing. */}
         <p className="cf-status" data-phase={phase} role="status" aria-live="polite">
-          <StatusText copy={copy} failure={failure} phase={phase} receipt={receipt} />
+          <StatusText
+            copy={copy}
+            failure={failure}
+            invalidCount={invalid.length}
+            phase={phase}
+            receipt={receipt}
+          />
         </p>
       </form>
 
@@ -292,11 +331,13 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
 function StatusText({
   copy,
   failure,
+  invalidCount,
   phase,
   receipt,
 }: {
   copy: ContactCopy;
   failure: Failure | null;
+  invalidCount: number;
   phase: Phase;
   receipt: string | null;
 }) {
@@ -310,9 +351,20 @@ function StatusText({
     );
   }
 
+  // Refused here, nothing sent. The same sentence a 400 gets, because the same
+  // thing is true of both: nothing was stored, and the fields say what to fix.
+  if (phase === "invalid") return <>{copy.invalid}</>;
+
   if (phase !== "failed" || failure === null) return null;
 
-  if (failure.status === 400) return <>{copy.invalid}</>;
+  if (failure.status === 400) {
+    // A 400 HAS TWO MEANINGS AND ONLY ONE OF THEM IS ABOUT A FIELD. The api
+    // sends `validation-failed` for a rejected Origin too, with `invalidParams`
+    // empty — deliberately, since an Origin is not a field. Printing "the
+    // fields below say what to change" there would send a visitor hunting for a
+    // mistake that is not theirs and that no field is marked with.
+    return <>{invalidCount > 0 ? copy.invalid : copy.refused}</>;
+  }
 
   if (failure.status === 429) {
     // THE WAIT IS THE API'S NUMBER OR THERE IS NO NUMBER. ADR 0021 §3 derives it

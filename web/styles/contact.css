@@ -121,6 +121,7 @@
 
 .cf-status[data-phase="sending"] { color: var(--ink-2); }
 .cf-status[data-phase="accepted"] { color: var(--acc); }
+.cf-status[data-phase="invalid"] { color: var(--amber); }
 .cf-status[data-phase="failed"] { color: var(--amber); }
 
 /* The receipt. Quotable is the whole point, so it is selectable, monospaced and
@@ -177,6 +178,14 @@
 }
 
 .tx-line { display: block; white-space: pre; }
+
+/* The empty line between the headers and the body. It is a block with nothing
+   in it, so it has no height of its own — and the height it needs is one line
+   of this panel's own type, which is these two tokens multiplied. Written here
+   rather than as a `\n` in the markup: a newline would be invisible on screen
+   (a browser drops a line break at the end of a block box) and would double in
+   every copy, selection and text extraction of the request. */
+.tx-line[data-kind="blank"] { height: calc(var(--t-mono-11) * var(--lh-mono)); }
 .tx-line[data-kind="request"] { color: var(--acc); }
 .tx-line[data-kind="header"] { color: var(--steel); }
 

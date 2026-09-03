@@ -533,6 +533,17 @@ export const en = {
   // happened and where to look.
   contactInvalid: "Nothing was sent. The fields below say what to change.",
 
+  // A `400` THAT NAMES NO FIELD, which is a real answer and not a theoretical
+  // one: `writeError` in api/internal/contact/contact.go sends exactly this for
+  // a refused Origin, with `invalidParams` empty on purpose — "ADR 0009 says
+  // that array is one entry per rejected *field*, and an Origin is not one".
+  // The visitor typed nothing wrong, and telling them to look at the fields
+  // would send them hunting for a mistake that is not theirs. In practice this
+  // means the deployment's origin allowlist is wrong, which is my problem.
+  contactRefused:
+    "The request was refused before it reached my mailbox, and none of the " +
+    "fields is at fault — this one is on me. The address below still works.",
+
   // The `429`. The wait is the api's measured number, from `Retry-After`, and
   // the component prints it — so this sentence must not contain one.
   contactRateLimited:

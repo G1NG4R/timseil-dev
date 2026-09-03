@@ -4,11 +4,10 @@
 // stay apart, because the visitor's next move depends on which one it was:
 // fix a field, wait ten minutes, or try again in a moment.
 //
-// AND THE HEADERS ARE HALF THE TEST. `content-type` must be exactly
-// `application/json` — the api compares it strictly and the Origin check hangs
-// off it — and `Retry-After` is the one number on the failure path that was
-// MEASURED by the api rather than assumed, so dropping it would replace a
-// measurement with a guess.
+// AND THE HEADERS ARE HALF THE TEST. `content-type` has to be JSON or the api's
+// Origin check is not enforceable (ADR 0021 §9), and `Retry-After` is the one
+// number on the failure path that was MEASURED by the api rather than assumed,
+// so dropping it would replace a measurement with a guess.
 
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
@@ -86,13 +85,15 @@ describe("the request", () => {
     assert.match(calls[0].url, /^https?:\/\/[^/]+\/api\/contact$/);
   });
 
-  it("sends exactly application/json, with no charset", async () => {
+  it("sends application/json, bare", async () => {
     answer(() => json({ ok: true, id: "msg_1" }, { status: 202 }));
     await apiPost("/api/contact", BODY);
 
     const headers = new Headers(calls[0].init.headers);
-    // `contact.go:181` compares the whole value. A charset suffix here is
-    // refused by our own api and looks like an outage from the outside.
+    // Not because a charset would be refused — `isJSON` cuts at the semicolon —
+    // but because the type has to BE json for the api's Origin check to be
+    // enforceable at all (ADR 0021 §9), and a parameter that buys nothing is one
+    // more thing to be wrong about.
     assert.equal(headers.get("content-type"), "application/json");
     assert.equal(calls[0].init.method, "POST");
     assert.equal(calls[0].init.cache, "no-store");

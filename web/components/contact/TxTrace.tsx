@@ -41,7 +41,16 @@ export function TxTrace({ body, state }: { body: ContactRequest | null; state: s
       {/* `<pre>` because the alignment IS the content here, and a screen reader
           should be offered it as one block rather than as eleven fragments —
           the note beside the honeypot only means something next to the line it
-          annotates. */}
+          annotates.
+
+          NO `\n` INSIDE A LINE. Each line is a block and a block already breaks,
+          so a newline character on top of it is invisible on screen — a browser
+          drops a line break at the end of a block box — and doubles in every
+          text extraction: `innerText`, a test reading the panel back, and a
+          visitor selecting the request to paste it somewhere. The blank line
+          between the headers and the body gets its height from contact.css
+          instead, which is the layer that owns heights. Measured before it was
+          changed: the separator was 20.34px of newline. */}
       <pre className="tx-body">
         {lines === null
           ? "waiting for input"
@@ -49,7 +58,6 @@ export function TxTrace({ body, state }: { body: ContactRequest | null; state: s
               <span className="tx-line" data-kind={line.kind} key={index}>
                 {line.text}
                 {line.note === undefined ? null : <span className="tx-note"> ← {line.note}</span>}
-                {"\n"}
               </span>
             ))}
       </pre>

@@ -119,12 +119,15 @@ export function retryAfterSeconds(header: string | null): number | null {
  * branch: 202 is a receipt, 400 carries `invalidParams`, 429 carries a measured
  * wait, 502 means the relay is down and the message is stored anyway.
  *
- * `content-type` IS EXACTLY `application/json`, WITH NO CHARSET. The api
- * compares it strictly (`contact.go:181`) and the Origin check depends on it: a
+ * `content-type` IS `application/json` AND NOTHING IS SENT WITH IT. The api
+ * would accept a `; charset=utf-8` — `isJSON` cuts at the semicolon and compares
+ * the media type — so this is not a strictness the api enforces, and an earlier
+ * draft of this comment said it was and was wrong. What the api DOES enforce is
+ * that the type is JSON at all, and the Origin check depends on it: a
  * cross-origin `<form>` can send `urlencoded`, `text/plain` or `multipart`
- * without ever triggering a preflight, and JSON cannot. A `; charset=utf-8` here
- * would be refused by our own api, which is the kind of failure that looks like
- * an outage.
+ * without ever triggering a preflight, and JSON cannot (ADR 0021 §9). The bare
+ * value is sent because a parameter buys nothing here and is one more thing to
+ * be wrong about.
  */
 export async function apiPost<P extends PostPath>(
   path: P,

@@ -74,6 +74,16 @@ void test("the wait is the difference while it is not", () => {
   assert.equal(remainingDwellMs(1000, 3500), 500);
 });
 
+void test("a wait of a fraction of a millisecond is still a wait", () => {
+  // THE ONE-MILLISECOND BUG, kept as a test. A timer asked to sleep 2957ms may
+  // wake at 2956.8; the reading is then 2999.7, `buildBody` floors it to 2999,
+  // and the api discards it in silence. So a fraction left over must come back
+  // as a positive number rather than as zero — the caller loops on it until it
+  // is zero, and this is the value that keeps the loop honest.
+  assert.equal(remainingDwellMs(1000, 3999.7) > 0, true);
+  assert.equal(remainingDwellMs(1000, 4000), 0);
+});
+
 void test("a clock that went backwards waits the whole floor", () => {
   // The safe direction: the visitor waits and the message is delivered. The
   // other direction sends a request that is discarded in silence, which is the
