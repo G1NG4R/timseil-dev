@@ -23,16 +23,31 @@
   padding-block: var(--s-72) var(--s-96);
 }
 
-/* The sheet's cap is `16ch`, and it is a measure rather than a box — the same
-   kind of number as About's `14ch`. "Open a channel." sets in one line at every
-   drawn width, which is the point: the shortest headline on this site is the
-   one on the page where somebody has something to do. */
+/* K-08 AND `:where()` FOR case.css's REASON, and this page is the third to need
+   it. The two H1 steps are 62 for the homepage and About and 52 everywhere
+   else; globals.css sets 62 on the element and layout.css drops it to 34 below
+   720. A CLASS here would beat both, and the page would keep 52 on a phone —
+   which is exactly what it did until the sheet oracle measured 390 and found
+   52 where the artboard draws 34. `:where()` contributes no specificity, so
+   source order decides: globals (62) → contact (52) → layout (34 under 720).
+
+   The `16ch` cap is the sheet's own, and it is a measure rather than a box —
+   the same kind of number as About's `14ch`. "Open a channel." sets in one line
+   at every drawn width, which is the point: the shortest headline on this site
+   is the one on the page where somebody has something to do. */
+:where(.contact) h1 {
+  font-size: var(--t-disp-52);
+}
+
 .contact-headline {
   margin: var(--s-26) 0 var(--s-20);
-  font: 500 var(--t-disp-52)/var(--lh-disp) var(--display);
+  font-family: var(--display);
+  font-weight: 500;
+  line-height: var(--lh-disp);
   letter-spacing: var(--ls-disp);
   color: var(--ink);
   max-width: 16ch;
+  text-wrap: pretty;
 }
 
 .contact-lede {
@@ -153,16 +168,22 @@
 .tx-dot {
   width: var(--s-6);
   height: var(--s-6);
-  border-radius: 50%;
+  border-radius: var(--radius-dot);
   background: var(--acc);
 }
 
 .tx-name { color: var(--ink-2); }
 
 /* Pushed to the right so the two readouts sit together, away from the label. */
-.tx-state { margin-inline-start: auto; }
+.tx-state {
+  margin-inline-start: auto;
+  font-size: var(--t-mono-9);
+}
 
-.tx-bytes { color: var(--dim); }
+.tx-bytes {
+  color: var(--dim);
+  font-size: var(--t-mono-9);
+}
 
 /* THE ONE PLACE ON THIS SITE THAT SCROLLS SIDEWAYS ON PURPOSE. A message is up
    to 4000 characters on one JSON line, so the trace has a width nothing can cap

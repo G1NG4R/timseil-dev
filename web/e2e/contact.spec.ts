@@ -174,6 +174,34 @@ test("what the page stores is said before it stores it", async ({ page }) => {
   await expect(page.locator(".contact-notice")).toContainText("hashed form of your IP address");
 });
 
+test("the headline sets on one line, which is what the 16ch cap is for", async ({ page }) => {
+  // THE ASSERTION THE ORACLE CANNOT MAKE. The sheet caps this headline at
+  // `16ch`, and a `ch` resolves to different pixels depending on which font
+  // loaded — 529.152 against 512 between a real browser and this rig. So the
+  // number is not pinnable and the requirement is: "Open a channel." is the
+  // shortest headline on this site and it does not break.
+  const lines = await page.evaluate(() => {
+    const h1 = document.querySelector("h1");
+    if (h1 === null) throw new Error("no h1");
+    const style = getComputedStyle(h1);
+    const lineHeight = Number.parseFloat(style.lineHeight);
+    return Math.round(h1.getBoundingClientRect().height / lineHeight);
+  });
+  expect(lines).toBe(1);
+});
+
+test("the lede stays inside a reading measure", async ({ page }) => {
+  // The other cap the oracle cannot hold. 56ch is one spelling of "this is a
+  // paragraph, not a banner"; what is checkable is that it is narrower than the
+  // column it sits in at the widths where the column is wide.
+  const { lede, column } = await page.evaluate(() => ({
+    lede: document.querySelector(".contact-lede")?.getBoundingClientRect().width ?? 0,
+    column: document.querySelector("main")?.getBoundingClientRect().width ?? 0,
+  }));
+  if (widthOf(page) >= 1080) expect(lede).toBeLessThan(column);
+  expect(lede).toBeGreaterThan(0);
+});
+
 test("nothing overflows sideways", async ({ page }) => {
   // The TX trace scrolls inside its own box on purpose; the page must not.
   const overflow = await page.evaluate(

@@ -60,16 +60,67 @@ const SHEETS = {
   // entscheiden." So two artboards, and the one switch this page's own grids
   // need was derived rather than drawn.
   about: 'docs/design/About - timseil.dev.dc.html',
+  // H8. Contact draws 1440 and 390, and it is named in the same sentence About
+  // is: "Fliesstext, Blog, About, Contact und Legal fliessen, dort ist nichts zu
+  // entscheiden." The one fixed column this page has — the 520px TX trace — is
+  // drawn at 1440 and gone below 1080, which is a switch layout.css already
+  // owns rather than a frame the sheet still owes.
+  contact: 'docs/design/Contact - timseil.dev.dc.html',
 };
 
 // ONE DECISION MOVES MANY MEASUREMENTS, so the reasons are named once and
 // referred to. Without this the oracle would read as twenty separate defects
 // where there are three decisions.
 const DIVERGENCE = {
+  // ── H8 ──────────────────────────────────────────────────────────────────────
+  'one-section-head':
+    'The Contact artboard draws its `SYS.06 — CHANNEL` marker at 11.5px. ' +
+    '`SectionHead` has drawn every section marker on this site at 12 since H1, ' +
+    'and the artboards disagree with each other about this number rather than ' +
+    'with the build — Case Study draws 12, the homepage 11.5. One component, ' +
+    'one step: a page-local size here would be a fourth spelling of a label ' +
+    'that means the same thing on four pages.',
+  'one-trace-geometry':
+    'The Contact sheet draws the form and its TX trace as `1fr 520px` with an ' +
+    '80px gap, which is a seventh two-column geometry — layout.css already ' +
+    'carries 480, 400, 380 and 420. H7b took `.cs-prob`\'s pair whole rather ' +
+    'than add one for sixteen pixels, and this does NOT, which needs saying. ' +
+    'The four existing pairs hold prose, a rail or a column of tiles on their ' +
+    'right: content whose width is a preference. The trace holds lines whose ' +
+    'width IS the content — `  "email": "anna.keller@firma.lu",` is as long as ' +
+    'it is, and what does not fit scrolls inside the panel. Forty pixels of ' +
+    'column and eight of gap, on the one element on this page with a minimum ' +
+    'width that is not a taste.',
+  'no-protocol-version':
+    'The sheet writes `POST /api/contact HTTP/2`. The trace is rendered BEFORE ' +
+    'the request leaves, and at that moment nothing on the page knows which ' +
+    'version the connection will negotiate — Traefik and the browser decide it, ' +
+    'and a local build over plain HTTP would print HTTP/2 and be wrong. A ' +
+    'version this page did not observe is an invented fact, and invariant 1 has ' +
+    'no exception for a detail that would look convincing.',
+  'one-copy-of-the-words':
+    'The mobile artboard carries a second, shorter set of words — "Geht direkt ' +
+    'an mein Postfach. Lieber selbst schreiben?" against the desktop\'s two ' +
+    'sentences — and draws the headline as `<h2>` at 34px. lib/i18n carries ONE ' +
+    'set, for the reason `one-copy-set` gives on the case study: a second exists ' +
+    'only to be forgotten when the first is corrected. The step still falls to ' +
+    '34 at 720, which is K-08 and a switch layout.css already owns. This is ' +
+    '#293, held open rather than settled here.',
+  'a-form-is-not-a-canvas':
+    'The sheet draws a DEMO-SCHALTER that forces a failure, a footer strip ' +
+    'reading "KEIN TRACKING · KEIN COOKIE · KEINE SPEICHERUNG AUF DEM SERVER · ' +
+    '3 EINTRÄGE LOKAL", a `BUILD v3.2.1` and an `UPTIME [99.98%]`. The switch is ' +
+    'a canvas affordance and not a control of the page. The strip is FALSE on ' +
+    'this page of all pages — `contact_messages` is the one table on this site ' +
+    'with personal data in it — and "3 Einträge lokal" would need a third ' +
+    'localStorage key, which invariant 9 does not have. The two numbers are ' +
+    'invented. None of the four is built; the page carries a true notice ' +
+    'instead.',
   'half-pixel':
-    'The sheets draw 9.5, 10.5 and 11.5px. tokens.css has thirteen steps and ' +
-    '"keine halben Pixel" (G1) — every mono size rounds down to the nearest ' +
-    'step. One decision, many places.',
+    'The sheets draw 9.5, 10.5, 11.5 — and, on the Contact form, 14px. ' +
+    'tokens.css has thirteen steps and "keine halben Pixel" (G1); every mono ' +
+    'size rounds down to the nearest one, half a pixel or a whole one. ' +
+    'One decision, many places.',
   'spacing-scale':
     'The sheets draw spacing off the 4px grid (22, 24, 13, 38, 100px). ' +
     'Foundations fixes the scale and G1 made it binding, so the stylesheets read ' +
@@ -2080,11 +2131,213 @@ const ABOUT_MAP = [
   },
 ];
 
+
+/**
+ * `/contact`'s map. Build plan H8.
+ *
+ * THE SHEET THIS PAGE IS MEASURED AGAINST IS ALSO THE SHEET IT DISAGREES WITH
+ * MOST, and the disagreements are not about pixels. Four things it draws are
+ * claims rather than geometry — a demo switch, a footer strip that says nothing
+ * is stored on the server, a build number and an uptime — and one of them is
+ * false on this page specifically, because `contact_messages` is the one table
+ * on this site that holds personal data. `a-form-is-not-a-canvas` carries that
+ * argument; what is left below is the drawing.
+ *
+ * THE FORM IS AN ISLAND, SO EVERY MEASUREMENT IS TAKEN WHERE A VISITOR MEETS
+ * IT. There is no `on:` in this file. `/work` has to take two thirds of its
+ * readings in the gallery because the rig has no api and no row stands on the
+ * page; this page reads nothing, and the form is on it whether or not anything
+ * answers.
+ */
+const CONTACT_MAP = [
+  // ── 1440 · Contact, artboard 1a · the two columns ────────────────────────
+  {
+    id: 'contact-columns',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 66,
+    decl: 'grid-template-columns', says: '1fr 520px',
+    reading: 'the form stands beside the request it is about to send',
+    measure: { kind: 'track-count', selector: '.cf' }, expect: 2,
+  },
+  {
+    id: 'contact-trace-width',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 66,
+    decl: 'grid-template-columns', says: '1fr 520px',
+    reading: 'and the trace is 520 wide, the one fixed column on this page',
+    measure: { kind: 'box-width', selector: '.tx' }, expect: 520,
+  },
+  {
+    id: 'contact-columns-gap',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 66,
+    decl: 'gap', says: '80px',
+    reading: 'eighty between them, the gap every two-column row on this site uses',
+    measure: { kind: 'computed', selector: '.cf', prop: 'column-gap' }, expect: '80px',
+  },
+  {
+    id: 'contact-section-padding',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 66,
+    decl: 'padding', says: '72px 0 40px',
+    reading: 'seventy-two above the marker, the step both other pages open on',
+    measure: { kind: 'computed', selector: '.contact', prop: 'padding-top' }, expect: '72px',
+  },
+  // ── the words ────────────────────────────────────────────────────────────
+  {
+    id: 'contact-marker-size',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 69,
+    decl: 'font', says: "500 11.5px 'JetBrains Mono',monospace",
+    reading: 'SYS.06 is the section marker this site already has, at the step it already uses',
+    measure: { kind: 'computed', selector: '.sec-id', prop: 'font-size' }, expect: '12px',
+    diverges: { class: 'one-section-head', sheet: '11.5px' },
+  },
+  {
+    id: 'contact-headline-size',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 70,
+    decl: 'font', says: "500 52px/1.06 'Chakra Petch',sans-serif",
+    reading: 'the shortest headline on this site is at the 52 step, like every other page head',
+    measure: { kind: 'computed', selector: '.contact-headline', prop: 'font-size' }, expect: '52px',
+  },
+  {
+    id: 'contact-lede-size',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 71,
+    decl: 'font', says: "400 15.5px/1.75 'Geist',sans-serif",
+    reading: 'the paragraph under it is body text at the step under the half pixel',
+    measure: { kind: 'computed', selector: '.contact-lede', prop: 'font-size' }, expect: '15px',
+    diverges: { class: 'half-pixel', sheet: '15.5px' },
+  },
+  // THE TWO `ch` CAPS ARE NOT IN THIS MAP, and that is a property of the unit
+  // rather than an omission. The sheet caps the headline at `16ch` and the lede
+  // at `56ch`; `getComputedStyle` returns a USED value, so a `ch` comes back as
+  // pixels — and the pixels depend on which font actually loaded. Measured:
+  // 529.152px in a browser with Chakra Petch and 512px in the Playwright rig,
+  // seventeen pixels apart for one declaration nobody changed. An oracle number
+  // that moves with a font file is not an oracle number.
+  //
+  // What the caps are FOR is asserted in e2e/contact.spec.ts instead: the
+  // headline sets on one line at both drawn widths, and the lede stays inside a
+  // reading measure. Those are the requirements; `16ch` is one spelling of one
+  // of them.
+
+  // ── the form ─────────────────────────────────────────────────────────────
+  {
+    id: 'contact-form-width',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 73,
+    decl: 'max-width', says: '640px',
+    reading: 'the fields stop at 640 rather than running the width of the column',
+    measure: { kind: 'computed', selector: '.cf-form', prop: 'max-width' }, expect: '640px',
+  },
+  {
+    id: 'contact-field-gap',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 73,
+    decl: 'gap', says: '22px',
+    reading: 'twenty between the fields, on the scale',
+    measure: { kind: 'computed', selector: '.cf-form', prop: 'row-gap' }, expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '22px' },
+  },
+  {
+    id: 'contact-label-size',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 77,
+    decl: 'font', says: "500 10px 'JetBrains Mono',monospace",
+    reading: 'a field label is mono at the smallest step, and it is a label rather than a placeholder',
+    measure: { kind: 'computed', selector: '.field-label', prop: 'font-size' }, expect: '10px',
+  },
+  {
+    id: 'contact-label-tracking',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 77,
+    decl: 'letter-spacing', says: '.14em',
+    reading: 'tracked out at the label step this site uses everywhere',
+    measure: { kind: 'computed', selector: '.field-label', prop: 'letter-spacing' }, expect: '1.4px',
+  },
+  {
+    id: 'contact-input-padding',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 81,
+    decl: 'padding', says: '13px 15px',
+    reading: 'the box a visitor types into, and ui.css has drawn it since G7 at exactly this padding',
+    measure: { kind: 'computed', selector: '#name', prop: 'padding-top' }, expect: '13px',
+  },
+  {
+    id: 'contact-input-font',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 81,
+    decl: 'font', says: "400 14px 'JetBrains Mono',monospace",
+    reading: 'and what is typed is mono, because the trace beside it is the same string',
+    measure: { kind: 'computed', selector: '#name', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'half-pixel', sheet: '14px' },
+  },
+  {
+    id: 'contact-button-tracking',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 112,
+    decl: 'letter-spacing', says: '.14em',
+    reading: 'the send button is a button of this site, tracked like every other',
+    measure: { kind: 'computed', selector: '.cf-actions .btn', prop: 'letter-spacing' }, expect: '1.43px',
+  },
+  // ── the trace ────────────────────────────────────────────────────────────
+  {
+    id: 'contact-trace-head-gap',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 125,
+    decl: 'gap', says: '9px',
+    reading: 'the dot, the name and the state sit ten apart, on the scale',
+    measure: { kind: 'computed', selector: '.tx-head', prop: 'column-gap' }, expect: '10px',
+    diverges: { class: 'spacing-scale', sheet: '9px' },
+  },
+  {
+    id: 'contact-trace-head-padding',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 125,
+    decl: 'padding', says: '11px 16px',
+    reading: 'sixteen in from the panel edge, exactly as drawn',
+    measure: { kind: 'computed', selector: '.tx-head', prop: 'padding-left' }, expect: '16px',
+  },
+  {
+    id: 'contact-trace-name-size',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 127,
+    decl: 'font', says: "600 10px 'JetBrains Mono',monospace",
+    reading: 'TX is a label at the smallest mono step',
+    measure: { kind: 'computed', selector: '.tx-name', prop: 'font-size' }, expect: '10px',
+  },
+  {
+    id: 'contact-trace-bytes-size',
+    sheet: 'contact', artboard: '1a', width: 1440, line: 130,
+    decl: 'font', says: "400 9.5px 'JetBrains Mono',monospace",
+    reading: 'and the byte count beside it at the step under the half pixel',
+    measure: { kind: 'computed', selector: '.tx-bytes', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  // ── 390 · Contact, artboard 1c ───────────────────────────────────────────
+  {
+    id: 'contact-columns-390',
+    sheet: 'contact', artboard: '1c', width: 390, line: 350,
+    decl: 'width', says: '390px',
+    reading: 'on the phone the trace falls under the form, one column',
+    measure: { kind: 'track-count', selector: '.cf' }, expect: 1,
+  },
+  {
+    id: 'contact-headline-390',
+    sheet: 'contact', artboard: '1c', width: 390, line: 361,
+    decl: 'font', says: "500 34px/1.1 'Chakra Petch',sans-serif",
+    reading: 'the display step falls to 34, which is K-08 and a switch layout.css owns',
+    measure: { kind: 'computed', selector: '.contact-headline', prop: 'font-size' }, expect: '34px',
+  },
+  {
+    id: 'contact-headline-tag-390',
+    sheet: 'contact', artboard: '1c', width: 390, line: 361,
+    decl: 'font', says: "500 34px/1.1 'Chakra Petch',sans-serif",
+    reading: 'and it is still the page\'s one h1, where the artboard writes h2',
+    measure: { kind: 'computed', selector: 'h1.contact-headline', prop: 'font-size' }, expect: '34px',
+    diverges: { class: 'one-copy-of-the-words', sheet: '<h2>' },
+  },
+  {
+    id: 'contact-field-gap-390',
+    sheet: 'contact', artboard: '1c', width: 390, line: 365,
+    decl: 'gap', says: '18px',
+    reading: 'the fields keep one rhythm at both widths rather than tightening by two pixels',
+    measure: { kind: 'computed', selector: '.cf-form', prop: 'row-gap' }, expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '18px' },
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
   { map: WORK_MAP, target: 'web/e2e/oracle/work.gen.json' },
   { map: ABOUT_MAP, target: 'web/e2e/oracle/about.gen.json' },
+  { map: CONTACT_MAP, target: 'web/e2e/oracle/contact.gen.json' },
 ];
 
 // ---------------------------------------------------------------- extraction

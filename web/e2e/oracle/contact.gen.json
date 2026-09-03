@@ -28,612 +28,363 @@
   },
   "entries": [
     {
-      "id": "work-head-rail",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-columns",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 62,
+      "line": 66,
       "width": 1440,
-      "says": "grid-template-columns: 1fr 420px",
-      "reading": "the head is one flexible column and a 420px stat rail",
+      "says": "grid-template-columns: 1fr 520px",
+      "reading": "the form stands beside the request it is about to send",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".cf"
+      },
+      "expect": 2
+    },
+    {
+      "id": "contact-trace-width",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 66,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 520px",
+      "reading": "and the trace is 520 wide, the one fixed column on this page",
       "measure": {
         "kind": "box-width",
-        "selector": ".work-stats"
+        "selector": ".tx"
       },
-      "expect": 420
+      "expect": 520
     },
     {
-      "id": "work-head-gap",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-columns-gap",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 62,
+      "line": 66,
       "width": 1440,
       "says": "gap: 80px",
-      "reading": "with 80px of air between the deck and the rail",
-      "measure": {
-        "kind": "gap-x",
-        "from": ".work-intro",
-        "to": ".work-stats"
-      },
-      "expect": 72,
-      "diverges": {
-        "class": "spacing-scale",
-        "sheet": "80px"
-      }
-    },
-    {
-      "id": "work-eyebrow-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 64,
-      "width": 1440,
-      "says": "font: 500 11.5px 'JetBrains Mono',monospace",
-      "reading": "the eyebrow is mono at the step under the half pixel the sheet draws",
+      "reading": "eighty between them, the gap every two-column row on this site uses",
       "measure": {
         "kind": "computed",
-        "selector": ".work-eyebrow",
+        "selector": ".cf",
+        "prop": "column-gap"
+      },
+      "expect": "80px"
+    },
+    {
+      "id": "contact-section-padding",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 66,
+      "width": 1440,
+      "says": "padding: 72px 0 40px",
+      "reading": "seventy-two above the marker, the step both other pages open on",
+      "measure": {
+        "kind": "computed",
+        "selector": ".contact",
+        "prop": "padding-top"
+      },
+      "expect": "72px"
+    },
+    {
+      "id": "contact-marker-size",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 69,
+      "width": 1440,
+      "says": "font: 500 11.5px 'JetBrains Mono',monospace",
+      "reading": "SYS.06 is the section marker this site already has, at the step it already uses",
+      "measure": {
+        "kind": "computed",
+        "selector": ".sec-id",
         "prop": "font-size"
       },
-      "expect": "11px",
+      "expect": "12px",
       "diverges": {
-        "class": "half-pixel",
+        "class": "one-section-head",
         "sheet": "11.5px"
       }
     },
     {
-      "id": "work-h1-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-headline-size",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 65,
+      "line": 70,
       "width": 1440,
-      "says": "font: 500 52px/1.05 'Chakra Petch',sans-serif",
-      "reading": "the work index headline is the 52px display step — K-08 keeps 62 for the homepage and About",
+      "says": "font: 500 52px/1.06 'Chakra Petch',sans-serif",
+      "reading": "the shortest headline on this site is at the 52 step, like every other page head",
       "measure": {
         "kind": "computed",
-        "selector": "main h1",
+        "selector": ".contact-headline",
         "prop": "font-size"
       },
       "expect": "52px"
     },
     {
-      "id": "work-deck-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-lede-size",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 66,
+      "line": 71,
       "width": 1440,
-      "says": "font: 400 15px/1.7 'Geist',sans-serif",
-      "reading": "and the deck under it is the 15px body step",
+      "says": "font: 400 15.5px/1.75 'Geist',sans-serif",
+      "reading": "the paragraph under it is body text at the step under the half pixel",
       "measure": {
         "kind": "computed",
-        "selector": ".work-deck",
+        "selector": ".contact-lede",
         "prop": "font-size"
       },
-      "expect": "15px"
-    },
-    {
-      "id": "work-stats-columns",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 68,
-      "width": 1440,
-      "says": "grid-template-columns: repeat(4,1fr)",
-      "reading": "four tiles, one per state the contract declares plus the total",
-      "measure": {
-        "kind": "track-count",
-        "selector": ".work-stats"
-      },
-      "expect": 4,
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-stats-gap",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 68,
-      "width": 1440,
-      "says": "gap: 16px",
-      "reading": "set 16px apart",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-stats",
-        "prop": "column-gap"
-      },
-      "expect": "16px"
-    },
-    {
-      "id": "work-stat-inset",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 69,
-      "width": 1440,
-      "says": "padding-left: 14px",
-      "reading": "each tile stands 14px off the rule that separates it",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-stat",
-        "prop": "padding-left"
-      },
-      "expect": "14px"
-    },
-    {
-      "id": "work-filters-rule",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 76,
-      "width": 1440,
-      "says": "border-top: 1px solid rgba(139,152,166,.16)",
-      "reading": "the filter block is fenced off above and below by the hairline",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-filters",
-        "prop": "border-top-width"
-      },
-      "expect": "1px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-filters-padding",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 76,
-      "width": 1440,
-      "says": "padding: 16px 0",
-      "reading": "and holds its rows 16px off both rules",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-filters",
-        "prop": "padding-top"
-      },
-      "expect": "16px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-filters-label-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 78,
-      "width": 1440,
-      "says": "font: 600 9px 'JetBrains Mono',monospace",
-      "reading": "STATUS and STACK name their rows at the smallest mono step",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-filter-label",
-        "prop": "font-size"
-      },
-      "expect": "9px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-filters-label-tracking",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 78,
-      "width": 1440,
-      "says": "letter-spacing: .16em",
-      "reading": "tracked like every other label of its size",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-filter-label",
-        "prop": "letter-spacing"
-      },
-      "expect": "1.44px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-chip-gap",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 79,
-      "width": 1440,
-      "says": "gap: 8px",
-      "reading": "8px between two chips",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-chips",
-        "prop": "column-gap"
-      },
-      "expect": "8px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-chip-wrap",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 88,
-      "width": 1440,
-      "says": "flex-wrap: wrap",
-      "reading": "and the row wraps rather than running off its column",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-chips",
-        "prop": "flex-wrap"
-      },
-      "expect": "wrap",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-chip-padding",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 80,
-      "width": 1440,
-      "says": "padding: 6px 11px",
-      "reading": "a chip is Foundations' chip: 6 by 11",
-      "measure": {
-        "kind": "computed",
-        "selector": ".chip",
-        "prop": "padding-left"
-      },
-      "expect": "12px",
-      "diverges": {
-        "class": "spacing-scale",
-        "sheet": "11px"
-      },
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-chip-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 80,
-      "width": 1440,
-      "says": "font: 600 9.5px 'JetBrains Mono',monospace",
-      "reading": "and reads at the smallest mono step, like the label over it",
-      "measure": {
-        "kind": "computed",
-        "selector": ".chip",
-        "prop": "font-size"
-      },
-      "expect": "9px",
+      "expect": "15px",
       "diverges": {
         "class": "half-pixel",
-        "sheet": "9.5px"
-      },
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-chip-radius",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 81,
-      "width": 1440,
-      "says": "border: 1px solid rgba(139,152,166,.25)",
-      "reading": "a chip at rest is a hairline box with square corners",
-      "measure": {
-        "kind": "computed",
-        "selector": ".chip",
-        "prop": "border-top-left-radius"
-      },
-      "expect": "0px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-chip-set",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 80,
-      "width": 1440,
-      "says": "background: #00E5FF",
-      "reading": "and a chip that is set is inverted — the accent as a fill, not a shade of it",
-      "measure": {
-        "kind": "computed",
-        "selector": ".chip[aria-pressed=\"true\"]",
-        "prop": "background-color"
-      },
-      "expect": "rgb(0, 229, 255)",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-empty-padding",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 142,
-      "width": 1440,
-      "says": "padding: 44px 8px",
-      "reading": "the panel for a combination nothing matches stands well clear of the rows",
-      "measure": {
-        "kind": "computed",
-        "selector": ".st-empty-panel",
-        "prop": "padding-top"
-      },
-      "expect": "20px",
-      "diverges": {
-        "class": "spacing-scale",
-        "sheet": "44px"
-      },
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-count-padding",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 98,
-      "width": 1440,
-      "says": "padding: 12px 0 6px",
-      "reading": "the counter sits 12px under the filter block",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-count",
-        "prop": "padding-top"
-      },
-      "expect": "12px"
-    },
-    {
-      "id": "work-count-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 98,
-      "width": 1440,
-      "says": "font: 500 9.5px 'JetBrains Mono',monospace",
-      "reading": "and reads at the smallest mono step",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-count",
-        "prop": "font-size"
-      },
-      "expect": "9px",
-      "diverges": {
-        "class": "half-pixel",
-        "sheet": "9.5px"
+        "sheet": "15.5px"
       }
     },
     {
-      "id": "work-row-tracks",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-form-width",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 102,
+      "line": 73,
       "width": 1440,
-      "says": "grid-template-columns: 40px 1fr 132px 104px 130px 20px",
-      "reading": "six columns: number, identity, figure, state, preview, exit",
-      "measure": {
-        "kind": "track-count",
-        "selector": ".work-row"
-      },
-      "expect": 6,
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-row-gap",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 102,
-      "width": 1440,
-      "says": "gap: 24px",
-      "reading": "with 24px between them — the nearest step is 26",
+      "says": "max-width: 640px",
+      "reading": "the fields stop at 640 rather than running the width of the column",
       "measure": {
         "kind": "computed",
-        "selector": ".work-row",
-        "prop": "column-gap"
+        "selector": ".cf-form",
+        "prop": "max-width"
       },
-      "expect": "26px",
-      "diverges": {
-        "class": "spacing-scale",
-        "sheet": "24px"
-      },
-      "on": "/dev/components"
+      "expect": "640px"
     },
     {
-      "id": "work-row-padding",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-field-gap",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 102,
+      "line": 73,
       "width": 1440,
-      "says": "padding: 24px 8px",
-      "reading": "and 24px of vertical breath, 8px of inset",
+      "says": "gap: 22px",
+      "reading": "twenty between the fields, on the scale",
       "measure": {
         "kind": "computed",
-        "selector": ".work-row",
-        "prop": "padding-top"
-      },
-      "expect": "26px",
-      "diverges": {
-        "class": "spacing-scale",
-        "sheet": "24px"
-      },
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-no-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 103,
-      "width": 1440,
-      "says": "font: 500 12px 'JetBrains Mono',monospace",
-      "reading": "the display number is the 12px mono step",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-no",
-        "prop": "font-size"
-      },
-      "expect": "12px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-name-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 105,
-      "width": 1440,
-      "says": "font: 500 20px 'Chakra Petch',sans-serif",
-      "reading": "the system name is 20px display — off the scale, like every other row title on this site",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-name",
-        "prop": "font-size"
+        "selector": ".cf-form",
+        "prop": "row-gap"
       },
       "expect": "20px",
-      "on": "/dev/components"
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "22px"
+      }
     },
     {
-      "id": "work-blurb-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-label-size",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 106,
+      "line": 77,
       "width": 1440,
-      "says": "font: 400 13.5px 'Geist',sans-serif",
-      "reading": "the one line about the system is body text at the step under the half pixel",
+      "says": "font: 500 10px 'JetBrains Mono',monospace",
+      "reading": "a field label is mono at the smallest step, and it is a label rather than a placeholder",
       "measure": {
         "kind": "computed",
-        "selector": ".work-blurb",
+        "selector": ".field-label",
+        "prop": "font-size"
+      },
+      "expect": "10px"
+    },
+    {
+      "id": "contact-label-tracking",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 77,
+      "width": 1440,
+      "says": "letter-spacing: .14em",
+      "reading": "tracked out at the label step this site uses everywhere",
+      "measure": {
+        "kind": "computed",
+        "selector": ".field-label",
+        "prop": "letter-spacing"
+      },
+      "expect": "1.4px"
+    },
+    {
+      "id": "contact-input-padding",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 81,
+      "width": 1440,
+      "says": "padding: 13px 15px",
+      "reading": "the box a visitor types into, and ui.css has drawn it since G7 at exactly this padding",
+      "measure": {
+        "kind": "computed",
+        "selector": "#name",
+        "prop": "padding-top"
+      },
+      "expect": "13px"
+    },
+    {
+      "id": "contact-input-font",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 81,
+      "width": 1440,
+      "says": "font: 400 14px 'JetBrains Mono',monospace",
+      "reading": "and what is typed is mono, because the trace beside it is the same string",
+      "measure": {
+        "kind": "computed",
+        "selector": "#name",
         "prop": "font-size"
       },
       "expect": "13px",
       "diverges": {
         "class": "half-pixel",
-        "sheet": "13.5px"
-      },
-      "on": "/dev/components"
+        "sheet": "14px"
+      }
     },
     {
-      "id": "work-stack-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
+      "id": "contact-button-tracking",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 107,
+      "line": 112,
       "width": 1440,
-      "says": "font: 500 9.5px 'JetBrains Mono',monospace",
-      "reading": "and the stack line under it is the smallest mono step",
+      "says": "letter-spacing: .14em",
+      "reading": "the send button is a button of this site, tracked like every other",
       "measure": {
         "kind": "computed",
-        "selector": ".work-stack",
+        "selector": ".cf-actions .btn",
+        "prop": "letter-spacing"
+      },
+      "expect": "1.43px"
+    },
+    {
+      "id": "contact-trace-head-gap",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 125,
+      "width": 1440,
+      "says": "gap: 9px",
+      "reading": "the dot, the name and the state sit ten apart, on the scale",
+      "measure": {
+        "kind": "computed",
+        "selector": ".tx-head",
+        "prop": "column-gap"
+      },
+      "expect": "10px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "9px"
+      }
+    },
+    {
+      "id": "contact-trace-head-padding",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 125,
+      "width": 1440,
+      "says": "padding: 11px 16px",
+      "reading": "sixteen in from the panel edge, exactly as drawn",
+      "measure": {
+        "kind": "computed",
+        "selector": ".tx-head",
+        "prop": "padding-left"
+      },
+      "expect": "16px"
+    },
+    {
+      "id": "contact-trace-name-size",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 127,
+      "width": 1440,
+      "says": "font: 600 10px 'JetBrains Mono',monospace",
+      "reading": "TX is a label at the smallest mono step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".tx-name",
+        "prop": "font-size"
+      },
+      "expect": "10px"
+    },
+    {
+      "id": "contact-trace-bytes-size",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 130,
+      "width": 1440,
+      "says": "font: 400 9.5px 'JetBrains Mono',monospace",
+      "reading": "and the byte count beside it at the step under the half pixel",
+      "measure": {
+        "kind": "computed",
+        "selector": ".tx-bytes",
         "prop": "font-size"
       },
       "expect": "9px",
       "diverges": {
         "class": "half-pixel",
         "sheet": "9.5px"
-      },
-      "on": "/dev/components"
+      }
     },
     {
-      "id": "work-figure-label-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 110,
-      "width": 1440,
-      "says": "font: 500 8.5px 'JetBrains Mono',monospace",
-      "reading": "the figure label is drawn under the smallest step the scale has, so it rounds up rather than down",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-figure-label",
-        "prop": "font-size"
-      },
-      "expect": "9px",
-      "diverges": {
-        "class": "half-pixel",
-        "sheet": "8.5px"
-      },
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-state-size",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 111,
-      "width": 1440,
-      "says": "font: 600 10px 'JetBrains Mono',monospace",
-      "reading": "the state word is the 10px mono step",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-state .st-word",
-        "prop": "font-size"
-      },
-      "expect": "10px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-h1-size-390",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 193,
+      "id": "contact-columns-390",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 350,
       "width": 390,
-      "says": "font: 500 34px/1.05 'Chakra Petch',sans-serif",
-      "reading": "the headline drops to the 34px display step on a phone — K-08s third rung",
+      "says": "width: 390px",
+      "reading": "on the phone the trace falls under the form, one column",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".cf"
+      },
+      "expect": 1
+    },
+    {
+      "id": "contact-headline-390",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 361,
+      "width": 390,
+      "says": "font: 500 34px/1.1 'Chakra Petch',sans-serif",
+      "reading": "the display step falls to 34, which is K-08 and a switch layout.css owns",
       "measure": {
         "kind": "computed",
-        "selector": "main h1",
+        "selector": ".contact-headline",
         "prop": "font-size"
       },
       "expect": "34px"
     },
     {
-      "id": "work-prev-height",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 112,
-      "width": 1440,
-      "says": "height: 76px",
-      "reading": "the reserved preview is 76px tall — a frame, not a picture, until K2 has an image",
+      "id": "contact-headline-tag-390",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 361,
+      "width": 390,
+      "says": "font: 500 34px/1.1 'Chakra Petch',sans-serif",
+      "reading": "and it is still the page's one h1, where the artboard writes h2",
       "measure": {
         "kind": "computed",
-        "selector": ".prev",
-        "prop": "height"
+        "selector": "h1.contact-headline",
+        "prop": "font-size"
       },
-      "expect": "76px",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-prev-rest",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 112,
-      "width": 1440,
-      "says": "opacity: .28",
-      "reading": "and it rests at 28% — decoration, so the opacity may carry the hover",
-      "measure": {
-        "kind": "computed",
-        "selector": ".prev",
-        "prop": "opacity"
-      },
-      "expect": "0.28",
-      "on": "/dev/components"
-    },
-    {
-      "id": "work-legend-rhythm",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 144,
-      "width": 1440,
-      "says": "margin-top: 72px",
-      "reading": "the legend stands 72px under the last row",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-legend",
-        "prop": "margin-top"
-      },
-      "expect": "72px"
-    },
-    {
-      "id": "work-legend-padding",
-      "sheet": "docs/design/Work Index - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 144,
-      "width": 1440,
-      "says": "padding: 24px 26px",
-      "reading": "and holds its text off the panel edge — 24 rounds to the 26 the other axis already uses",
-      "measure": {
-        "kind": "computed",
-        "selector": ".work-legend",
-        "prop": "padding-top"
-      },
-      "expect": "26px",
+      "expect": "34px",
       "diverges": {
-        "class": "spacing-scale",
-        "sheet": "24px"
+        "class": "one-copy-of-the-words",
+        "sheet": "<h2>"
       }
     },
     {
-      "id": "work-row-tracks-1024",
-      "sheet": "docs/design/Intermediate Widths - timseil.dev.dc.html",
-      "artboard": "1d",
-      "line": 507,
-      "width": 1024,
-      "says": "grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px",
-      "reading": "below 1080 the preview column is dropped, never shrunk — five tracks, not six at 60px",
+      "id": "contact-field-gap-390",
+      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 365,
+      "width": 390,
+      "says": "gap: 18px",
+      "reading": "the fields keep one rhythm at both widths rather than tightening by two pixels",
       "measure": {
-        "kind": "track-count",
-        "selector": ".work-row"
+        "kind": "computed",
+        "selector": ".cf-form",
+        "prop": "row-gap"
       },
-      "expect": 5,
-      "on": "/dev/components"
+      "expect": "20px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "18px"
+      }
     }
   ]
 }
