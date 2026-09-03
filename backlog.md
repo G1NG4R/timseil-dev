@@ -12,6 +12,182 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 03.09.2026, H7a abgenommen: 10 von 10, und ein Loch außerhalb des Tauschs
+
+`a813cca` läuft. Merge 11:57:11Z, Deploy-Job 12:06:30Z–12:07:04Z (**34 s**),
+Container laufen seit **12:07:14.01216702Z**. Uhrzeit mit `date -u` gelesen;
+12:07 UTC liegt weit vom Dokploy-Fenster 23:45–00:00 UTC.
+
+**`/about` ist die dritte vollständige Seite dieser Site** und die erste, die von
+der Person handelt statt vom System.
+
+### Der Zeuge hat etwas gefunden, und es war nicht der Tausch
+
+Zeuge ab 11:58:37Z, also **86 Sekunden nach dem Merge** und 7:53 vor dem
+Deploy-Job. Vier Pfade, zwei `web`, zwei `api`:
+
+```
+/                    530 Anfragen   530 × 200
+/about               530 Anfragen   529 × 200, 1 × keine Verbindung
+/api/health          530 Anfragen   530 × 200
+/api/systems         530 Anfragen   530 × 200
+
+✗ this run does not show a clean deploy
+```
+
+**Die Sekunde ausgerechnet, nicht geschätzt.** Der Ausfall liegt bei Sekunde 55,
+das ist **11:59:31Z**; Sekunden 56–58 tragen keine Stichprobe, ab 59 wieder alle
+200. Der Deploy-Job ist Sekunde **474 bis 508**. Der Ausfall liegt damit **sieben
+Minuten vor dem Tausch**, mitten im Ruhezustand, und die Deploy-Sekunden liegen
+vollständig in `59–530 · 200`.
+
+**Der Tausch selbst war also sauber, über alle vier Pfade.** Das ist die elfte
+Stichprobe an #304, und sie ist eine saubere.
+
+**Und das Urteil des Instruments ist zu breit.** `witness.sh` schreibt „this run
+does not show a clean deploy", sobald irgendeine Sekunde des Fensters nicht
+200 war — es kennt den Deploy-Zeitraum nicht und kann deshalb nicht zwischen
+„der Tausch hat etwas fallen lassen" und „irgendwann liefen 530 Sekunden lang
+2 120 Anfragen und eine hat es nicht geschafft" unterscheiden. Beim ersten
+Lesen sah das nach einem Fund an #304 aus und war einer über den Zeugen.
+
+**Was der Ausfall war, weiß ich nicht, und die Notiz sagt das.** Drei Pfade
+haben in derselben Sekunde 200 geantwortet; wäre der Ursprung weg gewesen,
+wären alle vier ausgefallen. Das zeigt eher auf die eine Verbindung als auf den
+Dienst. Eine Stichprobe, kein Urteil (ADR 0056).
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `a813cca`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3, H4, H5a, H5b, H5c, H6a und H6b — die laufenden Container tragen exakt die
+veröffentlichten Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **neunten** Mal nicht. Der
+`--panel`-Zweig bleibt die Reparatur und bleibt ungebaut.
+
+### Geklickt, nicht nur gelesen — an beiden gezeichneten Breiten
+
+```
+/ · /de · /fr · /about · /de/about · /fr/about · /work · /work/timseil-dev   alle 200
+/about                   kein robots-Meta — indizierbar
+                         canonical https://timseil.dev/about
+sitemap.xml              12 Einträge (von 9), /about in allen drei Sprachen
+JSON-LD                  ProfilePage · url absolut · mainEntity → …/#person
+Klammern im Dokument     keine
+Leerzustände             2, beide mit Grund
+Regionen                 TRAJECTORY · WHAT I RUN · HOW I WORK · OFF-SYSTEM
+
+1440   READ THE CASE STUDY →  /work/timseil-dev  "This site is the system it describes."
+ 390   READ THE CASE STUDY →  /work/timseil-dev  "This site is the system it describes."
+```
+
+### Die Geometrie an allen sieben Prüfbreiten, gegen Produktion
+
+`getBoundingClientRect` am ausgelieferten Build, `clientWidth` je Zeile
+mitgemessen statt der Rückmeldung geglaubt:
+
+```
+Breite  client  h1    hero   Karte  Kacheln  Prinzipien  Körper  Spalte  Überlauf  Köpfe
+ 1440    1440   62px  grid    480      4          2        494    1160       0     1111
+ 1081    1081   62px  grid    480      4          2        415    1001       0     1111
+ 1079    1079   62px  flex    999      4          2        414     999       0     1111
+ 1024    1024   62px  flex    944      4          2        386     944       0     1111
+  899     899   62px  flex    819      2          1        520     819       0     1111
+  719     719   34px  flex    639      2          1        520     639       0     1111
+  390     390   34px  flex    346      2          1        300     346       0     1111
+```
+
+**Beide eigenen Schalter sitzen beidseitig** (1080 nimmt dem Hero die zweite
+Spalte, 900 halbiert beide Raster), Überlauf null an jeder Breite, genau eine
+`<h1>`, und **jeder der vier Abschnittsköpfe einzeilig an jeder Breite** — die
+Spalte `Köpfe` ist die Zeilenzahl der vier Titel.
+
+### Die Reparatur an der Startseite steht in Produktion
+
+Der Fund aus H7a war nicht nur meiner: `SYS.01 TRAINING LOG` brach von 560 bis
+744 zweizeilig, seit H4. Gegen Produktion, an der Breite, die vorher brach:
+
+```
+Breite   TRAINING LOG   SELECTED WORK   UPLINK   LOG   Überlauf
+  745         1               1            1       1       0
+  744         1               1            1       1       0
+  719         1               1            1       1       0
+  560         1               1            1       1       0
+```
+
+Und der große Hero-Punkt steht weiter auf `/` und auf keiner zweiten Seite.
+
+### `ops.lastDeploy.durationSec` sagt 587 s, der Job lief 34 s
+
+Zum sechsten Mal notiert, #242. Der Wert misst die Pipeline und nicht den Deploy.
+
+## Gefunden — aus der H7a-Abnahme
+
+- **Das Urteil des Zeugen ist breiter als seine Daten.** `witness.sh` kennt das
+  Deploy-Fenster nicht und nennt jeden Lauf mit einer roten Sekunde „not a clean
+  deploy". Hier lag die rote Sekunde sieben Minuten davor. Die Zeitrechnung
+  gehört zur Auswertung, nicht zum Instrument — aber wer nur die letzte Zeile
+  liest, hat einen Fund an #304, den es nicht gibt. *(03.09.2026, H7a-Abnahme)*
+- **Ein Ausfall auf einem von vier gleichzeitigen Pfaden ist kein Ausfall des
+  Dienstes.** Drei Pfade antworteten in derselben Sekunde 200. Das ist die eine
+  Aussage, die die Vier-Pfad-Aufteilung aus H5c möglich macht und die eine
+  einzelne Messreihe nie treffen könnte. *(03.09.2026, H7a-Abnahme)*
+- **`--until-sha` braucht `/api/health` in derselben Pfadliste.** Vier getrennte
+  Zeugen mit je einem Pfad brechen sofort ab („waiting for a deploy reads
+  /api/health, which is not in the paths"). Ein Lauf mit vier `--path`, nicht
+  vier Läufe. Hat beim Start dreißig Sekunden gekostet.
+  *(03.09.2026, H7a-Abnahme)*
+- **`pkill -f <muster>` trifft die eigene Shell, wenn das Muster im eigenen
+  Kommando steht.** Zweimal an einem Tag: einmal an `next start -p 3200`, einmal
+  an `witness.sh`. Über die PID gehen, nicht über das Muster.
+  *(03.09.2026, H7a-Abnahme)*
+
+## Nachtrag zur H5c-Abnahme — drei Phasen überfällig, und heute zum zweiten Mal
+
+Steht seit dem 02.09. als Kommentar an **#304** und sonst nirgends; sollte mit
+dem H6-Bau-PR mitfahren und ist dabei liegengeblieben. Zwei Korrekturen an dem,
+was hier über die H5c-Abnahme steht:
+
+1. **Der Zeuge über `3db7baf` hat „kein sauberer Tausch" gemeldet, und das war
+   falsch.** Aus den Container-Startzeiten des Panels: api 10:57:14.851Z, web
+   10:57:20.751Z, Zeuge bis ~10:57:32Z — **beide Container im Fenster**, alle
+   vier Pfade 200 durch den Tausch. Der eine Fehlschlag
+   (`/api/contributions`, „no connection") lag **116 Sekunden davor**, gefolgt
+   von drei Sekunden ohne Stichprobe: die Signatur einer hängenden eigenen
+   Anfrage.
+2. **Die „rund zwanzig Sekunden" zwischen api- und web-Tausch waren aus
+   Anfragenummern hergeleitet, nicht gemessen.** Der gemessene Abstand bei
+   `3db7baf` ist **5,9 s**.
+
+**Und das ist genau der Fund von heute, ein zweites Mal.** Derselbe Fehlschluss,
+dieselbe Ursache: die letzte Zeile des Zeugen ist ein Urteil über ein Fenster,
+das er nicht kennt, und ein Fehlschlag *irgendwo* im Lauf liest sich darin wie
+ein Fehlschlag *im Tausch*. Zweimal hat es einen Fund an #304 vorgetäuscht, den
+es nicht gab — und beide Male hat erst das Umrechnen der Sekunde in Wanduhrzeit
+das aufgelöst. Solange `witness.sh` das Deploy-Fenster nicht kennt, gehört diese
+Rechnung in jede Abnahme.
+
+**Dazu die Einschränkung, die bestehen bleibt:** `--until-sha` stoppt am neuen
+**api**-Prozess plus kurzem Nachlauf, und der Container, der beide bekannten
+Löcher erzeugt hat, ist `web` und kommt danach. Bei `3db7baf` reichten 12 s
+Nachlauf; garantiert ist das nicht. Heute lag der Deploy vollständig im Fenster
+(Sekunde 474–508 von 530), also trägt dieser Lauf die Einschränkung nicht — aber
+die nächste Abnahme muss sie wieder prüfen statt annehmen.
+
+## Verschoben aus der H7a-Abnahme
+
+- **Der `--panel`-Zweig von `check-deployed.sh` → zum neunten Mal offen.** Die
+  Aufgabe steht seit G3 hier, der Weg in `backlog.local.md`.
+- **`ops.lastDeploy.durationSec` misst die Pipeline → #242, sechste Notiz.**
+- **`witness.sh` kennt das Deploy-Fenster nicht → Aufgabe notiert.** Das
+  Abnahmekriterium: der Zeuge nennt in seinem Urteil, ob eine rote Sekunde
+  innerhalb oder außerhalb des Tauschs lag, statt jeden Lauf mit einer roten
+  Sekunde „not a clean deploy" zu nennen. Zweimal hat diese Zeile einen Fund an
+  #304 vorgetäuscht, den es nicht gab.
+
+---
+
 ## Wo wir stehen — 03.09.2026, H7a gebaut: `/about` liest nichts, und das ist die Zahl
 
 **Zweig `phase/h7a-about`.** Hero, Operator-Karte, `WHAT I RUN`, `HOW I WORK`
