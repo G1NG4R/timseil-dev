@@ -350,9 +350,15 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     // The monotonic clock rather than `Date.now()`: a system clock corrected
     // mid-request would otherwise produce a negative duration, and the log
     // would print it.
-    const departedAt = performance.now();
     const body = buildBody(draft, honeypot, spent, new Date());
     setSentBody(body);
+
+    // The stopwatch starts on the LAST line before the call and not one earlier.
+    // Building the body and handing it to the panel are this page's work, and a
+    // duration whose whole purpose is to separate an SMTP round trip from a
+    // request that was discarded in microseconds cannot afford to carry a React
+    // render inside it.
+    const departedAt = performance.now();
     const result = await apiPost("/api/contact", body);
     const durationMs = performance.now() - departedAt;
     const answeredAt = Date.now();
