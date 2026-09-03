@@ -12,6 +12,138 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 03.09.2026, H7b abgenommen: 10 von 10, und ein Zeuge, der fehlt
+
+`c070a85` läuft. Merge 14:08:47Z, Deploy-Job 14:18:21Z–14:18:56Z (**35 s**),
+Container laufen seit **14:19:01.26173723Z**. Uhrzeit mit `date -u` gelesen.
+
+**Damit ist H7 fertig, und `/about` die dritte Seite dieser Site, auf der ein
+Leser etwas tun kann.**
+
+### Was diese Abnahme nicht hat, und warum sie es nicht nachholt
+
+**Der Zeuge über den Tausch von `c070a85` fehlt.** Er lag 14:18:21Z–14:18:56Z;
+die Sitzung war zu dem Zeitpunkt unterbrochen, und als sie weiterlief, war es
+18:13Z. Ein Zeuge misst Sekunde für Sekunde, *während* getauscht wird — vier
+Stunden später gibt es dafür keine Daten, und eine Messung von jetzt sagte nur,
+dass die Seite läuft, nicht dass der Tausch sauber war.
+
+**Nicht nachgeholt, sondern verschoben.** Der Abnahme-PR ist selbst ein Deploy —
+auch ein reiner `backlog.md`-Merge baut Images und tauscht die Container. Für
+#304 lautet die Frage „lässt ein Tausch eine Anfrage fallen", nicht „lässt
+*dieser* Tausch"; der Tausch dieses PRs ist also eine vollwertige zwölfte
+Stichprobe. Verloren ist nur, dass der gemessene Tausch nicht der ist, der die
+Rail zuerst live gebracht hat.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `c070a85`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3, H4, H5a–c, H6a, H6b und H7a — die laufenden Container tragen exakt die
+veröffentlichten Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **zehnten** Mal nicht.
+
+### Die Geometrie an allen sieben Prüfbreiten, gegen Produktion
+
+`getBoundingClientRect` am ausgelieferten Build, `clientWidth` je Zeile
+mitgemessen statt der Rückmeldung geglaubt:
+
+```
+Breite  client  h1    hero  Karte Kachel Prinz  Rail    Item  Kappen Füll%  Panel Über h1 Köpfe
+ 1440    1440   62px  grid   480     4     2   quer     193     1    91,7     2    0   1  1111
+ 1081    1081   62px  grid   480     4     2   quer     167     2    91,7     2    0   1  1111
+ 1079    1079   62px  flex   999     4     2   quer     167     2    91,7     1    0   1  1111
+ 1024    1024   62px  flex   944     4     2   quer     157     2    91,7     1    0   1  1111
+  899     899   62px  flex   819     2     1   quer     137     2    91,7     1    0   1  1111
+  719     719   34px  flex   639     2     1   senkr.   619     1    91,7     1    0   1  1111
+  390     390   34px  flex   346     2     1   senkr.   326     1    91,7     1    0   1  1111
+```
+
+**Alle drei Schalter sitzen beidseitig:** 1080 nimmt dem Hero die zweite Spalte
+und dem Panel seine, 900 halbiert Kachel- und Prinzipienraster, 720 stellt die
+Rail auf und setzt die Anzeigestufe auf 34. Überlauf null, genau eine `<h1>`,
+alle vier Abschnittsköpfe einzeilig, höchstens zwei Zeilen je
+Rail-Beschriftung, solange sie quer steht.
+
+### Die Rail bedient, nicht gelesen — an beiden gezeichneten Breiten
+
+Identisch bei 1440 und 390:
+
+```
+Ruhe          NOW   Platform work                  Füllung 91,7 %
+Klick 03      03    First service in public        41,7 %
+→             04    Go, and the container habit    58,3 %
+→             05    Own infrastructure             75 %    SHIPPED 02 timseil.dev
+←             04    Go, and the container habit    58,3 %
+↓             05    Own infrastructure             75 %
+← auf 01      NOW   Platform work                  91,7 %  ← läuft um
+Tab           verlässt die Gruppe — ein Tabstopp für sechs Stationen
+SHIPPED →     /work/timseil-dev
+```
+
+Die Füllung trifft `(index + 0.5) / 6` auf die Nachkommastelle, in beiden Lagen
+der Rail. **Und das Umlaufen ist gegen Produktion bestätigt** — die Abweichung
+vom Blatt, das klemmt.
+
+### Die Zusicherung, die diese Phase trägt — zum ersten Mal gegen Produktion
+
+```
+javaScriptEnabled: false          1440              390
+  Ruhe                            Platform work     Platform work
+  Klick auf 05                    Own infrastructure Own infrastructure
+  ←                               Go, and the …     Go, and the …
+```
+
+ADR 0066 tauscht das Skript des Blatts gegen eine Radiogruppe und behauptet
+dafür zwei Dinge: null Byte und ein Bedienelement, das ohne Skript funktioniert.
+Das erste war lokal gemessen, das zweite im Rig grün — **gegen Produktion ist es
+hier zum ersten Mal gelaufen.**
+
+### Was die Seite über sich sagt
+
+```
+/ · /de · /fr · /about · /de/about · /fr/about · /work · /work/timseil-dev   alle 200
+/about              kein robots-Meta · canonical https://timseil.dev/about
+sitemap.xml         12 Einträge
+JSON-LD             ProfilePage · https://timseil.dev/about
+Klammern            keine außer [SOON]
+Rail-Marken         01 02 03 04 05 NOW
+Belegzellen         1 von 6
+Leerzustände        1 — SYS.05.04, geschuldet an K2
+```
+
+### `ops.lastDeploy.durationSec` sagt 601 s, der Job lief 35 s
+
+Zum siebten Mal notiert, #242.
+
+## Gefunden — aus der H7b-Abnahme
+
+- **Ein Zeuge ist die einzige Messung dieser Abnahme, die eine Verfallszeit
+  hat.** Geometrie, Klicks, Digests und die No-JS-Zusicherung lassen sich vier
+  Stunden später genauso nehmen; der Tausch nicht. Wenn eine Sitzung
+  unterbrochen wird, ist das die eine Zahl, die weg ist — und der einzige Ausweg
+  ist, sie an den nächsten Tausch zu hängen statt sie zu erfinden.
+  *(03.09.2026, H7b-Abnahme)*
+- **Ein Doku-PR ist kein Verlegenheits-Deploy, sondern ein brauchbarer.** Dass
+  auch ein reiner `backlog.md`-Merge die Container tauscht, stand bisher als
+  Warnung im Gedächtnis. Hier ist es das Gegenteil: die Stichprobe, die dieser
+  Abnahme fehlt, holt der eigene Abnahme-PR nach. *(03.09.2026, H7b-Abnahme)*
+- **Die Füllung trifft die Arithmetik in beiden Lagen der Rail.** 41,7 · 58,3 ·
+  75 · 91,7 quer wie senkrecht — das ist die Zusicherung, dass `--fill` wirklich
+  eine Distanz und keine Breite ist, und sie ist nur gegen eine gedrehte Rail
+  überhaupt prüfbar. *(03.09.2026, H7b-Abnahme)*
+
+## Verschoben aus der H7b-Abnahme
+
+- **Der `--panel`-Zweig von `check-deployed.sh` → zum zehnten Mal offen.**
+- **`ops.lastDeploy.durationSec` misst die Pipeline → #242, siebte Notiz.**
+- **Die zwölfte Stichprobe an #304** kommt vom Tausch dieses PRs und wird als
+  Nachtrag geschrieben — sie fährt mit dem nächsten Bau-PR mit, damit kein
+  zusätzlicher Deploy entsteht.
+
+---
+
 ## Wo wir stehen — 03.09.2026, H7b gebaut: die Rail läuft, und sie kostet null Byte
 
 **Zweig `phase/h7b-trajectory`.** Sechs Stationen, Tastatur, Fülllinie,
