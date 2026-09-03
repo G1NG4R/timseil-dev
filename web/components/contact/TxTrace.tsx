@@ -1,4 +1,6 @@
+import type { LogLine } from "@/lib/contact/log";
 import type { ContactRequest } from "@/lib/contact/payload";
+import { CONTACT_MARKS, type ContactStateKey } from "@/lib/contact/states";
 import { bodyBytes, traceLines } from "@/lib/contact/trace";
 
 /**
@@ -18,7 +20,17 @@ import { bodyBytes, traceLines } from "@/lib/contact/trace";
  * NO `'use client'` OF ITS OWN. It is imported by one, which is enough; a
  * directive here would say this file is a boundary, and it is not one.
  */
-export function TxTrace({ body, state }: { body: ContactRequest | null; state: string }) {
+export function TxTrace({
+  body,
+  lines: log,
+  state,
+}: {
+  body: ContactRequest | null;
+  lines: readonly LogLine[];
+  state: ContactStateKey;
+}) {
+  const mark = CONTACT_MARKS[state];
+
   // `null` IS THE REST STATE AND NOT A LOADING STATE. Before the form has
   // mounted there is no dwell and no send moment, and this is also exactly what
   // a visitor without JavaScript is left holding — the server-rendered copy of
@@ -28,11 +40,35 @@ export function TxTrace({ body, state }: { body: ContactRequest | null; state: s
   const lines = body === null ? null : traceLines(body);
 
   return (
-    <aside className="tx" aria-label="Request preview">
-      <div className="tx-head">
-        <span className="tx-dot" aria-hidden="true" />
+    // `data-log` IS WHAT THE PHONE SWITCHES ON. Below 720 this panel is two
+    // lines under the button rather than a drawing of the request, and in the
+    // resting state it has no lines at all — an empty bordered box on a phone
+    // would be a component announcing that it has nothing to say. layout.css
+    // reads the attribute; the count is not a design value.
+    <aside className="tx" aria-label="Request preview" data-log={log.length > 0 ? "" : undefined}>
+      {/* THE TONE IS ON THE HEAD AND NOT ON A WRAPPER INSIDE IT. state.css sets
+          `--st-color` from `[data-tone]` on any element and `.st-dot` and
+          `.st-word` paint with it, so the dot can stay where the sheet draws it
+          — hard left, before the label — while the word sits at the other end
+          of the strip. A `.st` around the pair would have had to hold both, and
+          the sheet puts the byte counter between them. */}
+      <div className="tx-head" data-tone={mark.tone}>
+        {/* The dot is the same fact as the word, drawn a second way — so it is
+            hidden from a screen reader, which should hear SENDING and not
+            "bullet SENDING". It was `--acc` in every state until H8b, including
+            the failed one. */}
+        {mark.dot === null ? null : (
+          <span
+            className="st-dot"
+            data-dot={mark.dot}
+            // Presence, not a value: state.css matches `[data-pulse]`, and
+            // `false` would render `data-pulse="false"` and match it too.
+            data-pulse={mark.pulse ? "" : undefined}
+            aria-hidden="true"
+          />
+        )}
         <span className="tx-name">TX</span>
-        <span className="tx-state">{state}</span>
+        <span className="tx-state st-word">{mark.label}</span>
         {/* Bytes of the body, not of the drawing. lib/contact/trace.ts says why,
             and a test recalculates it. */}
         <span className="tx-bytes">{body === null ? "—" : `${String(bodyBytes(body))} B`}</span>
@@ -61,6 +97,26 @@ export function TxTrace({ body, state }: { body: ContactRequest | null; state: s
               </span>
             ))}
       </pre>
+
+      {/* WHAT HAPPENED, UNDER WHAT WAS ABOUT TO HAPPEN. `.st-log` rather than
+          new markup, for the reason TerminalPanel gives when it does the same:
+          it already draws the prompt in a `::before`, which keeps the prompt
+          out of the accessibility tree and out of anything a visitor copies.
+          `data-dir` picks which prompt.
+
+          NOT A LIVE REGION. `.cf-status` is the one `aria-live` on this page
+          and it already says what happened in a sentence; announcing the log as
+          well would read the same event twice, once as prose and once as a
+          transcript. */}
+      {log.length === 0 ? null : (
+        <ul className="st-log tx-log">
+          {log.map((line, index) => (
+            <li data-dir={line.dir} key={index}>
+              {line.text}
+            </li>
+          ))}
+        </ul>
+      )}
     </aside>
   );
 }

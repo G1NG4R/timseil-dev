@@ -126,6 +126,19 @@
   color: var(--dim);
 }
 
+/* TWO MORE PROMPTS, FOR A LOG THAT HAS TWO SIDES. H8b's contact panel writes
+   what the page did and what came back, and the sheet draws them apart: `>` for
+   a step this page took, `<` for the answer, two spaces for a line that
+   continues the answer above it. Everything without the attribute keeps `> ` —
+   ErrorPanel, LoadingLines and TerminalPanel say nothing about a direction and
+   are all one side of a conversation.
+
+   The character stays in the drawing rather than moving into the string for
+   the reason above it, and it earns a second job there: the phone shows only
+   the answer, and a stylesheet cannot select what it cannot see.             */
+.st-log > li[data-dir="in"]::before { content: "< "; }
+.st-log > li[data-dir="cont"]::before { content: "\00a0\00a0"; }
+
 /* The edge carries the tone, the box does not: a filled red panel would be the
    "ein Moment pro Seite" spent on a container. With data-tone="alert" from the
    component this is the one alert moment the sheet allows. */

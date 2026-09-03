@@ -32,14 +32,18 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { TxTrace } from "@/components/contact/TxTrace";
 import { apiPost } from "@/lib/api/post";
+import { secondServerSnapshot, secondSnapshot, subscribeClock } from "@/lib/clock";
 import { counterFor, FIELDS } from "@/lib/contact/fields";
+import { sessionLines } from "@/lib/contact/log";
 import { buildBody, type ContactRequest, remainingDwellMs } from "@/lib/contact/payload";
+import { contactState } from "@/lib/contact/states";
+import { waitLine } from "@/lib/state/retry";
 import {
   firstInvalidField,
   type Draft,
@@ -83,9 +87,29 @@ export interface ContactCopy {
  */
 type Phase = "rest" | "invalid" | "sending" | "accepted" | "failed";
 
-interface Failure {
-  status: number;
-  retryAfterSec: number | null;
+/**
+ * What came back, and how long it took to come back.
+ *
+ * THE DURATION IS NOT DECORATION AND IT IS THE REASON THIS RECORD REPLACED A
+ * BARE STATUS. ADR 0021 §2 answers a filled honeypot and a short dwell with the
+ * same well-formed 202 a real send gets — no row, no mail, a receipt that names
+ * nothing. From outside, the status cannot tell the two apart. What can is the
+ * round trip: a discarded submission short-circuits before the database and the
+ * relay and returns in milliseconds, a real one carries an SMTP exchange. The
+ * H8a acceptance had to measure this by hand to believe its own 202, and it
+ * stood in no instruction afterwards.
+ *
+ * `status: 0` IS "NOBODY WAS THERE" and not a code — the same value `apiPost`
+ * reports for a deadline, a refused connection and a visitor who left.
+ */
+interface Answer {
+  readonly status: number;
+  /** The api's own title for the problem, or `null` for a 202 and for silence. */
+  readonly statusText: string | null;
+  readonly durationMs: number;
+  /** `Date.now()` when it arrived, for the second printed beside the receipt. */
+  readonly answeredAt: number;
+  readonly retryAfterSec: number | null;
 }
 
 const EMPTY: Draft = { name: "", email: "", message: "" };
@@ -130,9 +154,34 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
   const [invalid, setInvalid] = useState<readonly InvalidParam[]>([]);
   const [phase, setPhase] = useState<Phase>("rest");
   const [receipt, setReceipt] = useState<string | null>(null);
-  const [failure, setFailure] = useState<Failure | null>(null);
+  const [answer, setAnswer] = useState<Answer | null>(null);
+  // When the api's measured `Retry-After` runs out, as wall-clock milliseconds.
+  // `null` whenever nothing is being waited out, which is almost always.
+  const [freeAt, setFreeAt] = useState<number | null>(null);
 
   const [clock, setClock] = useState<Clock | null>(null);
+
+  // THE SECOND HAND THIS PAGE ALREADY HAS. lib/clock.ts keeps one interval for
+  // however many clocks are on the screen, refcounted, and the header's has
+  // been subscribed on every page since G3 — so joining it costs a listener and
+  // not a timer. A second `setInterval` here would tick out of phase with the
+  // one in the header, and on a slow frame the two would show different
+  // seconds.
+  //
+  // THE CLOCK IS READ IN THE SNAPSHOT AND NOT HERE. A `Date.now()` in this
+  // render body would make the render non-idempotent — React may run it twice
+  // and get two answers — which is the same rule that keeps `performance.now()`
+  // out of it thirty lines above, and `react-hooks/purity` refuses it outright.
+  // `secondServerSnapshot()` is zero by construction, so the server pass and
+  // the hydration pass count nothing down.
+  const second = useSyncExternalStore(subscribeClock, secondSnapshot, secondServerSnapshot);
+
+  // WHOLE SECONDS, ROUNDED UP, so the last one is a second the visitor actually
+  // waits. Rounding down would free the button while the api would still refuse
+  // it, which is a countdown that lies at exactly the moment it matters.
+  const waitSec =
+    freeAt === null || second === 0 ? 0 : Math.max(0, Math.ceil((freeAt - second * 1000) / 1000));
+  const waiting = waitSec > 0;
 
   // THE BODY AS IT STANDS, built by the one function that builds the body that
   // is sent. TxTrace's own header says why it takes this rather than the draft:
@@ -145,6 +194,43 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
   // and that is the number that has to be exact.
   const preview: ContactRequest | null =
     clock === null ? null : buildBody(draft, honeypot, clock.dwellMs, new Date(clock.tsAt));
+
+  // WHICH OF THE SHEET'S SIX THE PAGE IS IN, derived rather than stored. The
+  // island holds five phases; the sixth is the line between "nothing typed" and
+  // "the clock is running", which `preview` already draws. Keeping a sixth
+  // value in state beside `phase` would be two variables free to disagree, and
+  // the day they did the badge would name a state the form was not in.
+  const state = contactState({
+    phase,
+    typed: preview !== null,
+    invalidCount: invalid.length,
+  });
+
+  // THE COUNTDOWN IS THE LINE, so it is recomputed on the tick rather than
+  // frozen when the answer arrived. `waitLine` refuses a wait that has run out
+  // and the log then drops the line, which is the same second the button comes
+  // back — one fact, drawn twice, and it cannot come apart.
+  //
+  // AND THERE IS NO `n/3` BESIDE IT, which is a measurement rather than a
+  // preference: two limiters answer this route with a 429 and both write it
+  // through `httpx.WriteRateLimitProblem`, so the documents carry the same type
+  // and the same title. A counter here would be naming which of the two refused
+  // the request, and this page cannot see that. lib/state/retry.ts carries the
+  // argument at length.
+  const retry = waiting ? waitLine(waitSec) : null;
+
+  const log = sessionLines({
+    state,
+    invalidCount: invalid.length,
+    honeypotEmpty: honeypot === "",
+    dwellMs: preview?.dwellMs ?? null,
+    status: answer?.status ?? null,
+    statusText: answer?.statusText ?? null,
+    durationMs: answer?.durationMs ?? null,
+    receipt,
+    answeredAt: answer?.answeredAt ?? null,
+    retry,
+  });
 
   // `at` IS READ BY THE HANDLER AND PASSED IN, rather than read here. A
   // function declared in a component body could be called during render for all
@@ -167,13 +253,16 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
 
   async function submit() {
     if (phase === "sending") return;
+    // The api would refuse it anyway, and spending the request would only move
+    // the wait it reports without shortening it.
+    if (waiting) return;
 
     const local = validateDraft(draft);
     if (local.length > 0) {
       // NOTHING IS SENT. A round trip here would spend one of three attempts in
       // ten minutes to be told what this page already knew.
       setInvalid(local);
-      setFailure(null);
+      setAnswer(null);
       setReceipt(null);
       setPhase("invalid");
       focusFirst(local);
@@ -181,7 +270,7 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     }
 
     setInvalid([]);
-    setFailure(null);
+    setAnswer(null);
     setPhase("sending");
 
     // THE WAIT THAT MAKES THE DWELL HONEST. ADR 0021 §2 answers anything under
@@ -217,7 +306,20 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     }
 
     const spent = performance.now() - openedAt;
+
+    // MEASURED HERE AND NOT IN `apiPost`, deliberately. The round trip is a
+    // fact of this page — it is what the panel prints — and `apiPost` is the
+    // module every later browser caller on this site inherits. Giving the
+    // shared transport a stopwatch because one page wanted a number is how a
+    // transport grows a reporting concern.
+    //
+    // The monotonic clock rather than `Date.now()`: a system clock corrected
+    // mid-request would otherwise produce a negative duration, and the log
+    // would print it.
+    const departedAt = performance.now();
     const result = await apiPost("/api/contact", buildBody(draft, honeypot, spent, new Date()));
+    const durationMs = performance.now() - departedAt;
+    const answeredAt = Date.now();
 
     if (result.kind === "ok") {
       // THE TEXT STAYS IN THE FIELD. The build plan and the handbook both say
@@ -226,6 +328,13 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
       // braucht". Clearing a form is the convention; this is the exception, and
       // it is the sender's copy of what they sent.
       setReceipt(result.data.id);
+      setAnswer({
+        status: result.status,
+        statusText: null,
+        durationMs,
+        answeredAt,
+        retryAfterSec: null,
+      });
       setPhase("accepted");
       return;
     }
@@ -234,8 +343,27 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     // the order of this form (validate.go:53-55) so the focus needs no sorting.
     const params = result.status === 400 ? (result.problem?.invalidParams ?? []) : [];
     setInvalid(params);
-    setFailure({ status: result.status, retryAfterSec: result.retryAfterSec });
+    setReceipt(null);
+    setAnswer({
+      status: result.status,
+      statusText: result.problem?.title ?? null,
+      durationMs,
+      answeredAt,
+      retryAfterSec: result.retryAfterSec,
+    });
     setPhase("failed");
+
+    // THE PAGE NOW HOLDS THE WAIT INSTEAD OF DESCRIBING IT. ADR 0021 §3 derives
+    // `Retry-After` from `min(received_at)`, so it is a measurement — and a
+    // wait a page prints but does not keep is one the visitor spends a request
+    // discovering. `null` leaves the button alone rather than inventing a
+    // duration to lock it for.
+    setFreeAt(
+      result.status === 429 && result.retryAfterSec !== null
+        ? answeredAt + result.retryAfterSec * 1000
+        : null,
+    );
+
     if (params.length > 0) focusFirst(params);
   }
 
@@ -295,7 +423,11 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
         </div>
 
         <div className="cf-actions">
-          <Button disabled={phase === "sending"} type="submit">
+          {/* LOCKED WHILE A MEASURED WAIT RUNS, and released by the same second
+              that removes the line from the log. A button that stayed live
+              through a 429 would invite the visitor to spend a request finding
+              out what the api has already told this page. */}
+          <Button disabled={phase === "sending" || waiting} type="submit">
             SEND →
           </Button>
         </div>
@@ -304,18 +436,23 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
             goes through it. A status that only changes colour is a status a
             screen reader never hears, and `polite` rather than `assertive`
             because none of these interrupt anything the visitor is doing. */}
-        <p className="cf-status" data-phase={phase} role="status" aria-live="polite">
+        {/* `data-state` RATHER THAN `data-phase`. The six are what the page
+            says about itself and the five are how it is implemented, and it was
+            the phase that leaked into the stylesheet — where a 400 that named
+            no field and a 400 that named three were one colour. */}
+        <p className="cf-status" data-state={state} role="status" aria-live="polite">
           <StatusText
             copy={copy}
-            failure={failure}
+            failure={answer}
             invalidCount={invalid.length}
             phase={phase}
             receipt={receipt}
+            retry={retry}
           />
         </p>
       </form>
 
-      <TxTrace body={preview} state={phase} />
+      <TxTrace body={preview} lines={log} state={state} />
     </div>
   );
 }
@@ -335,12 +472,14 @@ function StatusText({
   invalidCount,
   phase,
   receipt,
+  retry,
 }: {
   copy: ContactCopy;
-  failure: Failure | null;
+  failure: Answer | null;
   invalidCount: number;
   phase: Phase;
   receipt: string | null;
+  retry: string | null;
 }) {
   if (phase === "sending") return <>{copy.sending}</>;
 
@@ -372,11 +511,27 @@ function StatusText({
     // from `min(received_at)` precisely so it is measured; printing a flat ten
     // minutes would be wrong for everybody who wrote nine minutes ago, which is
     // most of the people who see this.
-    const wait = failure.retryAfterSec;
+    //
+    // AND IT COUNTS DOWN, because the page is holding the wait rather than
+    // reporting it: the button comes back at zero, and a sentence that still
+    // said "in 7 minutes" then would be describing a lock that is gone. The
+    // seconds come from the same countdown the log prints, so the two cannot
+    // disagree. Zero prints nothing at all — there is no wait left to name.
+    // THE COUNTDOWN IS NOT PROSE AND SO IT IS NOT IN THE DICTIONARY. `retry in
+    // 412s` is the sheet's own wording for this line and the same register as
+    // `202`, `SYS.06` and the receipt beside it — LANG.01 keeps nomenclature
+    // out of the dictionary, and a German page would still print it. It is also
+    // the one line here that a visitor might quote back, which is the argument
+    // for the same monospace treatment the receipt gets.
     return (
       <>
         {copy.rateLimited}
-        {wait === null ? null : <> Try again in {Math.ceil(wait / 60)} min.</>}
+        {retry === null ? null : (
+          <>
+            {" "}
+            <span className="cf-receipt">{retry}</span>
+          </>
+        )}
       </>
     );
   }

@@ -133,6 +133,28 @@
 /* Filled and wrong, in that order of specificity: a field that is both is
    wrong, and the error is the more useful thing to see. */
 .field-input[data-filled] { border-color: var(--acc-line); }
+
+/* LOCKED, NOT GREYED OUT — the sheet asks for exactly that ("felder gesperrt,
+   nicht ausgegraut") and until H8b it was a sentence with no rule behind it:
+   the form set `readOnly` while sending and nothing drew it, so the one state
+   in which a visitor most wants to know whether their text is still theirs
+   looked identical to the one before it.
+
+   The text keeps its colour. What changes is the surface: the field stops
+   looking like something to type into and takes the panel's ground, and the
+   edge drops back from the accent a filled field earns. Dimming the text would
+   be the ordinary answer and would say the message is being discarded, at the
+   moment it is being sent.
+
+   BEFORE THE ERROR RULE, so that a field which is both wrong and locked still
+   shows the error — the more useful thing to see, which is the order the line
+   above already keeps. */
+.field-input[readonly] {
+  background: var(--panel);
+  border-color: var(--line);
+  cursor: default;
+}
+
 .field-input[aria-invalid="true"] { border-color: var(--alert); }
 
 .field-error {
