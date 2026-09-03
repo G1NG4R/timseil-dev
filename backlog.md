@@ -12,7 +12,173 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 03.09.2026, H8a gebaut: die Seite, die als Erste fragt
+## Wo wir stehen — 03.09.2026, H8a abgenommen: 10 von 10, und die erste Nachricht durch das eigene Formular
+
+`89d4062` läuft. Merge 20:36:44Z, Deploy-Job 20:49:02Z–20:49:35Z (**33 s**),
+Container laufen seit **20:49:37.89Z** (api) und **20:49:43.83Z** (web).
+Uhrzeit mit `date -u` gelesen; 20:49 UTC liegt weit vom Dokploy-Fenster
+23:45–00:00.
+
+**`/contact` ist die vierte vollständige Seite dieser Site und die erste, von
+der aus ein Browser die API anspricht.** Der Backlog hat „Anfragen des Browsers
+an /api: 0" fünf Stufen lang mitgezählt; die Zahl ist jetzt eine andere.
+
+### Der Tausch war sauber, und die rote Sekunde lag zehn Minuten davor
+
+Zeuge ab 20:37:24Z, **40 Sekunden nach dem Merge** und 11:38 vor dem
+Deploy-Job. Vier Pfade, und `/contact` ist zum ersten Mal selbst einer davon:
+
+```
+/                    748 Anfragen   747 × 200, 1 × keine Verbindung
+/contact             748 Anfragen   748 × 200
+/api/health          748 Anfragen   748 × 200
+/api/systems         748 Anfragen   748 × 200
+
+✗ this run does not show a clean deploy
+```
+
+**Die Sekunde ausgerechnet, nicht geschätzt.** Der Ausfall liegt bei Sekunde 61,
+das ist **20:38:24Z**. Der Deploy-Job ist Sekunde **699 bis 732**, und die liegen
+vollständig in `65–748 · 200`. Der Ausfall liegt damit **zehn Minuten und
+achtunddreißig Sekunden vor dem Tausch**, mitten im Ruhezustand.
+
+**Der Tausch selbst war also sauber, über alle vier Pfade** — die dreizehnte
+Stichprobe an #304, und eine saubere.
+
+**Und es ist das dritte Mal, dass das Urteil des Instruments zu breit war.**
+Nach `3db7baf` (116 s davor) und `a813cca` (sieben Minuten davor) ist das der
+dritte Lauf, dessen Schlusszeile beim ersten Lesen wie ein Fund aussah. Drei
+Pfade haben in derselben Sekunde 200 geantwortet; wäre der Ursprung weg gewesen,
+wären alle vier ausgefallen. Eine Stichprobe, kein Urteil (ADR 0056).
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**, beide Images
+per Digest aus `89d4062`. Die neunte und zehnte über die Panel-API wie in H2b,
+H3, H4, H5a–c, H6a, H6b, H7a und H7b — die laufenden Container tragen exakt die
+veröffentlichten Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **elften** Mal nicht.
+
+### Die Nachricht ist wirklich rausgegangen, und die Antwortdauer beweist es
+
+Die Prüfung, die vor dem Merge nicht möglich war: eine Einsendung durch das
+gebaute Formular, im Browser, über den ganzen Weg — Origin-Kopf, Traefik,
+api-Container, OVH.
+
+```
+202 accepted   msg_01M1MGN4V2DX7ZPP
+Antwortdauer   1 120 ms
+Protokoll      h3
+Text im Feld   232 Zeichen, unverändert
+Felder         readOnly während des Sendens, nicht disabled
+```
+
+**Ein `202` allein beweist nichts** — ADR 0021 §2 beantwortet Honeypot und
+Dwell-Unterschreitung mit derselben wohlgeformten Quittung. Was es beweist, ist
+die **Dauer**: eine still verworfene Einsendung schließt vor Datenbank und SMTP
+kurz und kehrt in Millisekunden um. 1 120 ms sind ein SMTP-Umlauf.
+
+### Das Blatt zeichnet HTTP/2, und es ist h3
+
+`nextHopProtocol` der Anfrage sagt **h3**. Die Spur zeichnet deshalb gar keine
+Protokollversion, und die Begründung dafür war „die Seite kann es zum Zeitpunkt
+des Renderns nicht wissen" — grundsätzlich richtig und, wie sich zeigt, auch
+tatsächlich nötig: die Zeile des Blatts wäre auf der einen Fläche falsch
+gewesen, deren ganzer Zweck Genauigkeit ist.
+
+### Die Geometrie an allen sieben Prüfbreiten, gegen Produktion
+
+`getBoundingClientRect` am ausgelieferten Build, `clientWidth` je Zeile
+mitgemessen statt der Rückmeldung geglaubt:
+
+```
+Breite  client  h1     Spalten  Spur  Formular  Feld  Überlauf  h1n  Honigtopf
+ 1440    1440   52px      2      520     560    560       0      1    -9999
+ 1081    1081   52px      2      520     401    401       0      1    -9999
+ 1079    1079   52px      1      999     640    640       0      1    -9999
+ 1024    1024   52px      1      944     640    640       0      1    -9999
+  899     899   52px      1      819     640    640       0      1    -9999
+  719     719   34px      1      639     639    639       0      1    -9999
+  390     390   34px      1      346     346    346       0      1    -9999
+```
+
+Byte für Byte dieselbe Tabelle wie am lokalen Build. Beide Schalter sitzen
+beidseitig: 1080 nimmt der Spur ihre Spalte, 720 setzt die Anzeigestufe auf 34.
+Überlauf null, genau eine `<h1>`, der Honigtopf an jeder Breite außerhalb der
+Leinwand.
+
+### Die Zusicherung, die diese Phase trägt — zum ersten Mal gegen Produktion
+
+```
+javaScriptEnabled: false          1440                390
+  Überschrift                     Open a channel.     Open a channel.
+  Adresse                         mailto:contact@…    mailto:contact@…
+  Datenhinweis                    sichtbar            sichtbar
+  TX-Spur                         waiting for input   waiting for input
+  Bytes                           —                   —
+```
+
+Ohne Skript gibt es kein Formular, und die Seite tut auch nicht so. Die Spur
+zeichnet keine Anfrage mit genullter Uhr, sondern sagt, dass sie wartet; der
+Byte-Zähler sagt `—` statt `0`.
+
+### Was die Seite über sich sagt
+
+```
+/ · /de · /fr · /about · /work · /work/timseil-dev
+/contact · /de/contact · /fr/contact · /blog · /privacy · /imprint   alle 200
+/en/contact         308 → /contact
+/contact            kein robots-Meta · canonical https://timseil.dev/contact
+sitemap.xml         15 Einträge (von 12)
+JSON-LD             Person + ContactPage
+Klammern            keine
+Fußzeile            short, wie CHR.01 es für diese Seite sagt
+Konsole             leer — CANARY gesetzt und wiedergefunden
+```
+
+### `ops.lastDeploy.durationSec` sagt 766 s, der Job lief 33 s
+
+Zum achten Mal notiert, #242.
+
+## Gefunden — aus der H8a-Abnahme
+
+- **Die Antwortdauer unterscheidet, was der Statuscode absichtlich nicht
+  unterscheidet.** ADR 0021 §2 macht Honeypot und Dwell-Unterschreitung
+  ununterscheidbar von Erfolg — für einen Absender. Von außen bleibt eine Zahl:
+  eine verworfene Einsendung kehrt in Millisekunden um, eine zugestellte braucht
+  einen SMTP-Umlauf. **Das ist der einzige Weg, ein `202` von hier aus zu
+  prüfen**, und er stand in keiner Anleitung. *(03.09.2026, H8a-Abnahme)*
+- **Die Abweichung war nicht nur grundsätzlich richtig, sondern faktisch nötig.**
+  Die Spur zeichnet keine Protokollversion, weil die Seite sie beim Rendern
+  nicht kennen kann. Gemessen ist es **h3**, nicht das `HTTP/2` des Blatts. Ein
+  Argument aus Prinzip, das die Messung nachträglich bestätigt.
+  *(03.09.2026, H8a-Abnahme)*
+- **Zum dritten Mal sah die Schlusszeile des Zeugen wie ein Fund aus.** 116 s bei
+  `3db7baf`, sieben Minuten bei `a813cca`, jetzt zehneinhalb. Dreimal dieselbe
+  Umrechnung, dreimal dasselbe Ergebnis — das ist kein Zufall mehr, sondern ein
+  Instrument, das seinen eigenen Zeitraum nicht kennt. *(03.09.2026, H8a-Abnahme)*
+- **Der Abstand api → web ist eine Eigenschaft, keine Beobachtung.** 5,9 s in
+  H5c, 5,99 s im H7b-Nachtrag, 5,936 s hier. Drei Messungen über drei Tausche.
+  *(03.09.2026, H8a-Abnahme)*
+
+## Verschoben aus der H8a-Abnahme
+
+- **Der `--panel`-Zweig von `check-deployed.sh` → zum elften Mal offen.**
+- **`ops.lastDeploy.durationSec` misst die Pipeline → #242, achte Notiz.**
+- **Der Nachlauf des Zeugen gehört an den web-Container.** Der Lauf endete 7,1 s
+  nach webs Start; alle drei bekannten Löcher lagen in `web`. Dritte Notiz.
+- **Die Zustellung im Postfach ist nicht von hier bestätigt.** Die Antwortdauer
+  beweist den SMTP-Umlauf, nicht die Ankunft. Die Quittung ist
+  `msg_01M1MGN4V2DX7ZPP`.
+
+**Als Nächstes:** H8b — die sechs Zustände als Zustandssprache, die Retry-Zeile
+aus `lib/state/retry.ts`, das Sitzungs-Protokoll im TX-Panel und die Statuszeile,
+zu der die Spur auf dem Telefon wird.
+
+---
+
+## Vorher — 03.09.2026, H8a gebaut: die Seite, die als Erste fragt
 
 **Zweig `phase/h8a-contact`.** `/contact` ist die vierte vollständige Seite und
 die erste, von der aus ein **Browser** dieser Site die API anspricht.
