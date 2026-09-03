@@ -64,3 +64,40 @@ export function waitLine(seconds: number): string | null {
 
   return `retry in ${String(Math.floor(seconds))}s`;
 }
+
+// ── Holding a measured wait ────────────────────────────────────────────────
+//
+// The two lines of arithmetic behind the countdown, here rather than in the
+// component, because they are a decision about a number and the component is
+// markup plus a call. CI found out why they need a test: the first reading
+// printed `retry in 201s` for a `Retry-After: 200`.
+//
+// THE UNIT IS THE SECOND, ALL THE WAY THROUGH, and that is the whole repair.
+// The clock a React component may read is `secondSnapshot()`, which is
+// `Math.floor(Date.now() / 1000)` — the START of the current second, up to 999ms
+// in the past. Subtracting a millisecond deadline from it and rounding up
+// therefore produced one second too many, and one second too many is a number
+// larger than the one the api measured. Invariant 1 does not soften because the
+// error is small and errs towards waiting.
+//
+// The cost of doing it in seconds is the other end: an answer that arrives at
+// .999 of a second is released up to a second early. That is a courtesy
+// releasing early, not an enforcement failing — the api decides, and it answers
+// a premature attempt with a fresh 429 carrying a fresh measurement.
+
+/**
+ * The second at which a wait measured in seconds runs out.
+ *
+ * Floored to the same second `secondSnapshot()` reports, so that at the moment
+ * the answer arrives the difference below is exactly what the api sent.
+ */
+export function deadlineSecond(answeredAtMs: number, retryAfterSec: number): number {
+  return Math.floor(answeredAtMs / 1000) + Math.floor(retryAfterSec);
+}
+
+/** Whole seconds left, and never a negative one — a countdown does not run past
+ *  zero, it stops. `0` is the caller's signal that the wait is over. */
+export function secondsLeft(deadline: number, nowSecond: number): number {
+  if (!Number.isFinite(deadline) || !Number.isFinite(nowSecond)) return 0;
+  return Math.max(0, deadline - nowSecond);
+}

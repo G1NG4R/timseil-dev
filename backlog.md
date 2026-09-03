@@ -154,6 +154,20 @@ Komponentengraph von `/`, nicht auf einen Vergleichslauf.
 Nachgemessen und **nicht** eingetreten: `stripControl` zieht `lib/scrub.ts`
 nicht mit — die Literale der übrigen Exporte stehen in keinem Client-Chunk.
 
+### Der vierte Fund kam aus der CI, nicht von hier
+
+`retry in 201s` bei einem `Retry-After: 200`. Die Frist lag in Millisekunden, die
+Uhr, die eine Komponente lesen darf, liefert ganze Sekunden — den **Anfang** der
+laufenden Sekunde — und `ceil()` machte daraus eine Sekunde zu viel.
+
+**Von sieben Prüfbreiten fiel genau eine (w1081).** Lokal war derselbe Test
+grün, weil die Sekundengrenze anders lag. Die Arithmetik liegt jetzt in
+`lib/state/retry.ts` unter `node --test`, wo sie nicht mehr davon abhängt, wann
+ein Browser gestartet wurde.
+
+Der Fehler zeigte in die sichere Richtung — zu lange warten — und war trotzdem
+eine erfundene Zahl auf der Fläche, deren Zweck Genauigkeit ist.
+
 ## Gefunden — aus H8b
 
 - **Zwei Begrenzer, ein Dokument.** Token-Bucket und Kontakt-Boden schreiben
@@ -171,6 +185,10 @@ nicht mit — die Literale der übrigen Exporte stehen in keinem Client-Chunk.
   Nachgelesen im Skript, nicht aus dem Namen geschlossen. *(04.09.2026, H8b)*
 - **Der Alert-Moment war nie ausgegeben.** Beide Verweigerungen amber, seit H8a.
   *(04.09.2026, H8b)*
+- **Ein zeitabhängiger e2e-Test ist an sieben Breiten sieben Stichproben.** Die
+  201 fiel nur bei w1081; lokal an allen sieben grün. Die Lehre ist nicht „mehr
+  Toleranz im Test", sondern: Arithmetik gehört unter `node --test`, wo keine
+  Sekundengrenze mitwürfelt. *(04.09.2026, H8b, aus der CI)*
 - **`layout.css` ist zu ~50 % deutsch kommentiert**, jede andere Stilvorlage
   englisch. `CLAUDE.md` sagt Englisch. Drift, kein Beschluss — der neue Block
   ist englisch. *(04.09.2026, H8b)*

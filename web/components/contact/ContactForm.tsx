@@ -43,7 +43,7 @@ import { counterFor, FIELDS } from "@/lib/contact/fields";
 import { sessionLines } from "@/lib/contact/log";
 import { buildBody, type ContactRequest, remainingDwellMs } from "@/lib/contact/payload";
 import { contactState } from "@/lib/contact/states";
-import { waitLine } from "@/lib/state/retry";
+import { deadlineSecond, secondsLeft, waitLine } from "@/lib/state/retry";
 import {
   firstInvalidField,
   type Draft,
@@ -155,7 +155,13 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
   const [phase, setPhase] = useState<Phase>("rest");
   const [receipt, setReceipt] = useState<string | null>(null);
   const [answer, setAnswer] = useState<Answer | null>(null);
-  // When the api's measured `Retry-After` runs out, as wall-clock milliseconds.
+  // The SECOND at which the api's measured wait runs out — the same unit
+  // `secondSnapshot()` reports, deliberately. Milliseconds here and whole
+  // seconds there is what printed `retry in 201s` for a `Retry-After: 200`:
+  // the snapshot is the START of the current second, so a millisecond deadline
+  // measured against it rounds up to one second more than the api sent.
+  // lib/state/retry.ts carries the argument and the test.
+  //
   // `null` whenever nothing is being waited out, which is almost always.
   const [freeAt, setFreeAt] = useState<number | null>(null);
   // THE DWELL THAT ACTUALLY LEFT, which is not the one the trace draws. The
@@ -200,11 +206,8 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
   // the hydration pass count nothing down.
   const second = useSyncExternalStore(subscribeClock, secondSnapshot, secondServerSnapshot);
 
-  // WHOLE SECONDS, ROUNDED UP, so the last one is a second the visitor actually
-  // waits. Rounding down would free the button while the api would still refuse
-  // it, which is a countdown that lies at exactly the moment it matters.
-  const waitSec =
-    freeAt === null || second === 0 ? 0 : Math.max(0, Math.ceil((freeAt - second * 1000) / 1000));
+  // Both operands are seconds, so this is a subtraction and not a conversion.
+  const waitSec = freeAt === null || second === 0 ? 0 : secondsLeft(freeAt, second);
   const waiting = waitSec > 0;
 
   // THE BODY AS IT STANDS, built by the one function that builds the body that
@@ -402,7 +405,7 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
     // duration to lock it for.
     setFreeAt(
       result.status === 429 && result.retryAfterSec !== null
-        ? answeredAt + result.retryAfterSec * 1000
+        ? deadlineSecond(answeredAt, result.retryAfterSec)
         : null,
     );
 

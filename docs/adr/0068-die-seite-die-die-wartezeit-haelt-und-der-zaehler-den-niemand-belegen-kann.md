@@ -110,6 +110,33 @@ neben `retryLine()`, in die Datei, der beide Formen derselben Zeile gehören.
 `retryLine()` bleibt ohne Aufrufer außerhalb der Galerie, und **#231 bleibt
 offen mit einem gemessenen Grund statt einer Vermutung.**
 
+### 3b. Der Countdown rechnet in Sekunden, weil die Uhr eine Sekunde grob ist
+
+Die erste Fassung hielt die Frist in Millisekunden und verglich sie mit der Uhr,
+die eine React-Komponente lesen darf: `secondSnapshot()`, also
+`Math.floor(Date.now() / 1000)` — der **Anfang** der laufenden Sekunde, bis zu
+999 ms in der Vergangenheit. Aufgerundet wurde daraus eine Sekunde zu viel:
+**`retry in 201s` bei einem `Retry-After: 200`.**
+
+Eine Zahl, die größer ist als die gemessene, ist eine erfundene Zahl. Invariante
+1 wird nicht weicher, weil der Fehler klein ist und in die sichere Richtung
+zeigt — und die Zahl steht auf der Fläche, deren ganzer Zweck Genauigkeit ist.
+
+Gerechnet wird deshalb durchgehend in Sekunden: `deadlineSecond()` legt die
+Frist in dieselbe Einheit, in der die Uhr antwortet, und `secondsLeft()` ist eine
+Subtraktion. Im Moment der Antwort steht damit **exakt die Zahl der API** auf dem
+Schirm.
+
+**Was das kostet, am anderen Ende:** eine Antwort bei .999 einer Sekunde gibt den
+Button bis zu eine Sekunde zu früh frei. Das ist eine Höflichkeit, die zu früh
+endet, keine Durchsetzung, die versagt — die API entscheidet, und sie beantwortet
+einen verfrühten Versuch mit einem frischen `429` samt frischer Messung.
+
+**Gefunden hat das die CI, nicht der lokale Lauf.** Von sieben Prüfbreiten fiel
+genau eine, weil die Sekundengrenze zufällig anders lag; lokal war derselbe Test
+grün. Die Arithmetik liegt jetzt in `lib/state/retry.ts` unter `node --test`,
+wo sie nicht vom Zeitpunkt eines Browserlaufs abhängt.
+
 ### 4. Das Protokoll druckt Beobachtungen, und die Dauer ist die wichtigste
 
 ```
