@@ -12,6 +12,65 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Nachtrag zur H7b-Abnahme — der Zeuge kam nach, und er hat etwas gefunden
+
+Die Abnahme unten sagt, der Zeuge über den Tausch von `c070a85` fehle und die
+zwölfte Stichprobe komme vom Tausch des Abnahme-PRs. Sie ist gekommen, und sie
+ist die schärfste bisher.
+
+`69e0ef9`, Merge 18:36:49Z. Zeuge ab **18:36:53Z** — vier Sekunden nach dem
+Merge, vier Pfade, zwei `web`, zwei `api`:
+
+```
+/                619 Anfragen   618 × 200, 1 × 503
+/about           619 Anfragen   618 × 200, 1 × 503
+/api/health      619 Anfragen   619 × 200
+/api/systems     619 Anfragen   619 × 200
+```
+
+**Beide web-Pfade in derselben Sekunde, beide api-Pfade sauber.** Genau dafür
+gibt es die Aufteilung seit H5c: wäre der Ursprung weg gewesen oder das Netz,
+wären alle vier ausgefallen.
+
+### Wo die Sekunde liegt — zum ersten Mal an einem Container festgemacht
+
+Container-Startzeiten aus der Panel-API, die Zeugen-Sekunden dagegen gerechnet:
+
+```
+Deploy-Job (Actions)   18:46:21Z → 18:46:46Z     Sekunde 569 … 594
+api gestartet          18:46:58.043Z            Sekunde 606
+web gestartet          18:47:04.034Z            Sekunde 612   (+5,99 s nach api)
+503 auf / und /about   18:47:10Z                Sekunde 618   (+6,0 s nach web)
+Zeuge endet            18:47:11Z                Sekunde 619   (+7,0 s nach web)
+```
+
+Das Loch liegt **sechs Sekunden nach dem Start des web-Containers**. 503 heißt,
+dass Traefik in dieser Sekunde kein gesundes Backend für web hatte — der alte
+war weg, der neue noch nicht bereit. Der überlappende Start (ADR 0035)
+überlappt für web also nicht genug.
+
+**Der Abstand api → web ist 5,99 s** und bestätigt die 5,9 s aus der
+H5c-Abnahme fast auf die Hundertstel. Die „rund zwanzig Sekunden" der
+ursprünglichen H5c-Notiz waren aus Anfragenummern hergeleitet und sind damit
+zum zweiten Mal widerlegt.
+
+**Zwölf Tausche gemessen, drei mit Loch.** Der erste, bei dem die Sekunde einem
+einzelnen Container zugeordnet werden kann statt nur einem Zeitraum. An #304
+geschrieben.
+
+### Was die Messung nicht sagt, und die Aufgabe daraus
+
+**Der Zeuge endet 7,0 s nach dem web-Start.** `--until-sha` stoppt am neuen
+**api**-Prozess plus Nachlauf, und web kommt danach. Die Einschränkung steht
+seit H5c und ist hier zum ersten Mal in Zahlen sichtbar: das Fenster deckt den
+*Anfang* von webs Startphase ab, nicht ihr Ende. Ob nach 18:47:11Z noch eine
+Sekunde rot war, weiß ich nicht.
+
+**Aufgabe:** der Nachlauf gehört an den **web**-Container, nicht an den
+api-Prozess. Abnahmekriterium: der Zeuge läuft nachweislich über den Start
+beider Container hinaus. Solange das nicht so ist, misst er systematisch genau
+den Container nicht zu Ende, der alle drei bekannten Löcher erzeugt hat.
+
 ## Wo wir stehen — 03.09.2026, H7b abgenommen: 10 von 10, und ein Zeuge, der fehlt
 
 `c070a85` läuft. Merge 14:08:47Z, Deploy-Job 14:18:21Z–14:18:56Z (**35 s**),
