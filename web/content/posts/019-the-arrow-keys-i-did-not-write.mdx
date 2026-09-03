@@ -1,0 +1,193 @@
+---
+title: 'The arrow keys I did not write'
+deck: 'The design for my about page drives its timeline with a script: six divs with tabindex, a keydown handler that rebuilds the arrow keys by hand, and a paint function that writes colour literals into the DOM. A radio group does all of it natively, for zero bytes — and it works with JavaScript switched off, which the script never could.'
+published: 2026-09-03
+tags: ['html', 'accessibility', 'performance', 'css']
+systemId: 'timseil-dev'
+summary: |
+  My about page needed a timeline you can step through with the arrow keys. The
+  design handed me a script for it, and an earlier decision of my own had
+  already reserved a client component for the job. Neither was necessary: six
+  radio inputs and six labels give arrow-key stepping, a single tab stop for the
+  whole group, click-to-select and a state machine in three CSS selectors, at a
+  measured cost of zero bytes. The page is still byte-for-byte identical to my
+  homepage. Along the way the component turned out to be the first thing on the
+  site ever to render a CSS class that two other stylesheets had been
+  referencing since the first stage.
+---
+
+My about page has a trajectory rail: six stations across the page, a line that
+fills up to the one you have chosen, and a panel underneath that changes with
+it. The build plan calls it "the big interactive moment" of the page and asks
+for two things — click a station, or step through with `←` and `→`.
+
+The design handoff draws it, and it draws the implementation too:
+
+```jsx
+<div data-yi="0" tabindex="0" role="button"
+     onClick={onPick} onKeyDown={onKey}>
+```
+
+with a handler that rebuilds the keyboard by hand:
+
+```js
+if (e.key === "ArrowRight" || e.key === "ArrowDown") { set(i + 1); e.preventDefault(); }
+if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   { set(i - 1); e.preventDefault(); }
+if (e.key === "Enter" || e.key === " ")              { set(+e.currentTarget.dataset.yi); e.preventDefault(); }
+```
+
+and a `paint()` that runs on every change, writing six colour literals directly
+into `style.background`.
+
+I had also, two phases earlier, written an architecture decision record that
+reserved a client component for exactly this. The previous page on the site is a
+filtered list, the filter needed React state, and the record I wrote said the
+about page's rail would inherit the pattern.
+
+Both of those were wrong, and the thing that made them wrong is a form control
+from 1995.
+
+## What a radio group already is
+
+Six `<input type="radio">` sharing a `name`, each with a `<label>`:
+
+| what the rail needs | where it comes from |
+|---|---|
+| `←` `→` select the previous/next station | native |
+| `↑` `↓` do the same | native |
+| **one** tab stop for all six | native — roving tabindex |
+| click a station to select it | `<label for>` |
+| the selected state, without script | `:checked` |
+
+That last row is the one that changes the shape of the whole component. The
+sheet's `paint()` exists because JavaScript is holding the state, so JavaScript
+has to draw it. If the state lives in the document, CSS can read it:
+
+```css
+.tl-item                 { /* past   — the default */ }
+:checked ~ .tl-item      { /* future */ }
+:checked + .tl-item      { /* active */ }
+```
+
+Three selectors and a source order, in place of a function that assigns
+`dot.style.background = on ? "#00E5FF" : "#0A0E14"` six times per keystroke.
+
+Note which state is the default and why. The sibling combinator only reaches
+*forward*: I can name every label after the checked one, and I cannot name the
+ones before it. So "past" is not a selector, it is what a label looks like when
+nothing has named it, and the two states that *can* be named are the other two.
+That inversion is the only piece of cleverness in the file, and it is forced
+rather than chosen.
+
+## The number
+
+I measure the initial JavaScript of each route by hand — every `<script src>` in
+the prerendered document, gzipped per file — because my tooling only knows about
+one route and this is a different one.
+
+```
+/         143,856 B gzip   7 files
+/work     145,482 B gzip   8 files
+/about    143,856 B gzip   7 files
+```
+
+`/work` carries the filter island from the previous phase: 1,626 bytes. `/about`
+carries a six-station rail with a keyboard interface and a transitioning fill
+line, and it is **byte-for-byte identical to my homepage**.
+
+Zero is a satisfying number, but it is not the argument.
+
+## The argument
+
+My framework, in the configuration this site runs, has a known behaviour I have
+an open issue about: a streamed placeholder stays where it is if JavaScript
+never arrives. There is already one thing on this site that does not work
+without scripts.
+
+A hand-written keyboard handler would have made the rail the second — on the
+page whose entire argument is that it only says what it can back. So the test
+that matters is not the byte count:
+
+```ts
+test("the rail works with JavaScript turned off", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, … });
+  const page = await context.newPage();
+  await page.goto("/about");
+
+  await page.locator(".tl-item").nth(4).click();
+  await expect(page.locator(".tl-panel:visible .tl-head-title"))
+    .toHaveText("Own infrastructure");
+
+  await page.locator(".tl-input").nth(4).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator(".tl-panel:visible .tl-head-title"))
+    .toHaveText("Go, and the container habit");
+});
+```
+
+That test is the whole trade written down. It is also the one assertion the
+sheet's implementation could never have passed, and the reason I would take this
+approach again even if the two versions weighed the same.
+
+## The one behaviour I did not keep
+
+The sheet's script clamps at both ends:
+
+```js
+const set = (i) => state.i = Math.max(0, Math.min(TL.length - 1, i));
+```
+
+A native radio group **wraps**. Press `←` on the first station and you land on
+the last one. I found this by pressing the key rather than by reading the spec,
+which is the correct order for a claim about behaviour: my first test asserted
+clamping, and it passed for the wrong reason — six presses in a six-station
+group land you back where you started, so a wrap looks exactly like a clamp
+until you count.
+
+I kept the wrapping. Two reasons. The WAI-ARIA authoring practices specify
+wrapping for radio groups, so a reader who has met one anywhere else already
+knows what this does. And clamping would mean taking the keys back off the
+browser and reimplementing them in a client component — paying the entire cost I
+had just avoided, in order to take the word "timeline" slightly more literally.
+
+It is written down as a deliberate divergence, with a test that asserts the
+wrap, so that it stays a decision rather than becoming a bug somebody fixes.
+
+## The class that had been referenced for four stages and drawn never
+
+The panel lists what each station taught, as tags. I used `.tag`, because
+`layout.css` has listed `.tag` in its 44-pixel touch-target rule since the first
+styling stage, and `chrome.css` has carried
+
+```css
+.menu-section .tag { letter-spacing: .06em; font-weight: 400; }
+```
+
+since the stage after that.
+
+`.tag` was not defined anywhere. That modifier has been modifying nothing for
+four stages, and the touch-target rule has been sizing an element that never
+existed. The first thing on this site to render one was this panel, and it drew
+three tags as one unbroken line of body text.
+
+This is the same shape as a finding from two phases ago, when a breakpoint that
+had been in my stylesheet since the beginning turned out never to have had a
+component under it: **a value in a stylesheet is not a decision just because it
+is in a stylesheet.** A class that is named in two rules and drawn in none has
+nothing it can be wrong against. It becomes wrong the moment something renders
+it, and not one second earlier.
+
+## What I would tell myself two phases ago
+
+The decision record I wrote then asked the wrong question. It asked whether this
+component should be a client island, and answered yes by analogy with the one
+before it.
+
+The question that would have saved the analogy is narrower:
+
+> Is there a form control that already holds this state?
+
+For a filtered list there is not — "which chips are pressed, and therefore which
+rows exist" is not a thing any element models, so that one really did need
+state. For "which one of six", there is, and it has been in the platform longer
+than every framework I have ever used.

@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 
+import { TrajectoryPanel } from "@/components/about/TrajectoryPanel";
+import { TrajectoryRail } from "@/components/about/TrajectoryRail";
 import { IncidentLog } from "@/components/case/IncidentLog";
 import { OpsGrid } from "@/components/case/OpsGrid";
 import { SpecRail } from "@/components/case/SpecRail";
@@ -27,6 +29,7 @@ import type { Incident, OpsCell, SystemDetail, SystemList } from "@/lib/api/syst
 import { modules, type ModuleView } from "@/lib/api/training";
 import { Log } from "@/components/home/Log";
 import type { PostRead } from "@/lib/content/posts";
+import { STATIONS } from "@/lib/about/trajectory";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
 import { en } from "@/lib/i18n/messages/en";
@@ -1005,6 +1008,45 @@ export default function GalleryPage() {
         </div>
       </section>
 
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name" id="gal-tl-name">TrajectoryRail</h2>
+          <span className="gal-where">`/about` · SYS.05.01 · six stations, no script</span>
+        </div>
+        <p className="gal-states">
+          The inventory asks for `jahr aktiv`, `inaktiv` and `tastatur ← →`, and
+          two of the three are below: the chosen station and the ones that are
+          not. The third has nothing to draw — this is a radio group, so the
+          arrows are the browser&rsquo;s and there is no class for them. Press
+          them here and the rail answers; `e2e/about.spec.ts` is where that is
+          asserted, because a keystroke is not a state.
+        </p>
+        <p className="gal-states">
+          The rail rests on `NOW`. Everything behind the chosen station carries a
+          half-accent ring, everything after it a plain one, and the line runs to
+          the centre of the chosen dot rather than to the edge of its column.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <TrajectoryRail
+            name="gal-tl"
+            labelledBy="gal-tl-name"
+            panels={STATIONS.map((station) => (
+              <TrajectoryPanel
+                key={station.key}
+                station={station}
+                soon={en.aboutStationSoon}
+                pickedUp="PICKED UP"
+                shippedLabel="SHIPPED"
+                /* THE GALLERY GATES THE LINK THE WAY THE PAGE DOES, so a station
+                   whose system has no page draws no shipped cell here either. A
+                   fixture that handed every station an href would draw a state
+                   the site cannot produce. */
+                href={station.shipped === null ? null : `/work/${station.shipped.slug}`}
+              />
+            ))}
+          />
+        </div>
+      </section>
       {/* ── What is not built ────────────────────────────────────────────────
           The inventory, minus what stands above. Each one names the phase that
           owes it, because a dead cell without a reason is a bug — the gallery

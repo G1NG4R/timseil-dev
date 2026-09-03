@@ -248,3 +248,248 @@
   color: var(--steel);
   margin: 0;
 }
+
+/* ── SYS.05.01 · the trajectory rail ────────────────────────────────────────
+   H7b. Six radios, six labels, and no script — components/about/TrajectoryRail
+   .tsx carries the argument and ADR 0066 the arithmetic. What this file does is
+   the half the browser does not: make a radio group look like a rail.
+
+   THE STATE MACHINE IS THREE SELECTORS AND A SOURCE ORDER, and it replaces the
+   sheet's `paint()`, which writes six colour literals into `style.background`
+   on every change — invariant 8, from JavaScript.
+
+       .tl-item                    past    (the default: everything behind you)
+       :checked ~ .tl-item         future  (every label after the chosen one)
+       :checked + .tl-item         active  (the chosen one, and it wins by
+                                            standing later in this file)
+
+   The sibling combinator only reaches FORWARD, which is why "past" is the
+   default rather than a selector: there is no way to name the labels BEFORE the
+   checked one, so the rule is inverted and the two that can be named are.     */
+
+.tl { display: block; }
+
+/* `position: relative` for the track and the fill; the six columns are the
+   sheet's own `repeat(6,1fr)`. layout.css turns it into a stack under its
+   switch, as it does for every other grid on this site. */
+.tl-rail {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin-block-end: var(--s-34);
+}
+
+/* VISUALLY HIDDEN AND STILL FOCUSABLE. `display: none` or `visibility: hidden`
+   would take the radios out of the focus order, and a radio group nobody can
+   tab into is a rail nobody can operate. Off the box with zero opacity keeps
+   them in it; `pointer-events: none` keeps the invisible box from swallowing a
+   click meant for the label. */
+.tl-input {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+  margin: 0;
+}
+
+.tl-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  cursor: pointer;
+  padding-inline-end: var(--s-16);
+}
+
+/* THE FOCUS RING GOES ON THE LABEL, and this is the one rule the whole
+   arrangement stands on. globals.css draws `:focus-visible` on the focused
+   element, and the focused element here is a 1px transparent box in the corner
+   — a ring nobody can see, on a control that is being operated by keyboard. */
+.tl-input:focus-visible + .tl-item {
+  outline: var(--focus-ring);
+  outline-offset: var(--s-4);
+}
+
+.tl-label {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  block-size: var(--s-26);
+}
+
+/* NOT A `.st-dot`. That class is the geometry of a STATE and takes its fill
+   from a claim; a station makes none. The size is the sheet's 11px, which is a
+   component's own dimension in the same class as the 5px mark on a tile.
+
+   THE BASE RULE IS THE `PAST` STATE, and that is the inversion the sibling
+   combinator forces: the labels BEFORE the checked one cannot be named, so they
+   are what a label is when nothing has named it. The sheet draws them with a
+   half-strength accent border, which is `--acc-line`. */
+.tl-dot {
+  inline-size: 11px;
+  block-size: 11px;
+  border-radius: var(--radius-dot);
+  border: 1px solid var(--acc-line);
+  background: var(--bg);
+  transition: background var(--d-color) var(--e-out), border-color var(--d-color) var(--e-out);
+}
+
+.tl-cap {
+  font: 400 var(--t-mono-10)/1.5 var(--mono);
+  color: var(--dim);
+  margin-block-start: var(--s-14);
+}
+
+/* ---- future: every label after the chosen one ----------------------------- */
+.tl-input:checked ~ .tl-item .tl-dot {
+  border-color: var(--line-strong);
+}
+
+/* ---- active: the chosen label, last in this file so it wins ---------------- */
+/* `0 0 10px` IS A LENGTH AND `--acc-pulse` IS THE COLOUR, which is the split
+   check-tokens.sh polices and the split globals.css already uses in `ts-pulse`
+   ("0 0 8px var(--acc-pulse)"). The sheet draws `rgba(0,229,255,.6)`; the token
+   is 70% and is the one this site has. No new token was minted for a shadow. */
+.tl-input:checked + .tl-item .tl-dot {
+  background: var(--acc);
+  border-color: var(--acc);
+  box-shadow: 0 0 10px var(--acc-pulse);
+}
+
+.tl-input:checked + .tl-item .tl-label {
+  color: var(--acc);
+}
+
+.tl-input:checked + .tl-item .tl-cap {
+  color: var(--ink);
+}
+
+/* ---- the track and the line that runs along it ---------------------------- */
+
+/* `top: 34px` in the sheet is the label box plus the dot's own half — here it
+   is derived from the two instead of typed a third time: the label is --s-26
+   tall and the dot is 11, so the line sits at 26 + 5. */
+.tl-track,
+.tl-fill {
+  position: absolute;
+  inset-block-start: calc(var(--s-26) + 5px);
+  inset-inline-start: 0;
+  block-size: 1px;
+}
+
+.tl-track {
+  inset-inline-end: 0;
+  background: var(--line-strong);
+}
+
+/* SIX RULES AND NOT A MEASUREMENT. The sheet reads the dot's box with
+   `getBoundingClientRect()` on every paint — a number taken before the display
+   face has loaded and then never again, because it has no resize handling. The
+   fill is a percentage of the track, and lib/about/trajectory.ts holds the six
+   values under test: `(index + 0.5) / 6`, so the line ends UNDER the mark it
+   points at rather than past it. */
+/* THE SIX RULES SET A DISTANCE, NOT AN AXIS, and that is what keeps them six.
+   The rail runs across above the switch and down below it; a fill written as a
+   width would need a second set of six for the height, and twelve rules for one
+   idea is how two of them start disagreeing. `--fill` is how far along the
+   track the line has run, and layout.css decides which way "along" points. */
+.tl-fill {
+  --fill: 0%;
+  background: var(--acc);
+  box-shadow: 0 0 8px var(--acc-pulse);
+  inline-size: var(--fill);
+  transition: inline-size var(--d-wipe) var(--e-wipe), block-size var(--d-wipe) var(--e-wipe);
+}
+
+.tl-input:nth-of-type(1):checked ~ .tl-fill { --fill: 8.3333%; }
+.tl-input:nth-of-type(2):checked ~ .tl-fill { --fill: 25%; }
+.tl-input:nth-of-type(3):checked ~ .tl-fill { --fill: 41.6667%; }
+.tl-input:nth-of-type(4):checked ~ .tl-fill { --fill: 58.3333%; }
+.tl-input:nth-of-type(5):checked ~ .tl-fill { --fill: 75%; }
+.tl-input:nth-of-type(6):checked ~ .tl-fill { --fill: 91.6667%; }
+
+/* ---- the panels ----------------------------------------------------------- */
+
+/* `:has()` AND NOT A SIBLING CHAIN, because the panels are not siblings of the
+   radios — the radios live inside the rail and the panels beside it. The
+   alternative was to flatten both into one parent and lose the grid that makes
+   the rail a rail. Baseline since 2023 in all three engines this site checks. */
+.tl-panel {
+  display: none;
+  --mark-color: var(--line-strong);
+  --mark-len: 14px;
+  background-color: var(--panel);
+  padding: var(--s-26) var(--s-34);
+  gap: var(--s-56);
+  align-items: start;
+}
+
+.tl:has(.tl-input:nth-of-type(1):checked) .tl-panel:nth-child(1),
+.tl:has(.tl-input:nth-of-type(2):checked) .tl-panel:nth-child(2),
+.tl:has(.tl-input:nth-of-type(3):checked) .tl-panel:nth-child(3),
+.tl:has(.tl-input:nth-of-type(4):checked) .tl-panel:nth-child(4),
+.tl:has(.tl-input:nth-of-type(5):checked) .tl-panel:nth-child(5),
+.tl:has(.tl-input:nth-of-type(6):checked) .tl-panel:nth-child(6) {
+  display: grid;
+}
+
+.tl-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-14);
+  margin: 0 0 var(--s-16);
+}
+
+.tl-head-no {
+  font: 600 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}
+
+.tl-head-title {
+  font: 500 var(--t-disp-26)/1.2 var(--display);
+  color: var(--ink);
+}
+
+.tl-body {
+  max-width: 62ch;
+  font: 400 var(--t-body-15)/var(--lh-body) var(--body);
+  color: var(--ink-2);
+  margin: 0;
+}
+
+/* The five that have no paragraph yet. `[SOON]` keeps the accent so the eye
+   reads it as the site's own token rather than as a word in the sentence. */
+.tl-soon {
+  max-width: 62ch;
+  font: 400 var(--t-body-15)/var(--lh-body) var(--body);
+  color: var(--steel);
+  margin: 0;
+}
+
+.tl-soon-mark {
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.tl-aside-label {
+  font: 600 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+  margin: 0 0 var(--s-16);
+}
+
+.tl-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-6);
+  margin: 0 0 var(--s-20);
+}
+
+.tl-shipped {
+  font: 400 var(--t-mono-11)/1.7 var(--mono);
+  margin: 0;
+}
