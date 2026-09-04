@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/httpx"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
@@ -35,6 +36,15 @@ import (
 // the pick is the right one.
 const cacheControl = httpx.CacheControlShort
 
+// deliverabilityWindowDays is the window docs/slo.md defines for the fifth SLI,
+// and the only place thirty is written.
+//
+// It fills the query's interval AND the windowDays field of the answer, so the
+// number a reader is told cannot drift from the number that was measured. That
+// is invariant 7's rule — "die Zahl muss nachzählbar bleiben" — applied to a
+// second window; systems.DefaultWindow holds 91 for the same reason.
+const deliverabilityWindowDays = 30
+
 // Queries is the slice of the store this endpoint needs. Narrow on purpose: it
 // is what lets every branch below — including the ones that only happen on an
 // empty database or a broken one — be tested without Postgres.
@@ -43,6 +53,7 @@ type Queries interface {
 	SelfState(ctx context.Context, slug string) (string, error)
 	LatestMetrics(ctx context.Context, slug string) (store.LatestMetricsRow, error)
 	LastDeploy(ctx context.Context, slug string) (store.LastDeployRow, error)
+	ContactDeliverability(ctx context.Context, window pgtype.Interval) (store.ContactDeliverabilityRow, error)
 }
 
 // Build is what the binary knows about itself. The contract requires both
@@ -128,6 +139,23 @@ func (h *Handler) GetHealth(ctx context.Context, req httpx.GetHealthRequestObjec
 		}
 	}
 
+	// OUTSIDE THE `live` GATE, and deliberately, because invariant 3 is about the
+	// three numbers above it and not about this one. Those are per-system and
+	// measured at the reverse proxy; a system that has left `live` must not keep
+	// publishing them. The contact form goes on accepting messages either way,
+	// and a delivery rate that blanked itself the moment the self system was
+	// mis-seeded would hide the queue exactly when somebody is looking at it.
+	//
+	// No pgx.ErrNoRows branch: the query is two count()s, and count() over no
+	// rows is zero rather than no row. An error here is a real surprise —
+	// HealthCounts has already answered, so the database is reachable — and
+	// there is no honest value to put in `accepted` instead.
+	delivery, delErr := h.queries.ContactDeliverability(ctx, deliverabilityWindow())
+	if delErr != nil {
+		return nil, delErr
+	}
+	ops.Deliverability = deliverabilityOf(delivery)
+
 	deploy, dErr := h.queries.LastDeploy(ctx, h.selfSlug)
 	switch {
 	case errors.Is(dErr, pgx.ErrNoRows):
@@ -201,6 +229,50 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// log line.
 		h.log.ErrorContext(r.Context(), "writing the health response", "err", err)
 	}
+}
+
+// deliverabilityWindow is the constant as the query wants it.
+//
+// Days rather than Microseconds, which is where internal/contact spells its own
+// ten-minute window. The unit is the one docs/slo.md uses, so nothing has to be
+// multiplied out and read back; `30` appears in the interval exactly as it
+// appears in the answer.
+//
+// The two are not always the same interval — Postgres subtracts `30 days` by the
+// calendar and `720 hours` by the clock, and they part company over a
+// daylight-saving boundary. They agree for this database, whose session runs in
+// UTC, so this is a choice about which spelling states the definition rather
+// than a correction of one that would measure wrongly.
+func deliverabilityWindow() pgtype.Interval {
+	return pgtype.Interval{Days: deliverabilityWindowDays, Valid: true}
+}
+
+// deliverabilityOf turns two counts into the contract's object.
+//
+// THE DIVISION IS HERE AND NOT IN SQL, and queries/health.sql says why: written
+// as a CASE the generator types the column `interface{}`, and given an outer
+// cast it types it a non-pointer `float64` that cannot hold the null. Both
+// counts infer exactly, so the one branch that matters is written where a test
+// reaches it without Postgres.
+//
+// `rate` IS NULL AND NOT ZERO WHEN NOTHING WAS ACCEPTED. 0/0 is not 0 %. A form
+// nobody has used yet is not a form that loses messages, and `0.00 %` on the
+// only conversion point of this site would be the loudest invented number it
+// could print (invariant 1).
+//
+// A percentage and not a fraction, unlike errorRate: the target is written as
+// `> 99 %` in docs/slo.md, and uptime90d next to it is already a percentage.
+func deliverabilityOf(row store.ContactDeliverabilityRow) httpx.Deliverability {
+	out := httpx.Deliverability{
+		Accepted:   int(row.Accepted),
+		Delivered:  int(row.Delivered),
+		WindowDays: deliverabilityWindowDays,
+	}
+	if row.Accepted > 0 {
+		rate := float64(row.Delivered) / float64(row.Accepted) * 100
+		out.Rate = &rate
+	}
+	return out
 }
 
 // etagOf hashes the answer without generatedAt.

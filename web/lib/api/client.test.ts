@@ -47,7 +47,11 @@ const HEALTH = {
   sha: "1656fd4",
   startedAt: "2026-08-28T18:26:15Z",
   generatedAt: "2026-08-28T18:57:09Z",
-  ops: { uptime90d: 100, p95Ms: 24.25, errorRate: 0, measuredAt: null, systemsLive: 1, systemsTotal: 2, lastDeploy: null },
+  ops: {
+    uptime90d: 100, p95Ms: 24.25, errorRate: 0, measuredAt: null,
+    systemsLive: 1, systemsTotal: 2, lastDeploy: null,
+    deliverability: { rate: null, delivered: 0, accepted: 0, windowDays: 30 },
+  },
 };
 
 describe("apiGet reads an answer", () => {

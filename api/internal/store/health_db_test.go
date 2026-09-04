@@ -15,11 +15,13 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/G1NG4R/timseil-dev/api/internal/dbtest"
+	"github.com/G1NG4R/timseil-dev/api/internal/fixtures"
 	"github.com/G1NG4R/timseil-dev/api/internal/seed"
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
@@ -139,5 +141,120 @@ func TestMetricsAreRefusedForASystemThatIsNotLive(t *testing.T) {
 	// vat-check is seeded as queued, so its measurement must not be readable.
 	if _, err := q.LatestMetrics(ctx, "vat-check"); !errors.Is(err, pgx.ErrNoRows) {
 		t.Errorf("LatestMetrics returned numbers for a system that is not live: %v", err)
+	}
+}
+
+// ------------------------------------------------------------- deliverability
+//
+// Issue #206. The handler tests next door prove what Go does with two counts;
+// these prove the counts, and above all the one thing a stub cannot reach — the
+// window boundary, which is the only part of this query that involves a clock.
+
+// The test's own window, not internal/health's. Thirty is what docs/slo.md
+// defines, but a store test that imported the production constant would go red
+// the day the policy moved without a single query being wrong — the rule
+// contact_db_test.go states for testWindow.
+const deliverabilityWindow = 30 * 24 * time.Hour
+
+// deliverabilityIn asks the query and fails the test rather than the caller.
+func deliverabilityIn(t *testing.T, q *store.Queries, window time.Duration) store.ContactDeliverabilityRow {
+	t.Helper()
+
+	row, err := q.ContactDeliverability(context.Background(), interval(window))
+	if err != nil {
+		t.Fatalf("ContactDeliverability: %v", err)
+	}
+	return row
+}
+
+// Day one at the level the handler cannot see. LatestMetrics answers
+// pgx.ErrNoRows on an empty database and this one must NOT: count() over no rows
+// is zero, so "nobody has written yet" is a row of two zeros and an answer. The
+// difference matters because the caller has no ErrNoRows branch — if this query
+// ever started returning no row, /api/health would answer 500 on a fresh
+// database, which is the one moment the deploy gate is watching.
+func TestAnEmptyMessageTableAnswersWithTwoZeros(t *testing.T) {
+	q, _ := loadedPool(t, fixtures.Empty)
+
+	row := deliverabilityIn(t, q, deliverabilityWindow)
+	if row.Accepted != 0 || row.Delivered != 0 {
+		t.Errorf("counts = %d / %d on an empty table, want 0 / 0", row.Delivered, row.Accepted)
+	}
+}
+
+// The three delivery states, each counted where it belongs. 'sent' is the only
+// one in the numerator; 'queued' and 'failed' are both in the denominator and
+// neither is in the numerator, because neither has been delivered.
+func TestOnlySentCountsAsDelivered(t *testing.T) {
+	q, pool := loadedPool(t, fixtures.Empty)
+	ctx := context.Background()
+
+	sent := aSubmission()
+	sent.id = "msg_0000000000000101"
+	mustInsert(t, q, sent)
+	if err := q.MarkContactMessageSent(ctx, store.MarkContactMessageSentParams{ID: sent.id}); err != nil {
+		t.Fatalf("MarkContactMessageSent: %v", err)
+	}
+
+	failed := aSubmission()
+	failed.id = "msg_0000000000000102"
+	failed.hash = 0x02
+	mustInsert(t, q, failed)
+	reason := "relay refused the recipient"
+	if err := q.MarkContactMessageFailed(ctx, store.MarkContactMessageFailedParams{
+		DeliveryStatus: "failed", LastError: &reason, ID: failed.id,
+	}); err != nil {
+		t.Fatalf("MarkContactMessageFailed: %v", err)
+	}
+
+	// The third one is left as the insert wrote it: 'queued', still in flight.
+	queued := aSubmission()
+	queued.id = "msg_0000000000000103"
+	queued.hash = 0x03
+	mustInsert(t, q, queued)
+
+	if got := rowCount(t, pool); got != 3 {
+		t.Fatalf("%d rows, want 3", got)
+	}
+
+	row := deliverabilityIn(t, q, deliverabilityWindow)
+	if row.Accepted != 3 {
+		t.Errorf("accepted = %d, want 3 — every row that got a 202 is in the denominator",
+			row.Accepted)
+	}
+	if row.Delivered != 1 {
+		t.Errorf("delivered = %d, want 1 — queued and failed have both not been delivered",
+			row.Delivered)
+	}
+}
+
+// THE WINDOW BOUNDARY, and the only assertion here a stub cannot make. A message
+// from before the window must not be in either count: a failure thirty-one days
+// ago is not a statement about the last thirty. Without this the query would
+// still pass every handler test in the repository while measuring all of history.
+func TestAMessageOlderThanTheWindowIsOutsideBothCounts(t *testing.T) {
+	q, pool := loadedPool(t, fixtures.Empty)
+
+	inside := aSubmission()
+	inside.id = "msg_0000000000000111"
+	mustInsert(t, q, inside)
+
+	outside := aSubmission()
+	outside.id = "msg_0000000000000112"
+	outside.hash = 0x02
+	mustInsert(t, q, outside)
+	backdate(t, pool, outside.id, 31*24*time.Hour)
+
+	row := deliverabilityIn(t, q, deliverabilityWindow)
+	if row.Accepted != 1 {
+		t.Errorf("accepted = %d, want 1 — the 31-day-old row is outside a 30-day window",
+			row.Accepted)
+	}
+
+	// And the same rows through a window wide enough to hold both, so that the
+	// test above cannot pass because the fixture failed to write the second row.
+	if wide := deliverabilityIn(t, q, 60*24*time.Hour); wide.Accepted != 2 {
+		t.Errorf("accepted = %d over sixty days, want 2 — the old row exists, it is just outside",
+			wide.Accepted)
 	}
 }

@@ -34,6 +34,13 @@ type stubQueries struct {
 
 	deploy    store.LastDeployRow
 	deployErr error
+
+	delivery    store.ContactDeliverabilityRow
+	deliveryErr error
+
+	// The interval the handler actually asked for. Recorded rather than asserted
+	// in place, so that one test can hold it against the number in the answer.
+	askedWindow *pgtype.Interval
 }
 
 func (s stubQueries) HealthCounts(context.Context) (store.HealthCountsRow, error) {
@@ -52,8 +59,22 @@ func (s stubQueries) LastDeploy(context.Context, string) (store.LastDeployRow, e
 	return s.deploy, s.deployErr
 }
 
+func (s stubQueries) ContactDeliverability(_ context.Context, window pgtype.Interval) (
+	store.ContactDeliverabilityRow, error,
+) {
+	if s.askedWindow != nil {
+		*s.askedWindow = window
+	}
+	return s.delivery, s.deliveryErr
+}
+
 // dayOne is the state after B4's seed and before the probe has ever run: two
 // systems, one of them live, and not a single measurement anywhere.
+//
+// The zero ContactDeliverabilityRow is the truthful day-one value and not a
+// placeholder: nobody has written yet, so both counts are zero. The query
+// answers that with a row rather than pgx.ErrNoRows, which is why this field
+// carries no error twin like the four above it.
 func dayOne() stubQueries {
 	return stubQueries{
 		counts:     store.HealthCountsRow{SystemsLive: 1, SystemsTotal: 2},
@@ -61,6 +82,16 @@ func dayOne() stubQueries {
 		metricsErr: pgx.ErrNoRows,
 		deployErr:  pgx.ErrNoRows,
 	}
+}
+
+// deliverability reads the object out of an answer, or fails the test.
+func deliverability(t *testing.T, ops map[string]any) map[string]any {
+	t.Helper()
+	got, ok := ops["deliverability"].(map[string]any)
+	if !ok {
+		t.Fatalf("ops.deliverability is not an object: %v", ops["deliverability"])
+	}
+	return got
 }
 
 // errUnreachable is what a dead database actually looks like, host and port
@@ -325,12 +356,160 @@ func TestEveryRequiredFieldIsPresent(t *testing.T) {
 	}
 	ops := body["ops"].(map[string]any)
 	for _, key := range []string{"systemsLive", "systemsTotal", "lastDeploy",
-		"uptime90d", "p95Ms", "errorRate", "measuredAt"} {
+		"uptime90d", "p95Ms", "errorRate", "measuredAt", "deliverability"} {
 		if _, ok := ops[key]; !ok {
 			t.Errorf("ops has no %q, which the contract requires", key)
 		}
 	}
 	if body["status"] != string(httpx.HealthStatusOk) {
 		t.Errorf("status = %v, want ok", body["status"])
+	}
+}
+
+// ---------------------------------------------------------- deliverability
+//
+// Issue #206. The fifth SLI of docs/slo.md had a definition, a data source and
+// no way out of the database. These are the branches that answer for it.
+
+// The day-one case, and the one a falsiness check gets wrong. Nothing has been
+// accepted, so there is no quotient to form: 0/0 is not 0 %, and `0.00 %` on the
+// only conversion point of this site would read as "this form loses everything"
+// (invariant 1). The counts beside it are real zeros and stay zeros.
+func TestAnEmptyMessageBoxIsNoDataAndNotZeroPercent(t *testing.T) {
+	ops := decode(t, get(t, newHandler(t, dayOne()), ""))["ops"].(map[string]any)
+	got := deliverability(t, ops)
+
+	rate, present := got["rate"]
+	if !present {
+		t.Fatal("deliverability.rate is missing — the contract requires the key, null and all")
+	}
+	if rate != nil {
+		t.Errorf("rate = %v with nothing accepted, want null", rate)
+	}
+	if got["delivered"] != float64(0) || got["accepted"] != float64(0) {
+		t.Errorf("counts = %v / %v, want 0 / 0", got["delivered"], got["accepted"])
+	}
+	if got["windowDays"] != float64(deliverabilityWindowDays) {
+		t.Errorf("windowDays = %v, want %d", got["windowDays"], deliverabilityWindowDays)
+	}
+}
+
+// The dip this SLI is designed to show. A message the handler took but the relay
+// has not yet been given counts in the denominator and not in the numerator —
+// it has not been delivered. Reading it the other way would make a jammed queue
+// invisible for as long as it stays jammed, which is the failure the number
+// exists for.
+func TestAQueuedMessageCountsAsAcceptedAndNotDelivered(t *testing.T) {
+	q := dayOne()
+	q.delivery = store.ContactDeliverabilityRow{Accepted: 3, Delivered: 2}
+
+	got := deliverability(t, decode(t, get(t, newHandler(t, q), ""))["ops"].(map[string]any))
+
+	rate, ok := got["rate"].(float64)
+	if !ok {
+		t.Fatalf("rate = %v, want a number", got["rate"])
+	}
+	if rate < 66.6 || rate > 66.7 {
+		t.Errorf("rate = %v, want about 66.67", rate)
+	}
+	if got["delivered"] != float64(2) || got["accepted"] != float64(3) {
+		t.Errorf("counts = %v / %v, want 2 / 3", got["delivered"], got["accepted"])
+	}
+}
+
+// A message the dispatcher gave up on after five attempts is the failure a 202
+// hides: the visitor was told it was accepted and it never arrived. It has to
+// move this number, and the two counts have to make the loss legible — 9 of 10
+// is a different statement from 90 of 100 at the same percentage.
+func TestAMessageTheDispatcherGaveUpOnLowersTheRate(t *testing.T) {
+	q := dayOne()
+	q.delivery = store.ContactDeliverabilityRow{Accepted: 10, Delivered: 9}
+
+	got := deliverability(t, decode(t, get(t, newHandler(t, q), ""))["ops"].(map[string]any))
+
+	if got["rate"] != float64(90) {
+		t.Errorf("rate = %v, want 90", got["rate"])
+	}
+	if got["accepted"] != float64(10) {
+		t.Errorf("accepted = %v, want 10 — the denominator is what makes 90%% readable",
+			got["accepted"])
+	}
+}
+
+// Everything delivered is a measured 100, not a null. The empty case above and
+// this one are the two ends invariant 1 keeps apart.
+func TestEverythingDeliveredIsAMeasuredHundred(t *testing.T) {
+	q := dayOne()
+	q.delivery = store.ContactDeliverabilityRow{Accepted: 4, Delivered: 4}
+
+	got := deliverability(t, decode(t, get(t, newHandler(t, q), ""))["ops"].(map[string]any))
+	if got["rate"] != float64(100) {
+		t.Errorf("rate = %v, want 100", got["rate"])
+	}
+}
+
+// Both ends of the same number. The window the query was given and the window
+// the answer declares come from one constant, so a reader counting thirty days
+// is counting the days that were actually measured (invariant 7).
+func TestTheWindowInTheAnswerIsTheWindowThatWasAsked(t *testing.T) {
+	var asked pgtype.Interval
+	q := dayOne()
+	q.askedWindow = &asked
+
+	got := deliverability(t, decode(t, get(t, newHandler(t, q), ""))["ops"].(map[string]any))
+
+	if !asked.Valid || asked.Days != deliverabilityWindowDays {
+		t.Errorf("the query was asked for %+v, want %d days", asked, deliverabilityWindowDays)
+	}
+	// Days rather than microseconds, so that Postgres adds the window by the
+	// calendar. A DST boundary inside the window would otherwise move it by an
+	// hour without anybody changing the constant.
+	if asked.Microseconds != 0 || asked.Months != 0 {
+		t.Errorf("the window is %+v, want it expressed in days alone", asked)
+	}
+	if got["windowDays"] != float64(deliverabilityWindowDays) {
+		t.Errorf("windowDays = %v, want %d", got["windowDays"], deliverabilityWindowDays)
+	}
+}
+
+// Invariant 3 governs the three numbers above it, not this one. The contact form
+// keeps taking messages whatever state the self system is in, and a delivery rate
+// that blanked itself on a mis-seeded database would hide the queue exactly when
+// somebody has a reason to look at it.
+func TestDeliverabilityStandsEvenWhenTheSelfSystemIsNotLive(t *testing.T) {
+	q := dayOne()
+	q.state = "in_build"
+	q.delivery = store.ContactDeliverabilityRow{Accepted: 2, Delivered: 2}
+
+	body := decode(t, get(t, newHandler(t, q), ""))
+	ops := body["ops"].(map[string]any)
+
+	if body["status"] != "degraded" {
+		t.Fatalf("status = %v, want degraded", body["status"])
+	}
+	if ops["uptime90d"] != nil {
+		t.Errorf("uptime90d = %v for a system that is not live, want null", ops["uptime90d"])
+	}
+	if got := deliverability(t, ops); got["rate"] != float64(100) {
+		t.Errorf("rate = %v, want 100 — the form does not stop working when the seed is wrong",
+			got["rate"])
+	}
+}
+
+// There is no honest value for `accepted` when the query fails, and the two
+// counts are required integers. HealthCounts has already answered by this point,
+// so a failure here is a genuine surprise rather than an empty measurement — and
+// a zero would be an invented number with the weight of a measurement.
+func TestAFailedDeliverabilityQueryIsAProblemAndNotAZero(t *testing.T) {
+	q := dayOne()
+	q.deliveryErr = errUnreachable
+
+	rec := get(t, newHandler(t, q), "")
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", rec.Code)
+	}
+	if strings.Contains(rec.Body.String(), "5432") {
+		t.Errorf("the driver text reached the body: %s", rec.Body.String())
 	}
 }

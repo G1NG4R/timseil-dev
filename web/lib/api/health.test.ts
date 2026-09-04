@@ -22,6 +22,11 @@ function health(over: Record<string, unknown> = {}): Health {
       systemsLive: 1,
       systemsTotal: 2,
       lastDeploy: null,
+      // H8c, issue #206. Nothing in web reads this yet — it is here because the
+      // contract makes it required, and a fixture that left it out would be a
+      // shape /api/health cannot send. The empty-box values are the honest ones
+      // for a fixture: `rate` is null because nothing was accepted, not zero.
+      deliverability: { rate: null, delivered: 0, accepted: 0, windowDays: 30 },
     },
     ...over,
   };

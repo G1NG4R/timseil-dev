@@ -235,12 +235,14 @@ dieselbe".
 
 ---
 
-## Die drei Zahlen der Seite — F3, korrigiert in F5
+## Die drei Zahlen der Seite — F3, korrigiert in F5, erweitert in H8c
 
 `Metrics` im Contract hat drei Felder. **Zwei** kommen aus einer Recording Rule,
 das dritte nicht — und dass hier zuerst etwas anderes stand, ist der Fund von
-F5. Die Namen sind ein Vertrag, kein Etikett; `tools/check-rule-names.sh` hält
-ihn seit F5 maschinell.
+F5. Seit H8c steht eine vierte Zahl daneben, in `OpsSummary` statt in `Metrics`
+und ebenfalls ohne Regel; ADR 0069 sagt, warum sie nicht in `Metrics` gehört.
+Die Namen sind ein Vertrag, kein Etikett; `tools/check-rule-names.sh` hält ihn
+seit F5 maschinell.
 
 | Regel | Contract-Feld |
 |---|---|
@@ -250,6 +252,7 @@ ihn seit F5 maschinell.
 | `timseil:requests:error_ratio_5m` | — je Dienst, für F9 |
 | `timseil:service:availability_5m` | — je Dienst, Eingang für F10s Burn-Rate |
 | **keine** | `Metrics.uptime90d` ← `ops_days`, aus der externen Sonde |
+| **keine** | `OpsSummary.deliverability` ← `contact_messages`, direkt aus Postgres (H8c) |
 
 **Hier stand: `timseil:service:availability_5m` → `Metrics.uptime90d`, von F5
 über 91 Tage aggregiert.** Diese Abfrage kann es nicht geben. Dieser Prometheus
@@ -265,8 +268,15 @@ die Dienste — request-gewichtet, also genau das, was `Metrics.errorRate` mit
 „share of 5xx responses" behauptet. Die drei per Dienst bleiben, weil ein
 Dashboard und ein Alarm nach `service` schneiden wollen. ADR 0041 §2.
 
+**Die zweite Zeile ohne Regel ist H8c.** Die Zustellbarkeit wird bei jeder
+Antwort von `/api/health` aus `contact_messages` gezählt — kein Snapshot, keine
+Recording Rule, also auch nichts, was `check-rule-names.sh` prüfen könnte. Sie
+steht hier, damit die Tabelle vollständig bleibt und niemand die Regel sucht,
+die es nicht gibt. Ihr Dashboard-Panel gehört zu F9 wie die anderen; ADR 0069
+und `docs/slo.md` führen das als offene Zeile.
+
 Die Herleitung steht in `ops/prometheus/rules/slis.yml` neben jeder Regel, die
-Entscheidungen in ADR 0040 und ADR 0041, die SLOs in `docs/slo.md`.
+Entscheidungen in ADR 0040, ADR 0041 und ADR 0069, die SLOs in `docs/slo.md`.
 
 ### Was der p95 ist und was er nicht ist
 

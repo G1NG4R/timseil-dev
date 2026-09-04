@@ -11,6 +11,61 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const contactDeliverability = `-- name: ContactDeliverability :one
+SELECT count(*)::int                                         AS accepted,
+       count(*) FILTER (WHERE delivery_status = 'sent')::int AS delivered
+  FROM contact_messages
+ WHERE received_at > now() - $1::interval
+`
+
+type ContactDeliverabilityRow struct {
+	Accepted  int32
+	Delivered int32
+}
+
+// ContactDeliverability is the fifth SLI, and the only one this database can
+// answer on its own. docs/slo.md holds the definition; this is the query it has
+// been waiting for since F5, and issue #206 is the reason it took this long —
+// the shape of the answer was a contract decision before it was a SELECT.
+//
+// ONE ROW, ALWAYS, and for HealthCounts' reason above: count() over no rows is
+// zero, not no row. "Nobody has written yet" is therefore an answer and never a
+// pgx.ErrNoRows the caller has to translate.
+//
+// TWO COUNTS AND NOT THE QUOTIENT, which is a departure from metrics.sql, and
+// the reason is the generator rather than taste. Written as a CASE that answers
+// NULL for an empty window, sqlc types the column `interface{}`; given an outer
+// ::double precision cast it types it a plain `float64`, which is worse — the
+// scan would then fail on precisely the empty database, the one case the null
+// branch exists for. Both counts are NOT NULL and infer exactly, so the division
+// and its null branch live in internal/health, where a test reaches them without
+// Postgres. InsertMetricSnapshot keeps its CASE because uptime is a sum over
+// another table; here numerator and denominator both reach the answer anyway,
+// and a quotient beside them would be the same fact stated twice.
+//
+// 'sent' IN THE NUMERATOR, EVERYTHING IN THE DENOMINATOR. A row still 'queued'
+// has not been delivered, so it lowers the rate until it lands — at most the
+// dispatcher's last retry away (0·2·6·14·30 minutes, internal/contact/policy.go).
+// That is the direction worth having: a queue that jams is visible while it is
+// jammed rather than half an hour later. Both counts reach the answer so that a
+// reader can tell that dip from a real loss, which at a single-digit denominator
+// is the whole difference between the two.
+//
+// NO INDEX FOR THIS SCAN, and that is 00006_contact.sql's own rule: the
+// received_at index arrives "with the job, not before it". This table grows with
+// submissions rather than with measurements, and `accepted` in this very answer
+// is the instrument that will say when the scan has earned one.
+//
+// The window is an argument for the reason InsertMetricSnapshot's is: thirty is
+// written in exactly one place, and the answer carries it so that no page has to
+// assume it.
+func (q *Queries) ContactDeliverability(ctx context.Context, windowSize pgtype.Interval) (ContactDeliverabilityRow, error) {
+	row := q.db.QueryRow(ctx, contactDeliverability, windowSize)
+	var i ContactDeliverabilityRow
+	err := row.Scan(&i.Accepted, &i.Delivered)
+	return i, err
+}
+
 const healthCounts = `-- name: HealthCounts :one
 
 SELECT
@@ -25,17 +80,22 @@ type HealthCountsRow struct {
 
 // The queries behind GET /api/health.
 //
-// Three of them rather than one clever join, and that is a decision. A single
-// LEFT JOIN would save two round trips on an endpoint whose answer is cached
-// for sixty seconds — and it would hand sqlc a set of columns whose nullability
-// it cannot infer: `deploys.sha` is NOT NULL in the table, so a left-joined
-// `sha` is generated as a plain string, and the first health check on a database
-// with no deploys would fail scanning NULL into it. The generator would be
-// right about the schema and wrong about the query.
+// Five of them rather than one clever join, and that is a decision. It was three
+// in C2, and the reason has held twice since. A single LEFT JOIN would save four
+// round trips on an endpoint whose answer is cached for sixty seconds — and it
+// would hand sqlc a set of columns whose nullability it cannot infer:
+// `deploys.sha` is NOT NULL in the table, so a left-joined `sha` is generated
+// as a plain string, and the first health check on a database with no deploys
+// would fail scanning NULL into it. The generator would be right about the
+// schema and wrong about the query.
 //
 // Split, every column carries the nullability it has in its own table, and
 // "there is no row" arrives as pgx.ErrNoRows — which is the honest shape for
 // "nothing has been measured yet". Invariant 1 has somewhere to point.
+//
+// ContactDeliverability at the bottom is the fifth, and it makes the same
+// argument from the other side: two count()s infer exactly, and the one column
+// that would have needed inferring was moved into Go rather than guessed at.
 // HealthCounts always returns exactly one row, including on an empty database:
 // count() over no rows is zero, not no row. These two numbers are the only part
 // of the health answer that is never null, which is why they are the part that

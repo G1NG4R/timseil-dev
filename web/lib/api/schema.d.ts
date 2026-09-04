@@ -433,6 +433,51 @@ export interface components {
              */
             measuredAt: string | null;
         };
+        /**
+         * Deliverability
+         * @description The fifth SLI, and the only one whose source is this database rather than
+         *     Prometheus or the external probe. `docs/slo.md` holds the binding definition:
+         *     successfully delivered form submissions divided by all accepted ones, over
+         *     thirty days.
+         *
+         *     NOT A FIELD ON `Metrics`, and the reason is what those three numbers are.
+         *     They are per-system, measured at the reverse proxy, and gated by
+         *     `state = 'live'`. This one is about a queue, over a different window, and
+         *     there is exactly one contact form on this site — as a `Metrics` field every
+         *     other system would carry a permanent `null` meaning "not applicable" rather
+         *     than "not measured", and that is a second meaning for `null`.
+         */
+        Deliverability: {
+            /**
+             * Format: double
+             * @description A percentage between 0 and 100 — like `uptime90d` and unlike `errorRate`,
+             *     because the target for it is written as `> 99 %`.
+             *
+             *     `null` when nothing was accepted in the window. `0/0` is not `0 %`, and a
+             *     form nobody used is not a broken one (invariant 1).
+             * @example 100
+             */
+            rate: number | null;
+            /**
+             * @description Messages the relay took — `delivery_status = 'sent'`.
+             * @example 3
+             */
+            delivered: number;
+            /**
+             * @description Every message that was answered with a `202` and written down. One that is
+             *     still queued counts here and not in `delivered`: it has not been delivered
+             *     yet, and a queue that jams should be visible while it is jammed rather
+             *     than half an hour later.
+             * @example 3
+             */
+            accepted: number;
+            /**
+             * @description Days the window covers. It is in the answer so that no reader has to assume
+             *     it — the rule `SystemDetail.window` already follows.
+             * @example 30
+             */
+            windowDays: number;
+        };
         /** Health */
         Health: {
             /** @enum {string} */
@@ -457,6 +502,7 @@ export interface components {
             systemsLive: number;
             systemsTotal: number;
             lastDeploy: components["schemas"]["Deploy"] | null;
+            deliverability: components["schemas"]["Deliverability"];
         };
         /**
          * Badge
