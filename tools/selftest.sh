@@ -59,7 +59,8 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/check-deployed.sh" "$root/tools/registry.sh" \
    "$root/tools/prune-registry.sh" "$root/tools/witness.sh" \
    "$root/tools/rollout.sh" "$root/tools/release.sh" \
-   "$root/tools/check-rollout.sh" "$root/tools/check-tokens.sh" "$tmp/tools/"
+   "$root/tools/check-rollout.sh" "$root/tools/check-tokens.sh" \
+   "$root/tools/check-vuln.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1342,6 +1343,86 @@ accepts "absent linter skips locally"    env -u CI CHECK_LINT_BIN="$tmp/fakebin/
 rejects "absent linter rejected under CI" env CI=1 CHECK_LINT_BIN="$tmp/fakebin/not-here" tools/check-lint.sh "$tmp"
 
 rm -rf api fakebin .golangci.yml .golangci-lint-version
+
+printf 'vulnerabilities\n'
+# Five cases, and the fourth is the whole reason this block exists.
+#
+# On 2026-09-04 registry.npmjs.org stopped answering the bulk advisories
+# endpoint, and check-vuln.sh printed "npm audit reports a high or critical
+# advisory in a shipped dependency" — a sentence about a vulnerability that did
+# not exist. `npm audit` exits non-zero both when it finds something and when it
+# cannot ask, and the script had two branches for three cases. It also had no
+# test, which is how a security tool gets to say that for a whole morning.
+#
+# A fake npm, so nothing here depends on a registry somebody else operates. It
+# answers exactly what the real one answers, captured from a real run and from a
+# deliberately dead registry the same day.
+mkdir -p web fakebin
+printf '{}\n' > web/package-lock.json
+
+report() { # report <high count> — npm's own audit report shape
+  printf '{\n  "auditReportVersion": 2,\n  "vulnerabilities": {},\n  "metadata": {\n    "vulnerabilities": { "info": 0, "low": 0, "moderate": 0, "high": %s, "critical": 0, "total": %s }\n  }\n}\n' "$1" "$1"
+}
+
+{ printf '#!/bin/sh\n'; printf 'cat <<%s\n' EOF; report 0; printf 'EOF\n'; printf 'exit 0\n'; } > fakebin/npm-clean
+{ printf '#!/bin/sh\n'; printf 'cat <<%s\n' EOF; report 1; printf 'EOF\n'; printf 'exit 1\n'; } > fakebin/npm-finding
+# What an unreachable registry actually looks like: npm's warning, its error,
+# and an error document that carries no report at all.
+cat > fakebin/npm-offline <<'FAKE'
+#!/bin/sh
+echo 'npm warn audit request to https://registry.npmjs.org/-/npm/v1/security/advisories/bulk failed, reason: connect ECONNREFUSED'
+echo 'npm error audit endpoint returned an error'
+echo '{ "message": "request failed", "error": { "summary": "", "detail": "" } }'
+exit 1
+FAKE
+# Fails twice, answers on the third. The retry is ADR 0056 in a shell loop: one
+# refused sample is not a verdict.
+cat > fakebin/npm-flaky <<'FAKE'
+#!/bin/sh
+n=$(cat "$FLAKY_COUNT" 2>/dev/null || echo 0)
+n=$((n + 1)); echo "$n" > "$FLAKY_COUNT"
+if [ "$n" -lt 3 ]; then
+  echo 'npm error audit endpoint returned an error'
+  echo '{ "message": "request failed", "error": {} }'
+  exit 1
+fi
+echo '{ "auditReportVersion": 2, "vulnerabilities": {}, "metadata": { "vulnerabilities": { "high": 0, "critical": 0, "total": 0 } } }'
+exit 0
+FAKE
+chmod +x fakebin/npm-clean fakebin/npm-finding fakebin/npm-offline fakebin/npm-flaky
+
+# The go half is not what this block is about, and a real `go run` here would
+# fetch a scanner over the network — the very dependency these cases exist to
+# remove. A fake `go` that answers both the probe and the scan keeps the block
+# about npm.
+printf '#!/bin/sh\nexit 0\n' > fakebin/go-ok && chmod +x fakebin/go-ok
+
+vuln_check() { CHECK_VULN_NPM="$1" CHECK_VULN_GO="$tmp/fakebin/go-ok" tools/check-vuln.sh "$tmp"; }
+
+accepts "a clean audit is accepted"  vuln_check "$tmp/fakebin/npm-clean"
+refuses  "a real advisory is named as one" "high or critical advisory" \
+         vuln_check "$tmp/fakebin/npm-finding"
+
+# THE CASE THE MORNING PAID FOR. Not being able to ask is not a finding, and the
+# message must not say it is — `refuses` matches the text precisely so that a
+# future edit cannot quietly put the old sentence back.
+refuses "an unreachable registry is not called a finding" "went unchecked" \
+        env CI=1 CHECK_VULN_NPM="$tmp/fakebin/npm-offline" \
+            CHECK_VULN_GO="$tmp/fakebin/go-ok" tools/check-vuln.sh "$tmp"
+
+# And it is still red on a runner, for check-node.sh's reason: a required check
+# that goes green having asked nothing is worse than one that fails. Off a
+# runner it is a skip, because a laptop is allowed to be offline.
+accepts "an unreachable registry skips locally" \
+        env -u CI CHECK_VULN_NPM="$tmp/fakebin/npm-offline" \
+            CHECK_VULN_GO="$tmp/fakebin/go-ok" tools/check-vuln.sh "$tmp"
+
+FLAKY_COUNT="$tmp/flaky.count"; export FLAKY_COUNT
+rm -f "$FLAKY_COUNT"
+accepts "two refused samples are not a verdict" vuln_check "$tmp/fakebin/npm-flaky"
+
+rm -rf web fakebin flaky.count
+unset FLAKY_COUNT
 
 printf 'versions\n'
 # Two files naming the same runtime, and nothing comparing them — the shape
