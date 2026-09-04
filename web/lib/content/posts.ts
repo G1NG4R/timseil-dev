@@ -55,9 +55,13 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { plainText } from "./body.ts";
 import { log } from "../log.ts";
 
-/** What the homepage and the Work Index read. Four keys of six, plus the slug. */
+/** One entry: every key its frontmatter carries, plus the slug the filename is.
+ *
+ *  IT WAS FOUR OF SIX UNTIL H9a, and the two that were missing are the two the
+ *  post page draws. The head of this file has the rule that decided it. */
 export interface PostMeta {
   /** The filename without `.mdx` — the same string incidents.post_slug holds. */
   readonly slug: string;
@@ -316,14 +320,14 @@ export function postMeta(file: string, raw: string): PostMeta | null {
   if (keys === null) return null;
 
   const title = unquote(keys.get("title") ?? "");
-  const deck = unquote(keys.get("deck") ?? "");
+  const deck = plainText(unquote(keys.get("deck") ?? ""));
   const published = unquote(keys.get("published") ?? "");
   const systemId = unquote(keys.get("systemId") ?? "");
   const tags = tagList(keys.get("tags") ?? "");
   // NOT `unquote`d. A block scalar is already plain text — its content is
   // whatever was indented, quotes included — and stripping a leading `'` from a
   // paragraph that opens with a quotation would be this reader editing prose.
-  const summary = (keys.get("summary") ?? "").trim();
+  const summary = plainText((keys.get("summary") ?? "").trim());
 
   if (title === "" || deck === "") return null;
   if (!isDate(published)) return null;

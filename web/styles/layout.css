@@ -80,6 +80,30 @@
      einziges auf dieser Seite eine Mindestbreite hat, die kein Geschmack ist.
      Als `one-trace-geometry` im Orakel. */
   .cf { grid-template-columns: minmax(0,1fr) 520px; gap: 80px; align-items: start }
+
+  /* H9a · der Beitrag und seine Inhaltsschiene. Der ACHTE Verbraucher dieses
+     Schalters und der erste, dessen Schiene LINKS steht.
+
+     WARUM KEINES DER SIEBEN PAARE. Alle sieben tragen rechts eine Rail neben
+     einer Spalte, die den Rest nimmt — `minmax(0,1fr) N`. Das Blatt zeichnet
+     hier `196px 700px`: die Schiene zuerst, und die Lesespalte ist FEST. Der
+     Unterschied ist kein Geschmack, sondern das Lesemass. 68 Zeichen in Geist
+     16,5px sind rund 700px; eine `1fr`-Spalte bei 1440 wäre 900px breit, und
+     jeder Absatz stünde dann in einer Spalte, die ein Drittel breiter ist als
+     der Text darin — mit einem Codeblock und einer Tabelle, die die volle
+     Breite nähmen, während die Prosa daneben aufhört. Deshalb `minmax(0,700px)`
+     statt `1fr`: was rechts frei bleibt, bleibt frei.
+
+     72 STATT 64, und es ist ein Unentschieden, das zugunsten der Seite fällt.
+     Die Skala hat 56 und 72; beide sind acht Pixel entfernt. 72 ist der Abstand,
+     den `.hero` und `.cs-result` schon tragen. Als `spacing-scale` im Orakel.
+
+     STICKY BEI 96px, wie `.rail` bei 90 — der Kopf ist 66 hoch, und das Blatt
+     gibt der Schiene die Höhe des Abschnittsabstands darüber. */
+  .post-body-grid { grid-template-columns: 196px minmax(0, 700px); gap: 72px; align-items: start }
+  .post-rail      { position: sticky; top: 96px }
+  .post-foot      { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .post-all       { grid-column: 1 / -1 }
 }
 
 /* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
@@ -99,6 +123,20 @@
      wie `.tl-panel`: contact.css öffnet sie über `display: grid`, und ein
      Wechsel auf `flex` wäre eine Spur, die die Regel nicht mehr erreicht. */
   .cf { grid-template-columns: minmax(0,1fr); gap: var(--s-44) }
+
+  /* Die Schiene fällt über die Prosa, und zwar in DOM-Reihenfolge, ohne `order`.
+     Das ist der Grund, warum sie im Markup zuerst steht: ein Inhaltsverzeichnis
+     gehört vor den Text, den es beschreibt, und ein `order`-Tausch würde die
+     Tab-Reihenfolge von der Lesereihenfolge trennen.
+
+     KEIN AUFKLAPP-PANEL, obwohl das Blatt bei 390 eines zeichnet. Ein
+     Umschalter ist entweder eine Client-Insel auf einer Seite, die sonst keine
+     hat, oder ein `<details>`, dessen Zustand nicht der Breite folgen kann —
+     bei 1440 müsste es offen sein und bei 390 zu, und das kann CSS nicht sagen.
+     Fünf kurze Zeilen über dem Artikel sind keiner von beiden Preisen wert.
+     Als `no-toc-panel` im Orakel. */
+  .post-body-grid { grid-template-columns: minmax(0,1fr); gap: var(--s-44) }
+  .post-rail      { position: static }
   .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
   .work-row        { grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px }
   .work-row .prev  { display: none }      /* weglassen, nicht verkleinern */

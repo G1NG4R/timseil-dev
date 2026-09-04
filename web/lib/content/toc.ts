@@ -25,7 +25,7 @@
 
 import GithubSlugger from "github-slugger";
 
-import { bodyOf, proseLines } from "./body.ts";
+import { bodyOf, plainText, proseLines } from "./body.ts";
 
 export interface TocEntry {
   /** `01`, `02`, … — the sheet numbers the rail, and the heading itself carries
@@ -40,18 +40,6 @@ export interface TocEntry {
 /** `## ` at the start of a line, and nothing deeper or shallower. */
 const H2 = /^##[ \t]+(.+?)[ \t]*#*[ \t]*$/;
 
-/**
- * The heading text as the renderer will produce it.
- *
- * ONLY BACKTICKS, because they are the only inline syntax three of the 117
- * headings use — `` `4 containers` ``, `` `[SPEC]` ``, `` `The restore has been
- * tested` ``. Emphasis and links appear in none of them, and stripping syntax
- * that nobody writes is a rule with no test behind it.
- */
-function plain(text: string): string {
-  return text.replaceAll("`", "");
-}
-
 /** Every h2 of a post, in document order. Empty when the post has none. */
 export function toc(raw: string): readonly TocEntry[] {
   const slugger = new GithubSlugger();
@@ -61,7 +49,11 @@ export function toc(raw: string): readonly TocEntry[] {
     const found = H2.exec(line);
     if (found === null) continue;
 
-    const text = plain(found[1]);
+    // The heading as the renderer will produce it: three of the 117 headings in
+    // the corpus are written as inline code, and `rehype-slug` slugs the TEXT
+    // content rather than the marks. Same function the deks go through, for the
+    // same reason.
+    const text = plainText(found[1]);
     if (text === "") continue;
 
     entries.push({

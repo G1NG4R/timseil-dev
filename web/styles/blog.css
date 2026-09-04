@@ -1,0 +1,478 @@
+/* `/blog/<slug>`'s own surfaces. Build plan H9a.
+
+   WHAT IS HERE AND WHAT IS NOT, the same split case.css, home.css, work.css,
+   about.css and contact.css make: this file draws, layout.css switches. Nothing
+   below carries a media query. The page answers to one of the four declared
+   switches — 1080, where the contents rail stops standing beside the prose —
+   and layout.css owns it.
+
+   NO NEW TOKENS AND NO COLOUR THAT IS NOT ONE. The geometry literals are the
+   sheet's own measures: `20ch` for the headline, `68ch` for the prose, `196px`
+   for the rail, `700px` for the reading column and `44px` for the code gutter.
+
+   THE PROSE IS NOT WRITTEN HERE EITHER. Everything under `.post-body` is markup
+   MDX produced out of a file in content/posts — there is no component and no
+   class name to hook, so this file styles elements. That is the one place on
+   this site where a bare `h2` selector is the right tool: the alternative is a
+   class the author would have to write in markdown.
+
+   FOUR DIVERGENCES FROM THE SHEET, each of them a size the scale does not have
+   or a colour tokens.css does not:
+
+     type-scale      the sheet draws the post h1 at 50 and h2 at 21. The scale
+                     has neither; G1 made it binding and the Consistency Check
+                     offers exactly this choice in E-01. 52 and 26 are the steps
+                     on either side, and both are the ones every other page uses.
+     inline-code-tint the sheet tints inline code `rgba(0,229,255,.07)`. The
+                     accent mixes in tokens.css start at 20%, which behind text
+                     is a highlight rather than a tint, and a 7% one would be a
+                     fourteenth token added for one element. `--panel` is the
+                     inset surface the rest of the site uses and it follows every
+                     palette.
+     spacing-scale   64px between rail and prose, 48px under the header. The
+                     scale has 56 and 72, and 44 and 56. Eight pixels, which is
+                     the limit the oracle's `spacing-scale` divergence already
+                     names.
+     two-tones       code is not coloured. ADR 0070 carries the argument; the
+                     frame the sheet draws around the tones — head bar, gutter,
+                     scroll — is built.                                       */
+
+/* ── The crumb and the header ───────────────────────────────────────────── */
+
+.post-crumb {
+  padding-block-start: var(--s-26);
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+  max-width: none;
+}
+
+.post-crumb .here {
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.post-head {
+  padding-block: var(--s-34) var(--s-44);
+  border-block-end: 1px solid var(--line);
+  margin-block-end: var(--s-56);
+}
+
+/* K-08 AND `:where()` FOR case.css's REASON, and this page is the fourth to
+   need it. globals.css sets h1 to 62 on the element and layout.css drops it to
+   34 below 720; a class here would beat both and keep 52 on a phone. */
+:where(.post-head) h1 {
+  font-size: var(--t-disp-52);
+  max-width: 20ch;
+  text-wrap: pretty;
+}
+
+.post-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-14);
+  margin-block-end: var(--s-20);
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+  max-width: none;
+}
+
+.post-sys { color: var(--acc); }
+
+.post-system {
+  color: var(--acc);
+  border-block-end: none;
+}
+
+.post-deck {
+  margin-block-start: var(--s-20);
+  font: 400 var(--t-body-17)/var(--lh-body) var(--body);
+  color: var(--ink-2);
+}
+
+/* A definition list drawn as a row. `dl` has no layout of its own worth
+   keeping, and each pair is wrapped in a `div` so the browser keeps term and
+   value together when the row wraps at 390. */
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-26);
+  margin: var(--s-26) 0 0;
+}
+
+.post-meta > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-8);
+}
+
+.post-meta dt {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+}
+
+.post-meta dd {
+  margin: 0;
+  font: 400 var(--t-mono-10)/1 var(--mono);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.post-tags { text-transform: uppercase; }
+
+.post-source {
+  margin-block-start: var(--s-16);
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  max-width: none;
+}
+
+/* ── The body and its rail ──────────────────────────────────────────────── */
+
+/* A grid at every width. layout.css gives it two columns above 1080 and one
+   below, and it stays a grid across the switch for the reason `.cf` does — the
+   column count is the switch's to state, not this file's. */
+.post-body-grid {
+  display: grid;
+  margin-block-end: var(--s-72);
+}
+
+.post-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-26);
+}
+
+.post-rail-label {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--steel);
+  max-width: none;
+}
+
+.post-toc ol {
+  list-style: none;
+  margin: var(--s-12) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-10);
+}
+
+.post-toc li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--s-8);
+  align-items: baseline;
+}
+
+.post-toc li > span {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}
+
+.post-toc a {
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--ink-3);
+  border-block-end: none;
+}
+
+.post-toc a:hover { color: var(--acc-hi); }
+
+.post-runs-in a {
+  display: inline-block;
+  margin-block-start: var(--s-8);
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  border-block-end: none;
+}
+
+/* ── The summary panel ──────────────────────────────────────────────────── */
+
+.post-summary {
+  background: var(--panel);
+  border-inline-start: 2px solid var(--acc);
+  padding: var(--s-20) var(--s-26);
+  margin-block-end: var(--s-44);
+}
+
+.post-summary p:last-child {
+  margin-block-start: var(--s-12);
+  font: 400 var(--t-body-15)/var(--lh-body) var(--body);
+  color: var(--ink-2);
+}
+
+/* ── The prose ──────────────────────────────────────────────────────────── */
+
+/* The reading measure. `p` is already capped at 68ch in globals.css; these are
+   the blocks that are not paragraphs and would otherwise run the full column. */
+.post-body :is(ul, ol, blockquote, .footnotes) {
+  max-width: 68ch;
+}
+
+.post-body p {
+  margin-block-end: var(--s-20);
+  font: 400 var(--t-body-17)/var(--lh-body) var(--body);
+  color: var(--ink-2);
+}
+
+/* THE NUMBER IS A COUNTER, NOT A CHARACTER IN THE FILE. The sheet numbers the
+   sections `01`–`05` and so does the contents rail; an author who typed the
+   numbers into the markdown would be maintaining two lists of them, and the day
+   a section is inserted the rail and the headings would disagree.
+   `decimal-leading-zero` is the same two-digit form lib/content/toc.ts pads to. */
+.post-body { counter-reset: post-h2; }
+
+.post-body h2 {
+  counter-increment: post-h2;
+  margin-block: var(--s-56) var(--s-20);
+  font-family: var(--mono);
+  font-size: var(--t-disp-26);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+  scroll-margin-block-start: var(--s-96);
+}
+
+.post-body h2::before {
+  content: counter(post-h2, decimal-leading-zero) "  ";
+  font: 600 var(--t-mono-11)/1 var(--mono);
+  color: var(--acc);
+}
+
+.post-body :is(h3, h4, h5, h6) {
+  margin-block: var(--s-34) var(--s-12);
+  color: var(--ink);
+  scroll-margin-block-start: var(--s-96);
+}
+
+.post-body :is(ul, ol) {
+  margin-block-end: var(--s-20);
+  padding-inline-start: var(--s-20);
+  font: 400 var(--t-body-17)/var(--lh-body) var(--body);
+  color: var(--ink-2);
+}
+
+.post-body li { margin-block-end: var(--s-8); }
+
+/* The pull quote, and the one other place Chakra Petch is allowed: "Chakra
+   Petch ausschliesslich für Titel und das Pull-Quote — sonst wird Display zur
+   Tapete." */
+.post-body blockquote {
+  margin: var(--s-34) 0;
+  padding-inline-start: var(--s-20);
+  border-inline-start: 1px solid var(--acc-line);
+  font: 500 var(--t-disp-26)/1.3 var(--display);
+  color: var(--ink);
+}
+
+.post-body blockquote p {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  max-width: none;
+}
+
+/* Inline code. `:not(pre) >` keeps it away from a fenced block, whose `<code>`
+   is styled by the frame below. */
+.post-body :not(pre) > code {
+  font: 400 var(--t-body-15)/1 var(--mono);
+  color: var(--acc-hi);
+  background: var(--panel);
+  padding: 1px var(--s-4);
+}
+
+.post-body a { overflow-wrap: anywhere; }
+
+/* ── The two blocks that scroll ─────────────────────────────────────────── */
+
+.post-code {
+  margin: 0 0 var(--s-26);
+  border: 1px solid var(--line);
+}
+
+.post-code-head {
+  padding: var(--s-8) var(--s-14);
+  background: var(--panel);
+  border-block-end: 1px solid var(--line);
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--steel);
+}
+
+.post-code-body {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+}
+
+/* The gutter is a column of its own so that a long line scrolls under the
+   numbers instead of taking them with it. `aria-hidden` in the markup, because
+   a reader who hears "zero one" before every line is hearing the frame. */
+.post-code-gutter {
+  display: grid;
+  padding: var(--s-16) 0;
+  border-inline-end: 1px solid var(--line-soft);
+  font: 400 var(--t-mono-10)/var(--lh-mono) var(--mono);
+  color: var(--dim);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.post-code-gutter > span { padding-inline-end: var(--s-12); }
+
+.post-pre {
+  margin: 0;
+  padding: var(--s-16) var(--s-20);
+  overflow-x: auto;
+  font: 400 var(--t-mono-12)/var(--lh-mono) var(--mono);
+  color: var(--ink-3);
+}
+
+/* A `<pre>` outside the frame — a fence whose `<code>` child was not a plain
+   string, which MDX does not currently produce. It still scrolls and is still
+   reachable from the keyboard. */
+.post-body > .post-pre {
+  border: 1px solid var(--line);
+  margin-block-end: var(--s-26);
+}
+
+.post-table {
+  margin-block-end: var(--s-26);
+  overflow-x: auto;
+}
+
+.post-table table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font: 400 var(--t-mono-11)/var(--lh-mono) var(--mono);
+  color: var(--ink-3);
+}
+
+.post-table :is(th, td) {
+  padding: var(--s-8) var(--s-14);
+  border-block-end: 1px solid var(--line-soft);
+  text-align: start;
+  vertical-align: top;
+}
+
+.post-table th {
+  font-weight: 500;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--steel);
+  border-block-end-color: var(--line);
+}
+
+/* Footnotes come from remark-gfm and carry its own class name. No post writes
+   one yet; the rule is four declarations and the alternative is an unstyled
+   block appearing the first time somebody does. */
+.post-body .footnotes {
+  margin-block-start: var(--s-44);
+  padding-block-start: var(--s-20);
+  border-block-start: 1px solid var(--line);
+  font: 400 var(--t-body-13)/var(--lh-body) var(--body);
+  color: var(--steel);
+}
+
+/* ── The author line and the foot ───────────────────────────────────────── */
+
+.post-author {
+  display: flex;
+  align-items: center;
+  gap: var(--s-16);
+  flex-wrap: wrap;
+  margin-block-start: var(--s-56);
+  padding: var(--s-20) var(--s-20);
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+}
+
+/* A visibly empty slot, dashed, because there is no photograph in this
+   repository. K2 fills it; an `<img>` with no source would be a broken image
+   and leaving the box out would move the layout the day one arrives. */
+.post-portrait {
+  flex: none;
+  inline-size: 56px;
+  block-size: 56px;
+  border: 1px dashed var(--line-strong);
+}
+
+.post-author > div { flex: 1 1 20ch; }
+
+.post-author-name {
+  font: 500 var(--t-mono-12)/1.4 var(--mono);
+  color: var(--ink);
+}
+
+.post-author-bio {
+  margin-block-start: var(--s-6);
+  font: 400 var(--t-body-13)/var(--lh-body) var(--body);
+  color: var(--steel);
+}
+
+.post-foot {
+  display: grid;
+  gap: var(--s-20);
+  padding-block-start: var(--s-34);
+  border-block-start: 1px solid var(--line);
+}
+
+.post-neighbour {
+  border: 1px solid var(--line-soft);
+  padding: var(--s-20);
+}
+
+.post-neighbour[data-align="end"] { text-align: end; }
+
+.post-neighbour a {
+  display: block;
+  border-block-end: none;
+  color: var(--ink);
+}
+
+.post-neighbour a:hover { color: var(--acc-hi); }
+
+.post-neighbour-label {
+  font: 500 var(--t-mono-9)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+  margin-block-end: var(--s-12);
+  max-width: none;
+}
+
+.post-neighbour-title {
+  display: block;
+  font: 500 var(--t-mono-13)/1.35 var(--mono);
+}
+
+.post-neighbour-meta {
+  display: block;
+  margin-block-start: var(--s-6);
+  font: 400 var(--t-mono-10)/1 var(--mono);
+  color: var(--steel);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The half of the foot that is the sheet's one empty state. The row keeps its
+   box and its label; only the link is replaced by the reason it is not there. */
+.post-neighbour-none {
+  font: 500 var(--t-mono-13)/1.35 var(--mono);
+  color: var(--steel);
+}
+
+.post-neighbour-why {
+  margin-block-start: var(--s-8);
+  font: 400 var(--t-body-13)/var(--lh-body) var(--body);
+  color: var(--dim);
+}
+
+.post-all {
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  max-width: none;
+}

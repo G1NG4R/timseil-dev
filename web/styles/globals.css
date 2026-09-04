@@ -2,7 +2,7 @@
    comments below are the designer's and are kept as they came; nothing in this
    file is ours to reword.
 
-   Two departures, both named:
+   Three departures, all named:
 
      G1  the handoff's `@import './tokens.css'` is dropped — see below.
      G2  four colour literals are replaced by the tokens they should always
@@ -12,6 +12,10 @@
          stayed cyan while everything around them changed. The replacements
          carry the same numbers (35 · 25 · 70 · 20 %), derived from --acc in
          tokens.css, so they now follow every [data-theme]. ADR 0043.
+     H9a h4, h5 and h6 are added. The handoff sets h1-h3 and stops, which was
+         invisible while nothing on this site rendered long-form prose — a blog
+         post body is the first place a fourth level can occur, which is what
+         #246 says and why it was due with this phase. See the rule below.
 
    No other value changed. Import order lives in app/layout.tsx: tailwind,
    tokens, globals, layout — layout last, so its media queries win. */
@@ -35,6 +39,33 @@ h1, h2, h3 { font-family: var(--display); font-weight: 500; margin: 0; }
 h1 { font-size: var(--t-disp-62); line-height: 1.06; letter-spacing: var(--ls-disp); }
 h2 { font-size: var(--t-disp-34); line-height: 1.10; }
 h3 { font-size: var(--t-disp-26); line-height: 1.14; }
+
+/* #246 — h4-h6, and the rule is that the ladder continues into the body steps.
+   The display steps run out at h3: 62 · 34 · 26 and then nothing, because the
+   scale was drawn for pages whose deepest heading is a section title. Below that
+   the sizes that exist are the body steps, and they descend in the same
+   direction — 16.5 · 15 · 13 — so the ladder carries on rather than restarting.
+
+   NO NEW STEP IN tokens.css, which is the half of this decision that was a
+   choice. The Consistency Check offers both ways out in E-01: "Entweder die
+   Seiten auf die Skala ziehen oder die Skala um 56 erweitern." G1 took the first
+   for every page on this site, and taking the second here for a heading level
+   nothing has used yet would be a thirteenth step added for a hypothetical.
+
+   THE FACE AND THE WEIGHT ARE h1-h3's, so a fourth level reads as the same
+   family one rung down — and the weight is 500, which is already loaded.
+   app/fonts.ts kept the door open for Chakra Petch 400 at exactly this point
+   (#239, 9 728 B); it is not needed, and the door closes.
+
+   h5 IS THE BODY SIZE AND IS STILL A HEADING, by face and weight rather than by
+   size. That is the honest end of a scale: a document with five levels of
+   heading in a 68-character measure has a structural problem no stylesheet can
+   fix, and inventing a size to paper over it would say otherwise. */
+h4, h5, h6 { font-family: var(--display); font-weight: 500; margin: 0; }
+h4 { font-size: var(--t-body-17); line-height: 1.25; }
+h5 { font-size: var(--t-body-15); line-height: 1.3; }
+h6 { font-size: var(--t-body-13); line-height: 1.35; letter-spacing: var(--ls-label); }
+
 p  { margin: 0; text-wrap: pretty; max-width: 68ch; }
 
 a { color: var(--acc); text-decoration: none; border-bottom: 1px solid var(--acc-line); }

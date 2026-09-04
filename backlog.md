@@ -12,7 +12,168 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 04.09.2026, H8c abgenommen: die Zahl steht, und sie steht unter dem Ziel
+## Wo wir stehen — 04.09.2026, H9a gebaut: der Renderer steht, und er hat sofort etwas gefunden
+
+**Zweig `phase/h9a-post-renderer`.** ADR 0002 hat vor achtzehn Tagen MDX im
+Repository entschieden, und **kein Paket davon war installiert**. Einundzwanzig
+Beiträge lagen seit dem 23.08. da; gelesen hat sie bis heute nur `git`.
+
+Noch nicht gegen Produktion gemessen — das ist die Abnahme und kommt nach dem
+Merge.
+
+### Der Fund der Phase stand seit zwölf Tagen auf der Startseite
+
+Ein `deck` und fünf `summary` schreiben Inline-Code mit Backticks. Frontmatter
+erreicht `remark` nie — `remark-frontmatter` entfernt den Block vor dem Parsen,
+und `lib/content/posts.ts` liest ihn als Text. Also hat eine Auszeichnung dort
+keinen Renderer und hätte auch nie zufällig einen bekommen.
+
+```
+My design sheet draws a rate-limit line as `retry in 6s · 1/3`.
+```
+
+**Genau so, mit den Zeichen, seit H5c auf `/`.** Nicht subtil — nur ohne
+Vergleich: in einer dreizeiligen Liste zwischen Titeln und Daten lesen sich
+Backticks als Interpunktion. Neun Minuten nachdem dieselbe Zeile ein zweites Mal
+gezeichnet wurde, war es offensichtlich. Repariert wird es **beim Lesen**, an
+einer Stelle, damit die drei Flächen (Startseite, Beitrag, ab H9c der Feed) sich
+nicht widersprechen können; ein Test liest alle Dateien und weist die nächste
+Auszeichnung ab.
+
+### Null Client-Bytes, und zwar nachgemessen statt behauptet
+
+Der Bau auf `main` und der Bau auf diesem Zweig fordern **exakt dieselben
+Skripte**:
+
+```
+main   183 024 B gzip über alle <script src> von /en.html
+h9a    183 024 B — Datei für Datei identisch, gleiche Chunk-Hashes
+```
+
+Die Beitragsseite fordert dieselbe Liste und nichts eigenes. `@next/mdx`
+kompiliert zur Bauzeit; die Seite hat keine Insel.
+
+**Nebenbei bestätigt: `tools/bundle-size.sh` scheitert auf `main` genauso** —
+`static/chunks/35_….js` trägt `next/link` neben unseren sieben Inseln, was #301
+beschreibt. Der Zweig hat daran nichts geändert; derselbe Chunk-Hash auf beiden
+Bäumen.
+
+### Was #192 verlangt hat, und was die Regel dafür war
+
+„The frontmatter of every post is validated by the thing that renders it."
+Erledigt — und die Regel, die es entschieden hat, ist älter als die Frage:
+**jedes Feld, das gezeichnet wird, ist Pflicht.** `tags` und `summary` werden
+gezeichnet, also sind sie Pflicht. `updated` **nicht**, gegen ein Blatt, das ihn
+als Pflicht führt: kein Beitrag ist je geändert worden, und ein Datum aus der
+Bauuhr oder aus einer Hand ist #284 ein zweites Mal.
+
+### #246 kostet keine Schriftweite
+
+h4–h6 setzen die Leiter in die Body-Stufen fort — 16,5 · 15 · 13, Display-Face,
+Gewicht 500. `app/fonts.ts` hielt seit #239 die Tür für Chakra Petch 400 an genau
+dieser Stelle offen; sie bleibt zu, **9 728 B bleiben gespart.**
+
+### Der kaputte Fall, vorgeführt
+
+Neun neue Fälle in `posts.test.ts`, und der, für den der Leser existiert:
+
+```
+--- FAIL: is skipped for a missing tag list
+--- FAIL: is skipped for a summary whose block is empty
+--- FAIL: refuses the same tag twice
+```
+
+Ein halb gelesener Tag wird ein Chip-Schlüssel, ein `data`-Attribut und eine
+Seite eines Vergleichs — und findet sich danach selbst nicht wieder.
+
+### Gemessen, nicht geschätzt
+
+Der Bestand war 21 Beiträge, als die Phase begann; sie liefert ihren eigenen als
+`022` mit aus. Beide Zahlen stehen da, weil die Messungen unten teils vor und
+teils nach ihm gemacht wurden.
+
+| | vor `022` | ausgeliefert |
+|---|---|---|
+| Beiträge · vorgerenderte Routen | 21 · 63 | **22 · 66** (× 3 Sprachen) |
+| Code-Blöcke · mit Sprache | 79 · 37 | 81 · 37 |
+| Überschriften (alle h2) | 117 | 123 |
+| verschiedene Tags | 31 | 32 |
+
+| | |
+|---|---|
+| e2e am Beitrag | 24 grün bei 1440 und 390 |
+| Orakel `blog-post` | 35 grün, 34 Messungen, 13 abweichend |
+| axe über alle Routen × 7 Breiten | 77 grün |
+| `npm test` | 709 grün |
+| `make check` | grün |
+
+### Zwei Zahlen des Blattes, die sich widersprechen
+
+**700px Spalte gegen „Lesemaß 68 Zeichen".** Im Rig lösen 68ch bei 16,5px Geist
+zu **748px** auf. Die Spalte gewinnt, eine Zeile trägt rund **64 Zeichen statt
+68** — schmaler als die Angabe, nie breiter, und jetzt eine Zahl statt einer
+Annahme.
+
+**Und der Consistency Check ist an dieser Stelle veraltet.** K-08 führt für den
+Blog Post „H1 50px, mobil 30 — beide außerhalb der Skala". Das Blatt zeichnet in
+Zeile 73 `52px` und in Zeile 274 `34px`; beide sind Stufen. Dieselbe Familie wie
+#295.
+
+## Gefunden — aus H9a
+
+- **Ein String ist nicht falsch, bis ihn etwas ein zweites Mal zeichnet.** Der
+  Backtick-Fund oben, als Regel: eine Zahl oder ein Text, der einmal angezeigt
+  wird, hat keinen falsch aussehenden Zustand — er hat ein Aussehen. Erst zwei
+  Darstellungen erzeugen einen *Widerspruch*, und ein Widerspruch ist sichtbar.
+  Dieselbe Begründung wie die zweite Uhr in H8b. *(04.09.2026, H9a)*
+- **`@next/mdx` war nie installiert, achtzehn Tage nach der Entscheidung.** ADR
+  0002 ist seit dem 17.08. angenommen. Eine angenommene Entscheidung und eine
+  ausgeführte sind zwei Zustände, und nichts in diesem Repository unterscheidet
+  sie. *(04.09.2026, H9a)*
+- **Zwei Titel überschreiten die 58 Zeichen des Blattes** (68 und 63). Sie sind
+  veröffentlicht; die Regel kam nach ihnen. Die Zahl wird gemessen und
+  festgehalten, damit ein **dritter** eine Entscheidung ist und keine Drift.
+  *(04.09.2026, H9a)*
+- **`github-slugger` ist ein Paket, das dem Baum nichts hinzufügt.** `rehype-slug`
+  bringt es ohnehin mit; es wird deklariert statt aus dem Hoist geliehen, aus dem
+  Grund, den `next.config.ts` über `outputFileTracingIncludes` aufschreibt.
+  *(04.09.2026, H9a)*
+
+## Verschoben aus H9a
+
+- **Der Feed ist ab jetzt aus einem Grund leer, den es nicht mehr gibt — H9c.**
+  `lib/seo/feed.ts` begründet den leeren Kanal so: „`/blog/<slug>` does not exist
+  until H9 builds the MDX renderer. A feed with six items would therefore ship
+  six `<link>` elements pointing at six 404s." Diese Bedingung ist seit dieser
+  Phase falsch. Die Sitemap führt 21 Einträge, der Feed null — **eine Phase lang
+  widersprechen sich zwei maschinenlesbare Flächen dieser Seite.** Bewusst
+  gezahlt und hier datiert, damit H9c einen benannten Grund hat und keine
+  Aufgabe. Dasselbe gilt für die `s-maxage`-Notiz: ein Jahr auf einem Dokument,
+  das sich mit jedem Beitrag ändert.
+- **Der Fortschrittsbalken unter der Nav → I2.** Scroll-gekoppelte Bewegung samt
+  `@supports`-Kapselung und Firefox-Rückfall gehört dorthin, nicht in eine
+  Seitenphase. Gilt auch für den aktiven Eintrag in der Inhaltsschiene.
+- **`POSTMORTEM`-Kasten, `MEASURE`-Tabelle, Terminal-Aufnahme: nicht gebaut.**
+  Kein Beitrag benutzt sie. Sie kommen mit dem Beitrag, der sie braucht — ein
+  Bauteil ohne Verbraucher ist die Form, die #292 offenhält.
+- **Kein Serien-Marker**, weil es keine Serie und keinen Schlüssel dafür gibt.
+- **Kein `COPY`-Knopf und keine zwei Töne im Code.** ADR 0070 §3 trägt beides.
+- **Das Aufklapp-Panel für CONTENTS bei 390** — entweder eine Insel oder ein
+  `<details>`, dessen Zustand der Breite nicht folgen kann. Als `no-toc-panel`
+  in `layout.css` begründet.
+- **#192 wird nicht vom Merge geschlossen**, sondern nach der Abnahme von Hand:
+  `Measured in #192`. **#246** dagegen schließt der Merge — die Abnahme ist der
+  Diff, die Regel steht in `globals.css` und der Beitrag benutzt sie.
+- **Die Bausteine-Tafel widerspricht dem Handoff-README.** Das Blatt rechnet
+  „7 PFLICHT · 9 OPTIONAL", `docs/design/README.md:157` sagt „5 Pflicht- und 7
+  optionale Blöcke". Dieselbe Form wie #241; zu triagieren.
+- **Das Blatt-Skript wählt einen Tag, `docs/design/README.md:610` führt ein
+  `Set`.** Single-select gegen Mehrfachauswahl im Index — **zu entscheiden in
+  H9b**, und das Blatt-Skript ist die ausgeführte Fassung.
+
+---
+
+## Vorher — 04.09.2026, H8c abgenommen: die Zahl steht, und sie steht unter dem Ziel
 
 `05db1f8` läuft, `v0.30.0`. Merge **18:25:30Z**, Pipeline-Lauf ab 18:25:34Z,
 Deploy-Job 18:38:14Z → 18:38:43Z, `lastDeploy.at` **18:38:39Z**, der api-Prozess

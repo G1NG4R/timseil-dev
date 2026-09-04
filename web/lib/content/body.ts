@@ -53,3 +53,31 @@ export function proseLines(body: string): readonly string[] {
   }
   return out;
 }
+
+/**
+ * A frontmatter string as a reader sees it.
+ *
+ * THE FINDING THIS EXISTS FOR, AND IT WAS ALREADY IN PRODUCTION. One dek and
+ * five summaries in content/posts write inline code with backticks — "a
+ * rate-limit line as `retry in 6s · 1/3`" — and the homepage has been drawing
+ * that dek with its backticks in since H5c. Nobody noticed because nothing
+ * rendered the post beside it; H9a puts the same string under a title where it
+ * reads as a typo.
+ *
+ * FRONTMATTER IS NOT MARKDOWN, WHICH IS THE ACTUAL RULE. `remark` never sees
+ * these values: `remark-frontmatter` strips the block before parsing, and
+ * lib/content/posts.ts reads it as text. So a mark in there has no renderer and
+ * never will unless one is built for it — and until then the honest thing is to
+ * show the words rather than the marks.
+ *
+ * ONLY BACKTICKS, for toc.ts's reason: they are the only inline syntax that
+ * occurs. Stripping emphasis or links that nobody writes would be a rule with
+ * no test behind it and a surprise for whoever writes the first one.
+ *
+ * IT RUNS AT READ TIME so that the three surfaces which draw these strings — the
+ * homepage row, the post header, and the feed from H9c on — cannot disagree
+ * about them. Two spellings of one sentence is the defect, not the marks.
+ */
+export function plainText(value: string): string {
+  return value.replaceAll("`", "");
+}

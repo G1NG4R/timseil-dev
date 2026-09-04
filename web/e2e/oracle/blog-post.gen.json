@@ -29,143 +29,239 @@
   },
   "entries": [
     {
-      "id": "contact-columns",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-columns",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 66,
+      "line": 85,
       "width": 1440,
-      "says": "grid-template-columns: 1fr 520px",
-      "reading": "the form stands beside the request it is about to send",
+      "says": "grid-template-columns: 196px 700px",
+      "reading": "the contents rail stands beside the prose, and it stands on the left",
       "measure": {
         "kind": "track-count",
-        "selector": ".cf"
+        "selector": ".post-body-grid"
       },
       "expect": 2
     },
     {
-      "id": "contact-trace-width",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-rail-width",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 66,
+      "line": 85,
       "width": 1440,
-      "says": "grid-template-columns: 1fr 520px",
-      "reading": "and the trace is 520 wide, the one fixed column on this page",
+      "says": "grid-template-columns: 196px 700px",
+      "reading": "the rail is 196 wide, the first fixed column on this site that comes first",
       "measure": {
         "kind": "box-width",
-        "selector": ".tx"
+        "selector": ".post-rail"
       },
-      "expect": 520
+      "expect": 196
     },
     {
-      "id": "contact-columns-gap",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-column-width",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 66,
+      "line": 85,
       "width": 1440,
-      "says": "gap: 80px",
-      "reading": "eighty between them, the gap every two-column row on this site uses",
+      "says": "grid-template-columns: 196px 700px",
+      "reading": "and the reading column is 700 — fixed, not the rest of the row",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".post-column"
+      },
+      "expect": 700
+    },
+    {
+      "id": "post-columns-gap",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 85,
+      "width": 1440,
+      "says": "gap: 64px",
+      "reading": "seventy-two between them, the step every other two-column row on this site uses",
       "measure": {
         "kind": "computed",
-        "selector": ".cf",
+        "selector": ".post-body-grid",
         "prop": "column-gap"
       },
-      "expect": "80px"
-    },
-    {
-      "id": "contact-section-padding",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 66,
-      "width": 1440,
-      "says": "padding: 72px 0 40px",
-      "reading": "seventy-two above the marker, the step both other pages open on",
-      "measure": {
-        "kind": "computed",
-        "selector": ".contact",
-        "prop": "padding-top"
-      },
-      "expect": "72px"
-    },
-    {
-      "id": "contact-marker-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 69,
-      "width": 1440,
-      "says": "font: 500 11.5px 'JetBrains Mono',monospace",
-      "reading": "SYS.06 is the section marker this site already has, at the step it already uses",
-      "measure": {
-        "kind": "computed",
-        "selector": ".sec-id",
-        "prop": "font-size"
-      },
-      "expect": "12px",
+      "expect": "72px",
       "diverges": {
-        "class": "one-section-head",
-        "sheet": "11.5px"
+        "class": "spacing-scale",
+        "sheet": "64px"
       }
     },
     {
-      "id": "contact-headline-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-head-padding",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 70,
+      "line": 66,
       "width": 1440,
-      "says": "font: 500 52px/1.06 'Chakra Petch',sans-serif",
-      "reading": "the shortest headline on this site is at the 52 step, like every other page head",
+      "says": "padding: 34px 0 48px",
+      "reading": "thirty-four above the title, a step on the scale",
       "measure": {
         "kind": "computed",
-        "selector": ".contact-headline",
+        "selector": ".post-head",
+        "prop": "padding-top"
+      },
+      "expect": "34px"
+    },
+    {
+      "id": "post-head-rule",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 66,
+      "width": 1440,
+      "says": "margin-bottom: 56px",
+      "reading": "and fifty-six under the hairline that closes it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-head",
+        "prop": "margin-bottom"
+      },
+      "expect": "56px"
+    },
+    {
+      "id": "post-h1-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 73,
+      "width": 1440,
+      "says": "font: 500 52px/1.1 'Chakra Petch',sans-serif",
+      "reading": "the entry title is at the 52 step, like every page head that is not the homepage",
+      "measure": {
+        "kind": "computed",
+        "selector": "main h1",
         "prop": "font-size"
       },
       "expect": "52px"
     },
     {
-      "id": "contact-lede-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-deck-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 71,
+      "line": 74,
       "width": 1440,
-      "says": "font: 400 15.5px/1.75 'Geist',sans-serif",
-      "reading": "the paragraph under it is body text at the step under the half pixel",
+      "says": "font: 400 17.5px/1.65 'Geist',sans-serif",
+      "reading": "the dek under it is the largest body step",
       "measure": {
         "kind": "computed",
-        "selector": ".contact-lede",
+        "selector": ".post-deck",
         "prop": "font-size"
       },
-      "expect": "15px",
+      "expect": "16.5px",
       "diverges": {
         "class": "half-pixel",
-        "sheet": "15.5px"
+        "sheet": "17.5px"
       }
     },
     {
-      "id": "contact-form-width",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-meta-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 73,
+      "line": 75,
       "width": 1440,
-      "says": "max-width: 640px",
-      "reading": "the fields stop at 640 rather than running the width of the column",
+      "says": "font: 500 10.5px 'JetBrains Mono',monospace",
+      "reading": "the meta row is mono at the second-smallest step",
       "measure": {
         "kind": "computed",
-        "selector": ".cf-form",
-        "prop": "max-width"
+        "selector": ".post-meta dt",
+        "prop": "font-size"
       },
-      "expect": "640px"
+      "expect": "10px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "10.5px"
+      }
     },
     {
-      "id": "contact-field-gap",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-meta-gap",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 73,
+      "line": 75,
       "width": 1440,
-      "says": "gap: 22px",
-      "reading": "twenty between the fields, on the scale",
+      "says": "gap: 26px",
+      "reading": "twenty-six between the pairs, a step on the scale",
       "measure": {
         "kind": "computed",
-        "selector": ".cf-form",
-        "prop": "row-gap"
+        "selector": ".post-meta",
+        "prop": "column-gap"
+      },
+      "expect": "26px"
+    },
+    {
+      "id": "post-crumb-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 62,
+      "width": 1440,
+      "says": "font: 500 10.5px 'JetBrains Mono',monospace",
+      "reading": "the crumb is the same mono step as the meta row under it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-crumb",
+        "prop": "font-size"
+      },
+      "expect": "10px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "10.5px"
+      }
+    },
+    {
+      "id": "post-toc-entry-columns",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 95,
+      "width": 1440,
+      "says": "grid-template-columns: 22px 1fr",
+      "reading": "a contents line is a number and a title, in two columns",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".post-toc li"
+      },
+      "expect": 2
+    },
+    {
+      "id": "post-toc-entry-gap",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 95,
+      "width": 1440,
+      "says": "gap: 8px",
+      "reading": "eight between the number and the words",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-toc li",
+        "prop": "column-gap"
+      },
+      "expect": "8px"
+    },
+    {
+      "id": "post-summary-edge",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 113,
+      "width": 1440,
+      "says": "border-left: 2px solid #00E5FF",
+      "reading": "the summary carries the accent on its edge — the panel is not the alert moment",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-summary",
+        "prop": "border-left-width"
+      },
+      "expect": "2px"
+    },
+    {
+      "id": "post-summary-padding",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 113,
+      "width": 1440,
+      "says": "padding: 22px 26px",
+      "reading": "twenty above, on the scale",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-summary",
+        "prop": "padding-top"
       },
       "expect": "20px",
       "diverges": {
@@ -174,144 +270,245 @@
       }
     },
     {
-      "id": "contact-label-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-summary-label-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 77,
+      "line": 114,
       "width": 1440,
-      "says": "font: 500 10px 'JetBrains Mono',monospace",
-      "reading": "a field label is mono at the smallest step, and it is a label rather than a placeholder",
+      "says": "font: 600 9.5px 'JetBrains Mono',monospace",
+      "reading": "SUMMARY is a rail label at the smallest mono step",
       "measure": {
         "kind": "computed",
-        "selector": ".field-label",
+        "selector": "#post-summary-label",
         "prop": "font-size"
-      },
-      "expect": "10px"
-    },
-    {
-      "id": "contact-label-tracking",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 77,
-      "width": 1440,
-      "says": "letter-spacing: .14em",
-      "reading": "tracked out at the label step this site uses everywhere",
-      "measure": {
-        "kind": "computed",
-        "selector": ".field-label",
-        "prop": "letter-spacing"
-      },
-      "expect": "1.4px"
-    },
-    {
-      "id": "contact-input-padding",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 81,
-      "width": 1440,
-      "says": "padding: 13px 15px",
-      "reading": "the box a visitor types into, and ui.css has drawn it since G7 at exactly this padding",
-      "measure": {
-        "kind": "computed",
-        "selector": "#name",
-        "prop": "padding-top"
-      },
-      "expect": "13px"
-    },
-    {
-      "id": "contact-input-font",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 81,
-      "width": 1440,
-      "says": "font: 400 14px 'JetBrains Mono',monospace",
-      "reading": "and what is typed is mono, because the trace beside it is the same string",
-      "measure": {
-        "kind": "computed",
-        "selector": "#name",
-        "prop": "font-size"
-      },
-      "expect": "13px",
-      "diverges": {
-        "class": "half-pixel",
-        "sheet": "14px"
-      }
-    },
-    {
-      "id": "contact-button-tracking",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 112,
-      "width": 1440,
-      "says": "letter-spacing: .14em",
-      "reading": "the send button is a button of this site, tracked like every other",
-      "measure": {
-        "kind": "computed",
-        "selector": ".cf-actions .btn",
-        "prop": "letter-spacing"
-      },
-      "expect": "1.43px"
-    },
-    {
-      "id": "contact-trace-head-gap",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 125,
-      "width": 1440,
-      "says": "gap: 9px",
-      "reading": "the dot, the name and the state sit ten apart, on the scale",
-      "measure": {
-        "kind": "computed",
-        "selector": ".tx-head",
-        "prop": "column-gap"
       },
       "expect": "10px",
       "diverges": {
-        "class": "spacing-scale",
-        "sheet": "9px"
+        "class": "half-pixel",
+        "sheet": "9.5px"
       }
     },
     {
-      "id": "contact-trace-head-padding",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-h2-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 125,
+      "line": 118,
       "width": 1440,
-      "says": "padding: 11px 16px",
-      "reading": "sixteen in from the panel edge, exactly as drawn",
+      "says": "font: 500 21px 'JetBrains Mono',monospace",
+      "reading": "a section heading is mono, at the 26 step",
       "measure": {
         "kind": "computed",
-        "selector": ".tx-head",
-        "prop": "padding-left"
-      },
-      "expect": "16px"
-    },
-    {
-      "id": "contact-trace-name-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 127,
-      "width": 1440,
-      "says": "font: 600 10px 'JetBrains Mono',monospace",
-      "reading": "TX is a label at the smallest mono step",
-      "measure": {
-        "kind": "computed",
-        "selector": ".tx-name",
+        "selector": ".post-body h2",
         "prop": "font-size"
       },
-      "expect": "10px"
+      "expect": "26px",
+      "diverges": {
+        "class": "heading-scale",
+        "sheet": "21px"
+      }
     },
     {
-      "id": "contact-trace-bytes-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "post-prose-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 130,
+      "line": 119,
       "width": 1440,
-      "says": "font: 400 9.5px 'JetBrains Mono',monospace",
-      "reading": "and the byte count beside it at the step under the half pixel",
+      "says": "font: 400 16.5px/1.8 'Geist',sans-serif",
+      "reading": "the prose is the largest body step, and this one needs no rounding",
       "measure": {
         "kind": "computed",
-        "selector": ".tx-bytes",
+        "selector": ".post-body p",
+        "prop": "font-size"
+      },
+      "expect": "16.5px"
+    },
+    {
+      "id": "post-prose-measure",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 119,
+      "width": 1440,
+      "says": "max-width: 68ch",
+      "reading": "the column is 700 and 68ch resolves to 748, so the column is the measure and a line holds about 64 characters",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".post-body p"
+      },
+      "expect": 700
+    },
+    {
+      "id": "post-quote-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 162,
+      "width": 1440,
+      "says": "font: 400 21px/1.55 'Chakra Petch',sans-serif",
+      "reading": "the pull quote is the second and last place display is allowed, at the 26 step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-body blockquote",
+        "prop": "font-size"
+      },
+      "expect": "26px",
+      "diverges": {
+        "class": "heading-scale",
+        "sheet": "21px"
+      }
+    },
+    {
+      "id": "post-code-columns",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 137,
+      "width": 1440,
+      "says": "grid-template-columns: 44px 1fr",
+      "reading": "the line numbers stand in a column of their own, so a long line scrolls under them",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".post-code-body"
+      },
+      "expect": 2
+    },
+    {
+      "id": "post-code-gutter-width",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 137,
+      "width": 1440,
+      "says": "grid-template-columns: 44px 1fr",
+      "reading": "and that column is 44 wide",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".post-code-gutter"
+      },
+      "expect": 44
+    },
+    {
+      "id": "post-code-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 139,
+      "width": 1440,
+      "says": "font: 400 12.5px/1.85 'JetBrains Mono',monospace",
+      "reading": "code is mono at the largest step under the half pixel",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-pre",
+        "prop": "font-size"
+      },
+      "expect": "12px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "12.5px"
+      }
+    },
+    {
+      "id": "post-code-padding",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 139,
+      "width": 1440,
+      "says": "padding: 18px 20px",
+      "reading": "sixteen above the first line, on the scale",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-pre",
+        "prop": "padding-top"
+      },
+      "expect": "16px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "18px"
+      }
+    },
+    {
+      "id": "post-portrait-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 202,
+      "width": 1440,
+      "says": "width: 56px",
+      "reading": "the portrait slot is 56 square and visibly empty, because there is no photograph in this repository",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".post-portrait"
+      },
+      "expect": 56
+    },
+    {
+      "id": "post-author-name-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 204,
+      "width": 1440,
+      "says": "font: 500 12.5px 'JetBrains Mono',monospace",
+      "reading": "the byline is mono at the largest step under the half pixel",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-author-name",
+        "prop": "font-size"
+      },
+      "expect": "12px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "12.5px"
+      }
+    },
+    {
+      "id": "post-foot-columns",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 210,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 1fr",
+      "reading": "previous and next stand side by side, and both cells are drawn whether or not there is an entry in them",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".post-foot"
+      },
+      "expect": 2
+    },
+    {
+      "id": "post-foot-gap",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 210,
+      "width": 1440,
+      "says": "gap: 20px",
+      "reading": "twenty between the two cards, a step on the scale",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-foot",
+        "prop": "column-gap"
+      },
+      "expect": "20px"
+    },
+    {
+      "id": "post-neighbour-padding",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 211,
+      "width": 1440,
+      "says": "padding: 20px 22px",
+      "reading": "twenty inside a card, on the scale in both directions",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-neighbour",
+        "prop": "padding-top"
+      },
+      "expect": "20px"
+    },
+    {
+      "id": "post-neighbour-label-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 212,
+      "width": 1440,
+      "says": "font: 500 9.5px 'JetBrains Mono',monospace",
+      "reading": "the card label is mono at the smallest step",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-neighbour-label",
         "prop": "font-size"
       },
       "expect": "9px",
@@ -321,71 +518,67 @@
       }
     },
     {
-      "id": "contact-columns-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 350,
-      "width": 390,
-      "says": "width: 390px",
-      "reading": "on the phone the trace falls under the form, one column",
-      "measure": {
-        "kind": "track-count",
-        "selector": ".cf"
-      },
-      "expect": 1
-    },
-    {
-      "id": "contact-headline-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 361,
-      "width": 390,
-      "says": "font: 500 34px/1.1 'Chakra Petch',sans-serif",
-      "reading": "the display step falls to 34, which is K-08 and a switch layout.css owns",
+      "id": "post-neighbour-meta-size",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 214,
+      "width": 1440,
+      "says": "font: 400 10.5px 'JetBrains Mono',monospace",
+      "reading": "the date and the read time under a card title, one step up from the label",
       "measure": {
         "kind": "computed",
-        "selector": ".contact-headline",
+        "selector": ".post-neighbour-meta",
+        "prop": "font-size"
+      },
+      "expect": "10px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "10.5px"
+      }
+    },
+    {
+      "id": "post-h1-mobile",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 274,
+      "width": 390,
+      "says": "font: 500 34px/1.14 'Chakra Petch',sans-serif",
+      "reading": "the title falls to 34, which is K-08 and a switch layout.css already owns",
+      "measure": {
+        "kind": "computed",
+        "selector": "main h1",
         "prop": "font-size"
       },
       "expect": "34px"
     },
     {
-      "id": "contact-headline-tag-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 361,
+      "id": "post-summary-edge-mobile",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 292,
       "width": 390,
-      "says": "font: 500 34px/1.1 'Chakra Petch',sans-serif",
-      "reading": "and it is still the page's one h1, where the artboard writes h2",
+      "says": "border-left: 2px solid #00E5FF",
+      "reading": "the summary keeps its accent edge on a phone",
       "measure": {
         "kind": "computed",
-        "selector": "h1.contact-headline",
-        "prop": "font-size"
+        "selector": ".post-summary",
+        "prop": "border-left-width"
       },
-      "expect": "34px",
-      "diverges": {
-        "class": "one-copy-of-the-words",
-        "sheet": "<h2>"
-      }
+      "expect": "2px"
     },
     {
-      "id": "contact-field-gap-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 365,
+      "id": "post-columns-mobile",
+      "sheet": "docs/design/Blog Post - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 292,
       "width": 390,
-      "says": "gap: 18px",
-      "reading": "the fields keep one rhythm at both widths rather than tightening by two pixels",
+      "says": "margin-bottom: 30px",
+      "reading": "and the rail is above the prose rather than beside it — one column, and the entry that follows is the whole width",
       "measure": {
-        "kind": "computed",
-        "selector": ".cf-form",
-        "prop": "row-gap"
+        "kind": "track-count",
+        "selector": ".post-body-grid"
       },
-      "expect": "20px",
-      "diverges": {
-        "class": "spacing-scale",
-        "sheet": "18px"
-      }
+      "expect": 1
     }
   ]
 }

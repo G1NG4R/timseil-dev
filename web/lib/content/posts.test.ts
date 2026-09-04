@@ -158,6 +158,53 @@ describe("the tag list", () => {
   }
 });
 
+describe("a mark that has no renderer comes off too", () => {
+  // THE BEHAVIOUR, ASSERTED WHERE IT CAN FAIL. The corpus check further down
+  // holds the OUTPUT clean, which for a dek is true by construction; this holds
+  // the transformation itself, so removing the call would go red here rather
+  // than nowhere.
+  it("takes the backticks out of a dek", () => {
+    const raw = file(
+      [
+        "title: 'A title'",
+        "deck: 'a rate-limit line as `retry in 6s`'",
+        "published: 2026-09-01",
+        "tags: ['api']",
+        "summary: |",
+        "  and `2/3` is just arithmetic.",
+      ].join("\n"),
+    );
+
+    const post = postMeta("015-a-post.mdx", raw);
+    if (post === null) throw new Error("the fixture did not parse");
+
+    assert.equal(post.deck, "a rate-limit line as retry in 6s");
+    assert.equal(post.summary, "and 2/3 is just arithmetic.");
+  });
+
+  // AND THE TITLE IS LEFT ALONE, which is the asymmetry worth stating. A dek and
+  // a summary are prose and the marks in them are a mistake; a title written as
+  // code would be an authoring decision, and the corpus test below is what would
+  // put it in front of somebody rather than rewriting it in silence.
+  it("leaves a title as it was written", () => {
+    const raw = file(
+      [
+        "title: '`4 containers`'",
+        "deck: 'One line.'",
+        "published: 2026-09-01",
+        "tags: ['api']",
+        "summary: |",
+        "  A paragraph.",
+      ].join("\n"),
+    );
+
+    const post = postMeta("015-a-post.mdx", raw);
+    if (post === null) throw new Error("the fixture did not parse");
+
+    assert.equal(post.title, "`4 containers`");
+  });
+});
+
 describe("quotes come off, and nothing else does", () => {
   it("unescapes the doubled single quote that the posts actually use", () => {
     assert.equal(unquote("'the site''s nine stylesheets'"), "the site's nine stylesheets");
@@ -295,6 +342,20 @@ describe("every post in the repository", () => {
         post.summary.length > post.deck.length / 2,
         `${post.slug} has a summary shorter than half its dek`,
       );
+    }
+  });
+
+  // THE FINDING H9a MADE, HELD SO IT CANNOT COME BACK. One dek and five
+  // summaries in this repository write inline code with backticks, and the
+  // homepage had been drawing one of them with the marks in since H5c —
+  // frontmatter never reaches remark, so a mark there has no renderer.
+  // lib/content/body.ts strips them at read time; this is what proves it, and
+  // it also refuses the next mark somebody adds.
+  it("hands on no markup in the strings a page prints", () => {
+    for (const post of read.posts) {
+      assert.doesNotMatch(post.title, /`/, `${post.slug}: title carries a backtick`);
+      assert.doesNotMatch(post.deck, /`/, `${post.slug}: dek carries a backtick`);
+      assert.doesNotMatch(post.summary, /`/, `${post.slug}: summary carries a backtick`);
     }
   });
 
