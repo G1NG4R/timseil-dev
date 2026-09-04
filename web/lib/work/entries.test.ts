@@ -39,9 +39,20 @@ const SEEDED = {
   generatedAt: "2026-09-02T00:00:00Z",
 } as unknown as SystemList;
 
+const POST: PostMeta = {
+  slug: "000-x",
+  title: "X",
+  deck: "d",
+  published: "2026-08-23",
+  systemId: "timseil-dev",
+  tags: ["testing"],
+  summary: "One paragraph.",
+  updated: null,
+};
+
 const POSTS: readonly PostMeta[] = [
-  { slug: "001-a", title: "A", deck: "d", published: "2026-08-23", systemId: "timseil-dev" },
-  { slug: "002-b", title: "B", deck: "d", published: "2026-08-24", systemId: "timseil-dev" },
+  { ...POST, slug: "001-a", title: "A", published: "2026-08-23" },
+  { ...POST, slug: "002-b", title: "B", published: "2026-08-24" },
 ];
 
 // The broken case first: an answer that is not the answer the contract promised.

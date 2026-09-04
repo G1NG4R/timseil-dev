@@ -581,6 +581,51 @@ export const en = {
   // any sentence I could write in advance.
   contactUnexpected: "The reply was not one this page knows how to read",
 
+  // ── H9a · /blog/<slug> ──────────────────────────────────────────────────
+  //
+  // WHAT IS A KEY HERE AND WHAT IS NOT, by the same rule H6 and H8 used. A word
+  // the page prints is a key. A word MDX prints is not — the body of an entry is
+  // English prose in a file, and lib/seo/feed.ts records the decision that keeps
+  // it that way: "Die Blog-Posts bleiben einsprachig englisch — dort steht
+  // Fachliches, und Übersetzen wäre Arbeit ohne Leser." So the frame is
+  // translatable and the entry is not, which is the honest split rather than a
+  // gap: `/de/blog/<slug>` will one day carry German labels around English
+  // prose, and that is what it means for a log to be single-language.
+  blogEntry: "ENTRY",
+  blogPublished: "PUBLISHED",
+  blogUpdated: "UPDATED",
+  blogTags: "TAGS",
+  blogRead: "READ",
+  blogContents: "CONTENTS",
+  blogSummary: "SUMMARY",
+  blogRunsIn: "RUNS IN",
+  blogEditSource: "EDIT ON GITHUB",
+
+  // The foot. `PREVIOUS` is the older entry and `NEXT ENTRY` the newer one —
+  // lib/content/neighbours.ts names them from the reader's sense of the log
+  // rather than from the array's direction.
+  blogPrevious: "PREVIOUS",
+  blogNext: "NEXT ENTRY",
+  blogAllEntries: "ALL ENTRIES",
+  blogReply: "REPLY BY EMAIL",
+
+  // THE ONE EMPTY STATE OF A POST, and the sheet drew it as a row that stays:
+  // "ZEILE VERSCHWINDET NIE — ein fehlendes Element liest sich als Fehler, ein
+  // benanntes nicht." So the newest entry still renders a NEXT cell, and the
+  // cell says what it is instead of collapsing.
+  //
+  // TWO SENTENCES AND NOT ONE, because the reader is owed the reason and not
+  // only the fact — STATE.05's rule for every empty state on this site. The way
+  // out is the index, which the sheet also fixes: "DER AUSWEG ist der Index,
+  // nicht die Startseite."
+  blogNoNeighbour: "— none yet",
+  blogNoNextWhy:
+    "This is the newest entry, so there is nothing after it yet. The row stays " +
+    "and says so rather than disappearing.",
+  blogNoPreviousWhy:
+    "This is the first entry in the log, so there is nothing before it. The row " +
+    "stays and says so rather than disappearing.",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

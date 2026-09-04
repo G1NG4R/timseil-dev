@@ -26,12 +26,25 @@
 // prose it describes. So a case study has a date and the homepage does not, and
 // that asymmetry is the honest one: nothing has measured when `/` last changed.
 //
+// H9a IS THE OTHER HALF OF THAT SENTENCE, AND ITS DATE IS BETTER THAN THE CASE
+// STUDY'S. An entry carries `published`, and `updated` when it has been revised;
+// the later of the two is when the page last changed, and both are keys the
+// renderer validates rather than facts nobody checks. #284 is open against the
+// case study for exactly the property this half has: "updatedAt is the last
+// hand-typed fact on a case study, and nothing checks it." A post's dates go
+// through lib/content/posts.ts, which refuses a file whose date is not a day.
+//
+// NO POST CARRIES `updated` TODAY, so in practice every entry reports the day it
+// was published — which is true, because none has been revised. The branch is
+// here because the key exists, not because it has ever been taken.
+//
 // The other two are hints Google says in writing that it ignores. Writing them
 // anyway would be decoration that looks like configuration.
 
 import type { MetadataRoute } from "next";
 
 import { CASE_STUDIES, caseStudyPath } from "@/content/case-studies/index";
+import { postPath, postsOrNull } from "@/lib/content/posts";
 import { LOCALES, localeHref } from "@/lib/i18n/routes";
 import { indexablePaths } from "@/lib/seo/pages";
 import { SITE_URL } from "@/lib/site";
@@ -56,7 +69,14 @@ function alternateLanguages(path: string): Record<string, string> {
 /** The date the content of a path was last written, for the paths that have one. */
 function lastModifiedFor(path: string): Date | undefined {
   const study = CASE_STUDIES.find((entry) => caseStudyPath(entry) === path);
-  return study === undefined ? undefined : new Date(study.updatedAt);
+  if (study !== undefined) return new Date(study.updatedAt);
+
+  const post = postsOrNull()?.posts.find((entry) => postPath(entry) === path);
+  // `updated ?? published`, and never the newer of two dates by comparison: a
+  // revision is by definition after publication, so `updated` when present IS
+  // the later one. Comparing them would be code defending against a file the
+  // reader would have to have accepted first.
+  return post === undefined ? undefined : new Date(post.updated ?? post.published);
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {

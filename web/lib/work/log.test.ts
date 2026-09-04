@@ -6,7 +6,16 @@ import type { PostMeta } from "../content/posts.ts";
 import { logEntriesFor, logEntriesLine } from "./log.ts";
 
 function post(slug: string, systemId: string | null): PostMeta {
-  return { slug, title: `Title ${slug}`, deck: "One line.", published: "2026-09-01", systemId };
+  return {
+    slug,
+    title: `Title ${slug}`,
+    deck: "One line.",
+    published: "2026-09-01",
+    systemId,
+    tags: ["testing"],
+    summary: "One paragraph.",
+    updated: null,
+  };
 }
 
 // The broken case first, and here it is the one the frontmatter allows: a post

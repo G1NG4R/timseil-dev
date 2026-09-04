@@ -36,6 +36,28 @@ export const AUTHOR = {
   jobTitle: "Backend & DevOps Engineer",
 } as const;
 
+/**
+ * This repository, on the host it is pushed to.
+ *
+ * H9a NEEDED IT AND NOTHING ELSE DOES YET. The Blog Post sheet puts
+ * `EDIT ON GITHUB ↗` in the meta row, and its own rule for the block says when
+ * that link is allowed to exist: "Nur sinnvoll, solange der Inhalt im
+ * öffentlichen Repo liegt." It is, so it does — and the URL is built from this
+ * one string rather than written into a component, because the day the
+ * repository is renamed there must be exactly one place that is wrong.
+ *
+ * NOT `AUTHOR.github`, WHICH IS A PERSON. That URL is the `sameAs` of the
+ * JSON-LD `Person` and the target of the footer's GITHUB link; this one is a
+ * repository, and folding them together would mean a profile move renaming a
+ * source file's address.
+ *
+ * `main` IS HARD-CODED IN THE CALLER, not here, and it is the branch every
+ * merge lands on — CONTRIBUTING.md: "One phase = one branch = one pull request
+ * = one squash merge." A link to a branch that is deleted after every merge
+ * would be a 404 by design.
+ */
+export const REPO_URL = "https://github.com/G1NG4R/timseil-dev";
+
 /** The one sentence this site says about itself.
  *
  *  IT LIVES HERE BECAUSE THREE THINGS READ IT: the `<meta name="description">`
