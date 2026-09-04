@@ -12,7 +12,123 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 04.09.2026, H9a gebaut: der Renderer steht, und er hat sofort etwas gefunden
+## Wo wir stehen — 04.09.2026, H9a abgenommen: die Route steht, und der Zeuge kam achtzehn Sekunden zu kurz
+
+`56400fc` läuft, `v0.31.0`. Merge **22:52:34Z**, Deploy-Job 23:08:01Z → 23:08:29Z
+(28 s), der api-Prozess läuft seit **23:08:38.955Z**. Uhrzeit mit `date -u`
+gelesen; 23:08 liegt vor dem Dokploy-Fenster 23:45–00:00.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `56400fc` gebaut.
+
+### Die Zahl der Phase ist ein Paar, und die erste Hälfte ist nicht wiederholbar
+
+```
+22:53:33Z   sha 2fc680a   /blog/001-…  →  404
+23:09:36Z   sha 56400fc   /blog/001-…  →  200, 65 871 B
+```
+
+**Die 404 war zwanzig Minuten lang messbar und ist es nie wieder.** Vor dem
+Tausch gab es die Route nicht; nachher liefert dieselbe Adresse eine Seite aus
+einem Container, der die Dateien mitbringt. Alle **22 Einträge 200**, in `/`,
+`/de` und `/fr`; `/en/…` gibt 308 auf die kanonische Form. `EDIT ON GITHUB` und
+`RUNS IN` lösen beide auf 200 auf.
+
+### Der Fund der Abnahme: der Vorgabe-Deckel des Zeugen ist kleiner als die Pipeline
+
+Gestartet **39 s nach dem Merge** — besser als H8b mit 50 s, und trotzdem zu spät:
+
+```
+Zeuge gibt auf   23:08:11Z   (898 s, Grenze 900)
+Deploy-Job endet 23:08:29Z
+Merge → Deploy-Start: 927 s
+```
+
+Er sagt es selbst: „900s elapsed and sha 56400fc never answered — **this window is
+not the deploy**." **Der Tausch ist diese Runde nicht bezeugt.** Das ist kein
+Messfehler und keine Delle, sondern eine Grenze, die überholt ist: seit `e2e` auf
+dem kritischen Pfad steht (endete 23:07:57, der Deploy startet vier Sekunden
+später; `quickstart` 23:04:34), liegt die Vorlaufzeit **über** den 900 s.
+
+`witness.sh` nennt den Wert selbst „a guard rail on the instrument, not a
+measurement of the system" und bietet `WITNESS_MAX_SEC` an. **Ab H9b wird er auf
+1800 gesetzt.** Aufgeschrieben statt beim nächsten Mal neu entdeckt.
+
+### Was der Zeuge hat, in Wanduhrzeit gerechnet
+
+Vier verlorene Verbindungen, eine pro Pfad, über 898 s bei 844 Anfragen je Pfad:
+
+```
+/api/health  22:54:32Z · /work 22:55:37Z · / 22:56:51Z · /blog/001-… 23:03:41Z
+```
+
+**Alle vier bis vierzehn Minuten vor dem Tausch**, also im Ruhezustand — dieselbe
+Familie wie die Notiz aus H8b und #304, nicht der Tausch. Die Sekunden sind
+umgerechnet und nicht geschätzt; ohne das läse sich der rote Lauf wie ein
+Deploy-Fund.
+
+### Gegen Produktion gemessen, nicht lokal
+
+| | |
+|---|---|
+| Beitragsspecs + Blatt-Orakel, 1440 · 390 | **59 grün**, inkl. Lauf über alle 22 Einträge |
+| axe, 7 Breiten | **70 grün** — die 7 fehlenden sind `/dev/components`, das Produktion mit 404 beantwortet |
+| ohne JavaScript | grün |
+| geklickt | TOC-Anker landet die Überschrift bei `top: 96px` — das ist die `scroll-margin`, nicht Zufall; Krume und Folge-Links gefahren |
+
+`E2E_BASE_URL=https://timseil.dev` mit `reuseExistingServer` — das Rig baut dann
+keinen eigenen Server, sondern misst die Seite. Der Weg, den die Notiz zum Rig
+vermisst hat.
+
+### Die maschinenlesbaren Flächen
+
+```
+sitemap   81 URLs · 66 Einträge (22 × 3) · 69 mit lastmod
+          022 → 2026-09-04   001 → 2026-08-23   je das published des Eintrags
+feed      der leere Kanal, unverändert
+/blog     LOG [SOON], unverändert
+Einträge  kein noindex
+```
+
+Feed und Stub sind so gewollt: H9b flippt den einen, H9c füllt den anderen.
+
+### Ein Fehlalarm, und er war meiner
+
+Der erste Blick auf die Sitemap zeigte `lastmod=NONE` an beiden geprüften
+Einträgen. Es war meine Regex — das `<lastmod>` steht **hinter** dem
+`xhtml:link`-Block, und mein Fenster war 400 Zeichen zu kurz. 69 von 81 URLs
+tragen eines. Dieselbe Familie wie der `jq`-Fehler aus H8c: **das Messgerät stand
+im Verdachtsfall nicht mit auf der Liste.**
+
+## Gefunden — aus der H9a-Abnahme
+
+- **`WITNESS_MAX_SEC` muss ab jetzt gesetzt werden.** 900 s Vorgabe gegen 927 s
+  Vorlaufzeit. Der Deckel war richtig, als die Pipeline kürzer war; `e2e` hat ihn
+  überholt, und niemand hat es gemerkt, weil bis H9a jeder Zeuge zufällig gepasst
+  hat. *(04.09.2026, H9a-Abnahme)*
+- **`durationSec` sagt 948 s, der Deploy dauerte 28 s.** #242, **elfte Notiz**,
+  und wieder auf die Sekunde nachgerechnet. Merge 22:52:34Z → `lastDeploy.at`
+  23:08:25Z sind 951 s; der Job lief 23:08:01Z → 23:08:29Z.
+  *(04.09.2026, H9a-Abnahme)*
+- **Ein Abnahmelauf gegen Produktion ist billiger als gedacht.**
+  `E2E_BASE_URL` plus `reuseExistingServer` heißt: dieselben Specs, dieselbe
+  Geometrie, aber an der echten Seite und ohne lokalen Bau. 59 + 70 grün in
+  zusammen 1,6 Minuten. *(04.09.2026, H9a-Abnahme)*
+
+## Verschoben aus der H9a-Abnahme
+
+- **#192 schließt der Merge nicht** — die Messung liegt jetzt vor, und das
+  Häkchen wird von Hand gesetzt, so wie es im PR steht.
+- **Der Tausch selbst bleibt für H9a unbezeugt.** Nicht nachholbar: er ist
+  vorbei. Was nachholbar ist, ist die Einstellung für das nächste Mal.
+- **#206 unverändert offen.** `{"accepted":8,"delivered":7,"rate":87.5}` steht
+  wie gestern. Eine Nachricht ist angenommen und nie ausgeliefert worden, und
+  von hier aus lässt sie sich nicht diagnostizieren.
+- **Wo wird die Zustellbarkeit gezeichnet?** Weiter offen, Stufe-H-Triage.
+
+---
+
+## Vorher — 04.09.2026, H9a gebaut: der Renderer steht, und er hat sofort etwas gefunden
 
 **Zweig `phase/h9a-post-renderer`.** ADR 0002 hat vor achtzehn Tagen MDX im
 Repository entschieden, und **kein Paket davon war installiert**. Einundzwanzig
