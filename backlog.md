@@ -12,7 +12,204 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 03.09.2026, H8a abgenommen: 10 von 10, und die erste Nachricht durch das eigene Formular
+## Wo wir stehen — 04.09.2026, H8b gebaut: der Zähler, den niemand belegen kann
+
+**Zweig `phase/h8b-contact-states`.** Die vier Lücken aus der H8a-Abnahme sind zu:
+die sechs Zustände sprechen die Zustandssprache, das TX-Panel schreibt mit, die
+Spur wird auf dem Telefon zu zwei Zeilen, und die Seite hält die Wartezeit,
+statt sie zu beschreiben.
+
+**Gegen Produktion ist nichts davon gemessen.** Alle Zahlen unten stammen vom
+lokalen Produktionsbuild. `make check` grün, `make e2e` über alle sieben
+Prüfbreiten plus Blatt-Orakel: **282 grün, 0 rot**, das Orakel ohne Drift.
+
+### Der stärkste Fund: ein `429` hat zwei Absender, und beide schreiben dasselbe
+
+Das Blatt zeichnet `versuch 1/3 · retry in 6s`. Der Zähler sah nach der leichten
+Hälfte aus — die API lässt drei Sendungen je zehn Minuten zu, und
+`CountRecentContactMessages` zählt **Zeilen in `contact_messages`**, nicht
+Anfragen. Was die Abfrage zählt, ist damit genau das, wofür diese Seite eine
+Quittung bekommt. Zählbar, ohne zu fragen.
+
+Dann die zweite Frage: **wo wird der `429` geschrieben?** An zwei Stellen. Vor
+jeder `/api/*`-Route steht ein Token-Bucket (`middleware/ratelimit.go`), und
+`Except` nimmt nur `/healthz` und `/readyz` aus — `/api/contact` also nicht. Der
+Kontakt-Boden ist der zweite. Beide gehen durch `httpx.WriteRateLimitProblem`:
+gleicher `type`, gleicher `title`, `detail` unterscheidet sich nur in der
+Sekundenzahl.
+
+**Ein `2/3` unter diesem Statuscode benennt, welcher der beiden abgelehnt hat,
+und das steht in der Antwort nicht.** In der Praxis fast nie falsch — ein Mensch
+am Formular trifft den Boden und nie den Bucket, der sechzig Anfragen am Stück
+braucht — aber nicht belegbar, und gedruckt in Monospace direkt unter dem Code,
+wo es wie seine Erklärung liest.
+
+Gedruckt wird deshalb nur die Wartezeit, und die Seite **hält** sie: der Button
+ist gesperrt, solange sie läuft, und wird von derselben Sekunde freigegeben, die
+die Zeile aus dem Protokoll nimmt. Eine Zahl, die zum Warten auffordert, neben
+einem Bedienelement, das nicht warten lässt, ist eine Zahl, die die Oberfläche
+selbst nicht glaubt.
+
+`waitLine()` liegt jetzt neben `retryLine()` in `lib/state/retry.ts`.
+**`retryLine()` hat weiter keinen Aufrufer außerhalb der Galerie** — #231 bleibt
+offen, mit einer Messung statt einer Vermutung.
+
+Als `021-the-counter-i-could-not-prove.mdx` aufgeschrieben.
+
+### Der zweite Fund kam vom Bedienen, nicht vom Lesen
+
+Drei Felder per Skript in sieben Millisekunden gefüllt, gesendet — und das
+Protokoll schrieb **`dwell 7ms`** unter eine Anfrage, die 3000 trug.
+
+Die Ursache ist eine Grenze, die ADR 0067 absichtlich gezogen hat: die
+gezeichnete Anfrage ist der **Stand des letzten Tastendrucks**, weil eine
+mitlaufende Anzeige eine Sekunde pro Re-Render für eine Zahl kostet, die niemand
+abliest. Das Protokoll ist aber kein Entwurf, sondern ein **Abfahrtsprotokoll**,
+und was abfährt, wird beim Absenden frisch gemessen. Es las die falsche der
+beiden Zahlen.
+
+**Durch Lesen war das nicht zu finden** — wer das Formular wie ein Mensch
+ausfüllt, wartet den Boden ohnehin ab, und dann stimmen die beiden Zahlen fast
+überein. Der e2e-Test hält jetzt die gedruckte Zahl gegen die **gesendete**,
+nicht gegen den Boden.
+
+### Und der dritte Fund stand zwei Zeilen daneben
+
+Mit der Reparatur oben zeigte das Panel `"dwellMs": 6` im gezeichneten Rumpf und
+`dwell 7255ms` im Protokoll darunter — **dasselbe Feld, zwei Zeilen auseinander,
+zwei Zahlen.** Gesendet wurde 7255.
+
+Das ist kein neuer Fehler, sondern ein alter, der erst jetzt zu sehen ist:
+ADR 0067 führt ihn unter „Was das kostet" (*„Der Trace ist der Stand des letzten
+Tastendrucks"*), und bis H8b zeigte nichts auf der Seite die gesendete Zahl, an
+der man es hätte merken können. Der Kopfkommentar von `TxTrace` sagt aber, das
+Panel **sei** die Anfrage und nicht ihre Zeichnung.
+
+Die Zeichnung wechselt jetzt in dem Moment auf den gesendeten Rumpf, in dem er
+abfährt. Der Grund von ADR 0067 bleibt unangetastet — beim Tippen tickt nichts —
+und nach dem Absenden beschreibt alles auf dem Bildschirm dieselbe Sendung.
+
+### Drei Behauptungen des Blatts, die der Browser nicht beobachtet hat
+
+`> spam checks … ok` (die Prüfung läuft in der API), `> handing to provider …`
+(die Seite sieht nie einen Provider), `kopie an dich unterwegs` (ADR 0067 §7).
+Das Protokoll schreibt stattdessen, was es gesehen hat:
+
+```
+> honeypot empty · dwell 3247ms
+> POST /api/contact
+< 202 accepted · 1120ms
+  msg_01M1MGN4V2DX7ZPP · 14:22:07 UTC
+```
+
+`accepted`, nie `delivered`. Und **`1120ms` ist der Grund, warum es das
+Protokoll überhaupt gibt**: ADR 0021 §2 macht Erfolg und stille Verwerfung über
+den Statuscode ununterscheidbar, die Dauer nicht. Die H8a-Abnahme musste sie von
+Hand messen; jetzt steht sie auf der Seite.
+
+### Das „Sitzungs-Protokoll" ist keins, und das ist eine Lesart-Korrektur
+
+Der Handoff-Eintrag las sich wie eine Historie vergangener Sendungen. Im
+Laufzeit-Skript des Blatts setzt `send()` **`log: []` bei jedem Aufruf** — es
+gibt dort keine Historie, keine Überschrift, keinen Speicher. Der einzige
+Hinweis auf Aufbewahrung, `3 EINTRÄGE LOKAL`, ist von ADR 0067 §7 gestrichen und
+verlangte einen dritten localStorage-Key, den Invariante 9 nicht hat. Gebaut ist
+das Protokoll **einer** Übertragung.
+
+### Der eine Alert-Moment wurde vorher nie ausgegeben
+
+Bis H8b waren beide Verweigerungen amber; die Seite hat das Rot, das ihr das
+Blatt zugesteht, nie benutzt. Jetzt wird es genau einmal ausgegeben — und dafür
+zerfällt der `400` in zwei Zustände: **mit Feldern `REJECTED`** (das Rot trägt
+`.field-error`, seit G7), **ohne Felder `FAILED`**. ADR 0067 §5 hatte die Sätze
+schon getrennt, die Töne nicht.
+
+### `readOnly` hatte keine einzige Regel
+
+„Felder gesperrt, nicht ausgegraut" war seit H8a ein Satz ohne Zeile: das
+Formular setzte `readOnly`, und kein Stylesheet zeichnete es. Der eine Zustand,
+in dem ein Besucher am ehesten wissen will, ob sein Text noch seiner ist, sah aus
+wie der davor.
+
+### Die Insel wächst um 1 475 Byte
+
+| | H8a | H8b | |
+|---|---|---|---|
+| `/contact`, eigene Insel gzip | 4 873 | **6 348** | +1 475 |
+| `/work`, eigene Insel | 1 635 | 1 626 | Vergleichswert |
+
+Gemessen wie in H8a: die Client-Chunks der Route ohne die von `/`, einzeln
+gzip'd. Dass `/work` auf 9 Byte trifft, ist die Kalibrierung der Methode.
+
+**Das ist eng.** ADR 0050 ließ 6 725 Byte für sechs Bauteile; `/contact` allein
+belegt jetzt 6 348 davon. Terminal (J1/J2), 404-Spiel (H10) und
+Contribution-Graph liegen auf anderen Routen, und **dass das Gate das nicht
+sieht, ist #320 und #301 von der anderen Seite** — `bundle-size.sh` misst `/`
+und lehnt dort seit H3 ohnehin ab (#301: „holds framework and our own modules").
+Ein sauberer Baseline-Lauf gegen `main` kam nicht zustande: Turbopack lehnt in
+einem Worktree den `node_modules`-Symlink ab („points out of the filesystem
+root"). Die Aussage stützt sich deshalb auf #301 plus den unveränderten
+Komponentengraph von `/`, nicht auf einen Vergleichslauf.
+
+Nachgemessen und **nicht** eingetreten: `stripControl` zieht `lib/scrub.ts`
+nicht mit — die Literale der übrigen Exporte stehen in keinem Client-Chunk.
+
+### Der vierte Fund kam aus der CI, nicht von hier
+
+`retry in 201s` bei einem `Retry-After: 200`. Die Frist lag in Millisekunden, die
+Uhr, die eine Komponente lesen darf, liefert ganze Sekunden — den **Anfang** der
+laufenden Sekunde — und `ceil()` machte daraus eine Sekunde zu viel.
+
+**Von sieben Prüfbreiten fiel genau eine (w1081).** Lokal war derselbe Test
+grün, weil die Sekundengrenze anders lag. Die Arithmetik liegt jetzt in
+`lib/state/retry.ts` unter `node --test`, wo sie nicht mehr davon abhängt, wann
+ein Browser gestartet wurde.
+
+Der Fehler zeigte in die sichere Richtung — zu lange warten — und war trotzdem
+eine erfundene Zahl auf der Fläche, deren Zweck Genauigkeit ist.
+
+## Gefunden — aus H8b
+
+- **Zwei Begrenzer, ein Dokument.** Token-Bucket und Kontakt-Boden schreiben
+  ihren `429` durch dieselbe Funktion. Jede Zahl, die neben diesem Statuscode
+  seinen Grund benennt, ist unbelegbar. *(04.09.2026, H8b)*
+- **Das Protokoll las den Entwurf statt der Abfahrt.** `dwell 7ms` unter einer
+  Anfrage mit 3000. Zwei Zahlen, die dieselbe Größe heißen, und die Grenze
+  zwischen ihnen ist eine Entscheidung aus ADR 0067. *(04.09.2026, H8b)*
+- **Und dieselbe Grenze machte das Panel sich selbst widersprechen.** `"dwellMs":
+  6` in der Zeichnung, `dwell 7255ms` im Protokoll darunter. Der Fehler ist so
+  alt wie H8a; sichtbar wurde er erst, als etwas die gesendete Zahl danebenstellte.
+  **Beide Funde kamen vom Bedienen, keiner vom Lesen** — und beide liegen in der
+  Zahl, um die diese ganze Seite gebaut ist. *(04.09.2026, H8b)*
+- **Das „Sitzungs-Protokoll" des Blatts ist eine Sendung, keine Sitzung.**
+  Nachgelesen im Skript, nicht aus dem Namen geschlossen. *(04.09.2026, H8b)*
+- **Der Alert-Moment war nie ausgegeben.** Beide Verweigerungen amber, seit H8a.
+  *(04.09.2026, H8b)*
+- **Ein zeitabhängiger e2e-Test ist an sieben Breiten sieben Stichproben.** Die
+  201 fiel nur bei w1081; lokal an allen sieben grün. Die Lehre ist nicht „mehr
+  Toleranz im Test", sondern: Arithmetik gehört unter `node --test`, wo keine
+  Sekundengrenze mitwürfelt. *(04.09.2026, H8b, aus der CI)*
+- **`layout.css` ist zu ~50 % deutsch kommentiert**, jede andere Stilvorlage
+  englisch. `CLAUDE.md` sagt Englisch. Drift, kein Beschluss — der neue Block
+  ist englisch. *(04.09.2026, H8b)*
+
+## Verschoben aus H8b
+
+- **#231 bleibt offen**, jetzt mit gemessenem Grund: `retryLine()` bekommt hier
+  keinen Aufrufer, weil der Zähler nicht belegbar ist. H13 ist der nächste
+  Kandidat, falls die Fehlerseite wirklich pollt.
+- **#206 (Zustellbarkeit als SLI) bleibt offen.** „Fällig mit H8" ist erreicht
+  und nicht eingelöst: das Issue verlangt eine Contract-Entscheidung und eine
+  SQL-Abfrage in der API, H8b ist eine Web-Phase. Die Fälligkeit ist jetzt
+  überschritten und das gehört beim nächsten Triage entschieden.
+- **#301/#320 blockieren die Budget-Messung.** Solange `bundle-size.sh` `/`
+  misst und dort ablehnt, wird jede Insel dieser Site von Hand gemessen.
+- **Der Scan-Balken des Blatts ist nicht gebaut** — 1,1 s ist eine Dauer, die
+  `tokens.css` nicht hat, und das Blatt sagt an derselben Stelle „kein Spinner".
+
+---
+
+## Vorher — 03.09.2026, H8a abgenommen: 10 von 10, und die erste Nachricht durch das eigene Formular
 
 `89d4062` läuft. Merge 20:36:44Z, Deploy-Job 20:49:02Z–20:49:35Z (**33 s**),
 Container laufen seit **20:49:37.89Z** (api) und **20:49:43.83Z** (web).
@@ -172,9 +369,7 @@ Zum achten Mal notiert, #242.
   beweist den SMTP-Umlauf, nicht die Ankunft. Die Quittung ist
   `msg_01M1MGN4V2DX7ZPP`.
 
-**Als Nächstes:** H8b — die sechs Zustände als Zustandssprache, die Retry-Zeile
-aus `lib/state/retry.ts`, das Sitzungs-Protokoll im TX-Panel und die Statuszeile,
-zu der die Spur auf dem Telefon wird.
+**Als Nächstes war:** H8b — gebaut, siehe oben.
 
 ---
 

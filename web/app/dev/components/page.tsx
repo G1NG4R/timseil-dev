@@ -14,6 +14,7 @@ import { ChipStates } from "@/components/dev/ChipStates";
 import { StateFlip } from "@/components/dev/StateFlip";
 import { DegradedNotice } from "@/components/state/DegradedNotice";
 import { EmptyState } from "@/components/state/EmptyState";
+import { TxTrace } from "@/components/contact/TxTrace";
 import { ErrorPanel } from "@/components/state/ErrorPanel";
 import { LoadingLines } from "@/components/state/LoadingLines";
 import { NoData } from "@/components/state/NoData";
@@ -33,7 +34,10 @@ import { STATIONS } from "@/lib/about/trajectory";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
 import { en } from "@/lib/i18n/messages/en";
-import { retryLine } from "@/lib/state/retry";
+import { sessionLines } from "@/lib/contact/log";
+import type { ContactRequest } from "@/lib/contact/payload";
+import { CONTACT_STATE_KEYS, type ContactStateKey } from "@/lib/contact/states";
+import { retryLine, waitLine } from "@/lib/state/retry";
 import { MARKS, STATE_KEYS, stateLabel, type DayState, type StateKey } from "@/lib/state/words";
 
 /**
@@ -497,6 +501,31 @@ export default function GalleryPage() {
               retry={retryLine(30, 2, 5)}
             />
           </div>
+        </div>
+      </section>
+
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">ContactForm</h2>
+          <span className="gal-where">contact · six states, and never one by colour alone</span>
+        </div>
+        {/* THE SIX, SIDE BY SIDE, WHICH IS THE ONLY PLACE THEY EVER ARE. On the
+            page a visitor sees one at a time and four of them need a particular
+            answer from the api to reach at all — a 429 needs three messages in
+            ten minutes, a 502 needs the relay to be down. The Consistency
+            Check's second round lists "sechs Formzustände" as settled for this
+            page, and until here nothing rendered the claim.
+
+            THE PANEL AND NOT A LIVE FORM. Six islands on one document would be
+            six honeypots and six dwell clocks, and the state is not in the
+            fields — it is in this strip, which is what H8b built. */}
+        <div className="gal-demo">
+          {CONTACT_STATE_KEYS.map((state) => (
+            <div className="gal-case" key={state}>
+              <span className="gal-case-label">{state}</span>
+              <TxTrace body={galleryBody(state)} lines={galleryLog(state)} state={state} />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -1085,4 +1114,68 @@ function Row({ part }: { part: Part }) {
       </p>
     </div>
   );
+}
+
+/**
+ * A request for the gallery to draw, or `null` where the state has none.
+ *
+ * FIXED VALUES AND A FIXED TIMESTAMP, because this page is also a visual
+ * regression target: a body built from `new Date()` would make every run
+ * different in the one place a diff is supposed to mean something. The address
+ * is the sheet's own (`anna.keller@firma.lu`), so the panel here draws what the
+ * artboard draws.
+ */
+function galleryBody(state: ContactStateKey): ContactRequest | null {
+  if (state === "rest") return null;
+
+  return {
+    name: "Anna Keller",
+    email: "anna.keller@firma.lu",
+    message: "Hi Tim, we are looking for somebody for our payment pipeline.",
+    company: "",
+    dwellMs: 3247,
+    ts: "2026-09-03T14:22:04Z",
+  };
+}
+
+/** The log each state carries, built by the same function the page uses. */
+function galleryLog(state: ContactStateKey): ReturnType<typeof sessionLines> {
+  const base = {
+    state,
+    honeypotEmpty: true,
+    dwellMs: 3247,
+    invalidCount: 0,
+    status: null as number | null,
+    statusText: null as string | null,
+    durationMs: null as number | null,
+    receipt: null as string | null,
+    answeredAt: null as number | null,
+    retry: null as string | null,
+  };
+
+  switch (state) {
+    case "rejected":
+      return sessionLines({ ...base, invalidCount: 2 });
+    case "accepted":
+      return sessionLines({
+        ...base,
+        status: 202,
+        durationMs: 1120,
+        receipt: "msg_01M1MGN4V2DX7ZPP",
+        answeredAt: Date.parse("2026-09-03T14:22:07Z"),
+      });
+    case "failed":
+      // The 429, because it is the one state with a line that ticks: the page
+      // holds the api's measured wait and prints what is left of it.
+      return sessionLines({
+        ...base,
+        status: 429,
+        statusText: "Too many requests",
+        durationMs: 84,
+        answeredAt: Date.parse("2026-09-03T14:22:07Z"),
+        retry: waitLine(412),
+      });
+    default:
+      return sessionLines(base);
+  }
 }

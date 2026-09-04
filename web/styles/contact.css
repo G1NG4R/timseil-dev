@@ -134,10 +134,19 @@
   color: var(--dim);
 }
 
-.cf-status[data-phase="sending"] { color: var(--ink-2); }
-.cf-status[data-phase="accepted"] { color: var(--acc); }
-.cf-status[data-phase="invalid"] { color: var(--amber); }
-.cf-status[data-phase="failed"] { color: var(--amber); }
+/* Six states and four tones, which is the state language's own arithmetic:
+   fewer tones than states, so the colour cannot be the thing that names one.
+   REST and COMPOSING take the inherited dim and are told apart by the word in
+   the panel; lib/contact/states.ts holds that pair against ADR 0063.
+
+   THE ALERT MOMENT MOVED HERE FROM NOWHERE. Until H8b both refusals were amber
+   and this page never spent the red the sheet reserves for it ("EIN
+   ALERT-MOMENT: DER FEHLSCHLAG"). It is spent once: a 400 that names fields is
+   REJECTED and leaves the red to `.field-error`, which already carries it. */
+.cf-status[data-state="sending"] { color: var(--ink-2); }
+.cf-status[data-state="accepted"] { color: var(--acc); }
+.cf-status[data-state="rejected"] { color: var(--amber); }
+.cf-status[data-state="failed"] { color: var(--alert); }
 
 /* The receipt. Quotable is the whole point, so it is selectable, monospaced and
    the brightest thing in the sentence. */
@@ -165,16 +174,18 @@
   color: var(--steel);
 }
 
-.tx-dot {
-  width: var(--s-6);
-  height: var(--s-6);
-  border-radius: var(--radius-dot);
-  background: var(--acc);
-}
+/* NO `.tx-dot` ANY MORE. The head draws `.st-dot` from styles/state.css, which
+   is the same seven pixels every other state on this site is marked with —
+   solid, ring, barred or a dash, by the kind of answer behind it. What was here
+   was `--acc` in every state including the failed one, which is a green light
+   over a red sentence. */
 
 .tx-name { color: var(--ink-2); }
 
-/* Pushed to the right so the two readouts sit together, away from the label. */
+/* Pushed to the right so the two readouts sit together, away from the label.
+   It is `.st-word` as well, so the colour comes from `--st-color` and the tone
+   on the panel — this rule sets position and size and no colour at all, which
+   is the restraint state.css asks of every caller. */
 .tx-state {
   margin-inline-start: auto;
   font-size: var(--t-mono-9);
@@ -213,3 +224,18 @@
 /* The note beside the honeypot. Dim, because it is an annotation on the drawing
    and not part of the request — the one line in the block that is not bytes. */
 .tx-note { color: var(--dim); }
+
+/* ── The log ───────────────────────────────────────────────────────────────
+   What happened, under what was about to happen. `.st-log` draws the prompts;
+   this places the block. Separated by a rule rather than by space alone,
+   because the two halves of this panel are different tenses: above is the
+   request as it stands, below is what became of it.                         */
+
+.tx-log {
+  padding: var(--s-16);
+  border-block-start: 1px solid var(--line);
+}
+
+/* The answer is the line a visitor came back for. It takes the panel's brightest
+   ink; the steps this page took on the way stay at the log's own level. */
+.tx-log > li[data-dir="in"] { color: var(--ink); }

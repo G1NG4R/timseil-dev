@@ -102,3 +102,43 @@ export function clockSnapshot(): string {
 export function clockServerSnapshot(): string {
   return CLOCK_PLACEHOLDER;
 }
+
+// ── The same second, as a number ───────────────────────────────────────────
+//
+// H8b needed the clock to COMPARE a time rather than to print one: the contact
+// form holds the api's measured `Retry-After` and counts it down, and a
+// countdown needs "how many seconds are left", not "14:22:07".
+//
+// IT IS A SNAPSHOT AND NOT A `Date.now()` IN THE COMPONENT, which is the whole
+// point of putting it here. Reading a wall clock in a render body is what makes
+// a render non-idempotent — React may run it twice and get two answers — and
+// the lint rule `react-hooks/purity` refuses it outright. `getSnapshot` is the
+// one place a clock is allowed to be read, because React knows to call it
+// again rather than to trust what it returned.
+
+/**
+ * The current second, from the same interval every other clock on this page
+ * reads.
+ *
+ * NO CACHE, AND THE STRING ABOVE HAS ONE. That difference is not an oversight:
+ * `clockSnapshot` caches because two calls in one second must return the
+ * IDENTICAL string, and `Object.is` on two equal strings built separately is
+ * true in practice but is not what the value promises. Two equal numbers are
+ * `Object.is`-equal by definition, so the cache would be a line that cannot
+ * change any outcome.
+ */
+export function secondSnapshot(): number {
+  return Math.floor(Date.now() / CLOCK_INTERVAL_MS);
+}
+
+/**
+ * Zero, on the server and during hydration alike — `clockServerSnapshot`'s
+ * placeholder in the other unit.
+ *
+ * A caller reads it as "the browser clock has not taken over yet" and counts
+ * nothing down, which is correct rather than defensive: nothing can be being
+ * waited out before a visitor has pressed anything.
+ */
+export function secondServerSnapshot(): number {
+  return 0;
+}

@@ -272,9 +272,15 @@ export const PARTS: readonly Part[] = [
     where: "contact",
     states: ["rest", "fokus", "feldfehler", "sending", "accepted (202 + id)", "failed (502/429)"],
     origin: "inventory",
-    module: null,
-    owedBy: "H8",
-    preview: false,
+    module: "components/contact/ContactForm.tsx",
+    owedBy: null,
+    // WHAT THE GALLERY DRAWS IS THE PANEL, NOT SIX FORMS. The row above is the
+    // sheet's transcription and its six names are field states and form states
+    // mixed — `fokus` belongs to a field, `failed (502/429)` to the form. Both
+    // are said in one place, the TX strip, and that is what H8b built and what
+    // the preview shows in all six. Six live islands on one document would be
+    // six honeypots and six dwell clocks to look at one strip.
+    preview: true,
     note: null,
   },
   {

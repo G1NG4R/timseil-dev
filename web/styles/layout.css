@@ -679,3 +679,55 @@
      under the name rather than being pushed off the edge. */
   .trn-mod-head { flex-wrap: wrap; row-gap: var(--s-4) }
 }
+
+/* ── SYS.06 · the trace becomes a status line ──────────────────────────────
+   Build plan H8, sheet artboard `1c`, whose caption is the whole rule: "Mobile
+   · 390 — TX-Spur wird eine Statuszeile". Under the button it draws two lines —
+   a dot in the state's tone with `202 accepted · 412ms`, and `msg_… · 14:22:07
+   UTC` below it — and no frame, no header strip, no JSON.
+
+   720 AND NOT 1080. The sheet draws 1440 and 390 and says nothing about what
+   lies between. 720 is the switch this page already takes (the display step
+   falls to 34 here), and between 720 and 1079 the stacked panel is readable:
+   640px of form column carries `  "email": "…",` without breaking. A width of
+   its own would break the rule at the head of this file.
+
+   WHAT IT COSTS, AND IT IS THIS PHASE'S EXPENSIVE TRADE. Below 720 the page
+   gives up its strongest argument — the drawn request, the one surface where a
+   visitor can read that their text and no third party is in the packet. The
+   reason to do it anyway: that line is up to 4000 characters of JSON on one
+   line, and it scrolls sideways behind 346px of screen, on the one device where
+   the reader cannot see that there is more. That is the shape #294 holds open
+   against the request path, and it is not built a second time here.
+
+   THE WORD STAYS, THE REST GOES. The sheet leaves only the dot on the phone;
+   this leaves the state word beside it. Nine characters against the rule that
+   no state speaks through colour alone — on the one device where the colour of
+   a dot would otherwise be all that is left of it.                           */
+@media (max-width: 719px) {
+  /* With no lines there is nothing to show. An empty frame under the button
+     would be a component announcing that it has nothing to say; TxTrace sets
+     `data-log` as soon as the log has one line. */
+  .tx:not([data-log]) { display: none }
+
+  /* Not a box any more but an edge in the state's tone — `--st-color` comes
+     from the panel's own `data-tone`, so it is the same mark as the dot and
+     the word rather than a second decision about the same state. */
+  .tx {
+    border: 0;
+    border-inline-start: 1px solid var(--st-color, var(--line));
+  }
+
+  .tx-head { border-block-end: 0; padding-block-end: 0 }
+
+  /* `TX` labels a panel that is no longer one, and the byte counter counts a
+     body that is no longer drawn. */
+  .tx-name, .tx-bytes, .tx-body { display: none }
+
+  /* Without `TX` the `auto` margin pushes the word to the far edge, where it
+     would stand alone. It belongs beside the dot, which is where the sheet
+     draws it. */
+  .tx-state { margin-inline-start: 0 }
+
+  .tx-log { padding: var(--s-12) var(--s-16) 0 }
+}

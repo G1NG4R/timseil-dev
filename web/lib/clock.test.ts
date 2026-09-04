@@ -18,6 +18,8 @@ import test from "node:test";
 import {
   CLOCK_INTERVAL_MS,
   CLOCK_PLACEHOLDER,
+  secondServerSnapshot,
+  secondSnapshot,
   clockServerSnapshot,
   clockSnapshot,
   formatUtc,
@@ -172,4 +174,31 @@ void test("unsubscribing twice does not clear the interval out from under anyone
     globalThis.setInterval = realSet;
     globalThis.clearInterval = realClear;
   }
+});
+
+// ── The same second, as a number ───────────────────────────────────────────
+
+void test("the second snapshot is the same clock in another unit", () => {
+  const before = Math.floor(Date.now() / CLOCK_INTERVAL_MS);
+  const snapshot = secondSnapshot();
+  const after = Math.floor(Date.now() / CLOCK_INTERVAL_MS);
+
+  // Straddling a second boundary is the only way these differ, and then the
+  // snapshot is one of the two rather than something else.
+  assert.ok(snapshot === before || snapshot === after);
+});
+
+void test("two readings inside one second are the identical value", () => {
+  // The countdown that reads this compares it against a deadline. A snapshot
+  // that changed within a second would make React re-render for nothing, and
+  // the number is Object.is-equal by definition, which is why there is no
+  // cache here and there is one on the string.
+  assert.equal(secondSnapshot(), secondSnapshot());
+});
+
+void test("the server snapshot counts nothing down", () => {
+  // The other half of ADR 0044's argument, in the other unit: the server pass
+  // and the hydration pass must not read a wall clock, and a caller reads zero
+  // as "the browser has not taken over yet".
+  assert.equal(secondServerSnapshot(), 0);
 });
