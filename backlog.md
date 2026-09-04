@@ -12,7 +12,146 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 04.09.2026, H8b abgenommen: 10 von 10, und die Dauer, die zweimal gemessen wurde
+## Wo wir stehen — 04.09.2026, H8c gebaut: die fünfte Zahl, und der Nenner, der neben sie gehört
+
+**Zweig `phase/h8c-deliverability`.** Issue #206, fällig mit H8 und von H8a und
+H8b nicht angefasst, weil beide Web-Phasen waren. Die Zustellbarkeit war seit F5
+der eine SLI mit einer Definition, einer Datenquelle und keinem Weg aus der
+Datenbank. Jetzt hat sie beides, was #206 verlangt hat: die Abfrage und ein Feld
+im Contract.
+
+Noch nicht gegen Produktion gemessen — das ist die Abnahme und kommt nach dem
+Merge.
+
+### Die Entscheidung der Phase war der Ort, nicht die Abfrage
+
+#206 hat sich selbst als „a contract decision" bezeichnet, und das war richtig.
+`Metrics` ist pro System, hängt an `state='live'` und fährt in jedem `System`
+mit. Die Zustellbarkeit ist site-global, betrifft eine Warteschlange, hat ein
+anderes Fenster — und es gibt **ein** Kontaktformular. Als `Metrics`-Feld trüge
+jedes andere System ein `null`, das „nicht zutreffend" heißt statt „nicht
+gemessen", also eine zweite Bedeutung für `null`.
+
+Sie steht deshalb in `OpsSummary`, neben `systemsLive` und `lastDeploy`, und im
+Handler **außerhalb** des `live`-Gatters. ADR 0069 trägt das mit drei weiteren
+Entscheidungen.
+
+### Fünf Zustände am laufenden Endpunkt, ab einer Datenbank von Null
+
+`make dev-reset`, Stack hoch, dann `/api/health` → `.ops.deliverability` nach
+jedem Schritt:
+
+```
+Datenbank von Null, nie eine Nachricht   {"accepted":0,"delivered":0,"rate":null}
+eine angenommen, noch queued             {"accepted":1,"delivered":0,"rate":0}
+und sie geht raus                        {"accepted":1,"delivered":1,"rate":100}
+der Dispatcher gibt eine zweite auf      {"accepted":2,"delivered":1,"rate":50}
+dieser Fehlschlag ist 31 Tage alt        {"accepted":1,"delivered":1,"rate":100}
+```
+
+**Zeile 1 und Zeile 2 sind Invariante 1, nebeneinander.** `null` heißt, es gab
+nichts zu teilen; `0` heißt, es gab etwas und nichts davon kam an. Ein Formular,
+das noch niemand benutzt hat, ist kein Formular, das Nachrichten verliert — und
+`0,00 %` am einzigen Konversionspunkt wäre die lauteste erfundene Zahl, die
+diese Seite drucken kann.
+
+**Zeile 4 ist der Fehlerfall, für den es diesen SLI gibt:** eine Nachricht, die
+mit `202` quittiert und nie ausgeliefert wurde. Ohne diese Zahl bemerkt sie
+niemand. **Zeile 5 ist die Fenstergrenze** — derselbe Fehlschlag, um einen Tag
+zu alt, verschwindet aus beiden Zählwerten.
+
+### Ein Messfehler dieser Runde, und er war meiner
+
+Der erste Blick auf den Endpunkt nach `dev-reset` zeigte
+`"deliverability": null`, und das sah nach einem echten Fund aus. Es war mein
+`jq`: in `{ops: {uptime90d, …, deliverability}}` laufen die inneren Kürzel gegen
+die **Wurzel** und nicht gegen `.ops`, also kamen alle als `null` zurück. Auf
+einer frischen Datenbank sind die drei Metriken tatsächlich `null`, weshalb das
+Bild stimmig aussah. Der rohe Rumpf war die ganze Zeit richtig. Dieselbe Familie
+wie die Messfehler aus G4 und G5: **das Messgerät stand im Verdachtsfall nicht
+mit auf der Liste.**
+
+### Der stärkste Fund: der Generator hat die Nullbarkeit zweimal falsch geraten
+
+Geplant war der `NULL`-Zweig in SQL, wie ihn `InsertMetricSnapshot` für die
+Verfügbarkeit hält. Als `CASE` geschrieben tippt sqlc die Spalte
+`interface{}` — und mit einem äußeren `::double precision`, der das reparieren
+sollte, tippt es sie als **nicht-nullbares `float64`**. Das ist die schlechtere
+der beiden Fassungen: der Scan bräche auf genau der leeren Datenbank, also dem
+einen Fall, für den der Zweig existiert, und zwar erst zur Laufzeit.
+
+Beide Zählwerte sind `NOT NULL` und werden exakt abgeleitet. SQL liefert also
+die Zählwerte, `internal/health` bildet den Quotienten, und der `NULL`-Zweig ist
+ein `if`, den ein Test ohne Postgres erreicht. Aufgeschrieben in der Abfrage
+selbst, damit die Abweichung von `metrics.sql` nicht wie Nachlässigkeit aussieht.
+
+### Der kaputte Fall, vorgeführt
+
+`TestAMessageOlderThanTheWindowIsOutsideBothCounts` gegen eine absichtlich um
+365 Tage verbreiterte Abfrage:
+
+```
+--- FAIL: TestAMessageOlderThanTheWindowIsOutsideBothCounts
+    accepted = 2, want 1 — the 31-day-old row is outside a 30-day window
+```
+
+Die Fenstergrenze ist die einzige Behauptung dieser Abfrage, die ein Stub nicht
+prüfen kann, und sie ist die, die eine Quote sonst still über die ganze
+Geschichte rechnen ließe.
+
+### Was `make check` gefunden hat und der Plan nicht
+
+Zwei Test-Fixtures in `web/` bauen eine Antwort von `/api/health`. Das Feld ist
+`required`, also war die eine typisierte davon nach `make gen` rot. Der Plan
+hatte „keine Web-Änderung außer `schema.d.ts`" behauptet; das war eine Zeile
+daneben. Beide tragen jetzt den leeren Fall — `rate: null` bei null
+angenommenen —, und **nichts in `web/` liest das Feld**.
+
+## Gefunden — aus H8c
+
+- **Der Nenner geht mit an die Öffentlichkeit.** `/api/health` ist öffentlich,
+  also sagt `accepted` einem Fremden, wie viele Menschen in dreißig Tagen
+  geschrieben haben. Heute einstellig. Bewusst gezahlt: eine Quote ohne ihren
+  Nenner ist #208 ein zweites Mal, und es ist eine Zahl über den Betrieb dieser
+  Seite, keine über die Härtung dieses Hosts. Steht als Preis in ADR 0069.
+  *(04.09.2026, H8c)*
+- **Eine Nachricht in Flug drückt die Quote, bis zu dreißig Minuten lang.** Der
+  letzte Versuch des Dispatchers liegt bei 0 · 2 · 6 · 14 · 30. Bei
+  einstelligem Nenner sind das zweistellige Prozentpunkte. Die Richtung ist
+  gewollt — eine klemmende Warteschlange soll sichtbar sein, solange sie
+  klemmt — aber wer die Quote ohne `accepted` daneben liest, liest sie falsch.
+  *(04.09.2026, H8c)*
+- **`docs/slo.md` sagte „Drei davon erreichen die Seite […] Zwei nicht", und
+  beide Hälften stimmten nach dieser Phase nicht mehr.** Eine Zahl kann die API
+  erreichen, ohne die Seite zu erreichen; dieses Dokument hatte für den
+  Unterschied keine Worte. Es hat jetzt welche. *(04.09.2026, H8c)*
+- **Die Tabelle im Observability-Runbook hatte eine Zeile „keine Regel" und
+  brauchte eine zweite.** Wer die Recording Rule für die Zustellbarkeit sucht,
+  sucht etwas, das es nicht gibt. *(04.09.2026, H8c)*
+
+## Verschoben aus H8c
+
+- **Wo wird die Zustellbarkeit gezeichnet?** Sie steht in `/api/health` und auf
+  keiner Seite. `docs/design/INDEX.md` hat kein Blatt dafür, und ADR 0052 legt
+  die Kachelreihe der Fallstudie auf fünf fest — eine sechste wäre eine
+  Entwurfsentscheidung ohne Blatt. **Zu entscheiden bei der Stufe-H-Triage**,
+  nicht still im Vorbeigehen. Steht auch in `docs/slo.md` unter „Was hier nicht
+  steht".
+- **Ein Dashboard-Panel für die Zustellbarkeit → F9**, wo die anderen vier schon
+  liegen. `CLAUDE.md` verlangt zu jeder Metrik eins; ihre Quelle ist Postgres und
+  keine Recording Rule, also kann `check-rule-names.sh` sie nicht prüfen. Als
+  Zeile in `docs/slo.md` geführt, damit es kein Versprechen bleibt.
+- **Kein Index auf `received_at`.** `00006_contact.sql`s eigene Regel: der Index
+  kommt mit dem Job, nicht davor. `accepted` in eben dieser Antwort ist das
+  Instrument, das sagen wird, wann der Scan einen verdient hat.
+- **#206 wird nicht vom Merge geschlossen.** `CONTRIBUTING.md` lässt `Closes`
+  nur zu, wenn der Merge selbst die Abnahme ist. Hier ist die Abnahme eine
+  Messung gegen Produktion danach, also `Measured in #206` und von Hand
+  schließen.
+
+---
+
+## Vorher — 04.09.2026, H8b abgenommen: 10 von 10, und die Dauer, die zweimal gemessen wurde
 
 `2b3dce0` läuft. Merge 06:37:27Z, Deploy 06:56:36Z, Container laufen seit
 **06:56:53.094Z** (api) und **06:56:58.999Z** (web). Uhrzeit mit `date -u`

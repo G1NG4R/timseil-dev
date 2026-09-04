@@ -19,10 +19,13 @@ diese Seite behauptet von sich, den Unterschied zu kennen.
 | **Latenz** | `timseil:site:request_duration_seconds:p95_5m` | 5 min | p95 < 300 ms | gemessen, **auf einen Bucket genau** |
 | **Fehlerrate** | `timseil:site:requests:error_ratio_5m` | 5 min | < 0,1 % | gemessen |
 | **Latenz API getrennt** | — | — | p95 < 150 ms | **nicht getrennt gemessen** |
-| **Zustellbarkeit** | `contact_messages.delivery_status` | — | > 99 % | **nicht gemessen** |
+| **Zustellbarkeit** | `contact_messages.delivery_status` | 30 Tage | > 99 % | gemessen, **noch nicht gezeichnet** |
 
 Drei davon erreichen die Seite als `Metrics.uptime90d`, `Metrics.p95Ms` und
-`Metrics.errorRate`. Zwei nicht, und beide stehen unten mit ihrem Grund.
+`Metrics.errorRate`. Die vierte erreicht seit H8c die **API** als
+`OpsSummary.deliverability` — gemessen, abrufbar, und von keinem Blatt
+gezeichnet; der Unterschied steht unten und ist keine Nachlässigkeit, sondern
+eine offene Entwurfsfrage. Die fünfte ist gar nicht getrennt gemessen.
 
 ---
 
@@ -222,17 +225,77 @@ lebt in dieser einen Zeile PromQL.
 
 ## Zustellbarkeit — über 99 %
 
-**Nicht gemessen.** Kein Haken, sondern ein offener Punkt.
+Die Definition, unverändert seit F5: **erfolgreich zugestellte
+Formularsendungen geteilt durch alle angenommenen**, über dreißig Tage. Eine
+Nachricht, die angenommen und mit `202` quittiert, aber nie ausgeliefert wurde,
+ist der Fehlerfall, den diese Zahl sichtbar macht — und der einzige
+Konversionspunkt dieser Seite.
 
-Die Daten liegen: `contact_messages.delivery_status` steht seit B2 im Schema
-(`queued` · `sent` · `failed`), und der Dispatcher aus C6 schreibt ihn. Was fehlt, ist die Abfrage, die daraus eine
-Quote macht, und der Weg auf die Seite — der Contract hat kein Feld dafür.
+Bis H8c stand hier „nicht gemessen". Es fehlten die Abfrage und ein Feld im
+Contract; beide gibt es jetzt (Issue #206, ADR 0069).
 
-Die Definition steht trotzdem hier, damit sie beim nächsten Mal nicht neu
-erfunden wird: **erfolgreich zugestellte Formularsendungen geteilt durch alle
-angenommenen**, über dreißig Tage. Eine Nachricht, die angenommen und mit 202
-quittiert, aber nie ausgeliefert wurde, ist der Fehlerfall, den diese Zahl
-sichtbar macht — und der einzige Konversionspunkt dieser Seite.
+### Woraus
+
+```sql
+SELECT count(*)                                          AS accepted,
+       count(*) FILTER (WHERE delivery_status = 'sent')  AS delivered
+  FROM contact_messages
+ WHERE received_at > now() - $1::interval        -- $1 = 30 Tage
+```
+
+`api/internal/store/queries/health.sql`, gelesen bei jeder Antwort von
+`/api/health` und ausgeliefert als `OpsSummary.deliverability` mit vier Feldern:
+`rate`, `delivered`, `accepted`, `windowDays`.
+
+Das Fenster ist ein Argument und keine Literale, aus dem Grund, den
+`InsertMetricSnapshot` für die 91 nennt: die Zahl steht an genau einer Stelle
+(`deliverabilityWindowDays` in `internal/health`), und dieselbe Konstante füllt
+das Intervall **und** das Feld `windowDays` der Antwort. Zwei Kopien einer Zahl
+sind der Weg, auf dem sie aufhört, nachzählbar zu sein.
+
+**Zwei Zählwerte und der Quotient erst in Go.** Als `CASE` geschrieben tippt
+sqlc die Spalte `interface{}`; mit einem äußeren Cast tippt es sie als
+nicht-nullbares `float64`, und der Scan bräche genau auf der leeren Datenbank —
+dem einen Fall, für den der `NULL`-Zweig existiert. Die Division steht deshalb
+in `internal/health`, wo ein Test sie ohne Postgres erreicht.
+
+**`rate` ist `null` und nicht `0`, wenn nichts angenommen wurde.** `0/0` ist
+keine Null. Ein Formular, das noch niemand benutzt hat, ist kein Formular, das
+Nachrichten verliert — und `0,00 %` am einzigen Konversionspunkt wäre die
+lauteste erfundene Zahl, die diese Seite drucken könnte (Invariante 1).
+
+**Prozent, kein Bruch** — anders als `errorRate` und wie `uptime90d`, weil das
+Ziel hier als `> 99 %` geschrieben steht.
+
+**Der Zähler steht mit seinem Nenner da.** Das ist der Fund aus #208, auf eine
+zweite Quote angewandt: 100,00 % liest sich bei drei Nachrichten wie bei
+dreihundert. Wer die Quote bewerten will, braucht `accepted` daneben.
+
+### Was diese Zahl nicht sieht
+
+- **`sent` heißt, das Relay hat angenommen — nicht, dass die Nachricht im
+  Postfach liegt.** Die Antwortdauer belegt den SMTP-Umlauf, nicht die Ankunft;
+  aufgeschrieben in der H8b-Abnahme und hier an seinem Platz. Ein Relay, das
+  eine angenommene Nachricht danach still verwirft, bleibt für diese Zahl
+  unsichtbar.
+- **Der Honeypot-Pfad kommt nicht vor.** Eine Einsendung, die an Honeypot oder
+  Verweildauer scheitert, bekommt eine `202` und **keine Zeile**
+  (`internal/contact/contact.go`). Sie fehlt im Nenner, und das ist richtig: sie
+  ist nie angenommen worden, sie ist stillgelegt worden.
+- **Ein `502` kommt nicht vor.** Scheitert der Versand im Anfrageweg, erfährt es
+  der Absender (ADR 0021 §1). Diese Zahl misst, was **nach** einer `202`
+  passiert — also genau den Fehler, den sonst niemand bemerkt.
+- **Eine Nachricht in Flug drückt die Quote.** Eine Zeile, die noch `queued`
+  ist, zählt in den Nenner und nicht in den Zähler — sie *ist* noch nicht
+  zugestellt. Der letzte Versuch des Dispatchers liegt 30 Minuten nach Eingang
+  (0 · 2 · 6 · 14 · 30, `internal/contact/policy.go`), so lange kann die Delle
+  stehen. Die Richtung ist gewollt: eine klemmende Warteschlange ist sichtbar,
+  solange sie klemmt, und nicht eine halbe Stunde später. Bei einem
+  einstelligen Nenner ist die Delle groß — deshalb steht der Nenner daneben.
+- **Sie steht auf keiner Seite.** Sie ist über `/api/health` erreichbar und
+  wird nirgends gezeichnet. Kein Blatt zeigt sie, und die Kachelreihe der
+  Fallstudie ist durch ADR 0052 auf fünf festgelegt. Das ist eine offene
+  Entwurfsfrage, keine vergessene Zeile — siehe unten.
 
 ---
 
@@ -242,7 +305,8 @@ sichtbar macht — und der einzige Konversionspunkt dieser Seite.
 |---|---|
 | Burn-Rate-Alerts (1 h/14,4× sofort · 6 h/6× Ticket), Runbook je Alert | **F10** |
 | Dashboards, die diese SLIs zeigen | **F9** |
-| Die Zustellbarkeit als Abfrage und als Contract-Feld | offen, siehe oben |
+| Die Zustellbarkeit **auf einer Seite** — welches Blatt, welche Stelle | offen, Stufe-H-Triage |
+| Ein Panel für die Zustellbarkeit — ihre Quelle ist Postgres, keine Recording Rule | **F9**, wie die anderen vier |
 | Das Fehlerbudget im HUD der 404-Seite | **H10** |
 
 **Ein Alert ohne erprobtes Runbook zählt nicht.** Um drei Uhr nachts nützt eine
