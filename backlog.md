@@ -12,7 +12,158 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 04.09.2026, H8b gebaut: der Zähler, den niemand belegen kann
+## Wo wir stehen — 04.09.2026, H8b abgenommen: 10 von 10, und die Dauer, die zweimal gemessen wurde
+
+`2b3dce0` läuft. Merge 06:37:27Z, Deploy 06:56:36Z, Container laufen seit
+**06:56:53.094Z** (api) und **06:56:58.999Z** (web). Uhrzeit mit `date -u`
+gelesen; 06:56 UTC liegt weit vom Dokploy-Fenster 23:45–00:00.
+
+### Die Zahl der Phase steht jetzt auf der Seite — und eine zweite Messung bestätigt sie
+
+Eine echte Einsendung durch das gebaute Formular, im Browser, über den ganzen Weg:
+
+```
+202 accepted   msg_01M1NKKB0G9ASJ7Y   07:02:17 UTC
+Antwortdauer   856 ms        ← was die Seite druckt
+                853 ms        ← PerformanceResourceTiming.duration des Browsers
+Protokoll      h3
+dwellMs        3003 gezeichnet · 3003 im Protokoll · 3003 gesendet
+Text im Feld   225 Zeichen, unverändert
+```
+
+**Die drei Millisekunden Differenz sind der eigene Messweg der Seite**, und die
+Übereinstimmung ist das Ergebnis: H8a musste die Dauer von Hand messen, um der
+eigenen `202` zu glauben — jetzt druckt die Seite sie, und eine unabhängige
+Uhr im selben Browser bestätigt die gedruckte Zahl. 856 ms sind ein SMTP-Umlauf,
+keine stille Verwerfung (ADR 0021 §2).
+
+Und `dwellMs` steht dreimal identisch da — Zeichnung, Protokoll, gesendeter
+Rumpf. Das ist die Reparatur aus dieser Sitzung, gegen Produktion gehalten.
+
+### Der Tausch war sauber, und die zwei Löcher lagen acht Minuten davor
+
+Zeuge ab **06:38:17Z, 50 Sekunden nach dem Merge** — das Fenster, das H7b
+verpasst hat. Vier Pfade, 1139 Sekunden:
+
+```
+/                    1139 Anfragen   1139 × 200
+/contact             1139 Anfragen   1138 × 200, 1 × keine Verbindung
+/api/health          1139 Anfragen   1137 × 200, 1 × keine Verbindung, 1 × 429
+/api/systems         1139 Anfragen   1091 × 200, 48 × 429
+
+✗ this run does not show a clean deploy
+```
+
+**Die Sekunden ausgerechnet, nicht geschätzt.** `/contact` fällt bei Sekunde 635
+= **06:48:51Z**, `/api/health` bei 679 = **06:49:35Z**. Der api-Container startet
+06:56:53Z. Die beiden Ausfälle liegen also **8:02 und 7:18 vor dem Tausch**,
+mitten im Ruhezustand — und in den Sekunden des Tauschs (~1117–1123) antworten
+alle vier Pfade mit 200.
+
+**Vierzehnte Stichprobe an #304, und eine saubere.** Zum **vierten** Mal sah die
+Schlusszeile des Zeugen beim ersten Lesen wie ein Fund aus.
+
+**Die 48 × 429 sind das Instrument, nicht die Seite.** Der Zeuge schickt eine
+Anfrage je Sekunde und Pfad; zwei der vier Pfade sind `/api/*`, also genau
+2 Anfragen/s gegen `RATE_LIMIT_RPM=120` — das sind exakt 2/s. Der Lauf steht
+damit auf der Kante des Token-Buckets, und ein Lauf über 1139 s findet sie.
+H8a lief 748 s und blieb knapp darunter. **Das ist ein Fund über den Zeugen.**
+
+### Der Abstand api → web ist eine Eigenschaft, zum vierten Mal
+
+5,9 s in H5c, 5,99 s im H7b-Nachtrag, 5,936 s in H8a, **5,904 s** hier.
+
+### 10 von 10 Behauptungen
+
+`make check-deployed`: **8 Ansprüche, 1 von hier nicht stellbar**. Die neunte und
+zehnte über die Panel-API wie seit H2b — die laufenden Container tragen exakt die
+veröffentlichten Digests. **Der Weg steht in `backlog.local.md`, nicht hier.**
+
+`check-deployed.sh` kennt diesen Weg zum **zwölften** Mal nicht.
+
+### Die Geometrie an allen sieben Prüfbreiten, gegen Produktion
+
+```
+Breite  client  h1     Spalten  Spur  Formular  Feld  Überlauf  h1n  Honigtopf
+ 1440    1440   52px      2      520     560    560       0      1    -9999
+ 1081    1081   52px      2      520     401    401       0      1    -9999
+ 1079    1079   52px      1      999     640    640       0      1    -9999
+ 1024    1024   52px      1      944     640    640       0      1    -9999
+  899     899   52px      1      819     640    640       0      1    -9999
+  719     719   34px      1        0     639    639       0      1    -9999
+  390     390   34px      1        0     346    346       0      1    -9999
+```
+
+Byte für Byte dieselbe Tabelle wie in H8a — **bis auf die Spur bei 719 und 390,
+die jetzt 0 ist.** Das ist der neue Schalter, und er sitzt beidseitig: 1080 nimmt
+der Spur die Spalte, 720 nimmt ihr die Zeichnung.
+
+### Die sechs Zustände, gegen Produktion
+
+Im Ruhezustand an allen sieben Breiten: `REST`, Punkt `dash`, Ton `dim`. Unter
+720 steht das Panel gar nicht da — `data-log` fehlt, und ein leerer Rahmen unter
+dem Button wäre ein Bauteil, das ankündigt, nichts zu sagen zu haben.
+
+Die Statuszeile mit Antwort (bei 390, Antwort simuliert — eine echte Sendung für
+eine Stilfrage wäre das falsche Budget):
+
+```
+Panel     sichtbar, Rahmen nur links (1px links, 0px oben)
+JSON      weg · Bytes weg · TX weg
+Zustand   ACCEPTED · Punkt solid · Ton acc
+```
+
+### Was die Seite über sich sagt
+
+```
+/ · /de · /fr · /about · /work · /work/timseil-dev
+/contact · /de/contact · /fr/contact · /blog · /privacy · /imprint   alle 200
+/en/contact         308 → /contact
+/contact            kein robots-Meta · canonical https://timseil.dev/contact
+sitemap.xml         15 Einträge
+JSON-LD             Person + ContactPage
+Konsole             leer — CANARY gesetzt und wiedergefunden
+ohne Skript         Überschrift, Adresse, Datenhinweis da; Spur „waiting for
+                    input", Bytes `—`, Zustand REST — bei 1440 und bei 390
+```
+
+### `ops.lastDeploy.durationSec` sagt 1149 s, der Tausch dauerte Sekunden
+
+Zum neunten Mal notiert, #242.
+
+## Gefunden — aus der H8b-Abnahme
+
+- **Auf dem Telefon stehen vier Zeilen, wo das Blatt zwei zeichnet.** Unter 720
+  bleiben die beiden `>`-Zeilen der Seite sichtbar; das Artboard `1c` zeichnet
+  nur die Antwort. Die zwei Zeilen sind ehrlich und kurz, aber es ist eine
+  **zweite** Abweichung vom Blatt an dieser Stelle, und ADR 0068 §5 schreibt nur
+  die erste auf (das Zustandswort). Entweder werden sie unter 720 ausgeblendet
+  oder die Abweichung wird aufgeschrieben — offen, und ich habe es nicht still
+  entschieden. *(04.09.2026, H8b-Abnahme)*
+- **Der Zeuge steht auf der Kante des Token-Buckets.** Vier Pfade, davon zwei
+  unter `/api/*`, sind 2 Anfragen/s gegen ein Limit von exakt 2/s. Jeder Lauf,
+  der lang genug ist, erzeugt 429 — und die stehen dann in der Schlusszeile
+  neben echten Löchern. Das Instrument braucht entweder weniger `/api`-Pfade
+  oder eine Ausnahme. *(04.09.2026, H8b-Abnahme)*
+- **Die gedruckte Dauer ist gegen eine zweite Uhr geprüft.** 856 ms auf der
+  Seite, 853 ms in `PerformanceResourceTiming`. Damit ist nicht nur der Versand
+  belegt, sondern auch die Zahl, die ihn belegt. *(04.09.2026, H8b-Abnahme)*
+- **Zum vierten Mal sah die Schlusszeile des Zeugen wie ein Fund aus.** 116 s bei
+  `3db7baf`, sieben Minuten bei `a813cca`, zehneinhalb bei `89d4062`, jetzt acht.
+  *(04.09.2026, H8b-Abnahme)*
+
+## Verschoben aus der H8b-Abnahme
+
+- **Der `--panel`-Zweig von `check-deployed.sh` → zum zwölften Mal offen.**
+- **`ops.lastDeploy.durationSec` misst die Pipeline → #242, neunte Notiz.**
+- **Der Nachlauf des Zeugen gehört an den web-Container.** Vierte Notiz.
+- **Die Zustellung im Postfach ist nicht von hier bestätigt.** Die Antwortdauer
+  beweist den SMTP-Umlauf, nicht die Ankunft. Die Quittung ist
+  `msg_01M1NKKB0G9ASJ7Y`.
+
+---
+
+## Vorher — 04.09.2026, H8b gebaut: der Zähler, den niemand belegen kann
 
 **Zweig `phase/h8b-contact-states`.** Die vier Lücken aus der H8a-Abnahme sind zu:
 die sechs Zustände sprechen die Zustandssprache, das TX-Panel schreibt mit, die
