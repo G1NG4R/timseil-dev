@@ -2636,7 +2636,7 @@ const BLOG_POST_MAP = [
     reading: 'and the rail is above the prose rather than beside it — one column, and the entry that follows is the whole width',
     measure: { kind: 'track-count', selector: '.post-body-grid' }, expect: 1,
   },
-]
+];
 
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
