@@ -12,7 +12,121 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 04.09.2026, H8c gebaut: die fünfte Zahl, und der Nenner, der neben sie gehört
+## Wo wir stehen — 04.09.2026, H8c abgenommen: die Zahl steht, und sie steht unter dem Ziel
+
+`05db1f8` läuft, `v0.30.0`. Merge **18:25:30Z**, Pipeline-Lauf ab 18:25:34Z,
+Deploy-Job 18:38:14Z → 18:38:43Z, `lastDeploy.at` **18:38:39Z**, der api-Prozess
+läuft seit **18:38:53.807Z**. Uhrzeit mit `date -u` gelesen; 18:38 UTC liegt weit
+vom Dokploy-Fenster 23:45–00:00.
+
+### Der Fund der Abnahme: 87,5 %, beim allerersten Blick
+
+```
+{"accepted":8,"delivered":7,"rate":87.5,"windowDays":30}
+```
+
+**Das Ziel ist > 99 %.** Acht Nachrichten in dreißig Tagen, sieben zugestellt —
+**eine wurde angenommen und nie ausgeliefert.** Genau der Fehlerfall, für den
+dieser SLI gebaut wurde, und er stand schon da, bevor die Zahl zum ersten Mal
+gelesen wurde. Über drei Abrufe hinweg stabil.
+
+Es ist kein Messfehler und keine Delle: eine Nachricht in Flug wäre nach
+höchstens dreißig Minuten entschieden, und es ist seit Stunden nichts eingereicht
+worden. Die Zeile steht also auf `failed` oder hängt.
+
+**Diagnostiziert ist sie nicht, und von hier aus geht das auch nicht.** Die
+Abfrage steht in `docs/runbooks/api.md` („Das Formular antwortet 502", die
+Tabelle darunter); sie braucht die Datenbank, und das Panel ist nicht im
+Internet. Das ist der nächste Handgriff und keine Frage mehr, sondern eine
+Aufgabe.
+
+### Vorher und nachher, am selben Endpunkt
+
+```
+vor dem Tausch   ops hat 7 Schlüssel — deliverability FEHLT
+nach dem Tausch  ops hat 8 Schlüssel — deliverability ist ein Objekt
+```
+
+Der Unterschied ist der ganze Zweck der Phase, und er ist von außen sichtbar.
+
+### Der Tausch war sauber
+
+Zeuge ab **18:25:55Z, 25 Sekunden nach dem Merge**, bis `05db1f8` aus einem neuen
+Prozess antwortete plus 30 s:
+
+```
+/            1–770   200      770 Anfragen, 770 × 200
+/api/health  1–770   200      770 Anfragen, 770 × 200
+✓ every answer was 200
+```
+
+**Kein Loch.** Zwei Pfade, davon einer unter `/api/*` — die Kante aus der
+H8b-Abnahme (zwei `/api`-Pfade stehen auf dem Token-Bucket-Limit und erfinden
+429er) ist damit umgangen, nicht nur gemieden.
+
+### 8 Behauptungen, eine nicht von hier
+
+`make check-deployed`: `/api/health` 200 · `/` 200 · läuft `05db1f8` · meldet den
+eigenen Deploy · beide Images auf Digest aufgelöst · beide aus `05db1f8` gebaut ·
+Bau- und Laufzeit konsistent. Die neunte — ob die laufenden Container **diese
+Bytes** sind — kann nur der Host sehen.
+
+### CI, vollständig grün
+
+`check` · `db` · `e2e` · `images` · `scan` · `codeql (go)` ·
+`codeql (javascript-typescript)` am PR; auf `main` zusätzlich `publish`,
+`quickstart` und `deploy`. **`scan` und `quickstart` sind grün** — beide waren
+nach H8b an der npm-Registry-Störung rot, und #332 hat den Unterschied zwischen
+„gefunden" und „konnte nicht fragen" repariert. Hier ist er zum ersten Mal gegen
+einen gesunden Lauf bestätigt.
+
+## Gefunden — aus der H8c-Abnahme
+
+- **Die Zustellbarkeit steht bei 87,5 % und das Ziel ist 99 %.** Eine von acht
+  Nachrichten ist angenommen und nie ausgeliefert worden. Der SLI hat bei seiner
+  ersten Messung genau das gefunden, wofür er gebaut wurde. Die Diagnose
+  (`docs/runbooks/api.md`) braucht die Datenbank und steht aus.
+  *(04.09.2026, H8c-Abnahme)*
+- **`502` steht im Nenner, und die Doku behauptet das Gegenteil.** Ich habe in
+  `docs/slo.md` geschrieben: „Ein `502` kommt nicht vor. […] Diese Zahl misst,
+  was **nach** einer `202` passiert." **Das ist falsch.**
+  `contact.go` schreibt die Zeile in `h.store(...)`, **bevor** gesendet wird —
+  scheitert der Versand im Anfrageweg, bekommt der Absender einen `502` und die
+  Zeile steht trotzdem in der Tabelle und damit im Nenner. Dieselbe falsche
+  Aussage steht in der Contract-Beschreibung von `accepted` („answered with a
+  `202` and written down"). Der Nenner ist in Wahrheit **jede gespeicherte
+  Einsendung**, `202` und `502` gleichermaßen — was als Maß verteidigbar ist,
+  aber nicht das, was dasteht. **Mein Fehler, ausgeliefert.**
+  *(04.09.2026, H8c-Abnahme)*
+- **`ops.measuredAt` deckt die Zustellbarkeit nicht ab, und nichts sagt das.**
+  Der Zeitstempel gehört der `Metrics`-Hälfte von `OpsSummary` und trägt den
+  Prometheus-Moment; die Zustellbarkeit wird bei jeder Anfrage frisch gezählt und
+  ist immer aktuell. Beide stehen jetzt im selben `ops`-Objekt, und „When these
+  values were taken" liest sich, als gälte es für alle. *(04.09.2026, H8c-Abnahme)*
+- **Der Zeuge hat sein Budget fast aufgebraucht.** 900 s Budget, der Tausch kam
+  bei 770 s. Bei einem Lauf, der wie dieser zwölf Minuten in `e2e` steht, ist
+  `--until-sha` mit dem Standardbudget knapp. *(04.09.2026, H8c-Abnahme)*
+- **Zum zweiten Mal hat mein eigenes `jq` einen Fund erfunden.** Erst beim
+  Bau (`deliverability: null`), dann noch einmal in der Abnahme bei
+  `measuredAt`. Beide Male dasselbe: ein Kürzel in `{...}` läuft gegen die
+  Wurzel, nicht gegen `.ops`. Der rohe Rumpf war beide Male richtig.
+  *(04.09.2026, H8c-Abnahme)*
+
+## Verschoben aus der H8c-Abnahme
+
+- **`ops.lastDeploy.durationSec` sagt 785 s, der Deploy dauerte 25 s.** Lauf-Start
+  18:25:34Z → `lastDeploy.at` 18:38:39Z sind exakt 785 s; der Deploy-Job lief
+  18:38:14Z → 18:38:43Z. **#242, zehnte Notiz**, und diesmal auf die Sekunde
+  nachgerechnet statt geschätzt.
+- **Der `--panel`-Zweig von `check-deployed.sh` → zum dreizehnten Mal offen.**
+- **Wo wird die Zustellbarkeit gezeichnet?** Unverändert offen, Stufe-H-Triage.
+- **#206 bleibt offen, bis die 87,5 % erklärt sind.** Der PR sagte
+  `Measured in #206`, die Messung liegt jetzt vor — aber sie wirft eine Frage
+  auf, statt eine zu schließen. Erst die Diagnose, dann das Häkchen.
+
+---
+
+## Vorher — 04.09.2026, H8c gebaut: die fünfte Zahl, und der Nenner, der neben sie gehört
 
 **Zweig `phase/h8c-deliverability`.** Issue #206, fällig mit H8 und von H8a und
 H8b nicht angefasst, weil beide Web-Phasen waren. Die Zustellbarkeit war seit F5
