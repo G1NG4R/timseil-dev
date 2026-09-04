@@ -101,7 +101,7 @@ teils nach ihm gemacht wurden.
 
 | | |
 |---|---|
-| e2e am Beitrag | 24 grün bei 1440 und 390 |
+| e2e am Beitrag | 24 grün bei 1440 und 390, inkl. dem Lauf über alle 22 Einträge |
 | Orakel `blog-post` | 35 grün, 34 Messungen, 13 abweichend |
 | axe über alle Routen × 7 Breiten | 77 grün |
 | `npm test` | 709 grün |
@@ -133,6 +133,24 @@ Zeile 73 `52px` und in Zeile 274 `34px`; beide sind Stufen. Dieselbe Familie wie
 - **Zwei Titel überschreiten die 58 Zeichen des Blattes** (68 und 63). Sie sind
   veröffentlicht; die Regel kam nach ihnen. Die Zahl wird gemessen und
   festgehalten, damit ein **dritter** eine Entscheidung ist und keine Drift.
+  *(04.09.2026, H9a)*
+- **`<Activity>` macht jeden Selektor mehrdeutig, sobald ein Test navigiert.**
+  `next.config.ts` schreibt es seit G4 auf — „Navigation keeps up to three routes
+  mounted and merely hidden" — und `blog-post.spec.ts` ist der erste Test dieser
+  Seite, der von einer Instanz einer Route zu einer anderen Instanz **derselben**
+  Route geht. Danach löst `.post-neighbour` zu **vier** Elementen auf: zwei vor
+  dem Leser, zwei dahinter. Gemessen, nicht vermutet („Received: 4"). Die
+  Kettenprüfung hängt seitdem an `:visible`. Trifft jeden späteren Test mit
+  interner Navigation — H9b und J1 zuerst. *(04.09.2026, H9a)*
+- **Eine Konstante, die „der neueste Eintrag" heißt, war innerhalb eines PRs
+  falsch.** `BLOG_POST_NEWEST` nannte `021-…`, und dieselbe Phase liefert `022-…`
+  aus. Ersetzt durch einen Lauf über die Kette, der mehr behauptet: der Log ist
+  **eine** ununterbrochene Kette und genau ihre zwei Enden sind leer.
+  *(04.09.2026, H9a)*
+- **Und ein Warten, das schon erfüllt war, ist kein Warten.** Die erste Fassung
+  des Laufs wartete nach dem Klick auf `main h1` — das auf der Seite, die sie
+  gerade verlässt, ebenfalls existiert. Der Lauf bewegte sich nie und die
+  Zyklus-Sperre schlug im zweiten Schritt zu. Jetzt wartet er auf die URL.
   *(04.09.2026, H9a)*
 - **`github-slugger` ist ein Paket, das dem Baum nichts hinzufügt.** `rehype-slug`
   bringt es ohnehin mit; es wird deklariert statt aus dem Hoist geliehen, aus dem

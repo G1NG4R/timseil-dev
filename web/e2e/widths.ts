@@ -33,8 +33,16 @@ export function heightFor(width: Width): number {
  */
 export const BLOG_POST = "/blog/001-zero-downtime-measured-not-claimed";
 
-/** The newest entry, whose foot has no NEXT. */
-export const BLOG_POST_NEWEST = "/blog/021-the-counter-i-could-not-prove";
+// THERE IS NO `BLOG_POST_NEWEST`, AND THE FIRST DRAFT OF THIS FILE HAD ONE. It
+// named `021-…`, and the phase that wrote it shipped `022-…` in the same pull
+// request — so the constant was wrong before the branch was merged, and the test
+// that used it went red on the run after the post was added. A constant that
+// says "the newest" is a fact about the corpus written down somewhere the corpus
+// cannot reach.
+//
+// blog-post.spec.ts walks the chain instead: from the oldest entry, follow NEXT
+// until a foot has none. That is slower and it asserts more — that the log is one
+// unbroken chain and that exactly its two ends are empty.
 
 /**
  * The routes that exist today.

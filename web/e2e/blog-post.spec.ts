@@ -17,7 +17,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { BLOG_POST, BLOG_POST_NEWEST } from "./widths";
+import { BLOG_POST } from "./widths";
 
 function widthOf(page: Page): number {
   const size = page.viewportSize();
@@ -110,18 +110,55 @@ test("the oldest entry keeps its PREVIOUS cell and names the absence", async ({ 
   await expect(page.locator(".post-neighbour-why")).toContainText("the first entry");
 });
 
-test("the newest entry keeps its NEXT cell and names the absence", async ({ page }) => {
-  await page.goto(BLOG_POST_NEWEST);
+// THE CHAIN, WALKED. Starting at the oldest entry and following NEXT until a
+// foot has none proves three things at once that no unit test can: every link in
+// the chain resolves, the chain has exactly one end, and that end draws the
+// other half of the empty state. It replaces a constant naming "the newest
+// entry", which was wrong within one pull request of being written — this phase
+// adds a post, and the post it named stopped being the newest.
+test("the log is one unbroken chain, and only its ends are empty", async ({ page }) => {
+  const seen: string[] = [];
 
-  await expect(page.locator(".post-neighbour")).toHaveCount(2);
-  await expect(page.locator(".post-neighbour-none")).toHaveText("— none yet");
-  await expect(page.locator(".post-neighbour-why")).toContainText("the newest entry");
+  // `:visible`, AND IT IS NOT DEFENSIVE — IT IS `<Activity>`. next.config.ts
+  // records the behaviour under `cacheComponents`: "Navigation keeps up to three
+  // routes mounted and merely hidden." This is the first spec on this site that
+  // navigates from one instance of a route to another instance of the SAME
+  // route, so after one step `.post-neighbour` resolves to four elements — two
+  // on the page in front of the reader and two on the page behind it. Measured,
+  // not guessed: the first version of this walk failed with "Received: 4".
+  const live = (selector: string) => page.locator(`${selector}:visible`);
+
+  // A ceiling rather than a count. The rig must not need to know how many
+  // entries exist — that is the fact the constant got wrong — and a walk with no
+  // ceiling is a walk that hangs on a cycle instead of failing.
+  for (let step = 0; step < 200; step++) {
+    const here = new URL(page.url()).pathname;
+    expect(seen, `the chain returned to ${here}`).not.toContain(here);
+    seen.push(here);
+
+    await expect(live(".post-neighbour")).toHaveCount(2);
+
+    const next = live('.post-neighbour[data-align="end"] a');
+    if ((await next.count()) === 0) break;
+
+    await next.click();
+    // WAITING ON THE URL AND NOT ON AN ELEMENT. The first version of this loop
+    // waited for `main h1` to be present, which is true on the page it just left
+    // — so it passed instantly, the walk never moved, and the cycle guard fired
+    // on the second step. A wait that is already satisfied is not a wait.
+    await page.waitForURL((url) => new URL(url).pathname !== here);
+  }
+
+  expect(seen.length).toBeGreaterThan(1);
+
+  // The end of the walk is the newest entry, and it draws the absence rather
+  // than dropping the cell.
+  await expect(live(".post-neighbour-none")).toHaveText("— none yet");
+  await expect(live(".post-neighbour-why")).toContainText("the newest entry");
+  await expect(live(".post-all a")).toHaveAttribute("href", "/blog");
 });
 
-test("both ends offer the index as the way out", async ({ page }) => {
-  await expect(page.locator(".post-all a")).toHaveAttribute("href", "/blog");
-
-  await page.goto(BLOG_POST_NEWEST);
+test("the oldest entry offers the index as the way out", async ({ page }) => {
   await expect(page.locator(".post-all a")).toHaveAttribute("href", "/blog");
 });
 
