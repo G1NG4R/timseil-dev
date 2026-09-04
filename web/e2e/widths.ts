@@ -21,6 +21,30 @@ export function heightFor(width: Width): number {
 }
 
 /**
+ * A log entry. H9a — the sixth page with a spec of its own.
+ *
+ * THE OLDEST ENTRY, NOT THE NEWEST, and the choice is about which state is on
+ * the screen. `001-…` has no previous entry, so its foot draws the sheet's one
+ * empty state without anything having to be arranged; the newest entry draws
+ * the other half of the same row, and blog-post.spec.ts visits it by name for
+ * that. A slug is hard-coded here for the reason CASE_STUDY is: the rig has no
+ * api, and a list read at test time would be a second implementation of
+ * lib/content/posts.ts.
+ */
+export const BLOG_POST = "/blog/001-zero-downtime-measured-not-claimed";
+
+// THERE IS NO `BLOG_POST_NEWEST`, AND THE FIRST DRAFT OF THIS FILE HAD ONE. It
+// named `021-…`, and the phase that wrote it shipped `022-…` in the same pull
+// request — so the constant was wrong before the branch was merged, and the test
+// that used it went red on the run after the post was added. A constant that
+// says "the newest" is a fact about the corpus written down somewhere the corpus
+// cannot reach.
+//
+// blog-post.spec.ts walks the chain instead: from the oldest entry, follow NEXT
+// until a foot has none. That is slower and it asserts more — that the log is one
+// unbroken chain and that exactly its two ends are empty.
+
+/**
  * The routes that exist today.
  *
  * Stage H builds thirteen pages and this list grows with them. It is a list
@@ -37,6 +61,12 @@ export const ROUTES = [
   // exist; there is one.
   "/work/timseil-dev",
   "/blog",
+  // H9a. The first entry, and it is the OLDEST rather than the newest on
+  // purpose: `001-…` is the one post whose foot draws the empty state on the
+  // PREVIOUS side, so an accessibility sweep over this route sweeps the state
+  // as well as the page. The newest entry's own empty state is blog-post.spec's
+  // to drive, because it can navigate to it.
+  BLOG_POST,
   "/contact",
   "/privacy",
   "/imprint",
@@ -54,6 +84,16 @@ export const WORK = "/work";
 /** `/contact`. H8 — the fifth page with a spec of its own, and the only route
  *  on this site that a browser POSTs to. */
 export const CONTACT = "/contact";
+
+/**
+ * The two widths the Blog Post sheet draws.
+ *
+ * The same two About and Contact have, and the Intermediate Widths sheet says
+ * why in one sentence that names this page: "Fliesstext, Blog, About, Contact
+ * und Legal fliessen, dort ist nichts zu entscheiden." There is no 1024 frame
+ * for a page whose only fixed column is a 196px rail.
+ */
+export const BLOG_POST_DRAWN_WIDTHS = [1440, 390] as const;
 
 /**
  * The two widths the Contact sheet draws.

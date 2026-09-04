@@ -165,6 +165,11 @@ const GALLERY_LOG: PostRead = {
       deck: "A contribution graph was drawn eighty pixels narrower than the column it sits in.",
       published: "2026-09-01",
       systemId: "timseil-dev",
+      // The three keys H9a added. The gallery draws a row, and a row draws none
+      // of them — they are here because the type is the post's, not the row's.
+      tags: ["frontend", "css"],
+      summary: "One paragraph, as every post carries.",
+      updated: null,
     },
     {
       slug: "013-the-column-the-test-rig-could-not-see",
@@ -172,6 +177,11 @@ const GALLERY_LOG: PostRead = {
       deck: "A description column on my homepage computed to zero pixels wide.",
       published: "2026-09-01",
       systemId: "timseil-dev",
+      // The three keys H9a added. The gallery draws a row, and a row draws none
+      // of them — they are here because the type is the post's, not the row's.
+      tags: ["testing", "css"],
+      summary: "One paragraph, as every post carries.",
+      updated: null,
     },
     {
       slug: "001-zero-downtime-measured-not-claimed",
@@ -179,6 +189,11 @@ const GALLERY_LOG: PostRead = {
       deck: "My build plan promised about three seconds and no 5xx.",
       published: "2026-08-23",
       systemId: "timseil-dev",
+      // The three keys H9a added. The gallery draws a row, and a row draws none
+      // of them — they are here because the type is the post's, not the row's.
+      tags: ["ci-cd", "deploys", "traefik"],
+      summary: "One paragraph, as every post carries.",
+      updated: null,
     },
   ],
   skipped: [],

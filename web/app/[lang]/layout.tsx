@@ -78,6 +78,10 @@ import "../../styles/about.css";
 // stop standing beside each other, and 720 for the display step — and
 // layout.css owns both.
 import "../../styles/contact.css";
+// H9a. `/blog/<slug>`'s own surfaces. After contact.css, before layout.css, for
+// the reason every page sheet is: it may not override the chrome or the state
+// language, and layout.css's media queries have to win over its geometry.
+import "../../styles/blog.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root

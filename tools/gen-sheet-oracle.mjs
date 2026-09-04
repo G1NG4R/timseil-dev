@@ -66,6 +66,12 @@ const SHEETS = {
   // drawn at 1440 and gone below 1080, which is a switch layout.css already
   // owns rather than a frame the sheet still owes.
   contact: 'docs/design/Contact - timseil.dev.dc.html',
+  // H9a. The post draws 1440 and 390, and it is named in the same sentence
+  // About and Contact are: "Fliesstext, Blog, About, Contact und Legal
+  // fliessen, dort ist nichts zu entscheiden." The one fixed column it has —
+  // the 196px contents rail — is drawn at 1440 and gone below 1080, which is a
+  // switch layout.css owns rather than a frame the sheet still owes.
+  blogPost: 'docs/design/Blog Post - timseil.dev.dc.html',
 };
 
 // ONE DECISION MOVES MANY MEASUREMENTS, so the reasons are named once and
@@ -116,6 +122,18 @@ const DIVERGENCE = {
     'localStorage key, which invariant 9 does not have. The two numbers are ' +
     'invented. None of the four is built; the page carries a true notice ' +
     'instead.',
+  // ── H9a ──────────────────────────────────────────────────────────────────
+  'heading-scale':
+    'The Blog Post sheet sets the section headings at 21px and the pull quote ' +
+    'at 21px, and 21 is not a step. It is the case the Consistency Check calls ' +
+    'E-01 and leaves open — "Entweder die Seiten auf die Skala ziehen oder die ' +
+    'Skala um 56 erweitern" — and G1 answered it for every page on this site by ' +
+    'taking the first. So 26, the display step above, and NOT rounded down the ' +
+    'way `half-pixel` and `mono-scale` round: those two land inside a family ' +
+    'that has a smaller step, and here the next step down is 16.5, which is the ' +
+    'size of the prose the heading is supposed to open. A heading the size of ' +
+    'its paragraph is not a rounding, it is the loss of a level. The FACE stays ' +
+    'the sheet\'s in both cases — mono for the heading, display for the quote.',
   'half-pixel':
     'The sheets draw 9.5, 10.5, 11.5 — and, on the Contact form, 14px. ' +
     'tokens.css has thirteen steps and "keine halben Pixel" (G1); every mono ' +
@@ -2332,11 +2350,300 @@ const CONTACT_MAP = [
   },
 ];
 
+// ── H9a · Blog Post ────────────────────────────────────────────────────────
+//
+// TWO ARTBOARDS, LIKE ABOUT AND CONTACT. The Intermediate Widths sheet names
+// this page in its list of the ones with nothing to decide at 1024, so there is
+// no third frame and nothing was derived to stand in for one.
+//
+// WHAT IS NOT IN THIS MAP, and it is more than usual: the POSTMORTEM box, the
+// MEASURE table, the terminal capture, the SERIES block, the COPY button, the
+// reading-progress bar and the two-tone code. None of them is built, each for a
+// reason ADR 0070 gives, and an oracle entry for an element that does not exist
+// would be a red test standing in for a decision — which is what the backlog
+// and the ADR are for.
+//
+// THE `ch` CAPS ARE MEASURED AS PIXELS, NOT AS `ch`, for the reason CONTACT_MAP
+// gives one map up: `getComputedStyle` returns a used value and a `ch` resolves
+// against whichever font actually loaded. What the prose entry asserts instead
+// is the thing that surprised this phase — 68ch resolves to 748px at 16.5px
+// Geist and the column the sheet draws is 700, so the COLUMN is the binding
+// measure and a line holds about 64 characters rather than 68. Narrower than
+// the sheet's number, never wider, and worth having written down.
+const BLOG_POST_MAP = [
+  // ── 1440 · artboard 1a · the two columns ─────────────────────────────────
+  {
+    id: 'post-columns',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 85,
+    decl: 'grid-template-columns', says: '196px 700px',
+    reading: 'the contents rail stands beside the prose, and it stands on the left',
+    measure: { kind: 'track-count', selector: '.post-body-grid' }, expect: 2,
+  },
+  {
+    id: 'post-rail-width',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 85,
+    decl: 'grid-template-columns', says: '196px 700px',
+    reading: 'the rail is 196 wide, the first fixed column on this site that comes first',
+    measure: { kind: 'box-width', selector: '.post-rail' }, expect: 196,
+  },
+  {
+    id: 'post-column-width',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 85,
+    decl: 'grid-template-columns', says: '196px 700px',
+    reading: 'and the reading column is 700 — fixed, not the rest of the row',
+    measure: { kind: 'box-width', selector: '.post-column' }, expect: 700,
+  },
+  {
+    id: 'post-columns-gap',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 85,
+    decl: 'gap', says: '64px',
+    reading: 'seventy-two between them, the step every other two-column row on this site uses',
+    measure: { kind: 'computed', selector: '.post-body-grid', prop: 'column-gap' }, expect: '72px',
+    diverges: { class: 'spacing-scale', sheet: '64px' },
+  },
+  // ── the header ───────────────────────────────────────────────────────────
+  {
+    id: 'post-head-padding',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 66,
+    decl: 'padding', says: '34px 0 48px',
+    reading: 'thirty-four above the title, a step on the scale',
+    measure: { kind: 'computed', selector: '.post-head', prop: 'padding-top' }, expect: '34px',
+  },
+  {
+    id: 'post-head-rule',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 66,
+    decl: 'margin-bottom', says: '56px',
+    reading: 'and fifty-six under the hairline that closes it',
+    measure: { kind: 'computed', selector: '.post-head', prop: 'margin-bottom' }, expect: '56px',
+  },
+  {
+    id: 'post-h1-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 73,
+    decl: 'font', says: "500 52px/1.1 'Chakra Petch',sans-serif",
+    reading: 'the entry title is at the 52 step, like every page head that is not the homepage',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '52px',
+  },
+  {
+    id: 'post-deck-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 74,
+    decl: 'font', says: "400 17.5px/1.65 'Geist',sans-serif",
+    reading: 'the dek under it is the largest body step',
+    measure: { kind: 'computed', selector: '.post-deck', prop: 'font-size' }, expect: '16.5px',
+    diverges: { class: 'half-pixel', sheet: '17.5px' },
+  },
+  {
+    id: 'post-meta-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 75,
+    decl: 'font', says: "500 10.5px 'JetBrains Mono',monospace",
+    reading: 'the meta row is mono at the second-smallest step',
+    measure: { kind: 'computed', selector: '.post-meta dt', prop: 'font-size' }, expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '10.5px' },
+  },
+  {
+    id: 'post-meta-gap',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 75,
+    decl: 'gap', says: '26px',
+    reading: 'twenty-six between the pairs, a step on the scale',
+    measure: { kind: 'computed', selector: '.post-meta', prop: 'column-gap' }, expect: '26px',
+  },
+  {
+    id: 'post-crumb-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 62,
+    decl: 'font', says: "500 10.5px 'JetBrains Mono',monospace",
+    reading: 'the crumb is the same mono step as the meta row under it',
+    measure: { kind: 'computed', selector: '.post-crumb', prop: 'font-size' }, expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '10.5px' },
+  },
+  // ── the rail ─────────────────────────────────────────────────────────────
+  {
+    id: 'post-toc-entry-columns',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 95,
+    decl: 'grid-template-columns', says: '22px 1fr',
+    reading: 'a contents line is a number and a title, in two columns',
+    measure: { kind: 'track-count', selector: '.post-toc li' }, expect: 2,
+  },
+  {
+    id: 'post-toc-entry-gap',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 95,
+    decl: 'gap', says: '8px',
+    reading: 'eight between the number and the words',
+    measure: { kind: 'computed', selector: '.post-toc li', prop: 'column-gap' }, expect: '8px',
+  },
+  // ── the summary ──────────────────────────────────────────────────────────
+  {
+    id: 'post-summary-edge',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 113,
+    decl: 'border-left', says: '2px solid #00E5FF',
+    reading: 'the summary carries the accent on its edge — the panel is not the alert moment',
+    measure: { kind: 'computed', selector: '.post-summary', prop: 'border-left-width' },
+    expect: '2px',
+  },
+  {
+    id: 'post-summary-padding',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 113,
+    decl: 'padding', says: '22px 26px',
+    reading: 'twenty above, on the scale',
+    measure: { kind: 'computed', selector: '.post-summary', prop: 'padding-top' }, expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '22px' },
+  },
+  {
+    id: 'post-summary-label-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 114,
+    decl: 'font', says: "600 9.5px 'JetBrains Mono',monospace",
+    reading: 'SUMMARY is a rail label at the smallest mono step',
+    measure: { kind: 'computed', selector: '#post-summary-label', prop: 'font-size' },
+    expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  // ── the prose ────────────────────────────────────────────────────────────
+  {
+    id: 'post-h2-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 118,
+    decl: 'font', says: "500 21px 'JetBrains Mono',monospace",
+    reading: 'a section heading is mono, at the 26 step',
+    measure: { kind: 'computed', selector: '.post-body h2', prop: 'font-size' }, expect: '26px',
+    diverges: { class: 'heading-scale', sheet: '21px' },
+  },
+  {
+    id: 'post-prose-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 119,
+    decl: 'font', says: "400 16.5px/1.8 'Geist',sans-serif",
+    reading: 'the prose is the largest body step, and this one needs no rounding',
+    measure: { kind: 'computed', selector: '.post-body p', prop: 'font-size' }, expect: '16.5px',
+  },
+  {
+    id: 'post-prose-measure',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 119,
+    decl: 'max-width', says: '68ch',
+    reading: 'the column is 700 and 68ch resolves to 748, so the column is the measure and a line holds about 64 characters',
+    measure: { kind: 'box-width', selector: '.post-body p' }, expect: 700,
+  },
+  {
+    id: 'post-quote-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 162,
+    decl: 'font', says: "400 21px/1.55 'Chakra Petch',sans-serif",
+    reading: 'the pull quote is the second and last place display is allowed, at the 26 step',
+    measure: { kind: 'computed', selector: '.post-body blockquote', prop: 'font-size' },
+    expect: '26px',
+    diverges: { class: 'heading-scale', sheet: '21px' },
+  },
+  // ── the code block ───────────────────────────────────────────────────────
+  {
+    id: 'post-code-columns',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 137,
+    decl: 'grid-template-columns', says: '44px 1fr',
+    reading: 'the line numbers stand in a column of their own, so a long line scrolls under them',
+    measure: { kind: 'track-count', selector: '.post-code-body' }, expect: 2,
+  },
+  {
+    id: 'post-code-gutter-width',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 137,
+    decl: 'grid-template-columns', says: '44px 1fr',
+    reading: 'and that column is 44 wide',
+    measure: { kind: 'box-width', selector: '.post-code-gutter' }, expect: 44,
+  },
+  {
+    id: 'post-code-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 139,
+    decl: 'font', says: "400 12.5px/1.85 'JetBrains Mono',monospace",
+    reading: 'code is mono at the largest step under the half pixel',
+    measure: { kind: 'computed', selector: '.post-pre', prop: 'font-size' }, expect: '12px',
+    diverges: { class: 'half-pixel', sheet: '12.5px' },
+  },
+  {
+    id: 'post-code-padding',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 139,
+    decl: 'padding', says: '18px 20px',
+    reading: 'sixteen above the first line, on the scale',
+    measure: { kind: 'computed', selector: '.post-pre', prop: 'padding-top' }, expect: '16px',
+    diverges: { class: 'spacing-scale', sheet: '18px' },
+  },
+  // ── the author line and the foot ─────────────────────────────────────────
+  {
+    id: 'post-portrait-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 202,
+    decl: 'width', says: '56px',
+    reading: 'the portrait slot is 56 square and visibly empty, because there is no photograph in this repository',
+    measure: { kind: 'box-width', selector: '.post-portrait' }, expect: 56,
+  },
+  {
+    id: 'post-author-name-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 204,
+    decl: 'font', says: "500 12.5px 'JetBrains Mono',monospace",
+    reading: 'the byline is mono at the largest step under the half pixel',
+    measure: { kind: 'computed', selector: '.post-author-name', prop: 'font-size' }, expect: '12px',
+    diverges: { class: 'half-pixel', sheet: '12.5px' },
+  },
+  {
+    id: 'post-foot-columns',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 210,
+    decl: 'grid-template-columns', says: '1fr 1fr',
+    reading: 'previous and next stand side by side, and both cells are drawn whether or not there is an entry in them',
+    measure: { kind: 'track-count', selector: '.post-foot' }, expect: 2,
+  },
+  {
+    id: 'post-foot-gap',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 210,
+    decl: 'gap', says: '20px',
+    reading: 'twenty between the two cards, a step on the scale',
+    measure: { kind: 'computed', selector: '.post-foot', prop: 'column-gap' }, expect: '20px',
+  },
+  {
+    id: 'post-neighbour-padding',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 211,
+    decl: 'padding', says: '20px 22px',
+    reading: 'twenty inside a card, on the scale in both directions',
+    measure: { kind: 'computed', selector: '.post-neighbour', prop: 'padding-top' }, expect: '20px',
+  },
+  {
+    id: 'post-neighbour-label-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 212,
+    decl: 'font', says: "500 9.5px 'JetBrains Mono',monospace",
+    reading: 'the card label is mono at the smallest step',
+    measure: { kind: 'computed', selector: '.post-neighbour-label', prop: 'font-size' },
+    expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  {
+    id: 'post-neighbour-meta-size',
+    sheet: 'blogPost', artboard: '1a', width: 1440, line: 214,
+    decl: 'font', says: "400 10.5px 'JetBrains Mono',monospace",
+    reading: 'the date and the read time under a card title, one step up from the label',
+    measure: { kind: 'computed', selector: '.post-neighbour-meta', prop: 'font-size' },
+    expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '10.5px' },
+  },
+  // ── 390 · artboard 1b ────────────────────────────────────────────────────
+  {
+    id: 'post-h1-mobile',
+    sheet: 'blogPost', artboard: '1b', width: 390, line: 274,
+    decl: 'font', says: "500 34px/1.14 'Chakra Petch',sans-serif",
+    reading: 'the title falls to 34, which is K-08 and a switch layout.css already owns',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '34px',
+  },
+  {
+    id: 'post-summary-edge-mobile',
+    sheet: 'blogPost', artboard: '1b', width: 390, line: 292,
+    decl: 'border-left', says: '2px solid #00E5FF',
+    reading: 'the summary keeps its accent edge on a phone',
+    measure: { kind: 'computed', selector: '.post-summary', prop: 'border-left-width' },
+    expect: '2px',
+  },
+  {
+    id: 'post-columns-mobile',
+    sheet: 'blogPost', artboard: '1b', width: 390, line: 292,
+    decl: 'margin-bottom', says: '30px',
+    reading: 'and the rail is above the prose rather than beside it — one column, and the entry that follows is the whole width',
+    measure: { kind: 'track-count', selector: '.post-body-grid' }, expect: 1,
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
   { map: WORK_MAP, target: 'web/e2e/oracle/work.gen.json' },
   { map: ABOUT_MAP, target: 'web/e2e/oracle/about.gen.json' },
+  { map: BLOG_POST_MAP, target: 'web/e2e/oracle/blog-post.gen.json' },
   { map: CONTACT_MAP, target: 'web/e2e/oracle/contact.gen.json' },
 ];
 

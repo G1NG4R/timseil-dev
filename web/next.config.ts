@@ -1,3 +1,4 @@
+import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -140,7 +141,7 @@ const nextConfig: NextConfig = {
   // a coupling that already holds.
   //
   // MEASURED BOTH WAYS, AND IT IS NOT. Built without this entry,
-  // `.next/standalone/content/posts` holds all fourteen files anyway — and only
+  // `.next/standalone/content/posts` holds every file anyway — and only
   // that directory: `content/case-studies` and `content/generated` are absent
   // from the tree because they are imported, and imports are bundled rather than
   // copied. So the tracer is following the READ itself, which is a thing this
@@ -155,6 +156,21 @@ const nextConfig: NextConfig = {
   // phase's acceptance therefore looks at the built IMAGE and not only at the
   // built page.
   //
+  // H9a CHANGES THE PREMISE OF THAT PARAGRAPH WITHOUT CHANGING THE LINE. The
+  // posts are now read TWICE, by two mechanisms with two answers to the tracer:
+  // lib/content/posts.ts still reads the frontmatter with `readFileSync`, and
+  // app/[lang]/blog/[slug]/page.tsx now IMPORTS the body through the MDX loader.
+  // The import is bundled, so the compiled body reaches the image the ordinary
+  // way and this entry is no longer the only thing standing between the log and
+  // an empty page.
+  //
+  // IT STAYS FOR THE HALF THAT DID NOT CHANGE. The frontmatter read is still a
+  // read, the homepage and the Work Index still depend on it, and a bundled body
+  // says nothing about a source file the tracer was never asked to copy. What
+  // this does change is the blast radius: before H9a a missing directory meant
+  // `— NO DATA` on one section, and now it also means twenty-one routes whose
+  // metadata cannot be built.
+  //
   // THE KEY IS ESCAPED BECAUSE IT IS A GLOB, NOT A PATH. Keys are matched with
   // picomatch against the route, and `/[lang]` unescaped is a character class
   // that matches `/a`, `/l`, `/n` and `/g` — four routes that do not exist, and
@@ -165,4 +181,49 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * The MDX compiler, and the three plugins it is allowed to have.
+ *
+ * NO `pageExtensions`, WHICH IS THE HALF OF THE GUIDE THAT DOES NOT APPLY. That
+ * option exists so an `.mdx` file under `app/` becomes a route. Ours are under
+ * `content/posts/`, and `app/[lang]/blog/[slug]/page.tsx` imports them — the
+ * guide's second pattern ("Using imports"). Adding the extensions anyway would
+ * widen route resolution for a thing this project does not do.
+ *
+ * PLUGINS ARE NAMED AS STRINGS BECAUSE THE COMPILER IS RUST. Next 16 builds with
+ * Turbopack, and the guide states the limit as a fact rather than a preference:
+ * "remark and rehype plugins without serializable options cannot be used yet
+ * with Turbopack, because JavaScript functions can't be passed to Rust"
+ * (node_modules/next/dist/docs/01-app/02-guides/mdx.md). A plugin imported and
+ * passed as a function here would not fail loudly; it would fail at build. All
+ * three below take no options at all.
+ *
+ * WHY EACH ONE, measured against what the twenty-one files in content/posts
+ * actually contain rather than against what a blog might contain one day:
+ *
+ *   remark-frontmatter  the `---` block is YAML to us and a thematic break plus
+ *                       stray prose to MDX. Without this the summary paragraph
+ *                       would be rendered as the first paragraph of every post.
+ *                       It STRIPS; lib/content/posts.ts still does the reading.
+ *   remark-gfm          39 table rows across the corpus, and tables are the one
+ *                       block the design sheet asks a post to carry that plain
+ *                       CommonMark has no syntax for. Footnotes and strikethrough
+ *                       come with it.
+ *   rehype-slug         the CONTENTS rail links to headings, and a link needs an
+ *                       id. lib/content/toc.ts derives the same ids from the same
+ *                       text; toc.test.ts holds the two against each other.
+ *
+ * NO HIGHLIGHTER. The sheet draws code in two tones and this ships one. H9a's
+ * ADR carries the reason: a tokenizer is a dependency whose whole output is
+ * colour, and colour is the one thing invariant 8 keeps in tokens.css. The
+ * caption, the line numbers and the scroll are built; the tones are a written
+ * divergence in the oracle.
+ */
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ["remark-frontmatter", "remark-gfm"],
+    rehypePlugins: ["rehype-slug"],
+  },
+});
+
+export default withMDX(nextConfig);

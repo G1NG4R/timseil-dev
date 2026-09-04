@@ -1,0 +1,158 @@
+---
+title: 'The frontmatter nothing had ever read'
+deck: 'Twenty-one posts had six keys each. Two of them were never parsed, and the four that were had been read off a drawing rather than off a renderer. Building the renderer took nine minutes to find a string that had been wrong on my homepage for twelve days.'
+published: 2026-09-04
+tags: ['mdx', 'invariants', 'measurement', 'frontend']
+systemId: 'timseil-dev'
+summary: |
+  The blog on this site is MDX files in the repository, and until this week
+  nothing rendered them. Twenty-one of them had accumulated, each with six
+  frontmatter keys, and the reader I had written months earlier parsed four —
+  the three the homepage draws, plus one for a counter. The other two were
+  stepped over on purpose, with an issue attached saying the phase that built
+  the renderer would decide what they meant. That phase was this one, and the
+  decision turned out to be smaller than the thing it uncovered: a dek written
+  with inline code in it, rendered with the backticks showing, on a page anybody
+  could load, for twelve days. It was not invisible because it was subtle. It
+  was invisible because it had nothing to be compared against.
+---
+
+The log on this site is not a database. It is twenty-one MDX files in the
+repository, versioned like code, and an entry gets to production the same way a
+handler does: branch, pull request, squash merge, deploy. That was decided early
+and I still think it is right for three to five posts a year.
+
+What I had not noticed is what it means for a file that nothing reads.
+
+## Four of six, and the two that were skipped
+
+The reader was written when the homepage grew a section that lists the three
+newest entries. That section draws three things per row — a date, a title, a
+one-line dek — so the reader parsed those three, plus one more that a counter
+elsewhere needed. Two keys were left alone: a tag list and a paragraph-length
+summary.
+
+That was deliberate, and the comment at the top of the file said so:
+
+```
+// IT STILL DOES NOT DECIDE THE SCHEMA. #192 says the frontmatter of the first
+// post was read off a design sheet and that H9 decides what it means when it
+// builds the renderer. This reads four of the six keys and leaves that open:
+// `tags` and `summary` are stepped over, not modelled.
+```
+
+Which is an honest note and also a slightly odd position to have been in for
+three weeks. Six keys existed in every file. Four had a reader. Two had a design
+sheet — a drawing, made before any of the files were written, which said what
+the keys would be called and what they would hold. Nothing had ever compared the
+drawing to the files.
+
+## The rule that decided it was older than the question
+
+I expected to spend an evening on the schema. I spent about ten minutes, because
+the rule that answers it was already written down and had not changed:
+
+> Every field that is drawn is required.
+
+Until this week the only surface was a three-cell row, so three keys were
+required. The post page draws two more — a tag list in the meta row, a summary
+panel under the title — so those two are required now, and a file missing either
+one is skipped rather than rendered with a labelled hole in it.
+
+The interesting key was the seventh, which does not exist yet. The design sheet
+lists a revision date as mandatory: two dates in the header, both ISO. No entry
+in this repository has ever been revised. So the date would have to come from
+somewhere, and the two available somewheres are the build clock and my own
+fingers. The first changes every deploy, which would tell a crawler the whole
+log was rewritten because a dependency got a patch bump. The second is the
+defect an open issue already names about the case study one directory over: the
+last hand-typed fact, and nothing checks it.
+
+So the key is optional and the row is absent when the key is. An em dash there
+would have been the wrong answer too — it says a number is missing, and here
+nothing happened.
+
+## What fell out nine minutes later
+
+The first entry rendered, and the paragraph under the title said this:
+
+```
+My design sheet draws a rate-limit line as `retry in 6s · 1/3`.
+```
+
+Backticks and all. Not the styled inline code the body gets — the literal
+characters, in the middle of a sentence, in 16.5px Geist.
+
+The cause is one sentence long and I should have seen it coming. Frontmatter
+never reaches the markdown compiler: the plugin that handles it strips the block
+before parsing, and my own reader treats what is left as text. So an inline code
+mark in a dek has no renderer, has never had one, and would not have acquired
+one by accident.
+
+The part worth writing down is not the cause. It is that **this had been in
+production for twelve days.**
+
+The homepage draws that dek. It has drawn it since the log section was built.
+Anybody who loaded the front page of this site in those twelve days saw a
+sentence with stray backticks in it, and I loaded that page more times than
+anybody.
+
+## Why nothing looked wrong
+
+I have been trying to be precise about why I did not see it, because "I did not
+look carefully" is not a finding, it is an apology.
+
+The honest version is that the string had nothing to be compared against. On the
+homepage it is one line in a three-line list, in a section whose other content is
+titles and dates. Backticks in that context read as punctuation — as some
+deliberate typographic thing, of a piece with the `SYS.04` markers and the
+tabular numerals and the em dashes this site uses everywhere. There was no
+second rendering of the same sentence sitting next to it, set differently, to
+make the first one look wrong.
+
+The moment there was, it took nine minutes.
+
+That is a general property of this kind of defect and not a fact about me. A
+value that is displayed once has no wrong-looking state. It has an appearance,
+and the appearance is whatever it is. A value displayed twice, by two code paths,
+has a *disagreement* — and a disagreement is visible in a way that a single
+rendering never is. It is the same reason a second clock is worth more than a
+more careful reading of the first one.
+
+## The fix, and where it had to go
+
+Six files carry marks: one dek and five summaries. The marks come off at read
+time, in the reader, not in any of the three components that draw those strings.
+
+That placement is the whole point. The homepage row, the post header and — from
+the next phase — the feed all print the same sentence, and a fix in one component
+would have left two spellings of it in the codebase. Two spellings of one string
+is the defect; the backticks were only how it announced itself this time.
+
+There is a test now that reads every file in the repository and asserts that no
+title, dek or summary hands on a backtick. It will fail for the next mark
+somebody writes, which is the point: the rule is not "strip backticks", it is
+"frontmatter is not markdown", and the day that stops being true I would rather
+find out from a test than from a screenshot.
+
+## What else the renderer measured on its way in
+
+Two smaller things, both of which are only visible because something finally
+drew the page.
+
+The design sheet gives the reading column 700 pixels and, in the same breath,
+names 68 characters as the measure. In the rig those disagree: 68ch resolves to
+748 pixels at 16.5px Geist, so the column is the binding constraint and a line
+holds about 64 characters. Narrower than the stated measure, never wider — which
+is the safe direction, and now a number rather than an assumption.
+
+And the reading time. The sheet prints `12 MIN · 2 480 WORDS` beside each other,
+which is a divisor of 206.7 words per minute. Two hundred reproduces the pair
+exactly. So the rate this site uses is read off the drawing it is built against
+rather than picked out of the range the internet offers, and the word count —
+the half that is actually measured — excludes code, because nobody reads a
+listing at prose speed.
+
+Neither of those is interesting on its own. Both are the same shape as the
+backticks: a number that could not be checked until something produced a second
+one to check it against.

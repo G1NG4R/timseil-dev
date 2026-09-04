@@ -15,10 +15,25 @@
 // What this file may NOT do is pretend to be YAML — it reads the shapes that are
 // in the fourteen files and refuses everything else, rather than guessing.
 //
-// IT STILL DOES NOT DECIDE THE SCHEMA. #192 says the frontmatter of the first
-// post was read off a design sheet and that H9 decides what it means when it
-// builds the renderer. This reads four of the six keys and leaves that open:
-// `tags` and `summary` are stepped over, not modelled.
+// H9a DECIDED THE SCHEMA, WHICH IS WHAT #192 ASKED FOR: "the frontmatter of
+// every post in web/content/posts/ is validated by the thing that renders it."
+// All six keys are read now, plus one optional seventh, and the rule that
+// decides which are required did not change — it only got a second page to
+// answer to.
+//
+// THE RULE IS STILL "EVERY FIELD THAT IS DRAWN IS REQUIRED". Until H9a the only
+// surface was a three-cell row, so three keys were required. The post page draws
+// two more: `TAGS` in the meta row and the `SUMMARY` panel under the title, both
+// of which the Blog Post sheet lists as PFLICHT. So both are required, and a
+// file missing one is skipped rather than rendered with a hole where a mandatory
+// block should be.
+//
+// `updated` IS THE SEVENTH AND IT IS OPTIONAL, against a sheet that calls it
+// mandatory. Nothing in this repository has ever changed a published post, so a
+// date here would have to come from somewhere — the build clock, or a hand — and
+// both are invariant 1. #284 is the same shape one directory over: "updatedAt is
+// the last hand-typed fact on a case study, and nothing checks it." The key is
+// read when it is written and the line is absent when it is not.
 //
 // THE FOURTH KEY IS H6's, AND IT SETTLED #314 ON THE WAY IN. ADR 0002 names
 // `systemId` and `docs/design/README.md` writes `post.systemId`; all fifteen
@@ -40,9 +55,13 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { plainText } from "./body.ts";
 import { log } from "../log.ts";
 
-/** What the homepage and the Work Index read. Four keys of six, plus the slug. */
+/** One entry: every key its frontmatter carries, plus the slug the filename is.
+ *
+ *  IT WAS FOUR OF SIX UNTIL H9a, and the two that were missing are the two the
+ *  post page draws. The head of this file has the rule that decided it. */
 export interface PostMeta {
   /** The filename without `.mdx` — the same string incidents.post_slug holds. */
   readonly slug: string;
@@ -66,6 +85,36 @@ export interface PostMeta {
    * lib/work/log.ts's question, and it counts only what matches.
    */
   readonly systemId: string | null;
+  /**
+   * The subject words, in the order they were written.
+   *
+   * REQUIRED AND NON-EMPTY, because the post's meta row draws `TAGS …` and the
+   * index draws them in every row. An empty array would be a `TAGS` label with
+   * nothing after it on a page whose sheet calls the block mandatory.
+   *
+   * ORDER IS THE AUTHOR'S. The index sorts nothing here: `['api',
+   * 'rate-limiting', 'design', 'honesty']` puts the subject first and the
+   * afterthought last, and alphabetising would throw that away for tidiness.
+   */
+  readonly tags: readonly string[];
+  /**
+   * The paragraph under the title, and the one the feed hands to a stranger.
+   *
+   * NOT `deck`, AND THE DIFFERENCE IS WHO READS IT. The deck is one line above
+   * the fold and is what the homepage row and the index draw. This is two to
+   * three sentences, drawn in the SUMMARY panel of the post and used as the
+   * `<description>` of a feed item — the only text about a post that leaves
+   * this site.
+   */
+  readonly summary: string;
+  /**
+   * `YYYY-MM-DD` when the entry was revised, or nothing.
+   *
+   * THE ONE OPTIONAL KEY, against a sheet that lists it as mandatory. See the
+   * head of this file: no post has ever been revised, and a date derived from
+   * the build would be invariant 1 with an ISO format on it.
+   */
+  readonly updated: string | null;
 }
 
 /** A read of the directory, and what it could not use. */
@@ -92,6 +141,18 @@ const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 /** `key: value`, at the start of a line, with the value possibly empty. */
 const PAIR = /^([A-Za-z][\w-]*):(?:[ \t]+(.*))?$/;
 
+/** The two block-scalar openers that mean "the value is the indented run below".
+ *  `|` keeps the newlines, `|-` keeps them and drops the final one. Only `|`
+ *  occurs in the corpus; `|-` costs nothing and would otherwise be read as a
+ *  one-character value. `>` is NOT here: it folds lines, and folding is a
+ *  transformation this reader would have to implement rather than recognise. */
+const BLOCK = /^\|[-+]?$/;
+
+/** One tag: lowercase, digits, hyphens. The shape `incidents.post_slug` uses for
+ *  a slug, minus the leading number — because a tag ends up in a URL-shaped chip
+ *  key and in a `data-` attribute, and both want the same alphabet. */
+const TAG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 /**
  * The scalar keys of a frontmatter block, or `null` when there is not one.
  *
@@ -101,11 +162,18 @@ const PAIR = /^([A-Za-z][\w-]*):(?:[ \t]+(.*))?$/;
  * caller reports the name; which of the three it was is not information the
  * homepage can act on.
  *
- * A BLOCK SCALAR IS STEPPED OVER, NOT READ. `summary: |` opens a paragraph whose
- * lines are indented, and one of those lines beginning `title:` after six spaces
- * is prose, not a key. Anchoring PAIR at the start of the line is most of that;
- * consuming the indented run is the rest. Without both, the last `key:`-looking
- * sentence inside a summary would win over the real key above it.
+ * A BLOCK SCALAR IS NOW READ, AND THE OLD DEFENCE IS WHAT MAKES THAT SAFE.
+ * `summary: |` opens a paragraph whose lines are indented, and one of those
+ * lines beginning `title:` after six spaces is prose, not a key. Until H9a the
+ * body was stepped over; now it is collected, and the reason a sentence inside
+ * it still cannot become a key is unchanged: PAIR is anchored at column zero and
+ * an indented line is never tested against it.
+ *
+ * THE BODY IS DEDENTED BY ITS OWN SMALLEST INDENT, not by a fixed two spaces.
+ * YAML says the block's indentation is set by its first non-empty line, and a
+ * fixed number here would silently eat a level from a file that used four.
+ * Blank lines inside the block are kept as blank lines rather than measured —
+ * they carry no indentation to measure.
  */
 export function frontmatter(raw: string): ReadonlyMap<string, string> | null {
   const lines = raw.split("\n");
@@ -120,15 +188,45 @@ export function frontmatter(raw: string): ReadonlyMap<string, string> | null {
       closed = true;
       break;
     }
-    // Indented lines belong to whatever opened above them. Nothing this reader
-    // models is indented, so they are the block scalar's body or a nested map,
-    // and either way they are not a key of ours.
+    // Indented lines belong to whatever opened above them. A block scalar
+    // consumes its own body below, so anything still reaching here is either a
+    // nested map or the body of a block this reader chose not to open — and
+    // neither is a key of ours.
     if (/^[ \t]/.test(line)) continue;
 
     const match = PAIR.exec(line);
     if (match === null) continue;
 
     const [, key, value = ""] = match;
+
+    if (BLOCK.test(value.trim())) {
+      const body: string[] = [];
+      let indent = Number.POSITIVE_INFINITY;
+      let j = i + 1;
+      for (; j < lines.length; j++) {
+        const next = lines[j] ?? "";
+        if (next.trimEnd() === "---") break;
+        if (next.trim() === "") {
+          body.push("");
+          continue;
+        }
+        if (!/^[ \t]/.test(next)) break;
+        indent = Math.min(indent, next.length - next.trimStart().length);
+        body.push(next);
+      }
+      // FIRST WINS here too, and the body is consumed either way: a second
+      // `summary:` must not leave its paragraph behind to be read as keys.
+      if (!found.has(key)) {
+        const cut = Number.isFinite(indent) ? indent : 0;
+        found.set(
+          key,
+          body.map((l) => (l === "" ? "" : l.slice(cut))).join("\n").trim(),
+        );
+      }
+      i = j - 1;
+      continue;
+    }
+
     // FIRST WINS. A second `title:` at the top level is a broken file, and
     // keeping the first is the reading that matches what an editor sees.
     if (!found.has(key)) found.set(key, value.trimEnd());
@@ -157,6 +255,40 @@ export function unquote(value: string): string {
     return trimmed.slice(1, -1);
   }
   return trimmed;
+}
+
+/**
+ * `['ci-cd', 'deploys', 'traefik']` read as three strings, or `null`.
+ *
+ * A FLOW SEQUENCE ON ONE LINE IS THE ONLY FORM ACCEPTED, because it is the only
+ * form the twenty-one files use. The block form — a `-` per line — would be a
+ * second shape to read and a second shape to get wrong, and nothing has asked
+ * for it. A file that writes one gets `null` here and is named in `skipped`,
+ * which is louder than a tag list that silently came back empty.
+ *
+ * EVERY ITEM IS CHECKED AGAINST `TAG`, not merely unquoted. A tag becomes a chip
+ * key, a `data-` attribute and part of a filter comparison; `Rate Limiting` with
+ * a space would pass through a lenient reader and then fail to match itself.
+ * One bad item invalidates the list rather than being dropped from it — a post
+ * whose tags are half-read is a post filed under the wrong subjects.
+ */
+export function tagList(value: string): readonly string[] | null {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return null;
+
+  const inner = trimmed.slice(1, -1).trim();
+  if (inner === "") return null;
+
+  const tags: string[] = [];
+  for (const part of inner.split(",")) {
+    const tag = unquote(part);
+    if (!TAG.test(tag)) return null;
+    // A repeated tag would count twice in the index's chip counter and once in
+    // the row. Refusing is the reading that keeps those two numbers equal.
+    if (tags.includes(tag)) return null;
+    tags.push(tag);
+  }
+  return tags;
 }
 
 /** Whether `YYYY-MM-DD` names a day that exists. `2026-02-30` does not. */
@@ -188,18 +320,40 @@ export function postMeta(file: string, raw: string): PostMeta | null {
   if (keys === null) return null;
 
   const title = unquote(keys.get("title") ?? "");
-  const deck = unquote(keys.get("deck") ?? "");
+  const deck = plainText(unquote(keys.get("deck") ?? ""));
   const published = unquote(keys.get("published") ?? "");
   const systemId = unquote(keys.get("systemId") ?? "");
+  const tags = tagList(keys.get("tags") ?? "");
+  // NOT `unquote`d. A block scalar is already plain text — its content is
+  // whatever was indented, quotes included — and stripping a leading `'` from a
+  // paragraph that opens with a quotation would be this reader editing prose.
+  const summary = plainText((keys.get("summary") ?? "").trim());
 
   if (title === "" || deck === "") return null;
   if (!isDate(published)) return null;
+  if (tags === null || summary === "") return null;
+
+  // Present-and-broken is not the same as absent, and only the first is a
+  // reason to drop the file: a post that writes `updated: soon` has made a
+  // claim this reader cannot check, while a post that writes nothing has made
+  // none. The absent case is `null` two lines down.
+  const updatedRaw = unquote(keys.get("updated") ?? "");
+  if (updatedRaw !== "" && !isDate(updatedRaw)) return null;
 
   // An absent key and an empty one are one answer here — "this entry names no
   // system" — because neither can be counted towards anything. That is not the
   // rule above it, where an empty `title` makes the file unusable; a row with
   // no headline is broken, a post about no particular system is ordinary.
-  return { slug: name[1], title, deck, published, systemId: systemId === "" ? null : systemId };
+  return {
+    slug: name[1],
+    title,
+    deck,
+    published,
+    systemId: systemId === "" ? null : systemId,
+    tags,
+    summary,
+    updated: updatedRaw === "" ? null : updatedRaw,
+  };
 }
 
 /**
@@ -303,4 +457,93 @@ export function postsOrNull(): PostRead | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * `010` out of `010-a-slug` — the entry number the post's eyebrow prints.
+ *
+ * IT IS READ OFF THE SLUG AND NOT COUNTED, which is the sheet's own rule for
+ * this block: "ENTRY 010 — fortlaufend, nie neu vergeben, auch wenn ein Eintrag
+ * verschwindet." A position in the array would renumber every older entry the
+ * day one is withdrawn, and the number is the one thing about an entry that is
+ * supposed to survive that.
+ *
+ * IT IS ALREADY VALIDATED. `SLUG` refuses a filename without three leading
+ * digits, so a `PostMeta` that exists has them; the fallback is unreachable and
+ * is a substring rather than a guess.
+ */
+export function entryNumber(post: PostMeta): string {
+  return post.slug.slice(0, 3);
+}
+
+/**
+ * The route one entry answers to, language-free. `localeHref` adds the prefix.
+ *
+ * THE SLUG IS THE FILENAME AND THE FILENAME IS `incidents.post_slug`, which is
+ * the whole reason this is one line and not a mapping. ADR 0002 put the blog in
+ * the repository so that a notch in the operation grid could point at a file; H9c
+ * is where that pointer becomes an `<a href>`, and it will build it out of this.
+ */
+export function postPath(post: PostMeta): string {
+  return `/blog/${post.slug}`;
+}
+
+/**
+ * Every entry route, newest first.
+ *
+ * IT RETURNS `[]` RATHER THAN THROWING when the directory cannot be read, and
+ * that is the same decision `postsOrNull` makes one function up. lib/seo/pages.ts
+ * builds its table out of this at module scope: a throw there would take down
+ * every page on the site because the log could not be listed, which is a worse
+ * answer than a sitemap that is briefly short of twenty-one URLs. The route
+ * itself is prerendered, so in a built image this cannot be the first thing that
+ * goes wrong — it can only be the second.
+ */
+export function postPaths(): readonly string[] {
+  return (postsOrNull()?.posts ?? []).map(postPath);
+}
+
+/**
+ * The raw text of one entry's file, or nothing.
+ *
+ * WHY THE PAGE NEEDS THE SOURCE AND NOT ONLY THE META. Two of the things the
+ * post draws are properties of the BODY rather than of the frontmatter: the word
+ * count and the contents rail. Neither is in `PostMeta`, and putting them there
+ * would make the homepage and the Work Index — which draw neither — pay for
+ * both on every read.
+ *
+ * IT IS THE SECOND TIME THIS FILE IS OPENED during one page build, and that is
+ * accepted rather than optimised away. Twenty-one entries, prerendered once, two
+ * small reads each; a cache here would be a lifetime to reason about in exchange
+ * for microseconds in a build step.
+ *
+ * THE SLUG IS CHECKED AGAINST `SLUG` BEFORE IT BECOMES A PATH. It arrives from a
+ * URL segment, and `join(dir, "../../etc/passwd")` is a path this function must
+ * never construct — the pattern is anchored, forbids dots and slashes, and is
+ * the same one the incidents constraint uses. CLAUDE.md: "Keine URL aus
+ * Nutzereingabe in ausgehende Requests"; a filesystem read is the same rule with
+ * a different destination.
+ */
+export function postSource(slug: string, read: DirReader = nodeReader): string | null {
+  const file = `${slug}.mdx`;
+  if (!SLUG.test(file)) return null;
+  try {
+    return read.text(POSTS_DIR, file);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The entry for a slug, or nothing — the gate in front of `/blog/[slug]`.
+ *
+ * THE SAME SHAPE AS `caseStudyFor`, AND FOR THE SAME TWO REASONS. An unknown
+ * segment is `notFound()` before anything else runs, and lib/http/url.ts proving
+ * a segment is safe to put in a URL is a different question from this one:
+ * whether the page was meant to exist. `SLUG` already refuses anything the
+ * incidents constraint would refuse, so a segment that reaches here and matches
+ * is a file somebody wrote.
+ */
+export function postFor(slug: string): PostMeta | null {
+  return postsOrNull()?.posts.find((post) => post.slug === slug) ?? null;
 }

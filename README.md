@@ -450,6 +450,7 @@ the same page.
 | `/work` | `/de/work` | `/fr/work` | the systems |
 | `/work/<slug>` | `/de/work/<slug>` | `/fr/work/<slug>` | one system in full — a case study exists for a system that has been written about, and `/work/vat-check` is a 404 because none has |
 | `/blog` | `/de/blog` | `/fr/blog` | the log — the label says `LOG`, the route says `/blog` |
+| `/blog/<slug>` | `/de/blog/<slug>` | `/fr/blog/<slug>` | one entry, rendered from `web/content/posts/<slug>.mdx` — the slug is the filename, which is also what `incidents.post_slug` points at |
 | `/about` | `/de/about` | `/fr/about` | the operator |
 | `/contact` | `/de/contact` | `/fr/contact` | the channel |
 | `/imprint` · `/privacy` | `/de/…` | `/fr/…` | legal, reachable from every footer |
@@ -464,13 +465,25 @@ rather than half a page in German. Filling them is post-launch work; the
 mechanism, the routes and the switcher are not
 ([ADR 0046](docs/adr/0046-die-sprachroute-englisch-ohne-praefix-und-die-sprache-die-die-url-traegt.md)).
 
+**The entries are written in English only.** The frame around them — the labels,
+the contents rail, the foot — follows the language of the URL like every other
+page, and the prose inside does not. That is a decision rather than a gap: the
+posts are technical, and translating them would be work without a reader.
+
 `/healthz` carries no language: Traefik asks it once a second per backend and
 reads no prose. Neither do the four files a machine reads — `/robots.txt`,
 `/sitemap.xml`, `/feed.xml` and `/og.png`. The sitemap lists only the pages that
-are finished — today the homepage and one case study, in all three languages
-each — and the case study is the only URL in it that carries a `lastModified`,
-because it is the only one whose content has a date somebody wrote. The feed is
-a valid channel with no entries until the log has pages to point at.
+are finished — the homepage, `/work`, `/about`, `/contact`, one case study and
+every log entry, each in all three languages. Two kinds of URL in it carry a
+`lastModified`: a case study, from a date written by hand beside the prose, and
+a log entry, from the `published` date in its frontmatter — or `updated`, on the
+day one is ever revised.
+
+`/feed.xml` is a valid channel and still carries no items. The renderer for an
+item has existed and been tested since the feed was built; what it was waiting
+for was pages to point at, and those exist now. Filling it is the next phase's
+work, together with the four other places on this site that name an entry
+without linking to it.
 
 ## Decisions
 

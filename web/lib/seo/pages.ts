@@ -23,9 +23,10 @@
 import type { Metadata } from "next";
 
 import { caseStudyPaths } from "../../content/case-studies/index.ts";
+import { postPaths } from "../content/posts.ts";
 import { alternatesFor } from "../i18n/alternates.ts";
 import { type Locale, localeHref } from "../i18n/routes.ts";
-import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
+import { AUTHOR, SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
 
 /** The seven routes, language-free, in the order README's route table lists
  *  them.
@@ -53,7 +54,7 @@ export interface PageEntry {
 }
 
 /**
- * The seven fixed routes plus one row per case study.
+ * The seven fixed routes, one row per case study, and one per log entry.
  *
  * H1 IS WHERE THIS TABLE STOPPED BEING SEVEN LITERALS, and the alternative was
  * worse than the shape change. `/work/<slug>` is one address per system, so the
@@ -68,10 +69,24 @@ export interface PageEntry {
  * two flipped independently because the boolean is per row, and H6 flipped the
  * second of them — app/sitemap.ts picked the page up out of the same boolean
  * with no edit, which is the whole reason there is one table and not two.
+ *
+ * H9a REPEATS THAT ASYMMETRY DELIBERATELY, and it is the second time rather than
+ * a new idea: twenty-one entries become indexable here while `/blog` stays the
+ * `[SOON]` stub until H9b builds the index. The reason is the one above, word for
+ * word — the entries have something to say and the stub does not, and a crawler
+ * that read `LOG [SOON]` would file that as this site's writing. H9b flips the
+ * one remaining row.
+ *
+ * THE POST ROWS COME FROM THE FILESYSTEM AND THE CASE-STUDY ROWS DO NOT, which
+ * is the one wrinkle worth naming. `postPaths()` reads a directory at module
+ * scope; it answers `[]` rather than throwing when it cannot, because this table
+ * is imported by every page and a log that could not be listed must not be able
+ * to take the homepage down with it. lib/content/posts.ts carries that argument.
  */
 export const PAGES: readonly PageEntry[] = [
   ...FIXED_PAGES,
   ...caseStudyPaths().map((path) => ({ path, indexable: true })),
+  ...postPaths().map((path) => ({ path, indexable: true })),
 ];
 
 /** The image every page points at, and the feed every page announces. Both are
@@ -148,5 +163,62 @@ export function seoFor(locale: Locale, path: string): Metadata {
     // Present only while the page is a stub, so that it disappears together
     // with its reason rather than being carried as `index: true` noise.
     ...(indexable ? {} : { robots: { index: false } }),
+  };
+}
+
+/**
+ * A log entry's metadata: the site's card with the entry's words on it.
+ *
+ * WHY A SECOND FUNCTION AND NOT A FLAG ON THE FIRST. `seoFor` answers one
+ * question — what does THIS SITE say about this address — and every page it
+ * serves says the same three things with a different canonical. An entry says
+ * something else: it has its own title, its own description, and two dates. A
+ * boolean parameter would make one function do two jobs and leave the caller
+ * reading the implementation to find out which.
+ *
+ * `type: "article"` AND THE TWO TIMES, because that is the difference a crawler
+ * acts on: an article is dated and a website is not. `publishedTime` is the
+ * frontmatter's own `published`; `modifiedTime` appears only when the entry
+ * carries `updated`, which none does yet — the same absence sitemap.ts records,
+ * for the same reason.
+ *
+ * THE IMAGE IS STILL THE SITE'S CARD. There is no per-entry image: nothing in
+ * content/posts is a picture, and `next/og` generating one per entry is a phase
+ * nobody has planned. A shared card is a true statement about a shared site; a
+ * generated one that said something else would be the fourth place a title lives.
+ *
+ * THE DESCRIPTION IS THE DEK AND NOT THE SUMMARY, which is the opposite of what
+ * lib/seo/feed.ts does and is deliberate. A feed reader shows a paragraph and a
+ * search result shows about 160 characters — the dek is one line written to be
+ * read alone, and the summary is three sentences that would be cut mid-clause.
+ */
+export function seoForPost(
+  locale: Locale,
+  path: string,
+  entry: { title: string; deck: string; published: string; updated: string | null },
+): Metadata {
+  const base = seoFor(locale, path);
+
+  return {
+    ...base,
+    title: entry.title,
+    description: entry.deck,
+    openGraph: {
+      type: "article",
+      siteName: SITE_NAME,
+      url: localeHref(locale, path),
+      title: entry.title,
+      description: entry.deck,
+      images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
+      publishedTime: entry.published,
+      ...(entry.updated === null ? {} : { modifiedTime: entry.updated }),
+      authors: [AUTHOR.name],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: entry.title,
+      description: entry.deck,
+      images: [OG_IMAGE],
+    },
   };
 }

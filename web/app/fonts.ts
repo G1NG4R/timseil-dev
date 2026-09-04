@@ -32,10 +32,12 @@
 //
 // It cost 9 728 B on every first visit for a weight no design asked for.
 //
-// The one thing that could want it back is h4-h6, which have no step and no rule
-// at all (#246) and are first needed by H9's blog post body. If they land on the
-// display face at 400, this line comes back with that place named — which is
-// the trade this issue asked for, in the direction that is one line to reverse.
+// The one thing that could have wanted it back was h4-h6, which had no step and
+// no rule at all (#246) and were first needed by H9's blog post body. H9a wrote
+// the rule and it does not: the three levels take the display face at 500, like
+// h1-h3, and descend through the body steps. So the 9 728 B stay saved, and the
+// line that would have brought them back is not this one — it is a note in
+// styles/globals.css saying which decision closed the door.
 //
 // `adjustFontFallback` stays at its default (true). It is what generates the
 // metric-matched fallback face, and with `display: "swap"` that fallback is the

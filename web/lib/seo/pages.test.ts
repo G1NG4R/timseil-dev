@@ -14,6 +14,7 @@ import { NAV } from "../chrome.ts";
 import { LOCALES } from "../i18n/routes.ts";
 import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
 import { CASE_STUDIES, caseStudyPath } from "../../content/case-studies/index.ts";
+import { postPath, postsOrNull } from "../content/posts.ts";
 import { PAGES, indexablePaths, seoFor } from "./pages.ts";
 
 // A page added to `app/[lang]/` without a line in PAGES has not been decided
@@ -37,7 +38,12 @@ void test("a path the table does not know throws instead of guessing", () => {
 // anybody writing the line here is a page that started being indexed by
 // accident.
 void test("the homepage, the work index, about, contact and the case studies are indexable, and nothing else", () => {
-  assert.deepEqual(indexablePaths(), ["/", "/work", "/about", "/contact", "/work/timseil-dev"]);
+  // H9a ADDED A SECOND VARIABLE-LENGTH TAIL, so the fixed head is asserted as a
+  // list and the tail by the two tests below — one per content registry. Writing
+  // twenty-one slugs out here would be a second copy of content/posts, and the
+  // copy is the one that goes stale.
+  const fixed = indexablePaths().filter((path) => !path.startsWith("/blog/"));
+  assert.deepEqual(fixed, ["/", "/work", "/about", "/contact", "/work/timseil-dev"]);
   assert.equal(seoFor("en", "/").robots, undefined);
   assert.equal(seoFor("en", "/work/timseil-dev").robots, undefined);
   assert.equal(seoFor("en", "/work").robots, undefined);
@@ -47,6 +53,27 @@ void test("the homepage, the work index, about, contact and the case studies are
   // matters most right now: H8 put a form on this site, and the page that will
   // explain it says `[SOON]` until H12.
   assert.deepEqual(seoFor("en", "/privacy").robots, { index: false });
+  // `/blog` is among them until H9b, WHILE ITS ENTRIES ARE ALREADY INDEXABLE.
+  // pages.ts argues the asymmetry; it is the case-study/`/work` split a second
+  // time, and this is the assertion that says it was meant.
+  assert.deepEqual(seoFor("en", "/blog").robots, { index: false });
+});
+
+// The same drift the case-study test guards, one registry over: an entry that
+// renders at an address the SEO table has never heard of. `entryFor` throws for
+// an unknown path, so it would be a 500 on the post rather than a missing
+// sitemap line.
+void test("every log entry has a row, and every row says it may be indexed", () => {
+  const read = postsOrNull();
+  assert.notEqual(read, null, "the posts directory could not be read");
+
+  const known = new Map(PAGES.map((page) => [page.path, page.indexable]));
+  for (const post of read?.posts ?? []) {
+    const path = postPath(post);
+    assert.ok(known.has(path), `no page entry for ${path}`);
+    assert.equal(known.get(path), true, `${path} is written but not indexable`);
+    assert.doesNotThrow(() => seoFor("en", path));
+  }
 });
 
 // The drift this table was restructured to make impossible: a case study that
