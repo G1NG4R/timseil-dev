@@ -131,6 +131,40 @@ ohne Skript         Überschrift, Adresse, Datenhinweis da; Spur „waiting for
 
 Zum neunten Mal notiert, #242.
 
+## Gefunden — der Scanner, der nicht fragen konnte
+
+Nach dem H8b-Merge wurde der `main`-Lauf rot, in `scan` und `quickstart`. Beide
+hatten **eine** Ursache, und keine lag im Code: `registry.npmjs.org` beantwortete
+den Bulk-Advisories-Endpunkt etwa eine Stunde lang nicht.
+
+- **`check-vuln.sh` konnte „gefunden" nicht von „konnte nicht fragen"
+  unterscheiden.** `npm audit` endet aus beiden Gründen ungleich null, das
+  Skript hatte zwei Zweige für drei Fälle und druckte den lautesten Satz, den es
+  besitzt: *„a high or critical advisory in a shipped dependency"*. **Es gab
+  keinen.** Derselbe Befehl meldet mit genug Zeit `found 0 vulnerabilities` über
+  alle 472 Abhängigkeiten. Der Beleg für die richtige Lesart stand zwei Zeilen
+  darunter in der eigenen Ausgabe. Die devDependency-Notiz hat im selben Lauf
+  ebenso falsch gemeldet. *(04.09.2026)*
+- **Und das Werkzeug stand in keinem Test** — und hatte keinen Seam, mit dem man
+  einen bauen könnte. So kommt ein Sicherheitswerkzeug dazu, einen ganzen
+  Vormittag lang etwas Falsches zu behaupten. *(04.09.2026)*
+- **`quickstart` fiel an derselben Wurzel und meldete es korrekt.** Der
+  `image-web`-Build hängt bei `RUN npm ci`, also existiert das lokale Image
+  nicht, wenn `check-topology` danach fragt — `require-images` prüft
+  `docker image inspect`, nicht GHCR. Dort ist nichts zu reparieren; die
+  Verwechslung „Image fehlt" statt „npm kam nicht durch" kostet aber beim
+  nächsten Mal wieder eine halbe Stunde. *(04.09.2026)*
+- **Ein rotes `scan` hält keinen Deploy auf.** `deploy` hängt an
+  `[check, db, e2e, publish]`. Das ist so gewollt — die Absicherung sitzt am PR,
+  wo `scan` ein Pflicht-Kontext ist — war aber nirgends aufgeschrieben.
+  *(04.09.2026)*
+
+**Repariert in #332:** drei Ausgänge statt zwei, nach ADR 0054. Der
+Unterscheider ist, ob ein *Bericht* zurückkam (`auditReportVersion`), nicht
+welcher Exit-Code — gemessen gegen die echte Störung und gegen eine tote
+Registry. Das Tor bleibt rot, nur der Satz wird wahr, und die Datei bekommt
+ihren ersten Test.
+
 ## Gefunden — aus der H8b-Abnahme
 
 - **Auf dem Telefon stehen vier Zeilen, wo das Blatt zwei zeichnet.** Unter 720
