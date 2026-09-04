@@ -152,6 +152,11 @@ Zeile 73 `52px` und in Zeile 274 `34px`; beide sind Stufen. Dieselbe Familie wie
   gerade verlässt, ebenfalls existiert. Der Lauf bewegte sich nie und die
   Zyklus-Sperre schlug im zweiten Schritt zu. Jetzt wartet er auf die URL.
   *(04.09.2026, H9a)*
+- **`CONTRIBUTING.md` erlaubt `style:`, der commit-msg-Hook nicht.** Die
+  Typ-Tabelle im Beitragsleitfaden führt `style:` unter „no release at all"; der
+  Hook kennt `feat fix chore docs refactor test perf build ci revert` und weist
+  es ab. Gefunden beim Nachbessern des CodeQL-Befunds zu #335. Dieselbe Form wie
+  #241 — zwei Kopien einer Liste, eine davon veraltet. *(04.09.2026, H9a)*
 - **`github-slugger` ist ein Paket, das dem Baum nichts hinzufügt.** `rehype-slug`
   bringt es ohnehin mit; es wird deklariert statt aus dem Hoist geliehen, aus dem
   Grund, den `next.config.ts` über `outputFileTracingIncludes` aufschreibt.
