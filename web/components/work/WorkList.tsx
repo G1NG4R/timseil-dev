@@ -1,3 +1,4 @@
+import { JsonLd } from "@/components/JsonLd";
 import { EmptyState } from "@/components/state/EmptyState";
 import { WorkFilters, type FilterRowNode, type StatusChip } from "@/components/work/WorkFilters";
 import { WorkHeader } from "@/components/work/WorkHeader";
@@ -6,6 +7,9 @@ import type { SystemList } from "@/lib/api/systems";
 import { padTwo } from "@/lib/api/values";
 import type { PostMeta } from "@/lib/content/posts";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
+import { localeHref } from "@/lib/i18n/routes";
+import { collectionLd } from "@/lib/seo/jsonld";
 import { NO_DATA, stateLabel } from "@/lib/state/words";
 import { listed, statusCounts, workCount, workMeta } from "@/lib/work/counts";
 import { workEntries } from "@/lib/work/entries";
@@ -55,12 +59,14 @@ import { stackTags } from "@/lib/work/stacks";
 export function WorkList({
   body,
   posts,
+  locale,
   messages,
 }: {
   /** The answer, or `null` for both the fallback and a failed read. */
   body: SystemList | null;
   /** The log entries, read from this image's own content/posts. */
   posts: readonly PostMeta[];
+  locale: Locale;
   messages: Messages;
 }) {
   const entries = workEntries(body, posts, messages);
@@ -68,6 +74,31 @@ export function WorkList({
 
   return (
     <>
+      {/* #322, and the other half of it is on `/blog`. One builder, so the two
+          lists cannot describe themselves differently — the issue's own reason
+          for making this due with H9 rather than whenever.
+
+          IT IS INSIDE THE STREAMED REGION BECAUSE THE LIST IS. The rows arrive
+          from `/api/systems`; a block in the page shell would have to describe a
+          list it does not have yet, and when the api is down there is no list to
+          describe. An `ItemList` of nought over an outage would be a
+          machine-readable claim that this site runs nothing. */}
+      {entries.length === 0 ? null : (
+        <JsonLd
+          data={collectionLd(
+            locale,
+            localeHref(locale, "/work"),
+            messages.workTitle,
+            entries.map((entry) => ({
+              name: entry.name,
+              // `null` for a system with no page yet. The row draws no arrow
+              // for the same reason, and `collectionLd` omits the `url`.
+              path: entry.href === null ? null : localeHref(locale, entry.href),
+            })),
+          )}
+        />
+      )}
+
       {/* `null` rather than four zeroes when nothing countable arrived — the
           tiles and the counter under them have to make the same claim about the
           same answer, and `listed` is the one guard both read. */}

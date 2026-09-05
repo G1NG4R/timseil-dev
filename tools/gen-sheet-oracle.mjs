@@ -72,6 +72,12 @@ const SHEETS = {
   // the 196px contents rail — is drawn at 1440 and gone below 1080, which is a
   // switch layout.css owns rather than a frame the sheet still owes.
   blogPost: 'docs/design/Blog Post - timseil.dev.dc.html',
+  // H9b. The index draws 1440 and 390, and it is named in the same sentence the
+  // post is: "Fliesstext, Blog, About, Contact und Legal fliessen, dort ist
+  // nichts zu entscheiden." The one fixed geometry it has — the five-track entry
+  // row — is drawn at 1440 and stacked below 1080, which is a switch layout.css
+  // owns rather than a frame the sheet still owes.
+  blogIndex: 'docs/design/Blog Index - timseil.dev.dc.html',
 };
 
 // ONE DECISION MOVES MANY MEASUREMENTS, so the reasons are named once and
@@ -122,6 +128,40 @@ const DIVERGENCE = {
     'localStorage key, which invariant 9 does not have. The two numbers are ' +
     'invented. None of the four is built; the page carries a true notice ' +
     'instead.',
+  // ── H9b ──────────────────────────────────────────────────────────────────
+  'one-head-geometry':
+    'The Blog Index sheet draws its head as `1fr 340px` with an 80px gap. ' +
+    'layout.css carries four two-column geometries — 480, 400, 380 and 420 — ' +
+    'and `one-hero-geometry` and `one-panel-geometry` each turned down a fifth ' +
+    'for the same reason: "eine Regel, die niemand erreichen kann, ist kein ' +
+    'Ersatzteil, sondern die Behauptung, dass es etwas gibt." This head is the ' +
+    'work index\'s head with a different rail in it, so it takes that pair ' +
+    'whole — 420 and 72 — and the 1080 switch stays one switch.',
+  'chips-are-the-corpus':
+    'The sheet draws eight chips — ALL plus seven subjects — over ten invented ' +
+    'entries. The twenty-three written ones carry THIRTY-TWO tags, seventeen of ' +
+    'them once. lib/blog/tags.ts draws every one of them and caps nothing, ' +
+    'which is lib/work/stacks.ts\'s rule for the same question: the vocabulary ' +
+    'is derived from the data, so "a chip that matches nothing is never drawn ' +
+    'in the first place". A threshold would be a typed number deciding which of ' +
+    'my own subjects can be filtered by, and it would draw a different row ' +
+    'every time the corpus moved. The count is a measurement of what has been ' +
+    'written; the drawing is a drawing.',
+  'no-pagination':
+    'The sheet draws `PAGE 01 / 01` and `OLDER ENTRIES →` under the list. ' +
+    'Twenty-three entries are one page, so the control would lead nowhere — ' +
+    'the dead control STATE.05 refuses, and the third time this site has ' +
+    'declined to draw one: ADR 0062 §3 for the log row\'s arrow, and WorkRow ' +
+    'for a queued system\'s. `PAGE 01 / 01` on its own is a counter of pages ' +
+    'nobody can turn. It comes back with the entry that needs it.',
+  'search-is-not-only-titles':
+    'The sheet contradicts itself about what the field searches: the ' +
+    'placeholder says `grep titles…` and the script matches `r.textContent`, ' +
+    'which is the whole row — the ISO date and `12 MIN` included. Neither is ' +
+    'followed. lib/blog/filter.ts searches the three fields the row DRAWS, ' +
+    'which is ADR 0070 §2\'s rule for the frontmatter schema, and leaves the ' +
+    'date out because `2026` must not return twenty-two entries when nobody ' +
+    'searched for a year. The placeholder says what the code does.',
   // ── H9a ──────────────────────────────────────────────────────────────────
   'heading-scale':
     'The Blog Post sheet sets the section headings at 21px and the pull quote ' +
@@ -2638,12 +2678,199 @@ const BLOG_POST_MAP = [
   },
 ];
 
+
+// ─────────────────────────────────────────────────────────── H9b · Blog Index
+
+/**
+ * `Blog Index - timseil.dev.dc.html`, artboard `1a` at 1440 and `1b` at 390.
+ *
+ * WHAT IS ASSERTED HERE IS GEOMETRY AND NOT COPY. The sheet's list is ten
+ * invented entries with invented titles, dates and reading times — its own
+ * design note says so: "Titel, Daten, Lesezeiten und Tag-Zaehler sind
+ * Platzhalter". So every measurement below is a track, a gap or a step, and
+ * none of them is a string.
+ *
+ * NO `on` FIELD ON ANY OF THEM. The rig runs a production build with no api,
+ * and this page asks for none: it reads files that are in the image. So unlike
+ * `/work`, every row of this list is on the page the rig can open, and the
+ * measurements are taken where they ship.
+ */
+const BLOG_INDEX_MAP = [
+  // ── the head ─────────────────────────────────────────────────────────────
+  {
+    id: 'blog-eyebrow-step',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 64,
+    decl: 'font', says: "500 11.5px 'JetBrains Mono',monospace",
+    reading: 'the section marker is the mono step, not a half pixel between two',
+    measure: { kind: 'computed', selector: '.blog-eyebrow', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+  {
+    id: 'blog-h1-step',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 65,
+    decl: 'font', says: "500 52px/1.05 'Chakra Petch',sans-serif",
+    reading: 'K-08: 52 for every page but the homepage and About, and the sheet agrees',
+    measure: { kind: 'computed', selector: '.blog-head h1', prop: 'font-size' }, expect: '52px',
+  },
+  {
+    id: 'blog-stats-are-rows',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 68,
+    decl: 'flex-direction', says: 'column',
+    reading: 'the rail is four full-width rows and not four tiles — an address does not fit in a quarter of it',
+    measure: { kind: 'computed', selector: '.blog-stats', prop: 'flex-direction' }, expect: 'column',
+  },
+  {
+    id: 'blog-stats-gap',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 68,
+    decl: 'gap', says: '14px',
+    reading: 'fourteen between them, which is a step',
+    measure: { kind: 'computed', selector: '.blog-stats', prop: 'row-gap' }, expect: '14px',
+  },
+  {
+    id: 'blog-head-rail-width',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 62,
+    decl: 'grid-template-columns', says: '1fr 340px',
+    reading: 'the rail takes the 420 every other rail on this site takes, not a fifth width',
+    measure: { kind: 'box-width', selector: '.blog-stats' }, expect: 420,
+    diverges: { class: 'one-head-geometry', sheet: '340px' },
+  },
+  {
+    id: 'blog-stat-label-step',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 69,
+    decl: 'font', says: "500 10px 'JetBrains Mono',monospace",
+    reading: 'the rail labels are the 10px mono step, as the work rail is',
+    measure: { kind: 'computed', selector: '.blog-stat dt', prop: 'font-size' }, expect: '10px',
+  },
+  // ── the two controls ─────────────────────────────────────────────────────
+  {
+    id: 'blog-chips-gap',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 77,
+    decl: 'gap', says: '8px',
+    reading: 'the chips wrap at a desk with eight between them, and there are thirty-two of them rather than seven',
+    measure: { kind: 'computed', selector: '.blog-chips', prop: 'column-gap' }, expect: '8px',
+    diverges: { class: 'chips-are-the-corpus', sheet: 'ALL + 7 chips' },
+  },
+  {
+    id: 'blog-chips-wrap',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 77,
+    decl: 'flex-wrap', says: 'wrap',
+    reading: 'and they wrap rather than scroll at 1440, which the sheet itself draws',
+    measure: { kind: 'computed', selector: '.blog-chips', prop: 'flex-wrap' }, expect: 'wrap',
+  },
+  {
+    id: 'blog-search-step',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 90,
+    decl: 'font', says: "400 11.5px 'JetBrains Mono',monospace",
+    reading: 'the field is a mono step; what it searches is not what the placeholder beside it claims',
+    measure: { kind: 'computed', selector: '.blog-search-input', prop: 'font-size' }, expect: '12px',
+    diverges: { class: 'search-is-not-only-titles', sheet: 'grep titles…' },
+  },
+  {
+    id: 'blog-counter-step',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 92,
+    decl: 'font', says: "500 9.5px 'JetBrains Mono',monospace",
+    reading: 'the counter over the list is the 10px step, rounded off a half pixel',
+    measure: { kind: 'computed', selector: '.blog-count', prop: 'font-size' }, expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  // ── the year separator ───────────────────────────────────────────────────
+  {
+    id: 'blog-year-gap',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 95,
+    decl: 'gap', says: '16px',
+    reading: 'the year, its rule and its count stand sixteen apart',
+    measure: { kind: 'computed', selector: '.post-cards-year', prop: 'column-gap' }, expect: '16px',
+  },
+  // ── the entry row ────────────────────────────────────────────────────────
+  {
+    id: 'blog-row-tracks',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 97,
+    decl: 'grid-template-columns', says: '112px 1fr 200px 74px 24px',
+    reading: 'five columns: date, the entry, its subjects, its length, the arrow',
+    measure: { kind: 'track-count', selector: '.post-card-link' }, expect: 5,
+  },
+  {
+    id: 'blog-row-date-width',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 97,
+    decl: 'grid-template-columns', says: '112px 1fr 200px 74px 24px',
+    reading: 'the date column is 112 — one ISO date in tabular figures and nothing else',
+    measure: { kind: 'box-width', selector: '.post-card-date' }, expect: 112,
+  },
+  {
+    id: 'blog-row-tags-width',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 97,
+    decl: 'grid-template-columns', says: '112px 1fr 200px 74px 24px',
+    reading: 'the subjects take 200, bounded so a four-tag entry cannot eat the title',
+    measure: { kind: 'box-width', selector: '.post-card-tags' }, expect: 200,
+  },
+  {
+    id: 'blog-row-min-width',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 97,
+    decl: 'grid-template-columns', says: '112px 1fr 200px 74px 24px',
+    reading: 'the reading time takes 74',
+    measure: { kind: 'box-width', selector: '.post-card-min' }, expect: 74,
+  },
+  {
+    id: 'blog-row-gap',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 97,
+    decl: 'gap', says: '24px',
+    reading: 'twenty between the columns, the step the scale has where 24 is not one',
+    measure: { kind: 'computed', selector: '.post-card-link', prop: 'column-gap' }, expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '24px' },
+  },
+  // ── artboard 1b · 390 ────────────────────────────────────────────────────
+  {
+    id: 'blog-h1-step-390',
+    sheet: 'blogIndex', artboard: '1b', width: 390, line: 270,
+    decl: 'font', says: "500 34px/1.05 'Chakra Petch',sans-serif",
+    reading: 'the display step falls to 34, and the element stays an h1',
+    measure: { kind: 'computed', selector: '.blog-head h1', prop: 'font-size' }, expect: '34px',
+    diverges: { class: 'one-copy-of-the-words', sheet: '<h2>, and a shorter deck' },
+  },
+  {
+    id: 'blog-chips-scroll-390',
+    sheet: 'blogIndex', artboard: '1b', width: 390, line: 277,
+    decl: 'overflow-x', says: 'auto',
+    reading: 'the chip row turns from a wrap into a scroller, which is the sheet\'s own note',
+    measure: { kind: 'computed', selector: '.blog-chips', prop: 'overflow-x' }, expect: 'auto',
+  },
+  {
+    id: 'blog-chip-step-390',
+    sheet: 'blogIndex', artboard: '1b', width: 390, line: 279,
+    decl: 'font', says: "600 9px 'JetBrains Mono',monospace",
+    reading: 'and the chips in it are the 9px mono step, the same chip `/work` draws',
+    measure: { kind: 'computed', selector: '.blog-chips .chip', prop: 'font-size' }, expect: '9px',
+  },
+  {
+    id: 'blog-row-stacks-390',
+    sheet: 'blogIndex', artboard: '1b', width: 390, line: 292,
+    decl: 'padding', says: '16px 0',
+    reading: 'the entry stops being five columns and becomes two: a meta line, then the entry',
+    measure: { kind: 'track-count', selector: '.post-card-link' }, expect: 2,
+  },
+  {
+    id: 'blog-row-meta-gap-390',
+    sheet: 'blogIndex', artboard: '1b', width: 390, line: 293,
+    decl: 'gap', says: '10px',
+    reading: 'and the date and the reading time share that line, ten apart',
+    measure: { kind: 'computed', selector: '.post-card-link', prop: 'column-gap' }, expect: '10px',
+  },
+  {
+    id: 'blog-latest-badge-step',
+    sheet: 'blogIndex', artboard: '1a', width: 1440, line: 100,
+    decl: 'gap', says: '10px',
+    reading: 'the LATEST badge stands ten from the title it marks',
+    measure: { kind: 'computed', selector: '.post-card-titlebar', prop: 'column-gap' }, expect: '10px',
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
   { map: WORK_MAP, target: 'web/e2e/oracle/work.gen.json' },
   { map: ABOUT_MAP, target: 'web/e2e/oracle/about.gen.json' },
   { map: BLOG_POST_MAP, target: 'web/e2e/oracle/blog-post.gen.json' },
+  { map: BLOG_INDEX_MAP, target: 'web/e2e/oracle/blog-index.gen.json' },
   { map: CONTACT_MAP, target: 'web/e2e/oracle/contact.gen.json' },
 ];
 

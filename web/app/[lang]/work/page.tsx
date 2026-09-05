@@ -54,8 +54,8 @@ export default async function Page() {
 
   return (
     <>
-      <Suspense fallback={<WorkList body={null} posts={posts?.posts ?? []} messages={messages} />}>
-        <WorkLive posts={posts?.posts ?? []} messages={messages} />
+      <Suspense fallback={<WorkList body={null} posts={posts?.posts ?? []} locale={locale} messages={messages} />}>
+        <WorkLive posts={posts?.posts ?? []} locale={locale} messages={messages} />
       </Suspense>
 
       {/* The training log is SYS.01 of the homepage rather than a route of its

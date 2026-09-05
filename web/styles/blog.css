@@ -476,3 +476,360 @@
   letter-spacing: var(--ls-label);
   max-width: none;
 }
+
+/* ══ H9b · /blog, the index ═══════════════════════════════════════════════
+
+   ONE FILE FOR TWO PAGES, and the alternative was a `blog-index.css` that would
+   have had to repeat the eyebrow, the deck measure and the H1 step. The two
+   surfaces are one family: the row on the index prints the same date, the same
+   title and the same subjects the entry's own header does, out of one reader.
+
+   THE INDEX CLASSES ARE `post-card-*` AND `blog-*`, AND NOT `log-*`.
+   styles/home.css already owns `.log-row`, `.log-list`, `.log-date`,
+   `.log-title` and `.log-deck` for SYS.04, which draws three entries of this
+   same corpus. One set of selectors over two components rendering the same
+   posts would have made every rule and every assertion ambiguous about which
+   page it meant.
+
+   NO MEDIA QUERY HERE EITHER. The page answers to one declared switch — 1080,
+   where the entry row stops being a five-column grid — and layout.css owns it,
+   as it owns the one `/blog/<slug>` needs.
+
+   ONE MORE DIVERGENCE FROM THE SHEET, on top of the four above:
+
+     no-pagination   the artboard draws `PAGE 01 / 01` and `OLDER ENTRIES →`
+                     under the list. Twenty-three entries are one page, so the
+                     control would lead nowhere — the dead control STATE.05
+                     refuses, and the third time this site has declined to draw
+                     one (ADR 0062 §3 for the log row's arrow, `WorkRow` for a
+                     queued system's).                                        */
+
+/* ── The head ────────────────────────────────────────────────────────────── */
+
+.blog-head {
+  padding-block: var(--s-56) var(--s-44);
+}
+
+.blog-eyebrow {
+  margin: 0 0 var(--s-20);
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+}
+
+/* Full accent, not the sheet's `rgba(0,229,255,.55)`: over `--bg` that reads
+   4.37:1, under the 4.5 WCAG asks of text. `.work-marker` and `.sec-id` made
+   the same correction, and axe found it once already. */
+.blog-marker {
+  color: var(--acc);
+}
+
+/* K-08, and `:where()` for the reason work.css spells out: the two H1 steps are
+   62 for the homepage and About and 52 everywhere else. globals.css sets 62 on
+   the element and layout.css drops it to 34 below 720; a class here would beat
+   both and leave the phone at 52. `:where()` adds no specificity, so source
+   order decides. */
+:where(.blog-head) h1 {
+  font-size: var(--t-disp-52);
+  margin: 0 0 var(--s-20);
+  text-wrap: pretty;
+}
+
+/* 56ch, which is this sheet's own figure where `/work`'s is 58 — a measure and
+   not a width. The prose measure of this site is 68 characters; both decks are
+   narrower because they stand beside a rail rather than alone, and each takes
+   the number its own artboard draws. */
+.blog-deck {
+  margin: 0;
+  max-inline-size: 56ch;
+  font: 400 var(--t-body-15)/var(--lh-body) var(--body);
+  color: var(--steel);
+}
+
+/* A COLUMN OF ROWS AND NOT A ROW OF TILES, WHICH THE FIRST DRAFT GOT WRONG BY
+   COPYING THE NEIGHBOUR INSTEAD OF READING THIS SHEET. `WorkHeader`'s rail is
+   four tiles side by side, so this one was built that way too — and at 1440 the
+   four columns come out about 105px each, which is narrower than
+   `RSS · /feed.xml ↗`. Both address rows wrapped onto three lines. Seen on the
+   built page rather than reasoned about.
+
+   The sheet draws this rail `display:flex; flex-direction:column; gap:14px`,
+   every row a label on the left and its value on the right. Four rows of full
+   width, and nothing has to wrap. The two rails differ because what they hold
+   differs: four counts fit in a tile, an address does not. */
+.blog-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-14);
+  margin: var(--s-34) 0 0;
+  padding-block-end: var(--s-6);
+}
+
+/* Label left, value right, on one line — and the gap is a floor rather than a
+   spacing, so a long address pushes the label instead of colliding with it. */
+.blog-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-16);
+}
+
+.blog-stat dt {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.blog-stat dd {
+  margin: 0;
+  font: 500 var(--t-mono-13)/1 var(--mono);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.blog-stat a {
+  color: var(--acc);
+  text-decoration: none;
+}
+
+/* ── The two controls ────────────────────────────────────────────────────── */
+
+/* `auto 1fr` and not a typed label width. The sheet gives the label `52px` so
+   the two rows line up; `auto` gets the same alignment out of the longer of the
+   two words, which is one number nobody has to keep true. `WorkFilters` states
+   this at length for its own two rows. */
+.blog-filters {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-12) var(--s-16);
+  align-items: center;
+  padding-block-end: var(--s-20);
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.blog-filter-label {
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+/* THIRTY-TWO CHIPS AND NOT EIGHT, which is what the corpus holds and what
+   lib/blog/tags.ts refuses to cap. So the row wraps rather than scrolls at a
+   desk — a horizontal scroller with no visible end would hide two thirds of the
+   vocabulary behind a gesture. layout.css turns it into the scroller the sheet
+   draws where a wrap would cost four lines of a phone screen. */
+.blog-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+}
+
+.blog-search {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  padding-inline: var(--s-10);
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+}
+
+/* The terminal's prompt, and it names nothing — `aria-hidden`, with the visible
+   `SEARCH` beside it carrying the accessible name. */
+.blog-search-glyph {
+  font: 500 var(--t-mono-13)/1 var(--mono);
+  color: var(--acc);
+}
+
+/* `min-height` rather than padding, because the 44px rule is measured and the
+   coarse-pointer block in layout.css sets exactly this property. */
+.blog-search-input {
+  flex: 1;
+  min-height: var(--s-44);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 var(--t-mono-12)/1 var(--mono);
+}
+
+.blog-search-input::placeholder {
+  color: var(--dim);
+}
+
+.blog-search:focus-within {
+  border-color: var(--acc);
+}
+
+/* The field is inside a box that already takes the ring, so a second one on the
+   input would draw two. `:focus-within` above is the one. */
+.blog-search-input:focus-visible {
+  outline: none;
+}
+
+.blog-count {
+  margin: var(--s-20) 0 var(--s-16);
+  font: 500 var(--t-mono-10)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The list ────────────────────────────────────────────────────────────── */
+
+/* A HEADING AND NOT A LIST ITEM, though the sheet draws the separator inside the
+   list. components/blog/BlogList.tsx carries the argument: an `<li>` here would
+   make twenty-three entries announce themselves as twenty-five items. */
+.post-cards-year {
+  display: flex;
+  align-items: center;
+  gap: var(--s-16);
+  margin: var(--s-44) 0 var(--s-12);
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--steel);
+}
+
+/* The rule between the year and its count, drawn by the box rather than by a
+   character, so it takes whatever width is left. */
+.post-cards-year::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+  order: 1;
+}
+
+.post-cards-year-count {
+  order: 2;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.post-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.post-card {
+  border-block-end: 1px solid var(--line-soft);
+}
+
+/* THE WHOLE ROW IS THE LINK. components/blog/PostCard.tsx argues the divergence
+   from `WorkRow`, which is not a link: what that row refused was three controls
+   to one destination, and this one has a single destination and nothing else to
+   click. So the grid IS the anchor — no stretched-link trick, and one tab stop.
+
+   THE FIVE TRACKS ARE THE SHEET'S: `112px 1fr 200px 74px 24px`, gap 24. Below
+   1080 layout.css stacks them, because 410px of fixed track plus four gaps
+   leaves a title column narrower than the words in it. */
+.post-card-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-8) var(--s-20);
+  padding-block: var(--s-20);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* The hover is emphasis, not a control — the same two declarations `WorkRow`
+   and `SystemRow` use, and the reason neither needs `'use client'`. */
+.post-card-link:hover {
+  background: var(--panel);
+  box-shadow: inset 2px 0 0 var(--acc);
+}
+
+.post-card-date {
+  font: 400 var(--t-mono-11)/1 var(--mono);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.post-card-titlebar {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-10);
+}
+
+.post-card-title {
+  font: 500 var(--t-body-17)/1.35 var(--display);
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.post-card-link:hover .post-card-title {
+  color: var(--acc-hi);
+}
+
+/* The badge on the newest entry. Not a state word — `MARKS` would have to
+   invent a ninth meaning for "most recent" — so it carries no dot, exactly as
+   `.work-here` carries none for "you are here". */
+.post-card-latest {
+  padding-inline: var(--s-6);
+  border: 1px solid var(--acc-line);
+  font: 500 var(--t-mono-9)/1.6 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}
+
+.post-card-deck {
+  display: block;
+  margin-block-start: var(--s-6);
+  max-inline-size: 68ch;
+  font: 400 var(--t-body-13)/var(--lh-body) var(--body);
+  color: var(--steel);
+}
+
+.post-card-tags {
+  font: 400 var(--t-mono-10)/1.6 var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.post-card-min {
+  font: 400 var(--t-mono-11)/1 var(--mono);
+  color: var(--steel);
+  font-variant-numeric: tabular-nums;
+}
+
+.post-card-exit {
+  font: 500 var(--t-mono-13)/1 var(--mono);
+  color: var(--steel);
+}
+
+.post-card-link:hover .post-card-exit {
+  color: var(--acc);
+}
+
+/* ── The way out of an empty log, and the way to a feed ───────────────────── */
+
+.blog-exit {
+  margin: var(--s-16) 0 0;
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-label);
+}
+
+.blog-exit a {
+  color: var(--acc);
+  text-decoration: none;
+}
+
+.blog-subscribe {
+  margin-block-start: var(--s-72);
+  padding-block-start: var(--s-34);
+  border-block-start: 1px solid var(--line);
+}
+
+.blog-subscribe-head {
+  margin: 0 0 var(--s-12);
+  font: 500 var(--t-mono-11)/1 var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--steel);
+}
+
+.blog-subscribe-body {
+  margin: 0 0 var(--s-20);
+  max-inline-size: 58ch;
+  font: 400 var(--t-body-13)/var(--lh-body) var(--body);
+  color: var(--dim);
+}

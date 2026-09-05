@@ -104,6 +104,22 @@
   .post-rail      { position: sticky; top: 96px }
   .post-foot      { grid-template-columns: repeat(2, minmax(0, 1fr)) }
   .post-all       { grid-column: 1 / -1 }
+
+  /* H9b · the index. The head takes the same two-column shape `/work` has, and
+     the entry row takes the sheet's five tracks: `112px 1fr 200px 74px 24px`.
+
+     THE FIVE TRACKS ARE DRAWN ONLY HERE, and the switch is a measurement rather
+     than a preference — the same sum H5a made for the system row. 112 + 200 +
+     74 + 24 is 410px that cannot shrink, plus four 20px gaps: 490px before the
+     title has a character. Against the content column that is comfortable at
+     1080 (311px left at 1081, 654 at 1440) and it stops being comfortable
+     below, where a title of nine words would stand in a column narrower than
+     its own longest line. Under 1080 the row stacks instead — the same width at
+     which the contents rail on the entry page stops standing beside the prose,
+     so this page family has one switch and not two. */
+  .blog-head      { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 72px; align-items: end }
+  .blog-stats     { margin-block-start: 0 }
+  .post-card-link { grid-template-columns: 112px minmax(0, 1fr) 200px 74px 24px; align-items: baseline }
 }
 
 /* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
@@ -137,6 +153,26 @@
      Als `no-toc-panel` im Orakel. */
   .post-body-grid { grid-template-columns: minmax(0,1fr); gap: var(--s-44) }
   .post-rail      { position: static }
+
+  /* H9b · THE ENTRY ROW BECOMES A CARD, AND THE SHEET'S 390 ARTBOARD IS ALREADY
+     DRAWN THIS WAY ROUND: "Datum über dem Titel". Date and reading time share a
+     line, the title follows, then the dek, then the subjects — which is the
+     order the desktop row reads left to right, turned down the page.
+
+     THE CHIP ROW SCROLLS INSTEAD OF WRAPPING, which is the sheet's own note
+     ("Chips scrollen"). At a desk thirty-two chips wrap into three or four
+     lines and every one of them is visible; on a phone the same wrap is most of
+     a screen before the first entry, and the row is the one control a reader
+     can drag. `overscroll-behavior-inline` keeps that drag from turning into a
+     page-back gesture at the end of it. */
+  .blog-filters   { grid-template-columns: minmax(0,1fr); gap: var(--s-8); align-items: start }
+  .blog-chips     { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-inline: contain }
+  .post-card-link { grid-template-columns: auto minmax(0,1fr); gap: var(--s-8) var(--s-10) }
+  .post-card-date { grid-row: 1; grid-column: 1 }
+  .post-card-min  { grid-row: 1; grid-column: 2; justify-self: end }
+  .post-card-id   { grid-row: 2; grid-column: 1 / -1 }
+  .post-card-tags { grid-row: 3; grid-column: 1 / -1 }
+  .post-card-exit { display: none }
   .rail            { position: static }   /* sonst klebt sie am Abschnittsende */
   .work-row        { grid-template-columns: 40px minmax(0,1fr) 132px 104px 20px }
   .work-row .prev  { display: none }      /* weglassen, nicht verkleinern */

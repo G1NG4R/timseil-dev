@@ -31,6 +31,8 @@ import { modules, type ModuleView } from "@/lib/api/training";
 import { Log } from "@/components/home/Log";
 import type { PostRead } from "@/lib/content/posts";
 import { STATIONS } from "@/lib/about/trajectory";
+import { BlogList } from "@/components/blog/BlogList";
+import { PostCard } from "@/components/blog/PostCard";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
 import { DEV_GALLERY_ENV, galleryVisible } from "@/lib/gallery/visibility";
 import { en } from "@/lib/i18n/messages/en";
@@ -888,10 +890,10 @@ export default function GalleryPage() {
           claims — `00` means the api answered and there are none.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <WorkList body={GALLERY_SYSTEMS} posts={GALLERY_LOG.posts} messages={en} />
+          <WorkList body={GALLERY_SYSTEMS} posts={GALLERY_LOG.posts} locale="en" messages={en} />
         </div>
         <div className="gal-demo" style={{ display: "block" }}>
-          <WorkList body={null} posts={[]} messages={en} />
+          <WorkList body={null} posts={[]} locale="en" messages={en} />
         </div>
       </section>
 
@@ -920,6 +922,119 @@ export default function GalleryPage() {
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
           <ChipStates />
+        </div>
+      </section>
+
+      {/* ── The log index, in the two states its own corpus cannot produce ── */}
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">BlogList</h2>
+          <span className="gal-where">`/blog` · the states the repository cannot hold</span>
+        </div>
+        <p className="gal-states">
+          NOT IN THE HANDOFF INVENTORY, and not added to it — the sheet&apos;s
+          sixteen names carry `PostCard` for the blog, and lib/gallery/registry.ts
+          is a transcription of that sheet rather than a list of everything we
+          ship. `Log` one section down says the same about itself.
+        </p>
+        <p className="gal-states">
+          THE REASON THIS IS HERE IS THAT `/blog` CANNOT SHOW IT. The page reads
+          twenty-four files that are in this image, so the rig sees a full list
+          and nothing else — the two empty states are unreachable on the route
+          that owns them. They are two claims rather than one: `00 ENTRIES` says
+          the directory was read and holds nothing, and `— NO DATA` says it could
+          not be read at all, which on this site means an image that shipped
+          without its own content.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <BlogList
+            read={GALLERY_LOG_EMPTY}
+            locale="en"
+            feedHref="/feed.xml"
+            caseStudyHref="/work/timseil-dev"
+            exit={{ href: "/work", label: en.blogViewSystems }}
+            messages={en}
+          />
+        </div>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <BlogList
+            read={null}
+            locale="en"
+            feedHref="/feed.xml"
+            caseStudyHref="/work/timseil-dev"
+            exit={{ href: "/work", label: en.blogViewSystems }}
+            messages={en}
+          />
+        </div>
+        <p className="gal-states">
+          Both keep the two ADDRESS rows and lose only the counted ones — the
+          feed and the case study are still there when the log cannot be read,
+          because neither claim depends on it. And `LATEST` disappears rather
+          than saying `— NO DATA` when the log is merely empty: a dash there
+          would report a figure as missing when nothing has been written yet.
+        </p>
+      </section>
+
+      {/* ── PostCard, and the two states the inventory names ─────────────── */}
+      <section className="gal-part">
+        <div className="gal-part-head">
+          <h2 className="gal-name">PostCard</h2>
+          <span className="gal-where">`/blog` · one entry of the log</span>
+        </div>
+        <p className="gal-states">
+          rest · hover. THE INVENTORY CALLS IT A CARD AND THE SHEET DRAWS A ROW —
+          &quot;Mono-Liste, keine Karten — Zeilen scannen sich schneller als
+          Kacheln&quot;. lib/gallery/registry.ts keeps the handoff&apos;s name,
+          which is the treatment ADR 0066 gave `TrajectoryRail`: the inventory is
+          a second reading of the sheet, not a description of what shipped.
+        </p>
+        <p className="gal-states">
+          The whole row is one link, which is where this diverges from `WorkRow`.
+          That row refused to be one because the sheet gave it THREE controls to
+          one destination; this one has a single destination and nothing else to
+          click, so wrapping the grid is one tab stop and the link announces
+          itself with the entry&apos;s own title instead of an `aria-label`.
+          Hover is two declarations in styles/blog.css and needs no island.
+        </p>
+        <p className="gal-states">
+          The first row carries the `LATEST` badge and the second does not. The
+          badge is not a state word: `MARKS` would have to invent a ninth
+          meaning for &quot;most recent&quot;, so it takes no dot — the same call
+          `.work-here` makes for &quot;you are here&quot;.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <ol className="post-cards">
+            {GALLERY_LOG.posts.slice(0, 2).map((post, index) => (
+              <PostCard
+                key={post.slug}
+                post={post}
+                href={`/blog/${post.slug}`}
+                minutes={index === 0 ? "12 MIN" : "09 MIN"}
+                latest={index === 0}
+                messages={en}
+              />
+            ))}
+          </ol>
+        </div>
+        <p className="gal-states">
+          And the cell that stays empty. A file the reader listed and could not
+          re-read leaves the reading time absent — not `— NO DATA`, because
+          nobody attempted a measurement of a file that is not there. The column
+          keeps its track so the row does not shift.
+        </p>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <ol className="post-cards">
+            {GALLERY_LOG.posts.slice(2, 3).map((post) => (
+              <PostCard
+                key={post.slug}
+                post={post}
+                href={`/blog/${post.slug}`}
+                minutes={null}
+                latest={false}
+                messages={en}
+              />
+            ))}
+          </ol>
         </div>
       </section>
 

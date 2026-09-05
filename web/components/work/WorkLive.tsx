@@ -2,6 +2,7 @@ import { WorkList } from "@/components/work/WorkList";
 import { systemsNow } from "@/lib/api/readers";
 import type { PostMeta } from "@/lib/content/posts";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
 
 /**
  * The answered half of `/work`.
@@ -28,10 +29,15 @@ import type { Messages } from "@/lib/i18n/messages/en";
  */
 export async function WorkLive({
   posts,
+  locale,
   messages,
 }: {
   posts: readonly PostMeta[];
+  /** Only so the structured data can name canonical, locale-aware addresses.
+   *  Nothing else on this path needs it — the rows' own hrefs are language-free
+   *  and `next/link` resolves them. */
+  locale: Locale;
   messages: Messages;
 }) {
-  return <WorkList body={await systemsNow()} posts={posts} messages={messages} />;
+  return <WorkList body={await systemsNow()} posts={posts} locale={locale} messages={messages} />;
 }

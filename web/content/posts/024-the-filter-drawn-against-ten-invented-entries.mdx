@@ -1,0 +1,117 @@
+---
+title: 'The filter drawn against ten invented entries'
+deck: 'The design sheet gives the log eight tag chips. The log has thirty-two tags, seventeen of them used once — and the threshold that would have reproduced the drawing exactly is the reason not to use one.'
+published: 2026-09-05
+tags: ['design-handoff', 'measurement', 'frontend', 'testing']
+systemId: 'timseil-dev'
+summary: |
+  My design handoff draws the blog index with eight tag chips over ten invented
+  entries. The twenty-three entries I have actually written carry thirty-two
+  tags. A threshold of "three or more posts" would have reproduced the sheet's
+  eight chips exactly — which is precisely why I did not use one: it would have
+  been a number that measured nothing, reproducing a picture, and drawing a
+  different row every time I wrote a post.
+---
+
+The sheet for my log index is a good drawing. It has a mono list instead of
+cards, a year separator with a count, a search field, and a row of tag chips:
+`ALL 10`, `GO 04`, `DOCKER 02`, `KUBERNETES 01`, `POSTGRES 02`, `CI/CD 01`,
+`LINUX 02`, `AWS 01`.
+
+Eight chips. Under them, ten entries with titles like "Go concurrency patterns
+in production" and "Reading a Postgres query plan without panicking".
+
+The sheet says what those are, in its own design notes:
+
+> Titel, Daten, Lesezeiten und Tag-Zähler sind Platzhalter.
+
+I read that note eighteen days ago and filed it under "obviously". Then I built
+the page.
+
+## The corpus does not look like the drawing
+
+```
+entries          23
+distinct tags    32
+used once        17
+```
+
+Not eight chips. Thirty-two. More than half of them narrow a list of
+twenty-three entries down to exactly one.
+
+That is not a defect in the sheet. The sheet was drawn before I had written a
+single entry, and it drew a plausible blog. It is a defect in the *reading* — the
+moment where a placeholder count quietly becomes a design constraint because it
+is the only number in front of you.
+
+## The threshold that would have worked
+
+The obvious repair is a threshold: only draw a chip for a tag that holds enough
+entries to be worth filtering by. So I counted what each threshold would give.
+
+```
+>= 2 posts    15 chips
+>= 3 posts     7 chips
+>= 4 posts     5 chips
+```
+
+Seven. Plus the `ALL` sentinel, that is **eight chips** — exactly what the
+artboard draws. testing 09, frontend 09, observability 06, css 06,
+measurement 04, invariants 04, design-handoff 03.
+
+For about a minute this felt like a discovery. The sheet's eight were not
+arbitrary after all; there was a rule underneath, and I had found it.
+
+There was not. The corpus has 23 entries today. At 30 entries the threshold gives
+nine chips, at 60 it gives fifteen, and the row that "reproduces the sheet" stops
+reproducing it the week after I write this. What the threshold actually does is
+turn a drawing into a constant, and then let the constant drift away from the
+drawing on its own.
+
+And the number three measures nothing. It is not a width, not a count of
+anything, not a limit anybody hit. It is the number that made the output match a
+picture.
+
+## What the neighbouring page already decided
+
+I did not have to think this through from scratch, because the same question was
+answered on this site three phases ago. `/work` has a chip row too, and its
+vocabulary comes out of the API answer rather than out of a list:
+
+> A chip that matches nothing is never drawn in the first place — the emptiness
+> is a property of a COMBINATION, and it is the empty panel that carries it.
+
+Every one of my thirty-two tags matches at least one entry. So every one of them
+is a live control, and there is nothing to cap. The chip row wraps at a desk and
+scrolls on a phone, and it is thirty-two chips wide because I have written about
+thirty-two things.
+
+That decision has a side effect I like: the empty panel on this page can now only
+be reached one way. Since every chip carries a count derived from the corpus, a
+tag on its own can never return nothing. Nought results is always the search box,
+or a tag and a search together. The panel's wording says so, against a sheet that
+says "Zu diesem Tag gibt es noch nichts" — a sentence that would contradict the
+`06` printed on the chip beside it.
+
+## The other thing the sheet contradicted
+
+While I was in there: the search field's placeholder reads `grep titles…`, and
+the script under it matches `r.textContent` — the whole row, including the ISO
+date and the reading time.
+
+Both cannot be right, and neither is what I wanted. Searching only titles loses
+the reader who remembers half a sentence from a dek. Searching the whole row
+makes `2026` return every entry I have ever written.
+
+It searches the title, the dek and the tags: the fields the row actually draws.
+The placeholder now says that.
+
+## What I would do differently
+
+I would have counted first. Not because the count changed the design much — a
+mono list is still a mono list — but because the count is the thing that tells
+you which parts of a drawing are decisions and which parts are furniture.
+
+Eight chips looked like a decision for eighteen days. It was furniture. The
+thirty-two are a measurement, and a measurement is the only kind of number this
+site is allowed to print.

@@ -7,9 +7,15 @@
 //
 // WHAT IS DELIBERATELY ABSENT, because each absence is a claim not made:
 //
-//	SearchAction    there is no site search until H9. A `SearchAction` naming a
-//	                query URL that answers 404 is the machine-readable version of
-//	                a number nothing measured.
+//	SearchAction    H9b builds a search, and the absence stands — the REASON
+//	                changed, the decision did not. The old one was that there was
+//	                no search at all. The new one is that the log's search is a
+//	                filter inside one prerendered page: it has no query URL,
+//	                because putting the axes in `searchParams` would make the
+//	                route dynamic (components/blog/BlogFilters.tsx). A
+//	                `SearchAction` names a URL template a crawler is invited to
+//	                fetch, and every one this site could offer would answer with
+//	                the unfiltered index.
 //	image           there is no photograph of the operator in this repository.
 //	address         "BASED IN LUXEMBOURG" is a line in the footer, not a postal
 //	                address, and PostalAddress wants one.
@@ -138,6 +144,87 @@ export function contactLd(inLanguage: Locale, path: string): Record<string, unkn
         inLanguage,
         mainEntity: { "@id": PERSON_ID },
         isPartOf: { "@id": WEBSITE_ID },
+      },
+    ],
+  };
+}
+
+/** One row of a list: what it is called, and where it lives — if it lives
+ *  anywhere. `path` is `null` for a row that has no page of its own, which on
+ *  `/work` is every system that is not `live` yet. A `ListItem` may carry a
+ *  name and a position and no `url`; inventing one would be the machine-readable
+ *  half of the site pointing at a 404, which is invariant 5 and the reason
+ *  `WorkRow` draws no arrow on those rows either. */
+export interface ListEntry {
+  readonly name: string;
+  /** The canonical, locale-aware path — `localeHref` has already run. */
+  readonly path: string | null;
+}
+
+/**
+ * A list of ours, describing itself: `CollectionPage` wrapping an `ItemList`.
+ *
+ * ONE BUILDER FOR TWO PAGES, AND #322 ASKED FOR EXACTLY THAT. `/work` became the
+ * first indexable list on this site in H6a and carried no structured data;
+ * `/blog` is the second, and the issue names the cost of deciding twice: "One
+ * decision about how a list of ours describes itself, taken once for both …
+ * taken twice a phase apart it will come out differently, and then the two lists
+ * disagree in a way no test will ever catch."
+ *
+ * `CollectionPage` AND NOT `Blog`. schema.org has a `Blog` type with `blogPost`
+ * children, and it would fit one of the two callers and not the other. The thing
+ * both pages actually are is a page whose subject is a list — and a type that
+ * describes the SHAPE lets the same block stand over systems and over entries
+ * without either being described as the other.
+ *
+ * THE ORDER IS DECLARED, BECAUSE BOTH LISTS HAVE ONE. `/blog` is newest first
+ * and `/work` follows `ORDER BY s.system_no`; an `ItemList` without
+ * `itemListOrder` is unordered by default, which would be a machine-readable
+ * claim that the sequence on the page means nothing. `position` is 1-based, as
+ * schema.org requires, and it is the position in the list rather than the
+ * entry number `PostCard` prints.
+ *
+ * NO `Person` NODE, AND `isPartOf` POINTS AT AN `@id` THIS DOCUMENT DOES NOT
+ * DEFINE. That is `aboutLd`'s and `contactLd`'s treatment of `WEBSITE_ID`
+ * repeated rather than a new decision — they define the `Person` because
+ * `mainEntity` points at one, and neither defines the `WebSite` it says it is
+ * part of. Nothing on either list page is about a person, so no `Person` is
+ * repeated here.
+ *
+ * AND THIS IS THE DAY `serializeLd`'s LAST PARAGRAPH WAS WRITTEN FOR. It says
+ * it escapes `<` "for the day one of them is a post title, because that day the
+ * defect is invisible in review". Every `name` below is a post title or a system
+ * name, and both are prose somebody writes later.
+ */
+export function collectionLd(
+  inLanguage: Locale,
+  path: string,
+  name: string,
+  entries: readonly ListEntry[],
+): Record<string, unknown> {
+  const url = `${SITE_URL}${path}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": `${url}#collection`,
+        url,
+        name,
+        inLanguage,
+        isPartOf: { "@id": WEBSITE_ID },
+        mainEntity: {
+          "@type": "ItemList",
+          itemListOrder: "https://schema.org/ItemListOrderDescending",
+          numberOfItems: entries.length,
+          itemListElement: entries.map((entry, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: entry.name,
+            ...(entry.path === null ? {} : { url: `${SITE_URL}${entry.path}` }),
+          })),
+        },
       },
     ],
   };

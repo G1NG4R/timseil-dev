@@ -1,18 +1,20 @@
-// The RSS channel, and the reason it is empty.
+// The RSS channel, and it carries the log at last.
 //
-// Six posts sit in `web/content/posts/` and nothing renders them: `/blog` is a
-// `[SOON]` stub, and `/blog/<slug>` does not exist until H9 builds the MDX
+// IT WAS EMPTY FOR A REASON THAT EXPIRED, AND THE GAP IS WORTH RECORDING. This
+// file used to say: "`/blog/<slug>` does not exist until H9 builds the MDX
 // renderer. A feed with six items would therefore ship six `<link>` elements
-// pointing at six 404s — a document whose whole job is to be read by a machine
-// that follows links, handing it links that go nowhere. So the channel is real,
-// valid and discoverable, and it carries no items yet.
+// pointing at six 404s." That was invariant 5 in the machine-readable half of
+// the site, and it was right. H9a built the renderer and every entry became a
+// real address — so from that merge until this one, the sitemap listed
+// twenty-odd entries and the feed listed none, and two machine-readable
+// surfaces of one site disagreed about whether anything had been written.
+// H9b closes it, because H9b is the phase that draws a `SUBSCRIBE` block.
 //
-// THE ITEM RENDERING IS BUILT ANYWAY, and that is not speculation. It is the
-// only part of this file that can be wrong in a way nobody notices: an
-// unescaped ampersand in a title produces a document that some readers parse
-// and others reject, and the day H9 adds the first real title is the wrong day
-// to find that out. The empty channel is the state; the renderer is the
-// machine, and the machine is tested.
+// THE ITEM RENDERING WAS BUILT BEFORE THERE WAS ANYTHING TO RENDER, and this is
+// the phase that collects on it. The argument then was that an unescaped
+// ampersand in a title "produces a document that some readers parse and others
+// reject, and the day H9 adds the first real title is the wrong day to find
+// that out." Today is that day, and the escaping was already under test.
 //
 // ONE FEED, NOT THREE. The Language Switcher sheet decides it: "Die Blog-Posts
 // bleiben einsprachig englisch — dort steht Fachliches, und Übersetzen wäre
@@ -22,6 +24,7 @@
 // not the time anything was written. Invariant 1 applies to a feed exactly as
 // it applies to a metric: a number nothing measured does not get published.
 
+import { type PostMeta, postPath } from "../content/posts.ts";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../site.ts";
 
 /** The path the feed answers on. It is in RESERVED (lib/i18n/routes.ts) so that
@@ -98,13 +101,46 @@ function renderItem(item: FeedItem): string {
 }
 
 /**
- * The whole document. `items` is empty until H9, and the channel is valid
- * without them — RSS 2.0 requires `title`, `link` and `description` on the
- * channel and nothing else.
+ * Every entry, as feed items — newest first, because `readPosts` already is.
+ *
+ * `summary` AND NOT `deck`, and lib/content/posts.ts named this reader when it
+ * decided the difference: the deck is "one line above the fold" that the
+ * homepage and the index draw, and the summary is "the only text about a post
+ * that leaves this site". A `<description>` is exactly that — the paragraph a
+ * stranger reads in an application that is not this one.
+ *
+ * THE LINK IS THE ENGLISH ADDRESS, WITH NO LANGUAGE SEGMENT. There is one feed
+ * and not three, which the Language Switcher sheet decided: "Die Blog-Posts
+ * bleiben einsprachig englisch — dort steht Fachliches, und Übersetzen wäre
+ * Arbeit ohne Leser." `localeHref("en", …)` adds no prefix, so `postPath` is
+ * already the address, and prefixing it per language would give three feeds one
+ * identity.
+ *
+ * THE DATE IS BUILT AT UTC MIDNIGHT AND NOT PARSED LOOSELY. `published` is
+ * `YYYY-MM-DD`, and `new Date("2026-09-05")` is already UTC midnight by
+ * specification while `new Date("2026/09/05")` is local — the `T00:00:00Z` is
+ * written out so the value cannot depend on the container's timezone. This is
+ * the only place in the repository that turns a `published` string into a
+ * `Date`; lib/content/posts.ts keeps it as text everywhere else precisely
+ * because nothing there does arithmetic on it.
+ */
+export function feedItems(posts: readonly PostMeta[]): readonly FeedItem[] {
+  return posts.map((post) => ({
+    title: post.title,
+    link: `${SITE_URL}${postPath(post)}`,
+    description: post.summary,
+    published: new Date(`${post.published}T00:00:00Z`),
+  }));
+}
+
+/**
+ * The whole document. The channel is valid with no items at all — RSS 2.0
+ * requires `title`, `link` and `description` on the channel and nothing else —
+ * and that is still the shape it takes if the directory cannot be read.
  *
  * `<link>` points at `/blog` rather than the site root. That is the page this
- * channel corresponds to, it is already a route, and pointing it there now
- * means H9 has one less thing to remember.
+ * channel corresponds to, and as of H9b that page is the index rather than a
+ * stub.
  */
 export function renderFeed(items: readonly FeedItem[]): string {
   const self = `${SITE_URL}${FEED_PATH}`;

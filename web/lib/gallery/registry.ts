@@ -249,9 +249,19 @@ export const PARTS: readonly Part[] = [
     where: "blog",
     states: ["rest", "hover"],
     origin: "inventory",
-    module: null,
-    owedBy: "H9",
-    preview: false,
+    // H9b. THE INVENTORY CALLS IT A CARD AND THE SHEET DRAWS A ROW — "Mono-Liste,
+    // keine Karten — Zeilen scannen sich schneller als Kacheln". The
+    // transcription is left alone, which is the treatment ADR 0066 gave
+    // `TrajectoryRail`'s "jahr aktiv": this table is a second reading of the
+    // handoff and not a description of what shipped.
+    //
+    // BOTH STATES ARE DRAWN, AND `hover` NEEDS A POINTER RATHER THAN A PROP.
+    // It is two declarations in styles/blog.css on a row that is itself a link,
+    // so the gallery renders the component and the reader's pointer produces
+    // the state — the arrangement every hover in this table has.
+    module: "components/blog/PostCard.tsx",
+    owedBy: null,
+    preview: true,
     note: null,
   },
   {

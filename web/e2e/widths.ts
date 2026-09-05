@@ -45,6 +45,15 @@ export const BLOG_POST = "/blog/001-zero-downtime-measured-not-claimed";
 // unbroken chain and that exactly its two ends are empty.
 
 /**
+ * The log index. H9b — the seventh page with a spec of its own.
+ *
+ * A ROUTE AND NOT A SLUG, which is the difference from `BLOG_POST` above. There
+ * is one index and it is at one address, so nothing here can go stale the way
+ * `BLOG_POST_NEWEST` did within a single pull request.
+ */
+export const BLOG = "/blog";
+
+/**
  * The routes that exist today.
  *
  * Stage H builds thirteen pages and this list grows with them. It is a list
@@ -60,7 +69,7 @@ export const ROUTES = [
   // to be indexed besides `/`. content/case-studies is the list of slugs that
   // exist; there is one.
   "/work/timseil-dev",
-  "/blog",
+  BLOG,
   // H9a. The first entry, and it is the OLDEST rather than the newest on
   // purpose: `001-…` is the one post whose foot draws the empty state on the
   // PREVIOUS side, so an accessibility sweep over this route sweeps the state
@@ -94,6 +103,32 @@ export const CONTACT = "/contact";
  * for a page whose only fixed column is a 196px rail.
  */
 export const BLOG_POST_DRAWN_WIDTHS = [1440, 390] as const;
+
+/**
+ * The two widths the Blog Index sheet draws — the same two, and the same
+ * sentence names it: "Fliesstext, Blog, About, Contact und Legal fliessen,
+ * dort ist nichts zu entscheiden." Its one fixed geometry is the five-track
+ * entry row, and layout.css stacks it at the 1080 switch the post page already
+ * uses rather than owing a frame at 1024.
+ */
+export const BLOG_INDEX_DRAWN_WIDTHS = [1440, 390] as const;
+
+/**
+ * Where `/blog` changes shape. THREE OF THE FOUR, and unlike `/work` none of
+ * the absences is a fact about the rig: this page reads no endpoint, so every
+ * row it draws is in the document at every width.
+ *
+ * 1080 carries TWO components rather than one — the header grid and the entry
+ * row — and they share the switch rather than each taking its own, which is
+ * layout.css's standing rule ("Kein Bauteil bekommt seinen eigenen Wert"). The
+ * chip row turns from a wrap into a scroller at the same width, which is a
+ * third thing moving on one edge and still one edge.
+ *
+ * THERE IS NO 560. `.log-row` on the homepage has one and this row does not:
+ * the entry row is already stacked from 1079 down, so there is nothing left for
+ * a fourth switch to rearrange.
+ */
+export const BLOG_SWITCHES = [1080, 900, 720] as const;
 
 /**
  * The two widths the Contact sheet draws.

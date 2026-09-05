@@ -197,10 +197,25 @@
 .st-empty-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-8);
+  gap: var(--s-12);
   font: 400 var(--t-mono-11)/1 var(--mono);
   letter-spacing: var(--ls-label);
   color: var(--ink-3);
+}
+
+/* A RULE BETWEEN THE ECHOES, AND H9b IS WHY IT EXISTS. `/work` echoes single
+   words — `LIVE`, `GO` — and a gap tells two of them apart well enough. The log
+   index echoes phrases: `TAG: CSS` beside `SEARCH: "witness"` read on screen as
+   one sentence, measured on the built page rather than guessed at. The sheet
+   draws a separator for exactly this (`TAG: KUBERNETES × · JAHR: 2025 ×`).
+
+   A BORDER AND NOT A `·` IN `content`. Generated content lands in the
+   accessibility tree on some engines and not others, so a decorative middle dot
+   is a character some readers hear between every filter and others never do.
+   A border is seen by everyone who can see and heard by nobody. */
+.st-empty-filters span + span {
+  padding-inline-start: var(--s-12);
+  border-inline-start: 1px solid var(--line-strong);
 }
 
 /* ── DEGRADED ──────────────────────────────────────────────────────────────
