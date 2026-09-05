@@ -12,7 +12,177 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 05.09.2026: die erste rote Kachel, und die Seite war die ganze Zeit oben
+## Wo wir stehen — 05.09.2026, H9b gebaut: der Filter war gegen zehn erfundene Einträge gezeichnet
+
+**Zweig `phase/h9b-blog-index`.** `/blog` war der letzte `[SOON]`-Stub, der etwas
+zu sagen gehabt hätte: seit H9a sind vierundzwanzig Einträge indexierbar, der
+Index zu ihnen nicht. Er ist es jetzt, mit Filter, Suche, zwei Leerzuständen —
+**und mit dem Feed**, weil der Index für ihn wirbt.
+
+Noch nicht gegen Produktion gemessen — das ist die Abnahme und kommt nach dem
+Merge.
+
+### Der Fund der Phase, und die Schwelle, die ihn beinahe zugedeckt hätte
+
+Das Blatt zeichnet acht Tag-Chips über **zehn erfundenen Einträgen**. Es sagt das
+selbst — „Titel, Daten, Lesezeiten und Tag-Zähler sind Platzhalter" — und ich
+habe die Notiz vor achtzehn Tagen unter „offensichtlich" abgelegt.
+
+```
+Einträge            23   (24 mit dem Beitrag dieser Phase)
+verschiedene Tags   32
+genau einmal        17
+```
+
+Mehr als die Hälfte der Tags verengt eine Liste von dreiundzwanzig auf **einen**
+Eintrag. Die naheliegende Reparatur ist eine Schwelle, also habe ich sie
+gerechnet:
+
+```
+>= 2 Beiträge   15 Chips
+>= 3 Beiträge    7 Chips   + ALL = 8
+>= 4 Beiträge    5 Chips
+```
+
+**Acht.** Genau die Zahl des Blattes. Eine Minute lang fühlte sich das wie ein
+Fund an — die Acht sei doch nicht willkürlich, es gebe eine Regel darunter.
+
+Es gibt keine. Bei dreißig Einträgen gäbe dieselbe Schwelle neun Chips, bei
+sechzig fünfzehn, und die Reihe, die „das Blatt reproduziert", reproduziert es ab
+der nächsten Woche nicht mehr. **Die Drei misst nichts** — sie ist die Zahl, die
+die Ausgabe an ein Bild angleicht. `lib/work/stacks.ts` hat dieselbe Frage vor
+drei Phasen anders beantwortet, und die Antwort steht dort schon: das Vokabular
+kommt aus den Daten, damit „a chip that matches nothing is never drawn in the
+first place". Alle zweiunddreißig werden gezeichnet.
+
+**Nebenwirkung, die ich mag:** weil jeder Chip aus dem Korpus abgeleitet ist und
+seinen Zähler trägt, kann ein Tag allein **nie** null Treffer erzeugen. Das leere
+Panel ist nur über die Suche oder eine Kombination erreichbar — und sein Text
+sagt das, gegen ein Blatt, das „Zu diesem Tag gibt es noch nichts" schreibt und
+damit der `06` neben dem Chip widerspräche.
+
+### Gemessen, nicht geschätzt
+
+| | vorher | ausgeliefert |
+|---|---|---|
+| Einträge · vorgerenderte Routen | 23 · 69 | **24 · 72** (× 3 Sprachen) |
+| verschiedene Tags · Chips | 32 · 33 | 32 · 33 |
+| Sitemap-URLs | 84 auf `main` | **90** |
+| Feed-Einträge | **0** | **24** |
+| indexierbare feste Routen | 4 von 7 | **5 von 7** |
+
+| | |
+|---|---|
+| `npm test` | **779 grün** (57 neu in `lib/blog/**`) |
+| e2e Index (Verhalten · Blatt · Sweep) | **130 grün** über sieben Breiten |
+| e2e Galerie (`PostCard`, die zwei Leerzustände) | **42 grün** |
+| e2e gesamt | **2056 grün**, 3 übersprungen |
+| `make check` | grün, inkl. `check-tokens` und `check-contract` |
+| Blatt-Orakel `blog-index` | 22 Messungen, 7 abweichend |
+
+### Vier Fehler, die erst die gebaute Seite gezeigt hat
+
+**Die Kennzahlen-Schiene hatte ich vom Nachbarn kopiert statt vom Blatt
+gelesen.** `WorkHeader` zeichnet vier Kacheln nebeneinander, also tat dieser Kopf
+es auch — und bei 1440 sind vier Spalten je etwa 105px, schmaler als
+`RSS · /feed.xml ↗`. Beide Adresszeilen brachen dreizeilig um. Das Blatt zeichnet
+`flex-direction:column`: vier Zeilen voller Breite, Label links, Wert rechts.
+**Auf dem Bildschirm gesehen, nicht überlegt.**
+
+**`grid-template-columns` ist keine Sweep-Sonde.** Der erste Entwurf maß die
+Spuren der Eintragszeile — und ein berechneter Spurenwert löst `1fr` zu Pixeln
+auf, ändert sich also bei *jeder* Breite. Der Lauf meldete **39 Kanten**, wo das
+Blatt drei erlaubt. `tools/gen-sheet-oracle.mjs` schreibt genau diese Falle im
+Kopf auf: „A computed value cannot be compared with an authored one." Die Sonde
+ist jetzt das `display` des Pfeils — die fünfte Spur und sonst nichts.
+
+**Das geteilte Leerpanel trennte zwei Echos mit acht Pixeln.** Auf `/work` sind
+das einzelne Wörter (`LIVE`, `GO`); hier sind es Phrasen, und
+`TAG: CSS SEARCH: "witness"` liest sich als ein Satz. Repariert in `state.css`
+mit einer Linie statt mit einem `·` in `content`: erzeugter Text landet auf
+manchen Engines im Barrierefreiheits-Baum und auf anderen nicht.
+
+**Und die `<Activity>`-Falle hat genau dort zugeschlagen, wo sie angekündigt
+war.** Der H9a-Backlog nennt „H9b und J1 zuerst". Der erste Entwurf des Specs hat
+sich aus der Warnung *herausargumentiert* — Index und Eintrag seien doch zwei
+verschiedene Routen, also könne nichts mehrdeutig sein. `main h1` löste beim
+ersten Lauf zu **zwei** Elementen auf. Die Regel handelt davon, was montiert
+bleibt, nicht davon, zu welcher Route es gehört.
+
+## Gefunden — aus H9b
+
+- **Eine Schwelle, die ein Bild reproduziert, ist keine Messung.** Der Fund oben,
+  als Regel: wenn eine abgeleitete Zahl zufällig genau die Zahl einer Zeichnung
+  trifft, ist das kein Beleg für die Ableitung, sondern der Moment, in dem ein
+  Platzhalter zur Vorgabe wird. *(05.09.2026, H9b)*
+- **Eine Warnung im Backlog schützt nicht vor der Falle, wenn man sich aus ihr
+  herausargumentieren kann.** Die `<Activity>`-Notiz war präzise und nannte diese
+  Phase namentlich; der Ausweg war ein plausibler Sonderfall („zwei verschiedene
+  Routen"). Eine Notiz, die eine Bedingung nennt, lädt dazu ein, die Bedingung zu
+  widerlegen. Diese hätte eine Regel nennen sollen. *(05.09.2026, H9b)*
+- **Ein berechneter Spurenwert ist bei jeder Breite ein anderer.** Gilt für jede
+  spätere Sweep-Sonde, nicht nur für diese Seite. Das Orakel-Skript wusste es und
+  die Sweep-Sonde nicht — zwei Dateien, ein Wissen, und nur eine trug es.
+  *(05.09.2026, H9b)*
+- **Eine Seite, die ihren eigenen Inhalt im Image trägt, kann ihre Leerzustände
+  nie zeigen.** `/blog` liest vierundzwanzig Dateien und hat damit immer eine
+  Liste; die zwei Zustände, die es einem Leser schuldet, sind genau die zwei, die
+  es nie erreicht. Ohne die Galerie wäre „Leerzustand zuerst" eine Behauptung
+  gewesen — gebaut, begründet, und von nichts gerendert. `gallery.blog.spec.ts`
+  prüft dort jetzt, dass `00 ENTRIES` und `— NO DATA` zwei Sätze sind und nicht
+  einer. Dieselbe Form wie H2bs vier Tests, die grün waren, weil sie nichts
+  gefunden haben. *(05.09.2026, H9b)*
+- **`lib/work/log.test.ts` heißt „attributes all fifteen entries to this site"
+  und baut sich fünfzehn Fixtures.** Der Korpus hat vierundzwanzig. Der Test ist
+  grün und korrekt; sein *Name* ist eine Behauptung über das Repository an einer
+  Stelle, die das Repository nicht erreicht — dieselbe Form wie
+  `BLOG_POST_NEWEST`. H9c fasst diese Datei ohnehin an. *(05.09.2026, H9b)*
+- **Das Leerzustands-Artboard echot einen Filter, den keine Bedienung setzen
+  kann.** `TAG: KUBERNETES × · JAHR: 2025 ×` — das Skript des Blattes kennt `tag`
+  und `q` und keine Jahresachse. Eine Achse aus einer Zeichnung zu erfinden ist
+  die Form, die #292 offenhält. *(05.09.2026, H9b)*
+- **Der Grund für eine Abwesenheit kann erlöschen, ohne dass die Abwesenheit
+  falsch wird.** `lib/seo/jsonld.ts` führte `SearchAction` unter „there is no
+  site search until H9". Es gibt jetzt eine Suche — und sie hat keine Query-URL,
+  weil die Achsen in `searchParams` die Route dynamisch machten. Der Kommentar
+  musste geändert werden, die Entscheidung nicht. *(05.09.2026, H9b)*
+- **Ein Unit-Lauf von vier meldete einen Fehlschlag, den drei Wiederholungen
+  nicht reproduziert haben.** Kein Testname notiert, kein Muster gefunden.
+  Aufgeschrieben, damit ein zweites Vorkommen kein erstes ist — dieselbe Form wie
+  #291. *(05.09.2026, H9b)*
+
+## Verschoben aus H9b
+
+- **`WITNESS_MAX_SEC` steht jetzt auf 1800, und zwar in `witness.sh` selbst.**
+  Der H9a-Backlog sagt „Ab H9b wird er auf 1800 gesetzt", und ein Deckel, den
+  man pro Lauf setzen muss, ist ein Deckel, den man beim übernächsten Mal
+  vergisst. 927 s gemessene Vorlaufzeit gegen 900 s Vorgabe; 1800 ist das
+  Doppelte der Messung und damit ein Geländer statt einer zweiten Schätzung.
+  Damit ist die Notiz erledigt und nicht verschoben.
+- **H9c ist kürzer geworden.** Der Feed war dort eingeplant und ist hier
+  erledigt, weil der Index einen `SUBSCRIBE`-Block zeichnet und für einen leeren
+  Kanal geworben hätte. **Offen bleiben die drei Verweise:** `LogRow` →
+  `/blog/<slug>`, `IncidentLog` (#298), der Pfeil in `lib/work/log.ts` — samt
+  dem Testnamen oben.
+- **Der Jahres-Trenner ist heute unsichtbar.** Alle vierundzwanzig Einträge sind
+  von 2026, also zeichnet die Seite genau eine Überschrift. Die Gruppierung ist
+  gebaut und ihre Wirkung nur im Unit-Test zu sehen, bis der Log ein Jahr alt
+  wird. Kein Fehler, aber auch keine Fläche, die eine Abnahme prüfen kann.
+- **Pagination, Serien-Marker und Jahres-Filter sind nicht gebaut.** Gründe
+  einzeln in ADR 0071 §8. Die Pagination kommt mit dem Eintrag, der sie braucht.
+- **Der Fortschrittsbalken und der aktive Eintrag in der Schiene → I2**,
+  unverändert aus H9a.
+- **#293 zum sechsten Mal.** Das 390er-Artboard kürzt den Dek und zeichnet die
+  Überschrift als `<h2>`. Eine Fassung der Worte, ein `<h1>`, und die Stufe fällt
+  bei 720 — als `one-copy-of-the-words` im Orakel.
+- **Die zweiunddreißig Chips sind eine Wand, und das ist die bewusste Seite des
+  Tauschs.** Am Schreibtisch brechen sie über vier Zeilen um, auf dem Telefon
+  scrollen sie. Wenn der Korpus das unbenutzbar macht, ist die Antwort eine
+  gemessene Grenze und keine getippte Drei.
+
+---
+
+## Vorher — 05.09.2026: die erste rote Kachel, und die Seite war die ganze Zeit oben
 
 Das Raster hat heute seinen ersten Ausfall gezeichnet — `2026-09-05`,
 `state: outage`, `downSec: 16348` (4 h 32 min 28 s) — und `uptime90d` ist von

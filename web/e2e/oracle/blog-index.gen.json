@@ -33,363 +33,356 @@
   },
   "entries": [
     {
-      "id": "contact-columns",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-eyebrow-step",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 66,
-      "width": 1440,
-      "says": "grid-template-columns: 1fr 520px",
-      "reading": "the form stands beside the request it is about to send",
-      "measure": {
-        "kind": "track-count",
-        "selector": ".cf"
-      },
-      "expect": 2
-    },
-    {
-      "id": "contact-trace-width",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 66,
-      "width": 1440,
-      "says": "grid-template-columns: 1fr 520px",
-      "reading": "and the trace is 520 wide, the one fixed column on this page",
-      "measure": {
-        "kind": "box-width",
-        "selector": ".tx"
-      },
-      "expect": 520
-    },
-    {
-      "id": "contact-columns-gap",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 66,
-      "width": 1440,
-      "says": "gap: 80px",
-      "reading": "eighty between them, the gap every two-column row on this site uses",
-      "measure": {
-        "kind": "computed",
-        "selector": ".cf",
-        "prop": "column-gap"
-      },
-      "expect": "80px"
-    },
-    {
-      "id": "contact-section-padding",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 66,
-      "width": 1440,
-      "says": "padding: 72px 0 40px",
-      "reading": "seventy-two above the marker, the step both other pages open on",
-      "measure": {
-        "kind": "computed",
-        "selector": ".contact",
-        "prop": "padding-top"
-      },
-      "expect": "72px"
-    },
-    {
-      "id": "contact-marker-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 69,
+      "line": 64,
       "width": 1440,
       "says": "font: 500 11.5px 'JetBrains Mono',monospace",
-      "reading": "SYS.06 is the section marker this site already has, at the step it already uses",
+      "reading": "the section marker is the mono step, not a half pixel between two",
       "measure": {
         "kind": "computed",
-        "selector": ".sec-id",
+        "selector": ".blog-eyebrow",
         "prop": "font-size"
       },
-      "expect": "12px",
+      "expect": "11px",
       "diverges": {
-        "class": "one-section-head",
+        "class": "half-pixel",
         "sheet": "11.5px"
       }
     },
     {
-      "id": "contact-headline-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-h1-step",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 70,
+      "line": 65,
       "width": 1440,
-      "says": "font: 500 52px/1.06 'Chakra Petch',sans-serif",
-      "reading": "the shortest headline on this site is at the 52 step, like every other page head",
+      "says": "font: 500 52px/1.05 'Chakra Petch',sans-serif",
+      "reading": "K-08: 52 for every page but the homepage and About, and the sheet agrees",
       "measure": {
         "kind": "computed",
-        "selector": ".contact-headline",
+        "selector": ".blog-head h1",
         "prop": "font-size"
       },
       "expect": "52px"
     },
     {
-      "id": "contact-lede-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-stats-are-rows",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 71,
+      "line": 68,
       "width": 1440,
-      "says": "font: 400 15.5px/1.75 'Geist',sans-serif",
-      "reading": "the paragraph under it is body text at the step under the half pixel",
+      "says": "flex-direction: column",
+      "reading": "the rail is four full-width rows and not four tiles — an address does not fit in a quarter of it",
       "measure": {
         "kind": "computed",
-        "selector": ".contact-lede",
-        "prop": "font-size"
+        "selector": ".blog-stats",
+        "prop": "flex-direction"
       },
-      "expect": "15px",
-      "diverges": {
-        "class": "half-pixel",
-        "sheet": "15.5px"
-      }
+      "expect": "column"
     },
     {
-      "id": "contact-form-width",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-stats-gap",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 73,
+      "line": 68,
       "width": 1440,
-      "says": "max-width: 640px",
-      "reading": "the fields stop at 640 rather than running the width of the column",
+      "says": "gap: 14px",
+      "reading": "fourteen between them, which is a step",
       "measure": {
         "kind": "computed",
-        "selector": ".cf-form",
-        "prop": "max-width"
-      },
-      "expect": "640px"
-    },
-    {
-      "id": "contact-field-gap",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 73,
-      "width": 1440,
-      "says": "gap: 22px",
-      "reading": "twenty between the fields, on the scale",
-      "measure": {
-        "kind": "computed",
-        "selector": ".cf-form",
+        "selector": ".blog-stats",
         "prop": "row-gap"
       },
-      "expect": "20px",
+      "expect": "14px"
+    },
+    {
+      "id": "blog-head-rail-width",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 62,
+      "width": 1440,
+      "says": "grid-template-columns: 1fr 340px",
+      "reading": "the rail takes the 420 every other rail on this site takes, not a fifth width",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".blog-stats"
+      },
+      "expect": 420,
       "diverges": {
-        "class": "spacing-scale",
-        "sheet": "22px"
+        "class": "one-head-geometry",
+        "sheet": "340px"
       }
     },
     {
-      "id": "contact-label-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-stat-label-step",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 77,
+      "line": 69,
       "width": 1440,
       "says": "font: 500 10px 'JetBrains Mono',monospace",
-      "reading": "a field label is mono at the smallest step, and it is a label rather than a placeholder",
+      "reading": "the rail labels are the 10px mono step, as the work rail is",
       "measure": {
         "kind": "computed",
-        "selector": ".field-label",
+        "selector": ".blog-stat dt",
         "prop": "font-size"
       },
       "expect": "10px"
     },
     {
-      "id": "contact-label-tracking",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-chips-gap",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
       "line": 77,
       "width": 1440,
-      "says": "letter-spacing: .14em",
-      "reading": "tracked out at the label step this site uses everywhere",
+      "says": "gap: 8px",
+      "reading": "the chips wrap at a desk with eight between them, and there are thirty-two of them rather than seven",
       "measure": {
         "kind": "computed",
-        "selector": ".field-label",
-        "prop": "letter-spacing"
-      },
-      "expect": "1.4px"
-    },
-    {
-      "id": "contact-input-padding",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 81,
-      "width": 1440,
-      "says": "padding: 13px 15px",
-      "reading": "the box a visitor types into, and ui.css has drawn it since G7 at exactly this padding",
-      "measure": {
-        "kind": "computed",
-        "selector": "#name",
-        "prop": "padding-top"
-      },
-      "expect": "13px"
-    },
-    {
-      "id": "contact-input-font",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 81,
-      "width": 1440,
-      "says": "font: 400 14px 'JetBrains Mono',monospace",
-      "reading": "and what is typed is mono, because the trace beside it is the same string",
-      "measure": {
-        "kind": "computed",
-        "selector": "#name",
-        "prop": "font-size"
-      },
-      "expect": "13px",
-      "diverges": {
-        "class": "half-pixel",
-        "sheet": "14px"
-      }
-    },
-    {
-      "id": "contact-button-tracking",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 112,
-      "width": 1440,
-      "says": "letter-spacing: .14em",
-      "reading": "the send button is a button of this site, tracked like every other",
-      "measure": {
-        "kind": "computed",
-        "selector": ".cf-actions .btn",
-        "prop": "letter-spacing"
-      },
-      "expect": "1.43px"
-    },
-    {
-      "id": "contact-trace-head-gap",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1a",
-      "line": 125,
-      "width": 1440,
-      "says": "gap: 9px",
-      "reading": "the dot, the name and the state sit ten apart, on the scale",
-      "measure": {
-        "kind": "computed",
-        "selector": ".tx-head",
+        "selector": ".blog-chips",
         "prop": "column-gap"
       },
-      "expect": "10px",
+      "expect": "8px",
       "diverges": {
-        "class": "spacing-scale",
-        "sheet": "9px"
+        "class": "chips-are-the-corpus",
+        "sheet": "ALL + 7 chips"
       }
     },
     {
-      "id": "contact-trace-head-padding",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-chips-wrap",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 125,
+      "line": 77,
       "width": 1440,
-      "says": "padding: 11px 16px",
-      "reading": "sixteen in from the panel edge, exactly as drawn",
+      "says": "flex-wrap: wrap",
+      "reading": "and they wrap rather than scroll at 1440, which the sheet itself draws",
       "measure": {
         "kind": "computed",
-        "selector": ".tx-head",
-        "prop": "padding-left"
+        "selector": ".blog-chips",
+        "prop": "flex-wrap"
       },
-      "expect": "16px"
+      "expect": "wrap"
     },
     {
-      "id": "contact-trace-name-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-search-step",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 127,
+      "line": 90,
       "width": 1440,
-      "says": "font: 600 10px 'JetBrains Mono',monospace",
-      "reading": "TX is a label at the smallest mono step",
+      "says": "font: 400 11.5px 'JetBrains Mono',monospace",
+      "reading": "the field is a mono step; what it searches is not what the placeholder beside it claims",
       "measure": {
         "kind": "computed",
-        "selector": ".tx-name",
+        "selector": ".blog-search-input",
         "prop": "font-size"
       },
-      "expect": "10px"
+      "expect": "12px",
+      "diverges": {
+        "class": "search-is-not-only-titles",
+        "sheet": "grep titles…"
+      }
     },
     {
-      "id": "contact-trace-bytes-size",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
+      "id": "blog-counter-step",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
       "artboard": "1a",
-      "line": 130,
+      "line": 92,
       "width": 1440,
-      "says": "font: 400 9.5px 'JetBrains Mono',monospace",
-      "reading": "and the byte count beside it at the step under the half pixel",
+      "says": "font: 500 9.5px 'JetBrains Mono',monospace",
+      "reading": "the counter over the list is the 10px step, rounded off a half pixel",
       "measure": {
         "kind": "computed",
-        "selector": ".tx-bytes",
+        "selector": ".blog-count",
         "prop": "font-size"
       },
-      "expect": "9px",
+      "expect": "10px",
       "diverges": {
         "class": "half-pixel",
         "sheet": "9.5px"
       }
     },
     {
-      "id": "contact-columns-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 350,
-      "width": 390,
-      "says": "width: 390px",
-      "reading": "on the phone the trace falls under the form, one column",
+      "id": "blog-year-gap",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 95,
+      "width": 1440,
+      "says": "gap: 16px",
+      "reading": "the year, its rule and its count stand sixteen apart",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-cards-year",
+        "prop": "column-gap"
+      },
+      "expect": "16px"
+    },
+    {
+      "id": "blog-row-tracks",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 97,
+      "width": 1440,
+      "says": "grid-template-columns: 112px 1fr 200px 74px 24px",
+      "reading": "five columns: date, the entry, its subjects, its length, the arrow",
       "measure": {
         "kind": "track-count",
-        "selector": ".cf"
+        "selector": ".post-card-link"
       },
-      "expect": 1
+      "expect": 5
     },
     {
-      "id": "contact-headline-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 361,
-      "width": 390,
-      "says": "font: 500 34px/1.1 'Chakra Petch',sans-serif",
-      "reading": "the display step falls to 34, which is K-08 and a switch layout.css owns",
+      "id": "blog-row-date-width",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 97,
+      "width": 1440,
+      "says": "grid-template-columns: 112px 1fr 200px 74px 24px",
+      "reading": "the date column is 112 — one ISO date in tabular figures and nothing else",
       "measure": {
-        "kind": "computed",
-        "selector": ".contact-headline",
-        "prop": "font-size"
+        "kind": "box-width",
+        "selector": ".post-card-date"
       },
-      "expect": "34px"
+      "expect": 112
     },
     {
-      "id": "contact-headline-tag-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 361,
-      "width": 390,
-      "says": "font: 500 34px/1.1 'Chakra Petch',sans-serif",
-      "reading": "and it is still the page's one h1, where the artboard writes h2",
+      "id": "blog-row-tags-width",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 97,
+      "width": 1440,
+      "says": "grid-template-columns: 112px 1fr 200px 74px 24px",
+      "reading": "the subjects take 200, bounded so a four-tag entry cannot eat the title",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".post-card-tags"
+      },
+      "expect": 200
+    },
+    {
+      "id": "blog-row-min-width",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 97,
+      "width": 1440,
+      "says": "grid-template-columns: 112px 1fr 200px 74px 24px",
+      "reading": "the reading time takes 74",
+      "measure": {
+        "kind": "box-width",
+        "selector": ".post-card-min"
+      },
+      "expect": 74
+    },
+    {
+      "id": "blog-row-gap",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 97,
+      "width": 1440,
+      "says": "gap: 24px",
+      "reading": "twenty between the columns, the step the scale has where 24 is not one",
       "measure": {
         "kind": "computed",
-        "selector": "h1.contact-headline",
+        "selector": ".post-card-link",
+        "prop": "column-gap"
+      },
+      "expect": "20px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "24px"
+      }
+    },
+    {
+      "id": "blog-h1-step-390",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 270,
+      "width": 390,
+      "says": "font: 500 34px/1.05 'Chakra Petch',sans-serif",
+      "reading": "the display step falls to 34, and the element stays an h1",
+      "measure": {
+        "kind": "computed",
+        "selector": ".blog-head h1",
         "prop": "font-size"
       },
       "expect": "34px",
       "diverges": {
         "class": "one-copy-of-the-words",
-        "sheet": "<h2>"
+        "sheet": "<h2>, and a shorter deck"
       }
     },
     {
-      "id": "contact-field-gap-390",
-      "sheet": "docs/design/Contact - timseil.dev.dc.html",
-      "artboard": "1c",
-      "line": 365,
+      "id": "blog-chips-scroll-390",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 277,
       "width": 390,
-      "says": "gap: 18px",
-      "reading": "the fields keep one rhythm at both widths rather than tightening by two pixels",
+      "says": "overflow-x: auto",
+      "reading": "the chip row turns from a wrap into a scroller, which is the sheet's own note",
       "measure": {
         "kind": "computed",
-        "selector": ".cf-form",
-        "prop": "row-gap"
+        "selector": ".blog-chips",
+        "prop": "overflow-x"
       },
-      "expect": "20px",
-      "diverges": {
-        "class": "spacing-scale",
-        "sheet": "18px"
-      }
+      "expect": "auto"
+    },
+    {
+      "id": "blog-chip-step-390",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 279,
+      "width": 390,
+      "says": "font: 600 9px 'JetBrains Mono',monospace",
+      "reading": "and the chips in it are the 9px mono step, the same chip `/work` draws",
+      "measure": {
+        "kind": "computed",
+        "selector": ".blog-chips .chip",
+        "prop": "font-size"
+      },
+      "expect": "9px"
+    },
+    {
+      "id": "blog-row-stacks-390",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 292,
+      "width": 390,
+      "says": "padding: 16px 0",
+      "reading": "the entry stops being five columns and becomes two: a meta line, then the entry",
+      "measure": {
+        "kind": "track-count",
+        "selector": ".post-card-link"
+      },
+      "expect": 2
+    },
+    {
+      "id": "blog-row-meta-gap-390",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1b",
+      "line": 293,
+      "width": 390,
+      "says": "gap: 10px",
+      "reading": "and the date and the reading time share that line, ten apart",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-card-link",
+        "prop": "column-gap"
+      },
+      "expect": "10px"
+    },
+    {
+      "id": "blog-latest-badge-step",
+      "sheet": "docs/design/Blog Index - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 100,
+      "width": 1440,
+      "says": "gap: 10px",
+      "reading": "the LATEST badge stands ten from the title it marks",
+      "measure": {
+        "kind": "computed",
+        "selector": ".post-card-titlebar",
+        "prop": "column-gap"
+      },
+      "expect": "10px"
     }
   ]
 }

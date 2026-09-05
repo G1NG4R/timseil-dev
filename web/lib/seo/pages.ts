@@ -32,16 +32,17 @@ import { AUTHOR, SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
  *  them.
  *
  *  `indexable` is "does this page say anything yet", not "is it allowed to
- *  exist". Three of the seven are still `[SOON]` stubs, and a crawler that finds
- *  `BLOG [SOON]` files that away as what this site has to say on the subject
+ *  exist". Two of the seven are still `[SOON]` stubs, and a crawler that finds
+ *  `IMPRINT [SOON]` files that away as what this site has to say on the subject
  *  and takes a while to be talked out of it. The phase named in each comment
  *  fills the page and flips the boolean in the same commit — H6 did it for
- *  `/work`, H7 for `/about` and H8 for `/contact`, and every time app/sitemap.ts
- *  picked the page up out of this boolean with no edit of its own. */
+ *  `/work`, H7 for `/about`, H8 for `/contact` and H9b for `/blog`, and every
+ *  time app/sitemap.ts picked the page up out of this boolean with no edit of
+ *  its own. */
 const FIXED_PAGES = [
   { path: "/", indexable: true },
   { path: "/work", indexable: true },
-  { path: "/blog", indexable: false }, // H9
+  { path: "/blog", indexable: true }, // filled by H9b
   { path: "/about", indexable: true }, // filled by H7
   { path: "/contact", indexable: true }, // filled by H8
   { path: "/imprint", indexable: false }, // H12
@@ -70,12 +71,11 @@ export interface PageEntry {
  * second of them — app/sitemap.ts picked the page up out of the same boolean
  * with no edit, which is the whole reason there is one table and not two.
  *
- * H9a REPEATS THAT ASYMMETRY DELIBERATELY, and it is the second time rather than
- * a new idea: twenty-one entries become indexable here while `/blog` stays the
- * `[SOON]` stub until H9b builds the index. The reason is the one above, word for
- * word — the entries have something to say and the stub does not, and a crawler
- * that read `LOG [SOON]` would file that as this site's writing. H9b flips the
- * one remaining row.
+ * H9a REPEATED THAT ASYMMETRY DELIBERATELY AND H9b HAS CLOSED IT. For one phase
+ * the entries were indexable while `/blog` stayed the `[SOON]` stub, for the
+ * reason above word for word: the entries had something to say and the stub did
+ * not. The index says something now, so the row is `true` and the sitemap picked
+ * it up without an edit — which is the whole point of there being one table.
  *
  * THE POST ROWS COME FROM THE FILESYSTEM AND THE CASE-STUDY ROWS DO NOT, which
  * is the one wrinkle worth naming. `postPaths()` reads a directory at module

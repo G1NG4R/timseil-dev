@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { AUTHOR, SITE_URL } from "../site.ts";
-import { aboutLd, personLd, serializeLd, siteLd, webSiteLd } from "./jsonld.ts";
+import { aboutLd, collectionLd, personLd, serializeLd, siteLd, webSiteLd } from "./jsonld.ts";
 
 // THE DEFECT. An HTML parser ends a script element at the literal `</script`,
 // inside a JSON string as readily as outside one. A value carrying that
@@ -57,9 +57,11 @@ void test("the person is the one lib/site.ts names", () => {
   assert.equal(person.url, `${SITE_URL}/`);
 });
 
-// WHAT MUST NOT BE IN THERE. A SearchAction tells Google there is a search
-// endpoint; this site has none until H9, and a query URL that answers 404 is
-// the machine-readable form of an invented number.
+// WHAT MUST NOT BE IN THERE. A SearchAction tells a crawler there is a search
+// endpoint it can call with a query. H9b built a search and this assertion did
+// not change: the log's search is a filter inside one prerendered page, with no
+// query URL to name — every URL this site could offer would answer with the
+// unfiltered index.
 void test("the graph claims no search, no photograph, no address", () => {
   const serialized = serializeLd(siteLd("en"));
 
@@ -119,4 +121,107 @@ void test("the profile claims no photograph and no address", () => {
   for (const absent of ["image", "address", "SearchAction"]) {
     assert.ok(!serialized.includes(absent), `the profile claims ${absent}`);
   }
+});
+
+// ── H9b · #322, and it is one decision for two lists ────────────────────────
+
+const ENTRIES = [
+  { name: "The witness that was turned away", path: "/blog/023-the-witness-that-was-turned-away" },
+  { name: "The frontmatter nothing had ever read", path: "/blog/022-the-frontmatter-nothing-had-ever-read" },
+];
+
+/** The `CollectionPage` node out of the graph, so the tests below read plainly. */
+function pageOf(data: Record<string, unknown>): Record<string, unknown> {
+  const graph = data["@graph"];
+  assert.ok(Array.isArray(graph));
+  return graph[0] as Record<string, unknown>;
+}
+
+function listOf(data: Record<string, unknown>): Record<string, unknown> {
+  return pageOf(data).mainEntity as Record<string, unknown>;
+}
+
+// THE BROKEN CASE, and it is the one #322 was raised about: two lists described
+// by two builders come out differently and no test ever notices. So this asserts
+// that the SHAPE is identical for the two callers, over different data.
+void test("the log and the work index describe themselves with the same shape", () => {
+  const blog = pageOf(collectionLd("en", "/blog", "Writing", ENTRIES));
+  const work = pageOf(
+    collectionLd("en", "/work", "Selected work", [{ name: "timseil.dev", path: "/work/timseil-dev" }]),
+  );
+
+  assert.deepEqual(Object.keys(blog), Object.keys(work));
+  assert.equal(blog["@type"], work["@type"]);
+  assert.deepEqual(
+    Object.keys(blog.mainEntity as object),
+    Object.keys(work.mainEntity as object),
+  );
+});
+
+// A row with no page of its own carries a name and no url. Inventing one would
+// be the machine-readable half of the site pointing at a 404 — invariant 5, and
+// the reason WorkRow draws no arrow on those rows either.
+void test("a row with nowhere to go carries no url", () => {
+  const list = listOf(collectionLd("en", "/work", "Selected work", [
+    { name: "timseil.dev", path: "/work/timseil-dev" },
+    { name: "vat-check", path: null },
+  ]));
+  const items = list.itemListElement as Record<string, unknown>[];
+
+  assert.equal(items[0]?.url, `${SITE_URL}/work/timseil-dev`);
+  assert.ok(!("url" in (items[1] ?? {})), "a system with no page must not be given one");
+  assert.equal(items[1]?.name, "vat-check");
+});
+
+void test("every url in the list is absolute, because a crawler is not on this host", () => {
+  const list = listOf(collectionLd("en", "/blog", "Writing", ENTRIES));
+  for (const item of list.itemListElement as Record<string, unknown>[]) {
+    assert.ok(String(item.url).startsWith(`${SITE_URL}/`), `relative url: ${String(item.url)}`);
+  }
+});
+
+// An ItemList is unordered by default. Both of these lists have an order that
+// means something — newest first, and ORDER BY s.system_no — so the document
+// says so rather than leaving a crawler to assume it does not.
+void test("the order is declared and the positions are one-based", () => {
+  const list = listOf(collectionLd("en", "/blog", "Writing", ENTRIES));
+  assert.equal(list.itemListOrder, "https://schema.org/ItemListOrderDescending");
+  assert.equal(list.numberOfItems, ENTRIES.length);
+  assert.deepEqual(
+    (list.itemListElement as Record<string, unknown>[]).map((item) => item.position),
+    [1, 2],
+  );
+});
+
+// The count is the list's own length and not a number written beside it.
+void test("numberOfItems cannot disagree with the items", () => {
+  for (const entries of [[], ENTRIES, [...ENTRIES, ...ENTRIES]]) {
+    const list = listOf(collectionLd("en", "/blog", "Writing", entries));
+    assert.equal(list.numberOfItems, (list.itemListElement as unknown[]).length);
+  }
+});
+
+// The page names itself, and it says it is part of the one WebSite — the same
+// `@id` the homepage defines, which is how the two lists and the profile page
+// describe one site rather than four.
+void test("the collection names its own canonical url and the site it belongs to", () => {
+  const page = pageOf(collectionLd("de", "/de/blog", "Writing", ENTRIES));
+  assert.equal(page.url, `${SITE_URL}/de/blog`);
+  assert.equal(page["@id"], `${SITE_URL}/de/blog#collection`);
+  assert.deepEqual(page.isPartOf, { "@id": `${SITE_URL}/#website` });
+  // The language of the TEXT, which is what `getDictionary` resolved — not the
+  // language the route is named after.
+  assert.equal(page.inLanguage, "de");
+});
+
+// The titles in this list are prose somebody writes later, which is the case
+// serializeLd's own comment was written for.
+void test("a post title cannot close the script element it is inside", () => {
+  const html = serializeLd(
+    collectionLd("en", "/blog", "Writing", [
+      { name: 'A title with </script><img> & "quotes"', path: "/blog/001-a-slug" },
+    ]),
+  );
+  assert.ok(!html.includes("</script"), "a title closed the block");
+  assert.ok(!html.includes("<img"), "a title opened an element");
 });

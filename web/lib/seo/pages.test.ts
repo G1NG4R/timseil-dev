@@ -25,38 +25,38 @@ void test("a path the table does not know throws instead of guessing", () => {
   assert.throws(() => seoFor("en", "/about/"), /no page entry/);
 });
 
-// The four routes that say something today. It was one until H1, two until H6,
-// three when `/work` itself stopped being a [SOON] stub in that same phase, and
-// four since H7 filled `/about`. The other four stay out until the phase named
-// beside each fills them.
+// The five routes that say something today. It was one until H1, two until H6,
+// three when `/work` itself stopped being a [SOON] stub in that same phase,
+// four since H7 filled `/about`, and five since H9b filled `/blog`. The other
+// two stay out until H12 fills them.
 //
 // THE ORDER IS THE TABLE'S AND NOT ALPHABETICAL: `/about` sits where README's
 // route table puts it, after `/blog`, so this list reads the way the file does.
-// THIS TEST IS SUPPOSED TO GO RED WHEN A PHASE DOES ITS WORK, and it has four
+// THIS TEST IS SUPPOSED TO GO RED WHEN A PHASE DOES ITS WORK, and it has five
 // times now: H1 for the case study, H6 for `/work`, H7 for `/about`, H8 for
-// `/contact`. The list is the point — a page that starts being indexed without
-// anybody writing the line here is a page that started being indexed by
-// accident.
-void test("the homepage, the work index, about, contact and the case studies are indexable, and nothing else", () => {
+// `/contact`, H9b for `/blog`. The list is the point — a page that starts being
+// indexed without anybody writing the line here is a page that started being
+// indexed by accident.
+void test("the homepage, the log, the work index, about, contact and the case studies are indexable, and nothing else", () => {
   // H9a ADDED A SECOND VARIABLE-LENGTH TAIL, so the fixed head is asserted as a
   // list and the tail by the two tests below — one per content registry. Writing
   // twenty-one slugs out here would be a second copy of content/posts, and the
   // copy is the one that goes stale.
   const fixed = indexablePaths().filter((path) => !path.startsWith("/blog/"));
-  assert.deepEqual(fixed, ["/", "/work", "/about", "/contact", "/work/timseil-dev"]);
+  assert.deepEqual(fixed, ["/", "/work", "/blog", "/about", "/contact", "/work/timseil-dev"]);
   assert.equal(seoFor("en", "/").robots, undefined);
   assert.equal(seoFor("en", "/work/timseil-dev").robots, undefined);
   assert.equal(seoFor("en", "/work").robots, undefined);
   assert.equal(seoFor("en", "/about").robots, undefined);
   assert.equal(seoFor("en", "/contact").robots, undefined);
-  // And the three that are still stubs still refuse. `/privacy` is the one that
+  // H9b. The index and its entries now agree, and for one phase they did not —
+  // pages.ts argues that asymmetry and this is the line that closed it.
+  assert.equal(seoFor("en", "/blog").robots, undefined);
+  // And the two that are still stubs still refuse. `/privacy` is the one that
   // matters most right now: H8 put a form on this site, and the page that will
   // explain it says `[SOON]` until H12.
   assert.deepEqual(seoFor("en", "/privacy").robots, { index: false });
-  // `/blog` is among them until H9b, WHILE ITS ENTRIES ARE ALREADY INDEXABLE.
-  // pages.ts argues the asymmetry; it is the case-study/`/work` split a second
-  // time, and this is the assertion that says it was meant.
-  assert.deepEqual(seoFor("en", "/blog").robots, { index: false });
+  assert.deepEqual(seoFor("en", "/imprint").robots, { index: false });
 });
 
 // The same drift the case-study test guards, one registry over: an entry that

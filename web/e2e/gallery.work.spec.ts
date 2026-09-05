@@ -425,3 +425,35 @@ test("the chips wrap rather than hiding themselves behind a swipe", async ({ pag
   expect(box.overflow).toBe("visible");
   expect(box.scroll).toBeLessThanOrEqual(1);
 });
+
+// #322's `/work` half, and the gallery is the only place this rig can see it.
+// The block is inside the streamed region because the list is, so on the page
+// itself it needs an api answer this rig has none of — the same reason every
+// other measurement of a work row lives in this file.
+test("the work index describes its list to a machine", async ({ page }) => {
+  await page.goto(GALLERY);
+
+  const blocks = page.locator('script[type="application/ld+json"]');
+  await expect(blocks).toHaveCount(1);
+
+  const data = JSON.parse(await blocks.innerText()) as {
+    "@graph": {
+      "@type": string;
+      mainEntity: {
+        numberOfItems: number;
+        itemListElement: { name: string; url?: string }[];
+      };
+    }[];
+  };
+  const [node] = data["@graph"];
+
+  expect(node["@type"]).toBe("CollectionPage");
+
+  // One node per row of the fixture, and the queued system carries a name and
+  // no url — it has no page, and evidence never points into nothing.
+  const rows = await page.locator(".gal-demo .work-row").count();
+  expect(node.mainEntity.numberOfItems).toBeGreaterThan(0);
+  expect(node.mainEntity.itemListElement).toHaveLength(node.mainEntity.numberOfItems);
+  expect(node.mainEntity.itemListElement.some((item) => item.url === undefined)).toBe(true);
+  expect(rows).toBeGreaterThanOrEqual(node.mainEntity.numberOfItems);
+});

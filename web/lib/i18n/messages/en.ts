@@ -626,6 +626,93 @@ export const en = {
     "This is the first entry in the log, so there is nothing before it. The row " +
     "stays and says so rather than disappearing.",
 
+  // ── H9b · /blog ─────────────────────────────────────────────────────────
+  //
+  // THE SAME SPLIT H9a MADE ONE ROUTE DOWN: the frame is translatable and the
+  // entries are not. A word the PAGE prints is a key; the titles, decks and
+  // subjects below it are English prose in files, and lib/seo/feed.ts records
+  // why they stay that way.
+  //
+  // `TAG`, `SEARCH` AND `ALL` ARE NOT HERE. They are nomenclature — the words a
+  // reader of any language sees on this kind of control — and they are written
+  // inline in components/blog/BlogFilters.tsx, which is `WorkFilters`'s rule for
+  // `STATUS` and `STACK` and `WorkHeader`'s for `SYSTEMS`.
+  blogIndexTitle: "Writing",
+
+  // THE SHEET'S DECK, ONE SET OF WORDS. Its phone artboard stops after "what I
+  // would do differently" and drops the last sentence — #293 for the sixth
+  // time. One string, and layout.css decides how it wraps.
+  blogIndexDeck:
+    "Notes from building and running my own systems: what the failure looked " +
+    "like, what the fix was, and what I would do differently. No tutorials I " +
+    "have not run in production.",
+
+  blogIndexEntries: "ENTRIES",
+
+  // ONE KEY FOR TWO PLACES, because it is one word about one thing: the rail
+  // row that names the newest date, and the badge on the row that carries it.
+  // Two keys would let one of them be re-spelled on its own.
+  blogIndexLatest: "LATEST",
+
+  blogIndexFeed: "FEED",
+  blogIndexSystem: "SYSTEM",
+
+  // The search field's placeholder, which is a hint and never a label: its
+  // accessible name is the visible `SEARCH` word beside it, so every reader
+  // gets the same one. The sheet writes `aria-label="search entries"` instead
+  // and would have given some readers a second, invisible name for one control.
+  //
+  // IT NAMES WHAT IS ACTUALLY SEARCHED, AND THE SHEET DOES NOT. The artboard
+  // writes `grep titles…` over a script that matches the whole row, date and
+  // reading time included. lib/blog/filter.ts decided the middle answer — the
+  // three fields the row draws — and this line says so rather than promising
+  // less than it does.
+  blogSearchPlaceholder: "grep title, deck, tags…",
+
+  // The log that was read and holds nothing. NOT `blogListDown`, and the split
+  // is the one H6b made on `/work` and ADR 0062 §4 made for this same read on
+  // the homepage: `00 ENTRIES` is a measurement, and "could not be read" is a
+  // different claim entirely.
+  blogNoEntriesReason:
+    "The log starts empty. The first entry comes when the first system has " +
+    "done something worth writing about — not before.",
+
+  // The log that could not be read at all. On this site that means an image
+  // that shipped without its own content, which is the failure
+  // `outputFileTracingIncludes` exists to prevent.
+  blogListDown:
+    "The entries are files in this image, and that directory could not be " +
+    "read. No entry is shown rather than a list written by hand.",
+
+  // Nought matching entries.
+  //
+  // THE REASON NAMES THE COMBINATION AND NOT THE TAG, though the sheet's panel
+  // says "Zu diesem Tag gibt es noch nichts." On this page a tag on its own can
+  // never produce nothing: every chip is derived from the corpus and carries
+  // its own count, so an empty result is only ever the search, or a tag and a
+  // search together. Telling a reader their TAG is empty while the counter
+  // beside it says `06` would be the page contradicting itself.
+  blogNoMatchHead: "NO ENTRIES MATCH THIS COMBINATION",
+  blogNoMatchReason:
+    "Every tag carries the count beside it, so a tag on its own always has " +
+    "something behind it. Nothing is missing from the log — drop the search " +
+    "or the tag to see it again.",
+  blogReset: "RESET FILTER",
+
+  // The way out of an empty log, and the sheet names it: `SYSTEME ANSEHEN →`.
+  blogViewSystems: "VIEW SYSTEMS",
+
+  // SUBSCRIBE.
+  //
+  // THE SHEET'S SENTENCE IS CORRECTED HERE. It writes "served by the same API
+  // as everything else", and the feed is not: `app/feed.xml/route.ts` is a
+  // route handler in the web container and the api serves no part of it. A
+  // sentence that names the wrong machine is a claim with no system behind it.
+  blogSubscribeHead: "SUBSCRIBE",
+  blogSubscribeBody:
+    "No newsletter, no tracking. The feed is a plain RSS file, served by the " +
+    "same container as every page here.",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",
