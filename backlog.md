@@ -12,7 +12,85 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 04.09.2026, H9a abgenommen: die Route steht, und der Zeuge kam achtzehn Sekunden zu kurz
+## Wo wir stehen — 05.09.2026: die erste rote Kachel, und die Seite war die ganze Zeit oben
+
+Das Raster hat heute seinen ersten Ausfall gezeichnet — `2026-09-05`,
+`state: outage`, `downSec: 16348` (4 h 32 min 28 s) — und `uptime90d` ist von
+100 % auf **77,37 %** gefallen. Das ist `188 / 243`, und beide Zahlen sind
+nachzählbar: 188 gelungene Sondenläufe seit dem 23.08. gegen 55 nachgespielte
+Fehlprüfungen.
+
+**Niemand hatte einen Ausfall.** Die Sonde hat um 01:10:23Z eine Anfrage
+gestellt, `403` bekommen und `down` geschrieben — die einzige Vokabel, die sie
+für eine Abweisung hat. `uptime-log.txt` ist dabei zum ersten Mal überhaupt
+entstanden, 13 Tage nach der ersten Messung, genau wie entworfen.
+
+### Die Messung, die es entschieden hat
+
+Der Router-Zähler und der Service-Zähler des Proxys sehen fast gleich aus und
+sind es nicht: was ein Router *trifft*, und was ein Service *ausliefert*. Eine
+Anfrage, die dazwischen von einer Middleware abgewiesen wird, steht im ersten
+und nie im zweiten.
+
+```
+traefik_router_requests_total{router="timseil-web@docker", code="403"}
+  01:10:15Z   3499
+  01:10:30Z   3500      ← die Anfrage der Sonde
+```
+
+Service-Zähler in derselben Minute: nichts. Loki zwischen 01:08 und 01:13:
+keine Zeile aus dem web-Container. Beide Container liefen zu dem Zeitpunkt seit
+18 Stunden gesund, der letzte Deploy war um 00:02:30 fertig. Die Anfrage ist nie
+bei uns angekommen — sie wurde davor abgewiesen. **Ergebnis der Analyse in
+`backlog.local.md`, nicht hier.**
+
+Der Beitrag dazu ist geschrieben:
+`web/content/posts/023-the-witness-that-was-turned-away.mdx`, Branch
+`docs/the-witness-that-was-turned-away`. Nicht gepusht.
+
+## Gefunden — 05.09.2026
+
+- **Die Sonde kann eine Abweisung nicht von einer Abwesenheit unterscheiden.**
+  `probe.sh` bildet jeden Nicht-200 auf einen Grund und jeden Grund auf `down`
+  ab. Für die *Report*-Seite macht dasselbe Skript die Unterscheidung schon —
+  ein `401`/`400` dort ist ausdrücklich kein Ausfall, „a typo in a secret must
+  not colour a public grid red". An der Vordertür ist dieselbe Überlegung nie
+  angewandt worden. Ein `403` am Eingang ist eine Aussage über den *Klienten*,
+  nicht über den Host. **Vorsicht bei der Reparatur:** „403 heißt schreibe
+  nichts" ist eine Zeile davon entfernt, einen echten Ausfall zu verschweigen,
+  an dem Tag, an dem die Tür wirklich allen vor der Nase zugeht.
+  *(05.09.2026)*
+- **Der Replay macht aus der Kadenzlücke eine Dauer.** Die Grammatik ist zwei
+  Zeilen pro Ausfall, alles dazwischen wird rekonstruiert — tragfähig bei einer
+  Sonde alle fünf Minuten, und heute lief sie **sechsmal**. Aus einer einzigen
+  abgewiesenen Anfrage wurden 55 Fehlprüfungen, 16 348 s und 23 Punkte
+  Verfügbarkeit. Die Dauer auf der öffentlichen Seite misst nicht die Seite,
+  sondern **wie lange die Sonde geschlafen hat**. Zweite Hälfte von #180: die
+  Arithmetik ist repariert, die Grammatik nicht. *(05.09.2026)*
+- **Router-Zähler gegen Service-Zähler ist das Werkzeug für „wer hat
+  geantwortet".** Trennt abgewiesen von bedient ohne Zugriff auf den Host, und
+  hat hier in zwei Abfragen entschieden, was drei Vermutungen nicht konnten.
+  Gehört ins Runbook. *(05.09.2026)*
+- **`timseil-web@docker` in 24 h: 876 × `404` und 50 × `500`.** Bei 9 067 × `200`.
+  Beide Zahlen hat niemand bestellt und niemand erklärt — eigener Faden, nicht
+  Teil dieses Ausfalls. *(05.09.2026)*
+- **Grafana liest unser Loki und unser Prometheus von außen.** `graf.bas.lu`
+  trägt vier Datenquellen, zwei davon unsere; damit ist die Nachschau in einem
+  Vorfall ohne Host-Zugang möglich. Das ist der Lesepfad, der diesen Fund
+  überhaupt möglich gemacht hat. *(05.09.2026)*
+
+## Verschoben aus dem 05.09.2026
+
+- **Keine Kerbe.** Eine Kerbe braucht `cause`, `fix` und `post_slug`; die Ursache
+  steht, die Reparatur nicht. Der Beitrag ist geschrieben, die
+  `incidents`-Zeile wartet auf die Reparatur.
+- **Die Zeile im Log bleibt stehen.** Das Protokoll sagt, was die Sonde gesehen
+  hat. Aufräumen wäre eine Lüge in genau der Datei, die nicht sterben und nicht
+  aufgeräumt werden soll.
+
+---
+
+## Vorher — 04.09.2026, H9a abgenommen: die Route steht, und der Zeuge kam achtzehn Sekunden zu kurz
 
 `56400fc` läuft, `v0.31.0`. Merge **22:52:34Z**, Deploy-Job 23:08:01Z → 23:08:29Z
 (28 s), der api-Prozess läuft seit **23:08:38.955Z**. Uhrzeit mit `date -u`

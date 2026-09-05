@@ -1,0 +1,174 @@
+---
+title: 'The witness that was turned away'
+deck: 'The grid went red for four and a half hours on a day the site never stopped answering. One request was refused at the door, and the log had no grammar for the difference between a host that is gone and a host that would not let my prober in.'
+published: 2026-09-05
+tags: ['observability', 'uptime', 'evidence', 'measurement']
+systemId: 'timseil-dev'
+summary: |
+  The operations grid recorded its first outage today: four hours, thirty-two
+  minutes, twenty-eight seconds, and the ninety-one day availability figure fell
+  from a hundred per cent to seventy-seven. Nobody was having an outage. The
+  external prober made one request, was answered `403` by a security middleware
+  that sits in front of every site on this host, and wrote `down` — because the
+  only vocabulary it has for a refusal is the same one it has for a machine that
+  is not there. The four and a half hours came afterwards, from a replay rule
+  that turns the gap between two probes into a duration. Both halves are honest
+  code doing exactly what it was told.
+---
+
+## The first red cell
+
+The operations grid on this site had been green or grey since the day it started
+measuring. This morning it had a red cell, and the cell was today:
+
+```
+{"d":"2026-09-05","state":"outage","downSec":16348}
+```
+
+Four hours, thirty-two minutes, twenty-eight seconds. The ninety-one day
+availability on the case study went with it, from a hundred per cent to
+**77.37 %** — which is `188 / 243`, and both of those numbers can be recounted,
+which is the only reason the rest of this post exists.
+
+The site was up the whole time.
+
+## What the record said
+
+The prober runs on GitHub, not here, because a host cannot witness its own
+outage. When it finds the site gone it cannot report that to an endpoint on the
+missing machine, so it writes a line to a file on a branch instead, and the api
+replays the file when it is back. That file had never existed. It is created on
+the first outage and not before, and this morning at 01:10 it was created:
+
+```
+# uptime-log.txt — machine written by tools/probe.sh (F4).
+# Grammar: docs/adr/0038. Two lines per outage, tab separated, UTC.
+2026-09-05T01:10:23Z	down	http 4xx
+2026-09-05T05:42:51Z	up
+```
+
+Two lines, thirteen days after the first measurement, and everything on the
+public page follows from them. The replay expands a `down`/`up` pair into the
+instants a check would have run at, one every five minutes: **55 instants**, all
+failed, from 01:10:23 up to but not including the recovery. Fifty-five failed
+checks is well past the two that separate amber from red, so the cell is red.
+Fifty-four gaps of three hundred seconds, plus the hundred and forty-eight
+seconds from the last replayed instant to the first live check that answered,
+is 16 348 seconds, so the cell says four and a half hours. And 55 replayed
+failures against 188 live successes — the prober has run 190 times since
+23 August, 188 of them clean — is 77.37 %.
+
+Every one of those numbers is arithmetic on two lines of a file. There is no
+third source. Which makes the whole public claim rest on one word: `down`.
+
+## Ruling out the obvious
+
+The last deploy had finished at 00:02:30, an hour before. That was the first
+suspect and it was wrong twice over: the containers had not moved since.
+
+```
+timseildev-…-web-1   ghcr.io/g1ng4r/timseil-web:sha-f828d57   Up 18 hours (healthy)
+timseildev-…-api-1   ghcr.io/g1ng4r/timseil-api:sha-f828d57   Up 18 hours (healthy)
+```
+
+Eighteen hours, healthy, no restarts. At 01:10 both had been running for over an
+hour and both were passing their health checks. Whatever answered the prober,
+it was not this application failing.
+
+## The measurement that settled it
+
+The proxy in front of everything keeps two counters that look almost identical
+and are not. One counts what a **router** matched. The other counts what a
+**service** actually served. A request that is matched and then rejected by a
+middleware appears in the first and never in the second, and that gap is a
+fingerprint.
+
+The raw counter, scrape by scrape, fifteen seconds apart:
+
+```
+traefik_router_requests_total{router="timseil-web@docker", code="403"}
+  01:10:15Z   3499
+  01:10:30Z   3500      ← the prober's request
+```
+
+And the service counter for the same minute: nothing. No request, no response,
+no byte. The container's own log agrees — between 01:08 and 01:13 the web
+container logged not one line, on a day it logs every request it gets.
+
+So the request reached the front door, was answered **403**, and never got past
+it. Not a 404 from a router that had gone missing, not a 500 from the
+application, not a timeout. A refusal, by something standing in front, before
+anything of mine was consulted.
+
+There is only one thing standing there. The proxy carries an address-reputation
+middleware on its HTTPS entrypoint, ahead of every route it serves, and a
+rejected address gets a `403`. The other two middlewares on this router can emit
+a redirect and a retry, and neither can emit this.
+
+Two more readings finish the picture. In the same minute, other routes behind the
+same middleware answered `200` — so it was not failing closed and refusing
+everyone, it was making a decision about one address. And nothing in its own
+record of local decisions mentions that address, or that morning at all.
+
+That combination says the address was not rejected by anything that happened
+here. It was rejected on the strength of a reputation list the middleware did not
+author — which leaves no local trace, and is why the refusal is invisible in the
+one place I went looking first.
+
+The background rate is the last piece. Over twenty-four hours this site's router
+recorded 9 067 responses of `200` and **531 of `403`**. The door has been turning
+callers away all along, and every single one of those had been a scanner or a
+stranger until this morning, when it was my own witness.
+
+## What was actually wrong
+
+Two things, and only the second is interesting.
+
+**The prober cannot tell a refusal from an absence.** Its vocabulary maps every
+non-200 into a reason and every reason into `down`. That is deliberate and it is
+written down: the reason is mapped and never quoted, because a curl error carries
+the address it could not reach and the log is public. But the mapping flattens a
+distinction the same script already makes elsewhere. When the *report* endpoint
+answers `401` or `400`, `probe.sh` stops and says so out loud:
+
+> a typo in a secret must not colour a public grid red
+
+That is exactly the right instinct, and it was never applied to the front door.
+A `403` at the entrance is not a statement about the host. It is a statement
+about the *client* — about my prober, from an address someone else's list does
+not like. The building was open. The witness was turned away, and then filed a
+report saying the building was gone.
+
+**And a single observation was replayed as a continuous outage.** This is the
+larger half. The log's grammar is two lines per outage, a `down` and the `up`
+that closes it, and everything between them is reconstructed. That is sound when
+the prober runs every five minutes, because then the gap between two lines really
+is close to the outage. It runs every five minutes on paper. In practice it ran
+six times today. GitHub's scheduler does not owe anyone a cron expression, and
+the real spacing between my last two probes was four and a half hours.
+
+So the duration on a public page is not a measurement of the site. It is a
+measurement of **how long my prober was asleep**, wearing an outage's clothes. One
+refused request became 55 failed checks became four and a half hours became
+twenty-three points of availability. Nothing multiplied anything — that was fixed
+earlier, and the fix held. The replay is what turned one instant into a span, and
+it did so faithfully, from a grammar that assumes a cadence that does not happen.
+
+## What I am not doing
+
+I am not editing the file. The record says what the prober saw, and what it saw
+was a `403` it had no better word for. Deleting the line would make the grid
+prettier and the log a lie, and the entire point of the log is that it does not
+die and does not get tidied.
+
+There is no notch on the grid either. A notch needs a cause, a fix and a
+post-mortem, and until the second of those exists this is a post and not a
+verdict. The cause is now known to the second. The fix is a decision I would
+rather make slowly, because the obvious version — treat `403` as inconclusive
+and write nothing — is one careless line away from a prober that cannot report a
+real outage the day the door is genuinely shut in everyone's face.
+
+The honest state of this system is: the availability figure on my case study is
+currently 77 %, it is derived correctly from what was observed, and what was
+observed is wrong. Both of those sentences are true at the same time, and that
+is a worse feeling than a red cell.
