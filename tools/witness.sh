@@ -98,9 +98,18 @@ TAIL_SEC=${WITNESS_TAIL_SEC:-30}
 # A guard rail on the instrument, not a measurement of the system. It exists so
 # that an unattended witness cannot run until somebody notices; nothing is
 # concluded from its value, and it is only reached when --until-sha never comes
-# true. Say so out loud rather than letting a reader take 900 for a deadline the
-# deploy is held to.
-MAX_SEC=${WITNESS_MAX_SEC:-900}
+# true. Say so out loud rather than letting a reader take this number for a
+# deadline the deploy is held to.
+#
+# RAISED FROM 900 IN H9b, AND THE OLD VALUE WAS OVERTAKEN RATHER THAN WRONG.
+# The H9a acceptance measured 927 s between the merge and the sha answering, so
+# the witness gave up 27 s before the thing it was watching happened and
+# reported "this window is not the deploy". The cap was set when the pipeline
+# was shorter; `e2e` has been on the critical path since, and it ended four
+# seconds before the deploy job started. 1800 is twice the observed lead time,
+# which is a guard rail rather than a second estimate of it — and the run still
+# ends on --until-sha, as it always did.
+MAX_SEC=${WITNESS_MAX_SEC:-1800}
 
 usage() {
   printf 'usage: witness.sh --seconds N [--path P]… [base-url]\n' >&2

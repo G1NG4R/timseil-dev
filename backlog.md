@@ -153,6 +153,12 @@ bleibt, nicht davon, zu welcher Route es gehört.
 
 ## Verschoben aus H9b
 
+- **`WITNESS_MAX_SEC` steht jetzt auf 1800, und zwar in `witness.sh` selbst.**
+  Der H9a-Backlog sagt „Ab H9b wird er auf 1800 gesetzt", und ein Deckel, den
+  man pro Lauf setzen muss, ist ein Deckel, den man beim übernächsten Mal
+  vergisst. 927 s gemessene Vorlaufzeit gegen 900 s Vorgabe; 1800 ist das
+  Doppelte der Messung und damit ein Geländer statt einer zweiten Schätzung.
+  Damit ist die Notiz erledigt und nicht verschoben.
 - **H9c ist kürzer geworden.** Der Feed war dort eingeplant und ist hier
   erledigt, weil der Index einen `SUBSCRIBE`-Block zeichnet und für einen leeren
   Kanal geworben hätte. **Offen bleiben die drei Verweise:** `LogRow` →
