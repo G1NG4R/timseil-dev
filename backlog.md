@@ -12,7 +12,162 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 05.09.2026, H9b gebaut: der Filter war gegen zehn erfundene Einträge gezeichnet
+## Wo wir stehen — 06.09.2026, H9b abgenommen: grün gemergt, ohne Release, und der Grund stand im PR-Titel
+
+`254cd67` läuft, **und `v0.31.0` ist immer noch das letzte Release.** Merge
+**23:49:32Z**, Deploy-Job 00:13:53Z → 00:14:21Z (28 s), der api-Prozess läuft
+seit **00:14:33.846Z**. Uhrzeit mit `date -u` gelesen; der Deploy liegt hinter
+dem Dokploy-Fenster 23:45–00:00, und um 23:50, als `docker-cleanup` lief, lief
+hier `e2e`.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `254cd67` gebaut.
+
+### Der Fund der Abnahme: ein grüner Lauf, der kein Release gemacht hat
+
+Der PR hieß **„H9b · The log index, and the filter drawn against ten entries"**.
+Kein Conventional-Commit-Typ. Der Squash-Merge macht den PR-Titel zum Commit auf
+`main`, also steht dort jetzt der einzige Commit der letzten zwölf ohne Typ — und
+`tools/release.sh` liest genau diesen Typ:
+
+```
+tools/release.sh --tag
+  · no release due — nothing in these commits asks for one
+```
+
+**Die Pipeline hat getan, was ihr gesagt wurde, und blieb grün**, weil „kein
+Release fällig" für einen `docs:`-Merge das richtige Ergebnis ist. Drei sichtbare
+Folgen:
+
+```
+kein v0.32.0-Tag, kein GitHub-Release      letztes bleibt v0.31.0 (H9a)
+buildinfo.version nicht gesetzt            #335 baute mit -X …version=v0.31.0
+/api/badge/version                         v0.31.0-3-g254cd67   ← öffentlich
+```
+
+`CONTRIBUTING.md:54` sagt es wörtlich und ich habe es trotzdem gerissen: „**The
+type is a decision, not a formality** — Since E5c the type in that title decides
+whether the merge publishes a release."
+
+**Der `commit-msg`-Hook hat den falschen Commit geprüft.** Er hat meinen
+`feat(web):`-Subject lokal gelesen und sogar wegen 75 Zeichen abgewiesen — und
+genau dieser Commit wird beim Squash weggeworfen. Bewacht wird, was verschwindet;
+nichts in `.github/` prüft den Titel, der bleibt.
+
+### Und die Reparatur von gestern war mit einer Zahl begründet, die dieser Deploy überholt hat
+
+`witness.sh` steht seit H9b auf 1800 s, und der Kommentar daneben behauptet,
+das sei „twice the observed lead time". Gemessen war das gegen H9a:
+
+```
+H9a   Merge 22:52:34Z -> Deploy-Start 23:08:01Z    927 s
+H9b   Merge 23:49:32Z -> Deploy-Start 00:13:53Z   1461 s
+```
+
+**1800 gegen 1461 sind 1,23× und 339 s Rand, nicht das Doppelte.** Der Deckel
+hätte gehalten; die Begründung neben ihm war schon falsch, als sie ausgeliefert
+wurde. Die alten 900 s wären um **561 s** zu kurz gewesen — der Zeuge hätte
+diesen Tausch also wieder verpasst, und diesmal deutlicher.
+
+Dahinter steht eine Zahl, die ich nicht erkläre, sondern nur notiere: **`e2e`
+lief auf `main` 1453 s und auf dem PR 1032 s** — 421 s Unterschied für denselben
+Commit.
+
+### Gegen Produktion gemessen, nicht lokal
+
+| | |
+|---|---|
+| Index- und Beitragsspecs, sieben Breiten | **249 grün**, inkl. Blatt-Orakel und Sweep |
+| axe, sieben Breiten | **70 grün** — die 7 fehlenden sind `/dev/components`, das Produktion mit 404 beantwortet |
+| geklickt | Chips, Suche, Kombination auf null, Reset und Zeile → Beitrag → Krume, alle **an der echten Seite** durch `blog-index.spec.ts` |
+| ohne JavaScript | grün |
+
+`E2E_BASE_URL=https://timseil.dev` mit `reuseExistingServer`; `/healthz` antwortet
+200, also hat das Rig gemessen statt gebaut.
+
+### Der Zeuge, im Ruhezustand statt über dem Tausch
+
+**Der Tausch selbst bleibt unbezeugt** — er war zehn Stunden vorbei, als die
+Abnahme begann, und ist nicht nachholbar. Was messbar war, ist der Ruhezustand:
+
+```
+300 s × 3 Pfade = 900 Anfragen    / · /blog · /api/health
+900 × 200, keine verlorene Verbindung
+```
+
+Bemerkenswert, weil die H8b- und H9a-Läufe je eine pro Pfad verloren haben. 300 s
+sind zu kurz, um daraus etwas über #304 zu schließen; es ist eine Beobachtung und
+kein Gegenbeweis.
+
+### Die Flächen, an der Seite nachgezählt
+
+```
+/blog      24 Zeilen · 33 Chips · SHOWING 24 OF 24 · kein noindex
+/feed.xml  24 <item>          sitemap  90 URLs, /blog gelistet
+JSON-LD    /blog eine CollectionPage · /work eine, mit zwei Einträgen —
+           „VAT Check API" ohne url, „timseil.dev" mit
+Betrieb    2026-09-06 downSec 0, state ok · errorRate 0 · p95 11,5 ms · window 91
+Sonde      acht Läufe seit dem Merge, alle grün
+```
+
+Sitemap und Feed nennen zum ersten Mal dieselbe Zahl.
+
+## Gefunden — aus der H9b-Abnahme
+
+- **Der Hook prüft den Commit, der weggeworfen wird.** `commit-msg` liest die
+  Branch-Commits; der Squash macht den PR-*Titel* zum Commit auf `main`, und den
+  liest nichts. Zwei Jahre Konvention haben gehalten, weil ich die Titel bisher
+  von Hand richtig geschrieben habe — diesmal habe ich das `## Phase`-Feld der
+  Vorlage abgeschrieben. Eine Regel, die nur ein Mensch durchsetzt, ist keine
+  Regel, sondern eine Gewohnheit. *(06.09.2026, H9b-Abnahme)*
+- **Ein grüner Lauf beweist nicht, dass etwas passiert ist.** `publish` war
+  erfolgreich und hat nichts veröffentlicht — völlig korrekt, weil „kein Release
+  fällig" ein legitimes Ergebnis ist. Dieselbe Familie wie H2bs vier Tests, die
+  grün waren, weil sie nichts gefunden haben. *(06.09.2026, H9b-Abnahme)*
+- **Eine Begründung, die eine Messung zitiert, verfällt mit der Messung.** Das
+  „twice the observed lead time" in `witness.sh` war beim Schreiben richtig und
+  einen Deploy später falsch. Eine Zahl in einem Kommentar braucht das Datum
+  ihrer Messung, sonst liest sie sich für immer wie ein Naturgesetz.
+  *(06.09.2026, H9b-Abnahme)*
+- **1461 s Vorlaufzeit, gegen 927 s eine Phase früher.** 58 % länger, ohne dass
+  jemand etwas an der Pipeline geändert hätte. `e2e` auf `main` 1453 s gegen
+  1032 s auf dem PR. Nicht erklärt, nur gemessen. *(06.09.2026, H9b-Abnahme)*
+- **`durationSec` sagt 1486 s, der Deploy dauerte 28 s.** #242, **zwölfte
+  Notiz**, und wieder nachgerechnet. *(06.09.2026, H9b-Abnahme)*
+- **900 Anfragen im Ruhezustand ohne einen einzigen Abbruch.** Die bisherigen
+  Läufe verloren je eine pro Pfad. Zu kurz für einen Schluss, lang genug für eine
+  Notiz. *(06.09.2026, H9b-Abnahme)*
+
+## Verschoben aus der H9b-Abnahme
+
+- **Das fehlende Release wird nicht von Hand nachgeholt.** Ein Tag `v0.32.0` auf
+  `254cd67` würde eine Version benennen, die **kein Artefakt kennt**:
+  `buildinfo.version` wird beim Bauen per `-X` eingebacken, und das Image ist
+  gebaut. Der Badge liefe weiter auf `v0.31.0-3-g254cd67`, bis irgendwann neu
+  deployt wird — ein Tag, der dem Ding widerspricht, das er benennt, ist genau
+  die Sorte Zahl, die diese Seite sonst ablehnt. Der nächste `feat:`-Merge bumpt
+  auf `v0.32.0` und trägt den H9b-Commit in seinen Notizen mit. Die Lücke ist
+  eine Zuschreibung, kein Loch.
+- **Der Wächter für den PR-Titel ist fällig, und jetzt darf er gebaut werden.**
+  CLAUDE.md verlangt „keine neue Prüfregel ohne einen Fehler, der wirklich
+  passiert ist" — den gibt es jetzt, mit Logzeile und Datum. Die Form, die keine
+  zweite Kopie der Grammatik anlegt: den PR-Titel in eine Datei schreiben und
+  `.githooks/commit-msg` selbst darauf loslassen. Eine Grammatik, eine Datei,
+  und die 72-Zeichen-Regel kommt gratis mit. **Nicht in diesem PR** — die
+  Abnahme fasst nur `backlog.md` an.
+- **`witness.sh` braucht eine ehrlichere Zahl.** 1800 hält, aber mit 339 s Rand
+  und nicht mit dem behaupteten Faktor zwei. Entweder der Kommentar sagt „1,23×
+  der bisher längsten gemessenen Vorlaufzeit, 06.09.2026", oder der Deckel geht
+  auf 2700. Gehört in die Phase, die die Datei ohnehin anfasst.
+- **`lib/work/log.test.ts` heißt weiter „all fifteen entries"** bei
+  vierundzwanzig Beiträgen — aus H9b übernommen, H9c fasst die Datei an.
+- **Der falsche Ausfall vom 05.09. steht weiter im Raster.** `uptime90d` 77,82 %,
+  Badge rot. Er erholt sich mit jeder Sonde; die Reparatur der Sonden-Grammatik
+  ist ein eigener Faden und keine Aufgabe dieser Abnahme.
+
+---
+
+## Vorher — 05.09.2026, H9b gebaut: der Filter war gegen zehn erfundene Einträge gezeichnet
 
 **Zweig `phase/h9b-blog-index`.** `/blog` war der letzte `[SOON]`-Stub, der etwas
 zu sagen gehabt hätte: seit H9a sind vierundzwanzig Einträge indexierbar, der
