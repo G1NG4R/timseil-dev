@@ -43,7 +43,12 @@ export interface WorkEntry extends SystemEntry {
    * states get one and why the other two get no cell rather than `— NO DATA`.
    */
   readonly figure: ReturnType<typeof workFigure>;
-  /** `15 ENTRIES IN THE LOG`, or nothing. Text, never a link — see log.ts. */
+  /**
+   * `07 ENTRIES IN THE LOG`, or nothing. Text, never a link — see log.ts.
+   *
+   * The example is deliberately not the corpus's own count: this phase spent a
+   * test on exactly that kind of transcribed number going stale.
+   */
   readonly logLine: string | null;
   /**
    * The row's stack, as filter tokens.

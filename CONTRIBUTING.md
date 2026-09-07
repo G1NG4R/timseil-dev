@@ -58,6 +58,14 @@ Since E5c the type in that title decides whether the merge publishes a release.
 creates the tag; there is no release pull request and no `CHANGELOG.md` — the
 changelog is the body of the GitHub release. [ADR 0036](docs/adr/0036-releases-als-tag-ohne-release-pr.md).
 
+**And since H9c the title is checked rather than described.** `pr-title.yml`
+writes it to a file and runs `.githooks/commit-msg` over it — the same program
+your `git commit` runs, so there is one grammar and the 72-character limit
+applies to the title too. It re-runs when the title is edited. The paragraph
+above used to be the whole guard, and a merge got past it: PR #338 carried no
+type, the pipeline stayed green because "no release due" is a correct answer,
+and `v0.32.0` was never cut.
+
 | Type | Effect |
 |---|---|
 | `feat:` | minor — `v0.2.0` |

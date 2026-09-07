@@ -85,6 +85,17 @@ services:
     restart: "no"
     volumes:
       - ./api:/app
+      # THE LOG, READ-ONLY, FOR ONE TEST — #32. `incidents.post_slug` points at a
+      # file in web/content/posts and no foreign key can cross that boundary, so
+      # the check is a db test and the container running it has to be able to see
+      # both halves. Mounted at the path it has on a laptop rather than a tidier
+      # one, so `../../web/content/posts` is a single string in the test instead
+      # of a fork on whether it is running in Docker.
+      #
+      # `ro` because nothing here writes to it and this service runs migrations
+      # as timseil_migrate; a container with DDL rights does not also need write
+      # access to the site's content.
+      - ./web/content/posts:/web/content/posts:ro
       - go-mod-cache:/go/pkg/mod
       - go-build-cache:/root/.cache/go-build
     depends_on:

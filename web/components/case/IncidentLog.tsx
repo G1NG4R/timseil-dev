@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { EmptyState } from "@/components/state/EmptyState";
 import { downtimeLabel, incidentDate, type Incident } from "@/lib/api/systems";
 import { NO_DATA } from "@/lib/state/words";
@@ -24,18 +26,25 @@ import type { Messages } from "@/lib/i18n/messages/en";
  * with no explanation under it — invariant 4, enforced before this component
  * sees the data.
  *
- * THE POST-MORTEM LINK IS NOT BUILT YET AND IS NOT FAKED. `postSlug` names an
- * entry under content/posts, and H9 is the phase that renders them. Until then
- * the slug is shown as what it is — the name of the entry — rather than wrapped
- * in an `<a>` to a route that answers 404. Invariant 5 is about exactly this:
- * evidence never points into nothing.
+ * THE POST-MORTEM IS A LINK WHEN THE ENTRY EXISTS AND TEXT WHEN IT DOES NOT.
+ * H5c and H2b showed the slug as text because `/blog/<slug>` answered 404;
+ * H9a ended that condition and #298 asked for the `<a>`. It is conditional
+ * anyway, and lib/case/postmortem.ts holds the measurement that made it so: on
+ * the day this was written NOT ONE `post_slug` in this project named a file
+ * that exists. `postSlug` is a string from the api, the database constrains its
+ * shape and cannot see a directory, and invariant 5 does not become optional
+ * because a renderer arrived. So the resolved ones link and the rest read
+ * exactly as they did — the name of an entry, which is still true.
  */
 export function IncidentLog({
   incidents,
+  postHrefs,
   messages,
 }: {
   /** `null` is a system that was never asked; `[]` is a window with none. */
   incidents: readonly Incident[] | null;
+  /** Slug → address, for the post-mortems this repository holds. */
+  postHrefs: ReadonlyMap<string, string>;
   messages: Messages;
 }) {
   if (incidents === null || incidents.length === 0) {
@@ -44,7 +53,13 @@ export function IncidentLog({
 
   return (
     <ol className="incidents">
-      {incidents.map((incident) => (
+      {incidents.map((incident) => {
+        // Looked up once and read as a nullable, rather than asked twice with a
+        // `?? ""` under the second question — an empty href is a link to the
+        // page you are on, which is the exact failure this component refuses.
+        const href = postHrefs.get(incident.postSlug) ?? null;
+
+        return (
         <li className="incident" id={incident.id.toLowerCase()} key={incident.id}>
           <p className="incident-head">
             <span className="incident-id">{incident.id}</span>
@@ -62,10 +77,17 @@ export function IncidentLog({
             <dt>{messages.csFix}</dt>
             <dd>{incident.fix}</dd>
             <dt>{messages.csPostMortem}</dt>
-            <dd className="incident-post">{incident.postSlug}</dd>
+            {/* THE SLUG IS THE LINK TEXT EITHER WAY. It is the name of the
+                entry, so the linked and the unlinked entry read the same and
+                differ only in whether the name goes anywhere — which is what
+                the reader is entitled to know. */}
+            <dd className="incident-post">
+              {href === null ? incident.postSlug : <Link href={href}>{incident.postSlug}</Link>}
+            </dd>
           </dl>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ol>
   );
 }

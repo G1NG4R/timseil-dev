@@ -861,12 +861,24 @@
   color: var(--ink-2);
 }
 
-/* The post-mortem is named, not linked: H9 renders content/posts and until it
-   does an `<a>` here would answer 404. Invariant 5 — evidence never points into
-   nothing — in the one place on this page the database cannot enforce it. */
+/* The post-mortem is named, and since H9c it is a link WHEN THE ENTRY EXISTS.
+   The name is the same string either way — it is the entry's name — so the two
+   states differ by colour and by whether there is an anchor at all, not by two
+   sets of words. lib/case/postmortem.ts holds the reason the condition is still
+   there after the renderer arrived. */
 .incident-post {
   font-family: var(--mono);
   color: var(--steel);
+}
+
+.incident-post a {
+  color: var(--acc);
+  text-decoration: none;
+}
+
+.incident-post a:hover {
+  color: var(--acc-hi);
+  text-decoration: underline;
 }
 
 /* ══ .05 RESULT ═════════════════════════════════════════════════════════════

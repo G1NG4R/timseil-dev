@@ -46,7 +46,7 @@ import {
 } from "@/components/case/Live";
 import { MetricRow } from "@/components/case/MetricRow";
 import { NextSystem } from "@/components/case/NextSystem";
-import { EMPTY_GRID, OpsSection } from "@/components/case/OpsSection";
+import { EMPTY_GRID, NO_POST_HREFS, OpsSection } from "@/components/case/OpsSection";
 import { Pipeline } from "@/components/case/Pipeline";
 import { RequestPath } from "@/components/case/RequestPath";
 import { Result } from "@/components/case/Result";
@@ -238,12 +238,18 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
             <OpsSection
               grid={EMPTY_GRID}
               incidents={null}
+              postHrefs={NO_POST_HREFS}
               label={messages.csOperation}
               messages={messages}
             />
           }
         >
-          <OpsLive slug={study.slug} gridLabel={messages.csOperation} messages={messages} />
+          <OpsLive
+            slug={study.slug}
+            locale={locale}
+            gridLabel={messages.csOperation}
+            messages={messages}
+          />
         </Suspense>
       </section>
 

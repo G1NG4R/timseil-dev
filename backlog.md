@@ -12,7 +12,200 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 06.09.2026, H9b abgenommen: grün gemergt, ohne Release, und der Grund stand im PR-Titel
+## Wo wir stehen — 07.09.2026, H9c gebaut: vier Ablehnungen sind verfallen, und eine war weiter richtig
+
+**Zweig `phase/h9c-dangling-references`.** ADR 0071 hat den Rest von H9 als „die
+drei hängenden Verweise" benannt. Sie sind erledigt — zwei als Link, einer als
+Ablehnung mit neuem Grund — und dazu #32, der PR-Titel-Wächter und die ehrliche
+Zahl in `witness.sh`.
+
+Noch nicht gegen Produktion gemessen — das ist die Abnahme und kommt nach dem
+Merge.
+
+### Der Fund der Phase: der Link, den #298 verlangt, wäre eine 404 gewesen
+
+Das Issue ist vier Sätze lang und über seine eigenen Prämissen vollkommen
+richtig: bis H9a war ein `<a>` auf `/blog/<slug>` eine 404, danach nicht mehr,
+und „nichts wird rot, wenn ein Link möglich wird". Ich war einen Schritt davon
+entfernt, genau das zu tun, was dort steht — und habe beim Aussuchen eines Slugs
+für die Galerie die Datei nicht gefunden.
+
+```
+fixture   incidents.post_slug = '001-fixture-outage'        keine Datei, absichtlich
+Galerie   INC-001  011-the-migration-that-locked-the-table   keine Datei
+Galerie   INC-002  012-acme-json-and-the-three-am-restart    keine Datei
+Produktion  GET /api/systems/timseil-dev  ->  "incidents": []
+```
+
+**Kein einziger `post_slug` in diesem Projekt nennt eine Datei, die es gibt.**
+Das echte `011-` heißt `a-test-about-the-menu-reported-a-bug-in-the-hero`, das
+echte `012-` `the-preview-had-a-shorter-cascade-than-the-page`. Produktion hat an
+jedem Tag, an dem die Seite existiert, `incidents: []` geantwortet — die einzige
+Fläche, auf der ein Leser diese Auszeichnung je sehen konnte, ist die Galerie,
+und dort waren **beide** Einträge falsch.
+
+Ein bedingungsloser Link hätte Invariante 5 in genau der Phase gebrochen, deren
+erklärter Zweck sie war. Gebaut ist deshalb die Bedingung: `postFor` löst auf,
+und was nicht auflöst, bleibt Text — wie bisher. Die Galerie zeigt jetzt beide
+Hälften, und ein Test verlangt **genau einen** Anker zwischen zwei Incidents.
+
+### Und der Pfeil war nie eine Frage des Renderers
+
+`lib/work/log.ts` hielt den `→` zurück, weil `/blog/<slug>` eine 404 war. Das
+Blatt sagt aber, die Zeile verbinde „jedes System mit den Posts, die darüber
+geschrieben wurden" — der Pfeil öffnet also **keinen Beitrag, sondern eine
+gefilterte Liste.** Diese URL gibt es nicht: ADR 0071 §8 hat den Filterzustand
+aus der Adresse gehalten, und der Index hat zwei Achsen, `tag` und `q`, von denen
+keine ein System ist.
+
+Der Grund erlischt, die Entscheidung bleibt. Das ist die Regel, die der
+H9a-Backlog notiert hat — „Der Grund für eine Abwesenheit kann erlöschen, ohne
+dass die Abwesenheit falsch wird" — zum ersten Mal **angewandt** statt entdeckt.
+
+```
+feed         Grund verfallen, Ablehnung war falsch     -> H9b eingelöst
+LogRow       Grund verfallen, Ablehnung war falsch     -> eingelöst
+IncidentLog  Grund verfallen, ein neuer lag darunter   -> bedingt
+Work-Pfeil   Grund verfallen, ein anderer galt schon   -> bleibt Text
+```
+
+Vier Bauteile, die einen Satz zitierten, lasen sich wie vier Fälle einer
+Entscheidung. Sie waren vier Entscheidungen, die eine Weile übereinstimmten.
+
+### Zwei Fehler, die erst die gebaute Seite gezeigt hat
+
+**Die Sweep-Sonde las das falsche Element und hätte es nicht gemeldet.** Das
+Raster ist auf den Anker gewandert; `.log-row` ist seitdem auf jeder Breite
+`list-item`. Der Lauf meldete, der 560er-Schalter finde **nicht mehr statt** — er
+fand statt, die Sonde nicht. Dieselbe Familie wie der `grid-template-columns`-Fund
+aus H9b: ein Messgerät, das auf ein Bauteil zeigt, das es nicht mehr gibt.
+
+**Die Startseite ging von drei Bedienelementen auf sechs, und der 44px-Test
+zählt.** `touch-targets.coarse.spec.ts` behauptet eine Zahl und keine
+Untergrenze, genau damit ein Lauf, der nichts misst, nicht grün ist. Die drei
+neuen sind **Zeilen** — die Form, die eine 44px-Regel zufällig erfüllt — also
+bleibt die Zahl eine Zahl.
+
+**`aria-hidden` nimmt einen Knoten aus dem Barrierefreiheits-Baum und lässt ihn
+im Text stehen.** Der erste Entwurf des Namens-Tests verglich den Pfeil gegen
+`innerText` und fiel an **sechs von sieben Breiten** um — bei 390 nicht, weil der
+Pfeil dort gar nicht gezeichnet wird. `toHaveAccessibleName` liest, was ein Leser
+hört; `innerText` liest, was im DOM steht. Zwei Lesungen desselben Knotens, und
+der Test wollte die andere.
+
+### Gemessen, nicht geschätzt
+
+| | vorher | ausgeliefert |
+|---|---|---|
+| Beiträge · vorgerenderte Beitragsrouten | 24 · 72 | **25 · 75** (× 3 Sprachen) |
+| Bedienelemente in `main` auf `/` | 3 | **6** |
+| Abweichungen im Startseiten-Orakel | 18 | **17** — `no-link-until-h9` in Rente |
+| Ablehnungen aus H5c, die noch stehen | 3 | **1**, aus einem anderen Grund |
+| `post_slug`, die auf eine Datei zeigen | 0 von 3 | 0 von 3 — **jetzt geprüft** |
+
+| | |
+|---|---|
+| `npm test` | **788 grün** (7 neu in `lib/case/`, 2 neu in `lib/work/`) |
+| e2e gesamt | **2091 grün**, 3 übersprungen |
+| `make check` | grün, inkl. `check-tokens`, `check-contract`, `check-tools` |
+| `make check-db` | grün, inkl. der zwei neuen `#32`-Tests |
+| #32 gegen echtes Postgres | `checked 0 incident(s) against 25 entries` |
+| Von Hand am `next start`, Port 3200 | Zeile geklickt, `/de` geprüft, vier Tab-Stopps, Hover in allen vier Deklarationen |
+
+### Der Wächter, der beim eigenen Merge zum ersten Mal urteilt
+
+`.github/workflows/pr-title.yml` schreibt den PR-Titel in eine Datei und lässt
+`.githooks/commit-msg` darauf los — dasselbe Programm, das `git commit`
+ausführt. Eine Grammatik, eine Datei, und die 72-Zeichen-Regel gratis.
+
+Vier Titel durchgespielt, bevor der Workflow stand:
+
+```
+H9b · The log index, and the filter drawn against ten entries   abgewiesen
+feat(web): the log rows point at the entries they name          angenommen
+Revert "feat(web): something"                                   durchgereicht
+feat(web): `$(touch /tmp/pwned-by-a-pr-title)` and a backtick    als Text angenommen
+```
+
+Der letzte ist der Grund, warum der Titel über `env` kommt und nie über `${{ }}`
+in einem `run:` — die Datei wurde nicht angelegt.
+
+**Und dabei ist ein zweiter, älterer Widerspruch scharf geworden.**
+`CONTRIBUTING.md` und `release.sh:29` führen `style` seit E5c als „kein
+Release", der Hook kannte es nicht. Folgenlos, solange nur lokale Subjects
+gelesen wurden — ab jetzt ein Merge, den niemand abschließen kann. #241, wieder.
+
+## Gefunden — aus H9c
+
+- **Ein Issue, das seine eigene Veralterung vorhersagt, prüft trotzdem nur seine
+  eigenen Prämissen.** #298 hat richtig gesagt, wann seine Begründung erlischt,
+  und hat nicht gesagt, dass darunter eine zweite liegt. Eine Notiz, die eine
+  Bedingung nennt, lädt dazu ein, nur diese Bedingung nachzuschlagen. Dieselbe
+  Form wie die `<Activity>`-Warnung aus H9b, von der anderen Seite.
+  *(07.09.2026, H9c)*
+- **Ein geteilter Grund lässt vier Entscheidungen wie eine aussehen.** Vier
+  Bauteile zitierten seit H5c denselben Satz. Als er erlosch, wurden sie nicht
+  gleichzeitig falsch — zwei ja, eines bedingt, eines gar nicht. Der Wert davon,
+  Gründe statt Regeln aufzuschreiben, zeigt sich genau an dem Tag, an dem ein
+  Grund verfällt. *(07.09.2026, H9c)*
+- **Ein Selektor, der umzieht, nimmt jede Sonde mit, die auf ihn zeigt.** Das
+  Raster ging von `.log-row` auf `.log-row-link`; die Sweep-Sonde blieb stehen
+  und meldete einen Schalter, der aufgehört habe zu schalten. Ein Messgerät, das
+  auf ein Bauteil zeigt, das es nicht mehr gibt, meldet nicht „ich messe nichts",
+  sondern „nichts passiert". *(07.09.2026, H9c)*
+- **Eine Ausnahme, die niemand schreiben muss, kann niemand weiter fassen.**
+  #32 verlangt „the job has to skip fixtures". `dbtest.FreshSchema` legt
+  Migrationen an und sonst nichts, also ist die Fixture-Zeile gar nicht da. Die
+  bessere Antwort auf eine Ausnahme ist oft ein Kontext, der sie überflüssig
+  macht. *(07.09.2026, H9c)*
+- **Ein Check, der heute null Zeilen prüft, muss die Null aussprechen.** Der Seed
+  schreibt keine Incidents, Produktion hat keine — der #32-Test ist grün, weil er
+  nichts gefunden hat. Er gibt deshalb `checked 0 incident(s)` aus. Dieselbe
+  Familie wie H2bs vier Tests; der Unterschied ist, dass diese es sagt.
+  *(07.09.2026, H9c)*
+- **`aria-hidden` und `innerText` sind zwei Lesungen desselben Knotens.** Der
+  Fund oben, als Regel: eine Zusicherung über das, was ein Leser *hört*, muss den
+  Namen berechnen lassen (`toHaveAccessibleName`) und darf nicht den Textinhalt
+  danach absuchen. Trifft jeden späteren Test über einen Namen mit Dekoration
+  darin. *(07.09.2026, H9c)*
+- **Das Blatt-Orakel kann keine Abwesenheit ausdrücken.** „Bei 390 steht kein
+  Pfeil" ist keine Deklaration an einer Zeile des Blattes, und der Generator
+  weist einen Eintrag ab, dessen Zeile die Eigenschaft nicht trägt — zu Recht.
+  Solche Lesungen gehören in einen Spec, und der muss sagen, dass er eine Lesung
+  ist. *(07.09.2026, H9c)*
+- **Ein Kommentar, der auf ein Blatt zeigt, muss das Blatt gelesen haben.** Ob
+  der Pfeil bei 390 stehen bleibt, war eine Ableitung („Flex-Spalte, also vierte
+  Zeile") — bis ich das 390er-Artboard aufgeschlagen habe. Es zeichnet drei
+  gestapelte Zeilen und keinen Pfeil. Die Regel ist im Blatt, nicht im Kopf.
+  *(07.09.2026, H9c)*
+
+## Verschoben aus H9c
+
+- **Der neue Check muss in den Branch-Protection-Regeln verlangt werden.** Der
+  Workflow läuft ab dem Merge; dass er auch **blockiert**, ist eine Einstellung
+  bei GitHub und kein Zustand im Repository. Schritt der Abnahme.
+- **Das fehlende `v0.32.0` holt dieser Merge ein.** Der PR-Titel trägt `feat:`,
+  also bumpt der Squash auf `v0.32.0` und nimmt den H9b-Commit in seine Notizen
+  mit — so, wie die H9b-Abnahme es begründet hat. Ein nachträglicher Tag auf
+  `254cd67` bleibt abgelehnt.
+- **Die Galerie hängt an einem echten Slug.** `010-two-tests-were-green-because-
+  nothing-was-there` ist das Ziel des einen auflösenden Incidents. Wird der
+  Eintrag umbenannt, fällt der Link auf 404 — `gallery.ops.spec.ts` ruft die
+  Adresse deshalb wirklich ab, statt ihre Form zu prüfen.
+- **`make check-db` hängt jetzt an `web/content/posts`.** `compose.dev.yaml`
+  mountet das Verzeichnis schreibgeschützt unter denselben Pfad, den es auf einem
+  Rechner hat. Ein Umbau des Verzeichnisses macht einen Go-Test rot, und das ist
+  gewollt.
+- **Der falsche Ausfall vom 05.09. steht weiter im Raster.** Unverändert aus der
+  H9b-Abnahme; die Reparatur der Sonden-Grammatik ist ein eigener Faden.
+- **`/blog/system/<slug>` ist abgelehnt und nicht vergessen.** ADR 0072 trägt die
+  Begründung. Kommt frühestens mit einem Eintrag, der sie braucht.
+- **Der Fortschrittsbalken und der aktive Eintrag in der Schiene → I2**,
+  unverändert seit H9a.
+
+---
+
+## Vorher — 06.09.2026, H9b abgenommen: grün gemergt, ohne Release, und der Grund stand im PR-Titel
 
 `254cd67` läuft, **und `v0.31.0` ist immer noch das letzte Release.** Merge
 **23:49:32Z**, Deploy-Job 00:13:53Z → 00:14:21Z (28 s), der api-Prozess läuft
@@ -148,19 +341,20 @@ Sitemap und Feed nennen zum ersten Mal dieselbe Zahl.
   die Sorte Zahl, die diese Seite sonst ablehnt. Der nächste `feat:`-Merge bumpt
   auf `v0.32.0` und trägt den H9b-Commit in seinen Notizen mit. Die Lücke ist
   eine Zuschreibung, kein Loch.
-- **Der Wächter für den PR-Titel ist fällig, und jetzt darf er gebaut werden.**
+- ~~**Der Wächter für den PR-Titel ist fällig, und jetzt darf er gebaut werden.**~~
+  — erledigt in H9c als `.github/workflows/pr-title.yml`, in der Form, die unten
+  beschrieben ist. Die alte Notiz:
   CLAUDE.md verlangt „keine neue Prüfregel ohne einen Fehler, der wirklich
   passiert ist" — den gibt es jetzt, mit Logzeile und Datum. Die Form, die keine
   zweite Kopie der Grammatik anlegt: den PR-Titel in eine Datei schreiben und
   `.githooks/commit-msg` selbst darauf loslassen. Eine Grammatik, eine Datei,
   und die 72-Zeichen-Regel kommt gratis mit. **Nicht in diesem PR** — die
   Abnahme fasst nur `backlog.md` an.
-- **`witness.sh` braucht eine ehrlichere Zahl.** 1800 hält, aber mit 339 s Rand
-  und nicht mit dem behaupteten Faktor zwei. Entweder der Kommentar sagt „1,23×
-  der bisher längsten gemessenen Vorlaufzeit, 06.09.2026", oder der Deckel geht
-  auf 2700. Gehört in die Phase, die die Datei ohnehin anfasst.
-- **`lib/work/log.test.ts` heißt weiter „all fifteen entries"** bei
-  vierundzwanzig Beiträgen — aus H9b übernommen, H9c fasst die Datei an.
+- ~~**`witness.sh` braucht eine ehrlichere Zahl.**~~ — erledigt in H9c: der
+  Deckel bleibt 1800, der Kommentar trägt beide Messungen mit Datum und den
+  Faktor 1,23.
+- ~~**`lib/work/log.test.ts` heißt weiter „all fifteen entries"**~~ — erledigt in
+  H9c: der Test liest jetzt `readPosts(POSTS_DIR)` und tippt keine Zahl mehr.
 - **Der falsche Ausfall vom 05.09. steht weiter im Raster.** `uptime90d` 77,82 %,
   Badge rot. Er erholt sich mit jeder Sonde; die Reparatur der Sonden-Grammatik
   ist ein eigener Faden und keine Aufgabe dieser Abnahme.

@@ -1,0 +1,74 @@
+# YAML — and the one check in this repository that reads something GitHub owns
+# rather than something the tree does.
+#
+# WHY THIS FILE EXISTS. The squash merge makes the PULL REQUEST TITLE the commit
+# on main, and tools/release.sh reads the Conventional Commits type out of that
+# commit to decide whether a release is due. `.githooks/commit-msg` guards the
+# LOCAL messages, which the squash throws away. So the one line that survives
+# was the one line nothing checked.
+#
+# It went wrong on 2026-09-06. PR #338 was titled "H9b · The log index, and the
+# filter drawn against ten entries" — no type — and the pipeline stayed green
+# because "no release due" is the correct answer for a merge that asks for none:
+#
+#   tools/release.sh --tag
+#     · no release due — nothing in these commits asks for one
+#
+# No v0.32.0 tag, no GitHub release, and /api/badge/version served
+# v0.31.0-3-g254cd67 to anyone who asked. CONTRIBUTING.md said it in words —
+# "The type is a decision, not a formality" — and words are not a gate.
+#
+# ONE GRAMMAR, ONE FILE. This does not re-spell the pattern: it writes the title
+# to a file and runs the commit-msg hook on it, which is the same program a
+# developer's `git commit` runs. The 72-character rule comes along for free, and
+# the broken cases are proven where they always were, in tools/selftest.sh.
+#
+# WHY NOT A JOB IN ci.yml. That workflow takes `pull_request` with the default
+# types — opened, synchronize, reopened — and `edited` is not among them. A
+# title fixed after a green run would never be looked at again. Adding `edited`
+# there would re-run the whole pipeline on every title and body keystroke;
+# adding it here costs a checkout and a shell.
+#
+# `synchronize` IS in the list even though a push cannot change a title: a
+# branch protection rule wants this check present on the head commit, and a new
+# head with no run against it is a pull request that cannot be merged.
+
+name: pr-title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+# CLAUDE.md, security rules: explicit in every workflow, default read. This one
+# needs nothing beyond the checkout — it does not comment, label or annotate.
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: title
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # THE TITLE ARRIVES THROUGH `env` AND NEVER THROUGH `${{ }}` IN A `run`.
+      # An expression is substituted into the script BEFORE the shell sees it,
+      # so a title containing a backtick or `$(…)` would be executed rather than
+      # written. Through the environment it is data, and `printf '%s'` keeps it
+      # data — no `echo`, whose behaviour on a leading `-` is not portable.
+      #
+      # The hook reads the FIRST line, so a title cannot smuggle a second one in
+      # past it: a newline in $TITLE makes the remainder body, exactly as it
+      # would in a commit message.
+      - name: Check the title the squash merge will keep
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          printf '%s\n' "$TITLE" > "$RUNNER_TEMP/pr-title"
+          .githooks/commit-msg "$RUNNER_TEMP/pr-title"
+          printf '✓ the title is a Conventional Commit, and release.sh can read it\n'

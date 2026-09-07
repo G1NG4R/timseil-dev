@@ -35,6 +35,7 @@ import { MetricRow } from "@/components/case/MetricRow";
 import { OpsSection } from "@/components/case/OpsSection";
 import { SpecRail } from "@/components/case/SpecRail";
 import { systemNow } from "@/lib/api/readers";
+import { postMortemHrefs } from "@/lib/case/postmortem";
 import {
   OPS_WINDOW_CASE,
   incidentList,
@@ -44,6 +45,7 @@ import {
   stackLine,
 } from "@/lib/api/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
 import { systemStateWord } from "@/lib/state/derive";
 
 /** What every one of them needs, and what the fallbacks repeat. */
@@ -139,13 +141,25 @@ export async function MetricRowLive({
  * is `null`, and both components already draw that — the api being down and the
  * system never having run produce one picture, and it is the honest one.
  */
-export async function OpsLive({ slug, messages, gridLabel }: Common & { gridLabel: string }) {
+export async function OpsLive({
+  slug,
+  locale,
+  messages,
+  gridLabel,
+}: Common & { locale: Locale; gridLabel: string }) {
   const system = await systemNow(slug, OPS_WINDOW_CASE);
+  const incidents = incidentList(system);
 
   return (
     <OpsSection
       grid={opsGrid(system)}
-      incidents={incidentList(system)}
+      incidents={incidents}
+      // RESOLVED HERE AND NOT IN THE COMPONENT, which is where every href on
+      // this site is decided: `postMortemHrefs` reads the repository, and a
+      // presentational component that read a directory could not be rendered by
+      // the gallery. It is also the only place that has both halves — the api's
+      // slugs and the page's locale.
+      postHrefs={postMortemHrefs(incidents, locale)}
       label={gridLabel}
       messages={messages}
     />
