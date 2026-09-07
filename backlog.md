@@ -12,7 +12,166 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 07.09.2026, H9c gebaut: vier Ablehnungen sind verfallen, und eine war weiter richtig
+## Wo wir stehen — 07.09.2026, H9c abgenommen: `v0.32.0` steht, und der Zeuge hat 3330 Anfragen ohne einen Fehlversuch gesehen
+
+`d389891` läuft, **`v0.32.0`**. Merge **15:28:13Z**, Deploy-Job 15:46:32Z →
+15:47:02Z (30 s), der api-Prozess läuft seit **15:47:15.976Z**. Uhrzeit mit
+`date -u` gelesen; 15:46Z liegt weit vor dem Dokploy-Fenster 23:45–00:00.
+
+**Die Lücke aus H9b ist zugeschrieben, nicht geflickt.** Der `feat:`-Titel hat
+getan, was die H9b-Abnahme vorhergesagt hat:
+
+```
+v0.32.0   getaggt 15:32:06Z
+/api/badge/version   v0.32.0     ← vorher v0.31.0-3-g254cd67
+```
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `d389891` gebaut.
+
+### Der Zeuge hat den Tausch gesehen und nichts gefunden
+
+```
+/            1110 Anfragen   1110×200
+/blog        1110 Anfragen   1110×200
+/api/health  1110 Anfragen   1110×200
+             ✓ every answer was 200
+```
+
+**3330 Anfragen, kein einziger Nicht-200.** Der Lauf endete, als `/api/health`
+`d389891` aus einem **neuen Prozess** meldete — der Tausch ist also bezeugt und
+nicht verpasst. Je 8 s pro Pfad tragen keine Stichprobe; das ist die Lücke des
+Messgeräts, nicht der Seite.
+
+Damit ist es der **zweite** Lauf in Folge ohne verlorene Verbindung, nach
+dreien, die je eine pro Pfad verloren. Der Zustand aus #304 ist heute nicht
+aufgetreten.
+
+**Vorlaufzeit 1099 s** — Merge bis Deploy-Start. Die dritte Messung:
+
+```
+H9a  2026-09-04   927 s
+H9b  2026-09-06  1461 s
+H9c  2026-09-07  1099 s
+```
+
+Der Deckel von 1800 hält weiter mit dem Faktor, den `witness.sh` seit dieser
+Phase ausspricht: 1,23× der längsten Messung. Ich bin mit `WITNESS_MAX_SEC=2400`
+gefahren, gebraucht hätte es 1110 — die Vorgabe hätte gereicht.
+
+### Gegen Produktion gemessen, nicht lokal
+
+| | |
+|---|---|
+| `home.spec` SYS.04, sieben Breiten | **56 grün** — inkl. der Zeile, die den Eintrag wirklich abruft |
+| `blog-index` · `blog-post` · `case-study.ops` | **319 grün** |
+| Zeilen auf `/` | drei Links, alle **200**, `/de` trägt den Präfix |
+| Sitemap | 90 → **93 URLs**, davon **75** Beitragsrouten (25 × 3) |
+| Feed | 24 → **25 Einträge**, neuester `025-…` |
+| `incidents` in Produktion | weiter `[]` |
+
+### Der Fund der Abnahme: `home.spec` lässt sich gegen Produktion nicht ganz fahren
+
+Der volle Lauf meldet **158 grün und 35 rot**, und die 35 sind fünf Tests über
+sieben Breiten — alle fünf in `HOME.01`. Sie behaupten die Ausfallpanels:
+`main .st-empty-panel` viermal, jedes mit `— NO DATA` und einer Begründung, die
+ihren Endpunkt nennt.
+
+Der Kopfkommentar des Specs sagt selbst, warum das so ist:
+
+> THE RIG RUNS A PRODUCTION BUILD WITH NO API — playwright.config.ts says so —
+> so every API-backed section stands in its outage panel, every run.
+
+**Gegen Produktion antwortet die API, also gibt es keine Panels.** Diese fünf
+Tests sind dort nicht rot, sondern *unlaufbar* — sie prüfen die Abwesenheit
+einer Antwort, und die Abwesenheit ist eine Eigenschaft des Rigs.
+
+Das ist kein Defekt, und es ist auch nichts, was H9c verursacht hat. Es ist eine
+**Eigenschaft des Abnahmeverfahrens, die nirgends stand**: die H9a- und
+H9b-Abnahmen haben die Blog-Specs gegen die Seite gezogen und `home.spec` nie —
+also ist niemand hineingelaufen. Wer es das nächste Mal tut, hält 35 rote Tests
+in der Hand und muss von vorn herausfinden, dass sie richtig sind.
+
+**Der SYS.04-Block ist genau der Gegenbeweis dazu** und läuft gegen Produktion
+vollständig: seine Quelle ist `content/posts` im Image, nicht die API. Das steht
+sogar im selben Kommentar — „SYS.04 IS NOT HERE AT ALL, which is the thing that
+changed."
+
+### Die ganze CI kontrolliert, und der rote Lauf auf `main` ist älter als diese Phase
+
+`schedule/ci` vom 07.09. 09:22Z auf `df72a3e` — der wöchentliche Scanner-Lauf,
+zwei Jobs rot, **beide bekannte offene Issues und keiner ein Sicherheitsfund**:
+
+```
+scan       check-pins-online   syft v1.51.0 → v1.51.1
+                               golangci-lint v2.13.1 → v2.13.2     #300, wortgleich
+retention  prune-registry      "production runs df72a3e and no version of
+                                timseil-api carries sha-df72a3e"   #299, zweites Mal
+```
+
+Was im selben Lauf grün war, ist die Frage, auf die es ankommt:
+
+```
+✓ govulncheck: nothing reachable
+✓ npm audit: nothing high or above in what ships
+```
+
+**Zwei neue Fakten zu #299**, die es beim ersten Mal noch nicht gab:
+
+1. Der `push`-Lauf für `df72a3e` war am 06.09. **erfolgreich** und hat also
+   veröffentlicht. „Der Deploy hat nie gebaut" scheidet als Erklärung aus.
+2. Die Zeile darüber lautet `50 tagged builds, 50 indexes, 1 orphaned build(s)`.
+   **Zweimal exakt 50** ist die Gestalt einer Seitengrenze, nicht die eines
+   Bestands — und Paginierung ist genau die Hälfte, die #299 offenlässt.
+
+Von hier aus nicht zu entscheiden, wie das Issue es vorhergesagt hat:
+
+```
+gh api /users/G1NG4R/packages/container/timseil-api/versions
+  403 — You need at least read:packages scope
+```
+
+## Gefunden — aus der H9c-Abnahme
+
+- **Ein Abnahmelauf gegen Produktion hat eine Teilmenge, die er nicht fahren
+  kann.** Fünf Tests in `home.spec` behaupten die Ausfallpanels, und die gibt es
+  nur, weil das Rig ohne API baut. Die Regel dahinter ist allgemeiner als dieser
+  Spec: **ein Test, der eine Abwesenheit prüft, prüft die Umgebung mit** — und
+  eine Umgebung, die die Abnahme absichtlich austauscht, nimmt ihm seine
+  Voraussetzung. Gehört benannt, bevor es jemand als Regression liest.
+  *(07.09.2026, H9c-Abnahme)*
+- **Zweimal exakt 50 ist keine Zahl, sondern eine Seitengrenze.** Der neue Fakt
+  zu #299 oben, als Regel: eine runde Zahl, die zweimal an zwei Stellen
+  derselben Ausgabe steht, ist eher die Vorgabe eines Lesers als der Bestand
+  eines Regals. Dieselbe Familie wie die Acht aus H9b — nur andersherum, weil
+  hier die Zahl das Messgerät verrät statt die Zeichnung.
+  *(07.09.2026, H9c-Abnahme)*
+- **`durationSec` sagt 1125 s, der Deploy dauerte 30 s.** #242, **dreizehnte
+  Notiz**, und wieder auf die Sekunde nachgerechnet: Merge 15:28:13Z →
+  `lastDeploy.at` 15:47:00Z sind 1127 s; der Job lief 15:46:32Z → 15:47:02Z.
+  *(07.09.2026, H9c-Abnahme)*
+- **1110 Anfragen pro Pfad ohne einen einzigen Abbruch, zum zweiten Mal in
+  Folge.** Nach drei Läufen, die je eine verloren. Noch kein Schluss, aber die
+  Reihe kippt. *(07.09.2026, H9c-Abnahme)*
+
+## Verschoben aus der H9c-Abnahme
+
+- **Der `pr-title / title`-Check ist noch nicht verpflichtend.** Er läuft und er
+  war grün; dass er auch **blockiert**, ist eine Branch-Protection-Einstellung
+  bei GitHub. Bis sie gesetzt ist, ist der Wächter eine Anzeige und kein Gatter.
+- **#299 braucht einen Token mit `read:packages`**, sonst wird die Frage beim
+  nächsten Montag ein drittes Mal gestellt. Die zwei neuen Fakten oben gehören
+  ins Issue.
+- **#300 unverändert.** Zwei Pins, dieselben zwei Versionen wie am 31.08.
+- **#206 unverändert offen.** `{"accepted":8,"delivered":7,"rate":87.5}` steht
+  wie vor drei Tagen.
+- **Der falsche Ausfall vom 05.09. steht weiter im Raster.**
+- **#292, #293, #303 und #304 unverändert**, keiner davon von dieser Phase
+  berührt.
+
+---
+
+## Vorher — 07.09.2026, H9c gebaut: vier Ablehnungen sind verfallen, und eine war weiter richtig
 
 **Zweig `phase/h9c-dangling-references`.** ADR 0071 hat den Rest von H9 als „die
 drei hängenden Verweise" benannt. Sie sind erledigt — zwei als Link, einer als
