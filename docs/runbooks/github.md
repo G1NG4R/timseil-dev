@@ -12,22 +12,48 @@ verloren — und das ist Absicht.
 | Regel | Wert |
 |---|---|
 | Pull Request nötig | ja, `required_approving_review_count: 0` |
-| Erforderliche Checks | sieben, siehe unten |
+| Erforderliche Checks | neun, siehe unten |
 | `strict` | `false` — kein Rebase-Zwang bei jedem Merge |
 | Lineare Historie | erzwungen |
 | Force-Push, Löschen | verboten |
 | `enforce_admins` | **`true` — die Regeln gelten auch für mich** |
 
-Die sieben Kontexte:
+Die neun Kontexte:
 
 ```
-check · db · images · scan · codeql (go) · codeql (javascript-typescript) · CodeQL
+check · db · e2e · images · scan
+codeql (go) · codeql (javascript-typescript) · CodeQL · title
 ```
 
-Sechs kommen aus `.github/workflows/ci.yml`. Der siebte, `CodeQL` mit großem Q,
-kommt vom Code-Scanning-Dienst und wird rot, wenn ein PR **neue Alerts**
-einbringt. Ohne ihn gälte „Findings ≥ HIGH blockieren" für jeden Scanner außer
-diesem einen.
+Sieben kommen aus `.github/workflows/ci.yml`, einer — `title` — aus
+`.github/workflows/pr-title.yml`. Der neunte, `CodeQL` mit großem Q, kommt vom
+Code-Scanning-Dienst und wird rot, wenn ein PR **neue Alerts** einbringt. Ohne
+ihn gälte „Findings ≥ HIGH blockieren" für jeden Scanner außer diesem einen.
+
+**`e2e` und `title` sind in der H9c-Triage dazugekommen, und keiner der beiden
+war je abgelehnt.** Die Liste wurde zuletzt in #130 angefasst; `e2e` kam mit
+#269, `title` mit #345, und keiner stand hier oder im Skript. Ihre Abwesenheit
+war also eine Auslassung — anders als bei `quickstart` und `deploy` unten, die
+beide mit Grund draußen stehen.
+
+`title` hatte schon etwas gekostet: #338 wurde ohne Conventional-Commit-Typ
+gemergt, der Squash machte den Titel zum Commit auf `main`, `release.sh` fand
+keinen Typ, und `v0.32.0` wurde nie geschnitten. Der Workflow, der das fängt,
+existiert seit #345 — bis zu dieser Zeile war er eine Anzeige.
+
+`e2e` ist der einzige Job, der die Seite baut und **bedient**: 2091
+Zusicherungen über sieben Breiten. Er lief ohnehin auf jedem PR; ihn abzuwarten
+war eine Frage des Erinnerns. Der Preis ist, dass ein Merge frühestens nach
+16–18 Minuten möglich ist.
+
+**Die Namen sind die Namen der Check-Runs, erfragt statt abgeleitet:**
+
+```bash
+gh api repos/G1NG4R/timseil-dev/commits/<sha>/check-runs --jq '.check_runs[].name'
+```
+
+Ein Job in einem zweiten Workflow heißt hier trotzdem nur wie sein Job:
+`title`, nicht `pr-title / title` — egal, was die Weboberfläche danebenschreibt.
 
 **`quickstart` steht bewusst nicht in der Liste.** Der Job läuft nicht auf
 Pull Requests; ihn zu fordern hieße, einen Kontext zu fordern, der dort nie
