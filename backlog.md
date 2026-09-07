@@ -156,18 +156,82 @@ gh api /users/G1NG4R/packages/container/timseil-api/versions
 
 ## Verschoben aus der H9c-Abnahme
 
-- **Der `pr-title / title`-Check ist noch nicht verpflichtend.** Er läuft und er
-  war grün; dass er auch **blockiert**, ist eine Branch-Protection-Einstellung
-  bei GitHub. Bis sie gesetzt ist, ist der Wächter eine Anzeige und kein Gatter.
-- **#299 braucht einen Token mit `read:packages`**, sonst wird die Frage beim
-  nächsten Montag ein drittes Mal gestellt. Die zwei neuen Fakten oben gehören
-  ins Issue.
-- **#300 unverändert.** Zwei Pins, dieselben zwei Versionen wie am 31.08.
+- ~~**Der `pr-title / title`-Check ist noch nicht verpflichtend.**~~ — erledigt
+  am 07.09., zusammen mit `e2e`, das dieselbe Lücke hatte. Siehe unten.
+- ~~**#299 braucht einen Token mit `read:packages`**~~ — brauchte keinen. Der
+  OCI-Endpunkt, den `registry.sh` selbst benutzt, ist anonym; die Antwort steht
+  im #299-Abschnitt.
+- ~~**#300 unverändert.**~~ — beide gehoben, siehe den Pin-Abschnitt.
 - **#206 unverändert offen.** `{"accepted":8,"delivered":7,"rate":87.5}` steht
   wie vor drei Tagen.
 - **Der falsche Ausfall vom 05.09. steht weiter im Raster.**
 - **#292, #293, #303 und #304 unverändert**, keiner davon von dieser Phase
   berührt.
+
+---
+
+## Zwischendurch — 07.09.2026: die Gatter sind scharf, und `e2e` hatte dieselbe Lücke
+
+Sieben Pflicht-Kontexte werden neun. Gesetzt über `tools/github-setup.sh` und
+nicht in der Oberfläche — der Runbook lässt dafür keinen zweiten Weg zu.
+
+```
+vorher   check · db · images · scan · codeql (go) · codeql (javascript-typescript) · CodeQL
+nachher  … + e2e + title
+```
+
+Vorher und nachher über die API verglichen: **`contexts` ist das Einzige, was
+sich bewegt hat.** `strict`, `enforce_admins`, lineare Historie, Force-Push,
+Löschen, Conversation-Resolution, `restrictions` — alle identisch geblieben.
+
+### Der Fund: `e2e` fehlte auch, und das war nie entschieden
+
+`title` war die bekannte Lücke. Beim Nachtragen kam heraus, dass **`e2e`
+genauso fehlte** — und anders als bei `quickstart` und `deploy`, die beide mit
+Grund draußen stehen, stand dazu nirgends etwas.
+
+```
+Kontext-Liste zuletzt angefasst   #130
+e2e kam in ci.yml an              #269
+title kam an                      #345
+```
+
+Die Liste ist der einzige Teil der CI, der seit #130 stillstand, während
+`ci.yml` den Job dazubekam, der als einziger die Seite **baut und bedient**.
+Eine Auslassung, keine Entscheidung — und der Unterschied ist genau der, den
+dieses Repository sonst überall aufschreibt.
+
+### Der Name wurde erfragt, nicht abgeleitet
+
+Ein falscher Kontext sperrt `main`, und `enforce_admins` hält auch mich
+draußen. Also nicht geraten:
+
+```
+gh api repos/…/commits/<sha>/check-runs --jq '.check_runs[].name'
+  … db · deploy · e2e · images · publish · quickstart · retention · scan · title
+```
+
+**`title`, nicht `pr-title / title`.** Die zusammengesetzte Form ist eine
+Anzeige mancher Oberflächen und nicht der Name des Check-Runs — ein Detail, das
+zwischen „Gatter" und „gesperrtes `main`" entscheidet.
+
+### Und die Liste ist nicht der Beweis
+
+Der Beweis ist dieser PR. Eine Liste, die dasteht und nichts blockiert, ist ein
+falscher Name — also wird `mergeStateStatus` hier gelesen, solange `e2e` läuft.
+
+## Gefunden — beim Scharfstellen
+
+- **Die Liste der Pflicht-Checks altert anders als die CI.** `ci.yml` bekommt
+  Jobs, weil jemand sie schreibt; die Liste bekommt Einträge nur, wenn jemand
+  daran denkt. Zwei Orte, ein Wissen, und nur einer hat einen Auslöser. Dieselbe
+  Form wie #241 — nur dass die veraltete Kopie hier nichts falsch **sagt**,
+  sondern etwas nicht **tut**. *(07.09.2026)*
+- **Ein Testmerge ist billiger als ein CI-Lauf und beantwortet dieselbe Frage.**
+  #348 lag drei Commits hinter `main`, und `strict: false` ist im Repo eine
+  begründete Entscheidung. Statt 18 Minuten neu zu fahren: das echte
+  Merge-Ergebnis lokal gebaut und `make check` darauf laufen lassen.
+  *(07.09.2026)*
 
 ---
 
