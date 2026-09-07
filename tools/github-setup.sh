@@ -24,17 +24,39 @@ echo "  ✓ squash only, PR title becomes the commit, branch deleted on merge"
 
 # One phase = one branch = one PR = one squash merge = one deploy.
 #
-# required_status_checks names the seven contexts that exist, and naming them is
+# required_status_checks names the nine contexts that exist, and naming them is
 # the whole of issue #29. Until E2 this was null, because a required check that
 # does not exist blocks every merge rather than guarding one.
 #
-# Six come from ci.yml. The seventh, `CodeQL`, is posted by the code-scanning
-# service and goes red when a pull request introduces a new alert — which is
-# exactly what happened on #126 and cleared when the alert was dismissed with a
-# reason. Without it the build plan's "Findings ≥ HIGH blockieren" would hold
-# for every scanner except that one, and the last step would rest on somebody
-# noticing a red tick. ADR 0026 already argued that discipline is the weaker
-# instrument.
+# Seven come from ci.yml, one from pr-title.yml. The remaining one, `CodeQL`, is
+# posted by the code-scanning service and goes red when a pull request
+# introduces a new alert — which is exactly what happened on #126 and cleared
+# when the alert was dismissed with a reason. Without it the build plan's
+# "Findings ≥ HIGH blockieren" would hold for every scanner except that one, and
+# the last step would rest on somebody noticing a red tick. ADR 0026 already
+# argued that discipline is the weaker instrument.
+#
+# `e2e` AND `title` WERE ADDED IN THE H9c TRIAGE, AND NEITHER WAS EVER REFUSED.
+# This list was last touched in #130. `e2e` arrived with #269 and `title` with
+# #345, and neither was named here or in the runbook — so unlike `quickstart`
+# and `deploy` below, their absence was an omission rather than a decision.
+#
+# `title` is the one that had already cost something. The squash merge makes the
+# PULL REQUEST TITLE the commit on main and tools/release.sh reads its type;
+# .githooks/commit-msg guards the local messages the squash throws away. #338
+# merged with no type, the pipeline stayed green because "no release due" is the
+# right answer for a typeless merge, and v0.32.0 was never cut. The workflow
+# that catches it has existed since #345 and was an indicator until this line.
+#
+# `e2e` is the longer argument and the cheaper one to state: it is the only job
+# that renders the site and clicks it, 2091 assertions over seven widths. It ran
+# on every pull request already and merging without it was a matter of
+# remembering. A gate nobody can forget costs 16-18 minutes.
+#
+# THE NAMES ARE THE CHECK-RUN NAMES, ASKED FOR RATHER THAN DERIVED —
+# `gh api repos/OWNER/REPO/commits/SHA/check-runs --jq '.check_runs[].name'`.
+# A job in a second workflow is still just its job name here: `title`, not
+# `pr-title / title`, whatever the web interface renders beside it.
 #
 # `quickstart` is deliberately NOT in the list. It does not run on pull
 # requests (ci.yml says why), so requiring it would name a context that never
@@ -62,11 +84,13 @@ gh api -X PUT "repos/$REPO/branches/main/protection" --input - >/dev/null <<'JSO
     "contexts": [
       "check",
       "db",
+      "e2e",
       "images",
       "scan",
       "codeql (go)",
       "codeql (javascript-typescript)",
-      "CodeQL"
+      "CodeQL",
+      "title"
     ]
   },
   "enforce_admins": true,
@@ -82,7 +106,7 @@ gh api -X PUT "repos/$REPO/branches/main/protection" --input - >/dev/null <<'JSO
   "required_conversation_resolution": true
 }
 JSON
-echo "  ✓ PR required, seven checks required, no force push, linear history, admins included"
+echo "  ✓ PR required, nine checks required, no force push, linear history, admins included"
 
 echo ""
 echo "Verify:"
