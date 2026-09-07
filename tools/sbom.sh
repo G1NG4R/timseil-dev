@@ -45,8 +45,8 @@ out_dir=${1:?usage: sbom.sh <out-dir> <image:tag> <expected-purl-prefix>}
 image=${2:?usage: sbom.sh <out-dir> <image:tag> <expected-purl-prefix>}
 expect=${3:?usage: sbom.sh <out-dir> <image:tag> <expected-purl-prefix>}
 
-# syft v1.51.0
-scanner=${SBOM_IMAGE:-ghcr.io/anchore/syft@sha256:678bfa565b60f747aac0f8e964fe5588a24445b8d0a480e91f6efd70020dfbb0}
+# syft v1.51.1
+scanner=${SBOM_IMAGE:-ghcr.io/anchore/syft@sha256:95fe0835e5bebc6f8b1f8acef68d47d63d594ef4c0f25c097ff853b23cbac74c}
 
 name=${image%%:*}
 tag=${image#*:}
