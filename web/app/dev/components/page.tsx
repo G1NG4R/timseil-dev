@@ -4,6 +4,7 @@ import { TrajectoryPanel } from "@/components/about/TrajectoryPanel";
 import { TrajectoryRail } from "@/components/about/TrajectoryRail";
 import { IncidentLog } from "@/components/case/IncidentLog";
 import { OpsGrid } from "@/components/case/OpsGrid";
+import { NO_POST_HREFS } from "@/components/case/OpsSection";
 import { SpecRail } from "@/components/case/SpecRail";
 import { ModuleCard } from "@/components/home/ModuleCard";
 import { ContributionGraph } from "@/components/home/ContributionGraph";
@@ -31,6 +32,7 @@ import { modules, type ModuleView } from "@/lib/api/training";
 import { Log } from "@/components/home/Log";
 import type { PostRead } from "@/lib/content/posts";
 import { STATIONS } from "@/lib/about/trajectory";
+import { postMortemHrefs } from "@/lib/case/postmortem";
 import { BlogList } from "@/components/blog/BlogList";
 import { PostCard } from "@/components/blog/PostCard";
 import { PARTS, inventoryProgress, isBuilt, type Part } from "@/lib/gallery/registry";
@@ -324,6 +326,20 @@ const GALLERY_SYSTEMS = {
   generatedAt: "2026-09-01T12:00:00Z",
 } as unknown as SystemList;
 
+// ONE SLUG THAT RESOLVES AND ONE THAT DOES NOT, AND THAT IS THE WHOLE POINT
+// SINCE H9c. Both used to name entries this corpus has never held — `011-the-
+// migration-that-locked-the-table` and `012-acme-json-and-the-three-am-restart`
+// were invented alongside their outages — and so does the database fixture,
+// which writes `001-fixture-outage` and says in its own comment that the file is
+// deliberately absent. Production answers `incidents: []`. So on the day #298
+// came due, three surfaces could draw a post-mortem link and all three named
+// files that do not exist.
+//
+// A gallery that kept both would show one state of a two-state component, which
+// is the failure H9b's blog gallery was built to stop. INC-001 now names a real
+// entry so the link can be walked; INC-002 keeps an invented one, which is what
+// the fixture data actually produces and what a notch looks like when its
+// post-mortem has not been written yet.
 const GALLERY_INCIDENT: Incident[] = [
   {
     id: "INC-001",
@@ -331,12 +347,13 @@ const GALLERY_INCIDENT: Incident[] = [
     durationSec: 2520,
     cause: "postgres hit its memory limit while a migration held a lock",
     fix: "limit raised, migration split into two steps, lock timeout set",
-    postSlug: "011-the-migration-that-locked-the-table",
+    postSlug: "010-two-tests-were-green-because-nothing-was-there",
   },
   // TWO, NOT ONE, AND A TEST NEEDED THE SECOND. `selected` is a difference
   // rather than an appearance — the first `:target` rule was invisible beside an
   // untargeted entry and a screenshot is what caught it — so the gallery has to
-  // show a targeted entry next to one that is not.
+  // show a targeted entry next to one that is not. Since H9c it carries a
+  // second difference: this is the one whose post-mortem does not exist.
   {
     id: "INC-002",
     startedAt: "2026-08-28T03:02:00Z",
@@ -346,6 +363,9 @@ const GALLERY_INCIDENT: Incident[] = [
     postSlug: "012-acme-json-and-the-three-am-restart",
   },
 ];
+
+/** Resolved the way the case study resolves them, against the real corpus. */
+const GALLERY_POST_HREFS = postMortemHrefs(GALLERY_INCIDENT, "en");
 
 // The gallery — every component this site has, in every state its sheet
 // documents. Build plan G7, ADR 0049.
@@ -782,13 +802,22 @@ export default function GalleryPage() {
           `selected` is. No JavaScript is involved — components/case/OpsGrid.tsx
           says why not.
         </p>
+        <p className="gal-states">
+          And the two states of the post-mortem line, which is why there are two
+          incidents rather than one: INC-001 names an entry this repository holds
+          and links to it, INC-002 names one nobody has written and stays text.
+          The second is not a stale fixture. On the day the link was built every
+          `post_slug` in this project named a file that is not there — the
+          database&apos;s own included — and invariant 5 does not stop applying
+          because a renderer arrived.
+        </p>
         <div className="gal-demo" style={{ display: "block" }}>
           <OpsGrid
             grid={{ cells: GALLERY_DAYS, weeks: 13 }}
             label="Operation grid, gallery sample"
             messages={en}
           />
-          <IncidentLog incidents={GALLERY_INCIDENT} messages={en} />
+          <IncidentLog incidents={GALLERY_INCIDENT} postHrefs={GALLERY_POST_HREFS} messages={en} />
         </div>
       </section>
 
@@ -1054,13 +1083,15 @@ export default function GalleryPage() {
         </p>
         <p className="gal-states">
           The first block is the shape, rendered through the real section so the
-          head is the real `logMeta` counting the rows under it. No row is a
-          link: `/blog/&lt;slug&gt;` is a 404 until H9, and a row that lit up
-          under the pointer and did nothing would be the dead control STATE.05
-          refuses. The one link is in the head.
+          head is the real `logMeta` counting the rows under it. Every row is a
+          link since H9c, and the sheet&apos;s three promises — the arrow, the
+          pointer, the hover fill — come back together because they were given up
+          together: `/blog/&lt;slug&gt;` answered 404 until H9a, and a row that
+          lit up under the pointer and did nothing would be the dead control
+          STATE.05 refuses. One link per row, and one more in the head.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <Log read={GALLERY_LOG} caseStudyHref="/work/timseil-dev" messages={en} />
+          <Log read={GALLERY_LOG} locale="en" caseStudyHref="/work/timseil-dev" messages={en} />
         </div>
         <p className="gal-states">
           Then the two emptinesses, and they are two claims rather than one.
@@ -1070,10 +1101,20 @@ export default function GalleryPage() {
           without its own content.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <Log read={GALLERY_LOG_EMPTY} exit={{ href: "/blog", label: en.navLog }} messages={en} />
+          <Log
+            read={GALLERY_LOG_EMPTY}
+            locale="en"
+            exit={{ href: "/blog", label: en.navLog }}
+            messages={en}
+          />
         </div>
         <div className="gal-demo" style={{ display: "block" }}>
-          <Log read={null} exit={{ href: "/blog", label: en.navLog }} messages={en} />
+          <Log
+            read={null}
+            locale="en"
+            exit={{ href: "/blog", label: en.navLog }}
+            messages={en}
+          />
         </div>
         <p className="gal-states">
           And a read that had to skip a file. Nothing on the page says so — a
@@ -1083,7 +1124,7 @@ export default function GalleryPage() {
           not silence and not a throw.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <Log read={GALLERY_LOG_SKIPPED} caseStudyHref="/work/timseil-dev" messages={en} />
+          <Log read={GALLERY_LOG_SKIPPED} locale="en" caseStudyHref="/work/timseil-dev" messages={en} />
         </div>
       </section>
 
@@ -1163,7 +1204,7 @@ export default function GalleryPage() {
           reason, and STATE.05 is why: an empty list without one is a dead end.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <IncidentLog incidents={[]} messages={en} />
+          <IncidentLog incidents={[]} postHrefs={NO_POST_HREFS} messages={en} />
         </div>
       </section>
 

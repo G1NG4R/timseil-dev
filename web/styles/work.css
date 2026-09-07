@@ -341,8 +341,9 @@
 }
 
 /* The log line is the accent at reduced weight, which is what the sheet gives
-   its cross-links — and it is NOT a link. lib/work/log.ts holds the argument:
-   `/blog/<slug>` is a 404 until H9, and evidence never points into nothing. */
+   its cross-links — and it is NOT a link. lib/work/log.ts holds the argument,
+   and since H9c it is no longer the 404: it is that no URL narrows the index to
+   one system, so the arrow has a meaning and no address. */
 .work-log {
   color: var(--acc);
 }

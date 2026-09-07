@@ -76,11 +76,11 @@ export function WorkRow({ entry, messages }: { entry: WorkEntry; messages: Messa
 
         <SourceLine entry={entry} />
 
-        {/* Text, not a link, and this is the third time this site has made that
-            call: `/blog/<slug>` is a 404 until H9 builds the renderer, and
-            evidence never points into nothing (invariant 5). `IncidentLog`
-            prints a post_slug as text and `lib/seo/feed.ts` serves an empty
-            feed for the same reason. lib/work/log.ts holds the argument. */}
+        {/* Text, not a link, and since H9c it is the ONLY one of the four left:
+            `LogRow` links, `IncidentLog` links what resolves, and the feed
+            carries every entry. This line stays text because the sheet's arrow
+            opens "the posts about this system" and no URL on this site says
+            that — ADR 0071 §8. lib/work/log.ts holds the argument. */}
         {entry.logLine === null ? null : <span className="work-log">{entry.logLine}</span>}
       </span>
 

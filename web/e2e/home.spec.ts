@@ -168,17 +168,87 @@ test.describe("SYS.04, the log", () => {
     await expect(meta).toHaveText("LATEST 03 · SOURCE: content/posts");
   });
 
-  // THE DoD TEST OF THIS PHASE, and it is written as a count because a missing
-  // link is invisible and an extra one is not. `/blog/<slug>` is a 404 until H9,
-  // so a row that linked would be evidence pointing into nothing — invariant 5,
-  // and the decision components/home/LogRow.tsx carries.
-  test("no row is a link, and the section's one link is in its head", async ({ page }) => {
-    await expect(page.locator(".log-row a")).toHaveCount(0);
-    await expect(page.locator(".log a")).toHaveCount(1);
+  // THE DoD TEST OF THIS PHASE, and it is still written as a count because a
+  // missing link is invisible and an extra one is not. It used to assert ZERO
+  // row links: `/blog/<slug>` answered 404, so a row that linked was evidence
+  // pointing into nothing. H9a built the renderer and H9c spends the promise —
+  // one link per row, one in the head, and nothing else in the section.
+  test("every row is one link, and the head keeps its own", async ({ page }) => {
+    const rows = page.locator(".log-row");
+    const count = await rows.count();
+
+    // ONE PER ROW, NOT AT LEAST ONE. Two controls to one destination is the
+    // keyboard trap `WorkRow` refused; components/home/LogRow.tsx is allowed to
+    // wrap the grid precisely because it is the only one.
+    for (let i = 0; i < count; i++) {
+      await expect(rows.nth(i).locator("a")).toHaveCount(1);
+    }
+    await expect(page.locator(".log a")).toHaveCount(count + 1);
+
     await expect(page.locator(".log .sec-action a")).toHaveAttribute(
       "href",
       "/work/timseil-dev",
     );
+  });
+
+  // INVARIANT 5, AT THE PLACE THIS PHASE COULD BREAK IT. A row link is only
+  // worth having if it lands, and the way to know is to ask the server rather
+  // than to trust the string: `postPath` builds the href out of the same slug
+  // the file is named after, and a mismatch between those two is exactly the
+  // failure a shape check would not see.
+  test("no row points at a page that is not there", async ({ page }) => {
+    const hrefs = await page.locator(".log-row a").evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute("href") ?? ""),
+    );
+    expect(hrefs.length).toBeGreaterThan(0);
+
+    for (const href of hrefs) {
+      expect(href).toMatch(/^\/blog\/\d{3}-[a-z0-9-]+$/);
+      expect((await page.request.get(href)).status()).toBe(200);
+    }
+  });
+
+  // The arrow the sheet has drawn since the handoff, decoration and marked as
+  // such: it is inside the only link on the row, and read aloud it would add a
+  // glyph to a name that is already a sentence.
+  //
+  // AND IT IS NOT DRAWN ON A PHONE, WHICH IS READ OFF THE ARTBOARD RATHER THAN
+  // DERIVED FROM THE STACK. Below 560 the row is a flex column, so a third item
+  // would put a lone `→` on a fourth line under the dek — but "would look odd"
+  // is not a reason this repository accepts. The 390 artboard draws the row as
+  // three stacked lines and no arrow, and that is the reason. It cannot live in
+  // the sheet oracle: an absent element is not a declaration, and the generator
+  // refuses an entry whose sheet line does not carry the property.
+  test("the arrow is drawn where the sheet draws one", async ({ page }) => {
+    const exit = page.locator(".log-row").first().locator(".log-exit");
+    await expect(exit).toHaveAttribute("aria-hidden", "true");
+
+    if (widthOf(page) < 560) {
+      await expect(exit).toBeHidden();
+      return;
+    }
+    await expect(exit).toHaveText("→");
+  });
+
+  // THE NAME IS THE ROW, NOT THE TITLE, and the wrapping is what decides that.
+  // Measured rather than assumed: a link that announced only its date would pass
+  // every count above, and so would one that read its arrow out loud.
+  //
+  // `toHaveAccessibleName` AND NOT `innerText`, WHICH IS THE POINT THIS TEST
+  // NEARLY GOT WRONG. The first draft compared the arrow against `innerText`
+  // and failed at six widths: `aria-hidden` takes an element out of the
+  // ACCESSIBILITY TREE and leaves it in the text. The two are different
+  // readings of the same node, and only one of them is what a reader hears.
+  test("the link announces itself out of the row's own words", async ({ page }) => {
+    const row = page.locator(".log-row").first();
+    const link = row.locator("a");
+    const title = (await row.locator(".log-title").innerText()).trim();
+
+    expect(title.length).toBeGreaterThan(0);
+    await expect(link).toHaveAccessibleName(
+      new RegExp(title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+    );
+    await expect(link).not.toHaveAccessibleName(/→/);
   });
 
   // The sheet writes `SYSTEM 02 · CASE STUDY →` and the 02 comes from

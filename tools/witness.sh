@@ -105,10 +105,23 @@ TAIL_SEC=${WITNESS_TAIL_SEC:-30}
 # The H9a acceptance measured 927 s between the merge and the sha answering, so
 # the witness gave up 27 s before the thing it was watching happened and
 # reported "this window is not the deploy". The cap was set when the pipeline
-# was shorter; `e2e` has been on the critical path since, and it ended four
-# seconds before the deploy job started. 1800 is twice the observed lead time,
-# which is a guard rail rather than a second estimate of it — and the run still
-# ends on --until-sha, as it always did.
+# was shorter; `e2e` has been on the critical path since.
+#
+# THE SENTENCE HERE SAID "TWICE THE OBSERVED LEAD TIME" AND IT WAS ALREADY WRONG
+# WHEN IT SHIPPED. Both measurements, merge to deploy start:
+#
+#   H9a  2026-09-04  22:52:34Z -> 23:08:01Z    927 s
+#   H9b  2026-09-06  23:49:32Z -> 00:13:53Z   1461 s
+#
+# 1800 over 1461 is 1.23x and 339 s of margin, not a factor of two. The number
+# is kept and the claim about it is not: raising it further would be a second
+# estimate where this is at least a reading, and 900 would have missed the H9b
+# swap by 561 s — worse than the miss that caused the raise. What this line owes
+# a reader is the margin it actually has, so that the next overrun arrives as a
+# measurement rather than as a surprise.
+#
+# It is a guard rail on the instrument either way: nothing is concluded from it,
+# and the run still ends on --until-sha, as it always did.
 MAX_SEC=${WITNESS_MAX_SEC:-1800}
 
 usage() {

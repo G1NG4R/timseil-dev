@@ -1,0 +1,144 @@
+---
+title: 'Four refusals expired, and one of them was still right'
+deck: 'An issue asked me to turn a slug into a link now that the page behind it exists. Every slug in the project pointed at a file that does not.'
+published: 2026-09-07
+tags: ['invariants', 'measurement', 'frontend', 'testing', 'design-handoff']
+systemId: 'timseil-dev'
+summary: |
+  My site has one rule about evidence: it never points into nothing. For six
+  phases four different components obeyed it by refusing to link to blog posts
+  that had no renderer. The renderer shipped, the refusals expired, and I went
+  to spend them. Three were right to spend. The fourth would have shipped a 404
+  on the day I claimed to have satisfied the rule, and the fifth was never
+  about the renderer at all.
+---
+
+My site has one rule about evidence: it never points into nothing. Number five
+of nine, and the one I have leaned on most.
+
+For six phases it produced the same answer four times. The blog lived in the
+repository as MDX files with nothing to render them, so `/blog/<slug>` was a
+404, and four components each wrote down that they were refusing to link there:
+
+- the log row on my homepage printed a post's title with no anchor,
+- the incident log on a case study printed a post-mortem slug as text,
+- a counter on the work index said `07 ENTRIES IN THE LOG` without the arrow
+  its design sheet draws,
+- and my RSS feed served a valid channel with zero items in it.
+
+Then I built the renderer. Two phases later, all four refusals had expired, and
+I opened the phase whose entire job was to spend them.
+
+## Three of them were right to spend
+
+The feed went first, in the phase before this one, because the index it lives
+under advertises it — a subscribe button over an empty channel is the same
+defect one layer out.
+
+The log row went second, and it was the easy one. Its refusal had given up
+three things together: the arrow, the pointer cursor, and the hover fill. That
+grouping was the good part of the original decision. A row that lights up under
+the pointer and does nothing when clicked is worse than a row that stays flat;
+it is a dead control with an invitation attached. So they came back together
+too.
+
+## The fourth would have been a 404
+
+The issue for the incident log is four sentences long and completely correct
+about its own premises:
+
+> An `<a>` today would be a 404, which is invariant 5 — evidence never points
+> into nothing. So the current state is correct and will silently stay correct
+> after the renderer exists, because nothing turns red when a link becomes
+> possible. **Pull it along in H9.**
+
+That is a good issue. It predicted its own staleness. I nearly did exactly what
+it said, and then I went to pick a slug for the gallery fixture and could not
+find the file.
+
+Here is what I found instead:
+
+```
+fixture   incidents.post_slug = '001-fixture-outage'      no such file, deliberately
+gallery   INC-001  011-the-migration-that-locked-the-table  no such file
+gallery   INC-002  012-acme-json-and-the-three-am-restart   no such file
+prod      GET /api/systems/timseil-dev  ->  "incidents": []
+```
+
+**Not one post-mortem slug anywhere in my project names a file that exists.**
+
+The database fixture says so about itself, in a comment written months ago: the
+slug is invented on purpose, for an outage that never happened, so that a future
+CI check would have something it has to skip. The two gallery slugs were
+invented alongside their fake outages and never checked against anything,
+because nothing rendered them. And production has answered `incidents: []`
+every day the page has existed, so the only place a reader could ever have seen
+this markup is the component gallery — where both entries were wrong.
+
+An unconditional `<a>` would have shipped a 404 into the one surface that can
+display it, in the phase whose stated purpose was to satisfy the invariant
+about links that go nowhere.
+
+The fix is not clever. The slug is resolved against the corpus, and it becomes
+a link when the file is there and stays text when it is not. What is worth
+keeping is why that condition survives the renderer at all: the slug is a free
+string from an API. My schema constrains its *shape* — it has the same
+three-digit pattern the file reader uses — and a schema cannot see a directory.
+A foreign key does not reach across that boundary. The renderer arriving
+changed whether a link is *possible*, not whether it is *guaranteed*.
+
+So the gallery now carries one incident that resolves and one that does not,
+side by side, and a test asserts there is exactly one anchor between them. Not
+"at least one": two would mean the guard is gone, none would mean I shipped the
+decision without the thing it decided.
+
+## The fifth was never about the renderer
+
+The arrow on my work index is the one that looked most obviously due and turned
+out not to be due at all.
+
+Its design note says the line "connects each system with the posts written
+about it". So the arrow does not open a post. It opens a filtered list — the
+entries about this system.
+
+I do not have that URL. The phase before this one decided, for its own good
+reasons, to keep filter state out of the address bar: putting the axes in
+search params made the whole index a dynamic route. And the index has two
+filter axes, a tag and a search string, neither of which is a system.
+
+So I had three options. Point the arrow at the unfiltered log, which promises a
+narrower list than it delivers. Invent a third filter axis so the arrow becomes
+true, which is making up a control from a drawing. Or build a whole prerendered
+route per system for one arrow nobody has asked for.
+
+I did none of them. The line stays text.
+
+What changed is the sentence above it. It used to say the destination was a
+404. It says now that the destination has a meaning and no address.
+
+## The thing I actually learned
+
+I had written this rule down myself, one phase earlier, after noticing that a
+comment justifying an absence had gone stale while the absence stayed correct:
+
+> A reason for an absence can expire without the absence becoming wrong.
+
+I wrote it as an observation. This phase it was a tool. Four refusals, one
+sentence between them, and when the sentence stopped being true they did not
+all become wrong at the same rate:
+
+```
+feed        the reason expired, the refusal was wrong    -> spent
+log row     the reason expired, the refusal was wrong    -> spent
+post-mortem the reason expired, a new one was underneath -> conditional
+work arrow  the reason expired, a different one was true -> kept
+```
+
+The shared sentence was the problem. Four components citing one justification
+read like four instances of one decision, and they were not — they were four
+decisions that happened to agree for a while. When the shared reason expired,
+the honest move was not to spend them all and it was not to keep them all. It
+was to ask each one again.
+
+That is more annoying than a global find-and-replace, and it is the entire
+value of having written the reasons down instead of just the rules.

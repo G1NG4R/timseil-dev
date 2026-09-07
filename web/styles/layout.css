@@ -413,7 +413,7 @@
      than inheriting it: it resolves at 900, in the block above. The 560 it was
      given in G1 was never a reading of this row.
 
-     `.log-row` STAYS HERE, AND THIS IS THE ARITHMETIC RATHER THAN THE
+     THE LOG ROW STAYS HERE, AND THIS IS THE ARITHMETIC RATHER THAN THE
      MEASUREMENT — the distinction H5b paid for and wrote down: "nur die erste
      war eine Messung; die zweite war eine Lesung." The row is `110px 1fr` with
      a 26px gap, so 136px of it is chrome at every width. Read off this
@@ -426,12 +426,21 @@
 
      What the element actually GETS is checked on the built page at all seven
      widths; the figure that survives that check is in the phase's notes. */
-  .log-row { display: flex; flex-direction: column; gap: 10px }
+  /* H9c MOVED THE GRID ONTO THE ANCHOR and this switch went with it: the row is
+     an `<li>` holding one link, and the link is what has columns to give up. */
+  .log-row-link { display: flex; flex-direction: column; gap: 10px }
 
   /* The row loses its side padding with its columns: 8px of inset belongs to a
      cell in a grid, and there are no cells here. The sheet's phone artboard
      draws the same thing — `padding: 14px 0`. */
-  .log-row { gap: var(--s-6); padding: var(--s-14) 0 }
+  .log-row-link { gap: var(--s-6); padding: var(--s-14) 0 }
+
+  /* AND THE ARROW GOES WITH THE COLUMNS, because the phone artboard draws none.
+     Read off the sheet rather than inferred: its 390 rows are three stacked
+     lines — date, title, dek — and nothing else. A third flex item here would
+     put a lone `→` on a fourth line under the dek, which is a glyph the drawing
+     does not have and a shape nobody chose. The row is still the link. */
+  .log-exit { display: none }
 
   /* The phone artboard drops the date a step and tightens the gap under the
      title — 10px mono and 4px, both of which ARE steps, so neither is a

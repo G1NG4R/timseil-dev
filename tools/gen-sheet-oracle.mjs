@@ -247,15 +247,6 @@ const DIVERGENCE = {
     'of up to eight and this is not one; folding it in would have turned a ' +
     'reason into a habit. The rhythm is --s-72 over --s-96, which is the same ' +
     'pair `.cs-head` uses, so the two heroes on this site breathe alike.',
-  'no-link-until-h9':
-    'The sheet gives the log row a third column holding a `→`, a pointer cursor ' +
-    'and a hover fill — three promises about a click. `/blog/<slug>` is a 404 ' +
-    'until H9 builds the renderer, and invariant 5 is that evidence never ' +
-    'points into nothing. components/case/IncidentLog.tsx prints a post_slug as ' +
-    'text for the same reason and lib/seo/feed.ts serves an empty feed rather ' +
-    'than links to pages that do not exist. The hover goes with the arrow: a row ' +
-    'that lights up and does nothing is the dead control STATE.05 refuses, with ' +
-    'an invitation attached. The section keeps one link, in its head.',
   'mono-scale':
     'The sheet sets the hero subline at 14px mono and tracks AVAILABLE at ' +
     '.18em. The mono scale has 9 · 10 · 11 · 12 · 13 and the tracking tokens ' +
@@ -1227,19 +1218,20 @@ const HOME_MAP = [
     sheet: 'homepage', artboard: '1a', width: 1440, line: 240,
     decl: 'grid-template-columns', says: '110px 1fr 24px',
     reading: 'a fixed date column, the text taking the rest, and a column for the arrow',
-    // TWO TRACKS AND THE SHEET DRAWS THREE. The third holds a `→` to
-    // /blog/<slug>, which is a 404 until H9 — invariant 5, and the decision
-    // components/home/LogRow.tsx carries. The divergence is the arrow, not the
-    // measure: what is left of the sheet's row is its first two tracks.
-    measure: { kind: 'track-count', selector: '.log-row' }, expect: 2,
-    diverges: { class: 'no-link-until-h9', sheet: '110px 1fr 24px' },
+    // THREE TRACKS SINCE H9c, AND THE DIVERGENCE IS GONE RATHER THAN RESTATED.
+    // The third holds the `→` the sheet has drawn since the handoff; it was
+    // withheld while /blog/<slug> answered 404 and is drawn now that it does
+    // not. THE SELECTOR MOVED WITH THE GRID: the row is an `<li>` holding one
+    // link, and the link is the element with columns — components/home/
+    // LogRow.tsx says why the anchor wraps the grid and not the title.
+    measure: { kind: 'track-count', selector: '.log-row-link' }, expect: 3,
   },
   {
     id: 'home-log-date-column',
     sheet: 'homepage', artboard: '1a', width: 1440, line: 240,
     decl: 'align-items', says: 'baseline',
     reading: 'the date, the title and the dek sit on one baseline rather than on a box',
-    measure: { kind: 'computed', selector: '.log-row', prop: 'align-items' }, expect: 'baseline',
+    measure: { kind: 'computed', selector: '.log-row-link', prop: 'align-items' }, expect: 'baseline',
   },
   {
     id: 'home-log-date-size',
@@ -1299,7 +1291,7 @@ const HOME_MAP = [
     sheet: 'homepage', artboard: '1b', width: 390, line: 431,
     decl: 'padding', says: '14px 0',
     reading: 'the row loses its side inset with its columns: 8px of inset belongs to a cell in a grid, and at this width there are none',
-    measure: { kind: 'computed', selector: '.log-row', prop: 'padding' }, expect: '14px 0px',
+    measure: { kind: 'computed', selector: '.log-row-link', prop: 'padding' }, expect: '14px 0px',
   },
   {
     id: 'home-log-date-mobile',

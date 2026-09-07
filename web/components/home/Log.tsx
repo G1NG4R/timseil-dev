@@ -3,9 +3,10 @@ import Link from "next/link";
 import { LogRow } from "@/components/home/LogRow";
 import { EmptyState } from "@/components/state/EmptyState";
 import { SectionHead } from "@/components/ui/SectionHead";
-import type { PostRead } from "@/lib/content/posts";
+import { postPath, type PostRead } from "@/lib/content/posts";
 import { logEntries, logMeta } from "@/lib/home/posts";
 import type { Messages } from "@/lib/i18n/messages/en";
+import { localeHref, type Locale } from "@/lib/i18n/routes";
 import { NO_DATA } from "@/lib/state/words";
 
 /**
@@ -29,11 +30,11 @@ import { NO_DATA } from "@/lib/state/words";
  * meta carries the count like SYS.01's and SYS.02's do, and the count is
  * `logEntries().length` rather than the sheet's `LATEST 03`.
  *
- * ONE WAY OUT AND IT IS IN THE HEAD, WHICH IS NOT THE TRAP SystemRow REFUSED.
- * That one was two links in ONE ROW to ONE page — a keyboard trap dressed as
- * thoroughness. This is the section's only interactive element, because
- * LogRow.tsx gives up the row link until H9 exists; without it the whole of
- * SYS.04 would be inert, and the sheet draws it at both widths.
+ * FOUR WAYS OUT SINCE H9c, AND NOT THE TRAP SystemRow REFUSED. That one was two
+ * links in ONE ROW to ONE page — a keyboard trap dressed as thoroughness. Here
+ * the head goes to the case study and each row goes to its own entry: four
+ * links, four destinations, one tab stop each. Until H9 built the renderer the
+ * head's link was the only one, and LogRow.tsx says why it gave up the others.
  *
  * THE SHEET WRITES `SYSTEM 02 · CASE STUDY →` AND THE `02` IS DROPPED. That
  * number comes from /api/systems, which this section does not read — and
@@ -49,12 +50,15 @@ import { NO_DATA } from "@/lib/state/words";
  */
 export function Log({
   read,
+  locale,
   caseStudyHref = null,
   exit = null,
   messages,
 }: {
   /** The directory read, or `null` when it could not be read. */
   read: PostRead | null;
+  /** The one thing a row needs that a post does not carry: its address prefix. */
+  locale: Locale;
   /** Where the head's link goes, resolved for the locale by the caller. */
   caseStudyHref?: string | null;
   /** The way out of the empty state. `null` in the gallery. */
@@ -89,7 +93,7 @@ export function Log({
       ) : (
         <ol className="log-list">
           {entries.map((post) => (
-            <LogRow key={post.slug} post={post} />
+            <LogRow href={localeHref(locale, postPath(post))} key={post.slug} post={post} />
           ))}
         </ol>
       )}

@@ -481,9 +481,9 @@
    grid that has told a screen reader it is a table.
 
    THE WIDTH SWITCH IS NOT HERE. `layout.css` has carried the rule since G1 —
-   `.work-row, .sys-row, .log-row { flex-direction: column }` below 560 — and
-   this is the first of the three to arrive. That file owns every switch on this
-   page; this one owns none.
+   `.work-row, .sys-row, .log-row-link { flex-direction: column }` below 560 —
+   and this is the first of the three to arrive. That file owns every switch on
+   this page; this one owns none.
 
    THE LITERALS ARE THE SHEET'S FOUR COLUMN WIDTHS AND ONE TYPE SIZE. The
    widths are the same class as the `620px` above and the `3px` in the training
@@ -846,15 +846,36 @@
 }
 
 .log-row {
+  border-block-end: 1px solid var(--line-soft);
+}
+
+/* THE WHOLE ROW IS THE LINK SINCE H9c, so the grid moved onto the anchor rather
+   than staying on the `<li>` with an anchor inside it. A link that wrapped only
+   the title would put the hover on a phrase and the pointer on a strip of
+   nothing beside it; a grid on the list item with a link in one cell would be
+   the third column pointing somewhere the first two do not. LogRow.tsx holds
+   the argument about why there is exactly one control here.
+
+   The date column is the sheet's 110px. It holds `2026-09-01` at mono 11 with
+   room to spare, which is the point of a fixed track here: every date is the
+   same ten characters, so the column cannot be surprised by its content. The
+   third track is the sheet's 24px arrow column, drawn for the first time. */
+.log-row-link {
   display: grid;
-  /* The date column is the sheet's 110px. It holds `2026-09-01` at mono 11 with
-     room to spare, which is the point of a fixed track here: every date is the
-     same ten characters, so the column cannot be surprised by its content. */
-  grid-template-columns: 110px 1fr;
+  grid-template-columns: 110px 1fr 24px;
   gap: var(--s-26);
   align-items: baseline;
   padding: var(--s-20) var(--s-8);
-  border-block-end: 1px solid var(--line-soft);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Emphasis, not a control — the same two declarations `.post-card-link`,
+   `WorkRow` and `SystemRow` use, which is also why none of them needs
+   `'use client'`. */
+.log-row-link:hover {
+  background: var(--panel);
+  box-shadow: inset 2px 0 0 var(--acc);
 }
 
 .log-date {
@@ -880,6 +901,21 @@
   font: 400 var(--t-body-13)/1.5 var(--body);
   color: var(--steel);
   margin-block-start: var(--s-6);
+}
+
+.log-row-link:hover .log-title {
+  color: var(--acc-hi);
+}
+
+/* The arrow the sheet drew and H5c did not build. `PostCard` gives its own the
+   same two rules one page over. */
+.log-exit {
+  font: 500 var(--t-mono-13)/1 var(--mono);
+  color: var(--steel);
+}
+
+.log-row-link:hover .log-exit {
+  color: var(--acc);
 }
 
 /* ── The foot of the page, H5c ──────────────────────────────────────────────

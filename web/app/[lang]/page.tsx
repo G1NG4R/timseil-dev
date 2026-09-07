@@ -172,6 +172,7 @@ export default async function Home() {
       <Log
         key="SYS.04"
         read={homePosts()}
+        locale={locale}
         caseStudyHref={study === null ? null : localeHref(locale, caseStudyPath(study))}
         exit={exitFor("SYS.04")}
         messages={messages}

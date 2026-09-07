@@ -26,7 +26,12 @@ const PROBES: readonly Probe[] = [
   // H5c. The first probe on this page that reads a ROW rather than the chrome or
   // the hero, and the first that can: SYS.04's rows come out of the repository,
   // so they are here in a rig that has no api.
-  { key: "logRow", kind: "computed", selector: ".log-row", prop: "display" },
+  //
+  // IT READS THE ANCHOR SINCE H9c, BECAUSE THAT IS WHERE THE GRID WENT. The row
+  // is an `<li>` holding one link and the link is what has columns to give up,
+  // so `.log-row` computes `list-item` at every width and would have reported
+  // that this switch had stopped happening. It had not; the probe had.
+  { key: "logRow", kind: "computed", selector: ".log-row-link", prop: "display" },
 ];
 
 /**

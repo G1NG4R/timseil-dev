@@ -21,11 +21,14 @@ import type { Messages } from "@/lib/i18n/messages/en";
 export function OpsSection({
   grid,
   incidents,
+  postHrefs,
   label,
   messages,
 }: {
   grid: Grid;
   incidents: readonly Incident[] | null;
+  /** Slug → address for the post-mortems this repository holds. */
+  postHrefs: ReadonlyMap<string, string>;
   /** The grid's own accessible name. The `<section>` is named by its head. */
   label: string;
   messages: Messages;
@@ -33,7 +36,7 @@ export function OpsSection({
   return (
     <div className="ops-live">
       <OpsGrid grid={grid} label={label} messages={messages} />
-      <IncidentLog incidents={incidents} messages={messages} />
+      <IncidentLog incidents={incidents} postHrefs={postHrefs} messages={messages} />
     </div>
   );
 }
@@ -46,3 +49,13 @@ export function OpsSection({
  * people agreeing. A system that is not `live` reaches it too.
  */
 export const EMPTY_GRID: Grid = { cells: [], weeks: 0 };
+
+/**
+ * And the resting state of the post-mortem addresses, for the same reason.
+ *
+ * A fallback that built `new Map()` inline would be a second spelling of "we
+ * have resolved nothing yet", and the seam above only holds while there is one.
+ * There is nothing to resolve before the answer arrives: the slugs are IN the
+ * answer.
+ */
+export const NO_POST_HREFS: ReadonlyMap<string, string> = new Map();

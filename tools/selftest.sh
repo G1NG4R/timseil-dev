@@ -1681,8 +1681,20 @@ write_msg "kaputte nachricht"                 && rejects "non-conventional subje
 write_msg "feat: add thing"                   && accepts "conventional subject accepted"     .githooks/commit-msg msg
 write_msg "feat(api)!: breaking change"       && accepts "scope and bang accepted"            .githooks/commit-msg msg
 write_msg "wip: something"                    && rejects "unknown type rejected"             .githooks/commit-msg msg
+# CONTRIBUTING.md and release.sh have both listed `style` since E5c and this hook
+# did not. Harmless while only local subjects were read; a merge blocker once
+# pr-title.yml points the same hook at the title.
+write_msg "style: fold the long lines"        && accepts "style accepted, as the guide and release.sh say" .githooks/commit-msg msg
 write_msg "feat: $(printf 'a%.0s' $(seq 80))" && rejects "subject over 72 chars rejected"     .githooks/commit-msg msg
 write_msg "Merge branch main"                 && accepts "merge commit passes through"       .githooks/commit-msg msg
+# THE TITLE THAT ACTUALLY GOT THROUGH, kept verbatim. PR #338 merged on
+# 2026-09-06 with no type, the squash put it on main, and release.sh correctly
+# found no release due — so v0.32.0 was never cut and /api/badge/version said
+# v0.31.0-3-g254cd67 in public. The hook would have caught it and was never
+# asked; .github/workflows/pr-title.yml is what asks it now, and this is the
+# case that names the day.
+write_msg "H9b · The log index, and the filter drawn against ten entries" \
+                                              && rejects "the PR title that published nothing is rejected" .githooks/commit-msg msg
 
 printf 'pre-push\n'
 push_ref() { printf 'refs/heads/%s abc refs/heads/%s def\n' "$1" "$1" | .githooks/pre-push origin url; }

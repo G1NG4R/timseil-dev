@@ -92,6 +92,41 @@ test("every notch reaches its incident, and nothing else is a link", async ({ pa
   await expect(page.locator(".ops-grid a")).toHaveCount(count);
 });
 
+// #298, AND THE HALF OF IT THAT IS NOT "ADD AN `<a>`". The gallery carries two
+// incidents on purpose: one names an entry this repository holds, one names an
+// entry nobody has written. Both are legal `post_slug` values — the database
+// constrains the SHAPE of that string and cannot see a directory — so the page
+// has two states here and this is where both are visible at once.
+test("the post-mortem is a link when the entry exists and text when it does not", async ({
+  page,
+}) => {
+  const posts = page.locator(".incident-post");
+  await expect(posts).toHaveCount(2);
+
+  // Exactly one, not "at least one". Two would mean the guard is gone; none
+  // would mean the link was never built, and this phase would have shipped the
+  // decision without the thing it decided.
+  await expect(page.locator(".incident-post a")).toHaveCount(1);
+
+  // THE NAME IS THE SAME STRING EITHER WAY. A linked entry and an unlinked one
+  // read alike and differ only in whether the name goes anywhere.
+  for (let i = 0; i < 2; i += 1) {
+    await expect(posts.nth(i)).toHaveText(/^\d{3}-[a-z0-9-]+$/);
+  }
+});
+
+// INVARIANT 5, ASKED OF THE SERVER RATHER THAN OF THE STRING. A link that looks
+// right and answers 404 is exactly the thing the old refusal was protecting the
+// page from, and only a request can tell the two apart.
+test("the post-mortem link lands on the entry it names", async ({ page }) => {
+  const link = page.locator(".incident-post a");
+  const href = await link.getAttribute("href");
+  const name = await link.innerText();
+
+  expect(href).toBe(`/blog/${name}`);
+  expect((await page.request.get(href ?? "")).status()).toBe(200);
+});
+
 test("every cell says which day it is and what happened", async ({ page }) => {
   // The grid has no visible text at all — it is ninety-one squares — so its
   // whole readable form is the accessible name on each cell. This repository has

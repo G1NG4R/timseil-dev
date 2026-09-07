@@ -142,18 +142,25 @@ test.describe("targets a finger has to hit", () => {
   // H2b found four times in one file, and the shape that let H5a ship a section
   // which had silently dropped its link.
   //
-  // THREE SINCE H5c, AND THE THREE ARE NOT WHAT THEY WERE. Until this phase the
+  // THREE SINCE H5c, AND THE THREE ARE NOT WHAT THEY WERE. Until that phase the
   // two were the ways back out of the SYS.02 and SYS.04 shells. There are no
   // shells left: SYS.02's way back is still here because this rig has no api and
   // its panel is therefore the empty one, SYS.04's is not — a section that drew
   // its rows offers no way back, which is Systems.tsx's rule — and the two that
-  // replace it are the log head's link to the case study and `ABOUT →` in the
+  // replaced it are the log head's link to the case study and `ABOUT →` in the
   // foot, both of which are on the page whether anything answered or not.
+  //
+  // SIX SINCE H9c, AND THE THREE THAT WERE ADDED ARE THE POINT OF THIS BLOCK.
+  // Each log row became a link, so this page went from three controls to six in
+  // one commit — and every one of the three is a ROW, which is the shape that
+  // passes a 44px rule by accident and could stop doing so the day the dek gets
+  // shorter. The count is asserted for the same reason it always was: a run that
+  // measured nothing would otherwise be green.
   test("the homepage's own controls are at least 44 x 44", async ({ page }) => {
     await page.goto("/");
     const targets = await measure(page, "main");
 
-    expect(targets.length, "no interactive element found on the homepage").toBe(3);
+    expect(targets.length, "no interactive element found on the homepage").toBe(6);
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
 

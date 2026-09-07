@@ -4,14 +4,23 @@
 // jedes System mit den Posts, die darüber geschrieben wurden" — and draws it on
 // the row as `01 ENTRY IN THE LOG →`.
 //
-// THE ARROW IS NOT BUILT, AND THE NUMBER IS. `/blog/<slug>` is a 404 until H9
-// builds the renderer, so a link there would be evidence pointing into nothing:
-// invariant 5, and the third time this site has made the call. H5c's `LogRow`
-// prints a post's title without a link, components/case/IncidentLog.tsx prints
-// a `post_slug` as text, and lib/seo/feed.ts serves an empty feed rather than
-// links to pages that do not exist. The sheet half agrees with itself here: it
-// gives `CASE STUDY →` a pointer cursor and a hover colour and gives this one
-// neither, which is what a drawing does when the destination is not ready.
+// THE ARROW IS STILL NOT BUILT, AND ITS REASON IS A DIFFERENT ONE NOW. Until
+// H9a the answer was that `/blog/<slug>` answered 404, so a link there was
+// evidence pointing into nothing — invariant 5, and the third time this site
+// had made the call. That condition is gone: the renderer exists, H9c gives
+// `LogRow` and the post-mortem entry their links, and lib/seo/feed.ts carries
+// every entry. A reason can expire without the absence it argued for becoming
+// wrong, and this is that case rather than an oversight.
+//
+// WHAT THE ARROW WOULD MEAN IS "THE ENTRIES ABOUT THIS SYSTEM", AND NO URL ON
+// THIS SITE SAYS THAT. ADR 0071 §8 kept the index's filter state out of the URL
+// because `searchParams` made the route dynamic, and lib/blog/filter.ts has two
+// axes — `tag` and `q` — neither of which is a system. Pointing at the
+// unfiltered `/blog` would be a control promising a narrower list than it
+// delivers, which is what ADR 0071 §7 refused for the SUBSCRIBE block one page
+// over; inventing a third axis so the arrow can be true is the shape #292 is
+// open about. The sheet agrees with itself here, as it did before: it gives
+// `CASE STUDY →` a pointer cursor and a hover colour and gives this one neither.
 //
 // SO WHAT SHIPS IS A COUNT, and a count is worth shipping on its own. It is the
 // one number on this page that says how much has been WRITTEN about a system
