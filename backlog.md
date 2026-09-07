@@ -171,6 +171,86 @@ gh api /users/G1NG4R/packages/container/timseil-api/versions
 
 ---
 
+## Zwischendurch — 07.09.2026, #300: die zwei Pins, und ein Test, der aufgehört hatte zu prüfen
+
+`syft v1.51.0 → v1.51.1` und `golangci-lint v2.13.1 → v2.13.2`. Seit dem 31.08.
+offen, seitdem jeden Montag rot. **Alle vier Pins sind zum ersten Mal seit dann
+aktuell.**
+
+```
+✓ cosign v3.1.3 is current
+✓ gitleaks v8.30.1 is current
+✓ syft v1.51.1 is current
+✓ golangci-lint v2.13.2 is current
+```
+
+Der Lint-Bump kostet nichts: `0 issues` über ganz `api/`, keine neue Regel, die
+etwas anzumerken hätte.
+
+### Der Fund: der Selftest hatte den Digest abgeschrieben, den er prüft
+
+`make check` fiel nach dem Bump um, an einer Stelle, die mit syft nichts zu tun
+zu haben schien:
+
+```
+pins
+  ✗ a truncated digest rejected (accepted, should reject)
+```
+
+Die Zeile kürzte den Digest **per Literal**:
+
+```sh
+sed -i 's/@sha256:678bfa565b60…dfbb0/@sha256:678bfa565b60f747aac0f8e964fe5588a/' tools/sbom.sh
+```
+
+Sobald der Pin sich bewegt, greift das `sed` ins Leere, die Datei bleibt gültig,
+und der Fall meldet „accepted, should reject". **Der Test hätte still aufgehört
+zu prüfen** — gefangen nur, weil er nach der falschen Seite versagt: er
+behauptet eine Ablehnung und merkt, dass sie ausbleibt. Wäre er andersherum
+geschrieben, wäre er ab heute grün und leer gewesen.
+
+Repariert wertunabhängig statt nachgezogen: gekürzt wird jetzt, was immer für
+ein 64-Zeichen-Digest dasteht. Dieselbe Familie wie #241 — zwei Kopien einer
+Zahl, und nur eine bewegt sich.
+
+### Und der Digest wird von niemandem gegen seinen Tag geprüft
+
+`check-pins.sh --online` vergleicht **nur den Versions-String** gegen
+`tag_name` der Release-API. Ob der `@sha256:` daneben zu genau diesem Tag
+gehört, prüft nichts. Ein richtiger Kommentar über einem falschen Digest bliebe
+grün.
+
+Deshalb von Hand aufgelöst und gegengeprüft — und die Gegenprobe ist der Beleg,
+dass die Methode dieselbe ist, mit der der Pin ursprünglich gesetzt wurde:
+
+```
+v1.51.0   sha256:678bfa565b60f747aac0f8e964fe5588a24445b8d0a480e91f6efd70020dfbb0   ← wie in sbom.sh
+v1.51.1   sha256:95fe0835e5bebc6f8b1f8acef68d47d63d594ef4c0f25c097ff853b23cbac74c
+```
+
+Und `sbom.sh` gegen ein echtes Image gefahren, damit die Zahl nicht nur dasteht:
+Docker zog **denselben** Digest und syft v1.51.1 lieferte 22 Pakete.
+
+## Gefunden — aus dem Pin-Bump
+
+- **Ein Test, der einen Wert abschreibt, den er prüft, hört mit dem nächsten
+  Bump auf zu prüfen.** Der Fund oben, als Regel. Er ist hier nur aufgefallen,
+  weil der Fall eine *Ablehnung* behauptet: ein Fixture, das eine *Annahme*
+  behauptet, wäre unter derselben Änderung grün geblieben und leer geworden.
+  **Fixtures gehören an die Gestalt gebunden, nicht an den Wert.**
+  *(07.09.2026, #300)*
+- **`check-pins.sh --online` prüft die Version und nie den Digest.** Der Pin
+  besteht aus zwei Teilen, und geprüft wird einer. Keine neue Prüfregel dafür —
+  es ist noch nichts passiert, und CLAUDE.md verlangt einen benennbaren Vorfall.
+  Aufgeschrieben, damit ein erster Vorfall nicht als Überraschung ankommt.
+  *(07.09.2026, #300)*
+- **Die verdeckte Kopie in `~/.local/bin` ist mitgewandert**, mit Prüfsumme
+  gegen die veröffentlichte Liste. `/usr/bin/golangci-lint` steht weiter auf
+  2.12.2 aus dem Arch-Paket und bleibt verdeckt — `pacman` bewegt den falschen
+  Pin. *(07.09.2026, #300)*
+
+---
+
 ## Vorher — 07.09.2026, H9c gebaut: vier Ablehnungen sind verfallen, und eine war weiter richtig
 
 **Zweig `phase/h9c-dangling-references`.** ADR 0071 hat den Rest von H9 als „die

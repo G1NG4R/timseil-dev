@@ -1729,6 +1729,10 @@ cp cosign-image.good .cosign-image && rm cosign-image.good
 # another section not having tidied up is a test that fails for a reason that
 # has nothing to do with what it checks.
 printf 'pins\n'
+# A SHAPE FIXTURE, DELIBERATELY NOT THE REPOSITORY'S PIN. check-pins.sh only asks
+# whether this file reads as `vN.N.N`, so any well-formed version proves the same
+# thing — and keeping it in step with .golangci-lint-version would be the second
+# copy of a number that the line below just stopped being.
 printf 'v2.13.1\n' > .golangci-lint-version
 accepts "four pinned tools with digests and versions accepted" tools/check-pins.sh .
 
@@ -1737,7 +1741,16 @@ sed -i 's/^# syft v[0-9.]*$/# syft/' tools/sbom.sh
 refuses "a pin with no readable version rejected" "no readable version" tools/check-pins.sh .
 cp sbom.good tools/sbom.sh
 
-sed -i 's/@sha256:678bfa565b60f747aac0f8e964fe5588a24445b8d0a480e91f6efd70020dfbb0/@sha256:678bfa565b60f747aac0f8e964fe5588a/' tools/sbom.sh
+# THE DIGEST IS NOT TYPED HERE, and it was until the syft bump of 07.09.2026.
+# This line held a copy of the exact digest in tools/sbom.sh and truncated it by
+# literal match. The moment that pin moved, the sed matched nothing, the file
+# stayed valid, and this case reported "accepted, should reject" — a test that
+# had quietly stopped testing anything, caught only because it fails closed.
+#
+# It now truncates WHATEVER 64-character digest is there, so the fixture follows
+# the pin instead of shadowing it. Same defect this repository keeps finding:
+# two copies of one number, and only one of them moves.
+sed -i -E 's/@sha256:([0-9a-f]{32})[0-9a-f]{32}/@sha256:\1/' tools/sbom.sh
 refuses "a truncated digest rejected" "not 64" tools/check-pins.sh .
 cp sbom.good tools/sbom.sh
 
