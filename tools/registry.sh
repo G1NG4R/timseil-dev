@@ -115,8 +115,65 @@ case $cmd in
     printf '%s\n' "$d"
     ;;
 
+  # EVERY tag, which means following the registry when it says there are more.
+  #
+  # THIS RETURNED ONE PAGE UNTIL 07.09.2026 AND LOOKED LIKE AN INVENTORY. GHCR
+  # answers `tags/list` with 100 tags and a `Link: …; rel="next"` header, and
+  # this branch read the body and dropped the header. Two packages with 246 tags
+  # each therefore reported 123 of them, and the half that was missing was the
+  # newest — which is how prune-registry.sh came to say "production runs df72a3e
+  # and no version of timseil-api carries sha-df72a3e". The registry was right.
+  # Issue #299, and the number that gave it away was `50 tagged builds, 50
+  # indexes`: the same round number twice is a page size, not a count.
+  #
+  # THE DELETION PATH HAD THIS RIGHT ALREADY. prune-registry.sh pages the GitHub
+  # packages API properly. One repository, two listing strategies, and the one
+  # that could only misreport was the one that was wrong.
+  #
+  # The next URL is taken from the header rather than built here: `last=` is a
+  # cursor the registry owns, and constructing one would be this side guessing
+  # at the order it uses. Absolute path, so only the host is prepended.
+  #
+  # The cap is a guard rail on this loop, not a statement about the registry: a
+  # header that pointed at itself would otherwise spin forever, and 200 pages is
+  # far past anything this project can produce.
   tags)
-    api 'tags/list' | jq -r '.tags[]? // empty'
+    hdr=$(mktemp) || exit 1
+    trap 'rm -f "$hdr"' EXIT INT TERM
+
+    next='tags/list'
+    pages=0
+    while [ -n "$next" ]; do
+      pages=$(( pages + 1 ))
+      [ "$pages" -le 200 ] || {
+        printf '  ✗ %s/%s: still paginating after 200 pages — refusing to loop\n' \
+          "$NS" "$repo" >&2
+        exit 1
+      }
+
+      api "$next" -D "$hdr" | jq -r '.tags[]? // empty'
+
+      # `Link: <path>; rel="next"`, and nothing else in that header is ours to
+      # read. Missing means this was the last page, which is the normal exit.
+      next=$(tr -d '\r' < "$hdr" \
+        | awk 'tolower($1) == "link:" && /rel="next"/ {
+                 if (match($0, /<[^>]*>/)) print substr($0, RSTART + 1, RLENGTH - 2)
+               }' \
+        | head -1)
+
+      # api() builds its URL as https://HOST/v2/NS/REPO/<path>; the header gives
+      # the whole path from the root, so strip the prefix back off rather than
+      # teaching api() a second shape.
+      case $next in
+        "/v2/$NS/$repo/"*) next=${next#"/v2/$NS/$repo/"} ;;
+        '') ;;
+        *)
+          printf '  ✗ %s/%s: the next-page link left this repository: %s\n' \
+            "$NS" "$repo" "$next" >&2
+          exit 1
+          ;;
+      esac
+    done
     ;;
 
   # The config blob, which is where `created` and the OCI labels live. An index
