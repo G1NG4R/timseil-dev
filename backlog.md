@@ -171,6 +171,91 @@ gh api /users/G1NG4R/packages/container/timseil-api/versions
 
 ---
 
+## Zwischendurch — 07.09.2026, #299 beantwortet: die Registry hatte recht
+
+Das Issue fragte, welche Hälfte falsch ist — „whether the registry really does
+not carry that version, or whether the script reads its inventory too shallowly"
+— und verlangte, **einmal zu zählen**. Gezählt, und zwar **ohne**
+`read:packages`: der OCI-Endpunkt, den `registry.sh` benutzt, ist anonym.
+
+```
+GET /v2/g1ng4r/timseil-api/tags/list
+  100 Tags   (50 × sha-xxxxxxx  +  50 × sha256-…)
+  link: </v2/…/tags/list?last=sha256-a0481c07…&n=0>; rel="next"
+
+GET …?n=1000
+  246 Tags   123 × sha-      sha-df72a3e vorhanden, sha-d389891 vorhanden
+```
+
+**Das Skript liest zu flach.** GHCR paginiert und sagt es im `Link`-Header;
+`registry.sh` las den Rumpf und ließ den Header fallen. Die fehlende Hälfte war
+die neuere — deshalb genau der Satz aus dem CI-Lauf.
+
+Und die Zahl, die es verraten hat, war die im Backlog notierte: `50 tagged
+builds, 50 indexes`. Zweimal dieselbe runde Zahl ist eine Seitengröße.
+
+### Der Fund daneben: ein Repository, zwei Listungsstrategien
+
+`prune-registry.sh:255-268` — der **Lösch**pfad — paginiert die Packages-API
+korrekt, Seite für Seite, bis eine kürzer als 100 ist. Der **Plan**pfad, der
+über `registry.sh` geht, tat es nicht.
+
+Der Pfad, der etwas zerstören kann, las vollständig. Der Pfad, der nur berichtet,
+nicht. Beide im selben Repository, beide von derselben Hand.
+
+### Und der erste ehrliche Lauf findet sofort die andere Ursache
+
+```
+123 tagged builds, 123 indexes, 1 orphaned build(s)
+✗ the plan removes 560 of about 583 versions
+```
+
+Der Satz „no version of timseil-api carries sha-…" ist weg. Dafür feuert der
+Rückstände-Wächter — und **er hat recht**: 123 Builds, behalten werden 10, und
+gelöscht wurde noch nie etwas. `GHCR_PRUNE_ENABLED` ist nicht gesetzt,
+`GHCR_PRUNE_TOKEN` existiert nicht. Die Aufräumung war nie scharf; das erklärt
+die 123.
+
+Sein eigener Kommentar sagte es vorher: „A truncated listing and a large genuine
+backlog look identical from here." Die Meldung nannte trotzdem nur die erste
+Ursache — richtig geraten, solange die Paginierung fehlte, und ab jetzt die
+unwahrscheinlichere. Sie nennt jetzt beide.
+
+**`retention` bleibt damit rot, aus einem anderen und richtigen Grund.** Das ist
+Fortschritt und keine Reparatur: das Skript sagt jetzt die Wahrheit.
+
+## Gefunden — aus #299
+
+- **Zwei Wege zu einer Frage, und nur der gefährliche war richtig.** Derselbe
+  Baum listet Registry-Versionen an zwei Stellen: der Löschpfad paginiert, der
+  Berichtspfad nicht. Wo eine Fähigkeit zweimal gebaut wird, ist die
+  sorgfältigere die, hinter der eine Folge steht — und die andere wird still
+  falsch. *(07.09.2026, #299)*
+- **Ein `Link`-Header ist eine Aussage der Gegenseite über die Vollständigkeit
+  der eigenen Antwort.** Ihn zu ignorieren macht aus einer Seite einen Bestand,
+  ohne dass irgendwo eine Zahl falsch aussieht. Gilt für jede paginierte API,
+  die dieses Projekt noch anfassen wird. *(07.09.2026, #299)*
+- **Der Wächter, der zwei Ursachen hat, muss zwei nennen.** Solange die
+  Paginierung fehlte, war die eine Ursache immer die richtige — und die Meldung
+  wurde zur Diagnose statt zur Frage. *(07.09.2026, #299)*
+- **`read:packages` wurde nicht gebraucht.** Das Issue verlangte einen Token; die
+  Antwort lag am anonymen Endpunkt, den das Skript selbst benutzt — also an der
+  aussagekräftigeren Quelle. Ein Scope, den nichts braucht, wurde nicht
+  hinzugefügt. *(07.09.2026, #299)*
+
+## Verschoben aus #299
+
+- **Die 113 überzähligen Builds bleiben liegen.** Sie zu entfernen setzt voraus,
+  dass Löschen überhaupt scharf ist — `GHCR_PRUNE_ENABLED` und ein
+  `GHCR_PRUNE_TOKEN` mit `delete:packages`. Das ist eine eigene Entscheidung mit
+  einem eigenen Geheimnis und gehörte nicht in diesen Zweig.
+- **Danach reicht ein Lauf nicht.** Der Wächter lässt höchstens die Hälfte des
+  Bestands pro Lauf fallen, also `KEEP_BUILDS` stufenweise senken — 65, 37, 23,
+  … — statt den Wächter zu lockern. Gerechnet, nicht geschätzt: 560 von 583
+  Versionen wären ein Zug, erlaubt sind 291.
+
+---
+
 ## Zwischendurch — 07.09.2026, #300: die zwei Pins, und ein Test, der aufgehört hatte zu prüfen
 
 `syft v1.51.0 → v1.51.1` und `golangci-lint v2.13.1 → v2.13.2`. Seit dem 31.08.
@@ -248,6 +333,7 @@ Docker zog **denselben** Digest und syft v1.51.1 lieferte 22 Pakete.
   gegen die veröffentlichte Liste. `/usr/bin/golangci-lint` steht weiter auf
   2.12.2 aus dem Arch-Paket und bleibt verdeckt — `pacman` bewegt den falschen
   Pin. *(07.09.2026, #300)*
+
 
 ---
 

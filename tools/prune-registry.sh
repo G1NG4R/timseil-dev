@@ -234,9 +234,14 @@ for repo in ${only:-timseil-api timseil-web}; do
     continue
   fi
 
-  # A truncated listing and a large genuine backlog look identical from here.
+  # A truncated listing and a large genuine backlog look identical from here, and
+  # the message used to name only the first. It was the right guess while
+  # registry.sh read one page and stopped; #299 fixed that, and the first honest
+  # run afterwards found the OTHER cause — 123 builds where 10 are kept, because
+  # nothing has ever been deleted. Naming one cause for a symptom with two is how
+  # a correct refusal gets read as a bug in the reader.
   [ $(( n_plan * 2 )) -le "$n_known" ] \
-    || fail "the plan removes $n_plan of about $n_known versions — that is a listing this did not read to the end, until proven otherwise"
+    || fail "the plan removes $n_plan of about $n_known versions — either this listing was not read to the end, or nothing has been pruned for so long that the backlog IS most of the registry. Count before you widen this: tools/registry.sh tags <repo> | wc -l"
 
   printf '  would remove %s versions:\n' "$n_plan"
   while IFS='	' read -r kind what why; do
