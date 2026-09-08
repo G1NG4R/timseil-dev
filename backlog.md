@@ -170,6 +170,131 @@ gh api /users/G1NG4R/packages/container/timseil-api/versions
 
 ---
 
+## Zwischendurch — 08.09.2026: die Dependabot-Welle, und der Titel-Wächter misst nicht, was auf `main` landet
+
+Sieben offene Dependabot-PRs, alle sieben `BLOCKED` — und **keiner davon wegen
+seines Inhalts.** `title` ist seit #348 Pflicht-Kontext, `pr-title.yml` kam mit
+#345 um 17:28Z, und alle sieben Branches wurden vor 05:17Z desselben Tages
+geschnitten. Ein Pflicht-Kontext, den nie ein Ereignis ausgelöst hat, meldet
+nie — die Oberfläche sagt dazu nur `Expected — Waiting for status to be
+reported`.
+
+**Der billige Auslöser ist eine Titel-Änderung.** `ci.yml` hört auf
+`pull_request` ohne `types:`, also nur `opened, synchronize, reopened`;
+`pr-title.yml` hat `edited` dazu. Ein Titel hin und byte-genau zurück lässt
+`title` laufen und lässt die elf vorhandenen Check-Runs stehen — Sekunden statt
+eines Rebase mit 17 Minuten `e2e`. Dass die Workflow-Datei vom Merge-Ref kommt
+und nicht vom Head, ist die Voraussetzung dafür; sie hält.
+
+**Alle sieben sind durch, einzeln gemergt und einzeln deployt.** Jeder gegen
+`/api/health` nachgemessen statt gegen die Job-Farbe:
+
+```
+#341  49b5f62  traefik-Digest (Labor-Overlay)          deploy 12:42:37Z
+#340  abd173a  golang-Digest in api/Dockerfile          deploy 13:45:42Z  (nach Re-Run)
+#343  0cbc3e0  next 16.3.4                              deploy 14:24:58Z
+#351  d746130  web-development, 6 Updates (ersetzt #344) deploy 15:22:33Z
+#274  5406a66  Loki 3.7.7                               deploy 16:12:18Z
+#342  e8f1c54  goose 3.28    + stack.gen.json von Hand  deploy 16:38:17Z
+#275  52bfbd4  Alloy 1.19.2  + stack.gen.json von Hand  deploy 17:00:38Z
+```
+
+Nach jedem Deploy sackt `p95` sichtbar ab und erholt sich — 182 ms, 312 ms
+gegen 39–68 ms im Ruhezustand, und `GET /` einmal bei 2,57 s, drei Messungen
+später bei 0,26 s. **Das ist der Neustart im Fenster, keine Regression.** Wer
+die erste Messung nach einem Deploy für den Zustand hält, meldet sieben
+Regressionen an einem Nachmittag.
+
+### Der Fund: der Wächter misst den Titel ohne das Suffix, das der Squash anhängt
+
+`.githooks/commit-msg` begrenzt das Subject auf 72 Zeichen, und `pr-title.yml`
+gibt ihm den **PR-Titel**. Auf `main` landet aber `<Titel> (#N)` — sieben
+Zeichen, die niemand prüft.
+
+```
+#342   85 Zeichen  → rot,   auf main 92
+#343   74 Zeichen  → rot,   auf main 81
+#344   60 Zeichen  → grün,  auf main 67
+#341   47 Zeichen  → grün,  auf main 54  (gemerged)
+```
+
+Ein Titel mit 70 Zeichen ist für den Wächter grün und steht mit 77 auf `main`.
+Heute ist die Lücke harmlos, weil die zwei roten weit über der Grenze lagen —
+ein Titel zwischen 66 und 72 fällt lautlos durch.
+
+### Gefunden
+
+- **Dependabots Titel sind für dieses Repository zu lang.** Zwei von sieben über
+  72 Zeichen, beide auf demselben Muster: der Gruppen-Nachsatz `… in /web in the
+  web-production group` und der volle Modulpfad
+  `github.com/pressly/goose/v3`. `.github/dependabot.yml` hat kein Feld, das
+  einen Titel kürzt. Also Handarbeit pro PR — und da der Titel der Commit auf
+  `main` wird, ist das Kürzen ohnehin eine Entscheidung und kein Formalismus.
+- **Der Squash-Dialog hängt `Co-authored-by: dependabot[bot]` an.** In `49b5f62`
+  drin, in `9f97d2c` und `c4368bf` nicht — vier der letzten neun
+  Dependabot-Squashes tragen sie. `CLAUDE.md` schließt `Co-Authored-By` aus; die
+  Zeile entsteht in GitHubs Oberfläche, nicht im Branch, und `main` ist gegen
+  Force-Push gesperrt, also ist sie nicht mehr korrigierbar. Entweder das
+  Häkchen beim Mergen, oder die Regel benennt die Ausnahme.
+- **Fulcio hat den Deploy von #340 angehalten, und `make sign` hat keinen zweiten Versuch.**
+  `publish` Schritt 14, 13:11:44Z: die Signatur des api-Images war durch, die
+  SBOM-Attestierung fiel eine Sekunde später mit
+  `Post "https://fulcio.sigstore.dev/api/v2/signingCert": read: connection reset by peer`.
+  `deploy` hat `needs: [check, db, e2e, publish]`, wurde also übersprungen —
+  `main` stand auf `abd173a`, Produktion auf `49b5f62`. Das Gatter hat richtig
+  gehalten; der Fund ist, dass **ein TCP-Reset eines fremden Dienstes einen
+  Deploy kostet**, weil `tools/sign.sh` `cosign sign` und `cosign attest` genau
+  einmal versucht. Ein Re-Run repariert es, aber der ist Handarbeit und muss
+  jemandem auffallen. Kandidat für ein Issue: Wiederholung mit Backoff um die
+  zwei `cosign`-Aufrufe, oder die bewusste Entscheidung, dass Sigstore-Ausfälle
+  von Hand quittiert werden.
+- **Ein `rerun --failed` baut neu, und der Digest ist ein anderer.** Erwartet
+  war eine zweite Signatur am selben Digest; tatsächlich ging
+  `api@sha256:19e19b27…` aus dem ersten Versuch und `api@sha256:8f4be8d0…` aus
+  dem Re-Run hervor. Der Build ist nicht bit-reproduzierbar. **Der erste Digest
+  liegt damit untagged in GHCR — signiert, aber ohne SBOM-Attestierung**, weil
+  genau dazwischen der Reset kam. Kein Sicherheitsproblem (er ist von keinem Tag
+  aus erreichbar und trägt eine gültige Signatur dieser Workflow-Identität),
+  aber Registry-Müll, den nichts wegräumt und den `registry.sh` nach #299 jetzt
+  sehen kann. Zusammen mit dem Punkt darüber: ein fehlgeschlagener `publish`
+  hinterlässt immer eine halb beurkundete Schicht.
+
+- **Ein Dependabot-Rebase schreibt den PR-Titel neu, und die Kürzung ist weg.**
+  #342 stand nach dem Kürzen auf 47 Zeichen; der Rebase um 15:57Z setzte
+  `… in the go group across 1 directory` — **104 Zeichen**, länger als vorher.
+  Daraus folgt eine Reihenfolge, die nicht offensichtlich ist: **der Titel wird
+  zuletzt gesetzt**, nach dem letzten Eingriff von Dependabot. Ein eigener
+  Commit auf den Branch beendet dessen Rebases, ändert den Titel aber nicht —
+  also erst pushen, dann den Titel schreiben.
+- **`@dependabot rebase` kann einen Gruppen-PR schließen statt ihn zu rebasen.**
+  #344 (`web-development`, fünf Updates) wurde auf die Bitte hin mit *"Looks
+  like these dependencies are updatable in another way"* geschlossen und
+  dreißig Sekunden später als **#351 mit sechs** Updates neu eröffnet — die
+  Gruppe war unter ihm neu aufgelöst worden, weil #343 `next` auf `main`
+  gehoben hatte. Das ist das bessere Ergebnis, aber es heißt: **die PR-Nummer
+  einer Gruppe überlebt einen Rebase nicht**, und wer sie in einer Notiz führt,
+  führt eine tote Nummer.
+- **Der Grund, den Rebase überhaupt zu erzwingen, hielt der Prüfung stand.**
+  GitHub meldete #344 als `MERGEABLE` — die Diffs überschnitten sich nicht,
+  `next` lag in `dependencies`, die Gruppe in `devDependencies`. Textuell
+  mergebar ist aber nicht dasselbe wie ein stimmiges Lockfile, und die grünen
+  Häkchen waren vom 07.09. gegen den alten Baum. Bei `strict: false` merkt das
+  nichts. Der Ersatz-PR trug dann sechs statt fünf Updates — die Auflösung war
+  also tatsächlich eine andere.
+- **Alloy 1.19 ist als laufend belegt, als liefernd nicht.** Nach dem Deploy
+  zweimal gemessen — der Collector ist hochgekommen und nach vier Minuten noch
+  oben, also keine Restart-Schleife. Was offen bleibt: **ob Logzeilen bei Loki
+  ankommen.** `/api/health` beantwortet das nicht, weil die Metriken über
+  Traefik aus Prometheus kommen und Prometheus nicht an Alloy hängt; Alloys
+  einzige Aufgabe in `ops/alloy/config.alloy` ist Docker-Logs → Loki. Der Beleg
+  wäre eine Loki-Abfrage nach Zeilen jünger als der Deploy. **Aufgabe, nicht
+  Zustand** — der Weg dorthin steht nicht hier.
+- **`stack.gen.json` blockt #342 und #275** — kein Fund, der Handgriff aus
+  `.github/dependabot.yml`. Hier nur notiert, damit die beiden nicht als „rot,
+  also abgelehnt" gelesen werden.
+
+---
+
 ## Zwischendurch — 07.09.2026: die Gatter sind scharf, und `e2e` hatte dieselbe Lücke
 
 Sieben Pflicht-Kontexte werden neun. Gesetzt über `tools/github-setup.sh` und
