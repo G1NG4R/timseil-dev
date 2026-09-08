@@ -281,14 +281,15 @@ ein Titel zwischen 66 und 72 fällt lautlos durch.
   Häkchen waren vom 07.09. gegen den alten Baum. Bei `strict: false` merkt das
   nichts. Der Ersatz-PR trug dann sechs statt fünf Updates — die Auflösung war
   also tatsächlich eine andere.
-- **Alloy 1.19 ist als laufend belegt, als liefernd nicht.** Nach dem Deploy
-  zweimal gemessen — der Collector ist hochgekommen und nach vier Minuten noch
-  oben, also keine Restart-Schleife. Was offen bleibt: **ob Logzeilen bei Loki
-  ankommen.** `/api/health` beantwortet das nicht, weil die Metriken über
-  Traefik aus Prometheus kommen und Prometheus nicht an Alloy hängt; Alloys
-  einzige Aufgabe in `ops/alloy/config.alloy` ist Docker-Logs → Loki. Der Beleg
-  wäre eine Loki-Abfrage nach Zeilen jünger als der Deploy. **Aufgabe, nicht
-  Zustand** — der Weg dorthin steht nicht hier.
+- **Alloy 1.19 liefert, und das ist gegen Loki geprüft.** Zwei Aussagen, zwei
+  Belege: der Collector ist hochgekommen und war nach vier Minuten noch oben —
+  keine Restart-Schleife —, und in Loki stehen Zeilen mit Zeitstempel **nach
+  dem Deploy**. Die zweite Hälfte war nötig, weil die erste sie nicht enthält:
+  `/api/health` beantwortet die Frage nicht, denn die Metriken kommen über
+  Traefik aus Prometheus, und **Prometheus hängt nicht an Alloy**. Alloys
+  einzige Aufgabe in `ops/alloy/config.alloy` ist Docker-Logs → Loki. Ein
+  Collector, der läuft und nichts weiterreicht, sieht von außen aus wie einer,
+  der arbeitet.
 - **`stack.gen.json` blockt #342 und #275** — kein Fund, der Handgriff aus
   `.github/dependabot.yml`. Hier nur notiert, damit die beiden nicht als „rot,
   also abgelehnt" gelesen werden.
