@@ -13,7 +13,7 @@
       "Node 24",
       "Prometheus 3.13",
       "Loki 3.7",
-      "Alloy 1.18"
+      "Alloy 1.19"
     ],
     "vat-check": [
       "Python",
