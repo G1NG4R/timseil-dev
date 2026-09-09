@@ -12,11 +12,132 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## H10b gebaut — 09.09.2026: die Bewegung gehört dem Stylesheet, und der Durchzug hat eine Kante gefunden, die niemand gezeichnet hat
+## Wo wir stehen — 09.09.2026, H10b abgenommen: `v0.34.0` steht, und die Abnahme hat einen Knopf gefunden, den das Rig nie sehen konnte
+
+`cee24b6` läuft, **`v0.34.0`**. Merge **04:53:01Z**, Deploy-Job 05:08:53Z →
+05:09:23Z (**30 s**), der api-Prozess läuft seit **05:09:33.114Z**. Uhrzeit mit
+`date -u` gelesen; 05:08Z liegt weit vor dem Dokploy-Fenster 23:45–00:00.
+
+Der `feat:`-Titel hat wieder getan, was er soll: `v0.33.0` → **`v0.34.0`**,
+Minor, und `/api/badge/version` meldet ihn.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `cee24b6` gebaut.
+
+### Der Tausch ist diesmal nicht bezeugt, und das ist eine Lücke im Verfahren
+
+`witness.sh` ist **nicht gelaufen**. Der Merge lag zum Beginn der Abnahme schon
+über eine Stunde zurück, der Tausch war vorbei, und ein Zeuge, der nach dem
+Ereignis startet, bezeugt nichts. Die vier sauberen Tausche in Folge aus H9a–H10a
+sind damit **nicht auf fünf gewachsen**; #304 steht unverändert da, weder
+bestätigt noch widerlegt.
+
+Das ist keine Eigenschaft dieser Phase, sondern eine des Ablaufs: der Zeuge muss
+**vor** dem Merge stehen, nicht nach ihm. Bisher stand das nirgends.
+
+### Die Phase selbst, gegen Produktion gemessen
+
+Das ist die Zahl, um die es in H10b ging — dass die Bewegung in den Bytes liegt
+und nicht in einem Skript:
+
+```
+/no-such-address       404  css=3  data-glitch="true"  nf-replay  ✓
+/de/no-such-address    404  css=3  ✓
+/es/about              404  css=3  ✓
+/a/b/c                 404  css=3  ✓
+```
+
+Und das Keyframe liegt im ausgelieferten Stylesheet, nicht in einem Bundle:
+
+```
+@keyframes nf-glitch{0%{clip-path:inset(0);text-shadow:none;…}}
+.nf-display[data-glitch]{animation:nf-glitch var(--d-glitch) steps(2, end)}
+@media (prefers-reduced-motion:reduce){.nf-replay{display:none}}
+```
+
+Im Browser auf der laufenden Seite, Viewport 1063:
+
+| | |
+|---|---|
+| `animationName` · `animationDuration` | `nf-glitch` · **`0.28s`** |
+| `--d-glitch` | `.28s` — vom Minifier umgeschrieben, gleiche Zahl |
+| `.nf-main` | `flex` / `column` — der 1080er-Schalter greift |
+| `.nf-routes-list` | **3 Spalten** — nicht mehr das, was gerade passt |
+| `.nf-log` · `.nf-display` | 12px · 108px |
+| REPLAY geklickt | Knoten getauscht, `nf-glitch` läuft wieder |
+| Konsole | der `CANARY` und sonst nichts |
+
+Specs gegen die Seite gezogen, nicht gegen das Rig:
+
+```
+notfound.spec       33 grün, 1 übersprungen   (w1440 · w390)
+sheet + sweep       30 grün                   inkl. [1080, 720]
+reduced-motion      12 grün
+```
+
+### Der Fund der Abnahme: ein Pfeil, der 7,81 × 18 groß ist, und nur Produktion hat ihn
+
+`touch-targets.coarse.spec.ts` gegen die Seite gezogen meldet zwei Rote. Einer
+ist das Verfahren, einer ist die Seite.
+
+**Die Seite:** `.sys-exit a` — der `→`, der aus einer SYS.02-Zeile in die
+Fallstudie führt — misst unter `pointer: coarse`
+
+```
+w 7.81   h 18   display: inline   min-width: 44px   min-height: 44px
+```
+
+Die Regel **trifft und tut nichts**: `min-width`/`min-height` gelten nicht für
+eine nicht-ersetzte Inline-Box. Genau die Falle, die `home.css:207` und
+`ui.css:270` je einmal aufgeschrieben haben — dritter Fall, und der erste, den
+die Phase, die ihn ausgeliefert hat, nicht selbst gefangen hat. Als **#362**
+eröffnet.
+
+**Warum er durchkam:** das Rig fährt einen Produktionsbuild ohne API, SYS.02
+steht dort in seinem Ausfallpanel, und die Systemzeile ist gar nicht im
+Dokument. Der blinde Fleck, den H6b in einem Satz hat: „a sweep over seven widths
+can walk past a component it never sees."
+
+**Das Verfahren:** der zweite Rote ist `the filter chips`, der nach
+`/dev/components` geht. Die Galerie ist auf Produktion aus, also misst er null
+Chips. Nicht rot, sondern **unlaufbar** — dieselbe Gattung wie die fünf
+`home.spec`-Tests aus der H9c-Abnahme.
+
+### `durationSec` meldet 978 s für einen Deploy, der 30 s gedauert hat
+
+#242, die **fünfzehnte** Notiz. Die Form ist stabil, der Fehler auch: H9c 1125
+zu 30, H10a 1073 zu 28, jetzt 978 zu 30. Die Zahl misst weiterhin die Pipeline
+und nicht den Deploy, und sie steht weiterhin auf der Fallstudie.
+
+**Vorlaufzeit 952 s** — Merge bis Deploy-Start. Die vierte Messung:
+
+```
+H9a  2026-09-04   927 s
+H9b  2026-09-06  1461 s
+H9c  2026-09-07  1099 s
+H10b 2026-09-09   952 s
+```
+
+Der Deckel von 1800 hält.
+
+### Vier Issues aus dieser Phase, und 108 offen
+
+- **#358** die 404 ohne Chrome, verschoben aus H10a — vom Durchzug jetzt gemessen
+- **#359** `/blog/kein-post` und `/work/kein-system` rendern clientseitig
+- **#360** der Konstantzeit-Test fällt unter Last durch, nicht unter Angriff
+- **#362** der Pfeil mit 7,81 × 18 — der Fund dieser Abnahme
+
+**Als Nächstes:** H12 · Legal, Privacy, Imprint — die Seiten, die mit dem
+übereinstimmen müssen, was der Code tut, nicht umgekehrt. H11 ist das
+Error-Budget-Spiel und liegt hinter dem Launch.
+
+---
+
+## Vorher — 09.09.2026, H10b gebaut: die Bewegung gehört dem Stylesheet, und der Durchzug hat eine Kante gefunden, die niemand gezeichnet hat
 
 Die vier Stücke, die H10a offen gelassen hat, sind gebaut: Glitch, `REPLAY
-GLITCH`, Blatt-Parität, Durchzug. **Noch nicht gemergt, noch nicht gegen
-Produktion gemessen** — das steht in der Abnahme.
+GLITCH`, Blatt-Parität, Durchzug. Zu diesem Zeitpunkt weder gemergt noch gegen
+Produktion gemessen — beides steht im Abschnitt darüber.
 
 `make check` grün. Gegen den Branch gefahren, nicht gegen `main`.
 
