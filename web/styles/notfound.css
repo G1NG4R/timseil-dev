@@ -1,0 +1,325 @@
+/* The 404's own surfaces. Build plan H10.
+
+   WHAT IS HERE AND WHAT IS NOT, the same split case.css, home.css, work.css,
+   about.css, contact.css and blog.css make: this file draws, layout.css
+   switches. Nothing below carries a media query. The page answers to two of the
+   four declared switches and layout.css owns both — 1080, where the lede and
+   the router trace stop standing beside each other, and 720, where the display
+   step falls from 108 to 58.
+
+   ONE NEW TOKEN, AND IT IS THE ONLY ONE. `--t-disp-58` closes issue #247, which
+   asked for the decision rather than the number: the step existed in the sheet
+   and nowhere else. Everything else below is a colour, radius or duration that
+   already existed.
+
+   THE GEOMETRY LITERALS ARE THE SHEET'S OWN MEASURES, the policy contact.css
+   states for `16ch` and `640px`: `420px` is the rail the artboard draws
+   (`grid-template-columns:1fr 420px`), `80px` its gap, `52ch` the lede's cap,
+   and `1px` the hairlines. A reading of the drawing, not a value invented here.
+
+   RED IS THE THEME ON THIS PAGE RATHER THAN THE EXCEPTION, which is the one
+   place this site spends its alert moment more than once. The sheet says so
+   outright: "Alert-Rot ist hier das Thema, nicht die Ausnahme: Statuspunkt,
+   Panel-Brackets, Footer-Status. Cyan bleibt für Handlungen." Every red below
+   is one of those three; both actions stay cyan.                            */
+
+/* ── The page ───────────────────────────────────────────────────────────── */
+
+.nf {
+  padding-block: var(--s-72) var(--s-96);
+}
+
+.nf-main {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 80px;
+  align-items: center;
+}
+
+/* ── The lead ───────────────────────────────────────────────────────────── */
+
+.nf-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--t-mono-11);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  color: var(--alert);
+}
+
+/* The status mark. NOT `.st-dot` from state.css, because that one belongs to a
+   system state and this is not one — the site is online and answering, the
+   address is simply not a page. The sheet draws both facts side by side in its
+   footer: `ONLINE` and `STATUS 404`. */
+.nf-dot {
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: var(--radius-dot);
+  background: var(--alert);
+  box-shadow: var(--glow-alert);
+}
+
+/* K-08 AND `:where()` IS NOT NEEDED HERE, unlike contact.css and case.css. Those
+   two set an H1 SIZE that layout.css then has to beat at 720; this page keeps
+   its own size at 720 as well, so the class wins on both sides of the switch and
+   there is nothing to yield to. layout.css carries the 58. */
+.nf-display {
+  margin: 0 0 var(--s-30);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: var(--t-disp-108);
+  line-height: 0.94;
+  letter-spacing: var(--ls-disp);
+  color: var(--ink);
+}
+
+.nf-lede {
+  max-inline-size: 52ch;
+  margin: 0 0 var(--s-34);
+  font-size: var(--t-body-15);
+  line-height: 1.7;
+  color: var(--steel);
+}
+
+.nf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-12);
+}
+
+/* ── The router trace ───────────────────────────────────────────────────── */
+
+.nf-trace {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* The brackets the sheet paints red. This is the second of the three places it
+   names, and the only border on the page that is not `--line`. */
+.nf-trace::before,
+.nf-trace::after {
+  content: "";
+  display: block;
+  block-size: 1px;
+  background: var(--alert);
+}
+
+.nf-trace-facts {
+  display: grid;
+  gap: var(--s-6);
+  margin: 0;
+  padding: var(--s-14) var(--s-16);
+  border-block-end: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-mono-10);
+  letter-spacing: var(--ls-label);
+}
+
+.nf-fact {
+  display: flex;
+  gap: var(--s-10);
+}
+
+.nf-fact dt {
+  flex: none;
+  inline-size: 11ch;
+  color: var(--dim);
+}
+
+.nf-fact dd {
+  margin: 0;
+  min-inline-size: 0;
+  color: var(--ink-2);
+}
+
+/* THE ADDRESS IS A STRANGER'S BYTES, so it may not decide the width of the
+   panel. `anywhere` rather than `break-word`: a scanner's path has no spaces to
+   break at, and the panel is 420px on the widest artboard this page draws. */
+.nf-fact-path {
+  overflow-wrap: anywhere;
+}
+
+.nf-term {
+  padding: var(--s-16) var(--s-20) var(--s-20);
+}
+
+.nf-term-head,
+.nf-term-prompt {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--t-mono-10);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.nf-term-head {
+  margin-block-end: var(--s-12);
+}
+
+.nf-log {
+  margin: 0 0 var(--s-10);
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: var(--t-mono-11);
+  line-height: 1.9;
+  color: var(--steel);
+  overflow-wrap: anywhere;
+}
+
+.nf-log [data-tone="alert"] { color: var(--alert) }
+.nf-log [data-tone="amber"] { color: var(--amber) }
+.nf-log [data-tone="dim"]   { color: var(--dim) }
+
+/* ── SYS.404.01, the surface H11 fills ──────────────────────────────────── */
+
+.nf-budget {
+  margin-block-start: var(--s-56);
+  padding: var(--s-20);
+  border: 1px solid var(--line);
+}
+
+.nf-budget-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-10);
+  margin: 0 0 var(--s-8);
+  font-family: var(--mono);
+  font-size: var(--t-mono-11);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+}
+
+.nf-budget-id    { color: var(--acc) }
+.nf-budget-title { color: var(--ink) }
+.nf-budget-state { margin-inline-start: auto; color: var(--dim) }
+
+.nf-budget-lede {
+  margin: 0 0 var(--s-16);
+  font-size: var(--t-body-13);
+  color: var(--steel);
+}
+
+.nf-lanes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Drawn and still. A lane is a label on a surface until H11 gives it a game —
+   ADR 0058's "Fläche, nicht abgeschaltetes Bedienelement", which is why there
+   is no disabled styling here and nothing that looks pressable. */
+.nf-lane {
+  padding: var(--s-10) var(--s-12);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-mono-10);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  text-align: center;
+}
+
+/* ── The mounted routes ─────────────────────────────────────────────────── */
+
+.nf-routes {
+  margin-block-start: var(--s-56);
+}
+
+.nf-routes-head {
+  margin: 0 0 var(--s-16);
+  font-family: var(--mono);
+  font-size: var(--t-mono-11);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.nf-routes-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s-20);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* FIVE COLUMNS ON THE WIDEST ARTBOARD, and `auto-fit` gets there without a
+   media query: the sheet draws `repeat(5,1fr)` at 1440, and five 180px minimums
+   plus the gaps fit the content column there and nowhere narrower. Below that
+   the row reflows to four, three, two and one on its own, which is what the
+   mobile artboard shows — the list splitting at the fold rather than switching
+   at a breakpoint. This is the reason the 404 is one of the pages the
+   Intermediate Widths sheet excludes: "dort gibt es keine feste Spalte und
+   nichts zu entscheiden." */
+.nf-route {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding-block-end: var(--s-10);
+  border-block-end: 1px solid var(--line);
+  text-decoration: none;
+}
+
+.nf-route-path {
+  font-family: var(--mono);
+  font-size: var(--t-mono-12);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  color: var(--ink);
+}
+
+.nf-route-desc {
+  font-size: var(--t-body-13);
+  color: var(--steel);
+}
+
+@media (hover: hover) {
+  .nf-route:hover .nf-route-path { color: var(--acc) }
+  .nf-route:hover               { border-block-end-color: var(--acc) }
+}
+
+.nf-route:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 4px;
+}
+
+.nf-cv {
+  margin: var(--s-20) 0 0;
+  font-family: var(--mono);
+  font-size: var(--t-mono-10);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+/* ADR 0044's two links, and the reason they are a `<p>` rather than a footer:
+   `app/global-not-found.tsx` renders outside every layout, so the real footer —
+   which needs a route parameter to know its language — cannot run there. The
+   ADR's objection to an error page without one stands, and this is the smallest
+   honest answer to it: the two pages that have to stay reachable, and nothing
+   pretending to be the rest of the footer. */
+.nf-legal {
+  display: flex;
+  gap: var(--s-20);
+  margin: var(--s-56) 0 0;
+  padding-block-start: var(--s-20);
+  border-block-start: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: var(--t-mono-10);
+  letter-spacing: var(--ls-label);
+}
+
+.nf-legal a {
+  color: var(--dim);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .nf-legal a:hover { color: var(--acc) }
+}

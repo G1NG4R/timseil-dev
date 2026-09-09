@@ -713,6 +713,38 @@ export const en = {
     "No newsletter, no tracking. The feed is a plain RSS file, served by the " +
     "same container as every page here.",
 
+  // ── H10 · the 404 ──────────────────────────────────────────────────────
+  //
+  // WHAT IS NOT HERE: `ERR 404`, `STATUS 404`, `SIGNAL LOST`, `MOUNTED ROUTES`,
+  // `REQUESTED`, `METHOD`, `TRACE` and `SYS.404.01`. All nomenclature — LANG.01
+  // — and a German 404 would still read STATUS 404. The router trace is not
+  // here either: it is a log, and lib/notfound/trace.ts composes it, the same
+  // way lib/state/lines.ts composes an error panel.
+  notFoundLede:
+    "This route does not resolve. The request reached the server; there is " +
+    "simply nothing mounted at that path.",
+
+  // The five mounted routes, in the order the sheet lists them. The paths
+  // themselves are addresses rather than words and live in
+  // lib/notfound/mounted.ts; these are what each one is FOR.
+  notFoundRouteHome: "terminal, training log, systems",
+  notFoundRouteWork: "Selected work",
+  notFoundRouteBlog: "Writing",
+  notFoundRouteAbout: "About",
+  notFoundRouteContact: "Open a channel",
+
+  // The sheet draws this under the list, and it earns its line: the CV is the
+  // one thing a visitor may be hunting that is deliberately not an address.
+  notFoundCvHint: "The CV is not a route — type cv in the terminal on /.",
+
+  notFoundReturn: "RETURN TO ROOT",
+  notFoundSelectedWork: "SELECTED WORK",
+
+  // SYS.404.01. H10 draws the surface and H11 fills it after launch, so the
+  // sentence has to be true of an empty frame: it says what the panel will be,
+  // and the state chip beside it says it is not that yet.
+  notFoundBudgetLede: "While you are here — serve the requests.",
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

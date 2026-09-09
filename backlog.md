@@ -12,6 +12,86 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Vorher — 09.09.2026, H10a gebaut: vier Anläufe, und drei davon rendern die Seite nur im Browser
+
+Die 404 sollte eine `not-found.tsx` sein. Sie ist es nicht geworden, und der
+Grund war nur zu sehen, weil jeder Anlauf gegen einen Produktions-Build gemessen
+wurde statt gegen die Erwartung. ADR 0073 hat die Tabelle.
+
+**Der Kern:** weil das Wurzel-Layout in einem dynamischen Segment liegt
+(ADR 0046), **ist** `app/[lang]/not-found.tsx` die Wurzel-404 — und Next liefert
+eine Wurzel-404 durch sein Fehlerdokument aus:
+
+```
+/nonsense   404   <html id="__next_error__">
+                  Körper: nur <script>
+                  Stylesheets im <head>: 0
+                  ohne JavaScript: weiße Seite
+```
+
+Auf der Route, die diese Anlage häufiger ausliefert als jede andere. Gebaut ist
+jetzt `app/global-not-found.tsx` — Nexts eigene Antwort für genau diese Baumform,
+hinter `experimental.globalNotFound`.
+
+```
+/nonsense        404  css=3  serverseitig gerendert  ✓
+/de/nonsense     404  css=3  ✓
+/es/about        404  css=3  ✓
+/a/b/c           404  css=3  ✓
+/                200  unverändert
+```
+
+### Gefunden — aus dem Bau von H10a
+
+- **Eine Catch-all-Route überschattet die echten Seiten.** `app/[lang]/[...rest]`,
+  das nur `notFound()` ruft, hat `/`, `/work` und `/blog` mit dem 404-Körper unter
+  **Status 200** beantwortet. Der teuerste denkbare Fehlschlag, und ohne die
+  Messung wäre er grün durchgegangen.
+- **`app/layout.tsx` entfernt `lang` aus `next/root-params`.** Ein Root-Parameter
+  ist ein Segment *über* dem Wurzel-Layout; zieht man eines ein, hört `[lang]`
+  auf, einer zu sein. Der Build sagt `Export lang doesn't exist in target
+  module`, und `getDictionary()` hängt daran. Der strukturell sauberste Weg ist
+  damit versperrt, solange ADR 0046 gilt.
+- **`role="status"` auf einem `<ol>` ersetzt die Listenrolle.** Jedes `<li>`
+  verliert seinen Container; aus sieben Logzeilen werden sieben Waisen. Axe hat
+  es gefunden, ein Prüfer hätte es nicht. Die Rolle ist gestrichen.
+- **Der Seite fehlte ein `<title>`.** Sie umgeht jedes Layout, erbt also auch
+  keine Metadaten. Ebenfalls axe.
+- **Der Browser kodiert die Adresse, bevor sie ankommt.** `/<img src=x
+  onerror=alert(1)>` erreicht die Seite als `/%3Cimg%20…`. Die rohen Bytes
+  kommen nur von einem Client, der nicht kodiert — `curl`, ein Scanner. Beide
+  Formen sind jetzt geprüft, die rohe im Unit-Test, die kodierte im e2e.
+- **`headers()` im Rumpf der Seite ist unter `cacheComponents` ein Build-Fehler.**
+  Die Suspense-Grenze ist der vorgesehene Weg, und der Status hält: 404 mit
+  Grenze, gemessen.
+- **Das e2e-Rig hat noch nie einen Statuscode behauptet.** Bis H10 antwortete
+  jede Seite 200 und die Frage kam nicht auf. `notfound.spec.ts` ist die erste
+  Datei, die `response.status()` prüft — und die erste, die `response.text()`
+  liest statt des DOM, weil Playwright das Skript ausführt und eine nur im
+  Browser gerenderte Seite sonst wie eine funktionierende aussieht.
+- **#247 ist geschlossen:** `--t-disp-58` ist die vierzehnte Displaystufe, der
+  Schalter liegt auf der vorhandenen 720er-Kante.
+
+### Verschoben aus H10a
+
+- **Die 404 trägt kein Chrome.** `SiteHeader` und `SiteFooter` rufen
+  `getDictionary()` → `next/root-params`, und hier gibt es keine Route, von der
+  ein Parameter zu lesen wäre. `PRIVACY` und `IMPRINT` werden von Hand
+  gerendert — eine zweite, kleinere Kopie einer Fußzeilenreihe. ADR 0044s
+  Einwand bleibt gültig. **Braucht ein Issue.**
+- **Die Hülle ist englisch.** Einmal vorgerendert für die ganze Seite, also kein
+  Sprachsegment zu lesen. Kostet heute nur den `/de`-Präfix auf fünf Links, weil
+  die Überlagerungen leer sind. **Ab P6 kostet es mehr.**
+- **`/blog/kein-post` und `/work/kein-system` rendern clientseitig** — gemessen
+  **auch auf `main`, vor dieser Phase**. Bestehender Mangel, keine Regression.
+  **Braucht ein Issue.**
+- **`experimental.globalNotFound` ist ein experimentelles Flag.** Bei jedem
+  Next-Bump prüfen, ob es noch existiert und die Seite noch serverseitig
+  rendert. `notfound.spec.ts` ist der Wächter.
+- H10b steht aus: Glitch, `REPLAY GLITCH`, Sheet-Parität, Sweep.
+
+---
+
 ## Wo wir stehen — 07.09.2026, H9c abgenommen: `v0.32.0` steht, und der Zeuge hat 3330 Anfragen ohne einen Fehlversuch gesehen
 
 `d389891` läuft, **`v0.32.0`**. Merge **15:28:13Z**, Deploy-Job 15:46:32Z →

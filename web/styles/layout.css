@@ -124,7 +124,11 @@
 
 /* ---- < 1080: eine Spalte, Rail darunter, Vorschau weg -------------------- */
 @media (max-width: 1079px) {
-  .hero, .cs-spec, .cs-prob, .cs-arch {
+  /* `.nf-main` joins them in H10 rather than getting a rule of its own: the
+     404's hero is the same shape as the case study's — prose beside a rail —
+     and it stops being two columns at the same width for the same reason.
+     layout.css's own rule: "Kein Bauteil bekommt seinen eigenen Wert." */
+  .hero, .cs-spec, .cs-prob, .cs-arch, .nf-main {
     display: flex; flex-direction: column; gap: 44px;
   }
 
@@ -402,6 +406,13 @@
 /* ---- < 720: Typo und Tabellen -------------------------------------------- */
 @media (max-width: 719px) {
   h1              { font-size: var(--t-disp-34) }
+  /* H10. The 404 is the one page whose display does not fall to 34, and the
+     step is the sheet's own: 108 on the desktop artboard, 58 on the mobile
+     one. It rides on THIS switch rather than one of its own — ADR 0042 says
+     there are four, and a fifth for a single page would be the breakpoint
+     that was never a measurement H6 already paid for. A class, because the
+     bare `h1` above would otherwise win on source order. */
+  .nf-display     { font-size: var(--t-disp-58) }
   .decision-table { grid-template-columns: 1fr }
   .ops-tiles      { grid-template-columns: repeat(3, minmax(0,1fr)) }
 }

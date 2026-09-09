@@ -95,6 +95,22 @@ export const WORK = "/work";
 export const CONTACT = "/contact";
 
 /**
+ * An address that resolves to nothing. H10.
+ *
+ * IT IS NOT IN `ROUTES`, and that list's own comment is the reason: it holds
+ * "the routes that exist", and it is a list rather than a crawl precisely so
+ * that "a crawl cannot tell a route that is missing from a route that was never
+ * meant to be there". This is the second kind. Its accessibility sweep lives in
+ * notfound.spec.ts instead, where the thing being swept is stated rather than
+ * inferred.
+ *
+ * THE VALUE IS NONSENSE ON PURPOSE and must stay that way: the moment somebody
+ * mounts `/no-such-address`, this file is where the test starts passing for the
+ * wrong reason.
+ */
+export const NOT_FOUND = "/no-such-address";
+
+/**
  * The two widths the Blog Post sheet draws.
  *
  * The same two About and Contact have, and the Intermediate Widths sheet says

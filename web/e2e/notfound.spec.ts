@@ -1,0 +1,132 @@
+/**
+ * The 404 at every checked width, and the two things about it that no other
+ * spec in this rig has ever checked.
+ *
+ * THE STATUS CODE IS THE POINT OF THIS FILE. Nothing in `e2e/` has asserted an
+ * HTTP status until now — every page here answers 200 and the question never
+ * came up. It comes up here because Next can serve a 404 body under a `200`:
+ * "when streaming, a 200 status code will be returned … the status code cannot
+ * be updated" (loading.md). That is a soft 404, and this site argues against
+ * exactly that shape one level up, in docs/systemhandbuch.md, where the
+ * deploy acceptance counts non-200 rather than 5xx. So the status is asserted
+ * on every address that should have one.
+ *
+ * AND THE SECOND IS THAT THE PAGE EXISTS IN THE RESPONSE. H10a shipped its
+ * fourth attempt at this file's route for one reason: the first three rendered
+ * the 404 in the browser and nowhere else — an empty body full of <script>,
+ * assembled after hydration. A Playwright assertion on the DOM cannot tell that
+ * apart from a working page, because Playwright runs the script. So the
+ * assertions below read `response.text()`, which is the bytes on the wire, and
+ * that is the only form in which "server-rendered" is a claim rather than a
+ * hope.
+ */
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test } from "@playwright/test";
+
+import { MOUNTED_ROUTES } from "../lib/notfound/mounted";
+import { NOT_FOUND } from "./widths";
+
+/** WCAG 2.2 AA, the same set a11y.spec.ts sweeps the real routes with. */
+const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+
+test("an address that resolves to nothing answers 404", async ({ page }) => {
+  const response = await page.goto(NOT_FOUND);
+
+  expect(response?.status()).toBe(404);
+});
+
+// Four shapes of missing, because they take four different paths through the
+// router and only one of them is the obvious one.
+for (const path of ["/no-such-address", "/de/no-such-address", "/es/about", "/a/b/c"]) {
+  test(`${path} answers 404 and carries the page`, async ({ page }) => {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(404);
+
+    // The bytes, not the DOM. See the file header.
+    const html = (await response?.text()) ?? "";
+    expect(html).toContain("SIGNAL");
+    expect(html).toContain("MOUNTED ROUTES");
+  });
+}
+
+test("the response carries a stylesheet, so the page is not raw markup", async ({ page }) => {
+  const response = await page.goto(NOT_FOUND);
+  const html = (await response?.text()) ?? "";
+
+  expect(html).toMatch(/rel="stylesheet"/);
+});
+
+test("the router trace names the address that was asked for", async ({ page }) => {
+  await page.goto(NOT_FOUND);
+
+  await expect(page.locator(".nf-fact-path")).toHaveText(NOT_FOUND);
+});
+
+// THE ONE A STRANGER CONTROLS. The address is the only thing on this site that
+// a visitor writes and the page prints, so it is the site's one reflected-input
+// surface outside the terminal. lib/notfound/trace.ts holds the same case as a
+// unit test; this is the half that proves React escaped it in a real browser.
+test("markup in the address is printed, never executed", async ({ page }) => {
+  const attack = "/<img src=x onerror=alert(1)>";
+  let dialogs = 0;
+  page.on("dialog", (dialog) => {
+    dialogs += 1;
+    void dialog.dismiss();
+  });
+
+  const response = await page.goto(attack);
+
+  expect(response?.status()).toBe(404);
+  expect(dialogs).toBe(0);
+
+  // AND THE BROWSER GOT THERE FIRST, which is worth writing down rather than
+  // asserting around: it percent-encodes the address before the request is
+  // sent, so what the page prints is `/%3Cimg%20src=x…`. The raw bytes only
+  // arrive from a client that does not encode — curl, or a scanner — and that
+  // case is lib/notfound/trace.test.ts's, where it can be driven exactly.
+  await expect(page.locator(".nf-fact-path")).toContainText("%3Cimg");
+  // Either way: characters, never an element.
+  await expect(page.locator(".nf-fact-path img")).toHaveCount(0);
+});
+
+// The sheet's note says four mounted routes and its artboard draws five
+// columns; Routes and Paths settles it at five, "sonst ist sie eine Sackgasse
+// mit Dekoration". Both halves are asserted, because a list of five under a
+// sentence that says four is the defect this phase nearly shipped.
+test("five ways out, and the trace counts the same five", async ({ page }) => {
+  await page.goto(NOT_FOUND);
+
+  await expect(page.locator(".nf-routes-list li")).toHaveCount(MOUNTED_ROUTES.length);
+  await expect(page.locator(".nf-log")).toContainText(
+    `matching ${String(MOUNTED_ROUTES.length)} mounted routes`,
+  );
+});
+
+// ADR 0044: the footer is "der einzige Weg zu PRIVACY und IMPRINT von einer
+// Fehlerseite aus", and this page cannot render the real footer. The two links
+// it renders by hand instead are what that ADR is owed.
+test("privacy and imprint stay reachable from the error page", async ({ page }) => {
+  await page.goto(NOT_FOUND);
+
+  await expect(page.locator('.nf-legal a[href$="/privacy"]')).toHaveCount(1);
+  await expect(page.locator('.nf-legal a[href$="/imprint"]')).toHaveCount(1);
+});
+
+// H11 builds the game. Until then the surface says so, and `[SOON]` rather than
+// `— NO DATA` is the distinction lib/state/words.ts exists to keep: nothing was
+// measured and failed, the thing does not exist yet.
+test("the error-budget surface is a surface, not a disabled control", async ({ page }) => {
+  await page.goto(NOT_FOUND);
+
+  await expect(page.locator(".nf-budget-state")).toHaveText("[SOON]");
+  await expect(page.locator(".nf-budget canvas")).toHaveCount(0);
+  await expect(page.locator(".nf-lane")).toHaveCount(4);
+});
+
+test("the accessibility sweep is clean", async ({ page }) => {
+  await page.goto(NOT_FOUND);
+
+  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+
+  expect(results.violations).toEqual([]);
+});
