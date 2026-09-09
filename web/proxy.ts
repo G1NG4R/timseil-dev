@@ -49,6 +49,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { canonicalRedirect, rewriteTarget } from "@/lib/i18n/routes";
+import { REQUESTED_PATH_HEADER } from "@/lib/notfound/trace";
 import { REQUEST_ID_HEADER, createRequestId } from "@/lib/reqid";
 import {
   TRACEPARENT_HEADER,
@@ -74,6 +75,21 @@ export function proxy(request: NextRequest): NextResponse {
   const headers = new Headers(request.headers);
   headers.set(REQUEST_ID_HEADER, requestId);
   headers.set(TRACEPARENT_HEADER, renderTraceparent(span));
+
+  // THE ADDRESS THE VISITOR SENT, for the one page that has to print it.
+  //
+  // `app/global-not-found.tsx` is served by the router rather than rendered
+  // under a route, so it has no pathname of its own to read — this header is
+  // the only way back to the address that was asked for. It is also the address
+  // BEFORE the rewrite (`/about`, never `/en/about`), which is the one a
+  // visitor could quote.
+  //
+  // SET ON EVERY REQUEST, NEVER ADOPTED, for the reason X-Request-Id is: this
+  // value is RENDERED, so a copy that arrived from outside would be a path a
+  // stranger picked for a page we serve. Setting it unconditionally is what
+  // makes an inbound one unreachable — there is no branch where a visitor's
+  // own header survives.
+  headers.set(REQUESTED_PATH_HEADER, request.nextUrl.pathname);
 
   // The redirect goes first, and the order is load-bearing: `/en/about` must
   // leave as a 308 rather than be rewritten to `/en/en/about`. It is decided on

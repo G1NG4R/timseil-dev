@@ -123,6 +123,13 @@
   --t-disp-26: 26px;
   --t-disp-34: 34px;
   --t-disp-52: 52px;
+  /* H10, and issue #247 asked for the decision rather than the number: the
+     404 sheet steps its display from 108 to 58 on mobile, and until this
+     phase that 58 existed only in the drawing. A fourteenth step for one
+     page is a real cost, and it is still the cheaper of the two — the
+     alternative was the number itself, spelled out in layout.css, which is
+     the one thing this file exists to prevent. */
+  --t-disp-58: 58px;
   --t-disp-62: 62px;
   --t-disp-108: 108px;
 

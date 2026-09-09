@@ -57,6 +57,19 @@ const nextConfig: NextConfig = {
   //      React's <Activity>. A route that leaves state behind now leaves it in
   //      the document. components/MobileMenu.tsx is the one that did.
   cacheComponents: true,
+  // H10a. `app/global-not-found.tsx` is the only shape in which this site can
+  // server-render its own 404, and the flag is what turns that file on.
+  //
+  // THE ALTERNATIVES WERE MEASURED, NOT ASSUMED. A `not-found.tsx` under
+  // `app/[lang]/` is the ROOT not-found here — the root layout lives inside a
+  // dynamic segment (ADR 0046) — and Next serves a root not-found through its
+  // error document: an empty body, no stylesheet, the page assembled in the
+  // browser afterwards. On the route this container answers most often. Next's
+  // own documentation names this exact shape as the reason the file exists.
+  //
+  // It is experimental, so it is a dependency on an unstable API rather than a
+  // free win, and ADR 0073 carries the trade and what to watch on a Next bump.
+  experimental: { globalNotFound: true },
 
   // Derived, not chosen. ADR 0009 gives GET /api/health the header
   // `public, s-maxage=60, stale-while-revalidate=600`, and says in as many
