@@ -159,12 +159,21 @@ for f in $files; do
   base=${f##*/}
 
   # Walk the file keeping the run of comment lines directly above each
-  # statement. When a CREATE INDEX turns up, that run has to mention a SELECT.
+  # statement. When a CREATE INDEX turns up, that run has to quote the statement
+  # the index is for.
+  #
+  # SELECT was the whole list until H12, because until then every index here
+  # served a read. 00010_contact_retention.sql is the first one that does not:
+  # its query is the retention purge, and a DELETE over a range wants an index
+  # for exactly the reasons a SELECT does. The rule was never "an index serves a
+  # read", it was "an index names its query" — this is that rule finishing its
+  # own sentence, not a new one. The broken case is unchanged and still rejected:
+  # a comment that quotes no statement at all.
   missing=$(awk '
     /^[[:space:]]*--/          { block = block $0 " "; next }
     /^[[:space:]]*$/           { next }
     /CREATE[[:space:]]+(UNIQUE[[:space:]]+)?INDEX/ {
-      if (block !~ /SELECT/) { print NR }
+      if (block !~ /SELECT|DELETE|UPDATE/) { print NR }
     }
     { block = "" }
   ' "$f")

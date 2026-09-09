@@ -175,6 +175,12 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	// answer, and everything after that is this loop's.
 	dispatcher := contact.NewDispatcher(store.New(pool), sender, cfg.Mail.To, budget, log)
 
+	// The sixth, and the only one whose job is to make the site smaller rather
+	// than fuller. It deletes contact messages once the retention window has
+	// passed — the promise the privacy page makes in H12, kept here so that the
+	// page is citing a loop rather than an intention.
+	purger := contact.NewPurger(store.New(pool), log)
+
 	// Flipped before the listener closes, so /readyz says 503 while the last
 	// requests drain and whatever is watching stops sending new ones.
 	var accepting atomic.Bool
@@ -219,6 +225,7 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		backfiller.Stop()
 		snapshotter.Stop()
 		dispatcher.Stop()
+		purger.Stop()
 		stopLimiters()
 		pool.Close()
 		return err
@@ -226,20 +233,22 @@ func run(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 
 	log.Info("api listening", "addr", ln.Addr().String())
 
-	// All seven released after the drain, and in this order: the five background
+	// All eight released after the drain, and in this order: the six background
 	// users of the pool first, because work in flight would otherwise meet a
 	// closed one, the limiters' janitors next because nothing is waiting on
 	// them, the pool last because a handler still writing its response may still
-	// need it. Every Stop cancels rather than waits — a roll-up, a fetch or a
-	// snapshot cut halfway loses nothing that the next tick does not redo, and a
-	// delivery cut halfway costs at worst one duplicate mail to our own inbox,
-	// which is cheaper than holding the drain open for an SMTP conversation.
+	// need it. Every Stop cancels rather than waits — a roll-up, a fetch, a
+	// snapshot or a purge cut halfway loses nothing that the next tick does not
+	// redo, and a delivery cut halfway costs at worst one duplicate mail to our
+	// own inbox, which is cheaper than holding the drain open for an SMTP
+	// conversation.
 	return serve(ctx, srv, ln, cfg.ShutdownDelay, cfg.ShutdownGrace, &accepting, func() {
 		aggregator.Stop()
 		refresher.Stop()
 		backfiller.Stop()
 		snapshotter.Stop()
 		dispatcher.Stop()
+		purger.Stop()
 		stopLimiters()
 		pool.Close()
 	}, log)
