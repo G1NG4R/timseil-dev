@@ -14,6 +14,8 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import { NOT_FOUND } from "./widths";
+
 /** WCAG 2.2 AA asks for 24. This project's rule is 44, and 44 is what is checked. */
 const MIN = 44;
 
@@ -184,6 +186,34 @@ test.describe("targets a finger has to hit", () => {
     // not about the fixture — what it must never do is pass having measured
     // nothing, which is the failure the assertion names.
     expect(targets.length, "no chip was measured").toBeGreaterThan(10);
+    expect(tooSmall(targets), report(targets)).toEqual([]);
+  });
+
+  // H10b, AND IT IS HERE TO TURN A DECISION INTO A MEASUREMENT. The 404 draws a
+  // ghost control — REPLAY GLITCH, `12px 4px` around 11px of mono, which is 35
+  // tall before layout.css's coarse rule touches it. Artboard `1b` does not draw
+  // it, so it is removed at 720 and never stands where `pointer: coarse` applies.
+  // That is an argument, and this is the line that checks it holds.
+  //
+  // AND THE REST OF THE PAGE HAD NEVER BEEN MEASURED HERE AT ALL. H10a shipped
+  // nine controls on this route while this file went to `/` and the gallery and
+  // nowhere else — the blind spot H6b wrote down as "a sweep over seven widths
+  // can walk past a component it never sees". Two of the nine are `.btn`, which
+  // is `inline-block` and does take a `min-height`; five are flex columns and two
+  // are anchors inside a flex row, which is what blockifies them. No form of it
+  // was ever proven on this page.
+  test("the 404's own controls are at least 44 x 44, and replay is not among them", async ({
+    page,
+  }) => {
+    await page.goto(NOT_FOUND);
+    const targets = await measure(page, "main");
+
+    // Nine and not ten: two ways out, five mounted routes, PRIVACY and IMPRINT —
+    // and REPLAY GLITCH absent. The count is the assertion that says so, because
+    // `tooSmall` on a page whose one small control is hidden would be green
+    // either way. This is the number that moves the day the 720 rule is dropped,
+    // or the day the real footer arrives.
+    expect(targets.length, "the 404 drew a different number of controls").toBe(9);
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
 });

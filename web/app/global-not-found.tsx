@@ -170,6 +170,7 @@ export default function GlobalNotFound() {
                 lede={messages.notFoundLede}
                 returnLabel={messages.notFoundReturn}
                 workLabel={messages.notFoundSelectedWork}
+                replayLabel={messages.notFoundReplay}
                 homeHref={localeHref(locale, "/")}
                 workHref={localeHref(locale, "/work")}
               />

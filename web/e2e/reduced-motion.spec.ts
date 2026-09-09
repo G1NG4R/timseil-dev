@@ -14,7 +14,7 @@
  */
 import { expect, test } from "@playwright/test";
 
-import { ROUTES } from "./widths";
+import { NOT_FOUND, ROUTES } from "./widths";
 
 // A browser-context option rather than a project of its own: this is the only
 // file that wants the preference, and a ninth project to carry one setting
@@ -65,7 +65,17 @@ test("the browser really reports the preference", async ({ page }) => {
   ).toBe(true);
 });
 
-for (const route of ROUTES) {
+// THE 404 IS NAMED RATHER THAN SWEPT, and both halves of that are deliberate.
+// `ROUTES` holds "the routes that exist", and widths.ts keeps this address out of
+// it on purpose — it is the second kind, an address that resolves to nothing. So
+// it is appended here rather than added there.
+//
+// AND IT HAS TO BE HERE SINCE H10b. Until that phase the 404 was the one page
+// with nothing that moved; it is now the page whose FIRST move happens before any
+// script runs. Two mechanisms answer the preference on it — globals.css disables
+// the keyframe, a media query in notfound.css removes the control that repeats it
+// — and this file is what holds both against a browser that really carries it.
+for (const route of [...ROUTES, NOT_FOUND]) {
   test(`nothing on ${route} animates or transitions`, async ({ page }) => {
     await page.goto(route);
     await expect(page.locator("body")).toBeVisible();

@@ -76,6 +76,95 @@
   color: var(--ink);
 }
 
+/* ── The glitch ─────────────────────────────────────────────────────────────
+   H10b. The sheet makes this the theme of the page rather than a flourish —
+   its turn is titled "404 — SIGNAL LOST · ein 300ms-Glitch beim Laden, danach
+   still" — and its own design note sets the rule: "Glitch feuert einmal beim
+   Laden, 300ms, dann nie wieder von selbst — Interpunktion, keine Tapete."
+
+   CSS OWNS THE MOVE, JAVASCRIPT OWNS ONLY THE REPEAT, and that is the whole
+   decision of this phase. The sheet's `fire()` does four things in script:
+   assign the animation, assign a `text-shadow`, clear both on a 320ms timer,
+   and ask `matchMedia` about reduced motion. All four fall away here.
+
+     the first run   `data-glitch` is in the bytes the server sends, so the
+                     move happens at FIRST PAINT — no hydration, no script.
+                     On the one route this installation serves more than any
+                     other, that is the difference between a page that
+                     glitches and a page that glitches for people with
+                     JavaScript. `notfound.spec.ts` asserts the attribute in
+                     `response.text()` rather than in the DOM, for H10a's
+                     reason.
+     the cleanup     the two colour layers live INSIDE the keyframe and end at
+                     `none`, so there is nothing left over to clear. A timer
+                     that removes a style is a second place the move can be
+                     wrong.
+     reduced motion  globals.css sets `animation: none !important` on the
+                     universal selector, which is stronger than anything here.
+                     The attribute stays and does nothing. No script asks the
+                     question, so no test has to prove the answer was heard.
+
+   A SECOND KEYFRAME BESIDE `ts-glitch`, AND NOT A REUSE OF IT. state.css's is
+   move M5, the punctuation of a STATE CHANGE, and it writes down that it must
+   not touch colour — "Red belongs to the CHANGE and never to the state that
+   follows it". This one marks an ARRIVAL, on the one page where the sheet says
+   red is the subject: "Alert-Rot ist hier das Thema, nicht die Ausnahme." Two
+   meanings, two moves. ADR 0074.
+
+   THE BANDS ARE THE SHEET'S OWN, transcribed from `404 - timseil.dev.dc.html`
+   line 22 — five stops of `transform` and `clip-path: inset()`. The two colour
+   layers are the sheet's chromatic split, with its literals replaced by the
+   tokens they are: `#FF2D55` is `--alert` and `#00E5FF` is `--acc`, mixed the
+   way `--glow-alert` mixes. Invariant 8. */
+@keyframes nf-glitch {
+  0% {
+    transform: translate3d(0, 0, 0);
+    clip-path: inset(0 0 0 0);
+    text-shadow: none;
+  }
+  18% {
+    transform: translate3d(-3px, 1px, 0);
+    clip-path: inset(22% 0 46% 0);
+    text-shadow:
+      2px 0 color-mix(in srgb, var(--alert) 75%, transparent),
+      -2px 0 color-mix(in srgb, var(--acc) 55%, transparent);
+  }
+  34% {
+    transform: translate3d(2px, -1px, 0);
+    clip-path: inset(58% 0 14% 0);
+  }
+  52% {
+    transform: translate3d(-1px, 0, 0);
+    clip-path: inset(8% 0 72% 0);
+  }
+  70% {
+    transform: translate3d(2px, 1px, 0);
+    clip-path: inset(40% 0 30% 0);
+    text-shadow:
+      2px 0 color-mix(in srgb, var(--alert) 75%, transparent),
+      -2px 0 color-mix(in srgb, var(--acc) 55%, transparent);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    clip-path: inset(0 0 0 0);
+    text-shadow: none;
+  }
+}
+
+/* ONE ITERATION, and `--d-glitch` rather than the sheet's `.3s`, for the reason
+   state.css already gave: a repeated 280ms keyframe is 560ms and a different
+   move wearing the same token. The 280 is not a rounding of the 300 either —
+   the Foundations sheet writes the site's own durations as "280 Glitch ·
+   steps(2), max 300", so the two sheets disagree with EACH OTHER and tokens.css
+   holds the number one of them names. The oracle carries that as a divergence.
+
+   `steps(2, end)` is the sheet's, and state.css says what it is for: it makes
+   the move read as a switch rather than a wobble. An eased version of the same
+   keyframe is a different move. */
+.nf-display[data-glitch] {
+  animation: nf-glitch var(--d-glitch) steps(2, end);
+}
+
 .nf-lede {
   max-inline-size: 52ch;
   margin: 0 0 var(--s-34);
@@ -89,6 +178,27 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-12);
+}
+
+/* The replay control.
+
+   IT HAS NO LOOK OF ITS OWN. `.btn[data-variant="ghost"]` in ui.css is the
+   Foundations sheet's third button — transparent, `--dim`, `12px 4px`, cyan on
+   hover behind `hover: hover` — and the 404 artboard draws exactly that
+   specimen. The class below is a HOOK and nothing else: two places have to be
+   able to remove this control, and the sweep needs a name to probe.
+
+   A CONTROL THAT MOVES NOTHING IS WORSE THAN NO CONTROL, which is why the
+   first of those two places is here. Under `prefers-reduced-motion` the
+   keyframe above is disabled by globals.css, so a button labelled REPLAY
+   GLITCH would be a promise the page has already decided not to keep. The
+   sheet's note asks for the same thing in its own words: "prefers-reduced-
+   motion: Glitch, Puls und Cursor stehen still, Layout unverändert."
+
+   The second is layout.css at 720, where artboard `1b` draws the two ways out
+   stacked and this control not at all. */
+@media (prefers-reduced-motion: reduce) {
+  .nf-replay { display: none }
 }
 
 /* ── The router trace ───────────────────────────────────────────────────── */
@@ -165,7 +275,13 @@
   padding: 0;
   list-style: none;
   font-family: var(--mono);
-  font-size: var(--t-mono-11);
+  /* H10b · 12 AND NOT 11, WHICH IS THE SHEET'S OWN NUMBER. The desktop artboard
+     sets this log at `400 12px/1.8` and the mobile one at 10.5; H10a shipped 11
+     at both, which is the one step between them and matches neither. This class
+     exists on no other page, so a size of its own here is not a second spelling
+     of anything — the argument that keeps `.btn` out of the same treatment. The
+     10 is layout.css's, on the 720 switch. */
+  font-size: var(--t-mono-12);
   line-height: 1.9;
   color: var(--steel);
   overflow-wrap: anywhere;
@@ -243,21 +359,46 @@
 
 .nf-routes-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--s-20);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-/* FIVE COLUMNS ON THE WIDEST ARTBOARD, and `auto-fit` gets there without a
-   media query: the sheet draws `repeat(5,1fr)` at 1440, and five 180px minimums
-   plus the gaps fit the content column there and nowhere narrower. Below that
-   the row reflows to four, three, two and one on its own, which is what the
-   mobile artboard shows — the list splitting at the fold rather than switching
-   at a breakpoint. This is the reason the 404 is one of the pages the
-   Intermediate Widths sheet excludes: "dort gibt es keine feste Spalte und
-   nichts zu entscheiden." */
+/* FIVE COLUMNS, DECLARED — AND H10a WROTE `auto-fit` HERE INSTEAD.
+
+   The reasoning it wrote down was that `repeat(auto-fit, minmax(180px, 1fr))`
+   reaches the sheet's `repeat(5,1fr)` at 1440 on its own and "reflows to four,
+   three, two and one" below it, "which is what the mobile artboard shows — the
+   list splitting at the fold rather than switching at a breakpoint". Every
+   sentence of that is true and the conclusion still does not hold, which is the
+   whole reason H10b runs a sweep over this page.
+
+   WHAT THE SWEEP SAW. `auto-fit` does not reflow gradually; it JUMPS, at each
+   width where one more 180px track stops fitting. Measured, by bisecting the
+   old rule between 1440 and 390:
+
+       1060 · 860 · 660 · 424      five columns to four to three to two to one
+
+   Four edges, none of them one of the four this site declares. The first three
+   are the content column losing 200px of track and gap; the fourth is 424 and
+   not the 460 the same arithmetic gives, because under 560 the column stops
+   being `min(1160, vw − 80)` and becomes `vw − 44`. That last number is the
+   reason this is a measurement in this comment and not a calculation: the
+   formula changes underneath the rule, and nobody reading `auto-fit` would
+   think to ask. "The list splits by itself" turned out to mean "the list splits
+   four times, somewhere".
+
+   So the count is a decision now, on the two edges this page already has.
+   layout.css carries the two narrower ones: three between 1080 and 720, one
+   below, which is the stacked column artboard `1b` draws. Five here.
+
+   AND THE SENTENCE H10a CITED DOES NOT COVER THIS. "Dort gibt es keine feste
+   Spalte und nichts zu entscheiden" is the Intermediate Widths sheet deciding
+   that this page was owed no 1024 frame — and it is not a reading of this
+   drawing at all, which puts the router trace in a fixed 420px column on the
+   same artboard. e2e/widths.ts holds the long version. */
 .nf-route {
   display: flex;
   flex-direction: column;

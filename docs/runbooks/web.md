@@ -1098,6 +1098,55 @@ Artboards, die zu 100 % inline gestylt ist. ADR 0053.
 
 `make design` bleibt, wofür es gebaut ist: damit ein Mensch das Blatt danebenlegt.
 
+### Die 404 hat keine 900er-Kante, und das ist kein Fehler
+
+`notfound.sweep.spec.ts` erwartet **`[1080, 720]`**. Jede andere Seite hat dort
+eine dritte Zahl, und es ist immer 900 mit denselben drei Schlüsseln —
+`["button", "chromeHead", "nav"]`, also das Chrome. Diese Route rendert außerhalb
+jedes Layouts und kann weder `SiteHeader` noch `SiteFooter` ausführen (ADR 0073,
+ADR 0044). Wer hier eine 900 erwartet, sucht einen Kopf, den es nicht gibt.
+
+Der 720er trägt dafür **sieben** Bauteile: Displaystufe, `REPLAY GLITCH`, die
+gestapelten Rückwege, die einspaltige Routenliste und drei seitenlokale
+Typstufen. `SWITCH_MOVES` in der Datei zählt sie auf.
+
+### Wenn ein `tracks`-Fingerabdruck Kanten meldet, die niemand gezeichnet hat
+
+Zuerst nach `auto-fit` und `auto-fill` in der Regel dahinter sehen. H10b hat
+genau das auf der Routenliste der 404 gefunden:
+
+```
+1060 · 860 · 660 · 424     repeat(auto-fit, minmax(180px, 1fr))
+```
+
+`auto-fit` fließt nicht, es springt — an jeder Breite, an der eine weitere Spur
+nicht mehr passt. Die letzte Zahl ist **424 und nicht 460**, weil die
+Inhaltsspalte unter 560 aufhört `min(1160, vw − 80)` zu sein und `vw − 44` wird;
+die Formel wechselt also unter der Regel. Deshalb ist das eine Messung und keine
+Rechnung.
+
+Die Reparatur ist die Spaltenzahl auf den Kanten, die die Seite ohnehin hat, nicht
+eine Sonde weniger im Fingerabdruck. Die Inhaltsspalte darf fehlen, weil ihr Wert
+**stetig** ist; ein diskreter Wert, der an nicht erklärten Stellen springt, ist
+der Fund und nicht das Messgerät.
+
+### Nachmessen, was `auto-fit` getan hat
+
+Ohne den alten Stand auszuchecken: die Regel zur Laufzeit überschreiben und
+`edges()` darüberlaufen lassen.
+
+```ts
+await page.goto(NOT_FOUND);
+await page.addStyleTag({
+  content: ".nf-routes-list{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))!important}",
+});
+console.log(await edges(page, [{ key: "routes", kind: "tracks", selector: ".nf-routes-list" }]));
+```
+
+`!important` schlägt auch die Media Queries aus `layout.css`, der Lauf sieht also
+das reine `auto-fit`-Verhalten über alle Breiten. Die Datei kommt nach dem Lauf
+wieder weg — sie ist ein Messgerät, kein Test.
+
 ### Das Orakel von Hand ansehen
 
 ```sh

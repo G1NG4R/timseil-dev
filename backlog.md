@@ -12,7 +12,149 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 09.09.2026, H10a abgenommen: `v0.33.0` steht, der Tausch war sauber, und die 404 rendert serverseitig
+## H10b gebaut — 09.09.2026: die Bewegung gehört dem Stylesheet, und der Durchzug hat eine Kante gefunden, die niemand gezeichnet hat
+
+Die vier Stücke, die H10a offen gelassen hat, sind gebaut: Glitch, `REPLAY
+GLITCH`, Blatt-Parität, Durchzug. **Noch nicht gemergt, noch nicht gegen
+Produktion gemessen** — das steht in der Abnahme.
+
+`make check` grün. Gegen den Branch gefahren, nicht gegen `main`.
+
+```
+die ganze Suite   2246 grün, 5 übersprungen, 11,7 min
+  sheet     28   27 Messungen, 8 abweichend, plus der Deckelungstest
+  sweep      2   [1080, 720]
+  404      117   sieben Breiten, 2 übersprungen unter 720
+  coarse    14   inkl. der 404 zum ersten Mal
+  reduced   24   inkl. der 404 zum ersten Mal
+
+make quickstart   ✓ 9 von 9 URLs antworten, 0 Fehlschläge
+  aus einem frischen Klon von 070e2bb, Stack aus leerem Volume,
+  beide Images gebaut, check-topology grün
+```
+
+Beim **ersten** Quickstart-Lauf fiel `internal/middleware` durch — parallel lief
+die volle Playwright-Suite. Ruhig gefahren ist er grün. Das ist #360.
+
+### Der Glitch braucht kein JavaScript, und das ist die Entscheidung der Phase
+
+Das Blatt macht in `fire()` fünf Dinge im Skript und ruft es in
+`componentDidMount()`. Vier davon fallen weg: `data-glitch` liegt in den Bytes,
+die zwei Farbebenen enden im Keyframe, es gibt keinen Aufräum-Timer, und
+`globals.css` beantwortet `prefers-reduced-motion` mit dem Universalselektor.
+Übrig bleibt der zweite Lauf — `REPLAY GLITCH` — und der ist die einzige
+Client-Insel dieser Seite. ADR 0074.
+
+Gemessen, gegen `main` im selben Baum, gzip -9 über alle `<script src>` des
+vorgerenderten Dokuments:
+
+```
+_not-found.html   176 697 B → 177 439 B    +742 B, 7 Dateien beide Male
+en.html           182 829 B → 182 829 B    unverändert — die Route des Gates
+```
+
+### Ohne JavaScript nachgemessen, mit `curl` statt mit einem Browser
+
+Der stärkste Beleg der Phase braucht keinen Browser, und deshalb ist er einer:
+
+```
+class="nf-display" data-glitch="true"                       ← im Antwortkörper
+@keyframes nf-glitch{0%{clip-path:inset(0);…}}              ← im verlinkten CSS
+.nf-display[data-glitch]{animation:nf-glitch var(--d-glitch) steps(2, end)}
+@media (prefers-reduced-motion:reduce){.nf-replay{display:none}}
+```
+
+Attribut und Regel liegen beide in dem, was ein Client bekommt, der nichts
+ausführt. Der erste Lauf hängt an keiner Hydration.
+
+Im Browser, bei 1440, angehalten bei t = 60 ms:
+
+```
+transform  matrix(1, 0, 0, 1, -3, 1)
+clip-path  inset(22% 0px 46%)
+shadow     oklab(… / .75)  2px 0    ← --alert
+           oklab(… / .55) -2px 0    ← --acc
+```
+
+Das sind die Werte von Blattzeile 22 und 432, Stelle für Stelle. Konsole: der
+`CANARY` und sonst nichts — keine Hydrationswarnung, kein Fehler.
+
+**Eine Falle für die nächste Messung:** in einem Hintergrund-Tab meldet
+`document.visibilityState` `hidden`, Chrome friert die Animation bei
+`currentTime = 0` ein, und **`animationstart` feuert nie**. Die Animation
+existiert (`playState: "running"`), sie läuft nur nicht. Wer den Glitch über
+Ereignisse zählt und dabei nicht im Vordergrund ist, misst eine Null und hält
+sie für einen Fund.
+
+### Der Durchzug hat vier Kanten gefunden, die kein Blatt zeichnet
+
+`.nf-routes-list` stand seit H10a auf `repeat(auto-fit, minmax(180px, 1fr))`, mit
+einer aufgeschriebenen Begründung, deren Sätze alle stimmen und deren Schluss
+nicht trägt. `auto-fit` fließt nicht, es springt:
+
+```
+1060 · 860 · 660 · 424
+```
+
+Die vierte Zahl ist **424 und nicht 460**, weil die Inhaltsspalte unter 560
+aufhört `min(1160, vw − 80)` zu sein. Die Formel wechselt unter der Regel —
+deshalb ist das eine Messung und keine Rechnung. Die Spaltenzahl ist jetzt
+erklärt: fünf, drei, eine, auf den zwei Kanten, die die Seite ohnehin hat.
+
+### Und eine Kante, die fehlt, weil sie fehlen muss
+
+`NOT_FOUND_SWITCHES` ist `[1080, 720]`. Jede andere Seite hat dort eine 900 mit
+denselben drei Schlüsseln — das Chrome. Diese Route kann keines rendern. ADR
+0044s Einwand war zweimal aufgeschrieben und ist hier **zum ersten Mal
+gemessen**. Als **#358** eröffnet; kommt das Chrome, wächst die Liste um eine
+900, und der Durchzug sagt es.
+
+### Gefunden — aus dem Bau von H10b
+
+- **Der Minifier schreibt `280ms` zu `.28s` um.** Der erste Entwurf des
+  Token-Tests verglich Text und wurde auf einem korrekten Build rot. Das Token
+  liest sich in Entwicklung und Produktion verschieden und bedeutet dasselbe;
+  verglichen wird jetzt über `parseMs`, als Zahl.
+- **„Die 404 lädt kein JavaScript" war nie wahr.** Sie rendert ihr eigenes
+  `<html>`, also lag die React-Laufzeit immer darin — sieben Dateien, auch auf
+  `main`. Was H10a wirklich behauptet hat, gilt unverändert: `SYS.404.01` als
+  Fläche kostet **zusätzlich** nichts.
+- **Das Blatt verlangt drei Typangaben für ein Bauteil.** `600 11px`,
+  `600 10.5px` und `500 10px` für `.btn` in einer Reihe. Es widerspricht sich
+  selbst, nicht dem Bau; als `one-button-type` im Orakel.
+- **Neun Bedienelemente auf der 404 waren nie gegen die 44px gemessen worden.**
+  `touch-targets.coarse.spec.ts` ging nach `/` und in die Galerie und sonst
+  nirgends — derselbe blinde Fleck, den H6b aufgeschrieben hat. Alle neun halten.
+- **`make bundle-size` ist auf `main` rot**, mit #301s Meldung („holds framework
+  and our own modules"). Kein Fund dieser Phase, aber ein Werkzeug, das die
+  Zahl dieser Phase nicht liefern konnte — deshalb wurde von Hand gemessen.
+- **#187 meldet sich in jedem e2e-Lauf**: drei Turbopack-Warnungen zu
+  `instrumentation.ts` und der Edge-Runtime. Bestand, nicht neu.
+- **`TestTheComparisonCostsTheSameWhateverItIsHanded` fällt unter Last durch.**
+  Zweimal rot, während die volle Playwright-Suite mit acht Workern lief — einmal
+  mit 2,8× und einmal mit 2,1×, und **beide Male war ein anderes Paar der
+  Ausreißer**. Auf einer ruhigen Maschine dann 8 Läufe grün auf dem Branch und 5
+  auf `main`. Der Test misst `ConstantTimeTokenEqual` gegen einen 2,0-Deckel;
+  ein echter Kurzschluss wäre zwei Größenordnungen, ein Scheduler unter Volllast
+  schafft die zwei aber auch. **Kein Go-Code in H10b.** Wer `make quickstart`
+  neben einem e2e-Lauf startet, bekommt hier ein rotes Ergebnis, das nichts über
+  den Code sagt. Als **#360** eröffnet; verwandt mit #291, aber ein anderer Test.
+
+### Verschoben aus H10b
+
+- **Die Trace-Staffel bleibt ungebaut.** Das Blatt lässt die sieben Logzeilen
+  mit 420 ms Vorlauf und 150 ms je Zeile einlaufen. Bewusst außerhalb: der
+  Backlog nennt für H10b vier Stücke, und die Staffel gehört sachlich zu I2, wo
+  die Bewegungsregeln zentral entschieden werden. **09.09.2026, aus H10b.**
+- **Das mobile Artboard setzt Bauteilgrößen, die der Bau nicht nimmt.** Der
+  Terminalkopf steht dort auf 8,5px und die Routenliste auf 11px Abstand — für
+  beide fehlt eine Stufe bzw. der Abstand liegt neun über der Skala. Nicht im
+  Orakel, weil keine Entscheidung dazu aufgeschrieben ist. **09.09.2026.**
+- **`/blog/kein-post` und `/work/kein-system`** sind als **#359** eröffnet.
+
+---
+
+## Vorher — 09.09.2026, H10a abgenommen: `v0.33.0` steht, der Tausch war sauber, und die 404 rendert serverseitig
 
 `b4c2cbe` läuft, **`v0.33.0`**. Merge **00:57:59Z**, Deploy-Job 01:15:32Z →
 01:16:00Z (**28 s**), der api-Prozess läuft seit **01:16:12.540Z**. Uhrzeit mit
