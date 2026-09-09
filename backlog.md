@@ -12,6 +12,62 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Zwischendurch — 09.09.2026: der Doku-Merge tauschte die Container, und #242 bekam seine sechzehnte Kerbe
+
+`#363` gemergt **09:20:31Z**, `fe63e4d`. CI-Lauf `34334154850` vollständig grün —
+`check`, `db`, `e2e`, `quickstart`, `publish`, `scan`, beide CodeQL-Läufe und
+`deploy`; `retention` und `images` übersprungen wie bei jedem Push. Uhrzeiten mit
+`date -u` und aus der API gelesen, nicht geschätzt.
+
+Ein reiner `backlog.md`-PR, und er hat trotzdem beide Images gebaut und die
+Container getauscht. Das ist bekannt und bleibt trotzdem der Grund, warum ein
+Doku-Merge dieselbe Sorgfalt braucht wie ein Code-Merge.
+
+**Kein Release, und der Grund stand im Titel.** `docs(backlog):` ist kein
+`feat:`, also blieb `v0.34.0` stehen; `/api/badge/version` meldet
+`v0.34.0-1-gfe63e4d`. Dieselbe Mechanik wie bei H9b.
+
+### `durationSec` meldet 1084 s für einen Deploy, der 28 s gedauert hat
+
+#242, die **sechzehnte** Notiz. Die Form ist unverändert stabil:
+
+```
+H9c   1125 zu 30
+H10a  1073 zu 28
+H10b   978 zu 30
+#363  1084 zu 28
+```
+
+Der Deploy-Job lief **09:38:13Z → 09:38:41Z**, der api-Prozess läuft seit
+**09:38:52.299Z**. Die Zahl misst weiterhin die Pipeline und nicht den Deploy,
+und sie steht weiterhin auf der Fallstudie.
+
+**Vorlaufzeit 1062 s** — Merge bis Deploy-Start. Die fünfte Messung:
+
+```
+H9a   2026-09-04   927 s
+H9b   2026-09-06  1461 s
+H9c   2026-09-07  1099 s
+H10b  2026-09-09   952 s
+#363  2026-09-09  1062 s
+```
+
+Der Deckel von 1800 hält.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `fe63e4d` gebaut.
+
+### Und der Zeuge stand wieder nicht davor
+
+`witness.sh` ist nicht gelaufen. Der Fund der H10b-Abnahme — der Zeuge muss
+**vor** dem Merge stehen, nicht nach ihm — war zum Zeitpunkt dieses Merges zwar
+aufgeschrieben, aber der Merge war eine Entscheidung, keine Abnahme, und niemand
+stand bereit. Die vier sauberen Tausche aus H9a–H10a sind damit weiterhin vier;
+#304 steht unverändert da. **Beim H12a-Merge ist der Zeuge dran** — das ist die
+erste Gelegenheit, bei der der Ablauf es hergibt.
+
+---
+
 ## H12a gebaut — 09.09.2026: die Seite darf eine Frist nennen, weil jetzt eine Schleife sie hält
 
 H12 ist die Phase, die mit dem übereinstimmen muss, was der Code tut. Beim Lesen
