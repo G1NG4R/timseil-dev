@@ -12,6 +12,86 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 09.09.2026, H10a abgenommen: `v0.33.0` steht, der Tausch war sauber, und die 404 rendert serverseitig
+
+`b4c2cbe` läuft, **`v0.33.0`**. Merge **00:57:59Z**, Deploy-Job 01:15:32Z →
+01:16:00Z (**28 s**), der api-Prozess läuft seit **01:16:12.540Z**. Uhrzeit mit
+`date -u` gelesen; 01:15Z liegt weit hinter dem Dokploy-Fenster 23:45–00:00.
+
+Der `feat:`-Titel hat getan, was er soll: `v0.32.1` → **`v0.33.0`**, Minor, und
+`/api/badge/version` meldet ihn.
+
+### Der Zeuge hat den Tausch gesehen und nichts gefunden
+
+```
+/            1054 Anfragen   1054×200
+/blog        1054 Anfragen   1054×200
+/api/health  1054 Anfragen   1054×200
+             ✓ every answer was 200
+```
+
+Über 1054 s, davon 7 s ohne Stichprobe. **Der dritte saubere Tausch in Folge** —
+#304 wird damit immer unwahrscheinlicher, ist aber nicht widerlegt.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `b4c2cbe` gebaut.
+
+### Die Phase selbst, gegen Produktion gemessen
+
+Das ist die Zahl, um die es in H10a ging — dass die Seite **auf dem Server**
+entsteht und nicht erst im Browser:
+
+```
+/no-such-address       404  css=3  serverseitig gerendert  ✓
+/de/no-such-address    404  css=3  ✓
+/es/about              404  css=3  ✓
+/a/b/c                 404  css=3  ✓
+```
+
+Und der Trace-Streifen trägt beides — die vorgerenderte Hülle sagt ehrlich
+nichts, der gestreamte Teil ersetzt es durch die gemessenen Werte:
+
+```
+Hülle      REQUESTED  — NO DATA        TRACE  — NO DATA
+gestreamt  REQUESTED  /no-such-address  TRACE  1760efb62dece07cb434695b2ce92a20
+```
+
+Dazu: fünf Routen gezeichnet, die Logzeile sagt `matching 5 mounted routes`,
+`<title>404 — route not resolved</title>`, `noindex` von Next gesetzt, `[SOON]`
+auf `SYS.404.01`.
+
+### Gefunden — aus der H10a-Abnahme
+
+- **`durationSec` meldet 1073 s für einen Deploy, der 28 s gedauert hat.**
+  #242, die **vierzehnte** Notiz. Die Zahl misst weiterhin die Pipeline und nicht
+  den Deploy, und sie steht weiterhin auf der Fallstudie. Bei H9c waren es
+  1125 s zu 30 s — die Form ist stabil, der Fehler auch.
+- **`make probe` läuft lokal nicht ohne `INTERNAL_PROBE_TOKEN`.** Kein Fund am
+  System: die Sonde meldet an `/api/internal/probe`, und der geplante Lauf hat
+  das Token. Hier notiert, damit die nächste Abnahme nicht zweimal darüber
+  stolpert.
+
+### Verschoben aus der H10a-Abnahme
+
+- **Die 404 trägt kein Chrome.** `SiteHeader` und `SiteFooter` rufen
+  `getDictionary()` → `next/root-params`, und `global-not-found` hat keine Route,
+  von der ein Parameter zu lesen wäre. `PRIVACY` und `IMPRINT` sind von Hand
+  gerendert. ADR 0044s Einwand bleibt gültig. **Braucht ein Issue.**
+- **`/blog/kein-post` und `/work/kein-system` rendern clientseitig** — gemessen
+  auch auf `main` vor der Phase. Bestehender Mangel, keine Regression.
+  **Braucht ein Issue.**
+- **Die Hülle ist englisch.** Einmal für die ganze Seite vorgerendert. Kostet
+  heute nur den `/de`-Präfix auf fünf Links; ab P6 mehr.
+- **`experimental.globalNotFound` ist ein experimentelles Flag.** Bei jedem
+  Next-Bump prüfen, ob es noch existiert und die Seite noch serverseitig
+  rendert. `e2e/notfound.spec.ts` ist der Wächter — er liest `response.text()`
+  statt des DOM, weil Playwright das Skript ausführt.
+- **#247 ist geschlossen**, `--t-disp-58` steht in `tokens.css`.
+- H10b steht aus: Glitch, `REPLAY GLITCH`, Sheet-Parität, Sweep. Die 404 ist
+  bislang die einzige H-Seite ohne `.sheet`- und `.sweep`-Spec.
+
+---
+
 ## Vorher — 09.09.2026, H10a gebaut: vier Anläufe, und drei davon rendern die Seite nur im Browser
 
 Die 404 sollte eine `not-found.tsx` sein. Sie ist es nicht geworden, und der
@@ -92,7 +172,7 @@ hinter `experimental.globalNotFound`.
 
 ---
 
-## Wo wir stehen — 07.09.2026, H9c abgenommen: `v0.32.0` steht, und der Zeuge hat 3330 Anfragen ohne einen Fehlversuch gesehen
+## Vorher — 07.09.2026, H9c abgenommen: `v0.32.0` steht, und der Zeuge hat 3330 Anfragen ohne einen Fehlversuch gesehen
 
 `d389891` läuft, **`v0.32.0`**. Merge **15:28:13Z**, Deploy-Job 15:46:32Z →
 15:47:02Z (30 s), der api-Prozess läuft seit **15:47:15.976Z**. Uhrzeit mit
