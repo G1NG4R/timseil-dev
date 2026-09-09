@@ -740,6 +740,12 @@ export const en = {
   notFoundReturn: "RETURN TO ROOT",
   notFoundSelectedWork: "SELECTED WORK",
 
+  // H10b. The one control on this page that does not navigate, and the one
+  // whose words say what happens rather than where you go. It IS a string
+  // rather than nomenclature like `ERR 404`: "REPLAY" is a verb and a German
+  // 404 would translate it, where `STATUS 404` would stay.
+  notFoundReplay: "REPLAY GLITCH",
+
   // SYS.404.01. H10 draws the surface and H11 fills it after launch, so the
   // sentence has to be true of an empty frame: it says what the panel will be,
   // and the state chip beside it says it is not that yet.

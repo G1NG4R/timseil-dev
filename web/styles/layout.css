@@ -132,6 +132,13 @@
     display: flex; flex-direction: column; gap: 44px;
   }
 
+  /* H10b. The 404's way out. Five cells is a desktop row — at 1079 the content
+     column is 999px, so five of them would be 176px each with a description in
+     them — and the count is declared on this switch rather than left to an
+     `auto-fit` that jumps at four widths nothing declares. notfound.css holds
+     the measurement that found it. */
+  .nf-routes-list { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+
   /* The panel stacks with them. It stays a GRID rather than joining the flex
      rule above, because `display: grid` is what reveals it — the six `:has()`
      rules in about.css set exactly that, and a panel that switched to `flex`
@@ -413,6 +420,40 @@
      that was never a measurement H6 already paid for. A class, because the
      bare `h1` above would otherwise win on source order. */
   .nf-display     { font-size: var(--t-disp-58) }
+  /* H10b. REPLAY GLITCH rides on the same switch, and it is the sheet that
+     removes it rather than the 44px rule: artboard `1b` draws the two ways out
+     stacked full width and this control not at all. The rule follows from that
+     and happens to settle the other question too — the control never stands
+     where `pointer: coarse` applies, so there is no target below 44 to argue
+     about. `touch-targets.coarse.spec.ts` measures the page at 390 to keep that
+     a measurement rather than a claim. */
+  .nf-replay      { display: none }
+  /* One column, which is what artboard `1b` draws: five rows stacked, the last
+     two below the fold it marks at 844. */
+  .nf-routes-list { grid-template-columns: minmax(0, 1fr) }
+  /* And the two ways out stack full width, which `1b` also draws — it centres
+     their labels because they are no longer the width of their words. They fit
+     side by side at 390 (152 + 12 + 160 against a 346px column), so this is the
+     sheet's decision and not the column's: a way out of an error page is the
+     one control that should be impossible to miss. */
+  .nf-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-10);
+    text-align: center;
+  }
+  /* H10b · THREE TYPE STEPS THE MOBILE ARTBOARD DRAWS, and the precedent for
+     putting them here is `.head-mark`, `.tl-cap` and `.log-date`, which have
+     stepped a mono size at a narrow switch since G3, H7b and H5c. All three
+     below are classes only this page has, so none of them is a second spelling
+     of a shared component — which is exactly why `.btn` is NOT in this list,
+     though `1b` draws it at 10.5: that one is one component with one step, and
+     the oracle records the refusal as `one-button-type`.
+       status  11.5 → 10     log  12 → 10.5     lede  15.5 → 13.5
+     Rounded to the scale, as G1's "keine halben Pixel" requires. */
+  .nf-status      { font-size: var(--t-mono-10) }
+  .nf-log         { font-size: var(--t-mono-10) }
+  .nf-lede        { font-size: var(--t-body-13) }
   .decision-table { grid-template-columns: 1fr }
   .ops-tiles      { grid-template-columns: repeat(3, minmax(0,1fr)) }
 }

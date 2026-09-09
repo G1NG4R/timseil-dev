@@ -348,3 +348,50 @@ export const ABOUT_DRAWN_WIDTHS = [1440, 390] as const;
  * once against the sheet's table rather than eleven times.
  */
 export const ABOUT_SWITCHES = [1080, 900, 720] as const;
+
+/**
+ * The widths a sheet draws the 404 at. TWO, and the Intermediate Widths sheet
+ * names this page in the same sentence it names four others: "Blog-Index,
+ * Beitrag, About, Contact, Legal und 404 fließen — dort gibt es keine feste
+ * Spalte und nichts zu entscheiden."
+ *
+ * THE SENTENCE IS HALF WRONG ABOUT THIS PAGE, and the half that is wrong does
+ * not change the answer. Artboard `1a` very much draws a fixed column — the
+ * router trace stands in `grid-template-columns:1fr 420px` — so "keine feste
+ * Spalte" is not a reading of this drawing. What the sentence decides is
+ * whether a 1024 frame was owed, and the answer holds either way: `.nf-main`
+ * takes the shared 1080 switch layout.css has carried since G1, the switch H10a
+ * put it on, so there was never a rebuild for a third artboard to annotate.
+ */
+export const NOT_FOUND_DRAWN_WIDTHS = [1440, 390] as const;
+
+/**
+ * Where the 404 changes shape. TWO OF THE FOUR — and the ABSENCE IS THE
+ * MEASUREMENT here, in a way it is on no other page.
+ *
+ * EVERY OTHER PAGE HAS 900, and 900 is the chrome: `["button", "chromeHead",
+ * "nav"]` is the same triple in home, work, about and blog-index. This page has
+ * no chrome to switch. `app/global-not-found.tsx` renders outside every layout,
+ * `SiteHeader` and `SiteFooter` read `next/root-params`, and there is no route
+ * here to read a parameter from — so the header simply is not in the document
+ * at any width. ADR 0044's objection to an error page without a footer has been
+ * written down twice; this is the first line that MEASURES it. The day the
+ * chrome arrives, this list grows a 900 and the sweep says so before anyone
+ * remembers to look.
+ *
+ * 1080 is `.nf-main`, which this page inherits rather than declares — it joined
+ * `.hero, .cs-spec, .cs-prob, .cs-arch` in layout.css's single-column rule in
+ * H10a rather than taking a value of its own.
+ *
+ * 720 carries SEVEN components since H10b, which is what a switch is for. The
+ * display step falls 108 → 58 (`--t-disp-58`, #247); REPLAY GLITCH goes away,
+ * because artboard `1b` draws no third control; the two ways out stack full
+ * width; the route list becomes one column; and three page-local type sizes —
+ * status, lede and log — take the step that artboard draws. Not one of the
+ * seven asked for an edge of its own.
+ *
+ * 560 IS NOT HERE for the reason it is absent from `/about` and `/work`: `.col`
+ * narrows its margin there for every page at once, and layout.sweep.spec.ts
+ * checks that once rather than eleven times.
+ */
+export const NOT_FOUND_SWITCHES = [1080, 720] as const;

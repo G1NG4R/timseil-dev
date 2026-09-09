@@ -118,6 +118,26 @@ export const HOME_REGIONS = [
 export const WORK_REGIONS = [".work-count"] as const;
 
 /**
+ * The 404's, since H10b. ONE REGION, and it is the only page whose boundary
+ * exists for a build error rather than for an endpoint.
+ *
+ * `app/global-not-found.tsx` reads `headers()`, which is uncached runtime data,
+ * and under `cacheComponents` that is a build error in the body of a prerendered
+ * route. So the router trace sits behind `<Suspense>` with a fallback that is the
+ * same panel with both values `— NO DATA`. Both copies are in the document during
+ * the swap, exactly as on the four streamed routes above, and a sheet measurement
+ * taken then would see two of everything.
+ *
+ * `.nf-fact-path` AND NOT `.nf-trace`. The panel is what the fallback and the
+ * answer both render, so its count is 2 during the swap and 1 either side — but
+ * the fallback renders it too, which makes it useless as a "has it arrived"
+ * signal on its own. The path cell is rendered by both as well, and it is the
+ * cell notfound.spec.ts already reads, so one selector answers both questions
+ * this list is asked: the region is here, and it is here once.
+ */
+export const NOT_FOUND_REGIONS = [".nf-fact-path"] as const;
+
+/**
  * The page after streaming has settled.
  *
  * THE REGION LIST IS AN ARGUMENT, and H3 is why it is now one. Before this

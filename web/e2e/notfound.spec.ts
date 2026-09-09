@@ -24,6 +24,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 import { MOUNTED_ROUTES } from "../lib/notfound/mounted";
+import { parseMs } from "../lib/scramble";
 import { NOT_FOUND } from "./widths";
 
 /** WCAG 2.2 AA, the same set a11y.spec.ts sweeps the real routes with. */
@@ -121,6 +122,119 @@ test("the error-budget surface is a surface, not a disabled control", async ({ p
   await expect(page.locator(".nf-budget-state")).toHaveText("[SOON]");
   await expect(page.locator(".nf-budget canvas")).toHaveCount(0);
   await expect(page.locator(".nf-lane")).toHaveCount(4);
+});
+
+// ── H10b · the glitch ──────────────────────────────────────────────────────
+//
+// THE FIRST MOVING THING ON THIS PAGE, and the first on this site whose FIRST
+// run belongs to the server. The sheet's own version is a script that assigns
+// an animation on mount; this one is an attribute in the markup and a rule in
+// the stylesheet, so the assertions below are about the bytes, the token and
+// the restart — not about a JavaScript branch having been taken.
+
+test("the glitch is in the bytes, so the first run needs no hydration", async ({ page }) => {
+  const response = await page.goto(NOT_FOUND);
+  const html = (await response?.text()) ?? "";
+
+  // The same proof form H10a introduced for the whole page: `response.text()`
+  // is what a client without JavaScript receives. An assertion on the DOM would
+  // pass even if React had added the attribute after hydration, which is the
+  // exact difference this test exists to see.
+  expect(html).toMatch(/class="[^"]*nf-display[^"]*"[^>]*data-glitch/);
+});
+
+test("the move lasts the token and not a literal", async ({ page }) => {
+  await page.goto(NOT_FOUND);
+
+  // Invariant 8, at the one place on this page where it could be broken without
+  // anybody noticing: the sheet writes `.3s` and `--d-glitch` is 280ms.
+  //
+  // COMPARED AS A NUMBER, NOT AS TEXT, and the first draft of this test compared
+  // text and went red on a correct build. The minifier rewrites `280ms` to
+  // `.28s` in the shipped stylesheet, so the token READS differently in
+  // development and in production while meaning the same thing. What the rule
+  // has to say is that the animation lasts whatever the token lasts; the
+  // spelling is the build's business. `parseMs` is the same function
+  // `StateFlip` reads `--d-glitch` with.
+  const [duration, token] = await Promise.all([
+    page.locator(".nf-display").evaluate((el) => getComputedStyle(el).animationDuration),
+    page.locator(":root").evaluate((el) => getComputedStyle(el).getPropertyValue("--d-glitch")),
+  ]);
+
+  expect(parseMs(token), `--d-glitch reads \`${token}\``).toBe(280);
+  expect(parseMs(duration), `the move reads \`${duration}\``).toBe(
+    parseMs(token),
+  );
+});
+
+test("replay fires the move again, once per click", async ({ page }) => {
+  // The control is not drawn on the mobile artboard, and layout.css removes it
+  // at 720 — so this test has nothing to click at 719 and 390. Skipped there
+  // rather than given a viewport of its own: the point of the seven width
+  // projects is that a spec runs at every width the site is checked at, and a
+  // test that set its own would stop answering for the five in between.
+  const width = page.viewportSize()?.width ?? 0;
+  test.skip(width < 720, "artboard 1b draws no replay control");
+
+  await page.goto(NOT_FOUND);
+
+  // A COUNTER IN THE PAGE RATHER THAN A STOPWATCH IN THE RUNNER. The move lasts
+  // 280ms, so anything that tried to catch it running — `getAnimations().length`
+  // a moment after the click — would be a race, and a race in a test is a red
+  // run somebody eventually deletes. `animationstart` fires exactly once per run
+  // of the keyframe, which is the event the claim is actually about.
+  await page.evaluate(() => {
+    document.body.dataset.glitches = "0";
+    document.addEventListener(
+      "animationstart",
+      (event) => {
+        if (event.animationName !== "nf-glitch") return;
+        const seen = Number(document.body.dataset.glitches ?? "0");
+        document.body.dataset.glitches = String(seen + 1);
+      },
+      true,
+    );
+  });
+
+  // Once, and then once more — the second click is the half that would catch a
+  // control which only ever works the first time, which is what an attribute
+  // toggled without a remount would give.
+  await page.locator(".nf-replay").click();
+  await expect(page.locator("body")).toHaveAttribute("data-glitches", "1");
+
+  await page.locator(".nf-replay").click();
+  await expect(page.locator("body")).toHaveAttribute("data-glitches", "2");
+});
+
+// ARTBOARD `1b` DRAWS NO THIRD CONTROL, and that decision also keeps the one
+// target on this page that would have been under 44px away from every screen
+// where the rule applies. Both halves are asserted, because "it is hidden" and
+// "it is hidden at the right width" are different claims.
+test("replay is drawn at a desk and not on the mobile artboard", async ({ page }) => {
+  await page.goto(NOT_FOUND);
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator(".nf-replay")).toBeVisible();
+
+  await page.setViewportSize({ width: 719, height: 844 });
+  await expect(page.locator(".nf-replay")).toBeHidden();
+});
+
+// A CONTROL THAT MOVES NOTHING IS WORSE THAN NO CONTROL. Under the preference
+// the keyframe is disabled by globals.css, so the button is removed with it —
+// otherwise REPLAY GLITCH would be a promise the page has decided not to keep.
+test.describe("with reduced motion", () => {
+  test.use({ contextOptions: { reducedMotion: "reduce" } });
+
+  test("nothing moves and the replay control is gone", async ({ page }) => {
+    await page.goto(NOT_FOUND);
+
+    const glitch = page.locator(".nf-display");
+    const name = await glitch.evaluate((el) => getComputedStyle(el).animationName);
+
+    expect(name).toBe("none");
+    await expect(page.locator(".nf-replay")).toBeHidden();
+  });
 });
 
 test("the accessibility sweep is clean", async ({ page }) => {

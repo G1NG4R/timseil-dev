@@ -78,6 +78,19 @@ const SHEETS = {
   // row — is drawn at 1440 and stacked below 1080, which is a switch layout.css
   // owns rather than a frame the sheet still owes.
   blogIndex: 'docs/design/Blog Index - timseil.dev.dc.html',
+  // H10b. The 404 draws 1440 and 390, and the Intermediate Widths sheet names
+  // it in the same list About, Contact and both log pages are in: "Blog-Index,
+  // Beitrag, About, Contact, Legal und 404 fließen — dort gibt es keine feste
+  // Spalte und nichts zu entscheiden."
+  //
+  // HALF OF THAT SENTENCE IS NOT A READING OF THIS DRAWING, and it is worth
+  // saying so where the map can be checked against it: artboard `1a` puts the
+  // router trace in `grid-template-columns:1fr 420px`, which is a fixed column
+  // by any measure. What the sentence decides is whether a 1024 frame was owed,
+  // and there the answer holds anyway — `.nf-main` takes the shared 1080 switch
+  // rather than rebuilding, so there was no rebuild for a third artboard to
+  // annotate. e2e/widths.ts carries the same note beside the constant.
+  notFound: 'docs/design/404 - timseil.dev.dc.html',
 };
 
 // ONE DECISION MOVES MANY MEASUREMENTS, so the reasons are named once and
@@ -310,6 +323,19 @@ const DIVERGENCE = {
     'three days — and 365 is a round number about a year rather than about this ' +
     'picture. Counted from the cells that were actually drawn, which is ' +
     'invariant 7 applied one page over from the 91 it was written for.',
+  // ── H10b ────────────────────────────────────────────────────────────────────
+  'one-button-type':
+    'The 404 artboards ask for THREE type specs for one component. The two ' +
+    'ways out are `600 11px` at 1440 and `600 10.5px` at 390, and REPLAY ' +
+    'GLITCH beside them is `500 10px` — same element, same row, three ' +
+    'spellings. `.btn` has drawn every action on this site at `600 ' +
+    '--t-mono-11` since H1, and the Foundations sheet catalogues all three ' +
+    'variants as one specimen with one height. So the sheet is disagreeing ' +
+    'with itself here rather than with the build, which is `one-section-head` ' +
+    'exactly one component over. What the ghost DOES take from line 77 is its ' +
+    'padding, `12px 4px`, and that is asserted rather than excused. The three ' +
+    'sizes this page does step at 390 are all classes no other page has — ' +
+    'status, lede and log — which is the line between the two cases.',
   'square-corners':
     'The sheet gives the calendar cells a 2px radius and the legend swatches ' +
     'the same. `--radius` is 0 on this site and invariant 8 puts every radius ' +
@@ -2856,6 +2882,242 @@ const BLOG_INDEX_MAP = [
   },
 ];
 
+// ────────────────────────────────────────────────────────────────── H10b · 404
+
+/**
+ * `404 - timseil.dev.dc.html`, artboard `1a` at 1440 and `1b` at 390.
+ *
+ * THE PAGE THIS ORACLE MEASURES IS THE ONLY ONE WITH NO CHROME. Artboard `1a`
+ * draws a header at line 49 and a footer at line 137, and `app/global-not-
+ * found.tsx` can render neither: it lives outside every layout, and
+ * `SiteHeader` and `SiteFooter` read `next/root-params`, which needs a route.
+ * Those two are absent from this map rather than excused entry by entry — a
+ * `diverges` block says "we drew it differently", and nothing is drawn here at
+ * all. ADR 0044's objection is answered by the two links `.nf-legal` renders by
+ * hand, and MEASURED by notfound.sweep.spec.ts, whose edge list has no 900 in
+ * it where every other page's has.
+ *
+ * SO IS SYS.404.01. The sheet gives it a 196px `<canvas>` with a running game;
+ * H10a built four lane labels and a `[SOON]`, which is ADR 0058's "Fläche,
+ * nicht abgeschaltetes Bedienelement", and H11 builds the game after launch.
+ * Measuring the frame of a component that does not exist yet would be measuring
+ * a decision rather than a drawing.
+ *
+ * NO `on` FIELD ON ANY ENTRY, AND NO `ready` EITHER — the second is
+ * notfound.sheet.spec.ts's business, and the first is worth a line here: this
+ * page reads no endpoint. Its one `<Suspense>` boundary exists because
+ * `headers()` is runtime data under `cacheComponents`, not because an api might
+ * be down, so every element below is in the document in the rig exactly as it
+ * ships.
+ */
+const NOT_FOUND_MAP = [
+  // ── the lead, at a desk ──────────────────────────────────────────────────
+  {
+    id: 'nf-main-rail-width',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 65,
+    decl: 'grid-template-columns', says: '1fr 420px',
+    reading: 'the router trace stands in the 420 the sheet draws, beside the lead rather than under it',
+    measure: { kind: 'box-width', selector: '.nf-trace' }, expect: 420,
+  },
+  {
+    id: 'nf-main-gap',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 65,
+    decl: 'gap', says: '80px',
+    reading: 'eighty between them, which is the gap three other two-column rows on this site take',
+    measure: { kind: 'computed', selector: '.nf-main', prop: 'column-gap' }, expect: '80px',
+  },
+  {
+    id: 'nf-status-gap',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 67,
+    decl: 'gap', says: '11px',
+    reading: 'the mark stands next to the words rather than on top of them',
+    measure: { kind: 'computed', selector: '.nf-status', prop: 'column-gap' }, expect: '8px',
+    diverges: { class: 'spacing-scale', sheet: '11px' },
+  },
+  {
+    id: 'nf-status-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 69,
+    decl: 'font', says: "600 11.5px 'JetBrains Mono',monospace",
+    reading: 'ERR 404 is the mono step, not a half pixel between two',
+    measure: { kind: 'computed', selector: '.nf-status', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+  {
+    id: 'nf-dot-size',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 68,
+    decl: 'width', says: '7px',
+    reading: 'the alert mark is seven across — smaller than the status dot, because it is not one',
+    measure: { kind: 'box-width', selector: '.nf-dot' }, expect: 7,
+  },
+  {
+    id: 'nf-display-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 72,
+    decl: 'font', says: "600 108px/.94 'Chakra Petch',sans-serif",
+    reading: 'the biggest type on this site, and the only page that draws it',
+    measure: { kind: 'computed', selector: '.nf-display', prop: 'font-size' }, expect: '108px',
+  },
+  {
+    id: 'nf-display-margin',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 72,
+    decl: 'margin', says: '0 0 30px',
+    reading: 'thirty under it, which is a step and not a round number',
+    measure: { kind: 'computed', selector: '.nf-display', prop: 'margin-bottom' }, expect: '30px',
+  },
+  {
+    id: 'nf-lede-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 73,
+    decl: 'font', says: "400 15.5px/1.7 'Geist',sans-serif",
+    reading: 'the sentence that says the request arrived is body copy, at the body step',
+    measure: { kind: 'computed', selector: '.nf-lede', prop: 'font-size' }, expect: '15px',
+    diverges: { class: 'half-pixel', sheet: '15.5px' },
+  },
+  // ── the three controls ───────────────────────────────────────────────────
+  {
+    id: 'nf-actions-gap',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 74,
+    decl: 'gap', says: '14px',
+    reading: 'the two ways out and the replay stand in one row with a step between them',
+    measure: { kind: 'computed', selector: '.nf-actions', prop: 'column-gap' }, expect: '12px',
+    diverges: { class: 'spacing-scale', sheet: '14px' },
+  },
+  {
+    id: 'nf-action-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 75,
+    decl: 'font', says: "600 11px 'JetBrains Mono',monospace",
+    reading: 'the primary way out is the site\'s one button type, and here the sheet agrees with it',
+    measure: { kind: 'computed', selector: '.nf-actions .btn[data-variant="primary"]', prop: 'font-size' },
+    expect: '11px',
+  },
+  {
+    id: 'nf-action-padding',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 75,
+    decl: 'padding', says: '12px 20px',
+    reading: 'and the same padding, so the button is the specimen rather than a copy of it',
+    measure: { kind: 'computed', selector: '.nf-actions .btn[data-variant="primary"]', prop: 'padding-left' },
+    expect: '20px',
+  },
+  {
+    id: 'nf-replay-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 77,
+    decl: 'font', says: "500 10px 'JetBrains Mono',monospace",
+    reading: 'REPLAY GLITCH is the ghost variant of the same button, at the same step as the other two',
+    measure: { kind: 'computed', selector: '.nf-replay', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'one-button-type', sheet: '10px' },
+  },
+  {
+    id: 'nf-replay-padding',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 77,
+    decl: 'padding', says: '12px 4px',
+    reading: 'four at the sides and not twenty — the ghost is text, and this is where the sheet is taken whole',
+    measure: { kind: 'computed', selector: '.nf-replay', prop: 'padding-left' }, expect: '4px',
+  },
+  // ── the router trace ─────────────────────────────────────────────────────
+  {
+    id: 'nf-facts-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 79,
+    decl: 'font', says: "500 10px 'JetBrains Mono',monospace",
+    reading: 'REQUESTED · METHOD · TRACE are the small mono step, under the words rather than beside them',
+    measure: { kind: 'computed', selector: '.nf-trace-facts', prop: 'font-size' }, expect: '10px',
+  },
+  {
+    id: 'nf-term-head-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 92,
+    decl: 'font', says: "500 10px 'JetBrains Mono',monospace",
+    reading: 'the panel is titled at the same step the facts under it use',
+    measure: { kind: 'computed', selector: '.nf-term-head', prop: 'font-size' }, expect: '10px',
+  },
+  {
+    id: 'nf-log-step',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 98,
+    decl: 'font', says: "400 12px/1.8 'JetBrains Mono',monospace",
+    reading: 'the log itself is a step LARGER than the panel around it, because it is the thing being read',
+    measure: { kind: 'computed', selector: '.nf-log', prop: 'font-size' }, expect: '12px',
+  },
+  // ── the way out ──────────────────────────────────────────────────────────
+  {
+    id: 'nf-routes-tracks',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 126,
+    decl: 'grid-template-columns', says: 'repeat(5,1fr)',
+    reading: 'five routes in five columns, declared — not four, and not whatever fits',
+    measure: { kind: 'track-count', selector: '.nf-routes-list' }, expect: 5,
+  },
+  {
+    id: 'nf-routes-gap',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 126,
+    decl: 'gap', says: '20px',
+    reading: 'twenty between them, which is a step',
+    measure: { kind: 'computed', selector: '.nf-routes-list', prop: 'column-gap' }, expect: '20px',
+  },
+  {
+    id: 'nf-routes-head-margin',
+    sheet: 'notFound', artboard: '1a', width: 1440, line: 125,
+    decl: 'margin-bottom', says: '16px',
+    reading: 'sixteen under MOUNTED ROUTES before the list starts',
+    measure: { kind: 'computed', selector: '.nf-routes-head', prop: 'margin-bottom' }, expect: '16px',
+  },
+  // ── artboard 1b, at 390 ──────────────────────────────────────────────────
+  {
+    id: 'nf-display-step-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 166,
+    decl: 'font', says: "600 58px/.94 'Chakra Petch',sans-serif",
+    reading: 'the one page whose display does not fall to 34 — #247, and the fourteenth step',
+    measure: { kind: 'computed', selector: '.nf-display', prop: 'font-size' }, expect: '58px',
+  },
+  {
+    id: 'nf-actions-stack-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 168,
+    decl: 'flex-direction', says: 'column',
+    reading: 'the ways out stack full width — they would fit side by side here, and the sheet stacks them anyway',
+    measure: { kind: 'computed', selector: '.nf-actions', prop: 'flex-direction' }, expect: 'column',
+  },
+  {
+    id: 'nf-actions-gap-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 168,
+    decl: 'gap', says: '10px',
+    reading: 'and ten between them, which is a step and is narrower than the fourteen at a desk',
+    measure: { kind: 'computed', selector: '.nf-actions', prop: 'row-gap' }, expect: '10px',
+  },
+  {
+    id: 'nf-action-step-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 169,
+    decl: 'font', says: "600 10.5px 'JetBrains Mono',monospace",
+    reading: 'the button does NOT take a third size here; three spellings of one component is the sheet arguing with itself',
+    measure: { kind: 'computed', selector: '.nf-actions .btn[data-variant="primary"]', prop: 'font-size' },
+    expect: '11px',
+    diverges: { class: 'one-button-type', sheet: '10.5px' },
+  },
+  {
+    id: 'nf-status-step-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 163,
+    decl: 'font', says: "600 10px 'JetBrains Mono',monospace",
+    reading: 'ERR 404 does take the step, because `.nf-status` is a class no other page has',
+    measure: { kind: 'computed', selector: '.nf-status', prop: 'font-size' }, expect: '10px',
+  },
+  {
+    id: 'nf-lede-step-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 167,
+    decl: 'font', says: "400 13.5px/1.7 'Geist',sans-serif",
+    reading: 'and so does the sentence under it, rounded to the body step',
+    measure: { kind: 'computed', selector: '.nf-lede', prop: 'font-size' }, expect: '13px',
+    diverges: { class: 'half-pixel', sheet: '13.5px' },
+  },
+  {
+    id: 'nf-log-step-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 179,
+    decl: 'font', says: "400 10.5px/1.8 'JetBrains Mono',monospace",
+    reading: 'the log steps with them — 12 at a desk, 10 here, and 11 at neither',
+    measure: { kind: 'computed', selector: '.nf-log', prop: 'font-size' }, expect: '10px',
+    diverges: { class: 'half-pixel', sheet: '10.5px' },
+  },
+  {
+    id: 'nf-routes-column-390',
+    sheet: 'notFound', artboard: '1b', width: 390, line: 201,
+    decl: 'flex-direction', says: 'column',
+    reading: 'one column, five rows — the list the mobile artboard splits at its fold',
+    measure: { kind: 'track-count', selector: '.nf-routes-list' }, expect: 1,
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
@@ -2864,6 +3126,7 @@ const TARGETS = [
   { map: BLOG_POST_MAP, target: 'web/e2e/oracle/blog-post.gen.json' },
   { map: BLOG_INDEX_MAP, target: 'web/e2e/oracle/blog-index.gen.json' },
   { map: CONTACT_MAP, target: 'web/e2e/oracle/contact.gen.json' },
+  { map: NOT_FOUND_MAP, target: 'web/e2e/oracle/notfound.gen.json' },
 ];
 
 // ---------------------------------------------------------------- extraction
