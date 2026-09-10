@@ -12,7 +12,164 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Wo wir stehen — 09.09.2026, H10b abgenommen: `v0.34.0` steht, und die Abnahme hat einen Knopf gefunden, den das Rig nie sehen konnte
+## Zwischendurch — 09.09.2026: der Doku-Merge tauschte die Container, und #242 bekam seine sechzehnte Kerbe
+
+`#363` gemergt **09:20:31Z**, `fe63e4d`. CI-Lauf `34334154850` vollständig grün —
+`check`, `db`, `e2e`, `quickstart`, `publish`, `scan`, beide CodeQL-Läufe und
+`deploy`; `retention` und `images` übersprungen wie bei jedem Push. Uhrzeiten mit
+`date -u` und aus der API gelesen, nicht geschätzt.
+
+Ein reiner `backlog.md`-PR, und er hat trotzdem beide Images gebaut und die
+Container getauscht. Das ist bekannt und bleibt trotzdem der Grund, warum ein
+Doku-Merge dieselbe Sorgfalt braucht wie ein Code-Merge.
+
+**Kein Release, und der Grund stand im Titel.** `docs(backlog):` ist kein
+`feat:`, also blieb `v0.34.0` stehen; `/api/badge/version` meldet
+`v0.34.0-1-gfe63e4d`. Dieselbe Mechanik wie bei H9b.
+
+### `durationSec` meldet 1084 s für einen Deploy, der 28 s gedauert hat
+
+#242, die **sechzehnte** Notiz. Die Form ist unverändert stabil:
+
+```
+H9c   1125 zu 30
+H10a  1073 zu 28
+H10b   978 zu 30
+#363  1084 zu 28
+```
+
+Der Deploy-Job lief **09:38:13Z → 09:38:41Z**, der api-Prozess läuft seit
+**09:38:52.299Z**. Die Zahl misst weiterhin die Pipeline und nicht den Deploy,
+und sie steht weiterhin auf der Fallstudie.
+
+**Vorlaufzeit 1062 s** — Merge bis Deploy-Start. Die fünfte Messung:
+
+```
+H9a   2026-09-04   927 s
+H9b   2026-09-06  1461 s
+H9c   2026-09-07  1099 s
+H10b  2026-09-09   952 s
+#363  2026-09-09  1062 s
+```
+
+Der Deckel von 1800 hält.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `fe63e4d` gebaut.
+
+### Und der Zeuge stand wieder nicht davor
+
+`witness.sh` ist nicht gelaufen. Der Fund der H10b-Abnahme — der Zeuge muss
+**vor** dem Merge stehen, nicht nach ihm — war zum Zeitpunkt dieses Merges zwar
+aufgeschrieben, aber der Merge war eine Entscheidung, keine Abnahme, und niemand
+stand bereit. Die vier sauberen Tausche aus H9a–H10a sind damit weiterhin vier;
+#304 steht unverändert da. **Beim H12a-Merge ist der Zeuge dran** — das ist die
+erste Gelegenheit, bei der der Ablauf es hergibt.
+
+---
+
+## H12a gebaut — 09.09.2026: die Seite darf eine Frist nennen, weil jetzt eine Schleife sie hält
+
+H12 ist die Phase, die mit dem übereinstimmen muss, was der Code tut. Beim Lesen
+des `Legal`-Blatts gegen den Code stand der Widerspruch sofort da, und er ist
+kein Detail:
+
+> Das Blatt: *„Nothing is written to a database here."* (`:244`, und noch einmal
+> auf 390 in `:373`)
+> Der Code: `INSERT INTO contact_messages (…name, email, message, dwell_ms,
+> ip_hash…)` seit H8.
+
+Dazu `00006_contact.sql:87-89`, seit drei Phasen unverändert: *„the retention
+purge from L7 … does not exist yet."* Also lag die Datenschutzseite vor drei
+schlechten Wegen — keine Frist nennen (schwach unter Art. 5(1)(e)), eine Frist
+nennen, die kein Code hält (die Unwahrheit mit Rechtsfolgen aus
+`systemhandbuch.md:1181`), oder unbegrenzte Aufbewahrung einräumen.
+
+**Der Job ist deshalb aus L7 vorgezogen.** Er steht vor dem Text, den er trägt.
+Zu diesem Zeitpunkt weder gemergt noch gegen Produktion gemessen.
+
+### Was steht
+
+- `00010_contact_retention.sql` — der Index, den `00006` zurückgestellt hatte
+- `PurgeContactMessages` in `queries/contact.sql`, `:execrows`
+- `contact.Purger` — dieselbe Bauform wie Dispatcher, Aggregator, Refresher,
+  Backfill. Ohne Breaker, und der ADR sagt warum
+- `retentionWindow = 30 Tage`, `purgeEvery = 1 Stunde`, im Code statt in der
+  Umgebung
+- Sechster Hintergrundnutzer des Pools, acht Dinge nach dem Drain
+- ADR 0075
+
+### Die Zahl, die den Job überhaupt sicher macht
+
+`delivery_status <> 'queued'`. Ohne sie löscht der Purge eine Nachricht, die der
+Dispatcher nie ausgeliefert hat — an einen Absender, der ein `202` bekommen hat.
+Der Beweis läuft gegen echtes Postgres, gegen `store.New(pool)` statt gegen eine
+Abschrift, und als `timseil_app`:
+
+```
+TestThePurgeTakesTheSettledAndLeavesTheOwed   PASS
+TestThePurgeIsExclusiveAtTheCutoff            PASS
+```
+
+**Und beide waren rot, bevor sie grün waren.** Die Query wurde probeweise um den
+Statusfilter gekürzt:
+
+```
+deleted 3 rows, want 2 (the old sent one and the old failed one)
+left behind [d-recent-sent], want [c-old-queued d-recent-sent]
+```
+
+Sieben Tests insgesamt, fünf gegen die Schleife und zwei gegen die Anweisung.
+
+### Grün
+
+```
+make check-go       ✓ gofmt, vet, test -race · go.mod tidy
+make check-lint     ✓ golangci-lint v2.13.2, 0 issues
+make check-adrs     ✓ 76 decisions, 76 referenced, none dangling
+make check-contract ✓ no codegen drift
+make check-db       ✓ (nach zwei Fehlschlägen, siehe unten)
+```
+
+### Gefunden — aus H12a
+
+- **`repeat()` gibt es nur für `text`.** `repeat('\x61'::bytea, 32)` existiert
+  nicht; für 32 Byte braucht es `decode(repeat('61', 32), 'hex')`. Kostete den
+  ersten `check-db`-Lauf.
+- **Der Idempotenz-Index macht zwei Zeilen zu einer.**
+  `(client_ts, lower(email), message_hash)` — zwei Testzeilen im selben
+  Augenblick mit gleicher Adresse und festem Hash sind für diesen Index eine
+  Zeile. Jede künftige Vorrichtung, die mehr als eine Nachricht setzt, muss den
+  Hash variieren. Steht jetzt als Kommentar an `insertMessage`.
+- **`dwell_ms` wird gespeichert, das Blatt sagt das Gegenteil.** `:243`:
+  *„a hidden field … and how long you had the form open … neither is stored"* —
+  `company` wird verworfen, `dwell_ms` ist eine Spalte. Gehört in den H12b-Text.
+- **Zwei Zeilen der Datenschutztabelle im Systemhandbuch stimmen nicht.**
+  `systemhandbuch.md:1174-1175` sagt „Access-Logs 14 Tage | Rotation
+  konfiguriert" und „Anwendungslogs 7 Tage | Loki-Retention". Loki steht auf
+  `retention_period: 336h`, also **14** Tage, nicht 7 — und eine getrennte
+  Access-Log-Rotation war im Repository nicht zu finden. Die Seite darf nur die
+  Zahl nennen, die wirklich durchgesetzt wird. **Issue-Kandidat.**
+- **Das Systemhandbuch führt Umami als Teil der Antwort.** `:1178-1179`:
+  „kein CDN, Schriften selbst gehostet, Umami self-hosted" und „Umami cookielos".
+  Es gibt kein Umami — `compose.yaml` hat zehn Dienste und keiner zählt Besucher.
+  Der Abschnitt 07.03 des Blatts („I count page views with `[ANALYTICS TOOL]`")
+  hängt an derselben Annahme und entfällt in H12b zugunsten der stärkeren
+  Aussage: es zählt niemand. **Issue-Kandidat.**
+
+### Verschoben aus H12a
+
+- **Die Frist steht ab H12b an zwei Orten** — als Konstante in Go und als Wort
+  im englischen Text. Nichts hält sie zusammen. Die Alternative wäre ein Feld im
+  öffentlichen Contract, das nur eine Rechtsseite liest; bewusst nicht gebaut,
+  im ADR 0075 unter „Was das kostet" benannt. **Aufgabe, kein Zustand.**
+- **`make check-db` läuft die volle Suite** und braucht dafür gut zwei Minuten,
+  davon 71 s für `internal/store`. Für einen Lauf, der ein Paket prüfen will,
+  gibt es kein Ziel — von Hand über `compose.dev.yaml run` gemacht.
+
+---
+
+## Vorher — 09.09.2026, H10b abgenommen: `v0.34.0` steht, und die Abnahme hat einen Knopf gefunden, den das Rig nie sehen konnte
 
 `cee24b6` läuft, **`v0.34.0`**. Merge **04:53:01Z**, Deploy-Job 05:08:53Z →
 05:09:23Z (**30 s**), der api-Prozess läuft seit **05:09:33.114Z**. Uhrzeit mit

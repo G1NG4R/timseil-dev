@@ -117,8 +117,9 @@ type InsertContactMessageParams struct {
 // contact_messages is the only table in this schema holding personal data and
 // the only one the public API never reads. Nothing here is a SELECT of a
 // message: the handler writes one and reads back an id, the rate-limit floor
-// counts without looking, and the dispatcher reads the rows it has to send. No
-// query in this file can be reached by a GET.
+// counts without looking, the dispatcher reads the rows it has to send, and the
+// retention purge deletes without reading any of it back. No query in this file
+// can be reached by a GET.
 //
 // Two things are never stored as themselves. ip_hash is a keyed digest of the
 // client address, peppered in Go (00006_contact.sql says why a bare SHA-256 of
@@ -296,4 +297,39 @@ type MarkContactMessageSentParams struct {
 func (q *Queries) MarkContactMessageSent(ctx context.Context, arg MarkContactMessageSentParams) error {
 	_, err := q.db.Exec(ctx, markContactMessageSent, arg.MailMessageID, arg.ID)
 	return err
+}
+
+const purgeContactMessages = `-- name: PurgeContactMessages :execrows
+DELETE FROM contact_messages
+ WHERE received_at < $1
+   AND delivery_status <> 'queued'
+`
+
+// PurgeContactMessages deletes what the retention window no longer covers, and
+// hands back how many rows went.
+//
+// THE STATUS FILTER IS THE WHOLE SAFETY OF THIS STATEMENT. A purge written on
+// received_at alone would delete a message the dispatcher has not delivered
+// yet — silently, unrecoverably, and to a visitor who was handed a 202 saying
+// the message was accepted. 'queued' is the one state that means "still owed to
+// somebody", so it is the one state this statement may not touch. A row the
+// dispatcher has given up on is marked 'failed' by MarkContactMessageFailed
+// above, which makes it settled and therefore purgeable; a row that is still
+// 'queued' after the window has passed is a defect to look at, not a row to
+// delete.
+//
+// The cutoff is a parameter and not now() - interval, for the same reason the
+// rate-limit window is one: the constant lives in Go, next to the sentence that
+// justifies it, and the loop's clock is injectable so the test can put the
+// boundary wherever it needs it rather than sleep for it.
+//
+// :execrows, because the count is the only thing this loop is allowed to say
+// about what it deleted. A name, an address or a message in that log line would
+// be this package breaking its own package comment on the way out.
+func (q *Queries) PurgeContactMessages(ctx context.Context, cutoff pgtype.Timestamptz) (int64, error) {
+	result, err := q.db.Exec(ctx, purgeContactMessages, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

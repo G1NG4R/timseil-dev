@@ -1,10 +1,15 @@
-// Package contact serves POST /api/contact and drains what it could not
-// deliver.
+// Package contact serves POST /api/contact, drains what it could not deliver,
+// and clears out what it no longer needs.
 //
 // It is the only unauthenticated write path on the site and its only conversion
 // point, so it carries more machinery than any read endpoint: a honeypot, a
 // dwell time, two rate limits, an origin check, an idempotency key, a hashed
-// address, an inline send and a dispatcher behind it.
+// address, an inline send, a dispatcher behind it and a purge behind that.
+//
+// It is also the only package here that stores personal data, which is why the
+// purge is part of it rather than an operational chore somewhere else: the
+// retention period and the sentence justifying it belong next to the code that
+// wrote the row.
 //
 // The five answers, in the order the checks run:
 //
@@ -78,6 +83,48 @@ const (
 	// enough to be nobody's problem and tight enough to keep nonsense out of a
 	// timestamptz column.
 	maxClockSkew = 48 * time.Hour
+)
+
+// The purge's numbers.
+//
+// H12 BROUGHT THIS LOOP FORWARD OUT OF L7, and the reason is a sentence in the
+// build plan rather than anything technical: the privacy page "muss mit dem
+// übereinstimmen, was der Code tut. Nicht umgekehrt." A page that names no
+// retention period is thin under Art. 5(1)(e); a page that names one no loop
+// keeps is what the handbook calls an untruth with legal consequences. So the
+// loop is written first and the page cites it, not the other way round.
+const (
+	// How long a settled message stays in the table.
+	//
+	// THIRTY DAYS IS DERIVED, NOT CHOSEN. The row has three jobs and none of
+	// them outlives a month. Delivery is hours: five attempts on the schedule
+	// in contact.sql are spent about half an hour after the message arrives.
+	// Idempotency is client_ts + email + message_hash, and a resend of the same
+	// text a month later is a new message by any reading. The rate-limit floor
+	// looks ten minutes back. After that the row is a second copy of something
+	// already sitting in a mailbox, and a second copy nobody needs is exactly
+	// what a retention rule is for.
+	//
+	// Thirty days rather than the shortest defensible number because the row is
+	// also the only record of what the relay did with a message — last_error,
+	// delivery_attempts, mail_message_id — and that is what a person reads when
+	// somebody writes "I sent you something and heard nothing". A window
+	// shorter than a holiday would delete the evidence before the question
+	// arrives.
+	retentionWindow = 30 * 24 * time.Hour
+
+	// The tick, and it is what decides how far PAST the window a row can live.
+	//
+	// The page says thirty days without an asterisk, so the overshoot has to be
+	// small enough that the sentence stays true at any reading: at one hour, a
+	// row is gone within 30 days and one hour of the deadline. Cheaper than the
+	// dispatcher's minute by a factor of sixty, and against an index that has
+	// nothing to return on all but one run in seven hundred.
+	purgeEvery = time.Hour
+
+	// The ceiling on one run. One indexed DELETE over a range, so this is a
+	// bound on a database that has stopped answering rather than on the work.
+	purgeTimeout = 30 * time.Second
 )
 
 // The dispatcher's numbers.

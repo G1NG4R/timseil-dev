@@ -1078,6 +1078,13 @@ rejects "empty Down rejected" tools/check-migrations.sh
 write_migration "$(printf '%s' "$good_migration" | sed 's/^-- Serves C3.*$/-- an index/')"
 rejects "index without its query rejected" tools/check-migrations.sh
 
+# H12 widened that rule from SELECT to any statement, because 00010's index
+# serves the retention purge. The acceptance below is the half that would
+# otherwise only be proven by the real migration — and a rule proven only by the
+# tree it guards is a rule that quietly stops holding.
+write_migration "$(printf '%s' "$good_migration" | sed 's|^-- Serves C3.*$|-- Serves H12: DELETE FROM tracks WHERE created_at < $1|')"
+accepts "index whose query is a DELETE accepted" tools/check-migrations.sh
+
 # DROP TYPE fails on dependent columns, which is what turns the second cycle red.
 write_migration "$(printf '%s' "$good_migration" | sed "1a CREATE TYPE track_state AS ENUM ('core');")"
 rejects "enum type rejected" tools/check-migrations.sh
