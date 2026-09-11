@@ -32,21 +32,30 @@ import { AUTHOR, SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
  *  them.
  *
  *  `indexable` is "does this page say anything yet", not "is it allowed to
- *  exist". Two of the seven are still `[SOON]` stubs, and a crawler that finds
+ *  exist". One of the seven is still a `[SOON]` stub, and a crawler that finds
  *  `IMPRINT [SOON]` files that away as what this site has to say on the subject
  *  and takes a while to be talked out of it. The phase named in each comment
  *  fills the page and flips the boolean in the same commit — H6 did it for
- *  `/work`, H7 for `/about`, H8 for `/contact` and H9b for `/blog`, and every
- *  time app/sitemap.ts picked the page up out of this boolean with no edit of
- *  its own. */
+ *  `/work`, H7 for `/about`, H8 for `/contact`, H9b for `/blog` and H12b for
+ *  `/privacy`, and every time app/sitemap.ts picked the page up out of this
+ *  boolean with no edit of its own.
+ *
+ *  H12b FLIPPED ONE OF THE TWO LEGAL ROUTES AND NOT BOTH, which looks like half
+ *  a job and is the same decision this table has taken twice before. The
+ *  boolean is per row precisely so that a page with something to say can say it
+ *  while its neighbour is still a shell: a case study was indexable before
+ *  `/work` was, and the log entries before `/blog` was. `/privacy` now carries a
+ *  full text, and the page that explains what a form on this site does is the
+ *  last page that should be waiting on a second one. H12c fills `/imprint` and
+ *  flips the row below. */
 const FIXED_PAGES = [
   { path: "/", indexable: true },
   { path: "/work", indexable: true },
   { path: "/blog", indexable: true }, // filled by H9b
   { path: "/about", indexable: true }, // filled by H7
   { path: "/contact", indexable: true }, // filled by H8
-  { path: "/imprint", indexable: false }, // H12
-  { path: "/privacy", indexable: false }, // H12
+  { path: "/imprint", indexable: false }, // H12c
+  { path: "/privacy", indexable: true }, // filled by H12b
 ] as const;
 
 export interface PageEntry {

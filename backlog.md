@@ -12,6 +12,124 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 11.09.2026, H12b gebaut: `/privacy` steht, und das Blatt lag an sieben Stellen daneben
+
+Zwei Seiten waren geplant, eine ist gebaut. H12b ist `/privacy` mit dem
+Live-Readout, H12c wird `/imprint` mit `NOT APPLICABLE` und dem
+`SEE ALSO`-Verweis in beide Richtungen. Der Schnitt ist derselbe, den H9 und H10
+gemacht haben, und er hat sich beim Schreiben bestätigt: der Readout allein ist
+eine Client-Insel, ein Stylesheet, zwei Token und dreizehn Orakel-Messungen.
+
+**Der Fund der Phase ist die Liste selbst.** Das Blatt ist vom 16.08., der Code
+ist weitergegangen, und gegen ihn gelesen stimmen **sieben** Aussagen nicht mehr.
+Vier standen als Funde aus H12a im Backlog. Drei sind beim Schreiben dazugekommen,
+und zwei davon sind die interessanteren:
+
+- **Die Log-Tabelle listet drei Felder, die der Handler nicht schreibt.** Das
+  Blatt führt IP im Klartext, User-Agent und Referrer, alle 14 Tage.
+  `middleware/logging.go` schreibt Methode, Pfad (nie die Query), Status, Bytes,
+  Dauer, Request- und Trace-ID — und als einziges Adressfeld einen HMAC mit
+  **prozesslokalem** Schlüssel, der beim Neustart verschwindet. Die ehrliche
+  Fassung ist kürzer und deutlich überzeugender: ein Hash, den niemand
+  zurückrechnen kann, und zwei Besuche um einen Neustart herum, die sich nicht
+  verbinden lassen.
+- **`GET /privacy HTTP/2 · 200` im Readout ist zu drei Vierteln getippt.** Ein
+  Browser sieht den Status des Dokuments nicht, das er gerade anzeigt, und die
+  Protokollversion ist im Mock geraten. Jetzt gemessen über die Navigation
+  Timing API — und der erste Lauf gegen den lokalen Produktionsserver zeigte
+  **`http/1.1`**. Auf einer Seite, deren ganzes Argument ist, dass nichts darauf
+  erfunden ist, wäre das die schlechteste Stelle für eine Ausnahme gewesen.
+- Dazu: `ts404.best` gehört zu H11 und liegt hinter dem Launch. Ein Schlüssel im
+  Text, den nichts schreibt, ist Invariante 1 mit umgekehrtem Vorzeichen. Die
+  Tabelle in 07.04 hat heute **eine** Zeile.
+
+Die vollständige Tabelle mit Belegstellen steht in **ADR 0076**.
+
+### Was jede Zahl auf der Seite jetzt festhält
+
+`web/lib/legal/content.test.ts` sammelt per Regex jede Dauer aus der Prosa und
+hält sie gegen eine Tabelle, die je Zahl die durchsetzende Datei nennt: 14 Tage
+gegen `ops/loki/loki.yaml`, 30 Tage und 10 Minuten gegen
+`api/internal/contact/policy.go`. **Eine Zahl ohne Quelle ist ein Fehler.** Und
+in die Gegenrichtung: eine Quelle, die die Seite nie nennt, auch — sonst
+beschreibt die Tabelle irgendwann das Repository statt die Seite.
+
+Dazu `retention.test.ts`, das `policy.go` liest und **auf eine Umformulierung
+fällt, nicht nur auf einen neuen Wert**. Das ist die Klammer, die ADR 0075 unter
+„Was das kostet" als fehlend benannt hat — ohne neues `make`-Ziel, ohne
+aufgetautes `selftest.sh`.
+
+### Gefunden — aus H12b
+
+- **Ein `h1` mit eigener `font-size` schaltet den Display-Schritt ab.** Der erste
+  Entwurf nahm die 52px des Blatts; `legal.sweep.spec.ts` wurde in einer Zeile
+  rot, weil eine Klasse `h1 { --t-disp-34 }` aus `layout.css` auf Spezifität
+  schlägt und der 720er-Schritt damit auf dieser Seite ausfiel. Die Seite nimmt
+  jetzt den globalen Schritt. **Der Sweep hat das gefunden, nicht der Blick** —
+  und er hätte es auf jeder Seite gefunden, die sich das erlaubt.
+- **`globals.css` gibt jedem `p` 68ch, und eine Terminal-Fußzeile ist kein
+  Absatz.** Die Trennlinie unter dem Readout hörte auf halber Breite auf und zog
+  den Zähler mit. Eine Zeile `max-width: none`. Aufgefallen im Browser, nicht im
+  Test — die Sorte Fehler, für die das Ansehen da ist.
+- **Ein JS-Timer hätte `reduced-motion.spec.ts` bestanden.** Der Test sucht nach
+  CSS-Bewegung. Die grüne Zeile beweist ADR 0074 also nur, solange die Bewegung
+  im Stylesheet steht. Steht als Satz im ADR, damit niemand sie falsch liest.
+- **`header nav a[aria-current]` ist die falsche Frage.** Die erste Fassung des
+  Chrome-Tests fand drei Treffer: das Sprachmenü markiert die aktuelle Sprache,
+  und das Mobilmenü trägt seine eigene Kopie der Navigation. Die Frage, die das
+  Blatt beantwortet, ist `nav[aria-label="Main"]`.
+- **`ts-wipe` stand seit G1 ungenutzt in `globals.css`** und hat hier seinen
+  ersten Verbraucher. Eine Clip-Path-Wische ist, was eine Terminalzeile beim
+  Schreiben tut. Ein Keyframe weniger als geplant.
+- **Eine Tabelle mit `overflow-x: auto` ist bei 390 ein axe-Befund, kein
+  Layout-Detail.** `scrollable-region-focusable`, Schweregrad *serious*: eine
+  Box, die man nur durch Ziehen erreicht. Ich hatte die `::before`-Kopfzelle
+  gezeichnet und den Schalter dazu vergessen, also lief die Formulartabelle in
+  07.06 über, statt zu stapeln. **Die volle Suite hat es gefunden, die gezielten
+  Läufe nicht** — a11y fegt `ROUTES`, und `/privacy` stand seit G5 darin, ohne
+  dass je etwas dort war.
+- **Playwright wiederholt eine Zusicherung, aber kein `innerText()`.** Das ist
+  der eigentliche Fund, und er hat mich zwei Anläufe gekostet. Drei Tests lasen
+  einen **gemessenen** Wert direkt nach `goto` — auf dieser Maschine das
+  hydrierte Panel, auf dem CI-Runner `—`, also den Leerzustand. **Neun
+  Fehlschläge über sechs Breiten in CI, nachdem die Suite hier grün war.** Der
+  Fix ist ein `toHaveAttribute("data-state","live")` davor; die Tests, die
+  ohnehin mit `expect` lasen, waren nie betroffen.
+- **Und der erste Erklärungsversuch dafür war falsch.** Bei 390 war derselbe
+  Test einmal lokal rot, und ich schrieb `nextHopProtocol` als Ursache auf —
+  plausibel, ungemessen, und in 261 Versuchen nicht reproduziert. CI hat es
+  widerlegt: der gelesene Wert war `—`, also die ganze Messung noch nicht da,
+  Protokoll und Pfad zusammen. **Eine plausible Ursache ist keine gemessene.**
+  Der Satz steht jetzt als Erinnerung im Test daneben.
+
+### Triagiert — die zwei Issue-Kandidaten aus H12a sind erledigt, nicht offen
+
+- **Die Datenschutztabelle im Systemhandbuch** stand in vier von fünf Zeilen
+  falsch, nicht in zwei. Kapitel 30 ist korrigiert und nennt jetzt je Zusage die
+  Datei, die sie durchsetzt. Kein Issue.
+- **Umami** ist aus dem Handbuch raus und kommt auf der Seite nicht vor —
+  `content.test.ts` verbietet das Wort. Kein Issue.
+
+### Verschoben aus H12b
+
+- **H12c** — `/imprint`, der `SEE ALSO`-Verweis in beide Richtungen, `indexable`
+  für `/imprint`, das zweite Orakel aus Artboard 1a und der unteren Hälfte von 1c.
+- **Zwei Klammern dürfen den Merge nicht überleben.** `[ADDRESS]` und
+  `[OVH LEGAL ENTITY AND LOCATION]` sind Angaben, die das Repository nicht
+  herleiten kann. `content.test.ts` hält die Menge fest, damit sie nur absichtlich
+  schrumpft — aber kein Test weiß, wann sie leer sein muss.
+- **Die DE/FR-Rechtsfassung.** `/de` und `/fr` liefern englischen Text mit
+  korrektem `textLang`, wie `/about`. Der Konsistenzlauf nennt K-03 Pflicht, das
+  Blatt hält es unter „zwei offene Punkte" offen. **Issue-Kandidat**, fällig vor M6.
+- **Die Reichweite der Drittanbieter-Aussage ist festgelegt** — auf das, was
+  diese Anwendung tut. Gegen die Lage davor geprüft, Ergebnis nicht hier.
+  H12c muss denselben Satz in 06.02 des Impressums einschränken.
+- **Das Impressum erbt die fünfte Kopie der Kontaktadresse.** `contact@timseil.dev`
+  steht jetzt zweimal auf `/privacy`; mit H12c kommen drei weitere dazu. Die
+  „vier Adresskopien"-Aufgabe aus H8a wächst damit weiter, unverändert offen.
+
+---
+
 ## Wo wir stehen — 10.09.2026, H12a abgenommen: `v0.35.0` steht, und der fünfte saubere Tausch ist der erste, der bezeugt ist
 
 `4471f67` läuft, **`v0.35.0`**. Merge **15:14:50Z**, Deploy-Job 15:33:06Z →

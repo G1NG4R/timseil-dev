@@ -9,10 +9,19 @@
 // count the router trace prints is taken from this list rather than typed, so
 // the sentence cannot disagree with the thing under it.
 //
-// `/privacy` AND `/imprint` ARE MOUNTED AND ARE NOT HERE. They are footer
-// business — the chrome already puts them on this page, as it does on every
-// other — and both are `[SOON]` stubs until H12. Offering a stub as a way out
-// of a dead end is a second dead end.
+// `/privacy` AND `/imprint` ARE MOUNTED AND ARE NOT HERE, and H12b took the
+// second half of that reason away without changing the answer. They are footer
+// business: the chrome already puts them on this page, as it does on every
+// other, and app/global-not-found.tsx links both from its own foot. That was
+// always the first reason; the second one — that both were `[SOON]` stubs, and
+// offering a stub as a way out of a dead end is a second dead end — expired the
+// moment `/privacy` got a text.
+//
+// THE LIST STAYS AT FIVE ANYWAY, and the argument is the drawing. The sheet
+// draws `repeat(5,1fr)`, layout.css folds that to three under 1080 and to one
+// under 720, and notfound.gen.json measures those track counts. Seven entries
+// in five tracks would look broken and would still be green. A visitor who has
+// hit a 404 wants the way back to the site, not its legal apparatus.
 
 /** The addresses, in the sheet's order. Language-free: the page maps each one
  *  through `localeHref()` so `/de/nonsense` offers German addresses. */

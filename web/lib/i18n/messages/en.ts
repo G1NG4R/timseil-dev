@@ -505,12 +505,19 @@ export const en = {
   // The one thing this page stores that a visitor cannot see, said plainly and
   // BEFORE they send rather than in a policy they will not open.
   //
-  // IT IS HERE AND NOT ON /privacy BECAUSE /privacy IS A STUB UNTIL H12. A form
-  // that collects a name, an address and a message while the only page that
-  // could explain it says `PRIVACY [SOON]` would be this site breaking its own
-  // rule on the one page where it is not a style question. H12 writes the full
-  // text and L7 automates the retention; this sentence is what is true today,
-  // and it is true whatever those two decide.
+  // IT IS HERE AND IT STAYS HERE, AND H12b IS WHERE THAT STOPPED BEING FORCED.
+  // Until then the reason was that `/privacy` said `PRIVACY [SOON]`, and a form
+  // collecting a name, an address and a message while the only page that could
+  // explain it was a shell would be this site breaking its own rule on the one
+  // page where it is not a style question. `/privacy` now carries the full text
+  // — and the sentence still belongs here, for the better reason: it is read
+  // BEFORE the visitor presses send, rather than in a policy they will not open.
+  // A link is not a substitute for a sentence at the point of collection.
+  //
+  // WHAT DID CHANGE IS THAT IT IS NOW CHECKABLE. Everything below is said again
+  // in 07.06, at length, and lib/legal/content.test.ts holds that version
+  // against the columns of contact_messages and against retentionWindow. If the
+  // two ever disagree, the long one is the one with a test behind it.
   contactNotice:
     "What is stored: your name, address, message, the time, and a hashed form " +
     "of your IP address for the rate limit. The message goes to my mailbox and " +
