@@ -12,6 +12,141 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 11.09.2026, H12b abgenommen: `v0.36.0` steht, und die eine gemessene Zeile war in beiden Umgebungen anders als das Blatt
+
+`3ee6662` läuft, **`v0.36.0`**. Merge **21:29:31Z**, Deploy-Job 21:46:28Z →
+21:46:51Z (**23 s**), der api-Prozess läuft seit **21:47:05.533Z**. Uhrzeit mit
+`date -u` gelesen; 21:46Z liegt zwei Stunden vor dem Dokploy-Fenster 23:45–00:00.
+
+Der `feat:`-Titel hat wieder getan, was er soll: `v0.35.0` → **`v0.36.0`**,
+Minor, und `/api/badge/version` meldet ihn. Der Squash hat das `(#366)` gesetzt.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `3ee6662` gebaut.
+
+### Die stärkste Zeile der Seite ist die, die ich nicht abgeschrieben habe
+
+Das Blatt tippt im Readout `GET /privacy HTTP/2 · 200`. Gemessen statt getippt,
+liest dieselbe Zeile
+
+```
+lokaler Produktionsbuild   GET /privacy · http/1.1
+Produktion                 GET /privacy · h3
+```
+
+**Das Literal des Blatts wäre in beiden Umgebungen falsch gewesen**, und nur die
+Umsetzung in Produktion hat die zweite Hälfte davon gezeigt — lokal hätte man
+sich mit „na gut, dann eben http/1.1" zufrieden geben können. Der Statuscode
+steht weiterhin nirgends: ein Browser sieht den Status des Dokuments nicht, das
+er anzeigt. Für eine Seite, deren ganzes Argument ist, dass nichts auf ihr
+erfunden ist, wäre das die auffälligste Stelle gewesen, an der sie es doch tut.
+
+### Die erste p95 nach einem Deploy misst den Deploy
+
+Das ist der zweite Fund der Abnahme, und er wäre beinahe als Regression in
+dieses Dokument gewandert:
+
+```
+21:52:05Z   p95  347,9 ms   errorRate  0,1233
+22:02:05Z   p95  186,2 ms   errorRate  0
+```
+
+Der Schnappschuss um 21:52 liegt **fünf Minuten nach dem Neustart um
+21:47:05Z**, und das Fenster der Recording-Rule ist fünf Minuten — der Tausch
+selbst steckt also noch darin. Zehn Minuten später ist die Fehlerrate null und
+die p95 halbiert. Dieselbe Falle wie beim Zeugen, nur in der anderen Währung:
+**eine Zahl, deren Fenster über das Ereignis reicht, misst das Ereignis.** Wer
+die 347,9 ins Protokoll schreibt, meldet eine Verschlechterung, die es nicht
+gibt.
+
+`measuredAt` beantwortet das und steht deshalb in `/api/health`. Es ist kein
+Anfragezeitpunkt, sondern der Zeitpunkt des Schnappschusses; wer die Zahl liest,
+muss ihn gegen `startedAt` halten. Bei H12a stand p95 auf 99,5 ms — das ist der
+Vergleichswert, und 186,2 gegen 99,5 ist der nächste ehrliche Blick wert, nicht
+347,9 gegen 99,5.
+
+### Was gegen Produktion geprüft ist
+
+- `/privacy` antwortet **200** über HTTP/2, TTFB **325 ms**, kein `noindex`,
+  und die Sitemap listet alle drei Sprachrouten.
+- Im Browser: Panel `live`, acht Zeilen, `8 FIELDS · NOTHING ELSE` passt zur
+  Zeilenzahl, alle sieben Sprunglisten-Anker lösen auf, `LAST REVISED` steht im
+  `main` und nicht in der Fußzeile — **null Konsolenmeldungen**, also auch keine
+  Hydration-Warnung, was G3s Abnahmekriterium bleibt.
+- Die IP-Zeile steht schon im Server-HTML, vor jedem Skript. Das ist die eine
+  Zeile des Panels, die kein Browser beantworten kann, und sie ist damit die
+  einzige, die auch ohne einen erscheint.
+
+### `durationSec` meldet 1035 s für einen Deploy, der 23 s gedauert hat
+
+#242, die **achtzehnte** Notiz:
+
+```
+H10a  1073 zu 28
+H10b   978 zu 30
+#363  1084 zu 28
+H12a  1109 zu 26
+H12b  1035 zu 23
+```
+
+**Vorlaufzeit 1017 s** — Merge bis Deploy-Start. Die siebte Messung:
+
+```
+H9b   2026-09-06  1461 s
+H9c   2026-09-07  1099 s
+H10b  2026-09-09   952 s
+#363  2026-09-09  1062 s
+H12a  2026-09-10  1096 s
+H12b  2026-09-11  1017 s
+```
+
+Der Deckel von 1800 hält. Und 23 s ist der kürzeste Tausch dieser Reihe.
+
+### Was diese Abnahme nicht beweist
+
+**Dass die Seite stimmt, wenn jemand sie liest, der sie prüfen kann.** Alles
+oben ist gemessen: dass jede Zahl aus einer Datei kommt, die sie durchsetzt,
+dass kein Satz mehr behauptet, was der Code nicht tut. Was keine Maschine hier
+prüft, ist die juristische Vollständigkeit der Pflichtangaben. Das Blatt sagt es
+selbst — *„Kein Rechtsrat"* — und M4 ist die Stelle dafür.
+
+**Und zwei Klammern sind mit dem Merge live gegangen.** `[ADDRESS]` in 07.01 und
+`[OVH LEGAL ENTITY AND LOCATION]` in 07.06 stehen auf einer öffentlichen,
+indexierbaren Seite. Der Test hält die Menge fest, damit sie nur absichtlich
+schrumpft — aber kein Test weiß, wann sie leer sein **muss**, und genau das war
+die Lücke. **Sofort fällig**, nicht „vor M6".
+
+### Gefunden — aus der H12b-Abnahme
+
+- **Der Zeuge stand wieder nicht davor.** Dasselbe wie bei H10b und #363: der
+  Merge kam, bevor `witness.sh` lief. Sechster sauberer Tausch in Folge, aber
+  nur aus `check-deployed` erschlossen statt Sekunde für Sekunde mitgeschrieben.
+  #304 bekommt diesmal keine Messung. Das ist jetzt dreimal derselbe Grund, und
+  der Grund ist der Ablauf: **der Zeuge muss starten, bevor der Merge-Knopf
+  gedrückt wird**, nicht danach.
+- **Die erste p95 nach einem Tausch ist keine Aussage über die Seite.** Fünf
+  Minuten Fenster über einem Neustart, der fünf Minuten her ist. `measuredAt`
+  gegen `startedAt` halten, sonst ist die nächste Abnahme eine Regressionsmeldung.
+  Verwandt mit dem Zeugen-Fund aus H12a, und dieselbe Lehre: **ein Urteil ist so
+  breit wie sein Fenster.**
+- **Ein Test kann nur prüfen, was jemand ihm als Bedingung sagt.**
+  `content.test.ts` hält die Klammermenge exakt — und ist grün, solange sie
+  exakt stimmt, auch wenn sie zwei Einträge hat. Die Bedingung „vor dem Merge
+  leer" existiert in keiner Maschine dieses Repositories. Ob sie eine braucht,
+  ist eine echte Frage: das wäre eine neue Prüfregel, und CLAUDE.md verlangt
+  dafür einen Vorfall. **Der Vorfall ist jetzt passiert.**
+
+### Verschoben aus der H12b-Abnahme
+
+- **H12c** — `/imprint`, der `SEE ALSO`-Verweis in beide Richtungen, `indexable`
+  für `/imprint`, das zweite Orakel aus Artboard 1a und der unteren Hälfte von 1c.
+  Der eingeschränkte Drittanbieter-Satz aus 07.05 gilt dort für 06.02 genauso.
+- **Die DE/FR-Rechtsfassung**, unverändert offen. K-03, vor M6.
+- **Eine Prüfung, die Klammern vor dem Merge abweist**, mit dem Vorfall oben als
+  Auslöser. Aufgabe, kein Zustand.
+
+---
+
 ## Wo wir stehen — 11.09.2026, H12b gebaut: `/privacy` steht, und das Blatt lag an sieben Stellen daneben
 
 Zwei Seiten waren geplant, eine ist gebaut. H12b ist `/privacy` mit dem
