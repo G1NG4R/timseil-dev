@@ -82,6 +82,14 @@ import "../../styles/contact.css";
 // the reason every page sheet is: it may not override the chrome or the state
 // language, and layout.css's media queries have to win over its geometry.
 import "../../styles/blog.css";
+// H12b. `/privacy`'s own surfaces, in the same slot and for the same reason:
+// after the page sheets, before layout.css. It is the ninth of these and the
+// only one that overrides a shared component — `.lg-section .sec`, because the
+// Legal sheet opens a section of prose where ui.css's head titles a panel.
+// That override is the argument for this position rather than an exception to
+// it: ui.css comes first, layout.css comes last, and both still win where they
+// are supposed to.
+import "../../styles/legal.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root

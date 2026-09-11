@@ -66,6 +66,17 @@ const SHEETS = {
   // drawn at 1440 and gone below 1080, which is a switch layout.css already
   // owns rather than a frame the sheet still owes.
   contact: 'docs/design/Contact - timseil.dev.dc.html',
+  // H12b. `/privacy` draws 1440 and 390, and Legal is named in the same
+  // sentence About and Contact are: "Fliesstext, Blog, About, Contact und Legal
+  // fliessen, dort ist nichts zu entscheiden." Its one fixed column — the 380px
+  // jump rail — is drawn at 1440 and gone below 1080, which is a switch
+  // layout.css owns rather than a frame the sheet still owes.
+  //
+  // ONE SHEET, ONE MAP, FOR NOW. The file holds both legal pages: artboard 1a
+  // is `/imprint` and 1b is `/privacy`, and 1c stacks them. Only 1b has a page
+  // to measure until H12c, so the imprint's entries arrive with the page rather
+  // than sitting here failing against a `[SOON]` stub.
+  legal: 'docs/design/Legal - timseil.dev.dc.html',
   // H9a. The post draws 1440 and 390, and it is named in the same sentence
   // About and Contact are: "Fliesstext, Blog, About, Contact und Legal
   // fliessen, dort ist nichts zu entscheiden." The one fixed column it has —
@@ -238,6 +249,16 @@ const DIVERGENCE = {
     'Adding a third two-column geometry so that one page can be eighty pixels ' +
     'different would be that claim made on purpose. The 1080 switch is the ' +
     'same switch either way, which is the thing a reader can actually see.',
+  'one-display-step':
+    'The Legal sheet draws its `h1` at 52 and globals.css has given every `h1` ' +
+    'on this site 62 since G1. 52 IS a step — this is not `heading-scale`, ' +
+    'which is about a size the scale does not have — so the first draft simply ' +
+    'took the sheet\'s number, and legal.sweep.spec.ts went red in one line: a ' +
+    'class carrying a font-size beats layout.css\'s bare `h1 { --t-disp-34 }` ' +
+    'on specificity, so the display step stopped happening on this page at 720. ' +
+    'The 404 is the one page with a step of its own and layout.css argues that ' +
+    'exception in place. Ten pages open with the same size, and the reader who ' +
+    'moves between them sees one site rather than a page that shrank.',
   'one-panel-geometry':
     'The About sheet draws the trajectory panel `1fr 380px` with a 64px gap. ' +
     '`.cs-prob` in layout.css is `1fr 380px` with 80, and has been since G1. ' +
@@ -3118,6 +3139,117 @@ const NOT_FOUND_MAP = [
   },
 ];
 
+/**
+ * `/privacy` — the Legal sheet, artboard 1b at 1440 and 1c at 390.
+ *
+ * WHAT THIS MAP IS NOT MEASURING, and it is worth saying once here rather than
+ * eight times below: the readout's VALUES. They are this page's whole argument
+ * and not one of them is a geometry — legal.spec.ts holds the user agent
+ * against `navigator.userAgent` and the request line against the Navigation
+ * Timing entry, which is a measurement of the browser rather than of the
+ * drawing. This map holds the drawing.
+ */
+const PRIVACY_MAP = [
+  // ── 1440 · artboard 1b ────────────────────────────────────────────────────
+  {
+    id: 'priv-hero-cols',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 158,
+    decl: 'grid-template-columns', says: '1fr 470px',
+    reading: 'the hero is one flexible column and the readout panel beside it',
+    measure: { kind: 'box-width', selector: '.lg-hero > .lg-term' }, expect: 480,
+    diverges: { class: 'one-hero-geometry', sheet: '470px' },
+  },
+  {
+    id: 'priv-hero-gap',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 158,
+    decl: 'gap', says: '72px',
+    reading: 'with 72px of air between the headline and the panel',
+    measure: { kind: 'gap-x', from: '.lg-hero-text', to: '.lg-hero > .lg-term' }, expect: 72,
+  },
+  {
+    id: 'priv-hero-align',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 158,
+    decl: 'align-items', says: 'start',
+    reading: 'and the two aligned at the top rather than centred — which the panel needs, because it grows by eight rows a moment after the page paints and a centred row would slide the headline down as they arrive',
+    measure: { kind: 'computed', selector: '.lg-hero', prop: 'align-items' }, expect: 'start',
+  },
+  {
+    id: 'priv-h1',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 161,
+    decl: 'font', says: "500 52px/1.06 'Chakra Petch',sans-serif",
+    reading: 'the headline in the display face',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '62px',
+    diverges: { class: 'one-display-step', sheet: '52px' },
+  },
+  {
+    id: 'priv-readout-key',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 177,
+    decl: 'grid-template-columns', says: '112px 1fr',
+    reading: 'each readout line is a 112px label and whatever the browser answered',
+    measure: { kind: 'box-width', selector: '.lg-field dt' }, expect: 112,
+  },
+  {
+    id: 'priv-readout-type',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 177,
+    decl: 'font', says: "400 11.5px/1.6 'JetBrains Mono',monospace",
+    reading: 'set in mono, because every one of these is a value rather than a sentence',
+    measure: { kind: 'computed', selector: '.lg-field', prop: 'font-size' }, expect: '11px',
+    diverges: { class: 'half-pixel', sheet: '11.5px' },
+  },
+  {
+    id: 'priv-term-bar-gap',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 166,
+    decl: 'gap', says: '7px',
+    reading: 'the three dots of the terminal bar, spaced the way a title bar spaces them',
+    measure: { kind: 'computed', selector: '.lg-term-dots', prop: 'column-gap' }, expect: '8px',
+    diverges: { class: 'spacing-scale', sheet: '7px' },
+  },
+  {
+    id: 'priv-body-cols',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 193,
+    decl: 'grid-template-columns', says: '1fr 380px',
+    reading: 'the prose and the jump rail beside it — `.cs-prob` pair for pair, so the two move at one switch',
+    measure: { kind: 'box-width', selector: '.lg-rail' }, expect: 380,
+  },
+  {
+    id: 'priv-body-gap',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 193,
+    decl: 'gap', says: '80px',
+    reading: 'and 80px between them, which is the same pair again',
+    measure: { kind: 'gap-x', from: '.lg-prose', to: '.lg-rail' }, expect: 80,
+  },
+  {
+    id: 'priv-rail-item',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 256,
+    decl: 'grid-template-columns', says: '44px 1fr',
+    reading: 'a rail entry is its number and its short name, and the number column is why the rail carries short names at all',
+    measure: { kind: 'box-width', selector: '.lg-rail-id' }, expect: 44,
+  },
+  {
+    id: 'priv-numbered',
+    sheet: 'legal', artboard: '1b', width: 1440, line: 227,
+    decl: 'grid-template-columns', says: '22px 1fr',
+    reading: 'the four things that never leave this server are a numbered list, numeral beside the line rather than above it',
+    measure: { kind: 'track-count', selector: '.lg-numbered li' }, expect: 2,
+  },
+
+  // ── 390 · artboard 1c ─────────────────────────────────────────────────────
+  {
+    id: 'priv-h1-390',
+    sheet: 'legal', artboard: '1c', width: 390, line: 313,
+    decl: 'font', says: "500 34px/1.08 'Chakra Petch',sans-serif",
+    reading: 'on a phone the display step falls to 34 — K-08, and this page takes it from layout.css rather than declaring it',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '34px',
+  },
+  {
+    id: 'priv-rail-390',
+    sheet: 'legal', artboard: '1c', width: 390, line: 301,
+    decl: 'width', says: '390px',
+    reading: 'and the mobile artboard draws no jump rail at all: a table of contents between the last section and the footer is where one is least useful and most in the way',
+    measure: { kind: 'computed', selector: '.lg-rail', prop: 'display' }, expect: 'none',
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
@@ -3127,6 +3259,7 @@ const TARGETS = [
   { map: BLOG_INDEX_MAP, target: 'web/e2e/oracle/blog-index.gen.json' },
   { map: CONTACT_MAP, target: 'web/e2e/oracle/contact.gen.json' },
   { map: NOT_FOUND_MAP, target: 'web/e2e/oracle/notfound.gen.json' },
+  { map: PRIVACY_MAP, target: 'web/e2e/oracle/privacy.gen.json' },
 ];
 
 // ---------------------------------------------------------------- extraction

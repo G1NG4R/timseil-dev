@@ -1,0 +1,416 @@
+/* `/privacy`'s own surfaces. Build plan H12, phase H12b. ADR 0076.
+
+   WHAT IS HERE AND WHAT IS NOT, the split case.css, home.css, work.css and
+   about.css all make: this file draws, layout.css switches. Nothing below
+   carries a media query. This page answers to two of the four declared
+   switches — 1080, where the hero and the body stop being two columns and the
+   jump rail goes away, and 720, where the display step falls to 34 — and
+   layout.css owns both. Neither is new: `.lg-hero` takes `.hero`'s pair and
+   `.lg-body` takes `.cs-prob`'s, rather than introducing a ninth measurement.
+
+   NO NEW COLOUR, NO NEW RADIUS. Two new durations, --d-readout and --d-caret,
+   and they are in tokens.css with the reason beside them. The geometry
+   literals below are this page's own component sizes — 112px for the key
+   column of the readout, 44px for the rail's number column, 22px for the
+   numeral column of an ordered list, 68ch and 58ch for the two measures the
+   sheet gives — the same class as about.css's 80px label column, and
+   check-tokens.sh polices colour, radius and duration rather than geometry.
+
+   THE SHEET'S TYPE SIZES ARE PULLED TO THE SCALE. It draws 15.5px prose, 11.5px
+   readout rows and a 19px section title; the scale has no half pixels and no
+   19. They land on --t-body-15, --t-mono-11 and --t-body-17, and the three are
+   recorded as `heading-scale` divergences in the sheet oracle rather than
+   spelled out here. A fourteenth type step for one page is the cost tokens.css
+   warns about in its own words at --t-disp-58.
+
+   KEIN ALERT-ROT. Not one rule below reaches for --alert. The design note is
+   explicit — "Nichts hier ist ein Fehlerzustand" — and a legal page that turns
+   red at a visitor is making a threat rather than a disclosure.             */
+
+/* ---- Hero ---------------------------------------------------------------- */
+
+.lg-hero { padding: var(--s-56) 0 }
+
+.lg-eyebrow {
+  font: 600 var(--t-mono-11) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+  margin: 0 0 var(--s-20);
+}
+
+/* NO FONT-SIZE HERE, AND THE FIRST DRAFT HAD ONE. The Legal sheet draws this
+   headline at 52 where globals.css gives every `h1` 62, and taking the sheet's
+   number meant a class that beat layout.css's bare `h1 { --t-disp-34 }` on
+   specificity — so the display step simply stopped happening on this page at
+   720, and legal.sweep.spec.ts said so in one line. The 404 is the one page
+   allowed a step of its own and layout.css argues that exception in place; a
+   legal page is not a second one. 52 is one drawing's choice, 62 is the site's,
+   and the oracle records the difference as a `heading-scale` divergence rather
+   than this file carrying a number.
+
+   16ch IS THE SHEET'S AND IT STAYS: a measure is not a size, and it is the
+   reason "What this server knows" breaks after "server" rather than running the
+   width of the column. */
+.lg-h1 {
+  color: var(--ink);
+  max-width: 16ch;
+  margin: 0 0 var(--s-26);
+}
+
+.lg-lede {
+  font: 400 var(--t-body-15) / var(--lh-body) var(--body);
+  color: var(--ink-2);
+  max-width: 58ch;
+  margin: 0 0 var(--s-12);
+}
+
+.lg-sub {
+  font: 400 var(--t-body-13) / var(--lh-body) var(--body);
+  color: var(--steel);
+  max-width: 58ch;
+  margin: 0;
+}
+
+/* ---- The readout --------------------------------------------------------- */
+
+.lg-term {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  /* The sheet's corner arms, the same eight-gradient device the terminal panel
+     on the homepage uses. Derived from --acc-line so all seven palettes get
+     one, rather than the sheet's rgba(0,229,255,.55) literal. */
+  background-image:
+    linear-gradient(var(--acc-line), var(--acc-line)), linear-gradient(var(--acc-line), var(--acc-line)),
+    linear-gradient(var(--acc-line), var(--acc-line)), linear-gradient(var(--acc-line), var(--acc-line)),
+    linear-gradient(var(--acc-line), var(--acc-line)), linear-gradient(var(--acc-line), var(--acc-line)),
+    linear-gradient(var(--acc-line), var(--acc-line)), linear-gradient(var(--acc-line), var(--acc-line));
+  background-repeat: no-repeat;
+  background-size: 14px 1px, 1px 14px, 14px 1px, 1px 14px, 14px 1px, 1px 14px, 14px 1px, 1px 14px;
+  background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%;
+}
+
+.lg-term-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  padding: var(--s-12) var(--s-16);
+  border-bottom: 1px solid var(--line);
+}
+
+.lg-term-dots { display: flex; gap: var(--s-8) }
+
+.lg-term-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-dot);
+  border: 1px solid var(--line-strong);
+}
+
+.lg-term-title {
+  flex: 1;
+  text-align: center;
+  font: 500 var(--t-mono-10) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+.lg-term-badge {
+  font: 600 var(--t-mono-9) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}
+
+.lg-term-body { padding: var(--s-20) }
+
+.lg-fields { margin: 0 }
+
+.lg-field {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  /* The sheet's 14, and --s-14 is a step, so there is nothing to round. */
+  gap: var(--s-14);
+  padding: var(--s-4) 0;
+  font: 400 var(--t-mono-11) / var(--lh-mono) var(--mono);
+}
+
+.lg-field dt { color: var(--dim); letter-spacing: var(--ls-label) }
+
+.lg-field dd {
+  margin: 0;
+  /* A user agent is one unbroken token and a referrer can be longer than the
+     column. Without this the panel is what widens the page. */
+  word-break: break-all;
+  color: var(--ink-2);
+}
+
+.lg-field dd[data-emphasis="dim"] { color: var(--dim) }
+.lg-field dd[data-emphasis="ink"] { color: var(--ink) }
+
+/* THE STAGGER, AND IT IS THE STYLESHEET'S — ADR 0074.
+
+   The sheet's mock adds each row with a timer. Here every row is in the DOM as
+   soon as its value exists and the cascade delays it by `--i` steps; `--i` is a
+   count the component passes, which invariant 8 is not about. The end state is
+   the default, so globals.css's reduced-motion rule leaves a complete panel
+   rather than an empty one — and, unlike a timer, it actually obeys it.
+
+   `both` matters: without the backwards fill, row seven is drawn whole for one
+   frame before its delay starts.
+
+   AND THE KEYFRAME IS ts-wipe, WHICH GLOBALS.CSS HAS HAD SINCE G1. A clip-path
+   wipe left to right is what a line of a terminal actually does when it is
+   written, where a fade is what a card does when it arrives; the sheet draws a
+   log, so the log's own move is the right one — and it is already in the
+   cascade, which is one keyframe this phase does not add.                   */
+.lg-term[data-state="live"] .lg-field {
+  animation: ts-wipe var(--d-reveal) var(--e-wipe) both;
+  animation-delay: calc(var(--d-readout) * (2 + var(--i)));
+}
+
+.lg-term-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  /* globals.css gives every `p` the 68ch reading measure, which is right for
+     prose and wrong for the bottom rail of a panel: at mono 11 it cut the rule
+     off less than half way across and pulled the count in with it. This row is
+     a part of the terminal, not a paragraph. */
+  max-width: none;
+  margin: var(--s-12) 0 0;
+  padding-top: var(--s-12);
+  border-top: 1px solid var(--line-soft);
+  font: 600 var(--t-mono-11) / var(--lh-mono) var(--mono);
+}
+
+.lg-eof { color: var(--acc) }
+
+.lg-caret {
+  width: 7px;
+  height: 13px;
+  background: var(--acc);
+  /* ts-blink has been in globals.css since G1 with nothing using it. This is
+     its first consumer. `step-end` is the sheet's, and it is what makes a
+     cursor a cursor rather than a pulse. */
+  animation: ts-blink var(--d-caret) step-end infinite;
+}
+
+.lg-count {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--dim);
+  letter-spacing: var(--ls-label);
+}
+
+.lg-term-pending {
+  margin: var(--s-16) 0 0;
+  font: 400 var(--t-body-13) / var(--lh-body) var(--body);
+  color: var(--steel);
+}
+
+/* ---- The short version --------------------------------------------------- */
+
+.lg-short {
+  border: 1px solid var(--line-soft);
+  padding: var(--s-20) var(--s-26);
+  margin: 0 0 var(--s-56);
+}
+
+.lg-short-head {
+  font: 600 var(--t-mono-11) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  margin: 0 0 var(--s-16);
+}
+
+.lg-short ul { list-style: none; margin: 0; padding: 0 }
+
+.lg-short li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--s-12);
+  padding: var(--s-4) 0;
+  font: 400 var(--t-body-15) / var(--lh-body) var(--body);
+  color: var(--ink-2);
+}
+
+.lg-short-mark { font-family: var(--mono); color: var(--dim) }
+.lg-short li[data-yes="yes"] .lg-short-mark { color: var(--acc) }
+
+/* The word behind the glyph. Present for a screen reader, and out of the way
+   of everything else — `display:none` would take it from both. */
+.lg-short-word {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- Sections ------------------------------------------------------------ */
+
+.lg-prose { min-width: 0 }
+
+.lg-section { margin: 0 0 var(--s-56); scroll-margin-top: var(--s-96) }
+
+/* The one place this page overrides a shared component. `.sec` is a 12px label
+   over a hairline, which is right over a panel and wrong over four paragraphs
+   of a legal document: the sheet draws these heads at 19px with no rule under
+   them, because they open a section of prose rather than title a widget.
+   Overriding beats a second head component — there is one SectionHead on this
+   site and this page is not the reason to make it two. */
+.lg-section .sec {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--s-20);
+  align-items: baseline;
+  gap: var(--s-16);
+}
+
+.lg-section .sec-id {
+  font: 600 var(--t-mono-11) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--acc);
+}
+
+.lg-section .sec-title {
+  font: 500 var(--t-body-17) / var(--lh-mono) var(--mono);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
+}
+
+/* No `max-width` on either of these: globals.css already gives every `p` the
+   68ch measure, and 68ch is a multiple of the font size, so a 13px note is
+   narrower than a 15px paragraph without either of them saying a number. The
+   lede above DOES override it, because 58ch is the sheet's own tighter measure
+   for a first paragraph. */
+.lg-p {
+  font: 400 var(--t-body-15) / var(--lh-body) var(--body);
+  color: var(--ink-2);
+  margin: 0 0 var(--s-20);
+}
+
+.lg-note {
+  font: 400 var(--t-body-13) / var(--lh-body) var(--body);
+  color: var(--steel);
+  margin: 0 0 var(--s-20);
+  padding-left: var(--s-16);
+  border-left: 1px solid var(--line-soft);
+}
+
+.lg-numbered {
+  list-style: none;
+  margin: 0 0 var(--s-20);
+  padding: 0;
+  counter-reset: lg-item;
+  max-width: 68ch;
+}
+
+.lg-numbered li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--s-12);
+  padding: var(--s-8) 0;
+  font: 400 var(--t-body-15) / var(--lh-body) var(--body);
+  color: var(--ink-2);
+  counter-increment: lg-item;
+}
+
+.lg-numbered li::before {
+  content: counter(lg-item, decimal-leading-zero);
+  font: 600 var(--t-mono-11) / var(--lh-body) var(--mono);
+  color: var(--acc);
+}
+
+/* ---- Tables -------------------------------------------------------------- */
+
+.lg-table-wrap { margin: 0 0 var(--s-26); overflow-x: auto }
+
+.lg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 var(--t-body-13) / var(--lh-body) var(--body);
+}
+
+.lg-table th {
+  text-align: left;
+  font: 600 var(--t-mono-10) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  padding: 0 var(--s-16) var(--s-8) 0;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.lg-table td {
+  color: var(--ink-2);
+  padding: var(--s-12) var(--s-16) var(--s-12) 0;
+  border-bottom: 1px solid var(--line-faint);
+  vertical-align: top;
+}
+
+/* The retention column and the key column are values, not prose. */
+.lg-table td:last-child,
+.lg-table td:first-child { font-family: var(--mono); font-size: var(--t-mono-12) }
+
+/* ADR 0055: below the switch a table stops being one. Four words per line in
+   three columns is not a table, it is a column of fragments — so each cell
+   becomes its own row and carries the header it was only meaningful under.
+   The switch is layout.css's; this is what the header cell looks like once it
+   has fired, which is this file's half of the same division.
+
+   IT IS DRAWN HERE AND SWITCHED ON THERE, AND THE FIRST DRAFT ONLY DID THE
+   FIRST HALF. `.lg-table-wrap` kept `overflow-x: auto` at 390, so the form
+   table in 07.06 overflowed instead of stacking — and an overflowing box with
+   nothing focusable in it is `scrollable-region-focusable`, which axe calls
+   serious and which a390 run found on the first full sweep. A table that a
+   keyboard cannot reach is not a styling problem on a page about somebody's
+   rights. */
+.lg-table td::before {
+  content: attr(data-head);
+  display: none;
+  margin-bottom: var(--s-4);
+  font: 600 var(--t-mono-9) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+}
+
+/* ---- The jump rail ------------------------------------------------------- */
+
+.lg-rail { position: sticky; top: var(--s-96) }
+
+.lg-rail-head {
+  font: 600 var(--t-mono-10) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  margin: 0 0 var(--s-16);
+  padding-bottom: var(--s-8);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.lg-rail ul { list-style: none; margin: 0; padding: 0 }
+
+.lg-rail a {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  /* The sheet's 10, and --s-10 is a step. */
+  gap: var(--s-10);
+  padding: var(--s-4) 0;
+  font: 400 var(--t-mono-11) / var(--lh-mono) var(--mono);
+  color: var(--steel);
+  text-decoration: none;
+  transition: color var(--d-color) var(--e-snap);
+}
+
+.lg-rail a:hover { color: var(--ink) }
+.lg-rail-id { color: var(--dim) }
+
+.lg-revised {
+  font: 400 var(--t-mono-10) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-label);
+  color: var(--dim);
+  margin: var(--s-56) 0 0;
+  padding-top: var(--s-16);
+  border-top: 1px solid var(--line-soft);
+}

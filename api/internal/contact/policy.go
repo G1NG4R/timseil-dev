@@ -45,6 +45,14 @@ const (
 	// internal/server builds the token bucket in front of the route from these,
 	// and the database floor below uses them for its window. Two statements of
 	// "three in ten minutes" is one too many.
+	//
+	// AND SINCE H12b THERE IS A THIRD READER, outside this module and outside
+	// this language: /privacy tells a visitor their address is kept for ten
+	// minutes. The mirror is RATE_LIMIT_MINUTES in web/lib/legal/retention.ts,
+	// and web/lib/legal/retention.test.ts reads THIS FILE and fails if the two
+	// stop agreeing — including if this line stops being written as
+	// `N * time.Minute`. Change the number here and the test names the sentence
+	// that went stale with it.
 	RateLimit       = 3
 	RateLimitWindow = 10 * time.Minute
 
@@ -111,6 +119,14 @@ const (
 	// somebody writes "I sent you something and heard nothing". A window
 	// shorter than a holiday would delete the evidence before the question
 	// arrives.
+	//
+	// THE PAGE ADR 0075 WROTE THIS FOR NOW EXISTS, AND IT QUOTES THIS LINE.
+	// /privacy promises deletion after thirty days; the mirror is
+	// RETENTION_DAYS in web/lib/legal/retention.ts, held against this file by
+	// web/lib/legal/retention.test.ts. That test is the bracket the ADR said was
+	// missing under "Was das kostet", and it fails on a rewording as well as on
+	// a new value — so `720 * time.Hour` is a red test and not a silent lie on a
+	// legal page.
 	retentionWindow = 30 * 24 * time.Hour
 
 	// The tick, and it is what decides how far PAST the window a row can live.

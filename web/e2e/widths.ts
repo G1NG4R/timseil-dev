@@ -315,6 +315,41 @@ export const WORK_DRAWN_WIDTHS = [1440, 1024, 390] as const;
 export const WORK_SWITCHES = [1080, 900, 720] as const;
 
 /** `/about`. */
+/**
+ * The privacy page. H12b — the eighth page with a spec of its own.
+ *
+ * ONE OF TWO LEGAL ROUTES AND THE ONLY ONE THAT EXISTS YET. `/imprint` is still
+ * the `[SOON]` stub H12c replaces, which is why there is no `IMPRINT` constant
+ * here: a constant naming a page nobody has written is a promise this file
+ * cannot keep, and `ROUTES` already sweeps the stub for accessibility.
+ */
+export const PRIVACY = "/privacy";
+
+/**
+ * Where the Legal sheet draws `/privacy`: 1440 and 390.
+ *
+ * TWO FRAMES AND NO THIRD, and the Intermediate Widths sheet says so by name
+ * rather than by omission — Legal is in its list of pages with nothing to
+ * decide: "Fliesstext, Blog, About, Contact und Legal fliessen, dort ist nichts
+ * zu entscheiden." The one fixed column this page has, the 380px jump rail, is
+ * drawn at 1440 and gone below 1080, which is a switch layout.css already owns
+ * rather than a frame the sheet still owes.
+ */
+export const PRIVACY_DRAWN_WIDTHS = [1440, 390] as const;
+
+/**
+ * The switches this page answers to.
+ *
+ * 1080 is where the hero and the body stop being two columns and the jump rail
+ * goes away — `.cs-prob`'s switch, taken whole rather than measured again. 900
+ * is the chrome's (ADR 0044) and this page inherits it like every other. 720 is
+ * the display step falling to 34.
+ *
+ * NO 560: `.col`'s gutter change is layout.sweep.spec.ts's to prove, once, for
+ * every page rather than once per page.
+ */
+export const PRIVACY_SWITCHES = [1080, 900, 720] as const;
+
 export const ABOUT = "/about";
 
 /**

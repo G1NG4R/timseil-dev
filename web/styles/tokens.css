@@ -207,6 +207,21 @@
      only the Chrome sheet says 2.4. G6 extracts StatusDot and inherits this. */
   --d-pulse: 2600ms;
 
+  /* H12b. The privacy page's readout, and the two are one decision.
+
+     The Legal sheet's mock reveals its eight lines with
+     `setTimeout(…, 260 + i * 130)` — two numbers in JavaScript, where ADR 0074
+     says movement belongs to the stylesheet. One step is enough: the delay of
+     row i is `(2 + i)` steps, so the 260ms lead-in is the same number twice
+     over rather than a second one to keep in sync.
+
+     --d-caret is the terminal cursor of that panel, the sheet's 1.1s
+     `step-end`. It is deliberately NOT --d-pulse: a cursor blinking at the
+     cadence of a status dot reads as a state, and the design note for this
+     page is that nothing on it is a state.                                 */
+  --d-readout: 130ms;
+  --d-caret: 1100ms;
+
   /* The header ruler's two tick gradients and the menu's scanline. In the
      sheet these are rgba(139,152,166,.35/.14) and rgba(255,255,255,.02) —
      Terminal Noir literals, the same defect ADR 0043 removed for --acc-line

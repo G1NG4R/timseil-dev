@@ -1172,17 +1172,21 @@ Die Datenschutzseite ist kein Formalakt, sondern eine **Behauptung wie jede ande
 
 | Zusage | Umsetzung |
 |---|---|
-| Access-Logs 14 Tage | Rotation konfiguriert |
-| Anwendungslogs 7 Tage | Loki-Retention |
-| Rate-Limit-IP 10 Minuten | nur im Speicher, nur als Hash |
-| Keine dritte Partei im Anfrageweg | kein CDN, Schriften selbst gehostet, Umami self-hosted |
-| Kein Tracking, kein Cookie | Umami cookielos, zwei `localStorage`-Schlüssel |
+| Anwendungslogs 14 Tage | Loki, `retention_period: 336h` in `ops/loki/loki.yaml` |
+| Kontaktnachrichten 30 Tage | `retentionWindow` in `api/internal/contact/policy.go`, ADR 0075 |
+| Rate-Limit-IP 10 Minuten | `RateLimitWindow`, ebenda — nur als HMAC, nie im Klartext |
+| Kein Zähler, kein Cookie | es gibt kein Analytics-Werkzeug; **ein** `localStorage`-Schlüssel |
+| Keine dritte Partei, **soweit diese Anwendung reicht** | kein CDN, Schriften selbst gehostet, keine Einbettung |
 
 **Der Code muss einhalten, was die Seite verspricht.** Eine Retention-Regel, die nur auf der Datenschutzseite steht und nicht in der Konfiguration, ist eine Unwahrheit mit Rechtsfolgen.
 
+> **H12b hat diese Tabelle korrigiert, und sie stand vorher in vier von fünf Zeilen falsch.** „Anwendungslogs 7 Tage" — Loki steht auf 336 h, also 14; die 7 Tage sind Prometheus' Metriken-Retention und keine Logfrist. „Access-Logs 14 Tage | Rotation konfiguriert" — eine getrennte Access-Log-Rotation war im Repository nicht zu finden; was existiert, ist die Loki-Frist darüber. **„Umami self-hosted" und „Umami cookielos" — es gibt kein Umami**, `compose.yaml` hat zehn Dienste und keiner zählt Besucher. Und „zwei `localStorage`-Schlüssel": Invariante 9 *erlaubt* zwei, geschrieben wird heute einer, weil `ts404.best` zu H11 gehört und hinter dem Launch liegt.
+>
+> Die Lehre ist die aus F2, im anderen Gewand: **jede dieser Zeilen war geschrieben und nie ausgeführt worden.** Deshalb nennt die Tabelle jetzt je Zusage die Datei, die sie durchsetzt, und deshalb hält `web/lib/legal/content.test.ts` jede Dauer im Seitentext gegen genau diese Dateien. ADR 0076.
+
 ### Was das Formular ändert
 
-Ohne Formular verarbeitet die Seite praktisch keine personenbezogenen Daten. Mit Formular: Name, E-Mail, Nachricht, Zeitpunkt, IP-Hash fürs Rate-Limit, Mail-Provider als Auftragsverarbeiter. Dazu die Fehlererfassung über Faro.
+Ohne Formular verarbeitet die Seite praktisch keine personenbezogenen Daten. Mit Formular: Name, E-Mail, Nachricht, Zeitpunkt, IP-Hash fürs Rate-Limit, **die gemessene Verweildauer auf dem Formular** (`dwell_ms` — eine Spalte, kein verworfenes Feld), Mail-Provider als Auftragsverarbeiter. Dazu die Fehlererfassung über Faro, sobald F11 sie baut.
 
 Das gehört in die Datenschutzseite, samt Löschprozess. In Luxemburg unter der DSGVO ist das keine Kür.
 

@@ -54,6 +54,19 @@
   .hero     { display: grid; grid-template-columns: minmax(0,1fr) 480px; gap: 72px; align-items: center }
   .cs-spec  { display: grid; grid-template-columns: minmax(0,1fr) 400px; gap: 80px; align-items: start }
   .cs-prob  { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 80px; align-items: start }
+  /* H12b. `/privacy` brings two more rows and neither gets a number of its own.
+     The Legal sheet draws its hero at `1fr 470px / 72` and its body at
+     `1fr 380px / 80`; the body pair is `.cs-prob`'s exactly, and the hero's 470
+     is ten pixels off `.hero`'s 480 — a difference no reader can see and a
+     ninth measurement nobody wants to keep in step. Both take the pair that is
+     already here. "Kein Bauteil bekommt seinen eigenen Wert."
+
+     THE HERO ALIGNS TO THE TOP AND `.hero` DOES NOT. That one is not cosmetic:
+     the readout panel grows by eight rows a fraction of a second after the page
+     paints, and a centred row would slide the headline beside it downwards as
+     they arrive. */
+  .lg-hero  { display: grid; grid-template-columns: minmax(0,1fr) 480px; gap: 72px; align-items: start }
+  .lg-body  { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 80px; align-items: start }
   .cs-arch  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 60px; align-items: start }
   .rail     { position: sticky; top: 90px }
   .work-row { grid-template-columns: 40px minmax(0,1fr) 132px 104px 130px 20px }
@@ -128,9 +141,18 @@
      404's hero is the same shape as the case study's — prose beside a rail —
      and it stops being two columns at the same width for the same reason.
      layout.css's own rule: "Kein Bauteil bekommt seinen eigenen Wert." */
-  .hero, .cs-spec, .cs-prob, .cs-arch, .nf-main {
+  .hero, .cs-spec, .cs-prob, .cs-arch, .nf-main, .lg-hero, .lg-body {
     display: flex; flex-direction: column; gap: 44px;
   }
+
+  /* H12b. Below the switch the jump rail is a list of seven links between the
+     last section and the footer, which is where a table of contents is least
+     useful and most in the way. The sheet's mobile artboard draws no rail at
+     all, and it is right: the short version above the prose is the summary a
+     reader on a phone needs, and the sections are seven scrolls apart rather
+     than seventy. Hidden rather than reordered — a rail nobody can reach by
+     scrolling is not navigation. */
+  .lg-rail { display: none }
 
   /* H10b. The 404's way out. Five cells is a desktop row — at 1079 the content
      column is 999px, so five of them would be 176px each with a description in
@@ -456,6 +478,31 @@
   .nf-lede        { font-size: var(--t-body-13) }
   .decision-table { grid-template-columns: 1fr }
   .ops-tiles      { grid-template-columns: repeat(3, minmax(0,1fr)) }
+
+  /* H12b · ADR 0055 again, and this time on a real `<table>` rather than a grid
+     that called itself one. `/privacy` carries three of them, and the widest —
+     WHAT THE FORM SENDS / WHY / WHERE IT IS KEPT — is a sentence per cell. At
+     390 the content column is 346px: three columns of it is about eleven
+     characters a line, which is a column of fragments rather than a table.
+
+     SO EACH CELL BECOMES ITS OWN ROW AND CARRIES ITS HEADER. `thead` goes, and
+     `td::before` puts the column name back over the value it was only
+     meaningful under — legal.css draws that cell, this rule turns it on.
+
+     AND `overflow-x` GOES BACK TO VISIBLE, which is the half that was missing.
+     Left on `auto` the table overflowed instead of stacking, and axe called it
+     `scrollable-region-focusable`: a box you can only reach by dragging it. The
+     wrap stays for the widths above this one, where a table is still a table
+     and scrolling inside it is the right answer. */
+  .lg-table-wrap { overflow-x: visible }
+  .lg-table,
+  .lg-table tbody,
+  .lg-table tr,
+  .lg-table td      { display: block }
+  .lg-table thead   { display: none }
+  .lg-table td      { border-bottom: 0; padding: var(--s-4) 0 }
+  .lg-table tr      { padding: var(--s-12) 0; border-bottom: 1px solid var(--line-faint) }
+  .lg-table td::before { display: block }
 }
 
 /* ---- < 560: Zeilen werden Karten ----------------------------------------- */

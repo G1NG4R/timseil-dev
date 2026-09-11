@@ -1,28 +1,100 @@
-// A stub, and it is here so that G3 can prove itself. The chrome claims three
-// things — the active entry is white, nothing is active on `/`, and the footer
-// comes in two versions per CHR.01 — and none of them is observable if every
-// nav target is a 404. Six routes cost about fifty lines and turn the phase's
-// own acceptance into something a browser can show.
+// `/privacy`, SYS.07 of the Legal sheet.
 //
-// H12 REPLACES this file. Nothing here is a decision about the page.
+// THE STUB THAT STOOD HERE IS GONE. It said `PRIVACY [SOON]` and carried a
+// comment promising that H12 would replace it; this is that. What the stub was
+// for — giving G3's chrome a real nav target to prove itself against — is now
+// done by a page with something on it.
+//
+// EVERY SENTENCE IS IN lib/legal/content.ts AND NOT HERE, because `npm test`
+// reads `lib/**` and cannot load a `.tsx`, and the assertions that matter on
+// this page are about the sentences: that no duration appears which no file
+// enforces, that the six claims the design sheet outgrew are gone, and that the
+// only brackets left are the two nobody in this repository can fill. ADR 0076.
+//
+// ONE CLIENT ISLAND, AND IT IS THE PANEL. Everything else is a server component.
 
 import type { Metadata } from "next";
 
+import { Blocks } from "@/components/legal/Blocks";
+import { JumpRail } from "@/components/legal/JumpRail";
+import { Readout } from "@/components/legal/Readout";
+import { ShortVersion } from "@/components/legal/ShortVersion";
+import { SectionHead } from "@/components/ui/SectionHead";
+import { CONTENT, HERO, LABELS, PANEL, SHORT_VERSION } from "@/lib/legal/content";
+import { anchorFor, SECTIONS } from "@/lib/legal/sections";
 import { asLocale } from "@/lib/i18n/routes";
 import { seoFor } from "@/lib/seo/pages";
 
-// SEO, in one call. Until G5b this named its own canonical and wrote
-// `robots: { index: false }` as a literal, with the reason beside it. The
-// reason has not changed — the page is a stub, and a crawler that finds it
-// files that away as what this site has to say on the subject — but the
-// boolean now lives in lib/seo/pages.ts, because `app/sitemap.ts` needs the
-// same answer and two copies of it would drift. H12 flips it there and
-// deletes this page, and the sitemap follows in the same commit.
-export async function generateMetadata({ params }: PageProps<"/[lang]/privacy">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps<"/[lang]/privacy">): Promise<Metadata> {
   const { lang } = await params;
   return seoFor(asLocale(lang), "/privacy");
 }
 
+/** The id of the head that names a section, so the `<section>` landmark is
+ *  announced by the title already on the screen rather than by a second copy of
+ *  it. The About page does the same; the anchor the jump rail targets is the
+ *  same id, so there is one string per section and not two. */
+function titleIdFor(id: string): string {
+  return `${anchorFor(id)}-title`;
+}
+
 export default function Page() {
-  return <p>PRIVACY [SOON]</p>;
+  return (
+    <div className="lg">
+      <header className="lg-hero">
+        <div className="lg-hero-text">
+          <p className="lg-eyebrow">{HERO.eyebrow}</p>
+          <h1 className="lg-h1">{HERO.title}</h1>
+          <p className="lg-lede">{HERO.lede}</p>
+          <p className="lg-sub">{HERO.sub}</p>
+        </div>
+
+        <Readout
+          title={PANEL.title}
+          badge={PANEL.badge}
+          footer={PANEL.footer}
+          pending={PANEL.pending}
+          label={LABELS.readout}
+        />
+      </header>
+
+      <div className="lg-body">
+        <div className="lg-prose">
+          {/* THE SHORT VERSION SITS INSIDE THE PROSE COLUMN AND ABOVE IT at
+              every width, rather than in the rail. The sheet draws it in the
+              380px column on desktop; putting it there would mean a reader on a
+              phone — where the rail is gone — loses the only part of this page
+              most people read. */}
+          <ShortVersion
+            lines={SHORT_VERSION}
+            title={LABELS.shortVersion}
+            yesLabel={LABELS.yes}
+            noLabel={LABELS.no}
+          />
+
+          {SECTIONS.map((section) => (
+            <section
+              className="lg-section"
+              key={section.id}
+              id={anchorFor(section.id)}
+              aria-labelledby={titleIdFor(section.id)}
+            >
+              <SectionHead
+                id={section.id}
+                title={section.title}
+                titleId={titleIdFor(section.id)}
+              />
+              <Blocks blocks={CONTENT[section.id] ?? []} />
+            </section>
+          ))}
+
+          <p className="lg-revised">{LABELS.revised}</p>
+        </div>
+
+        <JumpRail sections={SECTIONS} label={LABELS.rail} />
+      </div>
+    </div>
+  );
 }
