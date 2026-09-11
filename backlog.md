@@ -88,15 +88,19 @@ aufgetautes `selftest.sh`.
   07.06 über, statt zu stapeln. **Die volle Suite hat es gefunden, die gezielten
   Läufe nicht** — a11y fegt `ROUTES`, und `/privacy` stand seit G5 darin, ohne
   dass je etwas dort war.
-- **Eine Zusicherung, die nur unter Last fällt, hat meistens recht.**
-  `the request line names the protocol` war bei 390 einmal rot, im Lauf mit 2344
-  Tests, und in 261 Versuchen danach nie wieder. `nextHopProtocol` ist erst
-  gefüllt, wenn die Navigation abgeschlossen ist, und die Hydration kann davor
-  laufen — die Seite sagt dann ehrlich nichts über ein Protokoll, das sie nicht
-  gemessen hat. Der Test verlangte etwas, das die Seite nie zugesagt hat. Jetzt
-  verlangt er das Richtige: *was dort steht, ist gemessen, und ein Status steht
-  nie dort.* Die Ursache ist erschlossen, nicht bewiesen — der Lauf hat seine
-  Artefakte nicht behalten.
+- **Playwright wiederholt eine Zusicherung, aber kein `innerText()`.** Das ist
+  der eigentliche Fund, und er hat mich zwei Anläufe gekostet. Drei Tests lasen
+  einen **gemessenen** Wert direkt nach `goto` — auf dieser Maschine das
+  hydrierte Panel, auf dem CI-Runner `—`, also den Leerzustand. **Neun
+  Fehlschläge über sechs Breiten in CI, nachdem die Suite hier grün war.** Der
+  Fix ist ein `toHaveAttribute("data-state","live")` davor; die Tests, die
+  ohnehin mit `expect` lasen, waren nie betroffen.
+- **Und der erste Erklärungsversuch dafür war falsch.** Bei 390 war derselbe
+  Test einmal lokal rot, und ich schrieb `nextHopProtocol` als Ursache auf —
+  plausibel, ungemessen, und in 261 Versuchen nicht reproduziert. CI hat es
+  widerlegt: der gelesene Wert war `—`, also die ganze Messung noch nicht da,
+  Protokoll und Pfad zusammen. **Eine plausible Ursache ist keine gemessene.**
+  Der Satz steht jetzt als Erinnerung im Test daneben.
 
 ### Triagiert — die zwei Issue-Kandidaten aus H12a sind erledigt, nicht offen
 

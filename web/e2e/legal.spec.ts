@@ -34,6 +34,26 @@ function widthOf(page: Page): number {
  */
 const MARKERS = ["07.01", "07.02", "07.03", "07.04", "07.05", "07.06", "07.07"];
 
+/**
+ * Wait for the panel to have read something before reading it back.
+ *
+ * WHY THIS IS A HELPER AND NOT A `beforeEach`: the eight labels and the IP line
+ * are in the server HTML, so a test that only counts rows or reads the IP needs
+ * no wait at all — and the `javaScriptEnabled: false` block below must never
+ * wait for a state that will never arrive.
+ *
+ * WHY IT EXISTS AT ALL, and it is the finding of this phase's CI run. Playwright
+ * retries a web-first assertion and does not retry `innerText()` or
+ * `evaluate()`. The three tests that read a MEASURED value used the second kind
+ * straight after `goto`, so on a fast machine they read the hydrated panel and
+ * on a loaded CI runner they read `—` — nine failures across six widths, where
+ * the local suite had been green. The panel was not wrong; the reading was
+ * taken too early.
+ */
+async function readingTaken(page: Page): Promise<void> {
+  await expect(page.locator(".lg-term")).toHaveAttribute("data-state", "live");
+}
+
 /** The eight readout labels, in the sheet's order. */
 const FIELDS = [
   "IP",
@@ -125,6 +145,7 @@ test("the panel shows eight lines, in the sheet's order", async ({ page }) => {
 });
 
 test("the user agent line is the browser's own, measured rather than asserted", async ({ page }) => {
+  await readingTaken(page);
   const shown = await page.locator(".lg-field", { hasText: "USER-AGENT" }).locator("dd").innerText();
   const real = await page.evaluate(() => navigator.userAgent);
 
@@ -135,20 +156,21 @@ test("the user agent line is the browser's own, measured rather than asserted", 
   expect(shown.length).toBeLessThanOrEqual(97);
 });
 
-// WHAT THE PAGE PROMISES, AND IT IS NARROWER THAN THE FIRST DRAFT ASSERTED.
-// That draft demanded the line carry the protocol whenever the test could read
-// one, and it failed once — at 390, in the first full sweep, under the load of
-// 2344 tests, and in no run since across 261 attempts. `nextHopProtocol` is
-// populated when the navigation response completes, and hydration can run
-// before that; the panel then reads an empty string and honestly says nothing
-// about a protocol it did not measure. The test was asserting something the
-// page never undertook to do.
+// WHAT THE PAGE PROMISES: whatever this line says is measured, and it never
+// says a status. Not "it always names a protocol" — the browser reports one
+// only once the navigation entry is complete, and a line that is sometimes
+// shorter is the right trade on a page whose argument is that nothing on it is
+// invented.
 //
-// So the promise is the one worth having: whatever the line says is measured,
-// and it never says a status. A page whose argument is that nothing on it is
-// invented is better served by a line that is sometimes shorter than by one
-// that is always complete.
+// THE FIRST TIME THIS TEST WENT RED I BLAMED THAT, AND I WAS WRONG. It failed
+// once at 390 in the first full local sweep, and the guess written here was
+// that `nextHopProtocol` had not been populated yet. CI disproved it on the
+// next run: the value read back was `—`, which is the PENDING panel — the whole
+// reading had not arrived, protocol and path together. The wait in
+// `readingTaken` is the actual fix, and this comment is kept as the reminder
+// that a plausible cause is not a measured one.
 test("the request line is measured, and never claims a status", async ({ page }) => {
+  await readingTaken(page);
   const shown = await page.locator(".lg-field", { hasText: "REQUEST" }).locator("dd").innerText();
   const real = await page.evaluate(() => {
     const entry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming;
@@ -169,6 +191,9 @@ test("the request line is measured, and never claims a status", async ({ page })
 });
 
 test("the IP line is a sentence about the server and never an address", async ({ page }) => {
+  // No wait here on purpose: this is the one line that is true before any script
+  // runs, and the `scripting off` block below holds it in the other state. If it
+  // ever needed hydrating, that would be the defect rather than the flake.
   const shown = await page.locator(".lg-field", { hasText: "IP" }).first().locator("dd").innerText();
   expect(shown).toContain("recorded server-side");
   expect(shown).not.toMatch(/\d+\.\d+\.\d+\.\d+/);
