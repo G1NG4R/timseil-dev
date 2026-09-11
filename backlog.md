@@ -12,6 +12,124 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 10.09.2026, H12a abgenommen: `v0.35.0` steht, und der fünfte saubere Tausch ist der erste, der bezeugt ist
+
+`4471f67` läuft, **`v0.35.0`**. Merge **15:14:50Z**, Deploy-Job 15:33:06Z →
+15:33:32Z (**26 s**), der api-Prozess läuft seit **15:33:44.411Z**. Uhrzeit mit
+`date -u` gelesen; 15:33Z liegt weit vor dem Dokploy-Fenster 23:45–00:00.
+
+Der `feat:`-Titel hat getan, was er soll: `v0.34.0` → **`v0.35.0`**, Minor, und
+`/api/badge/version` meldet ihn. Der Squash hat das `(#364)` gesetzt.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `4471f67` gebaut. `p95 99,5 ms`, `errorRate 0`.
+
+### Der Zeuge stand zum ersten Mal seit H10a davor — und der Tausch war sauber
+
+Das war der Fund der H10b-Abnahme: ein Zeuge, der nach dem Ereignis startet,
+bezeugt nichts. Diesmal lief er **zwei Minuten vor dem Merge** an, von 15:12:44Z,
+`--until-restart`, zwei Pfade zu einer Anfrage pro Sekunde.
+
+Der Deploy-Job liegt auf den **Sekunden 1223–1249** des Laufs. Auf beiden Pfaden
+stehen dort 200er, ohne Ausnahme. **Der Tausch selbst hat keinem Besucher etwas
+anderes als eine 200 gezeigt.** Damit sind es fünf saubere Tausche in Folge —
+und dieser ist der erste, für den das nicht nur aus `check-deployed` erschlossen,
+sondern eine Sekunde nach der anderen mitgeschrieben ist. #304 hat wieder eine
+Messung statt einer Lücke.
+
+### Das Urteil des Zeugen ist trotzdem rot, und das ist die zweite Lektion
+
+```
+✗ / — 1265 requests, 1259×200, 6×no connection
+✗ /api/health — 1265 requests, 1262×200, 3×no connection
+✗ this run does not show a clean deploy
+```
+
+Sein Urteil gilt für den ganzen Lauf, nicht für das Deploy-Fenster. In
+Wanduhrzeit umgerechnet:
+
+| Pfad | Sekunden | Wanduhr | Dauer | Lage |
+|---|---|---|---|---|
+| `/` | 51–75 | 15:13:34–15:13:58Z | 25 s | **außerhalb** |
+| `/api/health` | 51–67 | 15:13:34–15:13:50Z | 17 s | **außerhalb** |
+| `/` | 668–673 | 15:23:51–15:23:56Z | 6 s | **außerhalb** |
+
+Der erste Ausfall liegt **76 Sekunden vor dem Merge** — zu einem Zeitpunkt, an
+dem noch kein Bild gebaut und kein Container angefasst war. Wer die rote Zeile
+ungerechnet liest, meldet einen #304-Fund, den es nicht gibt.
+
+### Der Ausfall im Ruhezustand ist damit größer, als er war
+
+Bisher stand er als „drei Läufe, je eine Sekunde". Hier sind es zwei Cluster,
+und der erste dauert **25 Sekunden auf beiden Pfaden gleichzeitig**. Beide Male
+`no connection`, also kein 5xx und kein 403 — die Verbindung kam nicht zustande.
+Ein CrowdSec-Bann scheidet aus: der antwortet mit 403 und hält vier Stunden.
+
+**Die Ursache ist nicht entschieden.** Zwei Lesarten stehen im Raum, und keine
+ist belegt: der Anschluss, von dem aus gemessen wurde, oder das Origin. Die
+Sonde könnte es beantworten und tut es nicht — sie lief **15:11:38Z** und danach
+erst wieder nach dem Fenster, also liegt im Ausfall keine einzige Stichprobe.
+Das ist #180 in einem Satz. Was es entscheiden würde: derselbe Lauf von einem
+zweiten Standort, gleichzeitig.
+
+### `durationSec` meldet 1109 s für einen Deploy, der 26 s gedauert hat
+
+#242, die **siebzehnte** Notiz:
+
+```
+H9c   1125 zu 30
+H10a  1073 zu 28
+H10b   978 zu 30
+#363  1084 zu 28
+H12a  1109 zu 26
+```
+
+**Vorlaufzeit 1096 s** — Merge bis Deploy-Start. Die sechste Messung:
+
+```
+H9a   2026-09-04   927 s
+H9b   2026-09-06  1461 s
+H9c   2026-09-07  1099 s
+H10b  2026-09-09   952 s
+#363  2026-09-09  1062 s
+H12a  2026-09-10  1096 s
+```
+
+Der Deckel von 1800 hält.
+
+### Was diese Abnahme nicht beweist
+
+**Dass die Schleife löscht.** Sie läuft — der Prozess ist oben, und ein Lauf
+ohne Treffer meldet auf DEBUG, also steht nichts im Log, was von außen zu sehen
+wäre. Ein Beweis bräuchte eine Zeile, die älter als dreißig Tage ist, und die
+älteste im Formular ist neun Tage alt. Das ist keine Lücke der Phase, sondern
+eine der Zeit: der erste beobachtbare Lauf fällt in den Oktober. **Bis dahin
+steht die Zusage auf dem Test gegen echtes Postgres, nicht auf einer Messung in
+Produktion.** Wer das für zu wenig hält, hat einen Punkt — und die Antwort wäre
+eine Zeile mit gesetztem `received_at` in einer Wegwerf-Datenbank, was der
+`purge_db_test.go` bereits tut.
+
+### Gefunden — aus der H12a-Abnahme
+
+- **Der Ruhezustands-Ausfall ist auf 25 Sekunden gewachsen**, beide Pfade
+  gleichzeitig, außerhalb jedes Deploys. **Issue-Kandidat**, und der erste, für
+  den es eine Zahl statt eines Eindrucks gibt.
+- **Die Sonde hatte im Ausfall keine Stichprobe.** #180 steht seit dem 24.08. da
+  und hat hier zum ersten Mal etwas gekostet: die Frage „war die Seite weg oder
+  war es mein Anschluss" ist mit den vorhandenen Daten nicht zu beantworten.
+- **`witness.sh` urteilt über den Lauf, nicht über das Fenster.** Der Bericht
+  nennt Sekundennummern, das Deploy-Fenster nennt Uhrzeiten, und die Umrechnung
+  macht von Hand, wer sie nicht vergisst. Ein `--since`/`--until` oder eine
+  Fensterspalte im Bericht würde die Falle schließen. #158 sitzt daneben.
+
+### Verschoben aus der H12a-Abnahme
+
+- **H12b** — `/imprint` und `/privacy`, der Live-Readout, die SEO-Freigabe. Der
+  Text darf jetzt dreißig Tage nennen, weil eine Schleife sie hält.
+- **Die Frist steht ab H12b an zwei Orten**, unverändert offen aus H12a.
+
+---
+
 ## Zwischendurch — 09.09.2026: der Doku-Merge tauschte die Container, und #242 bekam seine sechzehnte Kerbe
 
 `#363` gemergt **09:20:31Z**, `fe63e4d`. CI-Lauf `34334154850` vollständig grün —
@@ -68,7 +186,7 @@ erste Gelegenheit, bei der der Ablauf es hergibt.
 
 ---
 
-## H12a gebaut — 09.09.2026: die Seite darf eine Frist nennen, weil jetzt eine Schleife sie hält
+## Vorher — 09.09.2026, H12a gebaut: die Seite darf eine Frist nennen, weil jetzt eine Schleife sie hält
 
 H12 ist die Phase, die mit dem übereinstimmen muss, was der Code tut. Beim Lesen
 des `Legal`-Blatts gegen den Code stand der Widerspruch sofort da, und er ist
