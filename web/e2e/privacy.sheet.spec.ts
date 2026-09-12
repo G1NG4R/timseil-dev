@@ -15,10 +15,10 @@
  * that was finished before it arrived.
  *
  * ONE ARTBOARD OF THE FOUR IS MEASURED HERE. 1a and the lower half of 1c are
- * `/imprint`, which is still a `[SOON]` stub; H12c brings a second map against
- * the same sheet. That is the reason this file is `privacy.sheet.spec.ts` and
- * not `legal.sheet.spec.ts`: `runSheetOracle` takes one route, and the two
- * legal pages are two routes however much one sheet draws them together.
+ * `/imprint`, and since H12c `imprint.sheet.spec.ts` measures them against the
+ * same sheet. That is the reason this file is `privacy.sheet.spec.ts` and not
+ * `legal.sheet.spec.ts`: `runSheetOracle` takes one route, and the two legal
+ * pages are two routes however much one sheet draws them together.
  */
 import generated from "./oracle/privacy.gen.json";
 import { runSheetOracle, type Oracle } from "./sheet";

@@ -32,29 +32,35 @@ import { AUTHOR, SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
  *  them.
  *
  *  `indexable` is "does this page say anything yet", not "is it allowed to
- *  exist". One of the seven is still a `[SOON]` stub, and a crawler that finds
- *  `IMPRINT [SOON]` files that away as what this site has to say on the subject
- *  and takes a while to be talked out of it. The phase named in each comment
- *  fills the page and flips the boolean in the same commit — H6 did it for
- *  `/work`, H7 for `/about`, H8 for `/contact`, H9b for `/blog` and H12b for
- *  `/privacy`, and every time app/sitemap.ts picked the page up out of this
- *  boolean with no edit of its own.
+ *  exist". Every one of the seven says something as of H12c, and until this
+ *  phase one did not: a crawler that found `IMPRINT [SOON]` would have filed
+ *  that away as what this site has to say on the subject and taken a while to
+ *  be talked out of it. The phase named in each comment fills the page and
+ *  flips the boolean in the same commit — H6 did it for `/work`, H7 for
+ *  `/about`, H8 for `/contact`, H9b for `/blog`, H12b for `/privacy` and H12c
+ *  for `/imprint` — and every time app/sitemap.ts picked the page up out of
+ *  this boolean with no edit of its own.
  *
- *  H12b FLIPPED ONE OF THE TWO LEGAL ROUTES AND NOT BOTH, which looks like half
- *  a job and is the same decision this table has taken twice before. The
- *  boolean is per row precisely so that a page with something to say can say it
- *  while its neighbour is still a shell: a case study was indexable before
- *  `/work` was, and the log entries before `/blog` was. `/privacy` now carries a
- *  full text, and the page that explains what a form on this site does is the
- *  last page that should be waiting on a second one. H12c fills `/imprint` and
- *  flips the row below. */
+ *  THE TWO LEGAL ROUTES FLIPPED ONE PHASE APART, which looked like half a job
+ *  and was the same decision this table had taken twice before. The boolean is
+ *  per row precisely so that a page with something to say can say it while its
+ *  neighbour is still a shell: a case study was indexable before `/work` was,
+ *  and the log entries before `/blog` was. A privacy page waiting on an imprint
+ *  would have been a privacy page nobody could find, and H8 had owed a visitor
+ *  that page since the day a form appeared on this site.
+ *
+ *  THE LIST IS NOW WHOLE, and that is worth one sentence rather than a
+ *  celebration: the next row added to this table starts at `false` again, and
+ *  the phase that fills it is named in the comment beside it before it is
+ *  written. Nothing on this site starts being indexed because somebody forgot
+ *  to decide. */
 const FIXED_PAGES = [
   { path: "/", indexable: true },
   { path: "/work", indexable: true },
   { path: "/blog", indexable: true }, // filled by H9b
   { path: "/about", indexable: true }, // filled by H7
   { path: "/contact", indexable: true }, // filled by H8
-  { path: "/imprint", indexable: false }, // H12c
+  { path: "/imprint", indexable: true }, // filled by H12c
   { path: "/privacy", indexable: true }, // filled by H12b
 ] as const;
 

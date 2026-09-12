@@ -318,10 +318,10 @@ export const WORK_SWITCHES = [1080, 900, 720] as const;
 /**
  * The privacy page. H12b — the eighth page with a spec of its own.
  *
- * ONE OF TWO LEGAL ROUTES AND THE ONLY ONE THAT EXISTS YET. `/imprint` is still
- * the `[SOON]` stub H12c replaces, which is why there is no `IMPRINT` constant
- * here: a constant naming a page nobody has written is a promise this file
- * cannot keep, and `ROUTES` already sweeps the stub for accessibility.
+ * ONE OF TWO LEGAL ROUTES, and until H12c the only one that existed: `/imprint`
+ * was the `[SOON]` stub, and there was deliberately no constant for it here
+ * because a constant naming a page nobody has written is a promise this file
+ * cannot keep. It names one now.
  */
 export const PRIVACY = "/privacy";
 
@@ -349,6 +349,41 @@ export const PRIVACY_DRAWN_WIDTHS = [1440, 390] as const;
  * every page rather than once per page.
  */
 export const PRIVACY_SWITCHES = [1080, 900, 720] as const;
+
+/**
+ * The imprint. H12c — the ninth page with a spec of its own, and the last route
+ * on this site that was a stub.
+ */
+export const IMPRINT = "/imprint";
+
+/**
+ * Where the Legal sheet draws `/imprint`: 1440 and 390.
+ *
+ * TWO FRAMES, AND THE SECOND ONE IS NOT A DRAWING OF THIS PAGE. Artboard 1a is
+ * the imprint at 1440. At 390 the sheet has no frame of its own for it: 1c is a
+ * single phone screen captioned "Privacy mit Readout, Imprint darunter", where
+ * the imprint follows the privacy text behind a rule as an `<h2>` section. It is
+ * still the only 390 drawing there is, so it is measured as one — and three of
+ * the oracle's readings there carry the `imprint-drawn-as-a-section` divergence,
+ * which says exactly this once instead of three times.
+ */
+export const IMPRINT_DRAWN_WIDTHS = [1440, 390] as const;
+
+/**
+ * The switches this page answers to, and they are `/privacy`'s exactly.
+ *
+ * 1080 is where the body stops being two columns and the jump rail goes away —
+ * `.cs-prob`'s switch, taken whole rather than measured again. 900 is the
+ * chrome's (ADR 0044). 720 is the display step falling to 34, and since H12c it
+ * is also where the operator's label column stops standing beside its value:
+ * one width, two things, no new breakpoint.
+ *
+ * THE PAGE HAS NO HERO SWITCH, which is the one difference from `/privacy` and
+ * is not an omission. `/privacy` puts a readout panel beside its headline;
+ * nothing stands beside this one, so its head is `.lg-head` and has no columns
+ * to lose.
+ */
+export const IMPRINT_SWITCHES = [1080, 900, 720] as const;
 
 export const ABOUT = "/about";
 

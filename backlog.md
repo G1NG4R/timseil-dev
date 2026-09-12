@@ -12,6 +12,81 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 12.09.2026, H12c gebaut: `/imprint` steht, und die Klammer kann den Merge nicht mehr überleben
+
+Die zweite Hälfte von H12. `/imprint` ersetzt den `[SOON]`-Stub aus G3, beide
+Rechtsseiten verlinken einander, `/imprint` ist indexierbar — **damit sagt jede
+Route in `lib/seo/pages.ts` etwas**, zum ersten Mal seit der Tabelle. ADR 0077.
+
+**Der Kern der Phase ist keine Seite, sondern eine Sperre.** H12b ist mit zwei
+Klammern live gegangen, obwohl ein Test sie hielt: `content.test.ts` prüfte, ob
+die Menge der erlaubten Klammern *exakt stimmt*, und sie stimmte exakt. Niemand
+hatte die Bedingung aufgeschrieben, auf die es ankam — **ob sie inzwischen leer
+ist**. `lib/legal/brackets.test.ts` fragt jetzt genau das, über beide Seiten, und
+kennt keine Ausnahmeliste. Der Preis steht im ADR und ist gewollt: **die Phase
+ist rot, bis die Angaben da sind, die nur ich habe.**
+
+### Gefunden — aus H12c
+
+- **Eine Client-Navigation lässt die verlassene Seite im Dokument stehen,
+  versteckt.** Nach dem Klick auf `SEE ALSO` hält `main` zwei `.lg`-Bäume: den
+  angezeigten und den, der es war — mitmontiert, damit der Rückweg sofort da
+  ist. Gefunden als Strict-Mode-Verstoß über zwei `main h1`, gemessen zwei
+  Sekunden nach dem Klick, also nicht flüchtig. Kein Mangel — `display: none`
+  nimmt den alten Baum aus dem Accessibility-Baum und aus der Tab-Reihenfolge —
+  aber **eine Regel für jeden Test, der von einer Seite auf eine andere klickt:
+  ein globaler Selektor trifft danach auch die Seite, die man verlassen hat.**
+  Von `/` auf `/privacy` passiert es nicht; zwischen zwei vorgerenderten Seiten
+  schon. Warum genau, ist nicht gemessen — **und eine plausible Ursache ist
+  keine gemessene**, deshalb steht hier keine.
+- **`track-count` misst nichts, wo kein Grid mehr steht.**
+  `getComputedStyle().gridTemplateColumns` löst auf einem `display: block` nicht
+  auf, sondern gibt den angegebenen Wert zurück — `150px minmax(0px, 1fr)`
+  zählt als **drei** Spuren, und die 390-Messung der Feldliste erwartete eine.
+  Die Messung fragt jetzt nach `display`. Betrifft nur diesen einen Eintrag; die
+  übrigen `track-count`-Messungen stehen alle auf Elementen, die Grids bleiben.
+- **Die Linie über `LAST REVISED` hörte auf halber Spalte auf** — auf *beiden*
+  Rechtsseiten, seit H12b. Dieselbe Falle, die H12b für `.lg-term-foot` schon
+  einmal korrigiert hat: `globals.css` gibt jedem `p` 68ch, und bei Mono 10 sind
+  das rund 340 px. **Gefunden durch Ansehen, nicht durch einen Test** — zum
+  zweiten Mal auf dieser Seite, und beide Male an derselben Sorte Form, nach der
+  keine Zusicherung dieser Seite fragt.
+- **Das mobile Artboard zeichnet `/imprint` gar nicht als Seite.** 1c ist ein
+  390-Rahmen mit beiden Dokumenten untereinander — Datenschutz zuerst, Impressum
+  hinter einer Linie, als `<h2>` in 28 px und ohne Sprungliste. Gebaut sind zwei
+  Routen, also ist die Überschrift ein `<h1>` mit dem mobilen Display-Schritt 34.
+  Drei der vier 390-Messungen des Orakels hängen an dieser einen Tatsache; sie
+  steht als `imprint-drawn-as-a-section` einmal da statt dreimal.
+- **Die Sprungliste klebte, solange sie die ganze Spalte war.** Mit zwei
+  Nachbarn hätte `position: sticky` gegen einen Wrapper von der Höhe seiner
+  eigenen drei Kästen gemessen — also aufgehört zu kleben, ohne dass ein Test
+  dieser Seite danach fragt. Jetzt klebt `.lg-aside`. Die Sorte Regression, die
+  nur auffällt, wenn man beim Scrollen zusieht.
+- **Zwei `contact`-Tests flackern im vollen Lauf bei 390** — „the honeypot
+  travels, and it travels empty" und „no counter stands beside the wait". Im
+  vollen Lauf (2431 grün, 9,6 min) beide rot, einzeln 31 von 31 grün. Die
+  Fehlermeldung ist `validating … 1 invalid`, also ein Feld, das beim Absenden
+  noch nicht gefüllt war — ein Rennen unter Last, nicht die Seite. Nicht von
+  H12c berührt. **Issue-Kandidat.**
+
+### Verschoben aus H12c
+
+- **Drei Angaben, die dieses Repository nicht herleitet**, und ohne die nicht
+  gemerged wird: Postanschrift (06.01 und `[ADDRESS]` auf `/privacy`),
+  OVH-Rechtsträger mit Sitz (`[HOSTING PROVIDER]` und
+  `[OVH LEGAL ENTITY AND LOCATION]`), und die Entscheidung gegen die
+  Telefonzeile. `brackets.test.ts` ist bis dahin rot, und das ist die Sperre.
+  **Als #368 im Tracker** — der Notizblock hält die Aufgabe, das Issue hält den
+  Stand; wer nur eins von beiden liest, findet sie ein zweites Mal.
+- **Die DE/FR-Rechtsfassung**, unverändert offen. K-03, vor M6.
+- **Die juristische Vollständigkeit prüft weiterhin keine Maschine.** M4, und
+  das Blatt sagt es selbst: *„Kein Rechtsrat"*.
+- **Die Kontaktadresse ist nicht ein sechstes Mal abgeschrieben worden** — das
+  Impressum liest `AUTHOR` aus `lib/site.ts`. Die „vier Adresskopien"-Aufgabe aus
+  H8a wächst damit nicht weiter, bleibt aber offen.
+
+---
+
 ## Wo wir stehen — 11.09.2026, H12b abgenommen: `v0.36.0` steht, und die eine gemessene Zeile war in beiden Umgebungen anders als das Blatt
 
 `3ee6662` läuft, **`v0.36.0`**. Merge **21:29:31Z**, Deploy-Job 21:46:28Z →

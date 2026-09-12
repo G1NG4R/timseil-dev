@@ -27,21 +27,17 @@
 //   6. "no third party in the request path" — scoped in 07.05 to what this
 //      application does, which is the part I can actually promise.
 //
-// THE BRACKETS THAT REMAIN ARE ENUMERATED, in `PLACEHOLDERS` below, and
-// content.test.ts fails on any bracket that is not one of them. They are the
-// facts only the operator has, and none of them may survive the merge — a legal
-// page that ships with `[ADDRESS]` on it is worse than no legal page.
+// NO BRACKET SURVIVES A MERGE, and in H12b one did. The rule and the incident
+// behind it are written out where `PLACEHOLDERS` used to stand, below.
+//
+// THIS FILE IS `/privacy` AND NOTHING ELSE. Since H12c there is a second legal
+// page in imprint.ts; the two share the block type in blocks.ts, the order in
+// sections.ts and the components, and share no prose. A sentence that belongs
+// on both pages belongs on one of them with a link from the other.
 
+import type { Block } from "./blocks.ts";
 import { RATE_LIMIT_MINUTES, retentionSentence } from "./retention.ts";
 import { FIELD_COUNT } from "./readout.ts";
-
-/** A block of a section. Four shapes, because the sheet draws four and a fifth
- *  would be a design decision taken in a data file. */
-export type Block =
-  | { readonly kind: "p"; readonly text: string }
-  | { readonly kind: "table"; readonly head: readonly string[]; readonly rows: readonly (readonly string[])[] }
-  | { readonly kind: "numbered"; readonly items: readonly string[] }
-  | { readonly kind: "note"; readonly text: string };
 
 /** One line of THE SHORT VERSION. `yes` is the sheet's ✓ and `no` its ✗; the
  *  mark is a flag rather than a character, because the character is a
@@ -52,13 +48,20 @@ export interface ShortLine {
 }
 
 /**
- * The brackets allowed to remain, and nothing else.
+ * THE LIST OF PERMITTED BRACKETS IS GONE, AND ITS ABSENCE IS THE RULE.
  *
- * Each is a fact this repository cannot derive: a postal address and the legal
- * identity of a company. Held by content.test.ts as an exact set, so the list
- * can shrink on purpose and never grow by accident.
+ * H12b shipped with two of them — `[ADDRESS]` here and
+ * `[OVH LEGAL ENTITY AND LOCATION]` in 07.06 — held as an exact set so the set
+ * could only shrink on purpose. It shrank by nothing, and both went live on a
+ * public, indexable page, because an exact set is green while it is exactly
+ * right and no machine in this repository knew when it had to be EMPTY.
+ *
+ * That is the incident CLAUDE.md asks for before a new rule exists, so the rule
+ * exists now and it is one sentence: no legal page carries a bracket. It is
+ * held in content.test.ts over both pages at once — `/privacy` here and
+ * `/imprint` in imprint.ts — and it fails until the facts only the operator has
+ * are in the text.
  */
-export const PLACEHOLDERS = ["[ADDRESS]", "[OVH LEGAL ENTITY AND LOCATION]"] as const;
 
 export const HERO = {
   eyebrow: "SYS.07 — PRIVACY",
@@ -105,6 +108,31 @@ export const LABELS = {
    *  is not the same question. This is the date somebody last read the page
    *  against the code, and only a person can set it. */
   revised: "LAST REVISED 2026-09-11",
+} as const;
+
+/**
+ * The card under the jump rail that points at the other legal page.
+ *
+ * DRAWN ON BOTH ARTBOARDS AND BUILT IN NEITHER, until now: the sheet puts a
+ * `SEE ALSO` on 1a pointing here and one on 1b pointing at the imprint, and
+ * H12b built the page that had nowhere to point — ADR 0076 records that as a
+ * cost of the split rather than a decision. H12c is the phase where the target
+ * exists, so the field arrives on both pages in the same commit.
+ *
+ * THE ARROW IS NOT IN THE STRING. `components/legal/SeeAlso.tsx` draws it, the
+ * way every other exit link on this site does — `CASE STUDY →`, `WORK →`. A
+ * glyph in a data file is a glyph three test files then have to spell.
+ *
+ * AND THE PATH IS A PATH, NOT AN HREF. `/imprint` is the same string
+ * lib/seo/pages.ts and e2e/widths.ts use; the page resolves it through
+ * `localeHref`, because a data file has no business knowing which language is
+ * reading it.
+ */
+export const SEE_ALSO = {
+  label: "SEE ALSO",
+  marker: "SYS.06 — IMPRINT",
+  blurb: "Who operates the site and where it runs.",
+  path: "/imprint",
 } as const;
 
 export const PANEL = {

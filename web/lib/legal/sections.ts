@@ -1,4 +1,4 @@
-// The order of `/privacy`, as data.
+// The order of the two legal pages, as data.
 //
 // THE SAME ARGUMENT lib/about/sections.ts AND lib/home/sections.ts MAKE: `npm
 // test` reads `lib/**` and `styles/**` and nothing else, so a list of sections
@@ -23,7 +23,14 @@
 //
 // WHAT IS HERE AND WHAT IS IN content.ts: ids and titles are the page's
 // skeleton and the jump rail is generated from them, so they are here. Every
-// sentence is prose and lives in content.ts.
+// sentence is prose and lives in content.ts — and since H12c in imprint.ts as
+// well.
+//
+// TWO LISTS IN ONE FILE, AND NOT TWO FILES. The pages share everything about
+// ORDER — the `Section` shape, the derived anchor, the rail, the pair of
+// nullable fields STATE.05 demands — and share not one sentence. Splitting the
+// skeleton would mean two copies of `anchorFor`, and the second copy is the one
+// that starts pointing at nothing. Splitting the prose was never in question.
 
 import type { Messages } from "../i18n/messages/en.ts";
 
@@ -70,7 +77,7 @@ export interface Section {
  * sheet's mobile frame really says is that the short version above them is
  * doing the work there, and it is.
  */
-export const SECTIONS: readonly Section[] = [
+export const PRIVACY_SECTIONS: readonly Section[] = [
   {
     id: "07.01",
     title: "Who is responsible",
@@ -123,15 +130,82 @@ export const SECTIONS: readonly Section[] = [
 ];
 
 /**
- * The ordinal a marker carries, or `null` if it is not one of this page's.
+ * The four sections of `/imprint`, in the order artboard 1a draws them.
+ *
+ * FOUR AND NOT SEVEN, AND THE ORDER IS AS LOAD-BEARING AS THE OTHER PAGE'S.
+ * 06.01 says who is answerable — which is the whole legal purpose of the
+ * document and therefore comes first, before a word about anything else. 06.02
+ * says where the thing runs, 06.03 says who wrote what is on it and what
+ * happens at the far end of a link, 06.04 says what somebody else may do with
+ * it. Read in any other order it becomes a colophon.
+ *
+ * WHAT IS NOT A SECTION AND IS ON THE PAGE: the `NOT APPLICABLE` list, which
+ * names the four compulsory entries a private site with no commercial activity
+ * does not have. It is not in this list because it is not part of the argument
+ * the numbers make — a jump rail that offered "things that do not apply" as a
+ * fifth destination would be a table of contents for an absence. It sits under
+ * the rail, which is where the sheet draws it and where it reads as a footnote
+ * to the whole page rather than as a section of it. imprint.ts carries it.
+ *
+ * THE MOBILE ARTBOARD DRAWS NO RAIL HERE AT ALL, and unlike `/privacy` it also
+ * folds 06.03 and 06.04 into one paragraph. Four sections are rendered at every
+ * width for the reason the other page renders seven: the fold is a drawing
+ * decision about a small screen, and a legal document that says less on a phone
+ * is a second document nobody maintains.
+ */
+export const IMPRINT_SECTIONS: readonly Section[] = [
+  {
+    id: "06.01",
+    title: "Operator and responsible party",
+    railLabel: "Operator",
+    reasonKey: null,
+    owedBy: null,
+  },
+  {
+    id: "06.02",
+    title: "Where it is hosted",
+    railLabel: "Hosting",
+    reasonKey: null,
+    owedBy: null,
+  },
+  {
+    id: "06.03",
+    title: "Content and links",
+    railLabel: "Content and links",
+    reasonKey: null,
+    owedBy: null,
+  },
+  {
+    id: "06.04",
+    title: "Reuse",
+    railLabel: "Reuse",
+    reasonKey: null,
+    owedBy: null,
+  },
+];
+
+/** Which page a marker belongs to, as the two digits in front of the dot.
+ *  `SYS.06` is the imprint and `SYS.07` is the privacy page, which is the
+ *  sheet's numbering and the site's — the homepage's own sections run SYS.01
+ *  to SYS.04 and `/contact` is SYS.06's neighbour at the same level. */
+export type PageMarker = "06" | "07";
+
+/**
+ * The ordinal a marker carries, or `null` if it is not one of that page's.
  *
  * A PARSER AND NOT AN INDEX LOOKUP, so the test can ask the sheet's own
  * question — "do these read 01 through 07 going down the page" — of a list it
- * did not build. `SYS.07` is the page rather than a section and answers `null`,
- * as does `06.01`, which belongs to the imprint.
+ * did not build. `SYS.07` is the page rather than a section and answers `null`.
+ *
+ * THE PAGE IS AN ARGUMENT SINCE H12c, AND THAT IS THE WHOLE CHANGE. It used to
+ * be baked in as `^07\.`, which made `06.01` answer `null` — correct then,
+ * because the imprint was a stub, and a quiet lie the moment it stopped being
+ * one. Passing the page in keeps the question the test actually wants to ask,
+ * "is this one of THIS page's markers", rather than widening the parser until
+ * `/privacy` would accept an imprint section without complaint.
  */
-export function sectionNumber(id: string): number | null {
-  const match = /^07\.(\d{2})$/.exec(id);
+export function sectionNumber(id: string, page: PageMarker): number | null {
+  const match = new RegExp(`^${page}\\.(\\d{2})$`).exec(id);
   if (match === null) return null;
   const number = Number.parseInt(match[1], 10);
   return number === 0 ? null : number;

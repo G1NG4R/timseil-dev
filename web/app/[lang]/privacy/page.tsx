@@ -18,11 +18,13 @@ import type { Metadata } from "next";
 import { Blocks } from "@/components/legal/Blocks";
 import { JumpRail } from "@/components/legal/JumpRail";
 import { Readout } from "@/components/legal/Readout";
+import { SeeAlso } from "@/components/legal/SeeAlso";
 import { ShortVersion } from "@/components/legal/ShortVersion";
 import { SectionHead } from "@/components/ui/SectionHead";
-import { CONTENT, HERO, LABELS, PANEL, SHORT_VERSION } from "@/lib/legal/content";
-import { anchorFor, SECTIONS } from "@/lib/legal/sections";
-import { asLocale } from "@/lib/i18n/routes";
+import { CONTENT, HERO, LABELS, PANEL, SEE_ALSO, SHORT_VERSION } from "@/lib/legal/content";
+import { anchorFor, PRIVACY_SECTIONS } from "@/lib/legal/sections";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { seoFor } from "@/lib/seo/pages";
 
 export async function generateMetadata({
@@ -40,7 +42,13 @@ function titleIdFor(id: string): string {
   return `${anchorFor(id)}-title`;
 }
 
-export default function Page() {
+export default async function Page() {
+  // The ROUTE's language, and the page needs it for exactly one thing: the link
+  // to the imprint. `/de/privacy` has to point at `/de/imprint` rather than drop
+  // the reader into English on the way out. H12c; before it this component took
+  // no arguments at all.
+  const { locale } = await getDictionary();
+
   return (
     <div className="lg">
       <header className="lg-hero">
@@ -74,7 +82,7 @@ export default function Page() {
             noLabel={LABELS.no}
           />
 
-          {SECTIONS.map((section) => (
+          {PRIVACY_SECTIONS.map((section) => (
             <section
               className="lg-section"
               key={section.id}
@@ -93,7 +101,21 @@ export default function Page() {
           <p className="lg-revised">{LABELS.revised}</p>
         </div>
 
-        <JumpRail sections={SECTIONS} label={LABELS.rail} />
+        {/* THE RAIL GAINED A NEIGHBOUR IN H12c, and that is why it is wrapped.
+            layout.css hides `.lg-rail` below 1080 — a table of contents between
+            the last section and the footer is where one is least useful — and
+            the way to the imprint must not go with it: it is the only route
+            this page offers to the other half of the document besides the
+            footer. The sheet draws both in the same column. */}
+        <aside className="lg-aside">
+          <JumpRail sections={PRIVACY_SECTIONS} label={LABELS.rail} />
+          <SeeAlso
+            label={SEE_ALSO.label}
+            marker={SEE_ALSO.marker}
+            blurb={SEE_ALSO.blurb}
+            href={localeHref(locale, SEE_ALSO.path)}
+          />
+        </aside>
       </div>
     </div>
   );

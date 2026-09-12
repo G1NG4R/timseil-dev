@@ -503,6 +503,16 @@
   .lg-table td      { border-bottom: 0; padding: var(--s-4) 0 }
   .lg-table tr      { padding: var(--s-12) 0; border-bottom: 1px solid var(--line-faint) }
   .lg-table td::before { display: block }
+
+  /* H12c · the imprint's operator list, and it is the table's argument one
+     component over. A 150px label column in front of a 346px content column
+     leaves under 200px for a postal address, so the pair stacks: the label
+     keeps its own line and the value gets the width. It rides on THIS switch
+     rather than a fifth, because the question — "does a labelled value still
+     fit beside its label" — is the one the tables above answer at exactly the
+     same width. */
+  .lg-def-row { display: block }
+  .lg-def-row dt { margin-bottom: var(--s-4) }
 }
 
 /* ---- < 560: Zeilen werden Karten ----------------------------------------- */

@@ -133,6 +133,29 @@ test("the main nav marks nothing active on this page", async ({ page }) => {
   await expect(page.locator('nav[aria-label="Main"] a')).not.toHaveCount(0);
 });
 
+// ── The way to the other legal page ────────────────────────────────────────
+//
+// H12c. The sheet draws a `SEE ALSO` card on both artboards and H12b could
+// build neither: the imprint was a stub, and pointing a reader at a `[SOON]`
+// shell is the second dead end lib/notfound/mounted.ts already refuses. Both
+// targets exist now, and the pair is held from both sides — the mirror of this
+// test is in imprint.spec.ts, and lib/legal/imprint.test.ts holds the two paths
+// against each other where no browser is needed.
+
+test("SEE ALSO points at the imprint, and goes there", async ({ page }) => {
+  const card = page.locator(".lg-seealso");
+  await expect(card).toBeVisible();
+  await expect(card.locator("a")).toHaveAttribute("href", "/imprint");
+  await expect(card.locator("a")).toContainText("SYS.06 — IMPRINT");
+
+  await card.locator("a").click();
+  await expect(page).toHaveURL(/\/imprint$/);
+  // `filter({ visible: true })` because the page navigated away from stays in
+  // the document, hidden, for an instant return. imprint.spec.ts carries the
+  // long version of that note.
+  await expect(page.locator("main h1").filter({ visible: true })).toHaveText("Who runs this");
+});
+
 // ── The readout ────────────────────────────────────────────────────────────
 
 test("the panel shows eight lines, in the sheet's order", async ({ page }) => {
