@@ -76,6 +76,8 @@ ist rot, bis die Angaben da sind, die nur ich habe.**
   OVH-Rechtsträger mit Sitz (`[HOSTING PROVIDER]` und
   `[OVH LEGAL ENTITY AND LOCATION]`), und die Entscheidung gegen die
   Telefonzeile. `brackets.test.ts` ist bis dahin rot, und das ist die Sperre.
+  **Als #368 im Tracker** — der Notizblock hält die Aufgabe, das Issue hält den
+  Stand; wer nur eins von beiden liest, findet sie ein zweites Mal.
 - **Die DE/FR-Rechtsfassung**, unverändert offen. K-03, vor M6.
 - **Die juristische Vollständigkeit prüft weiterhin keine Maschine.** M4, und
   das Blatt sagt es selbst: *„Kein Rechtsrat"*.
