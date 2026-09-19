@@ -295,7 +295,7 @@ export const CONTENT: Readonly<Record<string, readonly Block[]>> = {
     { kind: "p", text: retentionSentence() },
     {
       kind: "p",
-      text: "The message is then handed to OVH, my mail provider at [OVH LEGAL ENTITY AND LOCATION], which delivers it and acts as a processor under Art. 28 GDPR. It then sits in my mailbox for as long as the conversation is useful to either of us. It is used to answer you and for nothing else: no newsletter, no list, no forwarding.",
+      text: "The message is then handed to OVH GmbH in Köln, Germany, my mail provider, which delivers it and acts as a processor under Art. 28 GDPR. It then sits in my mailbox for as long as the conversation is useful to either of us. It is used to answer you and for nothing else: no newsletter, no list, no forwarding.",
     },
     {
       kind: "p",

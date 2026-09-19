@@ -143,7 +143,7 @@ export const CONTENT: Readonly<Record<string, readonly Block[]>> = {
   "06.02": [
     {
       kind: "p",
-      text: "The site runs in containers on a virtual private server rented from [HOSTING PROVIDER]. The provider supplies the hardware and the network; the machine itself is configured and maintained by me, which is also why the operations pages on this site can say what they say. The domain is registered through the same company.",
+      text: "The site runs in containers on a virtual private server rented from OVH GmbH, Oskar-Jäger-Straße 173/K6, 50825 Köln, Germany. The provider supplies the hardware and the network; the machine itself is configured and maintained by me, which is also why the operations pages on this site can say what they say. The domain is registered through the same company, and so is the mailbox the form writes to.",
     },
     {
       kind: "p",

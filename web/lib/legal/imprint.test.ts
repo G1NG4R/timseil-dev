@@ -58,7 +58,13 @@ void test("no German survives in an English interface", () => {
   // WEGLASSEN IST ZULÄSSIG]". Two of the three were brackets and are gone with
   // them; the sentence was prose and had to be translated. CLAUDE.md: UI text
   // is English, and a legal page is UI text with consequences.
-  const german = [/\büber\b/i, /\bgern\b/i, /\bFormular\b/i, /\bzulässig\b/i, /\bStra(ss|ß)e\b/i, /\bFragen dazu\b/i];
+  //
+  // `Straße` IS EXEMPT INSIDE A PROPER NOUN, and that exemption arrived with the
+  // first real address: the provider in 06.02 is `Oskar-Jäger-Straße 173/K6`,
+  // which is not the interface slipping into German — it is a street in Cologne,
+  // and the post office does not translate it. The lookbehind refuses the word
+  // on its own (`die Straße`) and allows it welded to a name.
+  const german = [/\büber\b/i, /\bgern\b/i, /\bFormular\b/i, /\bzulässig\b/i, /(?<![-\wäöüß])Stra(ss|ß)e\b/i, /\bFragen dazu\b/i];
   const joined = imprintText().join("\n");
   for (const pattern of german) {
     assert.doesNotMatch(joined, pattern, `${String(pattern)} is German, and this interface is English`);
