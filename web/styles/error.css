@@ -1,0 +1,72 @@
+/* The 500's own surfaces. Build plan H13.
+
+   WHAT IS HERE AND WHAT IS NOT, the split every page sheet in this directory
+   makes: this file draws, layout.css switches. Nothing below carries a media
+   query.
+
+   SMALLER THAN notfound.css BY A LONG WAY, and that is the design rather than
+   an unfinished file. The 404 is a page with an argument to make — a router
+   trace, the mounted routes, a game surface — and the sheet gives it its own
+   turn. There is NO hi-fi sheet for a 500 (docs/design/INDEX.md assigns this
+   phase `State Language`, which draws an error PANEL and not a page), so what
+   this page may draw is the vocabulary that already exists: the panel, the two
+   buttons, the display step. Inventing a second 404 here would be designing
+   against nothing.
+
+   NO COLOUR, RADIUS OR DURATION IS DECLARED BELOW — invariant 8. Every value
+   is a token or a measure read off the existing pages: `52ch` is the lede cap
+   notfound.css already uses, and `68ch` is the reading measure globals.css
+   gives every paragraph.
+
+   THE ALERT MOMENT IS THE PANEL'S AND NOTHING ELSE'S. STATE.05: "Rot nur hier
+   — pro Seite ein Alert-Moment." Unlike the 404, where the sheet makes red the
+   theme of the page, this page spends it once: `.st-panel[data-tone="alert"]`
+   in state.css is the only red in the document.                            */
+
+/* ── The page ───────────────────────────────────────────────────────────── */
+
+.er {
+  padding-block: var(--s-72) var(--s-96);
+}
+
+.er-head {
+  margin: 0 0 var(--s-20);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: var(--t-disp-52);
+  line-height: 1;
+  letter-spacing: var(--ls-disp);
+  color: var(--ink);
+}
+
+.er-lede {
+  max-inline-size: 52ch;
+  margin: 0 0 var(--s-34);
+  font-size: var(--t-body-15);
+  line-height: 1.7;
+  color: var(--steel);
+}
+
+/* The two sentences under the panel: what the identifier means, and which ids
+   are deliberately absent. They are quieter than the lede because they are
+   read once, by somebody who is about to copy the digest. */
+.er-note {
+  max-inline-size: 68ch;
+  margin: var(--s-16) 0 0;
+  font-family: var(--mono);
+  font-size: var(--t-mono-11);
+  line-height: 1.7;
+  color: var(--dim);
+}
+
+.er-note:first-of-type {
+  margin-block-start: var(--s-20);
+}
+
+.er-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-12);
+  margin-block-start: var(--s-34);
+}

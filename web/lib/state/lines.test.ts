@@ -102,3 +102,31 @@ describe("loadingLines", () => {
     ]);
   });
 });
+
+// Three states, and the middle one is why the field is not a plain string.
+// See ErrorInput.digest.
+describe("the digest line", () => {
+  it("is absent on a panel that has no such concept", () => {
+    const lines = errorLines({ source: "ops-api", status: 503 });
+    assert.equal(lines.length, 2);
+    assert.ok(!lines.some((line) => line.startsWith("digest:")));
+  });
+
+  it("prints a digest that exists", () => {
+    const lines = errorLines({ source: "web", status: 500, digest: "824995547" });
+    assert.equal(lines.at(-1), "digest: 824995547");
+  });
+
+  // THE BROKEN CASE: a page that owes an identifier and has none must say so.
+  // Staying quiet would read as "none was ever expected here", which is the one
+  // thing that is not true on the error page.
+  it("says — NO DATA for one that is owed and missing", () => {
+    assert.equal(errorLines({ source: "web", status: 500, digest: null }).at(-1), `digest: ${NO_DATA}`);
+    assert.equal(errorLines({ source: "web", status: 500, digest: "   " }).at(-1), `digest: ${NO_DATA}`);
+  });
+
+  it("stands after the retry line, not before it", () => {
+    const lines = errorLines({ source: "web", status: 500, retry: "attempt 2", digest: "824995547" });
+    assert.deepEqual(lines, ["web: 500", `last good measurement: ${NO_DATA}`, "attempt 2", "digest: 824995547"]);
+  });
+});

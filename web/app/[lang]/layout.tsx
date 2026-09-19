@@ -90,6 +90,10 @@ import "../../styles/blog.css";
 // it: ui.css comes first, layout.css comes last, and both still win where they
 // are supposed to.
 import "../../styles/legal.css";
+// H13. The 500 renders as this layout's child, so its sheet belongs in this
+// cascade at this position — after the page sheets, before layout.css, which is
+// where every page sheet before it went.
+import "../../styles/error.css";
 import "../../styles/layout.css";
 
 // THE THREE LANGUAGES THAT GET PRERENDERED. Under Cache Components a root

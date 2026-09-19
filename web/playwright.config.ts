@@ -123,6 +123,18 @@ export default defineConfig({
     // and anyone who can set an environment variable on the host already owns
     // the container. This sets it for a server that exists for the length of a
     // test run.
-    env: { DEV_GALLERY: "1" },
+    // H13 OPENS THE ERROR DRILL, and it is the same kind of door for the same
+    // kind of reason. The 500 cannot be reached by asking for it: a page only
+    // renders app/[lang]/error.tsx when something throws, and nothing on this
+    // site throws on purpose. app/[lang]/error-drill/[mode] does, behind
+    // lib/errors/drill.ts, and this is the server that may open it.
+    //
+    // ONE FLAG, TWO SHAPES. The mode is the route rather than the value,
+    // because this object can hold one value per run and the phase needs both
+    // failures in one: `/error-drill/render` throws before the first byte
+    // (500, no page at all) and `/error-drill/stream` throws in a Suspense
+    // hole the way every real page on this site would (200, page inside the
+    // chrome).
+    env: { DEV_GALLERY: "1", DEV_ERROR_DRILL: "1" },
   },
 });

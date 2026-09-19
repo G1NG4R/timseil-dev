@@ -34,14 +34,46 @@ export function utcHm(iso: unknown): string | null {
 export interface ErrorInput {
   /** Which system did not answer. `ops-api`, `github`, whatever asked. */
   readonly source: string;
-  /** The HTTP status, or `null` when nothing answered at all. */
-  readonly status: number | null;
+  /**
+   * The HTTP status.
+   *
+   * THE SAME THREE STATES `digest` HAS, and for once the middle one is the
+   * common case rather than the edge:
+   *
+   *   `undefined`  nobody measured it. `— NO DATA`.
+   *   `null`       nothing answered at all — a refused connection, a timeout.
+   *   a number     what came back.
+   *
+   * The distinction was bought by H13. An error boundary is a client component
+   * and cannot see the response it is part of, so the honest reading comes from
+   * `PerformanceNavigationTiming.responseStatus` — and a browser that does not
+   * serve one leaves this `undefined` rather than letting the page claim the
+   * 500 it would like to have had.
+   */
+  readonly status?: number | null;
   /** The reason phrase, if there was one. */
   readonly statusText?: string | null;
   /** When the last usable measurement was taken, as an ISO timestamp. */
   readonly lastGoodAt?: string | null;
   /** A line from retryLine(), or nothing. This page may not retry at all. */
   readonly retry?: string | null;
+  /**
+   * The framework's hash of the error, for the panels that have one.
+   *
+   * THREE STATES, NOT TWO, and the difference is the whole reason this is not a
+   * plain `string`:
+   *
+   *   `undefined`  this panel has no such concept — an upstream that answered
+   *                503 was never given a digest, and a line saying so would be
+   *                noise. No line.
+   *   `null`       there IS one and it is missing. `— NO DATA`, because a page
+   *                that owes an identifier and has none must say so rather than
+   *                stay quiet about it.
+   *   a string     the identifier itself.
+   *
+   * Invariant 1 is the distinction between the middle row and the top one.
+   */
+  readonly digest?: string | null;
 }
 
 /**
@@ -68,6 +100,13 @@ export function errorLines(input: ErrorInput): string[] {
   const retry = clean(input.retry ?? "");
   if (retry !== "") lines.push(retry);
 
+  // Last, because it is the line you copy rather than the line you read. See
+  // ErrorInput.digest for why `undefined` and `null` part ways here.
+  if (input.digest !== undefined) {
+    const digest = clean(input.digest ?? "");
+    lines.push(`digest: ${digest === "" ? NO_DATA : digest}`);
+  }
+
   return lines;
 }
 
@@ -83,8 +122,14 @@ export function loadingLines(what: string, source: string): string[] {
 }
 
 /** `503 service unavailable`, or what is left when parts are missing. */
-function statusPhrase(status: number | null, statusText?: string | null): string {
+function statusPhrase(status: number | null | undefined, statusText?: string | null): string {
   const text = clean(statusText ?? "").toLowerCase();
+
+  // Nobody looked. Distinct from the line below, and the distinction is the
+  // point: `no answer` is a measurement, `— NO DATA` is the absence of one.
+  if (status === undefined) {
+    return text === "" ? NO_DATA : `${NO_DATA} (${text})`;
+  }
 
   // Nothing answered. Not a code, and not an invented one either — `no answer`
   // is what a refused connection or a timeout actually was.

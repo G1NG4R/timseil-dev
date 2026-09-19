@@ -18,39 +18,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+import { CARRIED, TAGS, carriedRules } from "./axe";
 import { ROUTES } from "./widths";
 
-/**
- * WCAG 2.2 AA, which is the standard the build plan names for M2.
- *
- * `best-practice` is deliberately absent. It is advice rather than the
- * standard, and a gate that fails on advice is a gate people learn to ignore.
- */
-const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
-
-/**
- * Rules carried with a reason and a date, in the shape tools/check-vuln.sh
- * already uses for a CVE that cannot be fixed today.
- *
- * A carried rule is not a disabled one: it is named, it points at the issue
- * that will remove it, and it has a date after which somebody has to look
- * again. The alternative — a gate that is permanently red — is a gate people
- * learn to run with `|| true`.
- */
-const CARRIED = [
-  {
-    rule: "target-size",
-    issue: 257,
-    until: "2026-11-30",
-    why:
-      "The seven theme swatches are 44 x 44 under `pointer: coarse` and 11 x 11 " +
-      "under a fine one. WCAG 2.2 has no pointer exemption, so a mouse sees a " +
-      "violation; the fix is a design decision about a row the Chrome sheet draws " +
-      "at 11 px, not a CSS edit, and M6 is where it lands.",
-  },
-] as const;
-
-const carriedRules = new Set<string>(CARRIED.map((c) => c.rule));
+// The policy lives in e2e/axe.ts since H13, because error.spec.ts needs the
+// same carried list and two copies of a date is one date nobody reads.
 
 // The date is a real one and this is what makes it a clock rather than a
 // comment. A carried rule whose date has passed fails the suite on its own,
