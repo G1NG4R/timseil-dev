@@ -12,6 +12,175 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 19.09.2026, H12c abgenommen: `v0.37.0` steht, und der Zeuge stand zum ersten Mal seit vier Phasen davor
+
+`cb8a91e` läuft, **`v0.37.0`**. Merge **19:47:38Z**, Deploy-Job 20:06:07Z →
+20:06:34Z (**27 s**), der api-Prozess läuft seit **20:06:48.044Z**. Uhrzeit mit
+`date -u` gelesen; 20:06Z liegt gut dreieinhalb Stunden vor dem Dokploy-Fenster.
+
+Der `feat:`-Titel hat wieder getan, was er soll: `v0.36.0` → **`v0.37.0`**,
+Minor, und `/api/badge/version` meldet ihn. Der Squash hat das `(#369)` gesetzt.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `cb8a91e` gebaut.
+
+### Der Zeuge stand davor, und das Fenster ist zum ersten Mal vollständig
+
+Dreimal in Folge kam der Merge, bevor `witness.sh` lief — H10b, #363, H12b —, und
+jedes Mal war der saubere Tausch nur aus `check-deployed` erschlossen. Diesmal
+lief der Zeuge **100 Sekunden vor dem Merge** an, im Modus `--until-restart`, der
+genau dafür existiert: er braucht keine Squash-Sha und kann deshalb vorher
+starten.
+
+```
+/              1281 Anfragen   1281 × 200
+/api/health    1281 Anfragen   1281 × 200
+✓ every answer was 200
+```
+
+Einundzwanzig Minuten am Stück, eine Anfrage pro Sekunde und Pfad, quer über den
+Neustart um 20:06:48. **Siebter sauberer Tausch in Folge, und der zweite, der
+wirklich bezeugt ist.** Für **#304** ist das ein Datenpunkt und keine Antwort:
+in diesem Fenster ist keine einzige Anfrage verlorengegangen. Sieben Sekunden
+tragen keine Probe — Anfragen, die länger brauchten als ihr Intervall; der Zeuge
+schreibt die Lücke hin, statt sie zu glätten.
+
+### Die stärkste Zeile der Seite zeigt den falschen Pfad — #376
+
+Der Fund der Abnahme, und er sitzt auf der Seite, deren ganzes Argument ist, dass
+nichts auf ihr erfunden ist. Wer `/privacy` über den `SEE ALSO`-Verweis vom
+Impressum aus erreicht, liest im Readout:
+
+```
+direkt geladen        GET /privacy · h2    url /privacy    ok
+über /imprint         GET /imprint  · h2   url /privacy    FALSCH
+danach neu geladen    GET /privacy · h3    url /privacy    ok
+über /about           GET /privacy · h3    url /privacy    ok
+zweiter Besuch        GET /imprint  · h2                   FALSCH, unverändert
+```
+
+**Es ist nicht „die Seite, von der du kommst"** — von `/about` stimmt die Zeile.
+`lib/legal/readout.ts` hält die Lesung in einem modulweiten `live ??= …`, das eine
+Client-Navigation überlebt; **das erklärt, warum sie falsch bleibt, nicht warum
+sie falsch anfängt.** Ob die Momentaufnahme bei dieser Art Übergang vor dem
+Festschreiben der URL genommen wird, ist **nicht gemessen** — und eine plausible
+Ursache ist keine gemessene, zum zweiten Mal auf derselben Seite.
+
+Der Nebenbefund steht in derselben Tabelle: dieselbe URL, Minuten auseinander,
+einmal `h2` und einmal `h3`. Genau deshalb misst die Zeile das Protokoll, statt
+das `HTTP/2` des Blattes zu tippen.
+
+**Warum die Suite grün blieb:** `legal.spec.ts` liest diese Zeile nur nach einem
+direkten `goto`. Eine Prüfung, die *über den Link* ankommt, gibt es nicht — und
+der Link, den es dafür braucht, ist erst in dieser Phase entstanden.
+
+### Die erste p95 nach einem Deploy misst wieder den Deploy
+
+Zweite Abnahme in Folge, in der diese Zahl beinahe als Regression ins Protokoll
+gewandert wäre:
+
+```
+20:11:48Z   p95  813,4 ms   errorRate  0,0109     Fenster enthält den Neustart
+20:16:48Z   p95  183,1 ms   errorRate  0,0074     danach, mit meinem Prüfverkehr
+20:21:48Z   p95   22,9 ms   errorRate  0          danach, ohne ihn
+```
+
+Das Fenster der Recording-Rule ist fünf Minuten, der Neustart war um 20:06:48 —
+die erste Momentaufnahme liegt also vollständig über dem Tausch. `measuredAt`
+gegen `startedAt` halten, sonst meldet man eine Verschlechterung, die es nicht
+gibt. Der Vergleichswert aus dem Ruhezustand davor: **9,75 ms**, acht Tage ohne
+Deploy und fast ohne Verkehr; der aus H12b: 186,2 ms, also so gut wie derselbe
+Wert wie heute.
+
+**Und die dritte Zeile ist die eigentliche Lehre.** Die 183 ms sind keine Aussage
+über die Seite, sondern über mich: in diesem Fenster lief mein Abnahme-Verkehr,
+Playwright gegen Produktion, zwei Breiten, vier Läufe. Ein Fenster später ist er
+weg — und mit ihm die Fehlerrate, die vorher bei 0,0074 stand. **Welche meiner
+Anfragen sie erzeugt hat, ist nicht identifiziert**; gemessen ist nur, dass sie
+mit meinem Verkehr kommt und geht.
+
+Damit hat diese Abnahme drei p95-Werte, und **keine zwei davon messen dasselbe**:
+813 misst einen Containertausch, 183 misst einen Testlauf, 23 misst eine Seite,
+auf der gerade fast niemand ist. H12b hat 186,2 gegen 99,5 gestellt und den
+Vergleich als „nächsten ehrlichen Blick" notiert — heute zeigt sich, dass beide
+Zahlen dieser Reihe Testlauf-Zahlen waren. **Es gibt auf dieser Seite bis jetzt
+keine p95, die von echten Besuchern stammt**, und die Reihe im Protokoll sollte
+das sagen, statt eine Kurve zu zeichnen.
+
+### Was gegen Produktion geprüft ist
+
+- `/imprint` antwortet **200** über HTTP/2, TTFB **163 ms**, kein `noindex` — weder
+  im Kopf noch als Header —, und die Sitemap listet alle drei Sprachrouten.
+- `imprint.spec.ts` gegen Produktion gezogen: **18 Tests grün**, bei 1440 und 390.
+- Im Browser bei 1440 geklickt statt gelesen: alle vier Sprunglisten-Anker, beide
+  `SEE ALSO`-Wege, die Feldliste ohne `ADDRESS`-Zeile, `NOT APPLICABLE` mit vier
+  Einträgen, `LAST REVISED 2026-09-19` im `main` — **null Konsolenmeldungen**,
+  also auch keine Hydration-Warnung, was G3s Abnahmekriterium bleibt.
+- Bei 390 ist die Sprungliste weg, und das ist die Zusage aus `layout.css`.
+
+### `durationSec` meldet 1132 s für einen Deploy, der 27 s gedauert hat
+
+#242, die **neunzehnte** Notiz:
+
+```
+H10b   978 zu 30
+#363  1084 zu 28
+H12a  1109 zu 26
+H12b  1035 zu 23
+H12c  1132 zu 27
+```
+
+**Vorlaufzeit 1109 s** — Merge bis Deploy-Start. Die achte Messung:
+
+```
+H9c   2026-09-07  1099 s
+H10b  2026-09-09   952 s
+#363  2026-09-09  1062 s
+H12a  2026-09-10  1096 s
+H12b  2026-09-11  1017 s
+H12c  2026-09-19  1109 s
+```
+
+Der Deckel von 1800 hält. **Und die Vorlaufzeit ist fast vollständig ein Job:**
+`e2e` lief 19:47:44 → 20:06:04, also 1100 der 1109 Sekunden. Was #242 über
+`durationSec` sagt, gilt hier eine Ebene höher — die Zahl, die wie „Deploy"
+aussieht, ist die Testsuite.
+
+### Was diese Abnahme nicht beweist
+
+**Dass die Seite rechtlich vollständig ist.** Sie nennt keine Anschrift, begründet
+das und sagt eine auf Anfrage zu — ob das trägt, hängt daran, ob diese Seite als
+geschäftsmäßig gilt, und das ist M4 und ein Mensch mit Zulassung. Das Blatt sagt
+es selbst: *„Kein Rechtsrat"*.
+
+### Gefunden — aus der H12c-Abnahme
+
+- **#376**, oben. Der Readout nennt den falschen Pfad, wenn man über den Verweis
+  ankommt — auf der Seite, die von sich behauptet, nichts zu erfinden.
+- **Eine Prüfung, die nur nach `goto` liest, prüft nur den direkten Weg.** Die
+  Lehre ist allgemeiner als der Fehler: seit H12c gibt es Wege *zwischen* zwei
+  Seiten dieser Site, und keine Zusicherung nimmt einen davon.
+- **Der Zeuge funktioniert, wenn man ihn vorher startet** — und das ist keine
+  Erkenntnis über das Werkzeug, sondern über den Ablauf. `--until-restart` war
+  seit H9b da; gefehlt hat die Reihenfolge, nicht die Funktion.
+- **Die p95-Reihe im Protokoll misst nicht die Seite.** Drei Fenster
+  hintereinander, drei Größenordnungen: 813 (Tausch), 183 (mein Testlauf), 23
+  (Stille). Die Zahlen der letzten Abnahmen gehören alle in die mittlere
+  Kategorie. **Eine Reihe, deren Zeilen verschiedene Dinge messen, ist keine
+  Reihe** — entweder wird künftig dazugeschrieben, welcher Verkehr im Fenster
+  lag, oder die Zahl wird erst gelesen, wenn keiner mehr drin ist.
+
+### Verschoben aus der H12c-Abnahme
+
+- **#376** — der Pfad im Readout. Fix braucht einen Test, der über den Link
+  ankommt, sonst bleibt dieselbe Lücke offen.
+- **Die DE/FR-Rechtsfassung**, unverändert offen. K-03, vor M6.
+- **Die juristische Vollständigkeit** der Rechtsseiten — M4.
+- **Die „vier Adresskopien" aus H8a**, unverändert; H12c hat keine fünfte
+  angelegt, das Impressum liest `AUTHOR` aus `lib/site.ts`.
+
+---
+
 ## Wo wir stehen — 12.09.2026, H12c gebaut: `/imprint` steht, und die Klammer kann den Merge nicht mehr überleben
 
 Die zweite Hälfte von H12. `/imprint` ersetzt den `[SOON]`-Stub aus G3, beide
