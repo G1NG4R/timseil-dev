@@ -107,7 +107,7 @@ export const LABELS = {
    *  A DATE AND NOT A BUILD STAMP: `git` knows when this file changed, and that
    *  is not the same question. This is the date somebody last read the page
    *  against the code, and only a person can set it. */
-  revised: "LAST REVISED 2026-09-11",
+  revised: "LAST REVISED 2026-09-19",
 } as const;
 
 /**
@@ -169,7 +169,7 @@ export const CONTENT: Readonly<Record<string, readonly Block[]>> = {
   "07.01": [
     {
       kind: "p",
-      text: "Tim Seil, [ADDRESS], Luxembourg — reachable at contact@timseil.dev. There is no data protection officer: the scale of processing described below does not require one, and appointing one would not change any of it.",
+      text: "Tim Seil, Luxembourg — reachable at contact@timseil.dev, and a postal address on request. There is no data protection officer: the scale of processing described below does not require one, and appointing one would not change any of it.",
     },
   ],
 

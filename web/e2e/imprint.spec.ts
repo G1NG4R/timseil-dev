@@ -59,9 +59,17 @@ test("the markers are the sheet's, in the sheet's order, read off the page", asy
   expect(rendered.map((text) => text.trim())).toEqual(MARKERS);
 });
 
-test("the operator list names a person, an address and a capacity", async ({ page }) => {
+test("the operator list names a person, a mailbox and a capacity", async ({ page }) => {
   const keys = await page.locator(".lg-def dt").allTextContents();
-  expect(keys).toEqual(["NAME", "ADDRESS", "EMAIL", "CAPACITY", "CONTENT"]);
+  expect(keys).toEqual(["NAME", "EMAIL", "CAPACITY", "CONTENT"]);
+
+  // NO ADDRESS ROW, AND THE PAGE ARGUES IT. The site is private, sells nothing
+  // and takes no orders, so there is no business address to give — and the
+  // paragraph under this list says so and promises one in writing to anybody
+  // who needs it. lib/legal/imprint.test.ts holds the sentence; this holds that
+  // a reader of the rendered page meets it directly under the gap.
+  expect(keys).not.toContain("ADDRESS");
+  await expect(page.locator("#s-06-01")).toContainText("no order can be placed");
 
   // THE SHEET DRAWS A PHONE ROW AND THIS PAGE HAS NONE. Its value there is
   // `[OPTIONAL — WEGLASSEN IST ZULÄSSIG]`, which is an instruction to whoever

@@ -96,9 +96,31 @@ void test("the field list names the person, and takes the name from lib/site.ts"
   assert.equal(byKey.size, OPERATOR.length, "a key appears twice in the operator list");
   assert.equal(byKey.get("NAME"), AUTHOR.name);
   assert.equal(byKey.get("EMAIL"), AUTHOR.email);
-  for (const key of ["ADDRESS", "CAPACITY", "CONTENT"]) {
+  for (const key of ["CAPACITY", "CONTENT"]) {
     assert.ok(byKey.has(key), `the operator list has no ${key} row`);
   }
+});
+
+// ── The address that is not there ──────────────────────────────────────────
+
+void test("there is no address row, and the page says why rather than leaving a hole", () => {
+  // THE DECISION AND ITS REASON, HELD TOGETHER. Dropping the row is one edit;
+  // dropping it and saying nothing would leave a reader — or an authority —
+  // with an imprint that is silently short of the thing they came for. So the
+  // pair is asserted: no row, and a sentence in 06.01 that gives the ground it
+  // stands on. Either half alone is the defect.
+  assert.equal(
+    OPERATOR.some((field) => /address/i.test(field.key)),
+    false,
+    "the operator list has an ADDRESS row again — the page's prose says there is none",
+  );
+
+  const prose = CONTENT["06.01"].map((block) => (block.kind === "p" ? block.text : "")).join("\n");
+  assert.match(prose, /nothing is sold here/i);
+  assert.match(prose, /no order can be placed/i);
+  // And the promise that makes the position an honest one rather than a hole:
+  // whoever needs an address in writing can have one.
+  assert.match(prose, /postal address for something that has to be served in writing/i);
 });
 
 void test("there is no phone row", () => {

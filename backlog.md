@@ -71,13 +71,21 @@ ist rot, bis die Angaben da sind, die nur ich habe.**
 
 ### Verschoben aus H12c
 
-- **Drei Angaben, die dieses Repository nicht herleitet**, und ohne die nicht
-  gemerged wird: Postanschrift (06.01 und `[ADDRESS]` auf `/privacy`),
-  OVH-Rechtsträger mit Sitz (`[HOSTING PROVIDER]` und
-  `[OVH LEGAL ENTITY AND LOCATION]`), und die Entscheidung gegen die
-  Telefonzeile. `brackets.test.ts` ist bis dahin rot, und das ist die Sperre.
-  **Als #368 im Tracker** — der Notizblock hält die Aufgabe, das Issue hält den
-  Stand; wer nur eins von beiden liest, findet sie ein zweites Mal.
+- **Drei Angaben, die dieses Repository nicht herleitet** — **am 19.09. erledigt,
+  #368.** Der OVH-Rechtsträger ist eingesetzt (eine Firma, beide Rollen, weil es
+  ein Vertrag ist), die Telefonzeile bleibt weg, und die Anschrift wurde nicht
+  gefüllt, sondern **entschieden**: keine, mit dem Grund als Satz in 06.01 und
+  der Zusage, sie auf Anfrage schriftlich zu geben. ADR 0077 §6.
+  **Der eigentliche Fund steckt im Ablauf:** die Sperre war als Erinnerung
+  gedacht, eine fehlende Angabe nachzutragen — erzwungen hat sie eine Frage, die
+  sonst niemand gestellt hätte, nämlich ob eine Privatanschrift überhaupt auf
+  ein Portfolio gehört. Ohne den roten Test wäre die Klammer mitgelaufen, genau
+  wie in H12b. **Ein Test, der eine offene Frage sichtbar hält, ist mehr wert
+  als einer, der eine Antwort prüft.**
+- **Ob die Position ohne Anschrift rechtlich trägt, ist offen** — die
+  Impressumspflicht hängt an geschäftsmäßiger Tätigkeit, und ein Portfolio liegt
+  nah an der Grenze. Gehört M4, zusammen mit der übrigen Vollständigkeit. Sobald
+  über die Seite bezahlte Arbeit angebahnt wird, ist es ein neuer ADR.
 - **Die DE/FR-Rechtsfassung**, unverändert offen. K-03, vor M6.
 - **Die juristische Vollständigkeit prüft weiterhin keine Maschine.** M4, und
   das Blatt sagt es selbst: *„Kein Rechtsrat"*.

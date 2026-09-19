@@ -114,7 +114,37 @@ Unter 1080 verschwindet weiterhin **nur** die Sprungliste. Die beiden anderen
 Kästen sind Dokument und nicht Navigation, und das mobile Artboard zeichnet sie
 genau so.
 
-### 6. `/imprint` wird indexierbar, und damit ist die Tabelle vollständig
+### 6. Es steht keine Anschrift auf der Seite, und der Grund steht dort
+
+Die Angabe, an der die Phase am längsten hing, wird nicht gefüllt, sondern
+**entschieden**: `/imprint` nennt Name, Mailadresse und Eigenschaft, und keine
+Postanschrift.
+
+Die Begründung steht als Satz in 06.01, nicht als Lücke: Diese Seite ist privat,
+verkauft nichts, bietet keine Leistung an und nimmt keine Bestellung entgegen —
+es gibt also keine Geschäftsanschrift zu nennen, und eine Wohnanschrift, die für
+eine Seite ohne Handel veröffentlicht wird, offenbart etwas ohne Zweck. Dazu die
+eine Zusage, die die Position ehrlich hält: **wer eine Anschrift schriftlich
+braucht, bekommt sie auf Anfrage.**
+
+`imprint.test.ts` hält beide Hälften — keine `ADDRESS`-Zeile **und** der Satz,
+der sie begründet. Eine der beiden allein ist der Mangel: eine gestrichene Zeile
+ohne Grund ist von einer vergessenen nicht zu unterscheiden, und ein Grund ohne
+die Streichung ist ein Widerspruch.
+
+**Der `NOT APPLICABLE`-Kasten ist ausdrücklich nicht der Ort dafür.** Er zählt
+Pflichtangaben auf, die auf eine nicht-gewerbliche Seite *nicht zutreffen*; eine
+Anschrift trifft zu und ist *nicht veröffentlicht*. Die beiden Sätze zu
+vermischen würde den Kasten, dessen ganzer Wert seine Genauigkeit ist, zu einer
+Sammelstelle für alles machen, was fehlt.
+
+**Ob diese Position rechtlich trägt, prüft hier weiterhin keine Maschine und
+auch kein Modell.** Die Impressumspflicht hängt an geschäftsmäßiger Tätigkeit,
+und ein Portfolio liegt nah an dieser Grenze. Das ist M4, und das Blatt sagt es
+selbst: *„Kein Rechtsrat"*. Was H12c liefert, ist eine Seite, die ihre Position
+benennt statt sie zu verschweigen — das ist prüfbar, das andere nicht.
+
+### 7. `/imprint` wird indexierbar, und damit ist die Tabelle vollständig
 
 `lib/seo/pages.ts` kippt die letzte Zeile. Die beiden Rechtsrouten sind eine
 Phase auseinander freigegeben worden — eine Datenschutzseite, die auf ein
@@ -149,11 +179,19 @@ indexierbar vor `/work`, die Log-Einträge vor `/blog`.
 
 ### Was das kostet
 
-- **Ein roter Test als Zustand der Phase.** `brackets.test.ts` ist rot, solange
-  Anschrift und Rechtsträger fehlen, und damit ist `make check` rot. Wer die
-  Phase in diesem Zustand übernimmt, muss wissen, dass das die Sperre ist und
-  nicht der Fehler. Der Preis der Alternative ist in H12b gemessen: zwei
-  Klammern auf einer öffentlichen Seite.
+- **Ein roter Test als Zustand der Phase.** `brackets.test.ts` war rot, solange
+  Anschrift und Rechtsträger fehlten, und damit war `make check` rot — sieben
+  Tage lang, vom Bau bis zur Entscheidung. Wer eine Phase in diesem Zustand
+  übernimmt, muss wissen, dass das die Sperre ist und nicht der Fehler. Der
+  Preis der Alternative ist in H12b gemessen: zwei Klammern auf einer
+  öffentlichen Seite.
+- **Die Sperre hat ihre Arbeit getan, und sie war nicht die, die erwartet
+  wurde.** Gedacht war sie als Erinnerung, eine fehlende Angabe nachzutragen.
+  Was sie tatsächlich erzwungen hat, ist eine **Entscheidung**: die Frage „muss
+  meine Privatanschrift auf ein Portfolio" wäre ohne den roten Test nie gestellt
+  worden, und die Klammer wäre mit dem Merge live gegangen — genau wie in H12b.
+  Ein Test, der eine offene Frage sichtbar hält, ist mehr wert als einer, der
+  eine Antwort prüft.
 - **Eine dritte Form für gelabelte Werte.** Die Seite hat jetzt `Readout`
   (gemessen), `Fields` (getippt) und die Tabellen. Eine Komponente, die
   gemessene und getippte Werte kann, würde von beidem nichts beweisen — aber es
@@ -177,6 +215,18 @@ indexierbar vor `/work`, die Log-Einträge vor `/blog`.
 Merge leer ist.** Das wäre zwei Regeln, von denen eine die andere aufhebt, und
 die Frage „welche gilt heute" wäre wieder eine, die ein Mensch beantwortet.
 Genau diese Frage hat H12b falsch beantwortet.
+
+**Die Wohnanschrift veröffentlichen, weil es der sichere Weg ist.** Der sichere
+Weg wäre er nur juristisch, und auch das nur, wenn die Pflicht überhaupt greift.
+Eine Wohnanschrift ist dauerhaft indexiert, sobald sie einmal steht, und der
+Zweck, für den sie dort stünde, existiert bei einer Seite ohne Handel nicht.
+Wenn über diese Seite je bezahlte Arbeit angebahnt wird, ändert sich die Lage
+und mit ihr diese Entscheidung — dann ist es ein neuer ADR und kein Nachtrag.
+
+**Eine Anschrift eines Impressum-Dienstleisters.** Der Kern der Pflicht ist die
+Zustellbarkeit; eine Adresse, die nur als Adresse existiert, erfüllt die Form
+und nicht den Zweck, und ihre Haltbarkeit vor Gericht ist umstritten. Die
+Anfrage-Zusage in 06.01 leistet dasselbe ehrlicher und kostet nichts.
 
 **Die Klammern durch Beispieldaten ersetzen, bis die echten kommen.** Eine
 plausible Adresse auf einer Rechtsseite ist schlechter als eine sichtbare

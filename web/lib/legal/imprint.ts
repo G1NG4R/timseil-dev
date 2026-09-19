@@ -22,9 +22,17 @@
 //      field may be left out is not a field. The row is gone; the mail address
 //      and the postal address are both here, which is what the section is for.
 //   4. `[HOSTING PROVIDER, LEGAL NAME AND ADDRESS]` and `[REGISTRAR]` — one
-//      company, named once. CLAUDE.md says host, DNS and mail are OVH; the
-//      legal entity and its seat are a fact only the operator has, so they stay
-//      a bracket until they are filled.
+//      company, named once: OVH GmbH in Cologne hosts the server, registers the
+//      domain and carries the mail, because it is one contract.
+//
+// AND THE OPERATOR'S OWN ADDRESS IS NOT HERE, WHICH IS A DECISION AND NOT A
+// GAP. The sheet draws `[STRASSE UND HAUSNUMMER]`; this site is private, sells
+// nothing and offers no service, so no business address exists to give, and
+// publishing a home address for a site that does not trade discloses something
+// for no purpose. 06.01 says that in a sentence rather than leaving a hole, and
+// it makes the one promise that keeps the position honest: a postal address on
+// request. The legal completeness of that position is M4's question and not a
+// machine's — the sheet's own words, "Kein Rechtsrat".
 //   5. `LAST REVISED [DATE]` in the footer strip — it is on the PAGE. The
 //      Chrome sheet is the binding version of the footer and draws no such
 //      line, and a revision date is a statement about this text rather than
@@ -60,7 +68,7 @@ export const LABELS = {
    *  AND NOT A BUILD STAMP: `git` knows when this file changed, which is a
    *  different question from when somebody last read the page against the law
    *  and the code. Only a person can set it. */
-  revised: "LAST REVISED 2026-09-12",
+  revised: "LAST REVISED 2026-09-19",
 } as const;
 
 /** One row of the operator list: a mono label and the value beside it. */
@@ -86,13 +94,12 @@ export interface Field {
  */
 export const OPERATOR: readonly Field[] = [
   { key: "NAME", value: AUTHOR.name },
-  { key: "ADDRESS", value: "[ADDRESS], Luxembourg" },
   { key: "EMAIL", value: AUTHOR.email },
   {
     key: "CAPACITY",
     value: "Private individual — no registered business, no commercial activity",
   },
-  { key: "CONTENT", value: `${AUTHOR.name}, address as above` },
+  { key: "CONTENT", value: `${AUTHOR.name}, reachable at the address above` },
 ];
 
 /**
@@ -136,7 +143,14 @@ export const CONTENT: Readonly<Record<string, readonly Block[]>> = {
   "06.01": [
     {
       kind: "p",
-      text: "The postal address is there for anything that has to reach a person rather than a mailbox — a formal notice, a request that needs a paper trail. For everything else the mail address is faster, and it is the same person at the other end.",
+      // THE ABSENCE IS ARGUED WHERE A READER LOOKS FOR THE THING THAT IS
+      // MISSING, which is STATE.05's rule — a dead state without a reason is a
+      // bug — applied to prose rather than to a component. The `NOT APPLICABLE`
+      // box below is the wrong home for it: that box lists compulsory entries
+      // which do not apply to a site with no commercial activity, and a postal
+      // address is not inapplicable. It is unpublished, on purpose, and the
+      // purpose is a sentence.
+      text: "This site is private. Nothing is sold here, no service is offered and no order can be placed, so there is no business address to give — and a home address published for a site that does not trade is a disclosure without a purpose. Mail reaches me and is answered. If you need a postal address for something that has to be served in writing, ask for it at the address above and you will get one.",
     },
   ],
 
