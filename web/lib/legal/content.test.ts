@@ -5,51 +5,26 @@
 // A LEGAL PAGE IS THE ONE PLACE ON THIS SITE WHERE A STALE SENTENCE IS NOT A
 // COSMETIC DEFECT. Everywhere else a wrong number is embarrassing; here it is a
 // statement about what happens to somebody else's data. So the checks below are
-// deliberately blunt: an exact set of permitted brackets, a list of banned
-// phrases, and a sweep that refuses any duration it cannot trace to a config
-// file or a constant.
+// deliberately blunt: a list of banned phrases, and a sweep that refuses any
+// duration it cannot trace to a config file or a constant. The third check used
+// to live here too — an exact set of permitted brackets — and it moved to
+// brackets.test.ts in H12c, where it applies to both legal pages and demands
+// that the set be empty.
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { CONTENT, HERO, PANEL, PLACEHOLDERS, SHORT_VERSION, type Block } from "./content.ts";
+import { CONTENT, PANEL, SHORT_VERSION } from "./content.ts";
 import { FIELD_COUNT } from "./readout.ts";
 import { RATE_LIMIT_MINUTES, RETENTION_DAYS } from "./retention.ts";
-import { SECTIONS } from "./sections.ts";
+import { PRIVACY_SECTIONS } from "./sections.ts";
+import { privacyText } from "./text.ts";
 
 const REPO = new URL("../../../", import.meta.url);
 
-function blockText(block: Block): string[] {
-  switch (block.kind) {
-    case "p":
-    case "note":
-      return [block.text];
-    case "numbered":
-      return [...block.items];
-    case "table":
-      return [...block.head, ...block.rows.flat()];
-  }
-}
-
-/** Every string a reader can see on this page, in one array. */
-function allText(): string[] {
-  return [
-    HERO.eyebrow,
-    HERO.title,
-    HERO.lede,
-    HERO.sub,
-    PANEL.title,
-    PANEL.badge,
-    PANEL.footer,
-    PANEL.pending,
-    ...SHORT_VERSION.map((line) => line.text),
-    ...Object.values(CONTENT).flatMap((blocks) => blocks.flatMap(blockText)),
-  ];
-}
-
 void test("every section has prose, and no prose belongs to a section that is gone", () => {
-  const ordered = SECTIONS.map((section) => section.id);
+  const ordered = PRIVACY_SECTIONS.map((section) => section.id);
   assert.deepEqual(Object.keys(CONTENT).sort(), [...ordered].sort());
   for (const id of ordered) {
     assert.ok(CONTENT[id].length > 0, `${id} has a heading and nothing under it`);
@@ -57,32 +32,13 @@ void test("every section has prose, and no prose belongs to a section that is go
 });
 
 void test("no string on the page is empty", () => {
-  for (const text of allText()) assert.notEqual(text.trim().length, 0);
+  for (const text of privacyText()) assert.notEqual(text.trim().length, 0);
 });
 
-// ── The brackets ───────────────────────────────────────────────────────────
-//
-// lib/about/content.test.ts' device. The sheet leaves seven brackets in this
-// page's prose; five of them were answerable from the repository and are
-// answered. The two that remain are facts only the operator has.
-
-void test("the only brackets left are the ones on the list", () => {
-  const found = new Set<string>();
-  for (const text of allText()) {
-    for (const match of text.matchAll(/\[[^\]]*\]/g)) found.add(match[0]);
-  }
-  assert.deepEqual([...found].sort(), [...PLACEHOLDERS].sort());
-});
-
-void test("each listed placeholder is actually still in the text", () => {
-  // A list that outlives its brackets is a list nobody trims. If one is filled
-  // in, this fails until it is struck off — which is the only way the set ever
-  // shrinks on purpose.
-  const joined = allText().join("\n");
-  for (const placeholder of PLACEHOLDERS) {
-    assert.ok(joined.includes(placeholder), `${placeholder} is no longer used — remove it from PLACEHOLDERS`);
-  }
-});
+// THE BRACKETS ARE NOT HELD HERE ANY MORE. They were, as an exact permitted
+// set — and that set shipped with two brackets still on it, onto a public and
+// indexable page. brackets.test.ts holds the rule that replaced it, over both
+// legal pages at once: no legal page carries a bracket. ADR 0077.
 
 // ── The sentences the code outgrew ─────────────────────────────────────────
 
@@ -99,7 +55,7 @@ void test("none of the six sentences the sheet drew survives", () => {
     [/\bthree local entries\b/i, "one exists"],
     [/no third party in the request path/i, "scoped in 07.05 to what this application does"],
   ];
-  const joined = allText().join("\n");
+  const joined = privacyText().join("\n");
   for (const [pattern, why] of banned) {
     assert.doesNotMatch(joined, pattern, why);
   }
@@ -131,7 +87,7 @@ void test("every duration in the prose is one a file in this repository enforces
   ]);
 
   const seen = new Set<string>();
-  for (const text of allText()) {
+  for (const text of privacyText()) {
     for (const match of text.matchAll(/\b(\d+)\s+(minute|hour|day|week|month|year)s?\b/g)) {
       const phrase = `${match[1]} ${match[2]}s`;
       assert.ok(
@@ -149,7 +105,7 @@ void test("every duration in the prose is one a file in this repository enforces
 });
 
 void test("the retention promise is on the page in digits", () => {
-  const joined = allText().join("\n");
+  const joined = privacyText().join("\n");
   assert.match(joined, new RegExp(`\\b${String(RETENTION_DAYS)} days\\b`));
   // Spelled out, a number is invisible to the sweep above.
   assert.doesNotMatch(joined, /\b(fourteen|thirty|ten)\b/i);
@@ -191,7 +147,7 @@ void test("the form table names the database, because that is what happens", () 
 // ── Tone ───────────────────────────────────────────────────────────────────
 
 void test("no section shouts [SOON] at a reader of a legal document", () => {
-  assert.doesNotMatch(allText().join("\n"), /\[SOON\]|— NO DATA/);
+  assert.doesNotMatch(privacyText().join("\n"), /\[SOON\]|— NO DATA/);
 });
 
 void test("the short version is eight lines and each one is answered below", () => {

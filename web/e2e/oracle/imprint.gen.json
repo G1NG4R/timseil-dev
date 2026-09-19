@@ -36,58 +36,39 @@
   },
   "entries": [
     {
-      "id": "priv-hero-cols",
+      "id": "imp-body-cols",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 158,
+      "artboard": "1a",
+      "line": 68,
       "width": 1440,
-      "says": "grid-template-columns: 1fr 470px",
-      "reading": "the hero is one flexible column and the readout panel beside it",
+      "says": "grid-template-columns: 1fr 380px",
+      "reading": "the prose and the column beside it — `.cs-prob`'s pair, the same one `/privacy` takes, so the two legal pages move at one switch",
       "measure": {
         "kind": "box-width",
-        "selector": ".lg-hero > .lg-term"
+        "selector": ".lg-aside"
       },
-      "expect": 480,
-      "diverges": {
-        "class": "one-hero-geometry",
-        "sheet": "470px"
-      }
+      "expect": 380
     },
     {
-      "id": "priv-hero-gap",
+      "id": "imp-body-gap",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 158,
+      "artboard": "1a",
+      "line": 68,
       "width": 1440,
-      "says": "gap: 72px",
-      "reading": "with 72px of air between the headline and the panel",
+      "says": "gap: 80px",
+      "reading": "and 80px between them, which is that pair again",
       "measure": {
         "kind": "gap-x",
-        "from": ".lg-hero-text",
-        "to": ".lg-hero > .lg-term"
+        "from": ".lg-prose",
+        "to": ".lg-aside"
       },
-      "expect": 72
+      "expect": 80
     },
     {
-      "id": "priv-hero-align",
+      "id": "imp-h1",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 158,
-      "width": 1440,
-      "says": "align-items: start",
-      "reading": "and the two aligned at the top rather than centred — which the panel needs, because it grows by eight rows a moment after the page paints and a centred row would slide the headline down as they arrive",
-      "measure": {
-        "kind": "computed",
-        "selector": ".lg-hero",
-        "prop": "align-items"
-      },
-      "expect": "start"
-    },
-    {
-      "id": "priv-h1",
-      "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 161,
+      "artboard": "1a",
+      "line": 64,
       "width": 1440,
       "says": "font: 500 52px/1.06 'Chakra Petch',sans-serif",
       "reading": "the headline in the display face",
@@ -103,94 +84,61 @@
       }
     },
     {
-      "id": "priv-readout-key",
+      "id": "imp-def-key",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 177,
+      "artboard": "1a",
+      "line": 72,
       "width": 1440,
-      "says": "grid-template-columns: 112px 1fr",
-      "reading": "each readout line is a 112px label and whatever the browser answered",
+      "says": "grid-template-columns: 150px 1fr",
+      "reading": "a row of 06.01 is a 150px label and the value beside it — wider than the readout's 112 on the other page, because these labels are words rather than field names",
       "measure": {
         "kind": "box-width",
-        "selector": ".lg-field dt"
+        "selector": ".lg-def dt"
       },
-      "expect": 112
+      "expect": 150
     },
     {
-      "id": "priv-readout-type",
+      "id": "imp-def-gap",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 177,
+      "artboard": "1a",
+      "line": 72,
       "width": 1440,
-      "says": "font: 400 11.5px/1.6 'JetBrains Mono',monospace",
-      "reading": "set in mono, because every one of these is a value rather than a sentence",
+      "says": "gap: 14px 20px",
+      "reading": "with 20px between the label and its value, and 14 between the rows",
       "measure": {
         "kind": "computed",
-        "selector": ".lg-field",
-        "prop": "font-size"
-      },
-      "expect": "11px",
-      "diverges": {
-        "class": "half-pixel",
-        "sheet": "11.5px"
-      }
-    },
-    {
-      "id": "priv-term-bar-gap",
-      "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 166,
-      "width": 1440,
-      "says": "gap: 7px",
-      "reading": "the three dots of the terminal bar, spaced the way a title bar spaces them",
-      "measure": {
-        "kind": "computed",
-        "selector": ".lg-term-dots",
+        "selector": ".lg-def-row",
         "prop": "column-gap"
       },
-      "expect": "8px",
+      "expect": "20px"
+    },
+    {
+      "id": "imp-def-type",
+      "sheet": "docs/design/Legal - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 72,
+      "width": 1440,
+      "says": "font: 400 12.5px/1.6 'JetBrains Mono',monospace",
+      "reading": "set in mono, because a name, an address and a capacity are values rather than sentences",
+      "measure": {
+        "kind": "computed",
+        "selector": ".lg-def-row",
+        "prop": "font-size"
+      },
+      "expect": "12px",
       "diverges": {
-        "class": "spacing-scale",
-        "sheet": "7px"
+        "class": "half-pixel",
+        "sheet": "12.5px"
       }
     },
     {
-      "id": "priv-body-cols",
+      "id": "imp-rail-item",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 193,
-      "width": 1440,
-      "says": "grid-template-columns: 1fr 380px",
-      "reading": "the prose and the jump rail beside it — `.cs-prob` pair for pair, so the two move at one switch",
-      "measure": {
-        "kind": "box-width",
-        "selector": ".lg-rail"
-      },
-      "expect": 380
-    },
-    {
-      "id": "priv-body-gap",
-      "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 193,
-      "width": 1440,
-      "says": "gap: 80px",
-      "reading": "and 80px between them, which is the same pair again",
-      "measure": {
-        "kind": "gap-x",
-        "from": ".lg-prose",
-        "to": ".lg-rail"
-      },
-      "expect": 80
-    },
-    {
-      "id": "priv-rail-item",
-      "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 256,
+      "artboard": "1a",
+      "line": 99,
       "width": 1440,
       "says": "grid-template-columns: 44px 1fr",
-      "reading": "a rail entry is its number and its short name, and the number column is why the rail carries short names at all",
+      "reading": "a rail entry is its number and its short name, the same 44px column `/privacy` draws",
       "measure": {
         "kind": "box-width",
         "selector": ".lg-rail-id"
@@ -198,48 +146,125 @@
       "expect": 44
     },
     {
-      "id": "priv-numbered",
+      "id": "imp-na-head",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
-      "artboard": "1b",
-      "line": 227,
+      "artboard": "1a",
+      "line": 106,
       "width": 1440,
-      "says": "grid-template-columns: 22px 1fr",
-      "reading": "the four things that never leave this server are a numbered list, numeral beside the line rather than above it",
+      "says": "font: 600 9.5px 'JetBrains Mono',monospace",
+      "reading": "the label over the list of what does not apply, in the smallest mono step",
       "measure": {
-        "kind": "track-count",
-        "selector": ".lg-numbered li"
+        "kind": "computed",
+        "selector": ".lg-na-head",
+        "prop": "font-size"
       },
-      "expect": 2
+      "expect": "9px",
+      "diverges": {
+        "class": "half-pixel",
+        "sheet": "9.5px"
+      }
     },
     {
-      "id": "priv-h1-390",
+      "id": "imp-na-box",
+      "sheet": "docs/design/Legal - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 105,
+      "width": 1440,
+      "says": "padding: 20px 22px",
+      "reading": "and the list sits in a bordered box rather than running on under the rail — the absence is a thing on the page, not a footnote to it",
+      "measure": {
+        "kind": "computed",
+        "selector": ".lg-na",
+        "prop": "padding-left"
+      },
+      "expect": "20px",
+      "diverges": {
+        "class": "spacing-scale",
+        "sheet": "22px"
+      }
+    },
+    {
+      "id": "imp-seealso-link",
+      "sheet": "docs/design/Legal - timseil.dev.dc.html",
+      "artboard": "1a",
+      "line": 117,
+      "width": 1440,
+      "says": "font: 500 12px 'JetBrains Mono',monospace",
+      "reading": "the way to the other legal page, in the accent and at a step the scale actually has",
+      "measure": {
+        "kind": "computed",
+        "selector": ".lg-seealso-link",
+        "prop": "font-size"
+      },
+      "expect": "12px"
+    },
+    {
+      "id": "imp-h1-390",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
       "artboard": "1c",
-      "line": 313,
+      "line": 381,
       "width": 390,
-      "says": "font: 500 34px/1.08 'Chakra Petch',sans-serif",
-      "reading": "on a phone the display step falls to 34 — K-08, and this page takes it from layout.css rather than declaring it",
+      "says": "font: 500 28px/1.1 'Chakra Petch',sans-serif",
+      "reading": "on a phone the display step falls — to 34 here, because this is the heading of a page and the sheet's 28 is the heading of a section inside another one",
       "measure": {
         "kind": "computed",
         "selector": "main h1",
         "prop": "font-size"
       },
-      "expect": "34px"
+      "expect": "34px",
+      "diverges": {
+        "class": "imprint-drawn-as-a-section",
+        "sheet": "28px"
+      }
     },
     {
-      "id": "priv-rail-390",
+      "id": "imp-rail-390",
       "sheet": "docs/design/Legal - timseil.dev.dc.html",
       "artboard": "1c",
-      "line": 301,
+      "line": 379,
       "width": 390,
-      "says": "width: 390px",
-      "reading": "and the mobile artboard draws no jump rail at all: a table of contents between the last section and the footer is where one is least useful and most in the way",
+      "says": "border-top: 1px solid rgba(139,152,166,.16)",
+      "reading": "the mobile frame opens the imprint with a rule under the privacy text and gives it no jump rail — which is what this page does below 1080 as well, for its own reason: a table of contents between the last section and the footer is where one is least useful",
       "measure": {
         "kind": "computed",
         "selector": ".lg-rail",
         "prop": "display"
       },
       "expect": "none"
+    },
+    {
+      "id": "imp-def-390",
+      "sheet": "docs/design/Legal - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 385,
+      "width": 390,
+      "says": "display: block",
+      "reading": "and the label goes above its value rather than beside it: 150px in front of a 346px column leaves under 200 for a postal address",
+      "measure": {
+        "kind": "computed",
+        "selector": ".lg-def-row",
+        "prop": "display"
+      },
+      "expect": "block"
+    },
+    {
+      "id": "imp-na-390",
+      "sheet": "docs/design/Legal - timseil.dev.dc.html",
+      "artboard": "1c",
+      "line": 393,
+      "width": 390,
+      "says": "padding: 16px 18px",
+      "reading": "the box keeps its hairline on a phone, and its padding — the sheet tightens it by four pixels and the scale has one step here",
+      "measure": {
+        "kind": "computed",
+        "selector": ".lg-na",
+        "prop": "padding-left"
+      },
+      "expect": "20px",
+      "diverges": {
+        "class": "one-card-padding",
+        "sheet": "16px"
+      }
     }
   ]
 }

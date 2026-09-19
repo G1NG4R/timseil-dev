@@ -1,4 +1,11 @@
-/* `/privacy`'s own surfaces. Build plan H12, phase H12b. ADR 0076.
+/* The two legal pages' own surfaces. Build plan H12, phases H12b and H12c.
+   ADR 0076, ADR 0077.
+
+   ONE FILE FOR BOTH PAGES, because they are one sheet and one grammar: the same
+   section heads, the same tables, the same jump rail, the same measure. What
+   differs is what hangs beside the prose — a live readout on `/privacy`, a
+   field list and a list of what does not apply on `/imprint` — and those are
+   five rules, not a second stylesheet.
 
    WHAT IS HERE AND WHAT IS NOT, the split case.css, home.css, work.css and
    about.css all make: this file draws, layout.css switches. Nothing below
@@ -29,7 +36,13 @@
 
 /* ---- Hero ---------------------------------------------------------------- */
 
-.lg-hero { padding: var(--s-56) 0 }
+/* `.lg-hero` is the two-column head `/privacy` has, `.lg-head` is the plain one
+   `/imprint` has — the imprint draws no panel beside its headline, and giving it
+   the grid anyway would leave 480 pixels of declared, empty column. layout.css
+   switches `.lg-hero` and has nothing to say about `.lg-head`, which is the
+   division this file keeps: one row that answers to a switch, one that does not. */
+.lg-hero,
+.lg-head { padding: var(--s-56) 0 }
 
 .lg-eyebrow {
   font: 600 var(--t-mono-11) / var(--lh-mono) var(--mono);
@@ -323,6 +336,41 @@
   color: var(--acc);
 }
 
+/* ---- 06.01, the operator's details --------------------------------------- */
+
+/* A LABELLED VALUE IS NOT A TABLE AND NOT A PARAGRAPH, and this is the third
+   shape on these two pages for the same reason the readout is the second: these
+   five rows are read by somebody looking for one of them, not by somebody
+   reading down the page. The sheet's 150px label column is wider than the
+   readout's 112 because the labels are words rather than field names — CAPACITY
+   against IP — and both are this page's own component sizes, the class
+   about.css's 80px label column belongs to.
+
+   THE ROW IS ITS OWN GRID. The sheet draws one grid of five rows with
+   `gap:14px 20px`; a row per grid puts the same 150 in front of every value and
+   lets layout.css stack the pair at 720 with one declaration instead of
+   rewriting a template. The 14 comes back as the space between rows. */
+.lg-def { margin: 0 0 var(--s-26) }
+
+.lg-def-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: var(--s-20);
+  font: 400 var(--t-mono-12) / var(--lh-mono) var(--mono);
+}
+
+.lg-def-row + .lg-def-row { margin-top: var(--s-14) }
+
+.lg-def dt { color: var(--dim); letter-spacing: var(--ls-label) }
+
+.lg-def dd {
+  margin: 0;
+  color: var(--ink-2);
+  /* A postal address and a capacity are longer than the column at the widths
+     where the pair is still side by side. */
+  word-break: break-word;
+}
+
 /* ---- Tables -------------------------------------------------------------- */
 
 .lg-table-wrap { margin: 0 0 var(--s-26); overflow-x: auto }
@@ -376,9 +424,30 @@
   color: var(--dim);
 }
 
-/* ---- The jump rail ------------------------------------------------------- */
+/* ---- The column beside the prose ----------------------------------------- */
 
-.lg-rail { position: sticky; top: var(--s-96) }
+/* THE STICKINESS MOVED FROM THE RAIL TO THE COLUMN IN H12c, and it had to.
+   Until this phase the rail WAS the column — one grid child, sticky, with the
+   full row as its containing block. It now has neighbours: the `SEE ALSO` card
+   on both pages and the `NOT APPLICABLE` list on the imprint. Left on the rail,
+   `position: sticky` would have been measured against a wrapper the height of
+   its own three boxes, which is to say it would have stopped sticking
+   altogether — the quiet kind of regression that no test on this site asks
+   about and every reader on a long page notices.
+
+   AND ONLY THE RAIL GOES AWAY BELOW 1080. layout.css hides `.lg-rail` there and
+   leaves this column standing, because the other two boxes are part of the
+   document rather than navigation: the mobile artboard drops the table of
+   contents and keeps the list of what does not apply. */
+.lg-aside {
+  position: sticky;
+  top: var(--s-96);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-20);
+}
+
+/* ---- The jump rail ------------------------------------------------------- */
 
 .lg-rail-head {
   font: 600 var(--t-mono-10) / var(--lh-mono) var(--mono);
@@ -406,11 +475,88 @@
 .lg-rail a:hover { color: var(--ink) }
 .lg-rail-id { color: var(--dim) }
 
+/* THE RULE OVER THIS LINE STOPPED HALFWAY ACROSS THE COLUMN, on both legal
+   pages, from H12b until it was seen in a full-page screenshot at 1440. It is
+   the same trap `.lg-term-foot` records a few rules up: globals.css gives every
+   `p` the 68ch reading measure, which at mono 10 is about 340px, and the border
+   is as wide as the box. A closing rule under a document is not prose — it is
+   the line that says the document ends here, and a line that ends before the
+   text above it does says nothing.
+
+   FOUND BY LOOKING, NOT BY A TEST, which is the second time on this page: the
+   first was the terminal footer. Both are the shape no assertion on this site
+   asks about, because nobody writes `expect(border).toBeAsWideAsTheColumn()`. */
 .lg-revised {
   font: 400 var(--t-mono-10) / var(--lh-mono) var(--mono);
   letter-spacing: var(--ls-label);
   color: var(--dim);
+  max-width: none;
   margin: var(--s-56) 0 0;
   padding-top: var(--s-16);
   border-top: 1px solid var(--line-soft);
 }
+
+/* ---- The two cards under the rail ---------------------------------------- */
+
+/* ONE BOX RULE FOR BOTH, because the sheet draws one box twice: a hairline, the
+   same padding, a mono label in --dim over the content. Two classes sharing a
+   declaration beats two declarations that drift by two pixels. The sheet's
+   22px of side padding rounds to the scale's 20 the way every other spacing on
+   these pages does. */
+.lg-na,
+.lg-seealso {
+  border: 1px solid var(--line);
+  padding: var(--s-20);
+}
+
+.lg-na-head,
+.lg-seealso-head {
+  font: 600 var(--t-mono-9) / var(--lh-mono) var(--mono);
+  letter-spacing: var(--ls-head);
+  color: var(--dim);
+  margin: 0 0 var(--s-14);
+}
+
+.lg-na ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-10);
+  font: 400 var(--t-mono-11) / var(--lh-mono) var(--mono);
+  color: var(--steel);
+}
+
+/* The sheet's bullet is a mid dot in the dim step, drawn rather than listed —
+   `list-style` would put the browser's own glyph in a column this box has no
+   room for, and `content` here says exactly what the drawing says. */
+.lg-na li::before { content: "· "; color: var(--dim) }
+
+.lg-na-note,
+.lg-seealso-blurb {
+  /* globals.css gives every `p` the 68ch reading measure. In a 380px column
+     that is not a measure, it is a promise the box cannot keep — and the
+     `.lg-term-foot` rule above records the same correction for the same reason. */
+  max-width: none;
+  font: 400 var(--t-body-13) / var(--lh-body) var(--body);
+  color: var(--dim);
+  margin: var(--s-14) 0 0;
+}
+
+/* The sheet sets both notes at 11px Geist and the body scale starts at 13 —
+   there is no eleven to round down to, and a fourteenth type step for two
+   captions is the cost tokens.css warns about in its own words. Recorded in the
+   oracle as `heading-scale`, which is where every size the scale does not have
+   is argued. */
+.lg-seealso-link {
+  display: inline-block;
+  font: 500 var(--t-mono-12) / var(--lh-mono) var(--mono);
+  color: var(--acc);
+  text-decoration: none;
+  transition: color var(--d-color) var(--e-snap);
+}
+
+.lg-seealso-link:hover { color: var(--acc-hi) }
+
+.lg-seealso-blurb { color: var(--steel) }

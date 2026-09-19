@@ -363,6 +363,24 @@ const DIVERGENCE = {
     'in tokens.css, so a two here would be a value with no token behind it — ' +
     'and the operation grid, which is the same grammar at another scale, is ' +
     'square for that reason already.',
+  // ── H12c ────────────────────────────────────────────────────────────────────
+  'imprint-drawn-as-a-section':
+    'The mobile artboard does not draw `/imprint` as a page. 1c is one 390 ' +
+    'frame captioned "Privacy mit Readout, Imprint darunter": the imprint ' +
+    'follows the privacy text behind a rule, its heading is an `<h2>` at 28px, ' +
+    'and it has no jump rail because a section of a page does not get one. The ' +
+    'build has two routes — the sheet itself draws two desktop artboards, 1a ' +
+    'and 1b, and the footer links them separately — so the heading is the ' +
+    '`<h1>` of a document and takes the site\'s mobile display step, 34. ' +
+    'Recorded here rather than argued per entry, because three of this map\'s ' +
+    '390 readings follow from the same fact.',
+  'one-card-padding':
+    'The sheet tightens the two rail cards from `20px 22px` at 1440 to ' +
+    '`16px 18px` at 390. `--s-20` is one step and the difference is four ' +
+    'pixels inside a box 346px wide; a second padding value would be a second ' +
+    'thing to keep in step, and layout.css already carries the switch list ' +
+    'this page answers to. "Kein Bauteil bekommt seinen eigenen Wert" applies ' +
+    'to a value a reader cannot see just as much as to one they can.',
 };
 
 /**
@@ -3250,6 +3268,142 @@ const PRIVACY_MAP = [
   },
 ];
 
+/**
+ * `/imprint` — the Legal sheet, artboard 1a at 1440 and the lower half of 1c at
+ * 390.
+ *
+ * THE SECOND MAP AGAINST ONE SHEET, and H12b's own file said this one was
+ * coming: "Only 1b has a page to measure until H12c, so the imprint's entries
+ * arrive with the page rather than sitting here failing against a `[SOON]`
+ * stub."
+ *
+ * THE 390 READINGS COME FROM A FRAME THAT IS NOT THIS PAGE. 1c stacks both
+ * legal documents into one phone screen — privacy first, imprint behind a rule
+ * — so its heading is an `<h2>`, its type steps are a section's and it has no
+ * rail. `imprint-drawn-as-a-section` argues that once; the entries below cite
+ * it rather than repeating it.
+ *
+ * WHAT THIS MAP DOES NOT MEASURE: the words. Whether the third-party claim is
+ * scoped, whether a duration appears that nothing enforces, whether a bracket
+ * survived — those are lib/legal/imprint.test.ts and brackets.test.ts, and they
+ * are the reason this page exists. This map holds the drawing.
+ */
+const IMPRINT_MAP = [
+  // ── 1440 · artboard 1a ────────────────────────────────────────────────────
+  {
+    id: 'imp-body-cols',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 68,
+    decl: 'grid-template-columns', says: '1fr 380px',
+    reading: 'the prose and the column beside it — `.cs-prob`\'s pair, the same one `/privacy` takes, so the two legal pages move at one switch',
+    measure: { kind: 'box-width', selector: '.lg-aside' }, expect: 380,
+  },
+  {
+    id: 'imp-body-gap',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 68,
+    decl: 'gap', says: '80px',
+    reading: 'and 80px between them, which is that pair again',
+    measure: { kind: 'gap-x', from: '.lg-prose', to: '.lg-aside' }, expect: 80,
+  },
+  {
+    id: 'imp-h1',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 64,
+    decl: 'font', says: "500 52px/1.06 'Chakra Petch',sans-serif",
+    reading: 'the headline in the display face',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '62px',
+    diverges: { class: 'one-display-step', sheet: '52px' },
+  },
+  {
+    id: 'imp-def-key',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 72,
+    decl: 'grid-template-columns', says: '150px 1fr',
+    reading: 'a row of 06.01 is a 150px label and the value beside it — wider than the readout\'s 112 on the other page, because these labels are words rather than field names',
+    measure: { kind: 'box-width', selector: '.lg-def dt' }, expect: 150,
+  },
+  {
+    id: 'imp-def-gap',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 72,
+    decl: 'gap', says: '14px 20px',
+    reading: 'with 20px between the label and its value, and 14 between the rows',
+    measure: { kind: 'computed', selector: '.lg-def-row', prop: 'column-gap' }, expect: '20px',
+  },
+  {
+    id: 'imp-def-type',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 72,
+    decl: 'font', says: "400 12.5px/1.6 'JetBrains Mono',monospace",
+    reading: 'set in mono, because a name, an address and a capacity are values rather than sentences',
+    measure: { kind: 'computed', selector: '.lg-def-row', prop: 'font-size' }, expect: '12px',
+    diverges: { class: 'half-pixel', sheet: '12.5px' },
+  },
+  {
+    id: 'imp-rail-item',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 99,
+    decl: 'grid-template-columns', says: '44px 1fr',
+    reading: 'a rail entry is its number and its short name, the same 44px column `/privacy` draws',
+    measure: { kind: 'box-width', selector: '.lg-rail-id' }, expect: 44,
+  },
+  {
+    id: 'imp-na-head',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 106,
+    decl: 'font', says: "600 9.5px 'JetBrains Mono',monospace",
+    reading: 'the label over the list of what does not apply, in the smallest mono step',
+    measure: { kind: 'computed', selector: '.lg-na-head', prop: 'font-size' }, expect: '9px',
+    diverges: { class: 'half-pixel', sheet: '9.5px' },
+  },
+  {
+    id: 'imp-na-box',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 105,
+    decl: 'padding', says: '20px 22px',
+    reading: 'and the list sits in a bordered box rather than running on under the rail — the absence is a thing on the page, not a footnote to it',
+    measure: { kind: 'computed', selector: '.lg-na', prop: 'padding-left' }, expect: '20px',
+    diverges: { class: 'spacing-scale', sheet: '22px' },
+  },
+  {
+    id: 'imp-seealso-link',
+    sheet: 'legal', artboard: '1a', width: 1440, line: 117,
+    decl: 'font', says: "500 12px 'JetBrains Mono',monospace",
+    reading: 'the way to the other legal page, in the accent and at a step the scale actually has',
+    measure: { kind: 'computed', selector: '.lg-seealso-link', prop: 'font-size' }, expect: '12px',
+  },
+
+  // ── 390 · artboard 1c ─────────────────────────────────────────────────────
+  {
+    id: 'imp-h1-390',
+    sheet: 'legal', artboard: '1c', width: 390, line: 381,
+    decl: 'font', says: "500 28px/1.1 'Chakra Petch',sans-serif",
+    reading: 'on a phone the display step falls — to 34 here, because this is the heading of a page and the sheet\'s 28 is the heading of a section inside another one',
+    measure: { kind: 'computed', selector: 'main h1', prop: 'font-size' }, expect: '34px',
+    diverges: { class: 'imprint-drawn-as-a-section', sheet: '28px' },
+  },
+  {
+    id: 'imp-rail-390',
+    sheet: 'legal', artboard: '1c', width: 390, line: 379,
+    decl: 'border-top', says: '1px solid rgba(139,152,166,.16)',
+    reading: 'the mobile frame opens the imprint with a rule under the privacy text and gives it no jump rail — which is what this page does below 1080 as well, for its own reason: a table of contents between the last section and the footer is where one is least useful',
+    measure: { kind: 'computed', selector: '.lg-rail', prop: 'display' }, expect: 'none',
+  },
+  {
+    id: 'imp-def-390',
+    sheet: 'legal', artboard: '1c', width: 390, line: 385,
+    decl: 'display', says: 'block',
+    reading: 'and the label goes above its value rather than beside it: 150px in front of a 346px column leaves under 200 for a postal address',
+    // `display` AND NOT `track-count`, WHICH IS A FINDING ABOUT THE RIG RATHER
+    // THAN ABOUT THIS PAGE. `getComputedStyle().gridTemplateColumns` does not
+    // resolve to used track sizes on an element that is no longer a grid — it
+    // hands back the specified value, `150px minmax(0px, 1fr)`, which counts as
+    // three tokens and reads as three columns. A track count only means
+    // something where there are tracks.
+    measure: { kind: 'computed', selector: '.lg-def-row', prop: 'display' }, expect: 'block',
+  },
+  {
+    id: 'imp-na-390',
+    sheet: 'legal', artboard: '1c', width: 390, line: 393,
+    decl: 'padding', says: '16px 18px',
+    reading: 'the box keeps its hairline on a phone, and its padding — the sheet tightens it by four pixels and the scale has one step here',
+    measure: { kind: 'computed', selector: '.lg-na', prop: 'padding-left' }, expect: '20px',
+    diverges: { class: 'one-card-padding', sheet: '16px' },
+  },
+];
+
 const TARGETS = [
   { map: CASE_MAP, target: 'web/e2e/oracle/case-study.gen.json' },
   { map: HOME_MAP, target: 'web/e2e/oracle/home.gen.json' },
@@ -3260,6 +3414,7 @@ const TARGETS = [
   { map: CONTACT_MAP, target: 'web/e2e/oracle/contact.gen.json' },
   { map: NOT_FOUND_MAP, target: 'web/e2e/oracle/notfound.gen.json' },
   { map: PRIVACY_MAP, target: 'web/e2e/oracle/privacy.gen.json' },
+  { map: IMPRINT_MAP, target: 'web/e2e/oracle/imprint.gen.json' },
 ];
 
 // ---------------------------------------------------------------- extraction

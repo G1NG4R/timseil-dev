@@ -25,19 +25,20 @@ void test("a path the table does not know throws instead of guessing", () => {
   assert.throws(() => seoFor("en", "/about/"), /no page entry/);
 });
 
-// The six routes that say something today. It was one until H1, two until H6,
+// All seven routes say something as of H12c. It was one until H1, two until H6,
 // three when `/work` itself stopped being a [SOON] stub in that same phase,
-// four since H7 filled `/about`, five since H9b filled `/blog`, and six since
-// H12b filled `/privacy`. The last one stays out until H12c fills `/imprint`.
+// four since H7 filled `/about`, five since H9b filled `/blog`, six since H12b
+// filled `/privacy`, and seven since H12c filled `/imprint`.
 //
 // THE ORDER IS THE TABLE'S AND NOT ALPHABETICAL: `/about` sits where README's
 // route table puts it, after `/blog`, so this list reads the way the file does.
-// THIS TEST IS SUPPOSED TO GO RED WHEN A PHASE DOES ITS WORK, and it has six
+// THIS TEST IS SUPPOSED TO GO RED WHEN A PHASE DOES ITS WORK, and it has seven
 // times now: H1 for the case study, H6 for `/work`, H7 for `/about`, H8 for
-// `/contact`, H9b for `/blog`, H12b for `/privacy`. The list is the point — a
-// page that starts being indexed without anybody writing the line here is a
-// page that started being indexed by accident.
-void test("the homepage, the log, the work index, about, contact, privacy and the case studies are indexable, and nothing else", () => {
+// `/contact`, H9b for `/blog`, H12b for `/privacy`, H12c for `/imprint`. The
+// list is the point — a page that starts being indexed without anybody writing
+// the line here is a page that started being indexed by accident, and the next
+// route this site adds starts at `false` like every one of these did.
+void test("every fixed route and every case study is indexable, and nothing else is", () => {
   // H9a ADDED A SECOND VARIABLE-LENGTH TAIL, so the fixed head is asserted as a
   // list and the tail by the two tests below — one per content registry. Writing
   // twenty-one slugs out here would be a second copy of content/posts, and the
@@ -49,6 +50,7 @@ void test("the homepage, the log, the work index, about, contact, privacy and th
     "/blog",
     "/about",
     "/contact",
+    "/imprint",
     "/privacy",
     "/work/timseil-dev",
   ]);
@@ -65,8 +67,10 @@ void test("the homepage, the log, the work index, about, contact, privacy and th
   // two legal routes flipped one phase apart rather than together: a privacy
   // page waiting on an imprint is a privacy page nobody can find.
   assert.equal(seoFor("en", "/privacy").robots, undefined);
-  // And the one that is still a stub still refuses. H12c.
-  assert.deepEqual(seoFor("en", "/imprint").robots, { index: false });
+  // H12c. The last stub on this site is gone, and with it the last
+  // `robots: { index: false }` anybody had to write down. An imprint that no
+  // crawler may index is an imprint that does not do the one job it has.
+  assert.equal(seoFor("en", "/imprint").robots, undefined);
 });
 
 // The same drift the case-study test guards, one registry over: an entry that

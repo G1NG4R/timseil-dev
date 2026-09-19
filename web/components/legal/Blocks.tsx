@@ -1,9 +1,11 @@
 /**
  * The four shapes a legal section is made of, rendered.
  *
- * DECIDES NOTHING. Every string comes from lib/legal/content.ts, which is where
- * the tests can reach it; this file is markup plus one switch, the division ADR
- * 0044 draws and ADR 0048 restates.
+ * DECIDES NOTHING. Every string comes from lib/legal/content.ts — and since
+ * H12c from lib/legal/imprint.ts as well — which is where the tests can reach
+ * it; this file is markup plus one switch, the division ADR 0044 draws and ADR
+ * 0048 restates. The type it switches on lives in lib/legal/blocks.ts, so that
+ * neither page's data file is the other one's dependency.
  *
  * THE TABLES ARE REAL TABLES, and at 390 the stylesheet turns them into stacked
  * rows with their headers repeated through `data-head`. ADR 0055 settled that
@@ -11,7 +13,7 @@
  * words per line, and one that becomes a list loses the header its cells are
  * only meaningful under.
  */
-import type { Block } from "@/lib/legal/content";
+import type { Block } from "@/lib/legal/blocks";
 
 export function Blocks({ blocks }: { blocks: readonly Block[] }) {
   return (

@@ -453,7 +453,7 @@ the same page.
 | `/blog/<slug>` | `/de/blog/<slug>` | `/fr/blog/<slug>` | one entry, rendered from `web/content/posts/<slug>.mdx` — the slug is the filename, which is also what `incidents.post_slug` points at |
 | `/about` | `/de/about` | `/fr/about` | the operator |
 | `/contact` | `/de/contact` | `/fr/contact` | the channel |
-| `/imprint` · `/privacy` | `/de/…` | `/fr/…` | legal, reachable from every footer |
+| `/imprint` · `/privacy` | `/de/…` | `/fr/…` | legal, reachable from every footer and from each other — who runs the site, and what the server records |
 
 `/en/...` is not an address: it redirects to the unprefixed form with a 308, so
 each page has exactly one canonical URL. Every page emits `hreflang` for all
