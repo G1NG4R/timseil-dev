@@ -6,7 +6,7 @@
       "Next.js 16.3",
       "React 19.2",
       "Go 1.26",
-      "pgx 5.10",
+      "pgx 5.11",
       "sqlc 1.30",
       "goose 3.28",
       "PostgreSQL 18.6",
