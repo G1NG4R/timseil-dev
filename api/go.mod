@@ -3,7 +3,7 @@ module github.com/G1NG4R/timseil-dev/api
 go 1.26.6
 
 require (
-	github.com/jackc/pgx/v5 v5.10.0
+	github.com/jackc/pgx/v5 v5.11.0
 	github.com/oapi-codegen/runtime v1.7.0
 	github.com/pressly/goose/v3 v3.28.0
 	gopkg.in/yaml.v3 v3.0.1
