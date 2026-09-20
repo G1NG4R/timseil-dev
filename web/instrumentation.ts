@@ -36,6 +36,7 @@
 
 import { correlationFrom, headersFrom, logIds } from "@/lib/correlation";
 import { beginDraining, shutdownDelayMs } from "@/lib/drain";
+import { errorDigest } from "@/lib/errors/report";
 import { log } from "@/lib/log";
 import { errorText } from "@/lib/scrub";
 
@@ -99,7 +100,17 @@ export function register(): void {
 export function onRequestError(
   err: unknown,
   request: { path: string; method: string; headers: Record<string, string | string[]> },
-  context: { routerKind: string; routePath: string; routeType: string },
+  // `renderSource` and `revalidateReason` are Next's own fields
+  // (server/instrumentation/types.d.ts) and were simply not declared here
+  // before. The first is worth a column: it is the difference between a Server
+  // Component that threw and an HTML render that did, and without it a reader
+  // of the line has to guess which half of the render failed.
+  context: {
+    routerKind: string;
+    routePath: string;
+    routeType: string;
+    renderSource?: string;
+  },
 ): void {
   const correlation = correlationFrom(headersFrom(request.headers));
 
@@ -114,7 +125,12 @@ export function onRequestError(
       path: request.path.slice(0, 256),
       route_path: context.routePath,
       route_type: context.routeType,
+      render_source: context.renderSource,
       error: errorText(err),
+      // The one field a visitor can read back to us. Absent when the thrown
+      // value carried none, and absent rather than empty: log.ts drops an
+      // `undefined`, so a line without a digest says so by not having the key.
+      digest: errorDigest(err),
     },
     logIds(correlation),
   );

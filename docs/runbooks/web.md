@@ -839,6 +839,61 @@ ohne sie gebaut.
 Sie ist **keine Sicherheitsgrenze**: wer auf dem Host Umgebungsvariablen setzen
 kann, besitzt den Container ohnehin.
 
+### Die 500 ansehen — `DEV_ERROR_DRILL`
+
+Die Fehlerseite lässt sich nicht aufrufen. Sie erscheint nur, wenn etwas wirft,
+und nichts auf dieser Site wirft von selbst. `app/[lang]/error-drill/[mode]` tut
+es auf Befehl, hinter demselben Riegel wie die Galerie:
+
+```bash
+cd web && npm run build && DEV_ERROR_DRILL=1 npx next start -p 3112
+```
+
+**Zwei Modi, weil es zwei Formen des Scheiterns gibt** — und der Unterschied ist
+der Fund aus H13, nicht eine Bequemlichkeit:
+
+| Adresse | Status | was man sieht |
+|---|---|---|
+| `/error-drill/render` | **500** | 21 Zeichen Klartext. **Keine** Seite — der Wurf kam vor dem ersten Byte |
+| `/error-drill/stream` | **200** | die gestaltete 500, in der echten Chrome. Die Form, die jede echte Seite hat |
+| `/error-drill/closed` | 404 | der gebackene Ersatzmodus, der nie wirft |
+
+Die zweite Zeile ist der Normalfall: unter Cache Components liest jede echte
+Seite ihre Daten in einem Suspense-Loch, die Hülle ist dann längst raus, und der
+Status lässt sich nicht mehr ändern. **Ein Renderfehler dieser Site antwortet
+200.** ADR 0078.
+
+`DEV_ERROR_DRILL` akzeptiert **genau `1`**, aus demselben Grund wie
+`DEV_GALLERY`: wer `0` schreibt, meint aus. `compose.yaml` setzt die Variable
+nie. Sie ist **keine Sicherheitsgrenze** — wer auf dem Host Umgebungsvariablen
+setzen kann, besitzt den Container ohnehin.
+
+**Der Routen-Cache überdauert das Flag — in beide Richtungen.** Gemessen in
+H13a, und es ist die Falle dieser Übung:
+
+- Eine Antwort, die bei **offenem** Tor gerendert wurde, wird weiter
+  ausgeliefert, nachdem die Variable weg ist (`x-nextjs-stale-time: 300`).
+- Eine 404, die bei **geschlossenem** Tor entstand, wird weiter ausgeliefert,
+  nachdem das Tor auf ist — während der Render im Hintergrund trotzdem wirft
+  und eine ERROR-Zeile schreibt.
+
+Deshalb gilt für die Abnahme: **den Container austauschen, nicht die Variable
+wegnehmen.** Und die erste Messung nach dem Setzen des Flags zählt nur auf einem
+Container, der die Adresse vorher nie beantwortet hat. Lokal entspricht das
+`rm -rf .next && npm run build`, bevor der Server mit dem Flag startet — genau
+das tut das e2e-Rig bei jedem Lauf.
+
+**Gegen `next dev` misst man hier nichts.** Der Entwicklungsserver legt sein
+eigenes Overlay über jede Fehlergrenze; was dort steht, ist nicht, was ein
+Besucher bekommt.
+
+Die Logzeile dazu steht auf `stdout` und trägt `digest` — dieselbe Zahl, die auf
+der Seite steht:
+
+```bash
+docker compose logs web | grep '"msg":"request failed"' | tail -1 | jq .
+```
+
 ### Den Burst nachmessen
 
 Im DOM zählen, nie in den Bytes — die RSC-Nutzlast dupliziert das Markup, und

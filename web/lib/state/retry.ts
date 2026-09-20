@@ -65,6 +65,33 @@ export function waitLine(seconds: number): string | null {
   return `retry in ${String(Math.floor(seconds))}s`;
 }
 
+// ── And H13 was not the caller either ──────────────────────────────────────
+//
+// `retryLine()` still has no caller outside G7's gallery, and H13 is now the
+// second phase to look at it and decline. #231 stays open, with one more thing
+// measured.
+//
+// The error boundary's `retry` IS a real second attempt — the first in this
+// repository — so the obvious move was an `attemptLine(n)`: not the wait, not
+// the maximum, just how many times this visitor had pressed the button. It was
+// built, and then the browser answered the question the unit test could not.
+//
+// THE BOUNDARY IS REMOUNTED ON RETRY, so the count resets. Measured against a
+// production build: pressing the button fires a fresh request (the server log
+// grows a line with `render_source: react-server-components-payload`), the
+// failure happens again, and the panel comes back reading `attempt` nothing —
+// `useState(1)` started over. A `useRef` does not survive a remount either.
+//
+// What WOULD survive is a module-level variable, and this repository has just
+// paid for one of those: #376, where `lib/legal/readout.ts` holds its reading
+// in a module-wide `live ??=` that outlives a client navigation and keeps
+// showing the path you came from. Buying a counter with that mechanism would be
+// trading a missing number for a wrong one.
+//
+// So the honest count is one this page cannot keep, and a formatter with no
+// caller is exactly what #231 is about. Not shipping a second one is the
+// smaller mistake.
+
 // ── Holding a measured wait ────────────────────────────────────────────────
 //
 // The two lines of arithmetic behind the countdown, here rather than in the

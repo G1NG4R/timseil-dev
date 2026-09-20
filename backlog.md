@@ -12,6 +12,142 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 20.09.2026, H13a gebaut: der Status und die Seite schließen sich aus
+
+Die 500 steht, sie rendert in der echten Chrome, und `onRequestError` hat zum
+ersten Mal gefeuert. Gemessen gegen den lokalen Produktionsbuild
+(`npm run build && npm run start`, Port 3200) — nicht gegen `next dev`, das sein
+eigenes Overlay über jede Fehlergrenze legt. `make check` grün, 874 Unit-Tests,
+77 e2e über alle sieben Breiten.
+
+### Der stärkste Fund: Status und gestaltete Seite schließen sich aus
+
+Drei Messungen derselben Route:
+
+| Wo der Wurf landet | Status | Bytes | gestaltete Seite |
+|---|---|---|---|
+| vor dem ersten Byte | **500** | 21 B Klartext `Internal Server Error` | erscheint **nie** |
+| im Suspense-Loch | **200** | echtes Dokument, ~22 700 B, mit Chrome | clientseitig, **in der Chrome** |
+| oben im Baum nach leerer Hülle | **200** | `__next_error__`, leerer Body | clientseitig, **ohne** Chrome |
+
+Unter `cacheComponents` liest jede echte Seite ihre Daten in einem Suspense-Loch.
+**Zeile zwei ist der Normalfall — jeder echte Renderfehler dieser Site antwortet
+200.** Deshalb hat der Drill zwei Modi: einer mit nur einem hätte bewiesen,
+welche Hälfte sein Autor zufällig gebaut hat.
+
+Zeile eins ist überhaupt nur erreichbar, weil die Drill-Route ein dynamischer
+Parameter ohne gebackenen Wert ist und deshalb vollständig zur Anfragezeit
+rendert — derselbe Weg, den `/blog/kein-post` nimmt, und der Grund, warum dessen
+404 einen Status trägt.
+
+### Gefunden — aus H13a
+
+- **`onRequestError` hat zum ersten Mal gefeuert — #186 ist erledigt.** Genau
+  eine JSON-Zeile, `route_type: "render"`, mit `request_id` und `trace_id`. Seit
+  F1b stand der Handler da. Er feuert in *beiden* Formen oben, der Beleg hängt
+  also nicht am Statuscode.
+
+- **Die Zeile trug keinen `digest`, die Seite aber schon** — jetzt beide. Ohne
+  das wäre die Zahl auf der Seite eine Kennung, die nirgendwohin führt. Next
+  setzt `err.digest`, *bevor* der Handler läuft, beide Enden lesen dieselbe
+  Eigenschaft desselben Objekts. Dazu kam `render_source`, und die Spalte
+  verdient sich sofort: sie unterscheidet den Wiederholversuch
+  (`react-server-components-payload`) vom ersten Render.
+
+- **React rendert Fehlergrenzen serverseitig nicht, und das ist nachzählbar.**
+  `getDerivedStateFromError` kommt in `react-dom-server.node.production.js`
+  **null** mal vor; der einzige Treffer im Entwicklungs-Bundle ist eine Warnung.
+  Die gestaltete 500 kann prinzipiell nicht in `response.text()` stehen — ohne
+  JavaScript bleibt das Loch leer, und Crawler bekommen sie nie, weil die Grenze
+  bei Bot-User-Agents übersprungen wird. **Das ist zugleich die Ursache für
+  #359**, die dem Issue seit H10a fehlt.
+
+- **Die 500 erbt die echte Chrome — #358 ist für sie beantwortet.** `error.tsx`
+  im Segment rendert als Kind des Root-Layouts: `<header>`, `<footer>`,
+  `documentElement.id` **nicht** `__next_error__`, und die Verweise auf PRIVACY
+  und IMPRINT sind die echten. ADR 0044 hatte genau das befürchtet. Für die 404
+  bleibt #358 offen — sie rendert außerhalb jedes Layouts und kann nichts erben.
+
+- **Die Seite hätte beinahe eine 500 behauptet, die es nicht gab.** Die erste
+  Panel-Zeile liest jetzt `web: 200 render failed`, weil sie
+  `PerformanceNavigationTiming.responseStatus` misst statt zu erklären. Dafür
+  haben `ErrorInput.status` und `.digest` denselben Drei-Zustands-Unterschied
+  bekommen: `undefined` heißt „niemand hat gemessen", `null` heißt „nichts hat
+  geantwortet".
+
+- **#231: auch die Fehlerseite kann nicht zählen.** `attemptLine(n)` war gebaut
+  — nicht die Wartezeit, nicht das Maximum, nur die Klicks dieses Besuchers.
+  Dann hat der Browser die Frage beantwortet, die der Unit-Test nicht stellen
+  konnte: **React montiert die Grenze beim Retry neu**, `useState` fängt wieder
+  bei 1 an, ein `useRef` überlebt das genauso wenig. Was überlebte, wäre eine
+  modulweite Variable — wofür dieses Repository gerade mit **#376** bezahlt hat.
+  `attemptLine` ist deshalb **wieder entfernt**: ein zweiter Formatierer ohne
+  Aufrufer hätte #231 vertieft statt es zu lösen.
+
+- **Die getragene axe-Regel gilt auch hier, und das hat sie verschoben.** Die
+  500 erbt die echte Fußzeile, also erbt sie deren offenen Befund: die sieben
+  Theme-Swatches sind 11 px für die Maus (#257, mit Datum getragen). Gefunden
+  bei **w1024**, an genau einer Breite. Die Liste liegt jetzt in `e2e/axe.ts`
+  statt in `a11y.spec.ts` — zwei Kopien einer Liste wären zwei Kopien eines
+  **Datums**, und eine davon hätte ihre eigene Erinnerung überlebt. Jeder von
+  axe beanstandete Knoten lag in der Fußzeile, keiner auf der neuen Seite.
+
+- **Der Routen-Cache überdauert das Flag, in beide Richtungen.** Die
+  unangenehmste Messung der Phase, und sie hätte die Abnahme getäuscht: eine bei
+  offenem Tor gerenderte Antwort wird weiter ausgeliefert, nachdem die Variable
+  weg ist (`stale-time: 300`) — und eine bei geschlossenem Tor entstandene 404
+  wird weiter ausgeliefert, nachdem das Tor auf ist, **während der Render im
+  Hintergrund trotzdem wirft und eine ERROR-Zeile schreibt**. Zweimal
+  hintereinander stand dadurch ein Ergebnis auf dem Schirm, das nicht zum
+  gesetzten Flag gehörte. Für die Produktionsabnahme heißt das: **Container
+  austauschen, nicht die Variable wegnehmen.** Steht im Runbook.
+
+- **Die Trefferflächen der 500 sind gemessen, nicht hergeleitet.**
+  `layout.css` hebt unter `pointer: coarse` jeden `button` und jeden `a` auf 44 —
+  ein Argument, das beide Bedienelemente abdeckt, und Stufe H sagt, dass das
+  Argument nicht die Messung ist. Der Block liegt in
+  `touch-targets.coarse.spec.ts` statt in einer eigenen Datei, weil die
+  Messmaschinerie dort schon steht. Zwei Elemente, beide über 44.
+
+- **`export const dynamic` gibt es nicht mehr.** Die Optionsliste unter
+  `03-file-conventions/02-route-segment-config/` kennt `dynamicParams`,
+  `instant`, `maxDuration`, `preferredRegion`, `prefetch`, `runtime` — sonst
+  nichts. Wer unter `cacheComponents` eine Route vollständig zur Anfragezeit
+  rendern will, hat den dynamischen Parameter und sonst nichts.
+
+- **`instant = false` ist eine Falle, keine Lösung.** Der erste Entwurf baute
+  durch — aber das Flag erlaubt genau die *leere* Hülle, die dann mit 200
+  losfließt, bevor der Wurf passiert. Es liefert die Form ohne Chrome, also das
+  schlechteste beider Enden.
+
+- **Cache Components verbietet ein leeres `generateStaticParams`.** Der Drill
+  muss einen Modus backen, den er selbst nie benutzt — was gebacken wird, hat
+  sein Tor zur Bauzeit entschieden.
+
+- **Eine Funktion, die nur wirft, ist keine JSX-Komponente** (`TS2786`): der
+  abgeleitete Rückgabetyp ist `Promise<never>`.
+
+### Verschoben aus H13a
+
+- **`global-error.tsx` und die Fehler des Root-Layouts** — H13b. Dazu das
+  zweite Root-Layout als Auslöser, `"drill"` in `RESERVED`, und die
+  Theme-Wiederherstellung ohne globale Styles.
+- **Der Breiten-Sweep der 500** — H13b. Erwartet werden **drei** Kanten
+  (1080 · 900 · 720), weil diese Seite Chrome hat; die 404 hat zwei.
+- **Der Galerie-Eintrag** für das Fehlerpanel mit Digest-Zeile — H13b, damit M2
+  es ohne API sehen kann.
+- **Kein `.sheet.spec.ts`, und das bleibt so.** `docs/design/` enthält kein
+  hi-fi-Blatt für eine 500-Seite; `INDEX.md` weist H13 die `State Language` zu,
+  und die zeichnet ein Panel, keine Seite — dort ohnehin als „meine Zuordnung,
+  nicht die des Plans" gekennzeichnet.
+- **Die Produktionsabnahme von #186** — der Drill einmal von Hand auf dem Host,
+  mit Loki-Beleg, Flag danach wieder weg. Ergebnis nach `backlog.local.md`.
+- **Die DE/FR-Fassung der Fehlerseite.** `lib/errors/words.ts` hält ihre fünf
+  Sätze englisch, weil eine Client-Komponente sonst die ganze Dictionary ins
+  Bundle zöge (die Regel aus `ContactForm.tsx`). Heute kostenlos, ab P6 nicht.
+
+---
+
 ## Wo wir stehen — 19.09.2026, H12c abgenommen: `v0.37.0` steht, und der Zeuge stand zum ersten Mal seit vier Phasen davor
 
 `cb8a91e` läuft, **`v0.37.0`**. Merge **19:47:38Z**, Deploy-Job 20:06:07Z →

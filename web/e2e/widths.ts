@@ -110,6 +110,16 @@ export const CONTACT = "/contact";
  */
 export const NOT_FOUND = "/no-such-address";
 
+/** The two failures H13 causes on purpose. Both are 404 unless the rig's
+ *  `DEV_ERROR_DRILL` is set — see lib/errors/drill.ts.
+ *
+ *  They are two addresses rather than one because they are two different
+ *  answers, and the difference is the phase's finding: the first is where the
+ *  STATUS is right and there is no page, the second is where the PAGE is right
+ *  and the status is 200. */
+export const ERROR_BEFORE_FIRST_BYTE = "/error-drill/render";
+export const ERROR_IN_A_HOLE = "/error-drill/stream";
+
 /**
  * The two widths the Blog Post sheet draws.
  *

@@ -61,6 +61,13 @@ import "../../styles/work.css";
 // position — after work.css, before layout.css — because H7b puts the
 // trajectory rail in this page and the rail is a grid.
 import "../../styles/about.css";
+// H13, and the line is here on the first commit of the phase rather than after
+// a measurement said `display: block`. The rule this obeys is stated at the top
+// of this file and was found the hard way twice: "a preview that renders under
+// a shorter cascade than the page is a preview of something else." The gallery
+// draws the error panel with its digest line, so it needs the page's own sheet
+// in the page's own position.
+import "../../styles/error.css";
 import "../../styles/gallery.css";
 import "../../styles/layout.css";
 
