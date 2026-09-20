@@ -92,6 +92,23 @@ rendert — derselbe Weg, den `/blog/kein-post` nimmt, und der Grund, warum dess
   **Datums**, und eine davon hätte ihre eigene Erinnerung überlebt. Jeder von
   axe beanstandete Knoten lag in der Fußzeile, keiner auf der neuen Seite.
 
+- **Der Routen-Cache überdauert das Flag, in beide Richtungen.** Die
+  unangenehmste Messung der Phase, und sie hätte die Abnahme getäuscht: eine bei
+  offenem Tor gerenderte Antwort wird weiter ausgeliefert, nachdem die Variable
+  weg ist (`stale-time: 300`) — und eine bei geschlossenem Tor entstandene 404
+  wird weiter ausgeliefert, nachdem das Tor auf ist, **während der Render im
+  Hintergrund trotzdem wirft und eine ERROR-Zeile schreibt**. Zweimal
+  hintereinander stand dadurch ein Ergebnis auf dem Schirm, das nicht zum
+  gesetzten Flag gehörte. Für die Produktionsabnahme heißt das: **Container
+  austauschen, nicht die Variable wegnehmen.** Steht im Runbook.
+
+- **Die Trefferflächen der 500 sind gemessen, nicht hergeleitet.**
+  `layout.css` hebt unter `pointer: coarse` jeden `button` und jeden `a` auf 44 —
+  ein Argument, das beide Bedienelemente abdeckt, und Stufe H sagt, dass das
+  Argument nicht die Messung ist. Der Block liegt in
+  `touch-targets.coarse.spec.ts` statt in einer eigenen Datei, weil die
+  Messmaschinerie dort schon steht. Zwei Elemente, beide über 44.
+
 - **`export const dynamic` gibt es nicht mehr.** Die Optionsliste unter
   `03-file-conventions/02-route-segment-config/` kennt `dynamicParams`,
   `instant`, `maxDuration`, `preferredRegion`, `prefetch`, `runtime` — sonst

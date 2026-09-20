@@ -868,6 +868,21 @@ Status lässt sich nicht mehr ändern. **Ein Renderfehler dieser Site antwortet
 nie. Sie ist **keine Sicherheitsgrenze** — wer auf dem Host Umgebungsvariablen
 setzen kann, besitzt den Container ohnehin.
 
+**Der Routen-Cache überdauert das Flag — in beide Richtungen.** Gemessen in
+H13a, und es ist die Falle dieser Übung:
+
+- Eine Antwort, die bei **offenem** Tor gerendert wurde, wird weiter
+  ausgeliefert, nachdem die Variable weg ist (`x-nextjs-stale-time: 300`).
+- Eine 404, die bei **geschlossenem** Tor entstand, wird weiter ausgeliefert,
+  nachdem das Tor auf ist — während der Render im Hintergrund trotzdem wirft
+  und eine ERROR-Zeile schreibt.
+
+Deshalb gilt für die Abnahme: **den Container austauschen, nicht die Variable
+wegnehmen.** Und die erste Messung nach dem Setzen des Flags zählt nur auf einem
+Container, der die Adresse vorher nie beantwortet hat. Lokal entspricht das
+`rm -rf .next && npm run build`, bevor der Server mit dem Flag startet — genau
+das tut das e2e-Rig bei jedem Lauf.
+
 **Gegen `next dev` misst man hier nichts.** Der Entwicklungsserver legt sein
 eigenes Overlay über jede Fehlergrenze; was dort steht, ist nicht, was ein
 Besucher bekommt.

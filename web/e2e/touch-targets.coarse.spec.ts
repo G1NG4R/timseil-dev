@@ -14,7 +14,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { NOT_FOUND } from "./widths";
+import { ERROR_IN_A_HOLE, NOT_FOUND } from "./widths";
 
 /** WCAG 2.2 AA asks for 24. This project's rule is 44, and 44 is what is checked. */
 const MIN = 44;
@@ -214,6 +214,29 @@ test.describe("targets a finger has to hit", () => {
     // either way. This is the number that moves the day the 720 rule is dropped,
     // or the day the real footer arrives.
     expect(targets.length, "the 404 drew a different number of controls").toBe(9);
+    expect(tooSmall(targets), report(targets)).toEqual([]);
+  });
+
+  // H13, AND IT IS THE SAME BLIND SPOT H6b AND H10b BOTH WROTE DOWN: a page that
+  // ships two controls while this file goes somewhere else is a page whose
+  // targets were argued, not measured. layout.css raises every `button` and
+  // every `a` to 44 under `pointer: coarse`, which is an argument that covers
+  // both of these — and stage H's own rule says the argument is not the
+  // measurement ("Trefferflächen nachmessen, nicht greppen").
+  //
+  // THE ROUTE ONLY EXISTS WHILE THE DRILL IS OPEN. The rig sets
+  // DEV_ERROR_DRILL for the length of a run (playwright.config.ts); without it
+  // this address is a 404 and the count below would find the 404's controls
+  // instead, which is why the count is asserted rather than only `tooSmall`.
+  test("the 500's own controls are at least 44 x 44", async ({ page }) => {
+    await page.goto(ERROR_IN_A_HOLE);
+    await expect(page.locator(".er-head")).toBeVisible();
+
+    const targets = await measure(page, "main");
+
+    // Two: TRY AGAIN and RETURN TO ROOT. The panel is a log, not a control, and
+    // the two notes under it are prose.
+    expect(targets.length, "the 500 drew a different number of controls").toBe(2);
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
 });
