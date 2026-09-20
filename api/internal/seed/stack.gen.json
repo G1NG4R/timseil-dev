@@ -4,7 +4,7 @@
   "systems": {
     "timseil-dev": [
       "Next.js 16.3",
-      "React 19.2",
+      "React 19.3",
       "Go 1.26",
       "pgx 5.11",
       "sqlc 1.30",
