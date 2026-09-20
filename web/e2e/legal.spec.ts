@@ -15,7 +15,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { PRIVACY } from "./widths";
+import { IMPRINT, PRIVACY } from "./widths";
 
 /** The width this project is running at. home.spec.ts's idiom, unchanged. */
 function widthOf(page: Page): number {
@@ -211,6 +211,44 @@ test("the request line is measured, and never claims a status", async ({ page })
   // The sheet's mock also writes `· 200`. A browser cannot see the status of the
   // document it is displaying, so the page does not claim one.
   expect(shown).not.toMatch(/\b[1-5]\d\d\b/);
+});
+
+// THE TEST THAT WAS MISSING, AND #376 IS WHAT IT COST.
+//
+// Every assertion on this line arrived by `goto`, which is a document load: the
+// browser's address is the page's address and the two cannot disagree. The whole
+// of H12c was green while production printed `GET /imprint` on `/privacy`,
+// because the only way to see it is to arrive the way a reader does — by
+// clicking the link the sheet draws between the two legal pages.
+//
+// A client-side transition creates no new navigation entry and does not reload
+// the module, so anything the panel cached on the way in is still there on the
+// way out. The path is no longer among it.
+test("the request line names this page when the reader arrived by link", async ({ page }) => {
+  await page.goto(IMPRINT);
+
+  const card = page.locator(".lg-seealso");
+  await expect(card.locator("a")).toHaveAttribute("href", "/privacy");
+  await card.locator("a").click();
+  await expect(page).toHaveURL(/\/privacy$/);
+
+  await readingTaken(page);
+  const shown = await page
+    .locator(".lg-field", { hasText: "REQUEST" })
+    .locator("dd")
+    .first()
+    .innerText();
+
+  expect(shown).toContain("GET /privacy");
+  expect(shown).not.toContain("/imprint");
+
+  // AND IT STAYS RIGHT, which is the half the cache decided. A reading taken
+  // once and kept for the session was the reason the line never corrected
+  // itself later; re-reading the panel after the transition has settled has to
+  // give the same answer rather than a drifting one.
+  await expect(page.locator(".lg-field", { hasText: "REQUEST" }).locator("dd").first()).toContainText(
+    "GET /privacy",
+  );
 });
 
 test("the IP line is a sentence about the server and never an address", async ({ page }) => {
