@@ -12,6 +12,76 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 20.09.2026, H13a abgenommen: `v0.38.0` steht, und zwei Uhren sagen dasselbe über #242
+
+`7244a12` läuft, **`v0.38.0`**. Merge **11:02:35Z**, Deploy gemeldet 11:16:35Z,
+der api-Prozess läuft seit **11:16:50.096Z**. Uhrzeit mit `date -u` gelesen;
+11:02Z liegt knapp dreizehn Stunden vor dem Dokploy-Fenster.
+
+Der `feat:`-Titel hat wieder getan, was er soll: `v0.37.0` → **`v0.38.0`**,
+Minor. Der Squash hat das `(#378)` gesetzt.
+
+`check-deployed`: **8 Behauptungen, 1 nicht hier gestellt** — die Host-Seite, wie
+immer. Beide Image-Digests aus `7244a12` gebaut.
+
+### Der Zeuge stand davor, zum zweiten Mal in Folge
+
+```
+/              837 Anfragen   837 × 200
+/api/health    837 Anfragen   837 × 200
+✓ every answer was 200
+```
+
+Vierzehn Minuten am Stück, eine Anfrage pro Sekunde und Pfad, quer über den
+Neustart um 11:16:50. **Achter sauberer Tausch in Folge, dritter bezeugter.**
+Für **#304** wieder ein Datenpunkt und keine Antwort: in diesem Fenster ging
+keine einzige Anfrage verloren. Vier Sekunden tragen keine Probe.
+
+### Zwei unabhängige Uhren, dieselbe Zahl — die 20. Kerbe an #242
+
+`ops.lastDeploy.durationSec` meldet **837 s**. Der Zeuge lief **837 s**. Das ist
+kein Zufall und auch kein Fehler: beide messen dasselbe Intervall, vom Merge bis
+zum Container-Tausch. Der Tausch selbst dauerte Sekunden — der Zeuge hat ihn
+überquert, ohne eine Anfrage zu verlieren.
+
+**Damit ist #242 nicht mehr nur erschlossen.** Neunzehn Kerben lang stand die
+Behauptung „`durationSec` misst die Pipeline, nicht den Deploy" auf einer
+einzigen Quelle, nämlich der Pipeline selbst. Jetzt sagt eine zweite, von ihr
+unabhängige Uhr dieselbe Zahl.
+
+### Die p95 misst wieder nicht die Seite
+
+**180,25 ms**, `measuredAt` gleich `startedAt` — das Fenster enthält den Tausch
+*und* 837 Anfragen pro Pfad aus meinem eigenen Zeugen. Das ist die mittlere
+Kategorie aus der H12c-Abnahme, und sie ist hier besonders deutlich: der Zeuge
+ist in diesem Fenster praktisch der ganze Verkehr.
+
+### Das Tor ist in Produktion zu
+
+Gegen `https://timseil.dev` gemessen, ein Aufruf je Modus:
+
+```
+/error-drill/render   404
+/error-drill/stream   404
+/error-drill/closed   404
+```
+
+`compose.yaml` setzt `DEV_ERROR_DRILL` nie, und das Image wird ohne sie gebaut.
+
+### Verschoben aus der H13a-Abnahme
+
+- **#186 in Produktion auslösen** — offen, und bewusst. Der Handgriff kostet
+  nach dem eigenen Fund dieser Phase **zwei Container-Tausche**: Variable im
+  Panel setzen, neu ausrollen, Drill rufen, Variable weg, noch einmal ausrollen.
+  Die Variable nur wegzunehmen reicht nicht, weil der Routen-Cache die Antwort
+  überdauert. Ob eine Logzeile das wert ist, ist eine Entscheidung und keine
+  Aufgabe — gegen den Produktionsbuild ist derselbe Weg vollständig gemessen,
+  inklusive `request_id`, `trace_id` und `digest`.
+- **H13b** — `global-error.tsx`, das zweite Root-Layout als Auslöser, der
+  Breiten-Sweep der 500 und der Galerie-Eintrag.
+
+---
+
 ## Wo wir stehen — 20.09.2026, H13a gebaut: der Status und die Seite schließen sich aus
 
 Die 500 steht, sie rendert in der echten Chrome, und `onRequestError` hat zum
