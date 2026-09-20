@@ -204,7 +204,7 @@ Two details worth knowing before editing it:
 
 | Layer | Choice |
 |---|---|
-| Frontend | Next.js 16.3 LTS · React 19.2 · TypeScript strict · Tailwind 4.3 |
+| Frontend | Next.js 16.3 LTS · React 19.3 · TypeScript strict · Tailwind 4.3 |
 | Backend | Go 1.26 stdlib · pgx v5 · sqlc · goose · OpenTelemetry |
 | Data | PostgreSQL 18.6 |
 | Contract | OpenAPI 3.1 — types are generated, never hand-written |

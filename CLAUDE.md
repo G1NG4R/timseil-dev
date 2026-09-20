@@ -38,7 +38,7 @@ Der Leser kommt von außen und liest zuerst diese vier.
 
 ## Stack
 
-Next.js 16.3 LTS (App Router) · React 19.2 · TS strict · Tailwind 4.3
+Next.js 16.3 LTS (App Router) · React 19.3 · TS strict · Tailwind 4.3
 Go 1.26 stdlib · pgx v5 · sqlc · PostgreSQL 18.6 · goose · OTel
 Docker Compose · Traefik (Dokploy) · GitHub Actions · GHCR · Node 24 LTS
 Alloy (+ faro.receiver) · Prometheus 3.13 LTS · Loki 3.7 · Tempo 3.0 · Grafana
