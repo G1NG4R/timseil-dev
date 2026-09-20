@@ -25,6 +25,7 @@ import { expect, test } from "@playwright/test";
 
 import { MOUNTED_ROUTES } from "../lib/notfound/mounted";
 import { parseMs } from "../lib/scramble";
+import { NOT_FOUND_REGIONS, settled } from "./streaming";
 import { NOT_FOUND } from "./widths";
 
 /** WCAG 2.2 AA, the same set a11y.spec.ts sweeps the real routes with. */
@@ -59,6 +60,12 @@ test("the response carries a stylesheet, so the page is not raw markup", async (
 
 test("the router trace names the address that was asked for", async ({ page }) => {
   await page.goto(NOT_FOUND);
+  // WAIT FOR THE SWAP, don't read through it. The trace sits behind <Suspense>
+  // since H10b and the fallback renders the same panel, so `.nf-fact-path` is in
+  // the document twice while the answer replaces it — a strict-mode violation
+  // rather than a wrong value. streaming.ts owns that knowledge; this line
+  // borrows it instead of keeping a second copy.
+  await settled(page, NOT_FOUND_REGIONS);
 
   await expect(page.locator(".nf-fact-path")).toHaveText(NOT_FOUND);
 });
@@ -79,6 +86,10 @@ test("markup in the address is printed, never executed", async ({ page }) => {
 
   expect(response?.status()).toBe(404);
   expect(dialogs).toBe(0);
+
+  // The same wait as above, and this is the test that proved it was needed:
+  // it lost the race after 511 ms on 2026-09-20 and took `main` red with it.
+  await settled(page, NOT_FOUND_REGIONS);
 
   // AND THE BROWSER GOT THERE FIRST, which is worth writing down rather than
   // asserting around: it percent-encodes the address before the request is
