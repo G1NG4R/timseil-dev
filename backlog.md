@@ -12,6 +12,121 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Zwischendurch — 21.09.2026: der Tracker als Ganzes gelesen, zum ersten Mal seit der F5-Triage
+
+**109 offen, nicht 100.** Die erste Abfrage lief mit `--limit 100` in ihr eigenes
+Limit und verschwieg neun Issues — ausgerechnet #5 bis #13, die neun
+Design-Korrekturen aus Kapitel 7. Eine Liste, die schweigend abschneidet, ist die
+billigste Art, etwas zum zweiten Mal zu finden.
+
+Die Bilanz der 109: **29 sind heute im Repository machbar**, 46 hängen an einer
+Phase (21 davon die K1-Korrekturen, die per Bauart erst dort geschlossen werden),
+16 brauchen den Host, 15 sind Entscheidungen, 3 brauchen Produktionsmessungen.
+
+### Der stärkste Fund: dreizehn Issues warten auf eine Phase, die schon durch ist
+
+`#35` → G1 · `#66` → F2/F5 · `#183`, `#184` → F3 · `#193`, `#242` → H2 ·
+`#224` → G5 · `#230`, `#241` → G7 · `#245` → H4 · `#290` → H5 · `#206` → H8 ·
+`#231` → H8/H13. Der älteste ist **24 Tage** über seiner Phase, der jüngste vier.
+Elf davon haben eine vollständige Stufen-Triage überstanden — Stufe G schloss am
+29.08. —, und keine hat sie gefunden, **weil eine Triage `backlog.md` liest und
+diese Einträge längst dort heraus waren**. Sie waren zu Issues befördert worden,
+also genau dorthin, wo ein Eintrag sicher sein soll.
+
+Die Lücke ist damit nicht die Backlog-Regel. Sie ist, dass **nichts den Tracker
+gegen den Plan liest**: ein Issue, das eine Phase nennt, trägt eine Frist, die
+niemand ansieht. Aufgeschrieben als **#381**, ohne Prüfregel — die ist erst
+offensichtlich, wenn die dreizehn durch sind, weil ein Drittel sich vermutlich
+von selbst schließt.
+
+### Zwei Issues, deren Prämisse sich nicht nur überlebt, sondern umgedreht hat
+
+- **#96, das Platzhalter-Favicon.** `web/public/favicon.svg` hat genau einen
+  Commit, `844feca` aus Stufe D1, und der Kommentar darin nennt seinen eigenen
+  Nachfolger: „G3 owns the final artwork." G3 ist durch, G4 bis G7 auch, ganz
+  Stufe H bis H13a. Das Issue wurde eröffnet, „damit der Platzhalter nicht
+  stillschweigend die Antwort wird". Er ist es geworden.
+- **#157, `web` erreicht die `api` über einen Namen, den ihr Zwilling nicht
+  trägt.** Der Body sagt „Keine Seite liest die API serverseitig" und „ab Stufe G
+  schon". Stufe G ist durch: `apiTarget()` in `lib/http/url.ts` gibt serverseitig
+  `http://api:8080` zurück, und `lib/api/client.ts:149` hat Aufrufer über
+  `systems`, `health`, `training`, `contributions`. Acht saubere Tausche in Folge,
+  drei bezeugt, kein einziger 500er — **Beleg, kein Beweis**, und dieselbe Lücke,
+  die #304 benennt.
+
+### Drei Reparaturen, jede gegen ihren kaputten Fall gemessen
+
+- **Die Konstantzeit-Prüfung maß die Maschine (#360).** Sie nahm 50 000
+  Iterationen fünfmal und behielt die beste. Siebzehn Millisekunden sind viele
+  Scheduler-Quanten, also wird neben acht Playwright-Workern **jede** der fünf
+  Runden unterbrochen. Nachgemessen auf sechzehn Kernen mit 32 Lastschleifen:
+  **fünf Fehlschläge in zwanzig Läufen**, jedes Mal ein anderes Paar. Jetzt misst
+  sie Stöße von 256 Iterationen und behält den billigsten — Kontention kann einen
+  Stoß nur langsamer machen, nie schneller, also ist das Minimum ein Boden per
+  Arithmetik statt per Annahme. **Fünfzig von fünfzig grün** unter derselben Last,
+  bei gleichem Preis (256 000 Iterationen je Fall gegen 250 000; 0,55 s gegen
+  0,51 s). Die 2x-Schranke bleibt: eine, die eine verdrängte Goroutine fasst,
+  fasst auch einen echten Kurzschluss.
+- **Der 404-Test griff in den Suspense-Tausch.** Beide Zugriffe warten jetzt mit
+  `settled(page, NOT_FOUND_REGIONS)` — die Liste, die `streaming.ts` genau dafür
+  hält. Neu als **#382**, weil der Fund einen roten `main` gekostet hat.
+- **#376 ist lokal reproduzierbar, und zwar deterministisch.** Das Issue hielt
+  fest, der Zeitpunkt der Momentaufnahme auf so einem Übergang sei *nicht
+  gemessen*. Jetzt ist er es: gegen den lokalen Produktionsbuild, über den
+  `SEE ALSO`-Link von `/imprint` nach `/privacy`, liest die Zeile an **allen
+  sieben Breiten** `GET /imprint · http/1.1`. Der Pfad ist keine Messung des
+  Browsers, sondern eine Tatsache über das Dokument — er kommt jetzt von der
+  Seite, und der Cache ist nach ihm geschlüsselt.
+
+### Das Tor maß eine Zeichenkette, die niemand je sieht (#354)
+
+`tools/check-pr-title.sh` setzt jetzt `<Titel> (#N)` zusammen und gibt das an
+denselben `commit-msg`-Hook. **Das Suffix ist so lang wie die Nummer**: fünf
+Zeichen bei `(#1)`, sieben bei `(#370)`, weshalb es zusammengesetzt und nicht
+angenommen wird. Neun Fälle im Selftest, darunter die zwei Längen, die wirklich
+durchgegangen sind — #352 mit 66 Zeichen wurde 73 auf `main`.
+
+### Der Leichenfund auf Port 8731
+
+Ein abgebrochener Lauf ließ einen `python3 -m http.server` auf 8731 stehen. Der
+nächste Lauf konnte den Port nicht binden, und **siebzehn** verify- und
+witness-Fälle wurden auf einen Schlag rot — keiner nannte den Port. `curl` gibt
+bei einer 404 den Exit-Code 0 zurück, also war die Bereitschaftsprüfung mit dem
+fremden Server zufrieden und winkte den Block durch, damit er einzeln scheitert.
+Sie liest jetzt die `sha` zurück und sagt, wo man nachsieht.
+
+**Ob das die Eins-von-Fünf aus #291 ist, steht nicht fest** — vier saubere Läufe,
+dann hat die Jagd den eigenen Baum unter sich wechseln sehen, und vier sind keine
+Aussage. Es ist ein Mechanismus, der genau das gemeldete Bild erzeugt, und ab
+heute meldet er sich selbst. #291 bleibt offen.
+
+### Gefunden — nebenbei
+
+- **Playwright-Browser fehlten nach dem Dev-Bump.** #374 hat `@playwright/test`
+  bewegt, und `chromium_headless_shell-1243` lag nicht im Cache: sieben
+  Fehlschläge, die wie ein Testfehler aussehen und ein fehlender Download sind.
+  In CI trägt das der Setup-Schritt; lokal trägt es niemand. Keine Prüfregel —
+  noch kein Vorfall, nur eine Viertelstunde.
+- **`.decision-table`s tote Regel stand nie dauerhaft auf 78.** Sie stand dort für
+  fünf Commits und hat seither **elf weitere Zeilennummern** gesehen; heute ist es
+  479. Vier Stellen zitierten unverändert `layout.css:78`. Zwei davon sind lebende
+  Kommentare und nennen jetzt die Regel; ADR 0055 behält seine 78, weil eine ADR
+  festhält, was an einem Tag geschrieben wurde — korrigiert wird im späteren
+  Dokument, so wie ADR 0040 es mit ADR 0028 hält.
+
+### Entscheidungen, die anstehen
+
+#186 · #302 · #292 · #353 · #205 · #296 · #323 · #243 · #303 · #35 · #45 · #14 —
+je eine Vorlage mit Empfehlung, keine davon nebenbei gebaut.
+
+Offen und ausdrücklich: **#295 wollte die Spalte in `docs/design/INDEX.md`.**
+Die Datei sagt über sich selbst, sie sei „die einzige Datei hier, die wir selbst
+schreiben"; `CLAUDE.md` sagt „Nichts in `docs/design/` ändern". Die Spalte steht
+deshalb in Kapitel 7 des Build-Plans, und `INDEX.md` bleibt unberührt, bis eine
+der beiden Regeln gewinnt.
+
+---
+
 ## Zwischendurch — 20.09.2026: die Dependabot-Welle vom 14.09., und React steht gar nicht in der `package.json`
 
 Sechs PRs, seit dem 14.09. um 05:17Z offen. Vier grün und `CLEAN`, zwei rot —
