@@ -19,11 +19,21 @@ import type { Decision } from "@/content/case-studies/types";
  * does the same thing in its 390 artboard, where the rejected option becomes a
  * sentence that begins with the word "Rejected".
  *
- * `layout.css:78` — `.decision-table { grid-template-columns: 1fr }` — is still
- * without a consumer after this, and that is recorded rather than worked
- * around: the rule presumes a grid of divs, and a grid of divs only reflows if
+ * ONE RULE, NOT THE CLASS: `.decision-table { grid-template-columns: 1fr }` is
+ * still without a consumer after this, and that is recorded rather than worked
+ * around. The rule presumes a grid of divs, and a grid of divs only reflows if
  * its rows carry `display: contents`, which browsers strip from the
- * accessibility tree along with the row and cell roles.
+ * accessibility tree along with the row and cell roles. Everything else the
+ * class carries — `case.css` above 720, `layout.css` below it — is in use by
+ * the `<table>` this file renders.
+ *
+ * It sits in `layout.css` under the 720 switch. This comment, `case.css` and
+ * ADR 0055 all said `layout.css:78` until #292 counted. It WAS 78, for five
+ * commits; since then the rule has stood at eleven further line numbers and is
+ * at 479 today, and the citation was carried along through every one of them. A
+ * line number in a comment is a reference with a shelf life, so the two comments
+ * name the rule instead. ADR 0055 keeps its `:78` — an ADR records what was
+ * written on a day, and it is corrected here rather than rewritten there.
  *
  * WHICH SHEET'S COLUMNS. The two disagree, again: `Case Study Template` draws
  * `230px 1fr 1fr` with ALTERNATIVE in the middle, `Case Study 02` draws

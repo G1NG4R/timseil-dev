@@ -403,19 +403,25 @@ Sie steht hier bewusst **nicht** ein zweites Mal. Die frühere Fassung dieses Ka
 
 Die Entwürfe tragen Angaben, die nach den Entscheidungen dieses Plans nicht mehr stimmen. **Auf einer Seite über Prüfbarkeit sind das keine Kosmetikfehler.** In A3 als Issues anlegen, in K1 abarbeiten:
 
-| # | Wo | Steht da | Muss heißen | Schwere |
-|---|---|---|---|---|
-| 1 | Case-Study-Spec-Rail, Homepage-Systemzeile, Work Index, Terminal `stack` | `React Router 7` | `Next.js 16` | **kritisch** |
-| 2 | Case-Study-Spec-Rail | `PostgreSQL 16` | `PostgreSQL 18` | **kritisch** |
-| 3 | Handoff 4a | Health-Container mit SQLite | API-Container mit Postgres (ADR 0005) | hoch |
-| 4 | Homepage, Case Study 02, About, 404 | deutsche Absätze in EN-Oberfläche | englische Fassung | hoch |
-| 5 | Case Study `.04 OPERATIONS` | „ohne Prometheus" | Prometheus ist Teil des Stacks (ADR 0007) | hoch |
-| 6 | `Homepage Themes` | `[FOLGT]` | `[SOON]` | mittel |
-| 7 | Scroll-Choreografie | Pin „schaltet 5 Systeme" | 2 Systeme → Pin bis System 03 deaktivieren | mittel |
-| 8 | Contribution-Graph | `[PLACEHOLDER DATA]` | entfällt beim API-Anschluss | mittel |
-| 9 | Terminal-Inventar | Befehlsliste ohne `cv` | mit `cv` | niedrig |
+**Die Spalte „Form" ist das Warnschild (#295).** Eine *Anmerkung* steht neben der Zeichnung und verlässt das Blatt nie. *Seitentext* ist ein Satz, den die Seite ausliefert, wenn jemand ihn abschreibt — und genau das ist der teure Fall. Wer die Tabelle als Notiz über eine Zeichnung liest, übersieht, dass zwei dieser Korrekturen Sätze sind.
+
+| # | Wo | Steht da | Muss heißen | Form | Schwere |
+|---|---|---|---|---|---|
+| 1 | Case-Study-Spec-Rail, Homepage-Systemzeile, Work Index, Terminal `stack` | `React Router 7` | `Next.js 16` | **Seitentext** | **kritisch** |
+| 2 | Case-Study-Spec-Rail | `PostgreSQL 16` | `PostgreSQL 18` | **Seitentext** | **kritisch** |
+| 3 | Handoff 4a | Health-Container mit SQLite | API-Container mit Postgres (ADR 0005) | Anmerkung | hoch |
+| 4 | Homepage, Case Study 02, About, 404 | deutsche Absätze in EN-Oberfläche | englische Fassung | **Seitentext** | hoch |
+| 5 | Case Study `.04 OPERATIONS` | „ohne Prometheus" | Prometheus ist Teil des Stacks (ADR 0007) | **Seitentext** | hoch |
+| 6 | `Homepage Themes` | `[FOLGT]` | `[SOON]` | **Seitentext** | mittel |
+| 7 | Scroll-Choreografie | Pin „schaltet 5 Systeme" | 2 Systeme → Pin bis System 03 deaktivieren | Anmerkung | mittel |
+| 8 | Contribution-Graph | `[PLACEHOLDER DATA]` | entfällt beim API-Anschluss | **Seitentext** | mittel |
+| 9 | Terminal-Inventar | Befehlsliste ohne `cv` | mit `cv` | **Seitentext** | niedrig |
+
+**Zu #5, und das ist der Fund hinter der Spalte:** `Case Study 02` trägt „No metrics stack for one host and three services." und „Rejected: Prometheus and Grafana" als **englischen Seitentext**, nicht als Anmerkung neben der Zeichnung. Der Stack hat seit ADR 0007 Prometheus. Die Tabelle hielt die Tatsache fest und verschwieg, dass diese Fassung mitginge, wenn jemand sie abschriebe.
 
 **Zu #7:** Ein Pin, der zwei Zeilen durchschaltet, sieht nach ungenutzter Mechanik aus. Der große Moment ist am Launch-Tag die Boot-Sequenz.
+
+**Die Gegenprobe im Code:** `web/e2e/sheet.ts` und die drei `case-study.*.spec.ts` führen eine Liste veralteter Zeichenketten — `React Router`, `PostgreSQL 16`, `SQLite`, `metrics stack`, `wget`, `env_file` —, die auf keiner gebauten Seite vorkommen darf. Das ist die Hälfte, die eine Tabelle nicht leisten kann: sie erinnert, der Test weist ab.
 
 ---
 
@@ -1215,7 +1221,9 @@ docker compose rm -s -f api2 web2
 *Fertig wenn:* Jeder Zustand hat ein zweites Merkmal neben der Farbe.
 
 **G7 · Komponenten-Galerie** — Route `/dev/components`, nur in Development: jedes Bauteil × jeder Zustand. Entwicklungswerkzeug **und** Ziel für Visual Regression.
-*Fertig wenn:* Alle 15 Bauteile aus dem Handoff-Inventar mit allen dokumentierten Zuständen sichtbar.
+*Fertig wenn:* Alle Bauteile aus `SYS.00.04.04 KOMPONENTEN` mit allen dokumentierten Zuständen sichtbar — die Liste steht in `web/lib/gallery/registry.ts`, nicht hier.
+
+**Die 15 stimmten nie (#241).** Das Blatt hat **vierzehn Zeilen und sechzehn Namen**: `SpecRail · PostCard` und `TopNav · StatusDot` tragen je zwei. Die Zahl 15 stand nur in diesem Plan und, von hier abgeschrieben, im Backlog — kein Blatt nennt sie. G7 hat sie deshalb nicht korrigiert, sondern ersetzt: `registry.ts` trägt die sechzehn Namen als **Liste**, `inventoryProgress()` zählt sie, und `registry.test.ts` hält die Liste statt einer Zahl. Wer als Nächstes hinsieht, muss einer Liste widersprechen und nicht einer Ganzzahl, von der er annehmen könnte, sie sei gerundet.
 
 ---
 

@@ -456,7 +456,9 @@
 
 /* ── The decision table ────────────────────────────────────────────────────
    A table above 720 and labelled blocks below it; DecisionTable.tsx carries the
-   argument for both halves and for why layout.css:78 still has no consumer.
+   argument for both halves and for why the `grid-template-columns` rule under
+   the 720 switch in layout.css still has no consumer (#292 — cited here as
+   `layout.css:78` long after the rule had moved eleven times past it).
    The width-dependent half is in layout.css, as everything width-dependent on
    this page is.                                                               */
 

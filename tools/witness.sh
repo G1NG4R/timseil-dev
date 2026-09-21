@@ -63,14 +63,42 @@
 # drill that passed in three seconds and after --until-sha's own guard rail.
 #
 # The repair is the one verify-deploy.sh already uses for its fourth condition,
-# and it is the same field: .startedAt read against itself. A deploy is a NEW
-# PROCESS, so nothing counts as one until that value changes. Two consequences,
-# and the second is the one that matters:
+# and it is the same field: .startedAt read against itself. A deploy brings up a
+# NEW PROCESS, so nothing counts as one until that value changes. Two
+# consequences, and the second is the one that matters:
 #
 #   · --until-sha now needs the sha AND a restart. Started too late, it is red.
 #   · --until-restart needs no sha at all, which is what lets it be started
 #     BEFORE the merge — and a squash sha does not exist before the merge, which
 #     is exactly how the run above ended up starting too late.
+#
+# AND SINCE E5b THERE ARE TWO PROCESSES, NOT ONE (#158). The paragraph above was
+# written for a world with one backend and this instrument no longer measures
+# that world. A rollout runs the twin of each service beside it
+# (compose.rollout.yaml, steps 1 to 3), so for the length of the deploy window
+# /api/health is load-balanced across TWO processes and .startedAt alternates
+# between two values rather than changing once.
+#
+# WHAT THE INSTRUMENT DOES WITH THAT, and it is right: --until-restart takes the
+# first answer as its baseline and treats any change as "a new process is
+# answering". With twins that fires as soon as the twin joins the pool, which is
+# a true statement — a new process IS answering — and the tail then covers the
+# rest of the rollout. Both production runs on 2026-08-22 behaved accordingly:
+# the 19:19 deploy that missed its acceptance was reported as a deploy and was
+# red for the right reason, and the 20:11 one measured 333 requests, 333×200
+# across a real swap.
+#
+# WHAT IT DOES NOT PROVE, and this is the sentence the old paragraph implied and
+# should not have: a change in .startedAt proves that a process appeared which
+# was not there before. It does not prove the old one is gone. That claim
+# belongs to rollout.sh step 4, which removes the twins by service name, and to
+# verify-deploy.sh, which runs after they are gone and therefore still reads one
+# identity — checked against the same premise while this was written, and
+# untouched by it.
+#
+# This is not a bug report about the code below. It is a comment that argued
+# from a premise that stopped holding, in a file whose whole point is that an
+# instrument must not reassure.
 #
 # TIME IS RECORDED, NOT ASSUMED. Each sample carries the wall-clock second it
 # was taken in. A request that outlasts the interval leaves a gap in the numbers
