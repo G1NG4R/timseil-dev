@@ -18,10 +18,16 @@
 # v0.31.0-3-g254cd67 to anyone who asked. CONTRIBUTING.md said it in words —
 # "The type is a decision, not a formality" — and words are not a gate.
 #
-# ONE GRAMMAR, ONE FILE. This does not re-spell the pattern: it writes the title
-# to a file and runs the commit-msg hook on it, which is the same program a
-# developer's `git commit` runs. The 72-character rule comes along for free, and
-# the broken cases are proven where they always were, in tools/selftest.sh.
+# ONE GRAMMAR, ONE FILE. This does not re-spell the pattern: tools/check-pr-title.sh
+# composes the subject and runs the commit-msg hook on it, which is the same
+# program a developer's `git commit` runs. The broken cases are proven where they
+# always were, in tools/selftest.sh.
+#
+# THE 72-CHARACTER RULE DID NOT COME ALONG FOR FREE, and the sentence that stood
+# here said it did. The squash appends ` (#N)`, so the hook was measuring a
+# string seven characters shorter than the one that lands — #351 passed at 71 and
+# landed at 78. The suffix is composed in the script now, which is also why the
+# title is checked there rather than in three lines of `run` here. #354.
 #
 # WHY NOT A JOB IN ci.yml. That workflow takes `pull_request` with the default
 # types — opened, synchronize, reopened — and `edited` is not among them. A
@@ -59,16 +65,15 @@ jobs:
       # THE TITLE ARRIVES THROUGH `env` AND NEVER THROUGH `${{ }}` IN A `run`.
       # An expression is substituted into the script BEFORE the shell sees it,
       # so a title containing a backtick or `$(…)` would be executed rather than
-      # written. Through the environment it is data, and `printf '%s'` keeps it
-      # data — no `echo`, whose behaviour on a leading `-` is not portable.
+      # written. Through the environment it is data, and quoting it into the
+      # script's argument keeps it data — no `echo`, whose behaviour on a leading
+      # `-` is not portable.
       #
-      # The hook reads the FIRST line, so a title cannot smuggle a second one in
+      # The script takes the FIRST line, so a title cannot smuggle a second one
       # past it: a newline in $TITLE makes the remainder body, exactly as it
       # would in a commit message.
-      - name: Check the title the squash merge will keep
+      - name: Check the subject the squash merge will write
         env:
           TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          printf '%s\n' "$TITLE" > "$RUNNER_TEMP/pr-title"
-          .githooks/commit-msg "$RUNNER_TEMP/pr-title"
-          printf '✓ the title is a Conventional Commit, and release.sh can read it\n'
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: tools/check-pr-title.sh "$TITLE" "$NUMBER"

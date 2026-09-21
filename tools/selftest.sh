@@ -60,7 +60,7 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/prune-registry.sh" "$root/tools/witness.sh" \
    "$root/tools/rollout.sh" "$root/tools/release.sh" \
    "$root/tools/check-rollout.sh" "$root/tools/check-tokens.sh" \
-   "$root/tools/check-vuln.sh" "$tmp/tools/"
+   "$root/tools/check-vuln.sh" "$root/tools/check-pr-title.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -1702,6 +1702,46 @@ write_msg "Merge branch main"                 && accepts "merge commit passes th
 # case that names the day.
 write_msg "H9b · The log index, and the filter drawn against ten entries" \
                                               && rejects "the PR title that published nothing is rejected" .githooks/commit-msg msg
+
+printf 'pr-title\n'
+# THE GAP THE HOOK COULD NOT SEE, and two titles walked through it. The squash
+# appends ` (#N)`; the hook was handed the title without it, so 66 to 72
+# characters passed the gate and landed over the limit — #351 at 71 became 78 on
+# main, #352 at 66 became 73. Both are in the history, which is why this block
+# exists and why the cases below are written as lengths rather than as sentences.
+#
+# `chars N` builds a title whose SUBJECT is exactly N characters: six for
+# `feat: ` and N-6 of filler.
+chars() { printf 'feat: %s' "$(printf 'a%.0s' $(seq $(( $1 - 6 ))))"; }
+accepts "a title with room for the suffix is accepted" \
+  tools/check-pr-title.sh "$(chars 60)" 370
+# THE SUFFIX IS AS LONG AS THE NUMBER IS. ` (#1)` is five characters and
+# ` (#370)` is seven, so the boundary moves with the pull request — which is
+# the reason it is composed rather than assumed.
+accepts "67 and a one-digit number is exactly the limit" \
+  tools/check-pr-title.sh "$(chars 67)" 1
+refuses "68 and the same number is one over" \
+  "Subject is 73 characters" tools/check-pr-title.sh "$(chars 68)" 1
+# The case this whole block is about, at the length it really happened: #352 was
+# 66 characters, went green, and put 73 on main.
+accepts "65 and a three-digit number is exactly the limit" \
+  tools/check-pr-title.sh "$(chars 65)" 370
+refuses "66 — the length #352 shipped at — is one over once it is numbered" \
+  "Subject is 73 characters" tools/check-pr-title.sh "$(chars 66)" 370
+refuses "a title of 70 is refused for what the squash makes of it" \
+  "Subject is 77 characters" tools/check-pr-title.sh "$(chars 70)" 370
+# And the arithmetic is on screen, because a contributor who counted to 70
+# otherwise reads a refusal about 77 and cannot see where seven came from.
+accepts "it prints the three numbers before it refuses" \
+  sh -c 'out=$(tools/check-pr-title.sh "$(printf "feat: %s" "$(printf "a%.0s" $(seq 64))")" 370 2>&1 || true)
+         case $out in *"suffix           7 characters"*) exit 0 ;; *) exit 1 ;; esac'
+# The grammar still comes from the one file that spells it.
+refuses "a title with no type is still refused" \
+  "not a Conventional Commit" tools/check-pr-title.sh "H9b · The log index" 338
+# A pull request number is a number. Anything else is a caller bug, not a title
+# to report on, and it must not be pasted into the subject.
+refuses "a number that is not a number is refused" \
+  "not a pull request number" tools/check-pr-title.sh "feat: fine" '1); rm -rf /'
 
 printf 'pre-push\n'
 push_ref() { printf 'refs/heads/%s abc refs/heads/%s def\n' "$1" "$1" | .githooks/pre-push origin url; }
