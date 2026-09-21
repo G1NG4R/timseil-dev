@@ -12,6 +12,204 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Zwischendurch — 20.09.2026: die Dependabot-Welle vom 14.09., und React steht gar nicht in der `package.json`
+
+Sechs PRs, seit dem 14.09. um 05:17Z offen. Vier grün und `CLEAN`, zwei rot —
+und **beide roten aus demselben Grund, den `.github/dependabot.yml` selbst
+vorhergesagt hat**: Versionen werden zur `make gen`-Zeit aufgelöst (ADR 0012),
+Dependabot kann `make gen` nicht laufen lassen, also fällt jeder Bump, der ein
+`major.minor` aus `stack.yaml` bewegt, über `api/internal/seed/stack.gen.json`.
+
+| PR | Bump | Zustand |
+|---|---|---|
+| #375 | `github/codeql-action` 4.37.9 → 4.38.0, dreimal | grün |
+| #372 | `distroless/static` Digest, api-Runtime-Base | grün |
+| #371 | `prom/prometheus` v3.13.2 → v3.13.3 | grün |
+| #374 | dev: `@redocly/cli`, `typescript-eslint` | grün |
+| #370 | `pgx/v5` 5.10.0 → 5.11.0 | rot: `check` + `title` |
+| #373 | `react`/`react-dom` 19.2.8 → 19.3.0 | rot: `check`, später ersetzt durch #380 |
+
+`main` hatte seit dem 14.09. keine der betroffenen Dateien angefasst. Kein
+einziger echter Konflikt — die Welle lag sechs Tage, weil niemand hinsah, nicht
+weil etwas im Weg stand.
+
+**#371 blieb grün, weil ein Patch die Seite nicht bewegt.** `stack.gen.json`
+trägt nur `major.minor`; `Prometheus 3.13` bleibt `Prometheus 3.13`. Dieselbe
+Zeile in `dependabot.yml` sagt das seit #176 voraus, und es stimmt.
+
+**Die beiden roten sind nur an `check-contract` gescheitert**, und
+`check-go`/`check-lint`/`check-web` stehen in `make check` davor. Der Go-Code
+kompiliert also mit pgx 5.11, und #373 hatte zusätzlich ein grünes `e2e` —
+Playwright gegen die echte Lockfile mit React 19.3.
+
+### #354 zum zweiten Mal, und diesmal ohne Schaden
+
+#370s Titel ist **81 Zeichen**, der Wächter begrenzt auf 72. Weit genug
+darüber, dass die sieben Zeichen von ` (#370)`, die niemand misst, keine Rolle
+spielen — genau wie am 08.09. Der neue Titel wurde auf 52 gesetzt, damit die
+Lücke auch nicht auffällt.
+
+### Der Fund: die React-Version auf der Seite hat kein laufendes System hinter sich
+
+#373 sollte gegen das Bundle-Budget gemessen werden, bevor er durchgeht — #237
+stand bei 143 KB von 150 KB, und `make bundle-size` läuft in **keiner** CI.
+
+Erstes Hindernis: **`make bundle-size` ist auf `main` rot**, und zwar an #301 —
+`static/chunks/35_l6rwk4aatr.js` trägt Framework- und eigene Module, die
+Zuordnung bricht. Die Gesamtzahl entsteht im Skript aber *vor* der Zuordnung,
+also wurde sie daneben ausgerechnet: dieselbe Quelle (`<script src>` des
+gebauten Dokuments minus Polyfills, `gzip -9`), nur ohne die Aufteilung.
+
+```
+next 16.3.4, react 19.2.8   145900 B initial JS von / , 8 Dateien
+next 16.3.4, react 19.3.0   145900 B initial JS von / , 8 Dateien
+next 16.3.5, react 19.3.0   145900 B initial JS von / , 8 Dateien
+```
+
+**Byte-identisch, über drei Kombinationen.** Das ist kein Messfehler, und der
+Grund ist der eigentliche Fund:
+
+```
+$ grep -o '19\.3\.0-canary[^"]*' web/.next/static/chunks/*.js | ...
+  7 × 19.3.0-canary-cbb046ab-20260731     # bei react 19.2.8 in node_modules
+```
+
+**Next 16.3.4 liefert sein eigenes React mit.**
+`node_modules/next/dist/compiled/react-dom` ist
+`19.3.0-canary-cbb046ab-20260731`, und genau dieser String steht in den
+ausgelieferten Chunks — auch dann, wenn in `node_modules/react` die 19.2.8
+liegt. **16.3.5 liefert dieselbe Canary**, deshalb bewegt auch der Next-Patch
+die Zahl nicht. Der App Router zieht die mitgelieferte Kopie, nicht die aus der
+`package.json`.
+
+Damit gilt: **`stack.yaml` liest `dependencies.react` aus `web/package.json`,
+und das ist eine Deklaration, kein laufendes System.** Die Seite behauptete
+„React 19.2", während im Browser eine 19.3-Canary lief. Der Bump macht die
+Behauptung zufällig richtiger, nicht nachweislich.
+
+`docs/build-plan.md:169` wusste es schon — „React 19.2 (Canary-Kanal), nicht
+selbst pinnen, Next bestimmt". Der Eintrag in `stack.yaml` hat diesen Satz nie
+abgebildet. Das ist die eine Regel aus `CLAUDE.md` an ihrer dünnsten Stelle: die
+Zahl hat eine Quelldatei, aber kein System, das sie produziert. **Issue-Kandidat
+für die nächste Triage**, und keine Reparatur, die in einen Bump-PR gehört.
+
+Nebenbei: die 143 KB aus **#237** sind heute **145,9 KB**. 4100 B bis zum
+Budget, und React 19.3 verbraucht davon keines.
+
+### Der Titel-Wächter entscheidet per Rennen, und heute hat er beide Ausgänge gezeigt
+
+`pr-title.yml` hört auf `opened, edited, reopened, synchronize` und hat
+`concurrency: pr-title-${{ github.ref }}` mit `cancel-in-progress: true`. Wer
+einen Commit pusht und danach den Titel setzt, löst **zwei** Läufe aus — und
+wenn beide in dieselbe Sekunde fallen, überlebt einer, und welcher, ist nicht
+bestimmt.
+
+```
+#370  14:11:03Z  zwei Läufe   → der mit dem ALTEN Titel überlebte, ✗ 81 Zeichen
+#380  16:53:38Z  zwei Läufe   → der mit dem NEUEN Titel überlebte, ✓ 57 Zeichen
+```
+
+Bei #370 stand damit ein roter Pflicht-Kontext gegen einen Titel, den es nicht
+mehr gab. Die Reparatur ist dieselbe wie am 08.09.: Titel ändern und byte-genau
+zurück, dann läuft `title` allein und die anderen elf Check-Runs bleiben stehen.
+Zwei Sekunden Arbeit, wenn man weiß, wonach man sieht — und eine halbe Stunde
+Suche, wenn nicht, weil der rote Lauf einen Titel zitiert, der in der Oberfläche
+nirgends mehr steht.
+
+**Die Reihenfolge ist die billige Gegenmaßnahme**: erst pushen, den Lauf
+ankommen lassen, dann den Titel setzen. Sie kostet nichts und nimmt dem Rennen
+die Gleichzeitigkeit. Aufgeschrieben, weil die Regel sonst beim nächsten Mal neu
+gefunden wird — #354 zählt die Zeichen, dieser Eintrag zählt die Ereignisse.
+
+### #373 hat den Merge von #374 nicht überlebt, und das war der bessere Ausgang
+
+Zwei Minuten nach #374 hat Dependabot **#373 geschlossen und als #380 neu
+geöffnet** — dieselbe Gruppe, neu aufgelöst gegen das bewegte `main`, jetzt mit
+**drei** Updates: `react`, `react-dom` und zusätzlich **`next` 16.3.4 → 16.3.5**.
+Genau das, was der Eintrag vom 08.09. für #344 → #351 festgehalten hat, und aus
+demselben Grund die bessere Variante: die Lockfile wird neu gebaut, nicht aus
+einer veralteten Basis gemergt. Die PR-Nummer überlebt es nicht, die Arbeit auf
+dem alten Branch auch nicht.
+
+Der Next-Patch ändert am Seed nichts — `stack.gen.json` trägt `major.minor`,
+`Next.js 16.3` bleibt `Next.js 16.3`.
+
+**Was dabei auffiel und bleibt:** `next` steht jetzt auf 16.3.5, `@next/mdx` und
+`eslint-config-next` auf 16.3.4. Drei Pakete, die bisher immer dieselbe Zahl
+trugen, tragen zwei — weil Dependabots Gruppen sie trennen: das eine ist
+production, die beiden anderen development. Keine Prüfregel hält sie zusammen,
+und keine hat je eine gebraucht, weil die Gruppen bis heute im Gleichschritt
+liefen. Nächsten Montag räumt die Dev-Gruppe es vermutlich selbst ab. Wenn nicht,
+ist es eine Zeile in `check-versions.sh` — aber erst dann, denn eine neue
+Prüfregel braucht einen Vorfall, und das hier ist noch keiner.
+
+### Zwei Commits auf `main` haben nie einen Lauf bekommen — und das war kein Fehler
+
+Die vier grünen wurden in acht Sekunden gemerged, 14:11:06Z bis 14:11:14Z. Was
+daraus wurde:
+
+```
+14:11:06  c363e0d  #375  in_progress  →  läuft, deployt
+14:11:09  d860968  #372  cancelled    ←  um 14:11:13, ohne je zu starten
+14:11:12  799c851  #371  cancelled
+14:11:14  a0b439c  #374  pending      →  läuft danach, deployt
+```
+
+`ci.yml:69-71` setzt `cancel-in-progress` nur für `pull_request`, und daraus
+war hier die Erwartung abgeleitet worden, auf `main` würden sich vier Läufe
+hintereinander stellen. **Das tun sie nicht.** Eine Gruppe hält *einen*
+laufenden und *einen* wartenden Lauf; kommt ein dritter dazu, wird der wartende
+abgebrochen. `cancel-in-progress: false` schützt den laufenden, nicht den in
+der Schlange.
+
+Das Ergebnis ist hier richtig — `a0b439c` enthält alle vier Bumps, und was
+deployt wird, ist dieser Baum. Aber zwei Dinge folgen daraus, die vorher
+niemand aufgeschrieben hatte:
+
+- **Ein Commit auf `main` kann ohne jeden Lauf bleiben.** Kein `check`, kein
+  `e2e`, kein Image in der GHCR unter seinem Tag. Wer annimmt, zu jedem
+  `main`-Commit gäbe es ein Image, zum Zurückrollen etwa, liegt ab heute falsch.
+- **Wäre einer der übersprungenen Commits kaputt gewesen, hätte es der Lauf des
+  *nächsten* gemeldet** — und die Ursache läge dann in einem Commit, den der
+  rote Lauf nicht nennt.
+
+Wer das nicht will, merged nicht in acht Sekunden, sondern wartet jeden Lauf ab.
+Das ist die ganze Gegenmaßnahme, und sie kostet nur Geduld.
+
+### Und ein roter `main`, der keinem Bump gehört
+
+Der Lauf für `a0b439c` fiel mit **`2510 passed, 1 failed`**:
+
+```
+[w1024] › e2e/notfound.spec.ts:70 › markup in the address is printed, never executed
+  strict mode violation: locator('.nf-fact-path') resolved to 2 elements
+```
+
+**Das Repository beschreibt dieses Rennen selbst.** `web/e2e/streaming.ts:127-131`:
+seit H10b liegt der Router-Trace der 404 hinter `<Suspense>`, der Fallback
+rendert dieselbe Tafel wie die Antwort, „both copies are in the document during
+the swap … its count is 2 during the swap and 1 either side". `RouterTrace.tsx:40`
+ist die einzige Stelle im Baum, die `.nf-fact-path` erzeugt — zwei Treffer sind
+also Fallback und Antwort gleichzeitig.
+
+Dafür hält `streaming.ts` `NOT_FOUND_REGIONS` bereit. **Beide Tests in
+`notfound.spec.ts`, Zeile 63 und Zeile 88, greifen trotzdem direkt auf den
+Selektor zu**, ohne auf das Ende des Tauschs zu warten. Zeile 88 hat das Rennen
+nach 511 ms verloren; Zeile 63 kann es genauso verlieren und hat es nur noch
+nicht getan. **Issue-Kandidat**, und die Reparatur ist eine Zeile pro Test, kein
+Umbau — das Werkzeug dafür liegt schon in der Datei nebenan.
+
+Kein Zusammenhang mit der Welle: #372 und #371 fassen `web/` nicht an, #374 sind
+Dev-Abhängigkeiten, und der Lauf davor (`c363e0d`) war grün bis `deploy`.
+
+Die Folge war aber eine echte: **`deploy` hängt an `e2e`**, also blieb Produktion
+auf `c363e0d` stehen, und die Bumps aus #372, #371 und #374 lagen gebaut und
+signiert da, ohne ausgeliefert zu sein. Ein Neulauf von `a0b439c` wäre der
+falsche Griff gewesen — er hätte den älteren Baum ausgeliefert, während `cfca959`
+mit allem drin schon in der Schlange stand.
+
+---
+
 ## Wo wir stehen — 20.09.2026, H13a abgenommen: `v0.38.0` steht, und zwei Uhren sagen dasselbe über #242
 
 `7244a12` läuft, **`v0.38.0`**. Merge **11:02:35Z**, Deploy gemeldet 11:16:35Z,
