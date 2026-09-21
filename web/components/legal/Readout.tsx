@@ -5,7 +5,7 @@
 // the way — the same division of labour as components/Clock.tsx.
 "use client";
 
-import { type CSSProperties, useSyncExternalStore } from "react";
+import { type CSSProperties, useCallback, useSyncExternalStore } from "react";
 
 import {
   isPending,
@@ -34,7 +34,6 @@ function browserSource(): ReadoutSource {
     languages: navigator.languages,
     language: navigator.language,
     referrer: document.referrer,
-    path: location.pathname,
     protocol: navigation?.nextHopProtocol,
     screenWidth: screen.width,
     screenHeight: screen.height,
@@ -45,11 +44,11 @@ function browserSource(): ReadoutSource {
   };
 }
 
-/** Module level, so React sees the same function identity on every render and
- *  does not re-subscribe. lib/clock.ts makes the same point about its own. */
-function liveSnapshot() {
-  return readoutSnapshot(browserSource);
-}
+/** `subscribe` is the identity React watches — change it and it re-subscribes on
+ *  every render — so it stays module level. lib/clock.ts makes the same point
+ *  about its own. `getSnapshot` is allowed to move, and has to: it carries the
+ *  path, which belongs to the page rather than to the module. What must not move
+ *  is the array it returns, and `readoutSnapshot` keeps that stable per path. */
 
 /**
  * `tail -f access.log — your request`.
@@ -71,18 +70,24 @@ function liveSnapshot() {
  * rather than an empty one.
  */
 export function Readout({
+  path,
   title,
   badge,
   footer,
   pending,
   label,
 }: {
+  /** The address of the document this panel is part of, from the page that is
+   *  rendering it. NOT read from the browser — see `request` in
+   *  lib/legal/readout.ts, and #376 for what reading it there cost. */
+  path: string;
   title: string;
   badge: string;
   footer: string;
   pending: string;
   label: string;
 }) {
+  const liveSnapshot = useCallback(() => readoutSnapshot(path, browserSource), [path]);
   const fields = useSyncExternalStore(subscribeReadout, liveSnapshot, readoutServerSnapshot);
   const waiting = isPending(fields);
 

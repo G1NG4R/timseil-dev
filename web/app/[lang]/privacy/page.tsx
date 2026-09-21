@@ -60,6 +60,10 @@ export default async function Page() {
         </div>
 
         <Readout
+          // The one value in the panel that is not read off the browser. The
+          // page knows its own address for certain; the browser was asked once
+          // and answered `/imprint` (#376).
+          path={localeHref(locale, "/privacy")}
           title={PANEL.title}
           badge={PANEL.badge}
           footer={PANEL.footer}

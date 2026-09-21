@@ -55,7 +55,6 @@ export interface ReadoutSource {
   readonly languages: readonly string[] | undefined;
   readonly language: string | undefined;
   readonly referrer: string | undefined;
-  readonly path: string | undefined;
   /** The protocol the navigation actually negotiated — `h2`, `h3`, `http/1.1`.
    *  Empty or absent where the entry is not exposed, and then the line simply
    *  does not claim one. */
@@ -128,13 +127,28 @@ function language(source: ReadoutSource): string {
   return single !== undefined && single.length > 0 ? single : PENDING;
 }
 
-function request(source: ReadoutSource): string {
+/**
+ * THE PATH IS NOT A MEASUREMENT AND THIS IS THE ONE LINE THAT SAYS SO (#376).
+ *
+ * Every other value in this panel is something only the browser knows. The path
+ * is not: it is a fact about the document being displayed, and the page
+ * rendering it knows it for certain. It used to come from `location.pathname`
+ * at the moment the reading was taken, and taking it there was wrong twice
+ * over — the reading is cached for the life of the module, and on a client-side
+ * transition between two prerendered routes the snapshot could be taken before
+ * the URL committed. Arriving at `/privacy` from `/imprint` by link therefore
+ * printed `GET /imprint`, and nothing later corrected it.
+ *
+ * So it is handed in. The protocol beside it genuinely is a measurement of the
+ * connection and stays where it is.
+ */
+function request(path: string, source: ReadoutSource): string {
   // GET is not a guess: a document navigation a visitor arrived at by following
-  // a link, typing an address or restoring a tab is a GET. The path is read.
+  // a link, typing an address or restoring a tab is a GET.
   // The protocol is appended only when the browser reported one.
-  const path = source.path !== undefined && source.path.length > 0 ? source.path : PENDING;
+  const shown = path.length > 0 ? path : PENDING;
   const protocol = source.protocol;
-  return protocol !== undefined && protocol.length > 0 ? `GET ${path} · ${protocol}` : `GET ${path}`;
+  return protocol !== undefined && protocol.length > 0 ? `GET ${shown} · ${protocol}` : `GET ${shown}`;
 }
 
 function timeZone(source: ReadoutSource): string {
@@ -163,14 +177,14 @@ function timestamp(source: ReadoutSource): string {
  * eight strings, which is what lets the test below hand it a browser that knows
  * nothing and read the answer rather than a stack trace.
  */
-export function readFields(source: ReadoutSource): readonly ReadoutField[] {
+export function readFields(path: string, source: ReadoutSource): readonly ReadoutField[] {
   const userAgent = source.userAgent;
   const referrer = source.referrer;
 
   return [
     { key: IP_KEY, value: IP_VALUE, emphasis: "dim" },
     { key: "TIMESTAMP", value: timestamp(source), emphasis: "ink" },
-    { key: "REQUEST", value: request(source), emphasis: "body" },
+    { key: "REQUEST", value: request(path, source), emphasis: "body" },
     {
       key: "USER-AGENT",
       value:
@@ -221,6 +235,10 @@ const PLACEHOLDER: readonly ReadoutField[] = KEYS.map((key) => ({
 }));
 
 let live: readonly ReadoutField[] | null = null;
+// The path the cached reading was taken for. A cache that outlives the document
+// it describes is what #376 was: the reading is still right about the browser
+// and wrong about the page.
+let livePath: string | null = null;
 
 /** No-op, and a stable module-level reference so React does not re-subscribe on
  *  every render. Nothing about a finished request changes. */
@@ -239,12 +257,23 @@ export function subscribeReadout(): () => void {
  * getSnapshot should be cached to avoid an infinite loop". readout.test.ts pins
  * the identity rather than the contents.
  */
-export function readoutSnapshot(makeSource: () => ReadoutSource): readonly ReadoutField[] {
+export function readoutSnapshot(
+  path: string,
+  makeSource: () => ReadoutSource,
+): readonly ReadoutField[] {
   // A THUNK AND NOT A SOURCE, because React calls `getSnapshot` on every render
   // and building a source means touching `navigator`, `screen` and the
   // Navigation Timing entry each time. After the first call the answer is
   // already known, so the thunk is simply never invoked again.
-  live ??= readFields(makeSource());
+  //
+  // KEYED BY THE PATH, so the identity survives every render of one page and
+  // nothing else. Today only `/privacy` mounts the panel and the key never
+  // changes; the day a second page mounts it, the reading is recomputed rather
+  // than carried over — which is the failure this cache had, one route wide.
+  if (live === null || livePath !== path) {
+    live = readFields(path, makeSource());
+    livePath = path;
+  }
   return live;
 }
 
@@ -265,4 +294,5 @@ export function isPending(fields: readonly ReadoutField[]): boolean {
  *  request is read once per page load, and a page load is a fresh module. */
 export function resetReadoutForTest(): void {
   live = null;
+  livePath = null;
 }
