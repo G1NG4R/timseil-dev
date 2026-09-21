@@ -7,7 +7,24 @@ set -eu
 
 root=$(git rev-parse --show-toplevel)
 tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT INT TERM
+
+# THE DIRECTORY WAS SWEPT UP AND THE SERVER WAS NOT.
+#
+# The verify and witness blocks run a `python3 -m http.server` on a fixed port
+# and stop it when they are done. This trap is what runs when the script does
+# not get that far, and it only ever removed the directory.
+#
+# IT IS NOT A MEASURED REPAIR AND IT IS NOT CLAIMED AS ONE. On SIGINT, which is
+# what was tried, the old shape left nothing behind either — and the way an
+# orphan really did arise here was a SIGKILL, where no trap runs at all. So this
+# closes a door nobody has been seen walking through. What was measured is one
+# line further down, at the readiness probe.
+NOOP_PID=
+cleanup() {
+  if [ -n "$NOOP_PID" ]; then kill "$NOOP_PID" 2>/dev/null || true; fi
+  rm -rf "$tmp"
+}
+trap cleanup EXIT INT TERM
 
 fail=0
 ok() { printf '  ✓ %s\n' "$1"; }
@@ -1880,10 +1897,35 @@ printf 'ok\n' > noop/index.html
 ( cd noop && exec python3 -m http.server 8731 --bind 127.0.0.1 >/dev/null 2>&1 ) &
 NOOP_PID=$!
 NOOP=http://127.0.0.1:8731
+
+# IT WAITS FOR OUR DOCUMENT AND NOT FOR AN ANSWER (#291), and this half was
+# measured rather than reasoned.
+#
+# On 2026-09-21 a killed run left a `http.server` holding 8731. The next run's
+# own server could not bind it, and every verify and witness case went red at
+# once — seventeen of them, not one naming the port. `curl` exits 0 on a 404, so
+# the bare readiness probe was satisfied by the stray server and waved the block
+# through to fail one assertion at a time.
+#
+# Reading the sha back is what tells our fixture from somebody else's. Whether
+# this is also the one-in-five #291 counted is NOT established: four clean runs
+# were recorded before the hunt was interrupted, which is not enough to say. It
+# is a mechanism that produces exactly the reported symptom, and from today it
+# reports itself.
+noop_ready=0
 for _ in 1 2 3 4 5 6 7 8 9 10; do
-  curl -s -o /dev/null --max-time 1 "$NOOP/api/health" && break
+  case $(curl -s --max-time 1 "$NOOP/api/health" 2>/dev/null) in
+    *'"sha":"1234abc"'*) noop_ready=1; break ;;
+  esac
   sleep 0.3
 done
+if [ "$noop_ready" -eq 0 ]; then
+  no "the no-op server answers on 8731 with its own document"
+  printf '    nothing on 127.0.0.1:8731 served the fixture within three seconds.\n'
+  printf '    Either python3 is missing, or a server from an interrupted run is\n'
+  printf '    still holding the port — check with: ss -lntp | grep 8731\n'
+  printf '    Every verify and witness case below would now be red for that.\n'
+fi
 
 accepts "verify accepts a build that is up" \
   env VERIFY_BASE_URL="$NOOP" tools/verify-deploy.sh 1234abc
