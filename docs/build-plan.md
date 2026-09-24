@@ -1,6 +1,6 @@
 # Masterplan — timseil.dev
 
-**Stand:** 16.08.2026 · **75 Phasen in 13 Stufen** — **66 im Launch-Pfad**, 8 danach, 1 Grenzfall
+**Stand:** 16.08.2026 · **85 Phasen in 14 Stufen** — **76 im Launch-Pfad**, 8 danach, 1 Grenzfall
 
 | | |
 |---|---|
@@ -70,9 +70,9 @@ Deshalb teilt sich Observability nicht in „wichtig / unwichtig", sondern in **
 
 ### Der ehrliche Gewinn
 
-**Launch-Pfad: 66 Phasen, ~82 Sessions. Ausbau danach: 8 Phasen plus der Grenzfall E3.**
+**Launch-Pfad: 76 Phasen, ~100 Sessions. Ausbau danach: 8 Phasen plus der Grenzfall E3.**
 
-Gegenüber allen 75 Phasen und ~98 Sessions sind das **rund 18 % schneller online.** Nicht 50 %, und mit deinem strengeren Test auch nicht mehr die 20 % von vorhin. Das gehört gesagt.
+Gegenüber allen 85 Phasen und ~116 Sessions sind das **rund 14 % schneller online.** Nicht 50 %, und mit deinem strengeren Test auch nicht mehr die 20 % von vorhin. Das gehört gesagt.
 
 Der Grund bleibt: **die Komplexität dieser Seite ist ihr Inhalt.** Terminal, Boot-Sequenz, Betriebsraster, abgeleiteter Trainings-Log, sieben Themes — daran lässt sich nichts kürzen, ohne das Argument zu beschädigen. Kürzen lässt sich nur die Betriebs-Raffinesse *um* die Seite herum.
 
@@ -90,8 +90,8 @@ Die acht verschobenen Phasen ergeben Inhalt, den du sonst erfinden müsstest: **
 [Phasenzuschnitt](#phasenzuschnitt--warum-so-und-nicht-anders) · [Zwei Pfade](#zwei-pfade--und-der-test-der-entscheidet) · [Revidierte Entscheidungen](#revidierte-entscheidungen)
 1. [Leitidee & Invarianten](#1-leitidee--die-neun-invarianten) · 2. [Stack](#2-stack) · 3. [Was wir bewusst nicht bauen](#3-was-wir-bewusst-nicht-bauen) · 4. [Architektur](#4-architektur) · 5. [Qualitätsmodell](#5-qualitätsmodell) · 6. [Design-Ordner](#6-der-design-ordner-im-projekt) · 7. [Design-Korrekturen](#7-design-korrekturen) · 8. [Claude Code & Git-Workflow](#8-arbeiten-mit-claude-code) · 9. [Repo-Layout](#9-repo-layout) · 10. [Ressourcen & Kosten](#10-ressourcen--kosten) · 11. [Sicherheits-Grundlage](#11-sicherheits-grundlage) · 12. [Dokumentation](#12-dokumentation--was-automatisiert-wird-und-was-nicht)
 
-**Teil II — 75 Phasen in 13 Stufen**
-A Fundament · B Contract & Daten · C API · D Container · E CI/CD & Supply Chain · F Observability · G Frontend-Fundament · H Seiten · I Bewegung · J Terminal · K Inhalt · L Härtung · M Launch
+**Teil II — 85 Phasen in 14 Stufen**
+A Fundament · B Contract & Daten · C API · D Container · E CI/CD & Supply Chain · F Observability · G Frontend-Fundament · H Seiten · U Umbau · I Bewegung · J Terminal · K Inhalt · L Härtung · M Launch
 
 **Teil III** — Post-Launch
 
@@ -121,7 +121,7 @@ Der Maßstab ist **Kopplung, nicht Anzahl.** Eine Phase ist eine zusammenhängen
 
 ## Revidierte Entscheidungen
 
-Dieser Plan ist über mehrere Runden entstanden, und ich habe unterwegs sechs eigene Empfehlungen zurückgenommen. Das gehört hier hin, weil es zeigt, wo die Fallen liegen:
+Dieser Plan ist über mehrere Runden entstanden, und ich habe unterwegs sieben eigene Empfehlungen zurückgenommen. Das gehört hier hin, weil es zeigt, wo die Fallen liegen:
 
 | Ursprünglich | Jetzt | Warum |
 |---|---|---|
@@ -131,6 +131,7 @@ Dieser Plan ist über mehrere Runden entstanden, und ich habe unterwegs sechs ei
 | Blog per Go-Embed | **MDX im Repo** | Dein Entwurf hatte das längst entschieden |
 | GlitchTip für Error-Tracking | **Faro in Alloy** | Over-Engineering — derselbe Fehler, vor dem ich bei Mimir gewarnt hatte. Faro braucht null zusätzliche Container. |
 | 81 Phasen, mechanisch geschnitten | **75 Phasen, nach Kopplung geschnitten** | Acht Stellen waren zu fein (F4/F5 war sogar ein kaputter Schnitt — das Abnahmekriterium von F4 brauchte F5), vier zu grob (Homepage, Case Study, 404-Spiel) |
+| Backend/DevOps-Portfolio, Training Log als Lehrplan | **Junior DevOps, Training Log nur mit Beleg** | Die alte Rolle behauptete „kann ich schreiben" für Go, TypeScript und SQL; der Cluster belegt, was die Sprachen nicht belegen. ADR 0079 |
 
 ---
 
@@ -1014,7 +1015,7 @@ Alles andere ist Ballast.
 
 ---
 
-# Teil II — Die 75 Phasen (66 im Launch-Pfad)
+# Teil II — Die 85 Phasen (76 im Launch-Pfad)
 
 ## Stufe A — Fundament · 4 Phasen
 
@@ -1263,6 +1264,42 @@ Pro Phase: bauen, **Leerzustand zuerst**, Visual-Regression-Baselines, axe-core 
 
 ---
 
+## Stufe U — Umbau · 10 Phasen
+
+**Stufe U geht I, J, K, L und M voraus.** Die Seite behauptet eine Rolle, die ihre Systeme nicht belegen, und ein Training Log, das einen Lehrplan abbildet statt Messungen. Jede weitere Seite, die darauf aufsetzt, macht die Korrektur teurer — deshalb steht diese Stufe vor der Bewegung und nicht hinter dem Inhalt. Entschieden in ADR 0079. Der Hauptbeleg ist `talos-prod`, ein bare-metal Kubernetes-Cluster in einem eigenen, privaten Repository.
+
+**U0 · Regeln und Rahmen** — `CLAUDE.md`, dieser Plan, das ADR, die zwei Kommentarblöcke, die die alte Autorenregel zitierten. Reine Doku-Phase.
+*Fertig wenn:* `make check` grün, und im Diff steht kein `web/`, kein `api/`, kein `contract/`.
+
+**U1 · Titel und kurze Texte** — Eyebrow, Headline, `availability`, `jobTitle`, Meta-Description, README-Kopf.
+*Fertig wenn:* die fünf Rollen-Zeilen stehen neu, das OG-Bild zieht die neue Beschreibung, der Hero ist an allen Prüfbreiten sauber.
+
+**U2 · Posts raus, Log nur mit Posts** — die KI-geschriebenen Beiträge fallen weg. Log-Nav, Home-Sektion, `feed.xml` und Sitemap erscheinen erst wieder, sobald ein Post existiert.
+*Fertig wenn:* bei null Posts bleibt keine leere Sektion und kein Nav-Punkt, der Feed bricht nicht, und ein Test-Post bringt alles zurück.
+
+**U3 · Seed: Systeme und Training Log** — `talos-prod` als System 01 (`in_build`, Quelle privat), sechs Module, vierzehn Tracks, neunzehn Belegzeilen. Schema, View und Contract bleiben unverändert.
+*Fertig wenn:* `docker compose up` von Null seedet sauber, `/api/training` liefert 6 Module und 14 Tracks, `/api/systems` die zwei Systeme.
+
+**U4 · About-Seite und Bio** — Operator-Karte mit einer Zeile für das Werkzeug, „What I run" auf den Cluster, neue Bio und Intro.
+*Fertig wenn:* auf About steht kein `[SOON]` mehr außer in der Trajectory, und Tim hat jeden neuen Satz gelesen.
+
+**U5 · Trajectory** — die Stationen vom Helpdesk bis zum Cluster, mit Tags und ohne Jahreszahlen.
+*Fertig wenn:* die Rail bleibt per Tastatur bedienbar (ADR 0066), kein `[SOON]` bleibt stehen, Tim hat jeden Satz gelesen.
+
+**U6 · Case Study** — die Prosa-Blöcke fallen weg, die Mess-Blöcke bleiben (Live, Ops, Metriken, Incident-Log).
+*Fertig wenn:* die Seite trägt sich ohne leere Rahmen an allen Prüfbreiten, und **keine nutzersichtbare Stelle nennt mehr die alte Rolle** — die Schlussprüfung über U1 bis U6.
+
+**U7 · Laden vs. Fehler, Systemtexte** — ein Suspense-Fallback ist ein Ladezustand und kein Fehler; die übrigen Platzhalter werden vereinheitlicht oder entfernt.
+*Fertig wenn:* API langsam zeigt den Ladezustand, API tot den Fehlertext, und das rohe HTML trägt keine Fehlermeldung, solange die API antwortet.
+
+**U8 · DE und FR** — die Übersetzungen, erst nachdem U1 bis U7 gemergt sind, damit nichts zweimal übersetzt wird.
+*Fertig wenn:* `isComplete(de)` wahr ist und `/de` keinen englischen Block mehr zeigt. FR nur, wenn es jemand gegenlesen kann — sonst bleibt es leer und die Seite zeigt dort ehrlich Englisch (G5).
+
+**U9 · Nach dem Cutover** — `talos-prod` auf `live`, die doppelt zählenden Belege streichen, die VPS-Aussagen auf Seite und README prüfen. Revidiert ADR 0008 (ein Host) und ADR 0028 (Dokploy).
+*Fertig wenn:* die Cluster-Tracks stehen auf `applied`, keine falsche VPS-Aussage bleibt stehen, und der Health-Check zeigt den neuen Commit.
+
+---
+
 ## Stufe I — Bewegung · 3 Phasen
 
 **I1 · Boot-Sequenz** — 2400 ms, 6 Frames, `sessionStorage`-Flag, abbrechbar per Klick/Taste/Scroll, **kein Layout-Shift**.
@@ -1304,9 +1341,10 @@ Pro Phase: bauen, **Leerzustand zuerst**, Visual-Regression-Baselines, axe-core 
 ## Stufe K — Inhalt · 2 Phasen
 
 **K1 · Korrekturen & englische Fassung** — die neun Issues aus Kapitel 7, insbesondere #1, #2 und #5. Dazu ~6 deutsche Absätze übersetzen und Platzhalter auf `[SOON]` · `[PLACEHOLDER]` · `[ASSET]` vereinheitlichen.
+**Stufe U nimmt einen Teil davon vorweg:** die `[SOON]`/`[PLACEHOLDER]`-Vereinheitlichung erledigen U4, U5 und U7, die Übersetzungen U8. K1 schrumpft auf das, was danach noch offen ist.
 *Fertig wenn:* Keine deutschen Absätze in der EN-Fassung, alle neun Issues geschlossen.
 
-**K2 · Blogeintrag, CV & Bilder** — erster Blogeintrag: der Bau dieser Seite (Material für fünf: Supply-Chain-Signierung, SLOs auf einem VPS, „kein CDN, und warum", das Ausfallprotokoll in Git). CV einseitig A4, helles Theme, Nachweis-Spalte; Größe, sha256, Stand beim Build. Portrait oder sichtbar leerer Slot. Trajectory mit den zwei belegten Jahren. **LinkedIn/X-Zeile nur rendern, wenn eine URL existiert.**
+**K2 · Blogeintrag, CV & Bilder** — **den ersten Blogeintrag schreibt Tim selbst, nicht Claude** (ADR 0079). Thema: der Bau dieser Seite (Material für fünf: Supply-Chain-Signierung, SLOs auf einem VPS, „kein CDN, und warum", das Ausfallprotokoll in Git). CV einseitig A4, helles Theme, Nachweis-Spalte; Größe, sha256, Stand beim Build. Portrait oder sichtbar leerer Slot. Trajectory mit den zwei belegten Jahren. **LinkedIn/X-Zeile nur rendern, wenn eine URL existiert.**
 
 ---
 
@@ -1474,7 +1512,7 @@ Eine Session ist nicht nur „Claude Code baut". Sie besteht aus: **Plan Mode le
 
 **Warum die Seiten-Phasen so teuer sind:** Pixelgenau gegen ein hi-fi Design bei sieben Breiten heißt bauen → screenshotten → vergleichen → nachziehen → wieder screenshotten. Jede Schleife kostet Minuten, und du brauchst viele. Das ist keine Schwäche des Werkzeugs, das ist die Aufgabe.
 
-**Gesamt: ~82 Sessions, im Schnitt ~2,75 h → rund 225 Stunden.**
+**Gesamt: ~100 Sessions, im Schnitt ~2,75 h → rund 275 Stunden.**
 
 ### Mehrere Sessions pro Tag
 
@@ -1516,12 +1554,13 @@ Zwei Dinge im Plan hängen an Fristen, die du nicht beschleunigen kannst:
 | F Observability | 5 | 6 | 6 |
 | G Frontend-Fundament | 7 | — | 9 |
 | H Seiten | 12 | 1 | 16 |
+| U Umbau | 10 | — | 10 |
 | I Bewegung | 2 | 1 | 5 |
 | J Terminal | 2 | — | 3 |
 | K Inhalt | 2 | — | 4 |
 | L Härtung (Rest) | 7 | — | 9 |
 | M Launch | 6 | — | 7 |
-| **Summe** | **66** | **8 (+1)** | **~82** |
+| **Summe** | **76** | **8 (+1)** | **~100** |
 
 Stufe H und I ziehen erfahrungsgemäß über — die Sessions-Spalte hat das eingepreist.
 
