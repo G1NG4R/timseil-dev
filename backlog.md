@@ -123,6 +123,70 @@ Nicht geschlossen, nur notiert — die Triage kommt nach U9.
 
 ---
 
+## U1 · 24.09.2026 — Titel und kurze Texte: der Kommentar zählt seine eigenen Leser falsch
+
+Sieben Dateien, alle Text. Die fünf Rollen-Zeilen aus A11, dazu Headline und
+Stack-Zeile des Heros. Kein `api/`, kein `contract/`, keine Migration.
+
+### Der stärkste Fund: zwei Kommentare in `site.ts` zählen zu niedrig, beide
+
+`site.ts` erklärt über beiden Konstanten, **warum** sie dort stehen und nicht am
+Ort ihrer Verwendung — und begründet das mit einer Zahl von Lesern. Beide Zahlen
+sind zu klein:
+
+- **`SITE_DESCRIPTION` sagte „THREE THINGS READ IT", es sind fünf.** Gezählt:
+  `<meta name="description">` im Layout, drei Felder in `lib/seo/pages.ts`
+  (`og:description`, `twitter:description`, der OG-Alt-Text), das JSON-LD
+  `WebSite`, der RSS-Kanal in `lib/seo/feed.ts` und die Social Card.
+- **`jobTitle` sagte „Two things read it", es sind drei.** `PostAuthor.tsx:30`
+  druckt `Tim Seil — <jobTitle>` unter jeden Log-Beitrag und stand in keiner
+  Aufzählung.
+
+**Das Muster ist dasselbe wie bei jedem toten Verweis der Phase H9c: ein
+Kommentar, der eine Menge aufzählt, wird nicht mitgepflegt, wenn die Menge
+wächst.** Der Sitzungsplan hatte den ersten Fall selbst gefunden — und beim
+Korrigieren selbst zu niedrig gezählt, vier statt fünf. Eine Zahl in einem
+Kommentar ist eine Behauptung wie jede andere und wird genauso gemessen.
+
+### Gefunden
+
+- **Die 62-px-Headline nimmt bei 1081 px vier Zeilen, das Blatt erwartet drei.**
+  *Intermediate Widths:135* sagt „drei Zeilen brauchen 380"; gemessen ist die
+  Hero-Spalte dort **449 px breit** und der Satz steht trotzdem vierzeilig.
+  **Nicht von U1 verursacht** — alter und neuer Satz nehmen beide vier Zeilen.
+  Blatt-Abweichung ohne Eintrag, Issue-Kandidat für die Triage nach U9.
+- **Kein Umbruch dieser Phase kostet eine Zeile.** An allen sieben Prüfbreiten
+  gemessen, alter Text gegen neuen im selben DOM: Eyebrow, Headline, Stack-Zeile
+  und Verfügbarkeit brechen **identisch** um — 1/2/1/1 bei 1440, 2/2/2/2 bei 390.
+  Die Erwartung war „das Eyebrow wird kürzer, der Fall ist entschärft"; gemessen
+  ist er unverändert, weil er bei 390 auch vorher schon zweizeilig war (#293).
+- **`home.spec.ts:292` trägt die Headline wörtlich** und ist der einzige Test im
+  Baum, den eine Textänderung dieser Phase rot macht. A2 hatte `jsonld.test.ts`
+  genannt — das geht als einziges der beiden **nicht** rot: sein Literal ist ein
+  selbstgebautes Beispiel, das nie gegen `AUTHOR.jobTitle` vergleicht. Es trüge
+  den alten Rollensatz sonst als zehnte Fundstelle weiter, die A11 nicht führt.
+  Der Wert ist jetzt erkennbar synthetisch und behält sein `&`, denn geprüft
+  wird das Escaping des Kaufmanns-Und, nicht der Berufstitel.
+- **`words.ts:49` zitierte den Verfügbarkeitssatz falsch** — „open **for**
+  backend and infrastructure work" gegen „Open **to** …" im Wörterbuch. Der
+  Kommentar war von seiner Quelle weggedriftet, **bevor** die Quelle sich
+  geändert hat. Kein `grep` findet so etwas: das Zitat ist über zwei Zeilen
+  umgebrochen. Die zweite Stelle derselben Art steht in `Hero.tsx:28`.
+- **`README.md:25` steht auf Stufe F** und ist seit U0 zusätzlich über die
+  Stufenzahl falsch — der Plan führt vierzehn Stufen, nicht dreizehn. U1 fasst
+  die Zeile **nicht** an; sie gehört zu #384 und in die Triage nach U9.
+- **`aboutLede` trägt die alte Rolle weiter, und das ist so gewollt.** `/about`
+  ist nach U1 die einzige Seite, die noch „Backend and DevOps engineer" sagt —
+  U4 räumt sie. Die Seite ist zwischen U1 und U6 in sich uneinheitlich; ADR 0079
+  nennt den Preis unter „Was das kostet".
+
+### Nicht fällig gewesen
+
+`make gen` — `web/e2e/oracle/home.gen.json` trägt ausschließlich Geometrie
+(`box-width`, `track-count`) und kein Textliteral. Geprüft, nicht vermutet.
+
+---
+
 ## Zwischendurch — 23.09.2026: die Welle vom 21.09. als ein PR, und das Ablaufdatum, das genau richtig lag
 
 Fünf Dependabot-PRs (#390–#394), alle fünf grün und `CLEAN`, alle auf derselben

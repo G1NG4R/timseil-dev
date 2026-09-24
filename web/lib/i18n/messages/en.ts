@@ -182,7 +182,7 @@ export const en = {
   // LANG.01's set. `SYS.INIT` is named in it word for word. `SYS.01` to
   // `SYS.04` and the four section names are nomenclature — a German homepage
   // still reads SYS.02 SELECTED WORK, and they live in lib/home/sections.ts
-  // where a test can hold their order. `Go · TypeScript · Docker · Postgres`
+  // where a test can hold their order. `Talos · Kubernetes · Flux · Prometheus`
   // names technologies, exactly the case the sheet uses to state the rule.
   // `tim@vps: ~ — ssh` is a shell prompt, not a sentence. `[SOON]` is a
   // placeholder token and has one definition in lib/state/words.ts.
@@ -194,10 +194,10 @@ export const en = {
   // ONE COPY OF EVERY SENTENCE. The mobile artboard writes a shorter eyebrow
   // ("BACKEND & DEVOPS · LUX") and breaks the subline over two lines. We carry
   // the full one at both widths: H2a already found what a second, shorter set
-  // of words costs — it exists only to be forgotten when the first is
-  // corrected. The abbreviation is recorded as a sheet divergence instead.
-  homeEyebrow: "BACKEND & DEVOPS ENGINEER · LUXEMBOURG",
-  homeHeadline: "I build the systems behind the screen.",
+  // of words costs. Since ADR 0079 the sheet diverges twice over, not once:
+  // the abbreviation (#293), and the role the full line no longer claims.
+  homeEyebrow: "JUNIOR DEVOPS ENGINEER · LUXEMBOURG",
+  homeHeadline: "I run the systems behind the screen.",
   homeTagline: "self-taught, self-hosted.",
   // THE KEY LOST ITS `home` PREFIX IN H7, AND THAT IS THE POINT OF THE RENAME.
   // The About sheet draws this sentence too, word for word, beside the same dot
@@ -205,7 +205,7 @@ export const en = {
   // words costs — it exists only to be forgotten when the first is corrected —
   // so there is one sentence and it is no longer named after the first page
   // that happened to print it. ADR 0055 is the same move on a class name.
-  availability: "Open to backend and infrastructure work",
+  availability: "Open to junior DevOps and platform roles",
 
   // The terminal frame. It says what it is instead of standing there greyed
   // out — STATE.05, and the reason it has no input at all until stage J.

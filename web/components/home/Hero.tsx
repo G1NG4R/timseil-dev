@@ -25,8 +25,13 @@ import { MARKS } from "@/lib/state/words";
  *
  * THE STACK LINE AND `SYS.INIT` ARE NOT IN THE DICTIONARY, and LANG.01 is why:
  * "Übersetzt wird Prosa, nicht Nomenklatur." `SYS.INIT` is named in the sheet's
- * own list of words that stay English, and `Go · TypeScript · Docker ·
- * Postgres` is four product names — a German homepage still reads Docker.
+ * own list of words that stay English, and `Talos · Kubernetes · Flux ·
+ * Prometheus` is four product names — a German homepage still reads Kubernetes.
+ *
+ * THE SHEET DRAWS FOUR OTHER NAMES HERE, and ADR 0079 is why these four stand
+ * instead: the line under a hero that says JUNIOR DEVOPS ENGINEER has to name
+ * the systems the role is evidenced by, not the languages the app is written
+ * in. `docs/design/` keeps the old four; the divergence is deliberate.
  */
 export function Hero({
   eyebrow,
@@ -55,7 +60,7 @@ export function Hero({
       <h1 className="hero-headline">{headline}</h1>
 
       <p className="hero-sub">
-        <span className="hero-stack">Go · TypeScript · Docker · Postgres</span> — {tagline}
+        <span className="hero-stack">Talos · Kubernetes · Flux · Prometheus</span> — {tagline}
       </p>
 
       {/* THE DOT IS DECORATION AND THE WORD IS THE STATE, and keeping those two
