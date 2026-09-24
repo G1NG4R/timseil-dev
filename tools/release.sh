@@ -213,11 +213,13 @@ case $1 in
     # That is not a hypothetical — it is how the first real run of this job
     # ended, before a single image was built.
     #
-    # NOT a bot account and not a tool name. CLAUDE.md is explicit that no model
-    # or tool name appears in commits, pull requests, issues, TAGS or release
-    # notes. So the tag is made by whoever authored the commit it names: the
-    # honest answer, and one that needs no value written into this file to rot
-    # there. On main that is the author of the squash commit.
+    # NOT a bot account and not a tool name, and that survives ADR 0079. The
+    # trailer that ADR keeps is for commits somebody wrote with help; a tag is
+    # something a person decided to cut, and release notes are read as that
+    # person's word. A co-author is not a tagger. So the tag is made by whoever
+    # authored the commit it names: the honest answer, and one that needs no
+    # value written into this file to rot there. On main that is the author of
+    # the squash commit.
     who_name=$(git log -1 --format='%an')
     who_mail=$(git log -1 --format='%ae')
     [ -n "$who_name" ] || { printf '  ✗ the commit being tagged has no author\n' >&2; exit 1; }
