@@ -12,6 +12,117 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 24.09.2026, Stufe U beginnt: die Rolle, die der Beleg trägt
+
+Die Seite sagt seit dem ersten Tag „Backend & DevOps Engineer". Der Code
+darunter ist mit Claude Code entstanden — die Architektur ist erklärbar, das
+Schreiben nicht. Und das Training Log trägt 22 Tracks, von denen ein Teil über
+die Ableitung „kann ich schreiben" behauptet und ein zweiter Teil gar kein
+System hinter sich hat. Beides sind Behauptungen ohne laufenden Beleg, also
+genau das, was die eine Regel dieses Repositories verbietet.
+
+**Stufe U korrigiert das in zehn Phasen, und sie kommt vor I, J, K, L und M.**
+Nicht weil der Umbau dringender wäre als die Bewegung, sondern weil eine
+falsche Rolle mit jeder weiteren Seite mitwächst, die auf ihr aufsetzt.
+Hauptbeleg ist `talos-prod`, der Cluster im eigenen Repository. Die
+Entscheidung steht in ADR 0079, der Sitzungsplan liegt in `tmp/` und bleibt
+dort.
+
+U0 selbst ist reine Doku: das ADR, `CLAUDE.md`, `docs/build-plan.md`, zwei
+Kommentarblöcke und dieser Eintrag. Kein `web/`, kein `api/`, kein `contract/`.
+
+### Der stärkste Fund: das Autorenverbot war nie durchsetzbar, und 16-mal gebrochen
+
+`a359188` hat am 17.08.2026 jedes `Co-Authored-By` verboten. Zwei Messungen
+gegen den Baum, beide heute:
+
+- **Nichts hat es je geprüft.** `.githooks/commit-msg` liest nur die erste
+  Zeile, `check-repo.sh` führt keine Wortlisten, `selftest.sh` hat keinen Fall
+  dazu. Die Definition of Done von PR #15 sagt es selbst: *„n/a, this is a rule
+  in a document, not code."*
+- **Gebrochen wurde es trotzdem, von einer Oberfläche, die uns nicht gehört.**
+  **16 der 24 Dependabot-Squashes auf `main` tragen
+  `Co-authored-by: dependabot[bot]`** — GitHubs Squash-Dialog hängt sie an, und
+  `main` ist gegen Force-Push gesperrt, also ist keine davon korrigierbar.
+
+Das war der Eintrag weiter unten in dieser Datei (08.09., *„Entweder das
+Häkchen beim Mergen, oder die Regel benennt die Ausnahme"*) — **erledigt, und
+zwar mit der zweiten Möglichkeit.** Ab jetzt trägt ein Commit, an dem Claude
+mitgeschrieben hat, genau `Co-Authored-By: Claude Code <noreply@anthropic.com>`:
+Werkzeugname, keine Modellversion, keine Session-Zeile. Autor bleibt G1NG4R.
+
+Die einzigen zwei Commits mit einem Claude-Trailer sind übrigens `dce4110` und
+`690a835` vom 16./17.08.2026 — beide **vor** der Regel. Dort, wofür sie
+geschrieben war, hat sie gehalten, und das war der eigentliche Schaden: die
+Historie ist stumm darüber, wie dieses Repository gebaut wurde.
+
+### Gefunden — beim Prüfen des Umbauplans gegen den Baum
+
+- **Die Sessions-Summe in Anhang D stimmte nicht mit ihrer eigenen Spalte.**
+  Sie nannte `~82`, die Spalte summiert `90` (bei `E = 6`) bis `92`. Falsch seit
+  **vor** Stufe U. Mit zehn Phasen dazu wäre aus `82 + 10 = 92` eine Zahl
+  geworden, die nach Fortschreibung aussieht und keine ist — deshalb ist die
+  Spalte summiert worden statt die Summe: `~100`, und `:73`, `:75` und die
+  Stundenzahl ziehen nach. Die Prozentangabe „rund 18 % schneller" wird `14 %`,
+  weil sie aus genau diesen zwei Zahlen abgeleitet ist.
+- **„75 Phasen" stand an sechs Stellen, der Plan-Entwurf nannte zwei.** `:3`,
+  `:73`, `:75`, `:93`, `:1017` und Anhang D, dazu die Stundenzahl. `:133` bleibt
+  bei 75 — die Zeile beschreibt einen Schnitt, der stattgefunden hat, und ist in
+  der Vergangenheit richtig.
+- **`check-adrs` meldet nach 0079 achtzig Entscheidungen, nicht 79.** Die `0000`
+  der Vorlage zählt mit; der Entwurf hatte die Zahl von heute als Zahl von
+  morgen notiert. Ein Abnahmekriterium, das eine Zahl nennt, muss sie einmal
+  gemessen haben.
+- **`check-adrs` durchsucht `tmp/` mit**, obwohl `.gitignore` es fernhält: sein
+  `grep -r` kennt nur `node_modules` als Ausnahme. Eine Planungsdatei, die eine
+  noch nicht angelegte ADR-Nummer als Literal nennt, macht `make check` rot,
+  obwohl im Repository nichts falsch ist. Ob das Werkzeug `tmp/` überspringen
+  sollte, ist eine Entscheidung und kein Nachmittag — **Issue-Kandidat, nicht
+  nebenbei gebaut.**
+
+### Die sechs Prämissen, die v3 des Umbauplans nicht überlebt haben
+
+Alle sechs am 24.09. gegen den Baum geprüft, alle sechs korrigiert, bevor eine
+Zeile Code entstanden ist. Kurzform, damit die Falle nicht in drei Wochen ein
+zweites Mal gestellt wird:
+
+1. Die Spec lag im **getrackten** Baum und liegt jetzt in `tmp/`.
+2. Die geplante ADR-Nummer war längst vergeben — und `check-adrs` hätte das nie
+   gemeldet, weil Regel 1 nur prüft, *ob* eine Nummer existiert.
+3. Das Abnahmekriterium „die alte Rolle steht nirgends mehr" war der ersten
+   Phase zugeordnet und ist dort nicht erfüllbar; es gehört ans Ende der Kette.
+4. Ein Slug aus Stufe B hängt an deutlich mehr Stellen als an den zwei
+   Dateien, die der Plan nannte.
+5. Der Build-Plan brauchte nicht einen Eingriff, sondern neun.
+6. Offen war nie, **ob** die Co-Author-Zeile entsteht, sondern **welche Form**
+   sie hat. Die Standardform nennt Modell und Kontextgröße und wechselt pro
+   Sitzung; festgelegt ist jetzt der Werkzeugname.
+
+### Verschoben — bewusste Entscheidung
+
+- **Die Triage der Stufe H läuft nach U9, nicht vorher.** Heute stehen **108
+  Issues offen**. #381 hat den Tracker am 21.09. zum ersten Mal seit der
+  Stufe-F-Triage als Ganzes gelesen und dabei dreizehn Issues gefunden, deren
+  Phase längst durch ist — die Aufräumarbeit dahinter ist also bekannt und
+  beziffert. Der Umbau hat trotzdem Vorrang, weil jede Seite, die vorher
+  entsteht, die falsche Rolle mitträgt. Diese Zeile steht hier, damit die
+  nächste Sitzung nicht doch damit anfängt.
+  *Ursprungsphase: H13a-Abnahme · verschoben am 24.09.2026 nach U9.*
+
+### Issues, die Stufe U ohnehin berührt
+
+Nicht geschlossen, nur notiert — die Triage kommt nach U9.
+
+| # | Was | Phase |
+|---|---|---|
+| #384 | der README-Status steht seit 29 Tagen auf Stufe F; Zeile 3 daneben trägt die alte Rolle | U1 |
+| #193 | ein Post zitiert einen deutschen ADR als Beleg für einen englischen Leser | U2 — der Post fällt weg |
+| #359 | `/blog/kein-post` und `/work/kein-system` rendern nur im Browser | U2 |
+| #297 | Rot steht zweimal auf der Case Study | U6 |
+| #221 | das Sprachblatt will einen dritten localStorage-Key, Invariante 9 erlaubt zwei | U8 |
+
+---
+
 ## Zwischendurch — 23.09.2026: die Welle vom 21.09. als ein PR, und das Ablaufdatum, das genau richtig lag
 
 Fünf Dependabot-PRs (#390–#394), alle fünf grün und `CLEAN`, alle auf derselben
