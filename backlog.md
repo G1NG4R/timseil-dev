@@ -12,6 +12,76 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 24.09.2026, U1 abgenommen: `v0.39.0` steht, und die eine `null` kam von mir
+
+`5ab4592` läuft, **`v0.39.0`**. Merge **21:33:52Z**, `publish` 21:33:58Z bis
+21:37:30Z, `deploy` 21:52:38Z bis 21:53:08Z, Meldung `report ok 5ab4592 in
+1150s`. Uhrzeit mit `date -u` gelesen; 21:53Z liegt **1 h 52 min** vor dem
+Dokploy-Fenster.
+
+Der `feat:`-Titel hat getan, was er soll: `v0.38.2` → **`v0.39.0`**, Minor. Der
+Squash hat das `(#401)` gesetzt und die eine `Co-Authored-By`-Zeile aus den zwei
+Branch-Commits übernommen — genau einmal, wie seit U0 vorgesehen.
+
+Auf der Seite gemessen: Meta-Description, `og:` und `twitter:description`,
+JSON-LD `jobTitle` und `WebSite`, RSS-Kanal und alle vier Hero-Zeilen tragen den
+neuen Text. Die OG-Karte aus Produktion ist **byteidentisch** mit der lokal vor
+dem Merge geprüften — die Karte entsteht zur Bauzeit, und beide Builds stammen
+aus demselben Commit.
+
+### Der Fund der Abnahme: eine `null`, die von der falschen Frage kam
+
+`ops.lastDeploy` und `uptime90d` kamen beide als `null` zurück. Beinahe hätte
+genau das hier gestanden — und es wäre falsch gewesen: **`/api/ops` gibt es
+nicht.** Der Contract führt `/api/systems/{slug}`; die Antwort auf den falschen
+Pfad war ein RFC-9457-Problemdokument, und `jq '{lastDeploy, uptime90d}'` macht
+aus einem Körper ohne diese Schlüssel brav zwei `null`.
+
+**Invariante 1 sagt, was eine `null` bedeutet — sie sagt nicht, dass jede `null`
+aus dem System kommt.** Eine `0` ist als erfundene Zahl leicht zu erkennen; eine
+`null` sieht aus wie Ehrlichkeit und kann trotzdem ein Messfehler sein. Vom
+richtigen Pfad kamen die Zahlen sofort:
+
+```
+p95Ms        137,5 ms   measuredAt 21:53:19Z
+errorRate    0
+uptime90d    85,45 %
+window       91 Tage · 91 days-Einträge · state live · 0 incidents
+```
+
+Der Deploy steht als erster Eintrag in `deploys[]`: `sha 5ab4592`,
+`durationSec 1150`, `result ok`. Der Vorgänger `c042823` trägt **dieselben
+1150 s** — bei einer Spanne von 867 bis 1553 s in den letzten elf Einträgen ist
+das auffällig genug, um es einmal notiert zu haben, und zu wenig, um etwas zu
+behaupten. Beim nächsten Deploy nachsehen.
+
+### Die p95 misst wieder nicht die Seite
+
+**137,5 ms**, `measuredAt` **21:53:19Z** — elf Sekunden nach dem Ende des
+`deploy`-Jobs. Das Fenster enthält den Container-Tausch, also die mittlere
+Kategorie aus der H12c-Abnahme. Kein Wert über die Seite im Ruhezustand.
+
+### Was diese Abnahme nicht beweist
+
+**Der Zeuge lief nicht.** Der Merge ist ohne ihn gelaufen, und damit gibt es über
+die Sekunden des Container-Tauschs **keine Aussage** — kein Datenpunkt für
+**#304**, weder in die eine noch in die andere Richtung. Die acht bezeugten
+sauberen Tausche stehen unverändert bei acht.
+
+`durationSec` hat damit in dieser Abnahme **nur eine Uhr**, nämlich die Pipeline
+selbst. Die zwanzigste Kerbe an **#242** bleibt die letzte, die zwei unabhängige
+Uhren hatte.
+
+### Der letzte nutzersichtbare Rest der alten Rolle
+
+`/about` ist nach U1 die einzige Seite, die noch „Backend and DevOps engineer"
+sagt — `aboutLede`, `en.ts:436`. Gemessen, nicht erschlossen: `/`, `/work`,
+`/blog` und `/contact` tragen sie nicht mehr. Der Rest gehört U2, U3, U4 und U6;
+das vollständige Kriterium hängt an **U6**.
+
+---
+
+
 ## Wo wir stehen — 24.09.2026, Stufe U beginnt: die Rolle, die der Beleg trägt
 
 Die Seite sagt seit dem ersten Tag „Backend & DevOps Engineer". Der Code
