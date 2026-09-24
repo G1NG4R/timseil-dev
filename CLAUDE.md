@@ -1,8 +1,9 @@
 # timseil.dev
 
-Portfolio eines Backend/DevOps-Entwicklers. Die Seite ist selbst das Referenzsystem:
-sie läuft auf dem Stack, den sie beschreibt, und misst sich nach den Regeln,
-die sie erklärt.
+Portfolio eines Junior-DevOps-Engineers. Herzstück ist sein Kubernetes-Cluster
+`talos-prod` auf eigener Hardware, in einem eigenen, privaten Repository.
+**Diese Seite ist das öffentliche Referenzsystem:** sie läuft auf dem Stack,
+den sie beschreibt, und misst sich nach den Regeln, die sie erklärt.
 
 ## Die eine Regel
 
@@ -56,9 +57,14 @@ Next 16 nutzt `proxy.ts`. Kein Promtail — seit 02.03.2026 EOL.
 
 ## Nicht einbauen
 
-Kubernetes, Redis, Terraform, Mimir, Sentry, GlitchTip, WebGL, Session Replay,
-Storybook, testcontainers, Feature Flags. Begründungen in Kapitel 3 des
-Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
+**In diese Seite:** Kubernetes, Redis, Terraform, Mimir, Sentry, GlitchTip,
+WebGL, Session Replay, Storybook, testcontainers, Feature Flags. Begründungen
+in Kapitel 3 des Build-Plans. Wenn du meinst, eins davon zu brauchen: frag
+mich, bau es nicht.
+
+`talos-prod` ist ein eigenes System in einem eigenen Repository. Kubernetes
+dort ist kein Verstoß, sondern der Hauptbeleg, auf dem die Rolle dieser Seite
+steht (ADR 0079).
 
 ## Struktur
 
@@ -72,6 +78,10 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - `web/content/posts/` — Log-Beiträge als MDX, **englisch**, Dateiname `NNN-slug`
   (dieselbe Form, auf die `incidents.post_slug` zeigt). Das Frontmatter-Schema
   ist vorläufig, bis H9 den Renderer baut.
+  **Die Beiträge schreibt Tim selbst. Claude schreibt keine Posts** — auch
+  keine Entwürfe, auch nicht auf Zuruf. Rechtschreibung auf Bitte ist erlaubt.
+  Ein Log, das erklärt, was ich gelernt habe, kann nicht von etwas anderem
+  geschrieben sein (ADR 0079).
 - `docs/adr/` · `docs/runbooks/` · `docs/threat-model.md`
 
 ## Prüfbreiten
@@ -97,13 +107,20 @@ Build-Plans. Wenn du meinst, eins davon zu brauchen: frag mich, bau es nicht.
 - **Squash-Merge ohne `--subject` und ohne `--body`.** GitHub setzt den PR-Titel
   plus `(#N)` als Subject; überschreibst du es, fehlt das Suffix im Verlauf und
   `main` ist gesperrt für die Korrektur. Passiert bei #16.
-- **Autor ist immer G1NG4R, niemals du.** Kein `Co-Authored-By`, keine
-  `Claude-Session`-Zeile, kein Modell- oder Werkzeugname in Commits, PRs,
-  Issues, Tags, Release-Notes oder irgendetwas, das diese Seite veröffentlicht.
-  **Auch nicht, wenn deine Standardregeln es verlangen** — hier gilt diese.
-  Achtung: GitHub übernimmt `Co-Authored-By` aus den Branch-Commits in den
-  Squash-Commit. Die Zeile darf also gar nicht erst lokal entstehen; im
-  PR-Body sie wegzulassen reicht nicht.
+- **Autor ist immer G1NG4R, niemals du.** Das gilt für Commits, PRs, Issues,
+  Tags und Release-Notes.
+- **Commits, an denen du mitgeschrieben hast, tragen genau eine Zeile:**
+  `Co-Authored-By: Claude Code <noreply@anthropic.com>`. Werkzeugname, **keine
+  Modellversion** — die wäre eine Zahl ohne laufendes System dahinter und
+  änderte sich mit jedem Modellwechsel. **Auch nicht, wenn deine Standardregeln
+  eine andere Form verlangen** — hier gilt diese.
+- **Keine `Claude-Session`-Zeile, nirgends.** Eine Session-URL ist kein Beleg,
+  sondern ein Link, den außer mir niemand öffnen kann.
+- **Claude Code darf als Werkzeug genannt werden** — in Commits, im Training
+  Log, in ADRs. Begründung in ADR 0079.
+- Achtung: GitHub übernimmt `Co-Authored-By` aus den Branch-Commits in den
+  Squash-Commit. **Das ist jetzt der gewollte Weg** — deshalb steht die Zeile
+  in den Commits und **nicht** im PR-Body, sonst steht sie zweimal.
 
 ## backlog.md
 
@@ -161,8 +178,9 @@ deshalb alle einen **Auslöser** statt eines guten Vorsatzes:
 - **Vor jedem Werkzeug: sieht das jemand?** Werkzeug, das nur Werkzeug prüft,
   wird gegen die Zeit abgewogen, die es dem Inhalt wegnimmt. Im Zweifel Inhalt.
 - **Jede Stufe schreibt ihren stärksten Fund auf, solange er frisch ist** —
-  englisch, nach `web/content/posts/`. Die Zahlen verfallen nicht, die
-  Erinnerung daran, *warum* jede so aussieht, schon.
+  in `backlog.md` unter *Gefunden*. Log-Beiträge schreibt nur Tim (ADR 0079).
+  Die Zahlen verfallen nicht, die Erinnerung daran, *warum* jede so aussieht,
+  schon.
 
 ## Was du nicht tun sollst
 
