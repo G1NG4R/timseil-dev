@@ -1,6 +1,6 @@
 # timseil.dev
 
-A backend and DevOps portfolio that runs on the stack it describes and measures
+A junior DevOps portfolio that runs on the stack it describes and measures
 itself by the rules it explains. The site is its own reference system.
 
 [![ci](https://github.com/G1NG4R/timseil-dev/actions/workflows/ci.yml/badge.svg)](https://github.com/G1NG4R/timseil-dev/actions/workflows/ci.yml)

@@ -29,11 +29,11 @@ export const AUTHOR = {
   name: "Tim Seil",
   email: "contact@timseil.dev",
   github: "https://github.com/G1NG4R",
-  /** As the Language Switcher sheet writes it (`LANG.01`, row "Rolle").
-   *  Transcribed from the handoff rather than invented — that sheet is the only
-   *  place this site has ever said what the job is called. Two things read it:
-   *  the JSON-LD `Person` and the social card. */
-  jobTitle: "Backend & DevOps Engineer",
+  /** What the role is called. Since ADR 0079 it is the one the evidence
+   *  carries — `talos-prod` — and no longer the one the Language Switcher
+   *  sheet transcribes (`LANG.01`, row "Rolle"). Three things read it: the
+   *  JSON-LD `Person`, the social card, and the author line under every post. */
+  jobTitle: "Junior DevOps Engineer",
 } as const;
 
 /**
@@ -60,10 +60,10 @@ export const REPO_URL = "https://github.com/G1NG4R/timseil-dev";
 
 /** The one sentence this site says about itself.
  *
- *  IT LIVES HERE BECAUSE THREE THINGS READ IT: the `<meta name="description">`
- *  in the layout, the `og:description` and `twitter:description` in
- *  lib/seo/pages.ts, and the JSON-LD `WebSite`. It was a literal in the layout
- *  until G5b, when the second and third reader arrived.
+ *  IT LIVES HERE BECAUSE FIVE THINGS READ IT: the `<meta name="description">`
+ *  in the layout, three fields in lib/seo/pages.ts (`og:description`,
+ *  `twitter:description`, the OG alt text), the JSON-LD `WebSite`, the RSS
+ *  channel in lib/seo/feed.ts, and the social card. It said three until U1.
  *
  *  Not translated, and that is G5's rule rather than an omission: the German
  *  and French dictionaries are empty until P6, and a German description over an
@@ -73,7 +73,7 @@ export const REPO_URL = "https://github.com/G1NG4R/timseil-dev";
  *  same claim — the `<title>` of this site is its name, and will stay so until
  *  a stage-H page has a title of its own to put in front of it. */
 export const SITE_DESCRIPTION =
-  "Backend and DevOps portfolio — the site is its own reference system.";
+  "Junior DevOps portfolio — Kubernetes on bare metal, Luxembourg.";
 
 /**
  * Which of the systems in the database is this one.

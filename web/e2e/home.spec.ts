@@ -289,7 +289,7 @@ test.describe("the hero", () => {
   test("there is exactly one h1 and it is the display statement", async ({ page }) => {
     const h1 = page.locator("main h1");
     await expect(h1).toHaveCount(1);
-    await expect(h1).toHaveText("I build the systems behind the screen.");
+    await expect(h1).toHaveText("I run the systems behind the screen.");
   });
 
   // K-08: 62 for the homepage and About, 34 on a phone. Neither number is in

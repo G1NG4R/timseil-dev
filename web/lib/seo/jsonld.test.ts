@@ -26,12 +26,16 @@ void test("a value cannot close the script element it is inside", () => {
   );
 });
 
+// THE VALUE IS SYNTHETIC, AND THAT IS THE POINT. This test is about the
+// ampersand, not about the job title: since ADR 0079 the real `AUTHOR.jobTitle`
+// carries none, so reaching for it here would stop testing what it was written
+// for — and would go red out of the wrong reason at the next retitling.
 void test("an ampersand is escaped too, and the value survives it", () => {
-  const escaped = serializeLd({ jobTitle: "Backend & DevOps Engineer" });
+  const escaped = serializeLd({ jobTitle: "R & D Engineer" });
   assert.ok(!escaped.includes("&"));
   assert.equal(
     (JSON.parse(escaped) as { jobTitle: string }).jobTitle,
-    "Backend & DevOps Engineer",
+    "R & D Engineer",
   );
 });
 

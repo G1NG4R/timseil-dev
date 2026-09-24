@@ -46,8 +46,8 @@ export type TrackState = components["schemas"]["TrackState"];
  *   LIVE vs ONLINE      LIVE describes a single system, ONLINE the delivery of
  *                       this page. The meta bar says ONLINE; a system row says
  *                       LIVE.
- *   ONLINE vs AVAILABLE AVAILABLE in the hero is about the operator ("open for
- *                       backend and infrastructure work"), ONLINE about the
+ *   ONLINE vs AVAILABLE AVAILABLE in the hero is about the operator ("Open to
+ *                       junior DevOps and platform roles"), ONLINE about the
  *                       site. Until STATE.05 both carried the same word, which
  *                       "ging genau so lange gut, bis jemand nachfragt".
  *
