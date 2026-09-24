@@ -12,6 +12,101 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Zwischendurch — 23.09.2026: die Welle vom 21.09. als ein PR, und das Ablaufdatum, das genau richtig lag
+
+Fünf Dependabot-PRs (#390–#394), alle fünf grün und `CLEAN`, alle auf derselben
+Basis `37ffcc6`, sechs berührte Dateien ohne eine einzige Überschneidung. Sie
+sind **nicht einzeln gemergt worden, sondern als einer**: `git cherry-pick` auf
+einen Branch, ein Lauf, ein Deploy. Fünf Merges wären fünf volle Läufe gewesen,
+und die Welle vom 20.09. hat aufgeschrieben, was dabei passiert, wenn sie zu
+eng liegen — eine Concurrency-Gruppe hält einen laufenden und einen wartenden
+Lauf, der dritte bricht den wartenden ab.
+
+**Keiner der fünf hat einen `make gen`-Commit gekostet**, und das war vorher
+ausrechenbar: `stack.gen.json` trägt `major.minor`, also bleibt
+`Loki 3.7.7 → 3.7.8` die Zeile `Loki 3.7`; Go wird aus `api/go.mod` gelesen,
+nicht aus dem Dockerfile; `next` und `react` aus `dependencies.*`, und jedes
+Mitglied der web-Gruppe ist `devDependency` oder eine reine Lockfile-Bewegung.
+`check-contract` hat es bestätigt: kein Drift.
+
+### Drei Zahlen, gemessen statt angenommen
+
+- **Go bewegt sich nicht.** Beide golang-Digests tragen `GOLANG_VERSION=1.26.8`,
+  aus dem Config-Blob der Registry gelesen. #392 ist ein Alpine-Rebuild.
+- **Das Bundle bewegt sich nicht.** `@next/mdx` ist der MDX-Loader, und #237
+  lässt ~4 KB von 150 000. Beide Seiten heute im selben Baum gebaut und nach der
+  Methode aus ADR 0050 gemessen: **145 900 B, beide**, acht Dateien, Chunk für
+  Chunk dieselben Namen.
+- **Der Traefik-Kommentar war falsch, und zwar länger als diese Welle.**
+  `compose.lab.yaml` sagte `# traefik v3.7.11`. Aus den OCI-Labels gelesen sind
+  **beide** Digests v3.7.13 — der neue und der, der seit #341 auf `main` stand.
+
+### Der Fund: ein Versionskommentar in einer Compose-Datei hat keinen Leser
+
+`check-pins` geht über `.cosign-image` und `tools/*.sh`. Ein `# name vX.Y.Z`
+über einem Image-Pin in `compose*.yaml` wird von nichts gelesen — deshalb konnte
+die Zeile zwei Wochen falsch stehen, ohne dass ein Lauf rot wurde. Dependabot
+bewegt den Digest und lässt den Kommentar liegen; das ist kein Fehler des Bots,
+der Kommentar ist unserer. Ob daraus eine Prüfregel wird, ist eine Entscheidung
+und kein Nachmittag — **Issue-Kandidat, nicht nebenbei gebaut.**
+
+### Das Ablaufdatum hat getan, wofür es da war
+
+`images` wurde rot, und nicht wegen der Welle: `.trivyignore` trug
+CVE-2026-14456 mit `exp:2026-09-23`. Der Eintrag lief an genau diesem Morgen ab,
+Trivy meldete wieder 2× HIGH auf openssl im web-Image — das ist das Verhalten,
+das der Kopf der Datei bestellt, keine Überraschung.
+
+Der Eintrag hatte am 26.08. aufgeschrieben, warum nicht gebumpt wurde
+(`node:24-alpine`, `node:lts-alpine`, `node:24-alpine3.22` trugen alle 3.5.7-r0
+oder älter) und was zuerst zu versuchen sei, wenn er rot wird: „bumping the
+digest, not extending the date." **Beides war heute richtig.** Aus der
+apk-Datenbank der Basisschicht gelesen:
+
+```
+bisher gepinnt   d32cdf6   alpine 3.24.1   libcrypto3/libssl3 3.5.7-r0
+node:24-alpine   ebfe2f9   alpine 3.24.2   libcrypto3/libssl3 3.5.8-r0
+```
+
+Der Rebuild kam **an dem Tag, an dem der Eintrag auslief** — die vier Wochen
+waren die richtige Schätzung. `.trivyignore` hält jetzt wieder keinen Eintrag,
+und Trivy meldet 0 statt 2.
+
+Das ging als **eigener PR** vor die Welle, nicht als sechster Commit in ihr: der
+Wellen-Titel behauptet, keine Version zu bewegen, die die Seite liest, und ein
+Basis-Image-Tausch hätte den Satz falsch gemacht. Dazu ist alpine 3.24.1 → 3.24.2
+unter `sharp`/`libvips` die einzige Änderung des Tages mit echter
+Laufzeitreichweite — und ihr Fehlermodus ist auf einem PR gar nicht abgedeckt,
+weil `quickstart` nur auf `main` läuft. Es lief dort grün.
+
+### #354 zum dritten Mal, diesmal vor dem Push
+
+Der erste Titel des Fix-PRs war **73 Zeichen mit ` (#397)`**, um genau eines zu
+lang. `tools/check-pr-title.sh` hat es vor dem Öffnen gesagt, nicht die rote CI
+danach — das ist der Unterschied zum 08.09. und zum 20.09.
+
+### Der Zeuge, zweimal
+
+Der erste Lauf war **zwei Stunden zu früh** und lief in seine Reißleine: 1800 s,
+3600 Anfragen, alle 200 — und trotzdem `✗ this window is not the deploy`. Genau
+das ist die Bauart: ein zu früh gestarteter Zeuge wird rot, nicht fälschlich
+grün. Nebenbei ist das die bisher längste Ruhezustandsmessung, ohne einen
+einzigen Nicht-200 und ohne Abriss.
+
+Der zweite lag richtig: **1568 Anfragen je Pfad, alle 200**, quer durch den
+Tausch. Mit dem Fenster von #397 davor (je 380, alle 200) sind das **zwei
+saubere Deploy-Fenster an einem Tag** — zwei Stichproben mehr für #304, das
+festhält, dass zwei nicht reichen.
+
+### Was offen bleibt
+
+- `up{job="loki"}` nach dem 3.7.8-Tausch ist von außen nicht messbar; der Weg
+  liegt im Docker-Netz des Hosts. `quickstart` hat bewiesen, dass das Image von
+  Null hochkommt — die Bestätigung auf dem Host ist ein eigener Schritt.
+- Der Versionskommentar über einem Compose-Pin hat keinen Leser. Issue-Kandidat.
+
+---
+
 ## Zwischendurch — 21.09.2026: der Tracker als Ganzes gelesen, zum ersten Mal seit der F5-Triage
 
 **109 offen, nicht 100.** Die erste Abfrage lief mit `--limit 100` in ihr eigenes
