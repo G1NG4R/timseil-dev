@@ -104,9 +104,10 @@ jobs:
       # Only on a change, so an unchanged file never produces an empty commit.
       #
       # The author is the prober and says so. It is not G1NG4R, because he did
-      # not write this line, and it is not a bot name either — CLAUDE.md keeps
-      # tool names out of anything this site publishes, and this branch is
-      # published.
+      # not write this line, and it is not a co-author either: the trailer ADR
+      # 0079 keeps is for commits somebody wrote with help. This one is a
+      # measurement written by a loop, and giving it an author would claim one
+      # for a number.
       - name: Commit the state change
         if: steps.probe.outputs.changed == 'yes'
         working-directory: ops-data
