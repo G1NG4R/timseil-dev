@@ -5,7 +5,7 @@ import type { Messages } from "@/lib/i18n/messages/en";
 import { type StateKey, stateLabel } from "@/lib/state/words";
 
 /**
- * ROLE · STACK · YEAR · STATUS · SOURCE, in the plate with the corner brackets.
+ * STACK · YEAR · STATUS · SOURCE, in the plate with the corner brackets.
  *
  * THE ONLY THING THIS COMPONENT DECIDES IS THE ORDER. Every value arrives
  * resolved: the stack comes from `systems.stack`, which `make gen` fills out of
@@ -14,9 +14,16 @@ import { type StateKey, stateLabel } from "@/lib/state/words";
  * sheet's `React Router 7` and `PostgreSQL 16` — unreachable rather than fixed:
  * there is no place in this file where a version could be typed.
  *
- * IT IS A `<dl>` AND NOT A GRID OF `<span>`s. Five key/value pairs are a
- * description list, and a screen reader then reads "ROLE, design, backend,
- * infrastructure" instead of ten unrelated fragments. The two-column grid is
+ * THERE WERE FIVE ROWS UNTIL U6, and the one that went was ROLE. Three of the
+ * four left are answers; `year` is typed and stays typed, because a year is a
+ * statement about the system. ROLE was a statement about the person who built it
+ * — and the author's account of himself is the one claim on this site that no
+ * running system can carry, which is the whole of ADR 0079. ADR 0081 draws the
+ * line inside this component rather than around it.
+ *
+ * IT IS A `<dl>` AND NOT A GRID OF `<span>`s. Four key/value pairs are a
+ * description list, and a screen reader then reads "STACK, Next.js · Go ·
+ * PostgreSQL" instead of eight unrelated fragments. The two-column grid is
  * `.spec-body`'s, so the markup and the picture agree without a wrapper per row.
  *
  * SOURCE IS ITS OWN AXIS, NOT PART OF THE STATE — K-21, and the schema enforces
@@ -25,7 +32,6 @@ import { type StateKey, stateLabel } from "@/lib/state/words";
  * reason underneath rather than the bare word.
  */
 export function SpecRail({
-  role,
   stack,
   year,
   state,
@@ -33,7 +39,6 @@ export function SpecRail({
   source,
   messages,
 }: {
-  role: string;
   stack: string | null;
   year: string;
   state: StateKey | null;
@@ -46,9 +51,6 @@ export function SpecRail({
       <p className="spec-label">SPEC</p>
 
       <dl className="spec-body">
-        <dt className="spec-key">{messages.csRole}</dt>
-        <dd className="spec-val">{role}</dd>
-
         <dt className="spec-key">STACK</dt>
         <dd className="spec-val">{stack ?? <NoData />}</dd>
 

@@ -106,35 +106,33 @@ export const en = {
   // word for word, and `DEPLOY` is the verb this repository uses in its own
   // pipeline. `UPTIME` already had a key — it is a heading over a number, and
   // the meta bar has translated it since G5.
-  csRole: "ROLE",
   csYear: "YEAR",
   csStatus: "STATUS",
   csSource: "SOURCE",
-  csProblem: "PROBLEM",
-  csConstraints: "CONSTRAINTS",
   csErrorRate: "ERROR RATE",
   csIncidents: "INCIDENTS",
 
-  // H2a · the two sections under the problem, and the words inside them.
+  // H2a, and one word of it left after U6. The section heads ARCHITECTURE, SIDE
+  // LANES, DECISIONS, DECISION, ALTERNATIVE, WHY THIS ONE and PHASES went with
+  // the blocks they named; `.01 BUILD` now holds the generated compose block on
+  // its own.
   //
-  // THE SAME OMISSIONS AS H1's, by the same rule. There is no key for the two
-  // section metas the sheet draws — "HOP LATENCIES ARE PLACEHOLDERS" and
-  // "CAPTURES ARE PLACEHOLDERS" — because neither placeholder is built and a
-  // meta that described the drawing rather than the page would be nomenclature
-  // for something absent. `.01 PROBLEM` carries no meta either.
+  // FIFTEEN KEYS WENT IN THAT PHASE, and the number is worth writing down here
+  // because `Messages` is `Record<keyof typeof en, string>` — every key in this
+  // file is a line U8 owes a German and a French reader. A heading nobody draws
+  // is a translation nobody can check.
   //
-  // `WHY THIS ONE` is the Template's column head, not `Case Study 02`'s
-  // "REJECTED — AND WHAT IT COSTS". Which sheet wins was settled in ADR 0052.
-  csArchitecture: "ARCHITECTURE",
+  // THERE IS STILL NO KEY FOR A SECTION META. The sheet captions rows "HOP
+  // LATENCIES ARE PLACEHOLDERS", "CAPTURES ARE PLACEHOLDERS" and "STAGE TIMINGS
+  // ARE PLACEHOLDERS"; none of those placeholders is built, and a meta that
+  // described the drawing rather than the page would be nomenclature for
+  // something absent.
   csBuild: "BUILD",
-  csSideLanes: "SIDE LANES",
-  csDecisions: "DECISIONS",
-  csDecision: "DECISION",
-  csAlternative: "ALTERNATIVE",
-  csWhyThisOne: "WHY THIS ONE",
-  csPhases: "PHASES",
 
-  // H2b · the last two sections, the grid legend, and the words a notch opens.
+  // H2b · the last section, the grid legend, and the words a notch opens.
+  //
+  // IT WAS TWO. `.05 RESULT` and its three keys went in U6; what is left is
+  // `.02 OPERATIONS`, which is `.04` renumbered.
   //
   // THE LEGEND IS FOUR WORDS AND ONLY TWO ARE NEW. `DEGRADED` is already a state
   // word above and means the same thing about a day that it means about a
@@ -153,9 +151,7 @@ export const en = {
   // number the page counted, and the stylesheet uppercases the line; a string
   // that arrived shouting would be a second opinion about the same rule.
   csOperations: "OPERATIONS",
-  csResult: "RESULT",
   csPushToLive: "PUSH TO LIVE",
-  csObservability: "OBSERVABILITY",
   csOperation: "OPERATION",
   csDays: "days",
   csWeeks: "weeks",
@@ -171,9 +167,6 @@ export const en = {
     "Not a clean record — a short one. The grid above says how much of the " +
     "window was measured, and an incident here would carry its cause, its fix " +
     "and the entry that explains it.",
-  csWhatHolds: "WHAT HOLDS",
-  csWhatIdChange: "WHAT I WOULD CHANGE",
-  csNextSystem: "NEXT SYSTEM",
 
   // H3 · the homepage: the hero's sentences and the four reasons a section is
   // still empty.

@@ -26,7 +26,7 @@ import { timseilDev } from "../../content/case-studies/timseil-dev.ts";
 const workflow = readFileSync(new URL("../../../.github/workflows/ci.yml", import.meta.url), "utf8");
 
 /** The stages that claim to be a job in the workflow. */
-const jobs = timseilDev.operations.stages
+const jobs = timseilDev.stages
   .map((stage) => stage.job)
   .filter((job): job is string => job !== null);
 
@@ -68,7 +68,7 @@ describe("the pipeline row is the pipeline", () => {
   // leaving them off the row — the row would then be five boxes and a different
   // claim.
   it("marks the two stages that are not jobs as not jobs", () => {
-    const notJobs = timseilDev.operations.stages
+    const notJobs = timseilDev.stages
       .filter((stage) => stage.job === null)
       .map((stage) => stage.title);
 
@@ -76,6 +76,6 @@ describe("the pipeline row is the pipeline", () => {
   });
 
   it("draws seven stages, which is what the sheet draws", () => {
-    assert.equal(timseilDev.operations.stages.length, 7);
+    assert.equal(timseilDev.stages.length, 7);
   });
 });

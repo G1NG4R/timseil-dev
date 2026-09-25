@@ -8,60 +8,29 @@
 // EVERY FIELD HERE IS PROSE OR A LABEL. Nothing measured, nothing versioned:
 // those come from /api/systems/{slug}, and lib/api/systems.ts reads them. If a
 // field ever wants a number, that is the signal it belongs in the api instead.
-
-/**
- * One station on the request path.
- *
- * `own` is the sheet's own vocabulary and not a styling flag: the Case Study Map
- * labels every box `EIGEN` or `EXTERN`, and the Template draws the two stations
- * that are our code with a signal border while the browser, the edge and the
- * volume keep the ordinary one. The distinction is what the section argues, so
- * it is content.
- */
-export interface Hop {
-  /** `CLIENT`, `EDGE`, `WEB`, `API`, `DATA` — the station, not the product. */
-  readonly key: string;
-  /** The thing standing there. A technology, never a version. */
-  readonly name: string;
-  readonly detail: string;
-  /** Whether this station is code in this repository. */
-  readonly own: boolean;
-}
-
-/** One of the lanes beside the path: the things that are not a request. */
-export interface Lane {
-  readonly key: string;
-  readonly detail: string;
-}
-
-/**
- * One row of the decision table.
- *
- * `alternative` is required, and that is the point of the table rather than a
- * schema detail — the Operations sheet says it in one line: a choice recorded
- * without what it rejected "ist es keine Entscheidung".
- */
-export interface Decision {
-  readonly decision: string;
-  readonly alternative: string;
-  readonly why: string;
-}
-
-/** One phase of the build, in the order it happened. */
-export interface Phase {
-  readonly title: string;
-  readonly detail: string;
-}
+//
+// AND AS OF U6 THERE ARE NINE OF THEM, where there were eighteen. The phase cut
+// the argument out of this file and kept what something else produces or holds:
+// `composeCaption` explains a block `make gen` writes, `stages` is a list of
+// names lib/content/pipeline.test.ts holds against the workflow, and the rest is
+// a slug, a date and three labels. What went is the problem statement, the
+// constraints, the request path, the decision table, the build phases, the
+// observability panel and the result — nine fields that were right or wrong the
+// way a sentence is, with nothing able to tell which. ADR 0081 carries the rule.
+// ADR 0079 §4 is where the argument was first made — about `web/content/posts/`,
+// which is the only directory it names; 0081 §1 is the decision to extend it
+// here, and it is a decision rather than a reading.
 
 /**
  * One stage of the pipeline that puts a commit on the server.
  *
- * `job` IS THE HALF THAT CAN BE CHECKED. The sheet draws seven boxes with a
+ * `job` IS THE HALF THAT CAN BE CHECKED, and after U6 it is the reason this
+ * interface is the only one left in here. The sheet draws seven boxes with a
  * duration under each — `[—s]` — and nothing measures a stage, so the duration
- * is left out for the reason `Hop` gives about hop latency. What is left is
- * seven names, and a name is exactly the kind of prose that goes stale silently:
- * a renamed job in `ci.yml` would leave this page describing a pipeline that no
- * longer exists.
+ * is left out: a number no system produces is invariant 1's whole subject. What
+ * is left is seven names, and a name is exactly the kind of prose that goes
+ * stale silently — a renamed job in `ci.yml` would leave this page describing a
+ * pipeline that no longer exists.
  *
  * So a stage that IS a job in `.github/workflows/ci.yml` names it, and
  * lib/content/pipeline.test.ts holds the two against each other. `null` is for
@@ -76,47 +45,39 @@ export interface Stage {
   readonly job: string | null;
 }
 
-/**
- * The card at the foot of `.05`: what is being built next.
- *
- * NO STATE WORD AND NO NUMBER, which is the whole decision. The sheet draws
- * `05 FOUNDRY ◇ QUEUED` — a system number and a state — and both of those live
- * in `systems`, not here. Reading them would mean a fifth `<Suspense>` boundary
- * and a second endpoint (`/api/systems`) on a page that makes one upstream call,
- * for a card; writing them here would put a state word in a file that is not
- * allowed to hold a measurement.
- *
- * So the card names the system and links to the Work Index, which is the page
- * whose job this is. H6 builds it and can give this card its source.
- */
-export interface NextSystem {
-  /** The system's name, as a person writes it. Not its slug. */
-  readonly name: string;
-  readonly detail: string;
-}
-
 export interface CaseStudy {
   /** The system's slug in `systems`. The route is `/work/<slug>`. */
   readonly slug: string;
   /** ISO date, `YYYY-MM-DD`. The page's real modification date for sitemap.ts. */
   readonly updatedAt: string;
 
-  /** The `<h1>`. One sentence, not the system's name — the eyebrow says that. */
+  /**
+   * The `<h1>`. One sentence, not the system's name — the eyebrow says that.
+   *
+   * THE ONE SENTENCE U6 LEFT STANDING, and it is here rather than in the api
+   * because a document needs a heading before anything has answered. The lead
+   * paragraph and the red alert line that stood beside it are gone: both argued,
+   * and `alert` argued in the one colour this page reserves for an outage.
+   */
   readonly headline: string;
-  readonly lead: string;
   /**
    * One line about the system, for a list that has room for a line.
    *
-   * NOT `lead`, AND H5 IS WHY THE FIELD EXISTS. The homepage's system list draws
-   * one row per system with a single descriptive column; `lead` is four
-   * sentences written for a hero. Truncating it in the component would have been
-   * the same defect as a second, shorter copy of the words (#293) with the
-   * additional flaw that nobody could read the result before it shipped.
+   * NOT A HEADLINE, AND H5 IS WHY THE FIELD EXISTS. The homepage's system list
+   * draws one row per system with a single descriptive column. Truncating a
+   * longer field in the component would have been the same defect as a second,
+   * shorter copy of the words (#293) with the additional flaw that nobody could
+   * read the result before it shipped.
    *
    * SO IT LIVES HERE AND NOT IN THE DATABASE. `systems` holds slug, number,
    * name, state, source, stack and metrics — what a machine writes. A sentence
    * about what the system IS is prose, and migration 00002 keeps the table to
    * what a machine writes.
+   *
+   * IT SURVIVED U6 BECAUSE IT IS NOT ON THIS PAGE. The phase cut the case
+   * study's prose; this line is drawn by components/home/SystemRow.tsx and
+   * components/work/WorkRow.tsx, and cutting it would have emptied a column on
+   * two pages the phase was not about.
    *
    * A SYSTEM WITHOUT A CASE STUDY THEREFORE HAS NO BLURB, and that is the honest
    * shape rather than a gap to fill: `talos-prod` is in_build, its repository is
@@ -125,36 +86,37 @@ export interface CaseStudy {
    * `— NO DATA` would have promised a number that nobody is going to measure.
    */
   readonly blurb: string;
-  /** The one red line on the page. */
-  readonly alert: string;
 
-  readonly role: string;
+  /**
+   * The YEAR row of the spec rail.
+   *
+   * IT STAYS TYPED AND `role` DID NOT, which is the line ADR 0081 draws inside
+   * this component: a year is a statement about the system, and the system is
+   * the thing the page is about. `role` was a statement about its author, and
+   * the author's own account of himself is the one claim on this site that no
+   * running system can carry.
+   */
   readonly year: string;
   /** The qualifier after the state word in the spec rail's STATUS row. */
   readonly hosting: string;
 
-  readonly problem: readonly string[];
-  readonly constraints: readonly string[];
-
-  /** `.02 ARCHITECTURE` — the request path, the lanes beside it, the decisions. */
-  readonly architecture: {
-    readonly hops: readonly Hop[];
-    readonly lanes: readonly Lane[];
-    readonly decisions: readonly Decision[];
-  };
-
-  /** `.03 BUILD` — the caption under the compose block, and the order of work. */
-  readonly build: {
-    readonly composeCaption: string;
-    readonly phases: readonly Phase[];
-  };
+  /**
+   * The caption over the compose block — what it is, and why it can be trusted.
+   *
+   * IT IS DESCRIPTION AND NOT ARGUMENT, which is why U6 kept it. Every claim in
+   * it is about a mechanism that exists: tools/gen-compose-excerpt.mjs cuts the
+   * block out of the file the host runs, `make gen` runs it, and the checksum
+   * comparison in `make check` turns the build red if the two drift apart. A
+   * reader can verify the sentence by moving the file.
+   */
+  readonly composeCaption: string;
 
   /**
-   * `.04 OPERATIONS` — how a commit reaches the server, and what watches it.
+   * How a commit reaches the server. Seven stages, in order.
    *
-   * THE GRID IS NOT IN HERE, and that is the shape of the section rather than an
+   * THE GRID IS NOT IN HERE, and that is the shape of the page rather than an
    * omission: the 91 days, the notches and the incidents all come from
-   * `/api/systems/{slug}`. This field is the prose around them.
+   * `/api/systems/{slug}`.
    *
    * WHAT IS DELIBERATELY ABSENT. The Template draws a DATA SAFETY panel beside
    * the monitoring one — backup target, backup retention, the date of the last
@@ -169,35 +131,7 @@ export interface CaseStudy {
    * two are different sentences. ADR 0057 carries the decision — the page does
    * not carry the reason, because the reason is the shape of the answer.
    */
-  readonly operations: {
-    readonly stages: readonly Stage[];
-    /**
-     * The observability panel, in the shape the lanes already use.
-     *
-     * IT MUST NOT REPEAT `.02`. The architecture section already carries a
-     * MONITOR lane and a POST-MORTEM lane; what stands here is what those two do
-     * not say. No cadence, no port, no hostname — the same three the
-     * architecture section's own comment refuses.
-     */
-    readonly observability: readonly Lane[];
-  };
-
-  /** `.05 RESULT` — what held, what would change, and what comes next. */
-  readonly result: {
-    readonly holds: readonly string[];
-    /**
-     * What would be done differently.
-     *
-     * EVERY LINE IS CHECKED AGAINST THE SAME RULE AS `.04`. "Verification happens
-     * against production" is a sentence about engineering practice; "the panel is
-     * still reachable from outside" would be a direction. The sheet's three lines
-     * are fiction — a staging target, a WebGL budget, structured logs from the
-     * first commit — and the replacements come from what this repository actually
-     * did, each with something in `git log` or an issue behind it.
-     */
-    readonly change: readonly string[];
-    readonly next: NextSystem;
-  };
+  readonly stages: readonly Stage[];
 
   readonly emptyNote: {
     readonly label: string;

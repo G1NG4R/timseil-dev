@@ -45,7 +45,15 @@
    `.hero`. Three phases deferred a decision that has no candidate left, and a
    rule nobody can reach is not a spare part, it is a claim that something
    exists. docs/design/code/layout.css keeps its copy — that folder is
-   read-only and is the drawing, not the build.                               */
+   read-only and is the drawing, not the build.
+
+   `.cs-prob` AND `.cs-arch` FOLLOWED IT IN U6, for the same reason and with less
+   deliberation needed: the problem section and the build phases are gone, so
+   `1fr 380px / 80` and `1fr 420px / 60` had no drawer left on the one page that
+   drew them. The 380 pair is not lost — `.lg-body` declares it, and the
+   comments below name that one now. The 420 pair is gone outright; nothing else
+   on this site puts a 420px rail beside a column, and inventing a consumer for
+   it would be the claim this note refuses. ADR 0081.                          */
 
 /* ---- >= 1080: zweispaltig, wie gezeichnet -------------------------------- */
 /* minmax(0,1fr) statt 1fr: eine 1fr-Spalte hat implizit min-width:auto und
@@ -53,10 +61,9 @@
 @media (min-width: 1080px) {
   .hero     { display: grid; grid-template-columns: minmax(0,1fr) 480px; gap: 72px; align-items: center }
   .cs-spec  { display: grid; grid-template-columns: minmax(0,1fr) 400px; gap: 80px; align-items: start }
-  .cs-prob  { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 80px; align-items: start }
   /* H12b. `/privacy` brings two more rows and neither gets a number of its own.
      The Legal sheet draws its hero at `1fr 470px / 72` and its body at
-     `1fr 380px / 80`; the body pair is `.cs-prob`'s exactly, and the hero's 470
+     `1fr 380px / 80`; the body pair was `.cs-prob`'s exactly, and the hero's 470
      is ten pixels off `.hero`'s 480 — a difference no reader can see and a
      ninth measurement nobody wants to keep in step. Both take the pair that is
      already here. "Kein Bauteil bekommt seinen eigenen Wert."
@@ -67,14 +74,13 @@
      they arrive. */
   .lg-hero  { display: grid; grid-template-columns: minmax(0,1fr) 480px; gap: 72px; align-items: start }
   .lg-body  { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 80px; align-items: start }
-  .cs-arch  { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 60px; align-items: start }
   .rail     { position: sticky; top: 90px }
   .work-row { grid-template-columns: 40px minmax(0,1fr) 132px 104px 130px 20px }
 
   /* H7b · the trajectory panel, and it is the SIXTH consumer of this switch
      rather than a seventh geometry. The About sheet draws it `1fr 380px` with a
-     64px gap, which is `.cs-prob`'s columns and a different gap; the panel takes
-     `.cs-prob`'s pair whole, for the reason ADR 0065 gives about the hero — a
+     64px gap, which is this file's 380px pair and a different gap; the panel
+     takes the pair whole, for the reason ADR 0065 gives about the hero — a
      rule that exists so one page can be sixteen pixels different is a rule
      nobody can reach twice. Recorded in the oracle as `one-panel-geometry`. */
   .tl-panel { grid-template-columns: minmax(0,1fr) 380px; gap: 80px }
@@ -83,7 +89,7 @@
      Schalters, und der erste seit H1, der eine eigene Zahl bekommt statt ein
      bestehendes Paar zu übernehmen.
 
-     WARUM NICHT `.hero`s 480/72, wie `.tl-panel` `.cs-prob`s Paar genommen hat:
+     WARUM NICHT `.hero`s 480/72, wie `.tl-panel` das 380er-Paar genommen hat:
      die vier bestehenden Zweispalter tragen rechts Prosa, eine Rail oder eine
      Kachelspalte — Inhalt, dessen Breite eine Vorliebe ist. Die TX-Spur trägt
      Zeilen, deren Breite der Inhalt IST: `  "email": "anna.keller@firma.lu",`
@@ -109,7 +115,7 @@
 
      72 STATT 64, und es ist ein Unentschieden, das zugunsten der Seite fällt.
      Die Skala hat 56 und 72; beide sind acht Pixel entfernt. 72 ist der Abstand,
-     den `.hero` und `.cs-result` schon tragen. Als `spacing-scale` im Orakel.
+     den `.hero` und `.blog-head` schon tragen. Als `spacing-scale` im Orakel.
 
      STICKY BEI 96px, wie `.rail` bei 90 — der Kopf ist 66 hoch, und das Blatt
      gibt der Schiene die Höhe des Abschnittsabstands darüber. */
@@ -141,7 +147,7 @@
      404's hero is the same shape as the case study's — prose beside a rail —
      and it stops being two columns at the same width for the same reason.
      layout.css's own rule: "Kein Bauteil bekommt seinen eigenen Wert." */
-  .hero, .cs-spec, .cs-prob, .cs-arch, .nf-main, .lg-hero, .lg-body {
+  .hero, .cs-spec, .nf-main, .lg-hero, .lg-body {
     display: flex; flex-direction: column; gap: 44px;
   }
 
@@ -502,7 +508,6 @@
   .nf-status      { font-size: var(--t-mono-10) }
   .nf-log         { font-size: var(--t-mono-10) }
   .nf-lede        { font-size: var(--t-body-13) }
-  .decision-table { grid-template-columns: 1fr }
   .ops-tiles      { grid-template-columns: repeat(3, minmax(0,1fr)) }
 
   /* H12b · ADR 0055 again, and this time on a real `<table>` rather than a grid
@@ -695,11 +700,6 @@
 @media (max-width: 1079px) {
   .spec-body { grid-template-columns: 72px 1fr 72px 1fr }
   .spec      { background-size: 14px 1px, 1px 14px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0 }
-
-  /* The constraints do the same thing for the same reason, and H1b found that
-     they were not doing it: the 1024 frame draws them `1fr 1fr`. Five short
-     lines in a full-width plate leave a stripe of nothing beside them. */
-  .cs-constraints { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-12) var(--s-26) }
 }
 
 /* ---- < 720: the rail stacks, and the tiles are already handled ----------
@@ -708,13 +708,6 @@
    which is what the mobile artboard draws.                                  */
 @media (max-width: 719px) {
   .spec-body { grid-template-columns: 1fr; gap: var(--s-4) var(--s-16) }
-
-  /* And the constraints go back to one column, which is what the mobile
-     artboard draws (Case Study Template 398). The bound is this switch and not
-     another because the derivation at the head of this file already states the
-     rule for it: "Tabellen einspaltig (zweite Spalte bliebe unter 300)". Two
-     columns of a 639px content column are 300 each with the gap taken off. */
-  .cs-constraints { display: flex }
   .spec-key  { margin-block-start: var(--s-8) }
   .cs-head   { padding-block: var(--s-26) var(--s-44) }
   .cs-metrics { margin-block-end: var(--s-56) }
@@ -728,91 +721,18 @@
   .ops-tiles > :nth-child(5) { grid-column: span 2 }
 }
 
-/* ---- Case study, H2a ----------------------------------------------------
-   The width-dependent half of the .02 and .03 sections. Same placement rule as
-   the H1 block above: the switches live here, all four in one file, and no
-   component gets its own value.
+/* ---- Case study, `.02 OPERATIONS` ---------------------------------------
+   H2b drew this for `.04` and `.05`; U6 removed `.05` and renumbered `.04`, and
+   what is left is the pipeline and the operation grid. Same placement rule as
+   the block above: every switch this file owns stays readable in one place, and
+   no component gets a value of its own.
 
-   No new switch. 1080 is the one the head of this file already derives for
-   every two-column row, and the request path is the same kind of row: five
-   boxes need ~140px each plus four 64px gaps to hold `PostgreSQL` on one line,
-   which is 956px of content column — reached at 1036 and comfortable at 1080.
-   720 and 560 are the table switches, and the lanes are a table.             */
-
-/* ---- < 1080: the path stands up ----------------------------------------
-   Five stations across a 944px column at 1024 would be 137px each, and the
-   longest name is already 86 of them. The arrows go rather than shrink, which
-   is this file's existing answer for a part that no longer fits — `.work-row
-   .prev { display: none }`, "weglassen, nicht verkleinern". A column of five
-   boxes reads as a sequence without them, and the order is in the `<ol>`.   */
-@media (max-width: 1079px) {
-  .arch-path  { grid-template-columns: 1fr; row-gap: var(--s-16) }
-  .arch-arrow { display: none }
-}
-
-/* ---- < 720: four lanes would be 148px each ------------------------------
-   The same bound the head of this file gives for tables — "zweite Spalte
-   bliebe unter 300" — applied to four columns instead of two: 591px of content
-   across four is 148, and the lanes are mono 11 prose.
-
-   And the decisions become blocks at the same switch, which is the same rule
-   this file already states for tables one line further up. The header row goes
-   and each cell says its own column instead; DecisionTable.tsx explains why the
-   labels swap rather than the reader scrolling. Three columns of 213px, one of
-   them 13px Geist prose, was the alternative.                               */
-@media (max-width: 719px) {
-  .arch-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-
-  .decision-table thead { display: none }
-  .decision-table,
-  .decision-table tr,
-  .decision-table th,
-  .decision-table td { display: block }
-
-  /* "Tabelle wird zu Karten" — the mobile artboard's own caption, and it means
-     what it says: each decision becomes a plate with the same fill and hairline
-     as every other panel on this page, stacked with 14px between them. */
-  .decision-table tbody {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-14);
-  }
-  .decision-table tbody tr {
-    background: var(--panel);
-    border: 1px solid var(--line-soft);
-    padding: var(--s-16) var(--s-20);
-  }
-  .decision-table tbody th,
-  .decision-table tbody td { border-block-end: 0 }
-  .decision-table th,
-  .decision-table td { padding: 0; padding-block-start: var(--s-12) }
-  .decision-table tbody tr > :first-child { padding-block-start: 0 }
-
-  .dt-label {
-    display: block;
-    margin-block-end: var(--s-4);
-    font: 600 var(--t-mono-9)/1 var(--mono);
-    letter-spacing: var(--ls-head);
-    color: var(--dim);
-    text-transform: uppercase;
-  }
-}
-
-/* ---- < 560: and two would be 165 ---------------------------------------- */
-@media (max-width: 559px) {
-  .arch-lanes { grid-template-columns: 1fr }
-}
-
-/* ---- Case study, H2b ----------------------------------------------------
-   The width-dependent half of `.04` and `.05`. Same placement rule as the two
-   blocks above: every switch this file owns stays readable in one place, and no
-   component gets a value of its own.
-
-   NO NEW SWITCH, AND TWO OF THE FOUR ARE ENOUGH. The pipeline is a row of seven
-   equal boxes, which is the same kind of row as the lanes — it just has seven
-   instead of four — so it answers to the same three widths, and the arithmetic
-   is the one at the head of this file: at 1024 a 944px column across seven is
-   134px, and `multi-stage image` does not sit in it.
+   NO NEW SWITCH, AND THREE OF THE FOUR ARE ENOUGH. The pipeline is a row of
+   seven equal boxes, and the arithmetic is the one at the head of this file: at
+   1024 a 944px column across seven is 134px, and `multi-stage image` does not
+   sit in it. It used to share these three widths with the side lanes, a row of
+   the same kind with four boxes instead of seven; the lanes went in U6 and the
+   arithmetic is unchanged, because it was never theirs.
 
    The operation grid needs nothing at any width, and the comment in the 560
    block above is why: thirteen columns of 15px with twelve 4px gaps is 243px,
@@ -821,22 +741,14 @@
 /* ---- < 1080: seven across becomes four ---------------------------------- */
 @media (max-width: 1079px) {
   .pipeline  { grid-template-columns: repeat(4, minmax(0, 1fr)) }
-  .cs-result { display: flex; flex-direction: column; gap: var(--s-26) }
 }
 
 /* ---- >= 1080: as drawn --------------------------------------------------- */
 @media (min-width: 1080px) {
   .pipeline  { grid-template-columns: repeat(7, minmax(0, 1fr)) }
-
-  /* The sheet draws 80px between the two result panels, which is the air every
-     other two-column row on this page carries. 72 is the nearest step on the
-     scale G1 made binding — the oracle's `spacing-scale` divergence, and the
-     largest single difference it names is 4px; this one is 8. Stacked, the row
-     gap stays 26: 72px between two plates in one column is a gap, not a rhythm. */
-  .cs-result { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--s-72) }
 }
 
-/* ---- < 720: four would be 148px each, which is the lanes' bound ---------- */
+/* ---- < 720: four across would be 148px each ----------------------------- */
 @media (max-width: 719px) {
   .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)) }
 

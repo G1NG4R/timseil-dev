@@ -86,6 +86,160 @@ noch nichts gemessen wurde; Invariante 6 zählt einen Tag ohne Messung als
 
 ---
 
+## U6 · 26.09.2026 — Case Study: die Prosa fällt, und zwei Blöcke bleiben, die der Plan nicht aufzählt
+
+Die Fallstudie hatte 409 Zeilen Inhalt, achtzehn Felder, fünf Sektionen und
+neunzehn Bauteile. Sie hat jetzt 144 Zeilen, neun Felder, zwei Sektionen und
+zwölf Bauteile. Was weg ist, war ein Argument über Tims Arbeit, geschrieben von
+Claude Code. Was bleibt, erzeugt ein System oder hält ein Test.
+
+`1816` gelöschte Zeilen gegen `507` neue, verteilt auf 24 Dateien plus ADR 0081
+und eine umbenannte Spec.
+
+### Das Kriterium stand seit H2b in einem Testkopf
+
+`web/lib/content/pipeline.test.ts:4-13`, über sich selbst geschrieben:
+
+> „Everything else in content/case-studies is an argument — it is right or wrong
+> the way a sentence is, and a test cannot tell. The pipeline row is different:
+> it is a list of NAMES that exist somewhere else."
+
+Der Satz war als Begründung für einen Test gedacht und ist die Definition, die
+die Phase gebraucht hat. **Ein Kriterium, das schon im Baum liegt, muss man nicht
+erfinden — man muss es finden.** Der Weg dorthin war, vor dem Löschen zu fragen,
+was eigentlich einen Block hält, und die Antwort stand in der Datei, die ihn
+hält.
+
+### Der Fund der Phase: die zwei neuen Tests waren zuerst falsch, und der Browser hat es gezeigt
+
+Beide Zusicherungen dieser Phase sind grün durch **2170** e2e-Tests gelaufen —
+und beide waren trotzdem falsch geschrieben. Gesehen hat das erst ein
+Handaufruf gegen den lokalen Produktionsserver, nicht das Rig.
+
+1. **`.spec .spec-key` gab acht Schlüssel statt vier.** React streamt eine
+   Region in `<div hidden id="S:3">` ans Ende von `<body>` und schiebt sie per
+   Inline-Skript an ihren Platz. Bis das läuft, steht **jede** gestreamte Region
+   zweimal im Dokument. `settled()` macht das Rennen unwahrscheinlich, nicht
+   unmöglich — der Handaufruf hat es getroffen. Die Reparatur ist dieselbe wie
+   bei U5: **auf `main` einschränken.** Zweimal in zwei Phasen war „über das
+   ganze Dokument gezählt" die Ursache.
+2. **`<template id="B:5">` steht zwischen Pipeline und Raster.** React setzt
+   eins pro Suspense-Grenze, sieben auf dieser Seite, alle mit Höhe 0. Der Test
+   „keine Sektion ist ein Kopf ohne Rumpf" hätte es als leeren Block gezählt und
+   wäre über das Framework rot geworden statt über die Seite. Ein `<template>`
+   ist ein Marker und kein Rahmen; es wird jetzt ausgenommen.
+
+**Beides hätte ein grüner Lauf nie gemeldet.** Der Unterschied war, die Seite
+im Browser aufzumachen und die Zahlen selbst zu lesen, statt dem Lauf zu
+glauben.
+
+### Das Orakel wird gefiltert, nicht geschrumpft
+
+22 der 50 Einträge in `case-study.gen.json` messen Bauteile, die es nicht mehr
+gibt. Der erste Entwurf wollte sie aus `tools/gen-sheet-oracle.mjs` streichen —
+das hätte `minimumEntries` von **39 auf 28** gedrückt, und `e2e/sheet.ts` sagt
+über genau diese Schwelle: *„it never moves down without someone saying why"*,
+dazu `drawnWidths`, damit *„a shrinking oracle is a failure rather than a
+quieter run"*. Eine fallende Schwelle ist die Form, in der eine Messung
+verschwindet, ohne dass es jemand merkt.
+
+**U2 hatte den richtigen Haken schon gebaut**: `applies`, für die zehn
+`home-log-*`-Einträge. Die 22 stehen jetzt als `Set` in
+`case-study.sheet.spec.ts`, das Orakel ist unberührt, die Schwelle steht bei 39,
+und `make check` meldet keine Codegen-Drift, weil kein Generat angefasst wurde.
+Der Lauf erklärt **29** statt 51 Tests (28 Einträge plus den Wächter), alle drei
+gezeichneten Breiten bleiben besetzt: 1440: 18, 1024: 5, 390: 5.
+
+**Die Falle daneben:** `applies` wird in `runSheetOracle` **synchron** in der
+ersten Zeile aufgerufen. Ein `const` unter dem Aufruf steht dann noch in seiner
+temporalen Totzone, und die Datei fällt beim Einsammeln mit einem
+`ReferenceError` aus — nicht ein Test wird rot, sondern alle. `home.sheet.spec.ts`
+ist dem nie begegnet, weil `HAS_LOG` importiert ist.
+
+### Gefunden
+
+- **Kein Schalter verliert alle seine Beweger.** `layout.sweep.spec.ts` verliert
+  zwei von zehn Proben (`.cs-prob`, `.cs-constraints`). Nachgerechnet: 1080
+  behält `.cs-spec`, `.spec-body` und die Rail, 900 den Header, 720
+  `.spec-body` und den Display-Schritt, 560 die Kacheln. `SWITCHES` bleibt
+  `[1080, 900, 720, 560]`. **Hätte ein Schalter seinen letzten Beweger
+  verloren, hätte ihn nichts rot gemeldet** — `sweep.ts` gibt für ein fehlendes
+  Element an jeder Breite `"absent"` zurück, also überall dasselbe, also keine
+  Kante. Das ist wörtlich die Drift, gegen die `SWITCH_MOVES` geschrieben wurde.
+- **`.cs-panel` verliert alle vier Zeichner auf einmal.** Die Platte war von
+  `Constraints`, `BuildPhases`, `NextSystem` und `Result` gezeichnet — alle vier
+  fallen. Keine Prüfregel findet eine CSS-Klasse ohne Zeichner; das war
+  Handarbeit, und #292 ist der Beleg, dass so etwas sonst liegen bleibt.
+- **`en.ts` bereinigt sich selbst, `case.css` nicht.** `Messages` ist
+  `Record<keyof typeof en, string>`, also ist ein übrig gebliebener
+  Wörterbuch-Verbraucher ein Typfehler — `tsc` hat die Arbeitsliste geschrieben.
+  Für die 419 gelöschten Zeilen `case.css` und 142 `layout.css` gibt es nichts
+  Vergleichbares.
+- **Der Build-Plan markiert erledigte Phasen überhaupt nicht.** U1 bis U5 stehen
+  unverändert im Futur. Eine Markierung für U6 zu erfinden hätte eine Konvention
+  eingeführt, die es nicht gibt; stattdessen steht dort jetzt der Verweis auf
+  ADR 0081 und die Abweichung, die er trägt.
+- **Die Schluss-Prämisse aus A11 war falsch, und nicht wegen U6.** Der Plan
+  erwartet nach dieser Phase „genau die neun Zeilen" aus seiner Bleibt-Tabelle.
+  Die Tabelle zählt sieben Dateien auf, die im `grep`-Umfang gar nicht
+  vorkommen, und eine ihrer Zeilen (`web/lib/state/words.ts:50`) trägt das Wort
+  seit U1 nicht mehr. Gemessen: vorher **6**, nachher **4**, keine davon eine
+  Rolle. Korrigiert in ADR 0081 §7.
+- **Der Compose-Block passt jetzt in eine Zeile.** Die längste generierte Zeile
+  ist die `image:`-Zeile mit 125 Zeichen; in der 680px-Spalte von `.cs-arch`
+  brach sie um, in der 1160px-Inhaltsspalte nicht mehr. Kein Eingriff — eine
+  Folge davon, dass die 420er-Rail weg ist.
+
+### Verschoben
+
+- **Ohne API zeichnet `.ops-grid` 129 px Nichts.** Null Zellen, eine Bildunterschrift
+  `OPERATION · — NO DATA`, und darunter eine leere Fläche bis zum Incident-Log.
+  Gegen Produktion trägt das Raster 91 Zellen, also ist es kein Befund über
+  diese Phase — `OpsGrid` und `OpsSection` stehen nicht im Diff. Es ist der
+  Zustand, den **U7** trennen soll: ein Ladezustand ist kein Fehler, und
+  „keine Daten" ist keins von beidem. Die neue „keine leeren Rahmen"-Zusicherung
+  fängt es bewusst **nicht**: sie misst die Rahmen, die U6 hätte brechen können,
+  und ein ehrliches „— NO DATA" ist kein gebrochener Rahmen.
+- **Die zwei Divergenz-Klassen `path-stacks` (= #294) und `one-copy-set` haben
+  nach U6 keinen Eintrag mehr, der sie in Anspruch nimmt.** Sie bleiben stehen:
+  `divergenceReasons` ist ein **globaler** Block, der in alle zehn Orakel
+  geschrieben wird, und eine gelöschte Klasse zieht neun fremde Seiten in den
+  Diff. `build()` prüft ohnehin nur die Richtung „Divergenz ohne Begründung",
+  nie die Gegenrichtung. Vorgemerkt für die Triage nach U9.
+- **#297 löst sich auf.** „Rot steht zweimal auf der Case Study" war die
+  Hero-Zeile gegen die erste Ausfallzelle. Mit `alert` ist die Hero-Zeile weg,
+  **bevor** die erste Kerbe kommt; `--alert` steht auf dieser Seite nur noch auf
+  der Ausfallzelle, ihrer Legende und der Incident-Kennung.
+- **#294 löst sich auf** — der Anfrageweg fällt mit `RequestPath`.
+- **#292 ist erledigt** — `.decision-table { grid-template-columns: 1fr }` fällt
+  mit der `<table>`, die sie nie erreicht hat.
+- **#293 bleibt offen und schrumpft** — `mobile-lanes-columns` war ein Träger und
+  fällt aus dem erklärten Satz; `en.ts:194-198` bleibt der lebende Träger.
+- **#284 bleibt, und U6 ist sein zweiter Beleg.** `updatedAt` musste zum zweiten
+  Mal von Hand bewegt werden (`2026-08-31` → `2026-09-26`), weil eine Regel im
+  Kopf der Datei es verlangt und nichts sie prüft.
+- Keine Issue-Triage. Stufe U läuft; aufgeräumt wird nach U9.
+
+### Idee
+
+- **`year: "2026 — ongoing"` ist der zweite handgetippte Zeitwert der Seite**,
+  gleiche Klasse wie #284, nur ohne Verbraucher, der ihn falsch anzeigen könnte.
+  Kein Vorfall, keine Regel — nur notiert.
+- **`hosting: "self-hosted"` wird beim Cutover mehrdeutig.** Gehört zu U9.
+
+### Fünfzehn Schlüssel weniger für U8
+
+`csRole` · `csProblem` · `csConstraints` · `csArchitecture` · `csSideLanes` ·
+`csDecisions` · `csDecision` · `csAlternative` · `csWhyThisOne` · `csPhases` ·
+`csResult` · `csObservability` · `csWhatHolds` · `csWhatIdChange` ·
+`csNextSystem`.
+
+`de.ts` und `fr.ts` sind leere `Partial<Messages>`, und `isComplete()` iteriert
+`Object.keys(en)`. Fünfzehn Überschriften, die niemand mehr zeichnet, sind
+fünfzehn Übersetzungen, die U8 nicht schreiben und niemand prüfen muss.
+
+---
+
 ## U5 · 25.09.2026 — Trajectory: die Rail hat den Hero widerlegt
 
 Die Rail zeichnet den Weg vom Homelab zum Cluster. Sechs Stationen, keine

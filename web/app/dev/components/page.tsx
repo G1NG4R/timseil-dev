@@ -742,7 +742,6 @@ export default function GalleryPage() {
           <div className="gal-case">
             <span className="gal-case-label">public source</span>
             <SpecRail
-              role="Design, backend, infrastructure — solo"
               stack="Next.js 16.3 · Go 1.26 · PostgreSQL 18.6"
               year="2026 — ongoing"
               state="live"
@@ -756,7 +755,6 @@ export default function GalleryPage() {
                 the schema refuses one without it. */}
             <span className="gal-case-label">closed, with a reason</span>
             <SpecRail
-              role="Backend — contract work"
               stack="Python · FastAPI · Docker"
               year="2025"
               state="queued"
@@ -770,7 +768,6 @@ export default function GalleryPage() {
                 absent, and none of it falls back to a plausible value. */}
             <span className="gal-case-label">no answer from the api</span>
             <SpecRail
-              role="Design, backend, infrastructure — solo"
               stack={null}
               year="2026 — ongoing"
               state={null}
