@@ -118,9 +118,16 @@ steht (ADR 0079).
   sondern ein Link, den außer mir niemand öffnen kann.
 - **Claude Code darf als Werkzeug genannt werden** — in Commits, im Training
   Log, in ADRs. Begründung in ADR 0079.
-- Achtung: GitHub übernimmt `Co-Authored-By` aus den Branch-Commits in den
-  Squash-Commit. **Das ist jetzt der gewollte Weg** — deshalb steht die Zeile
-  in den Commits und **nicht** im PR-Body, sonst steht sie zweimal.
+- **Dieselbe Zeile steht ans Ende des PR-Bodys, genau einmal.** GitHub baut den
+  Squash-Commit aus `PR_TITLE` und `PR_BODY`, nie aus den Branch-Commits —
+  gemessen am 25.09.2026, nicht angenommen. Die Zeile steht trotzdem auch in den
+  Branch-Commits: dort ist sie die Wahrheit über den Branch, und doppelt kann
+  sie nicht werden, weil `main` nur den Body sieht.
+- Die alte Fassung dieser Regel legte die Zeile in die Commits **und** hielt sie
+  aus dem PR-Body heraus, „sonst steht sie zweimal". Unter `PR_BODY` stand sie
+  dadurch **null**-mal: sechs U-Squashes in Folge tragen keine. Rückwirkend ist
+  nichts zu retten, `main` ist gegen Force-Push gesperrt — dieselbe Lage wie bei
+  den sechzehn Dependabot-Squashes. ADR 0079 §3.
 
 ## backlog.md
 
