@@ -106,27 +106,36 @@ Damit benennt die Regel auch die Dependabot-Ausnahme, statt sie sechzehnmal zu
 verlieren: `Co-Authored-By` ist keine verbotene Zeile mehr, sondern eine
 geführte. Autor bleibt in jedem Fall G1NG4R.
 
-**Nachtrag vom 25.09.2026 — wo die Zeile stehen muss, damit sie ankommt.** Diese
-Festlegung sagte, die Zeile gehöre in die Commits, und `CLAUDE.md` hielt sie
-deshalb aus dem PR-Body heraus, „sonst steht sie zweimal". Die Abnahme von U2
-hat nachgezählt: sie steht auf keinem einzigen Squash. Die Ursache steht an der
-Quelle und ist gemessen, nicht erschlossen — das Repository ist auf
-`squash_merge_commit_title: PR_TITLE` und `squash_merge_commit_message: PR_BODY`
-gestellt, GitHub baut den Squash-Commit also aus der PR-Beschreibung und nie aus
-den Branch-Commits. Die Regel war in sich geschlossen falsch: sie legte die
-Zeile genau dorthin, wo `main` sie nicht liest.
+**Nachtrag vom 25.09.2026 — diese Festlegung hielt, und eine Messung hat das
+Gegenteil behauptet.** Am selben Tag stand hier kurzzeitig ein Nachtrag, der
+sagte, die Zeile komme auf keinem Squash an und gehöre deshalb in den PR-Body.
+Er war falsch, und mit ihm ein Eintrag in `backlog.md`, eine Änderung an
+`CLAUDE.md` und der Squash `a2684275`, der die Zeile seither **zweimal** trägt.
 
-**Die Zeile steht ab jetzt am Ende des PR-Bodys**, und weiter auch in den
-Branch-Commits. Doppelt werden kann sie nicht, weil der Squash nur den Body
-sieht; fehlen kann sie nur noch, wenn sie niemand schreibt. Die verworfene
-Alternative wäre gewesen, die Einstellung auf `COMMIT_MESSAGES` zu drehen — das
-ersetzte die PR-Beschreibung durch aneinandergehängte Commit-Nachrichten und
-wäre der schlechtere Tausch.
+Der Fehler war die Suche, nicht die Regel. GitHub hängt den Trailer aus den
+Branch-Commits an den Squash und **normalisiert ihn dabei klein**:
 
-Die sechs Squashes von U0 bis zur U3-Abnahme bleiben stumm. `main` ist gegen
-Force-Push gesperrt, dieselbe Lage wie bei den sechzehn Dependabot-Squashes, und
-es gilt derselbe Satz wie oben: das ist ein Befund über die Regel und nicht über
-die Disziplin.
+```
+Co-authored-by: Claude Code <noreply@anthropic.com>
+```
+
+Gezählt wurde mit `grep -c '^Co-Authored-By:'` — verankert und
+groß-/kleinschreibungsempfindlich. Das ergibt auf jedem einzelnen Squash null,
+sechsmal hintereinander, und sechs Nullen sehen aus wie ein Befund. Richtig
+gezählt tragen `c042823`, `5ab4592`, `1713c1e`, `5c26356`, `518eb99` und
+`a310ac1` die Zeile alle. Der Body von `1713c1e` sagt es sogar selbst.
+
+Was daran nicht falsch war: das Repository steht tatsächlich auf
+`squash_merge_commit_message: PR_BODY`. Der Fehlschluss war, daraus zu folgern,
+der Squash trage **nur** den Body — er trägt den Body *und* die Co-Author-Zeilen
+der Commits, die er ersetzt. Eine gemessene Einstellung ist kein gemessenes
+Verhalten.
+
+Es bleibt also bei §3: die Zeile steht in den Branch-Commits und **nicht** im
+PR-Body. Wer prüfen will, ob sie angekommen ist, sucht case-insensitiv. Die
+Doppelung auf `a2684275` bleibt stehen, `main` ist gegen Force-Push gesperrt —
+dieselbe Lage wie bei den sechzehn Dependabot-Squashes, und derselbe Satz gilt:
+das ist ein Befund über die Prüfung und nicht über die Disziplin.
 
 ### 4. Log-Beiträge schreibt Tim
 
