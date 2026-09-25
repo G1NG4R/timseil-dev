@@ -2,3 +2,4 @@
 # Grammar: docs/adr/0038. Two lines per outage, tab separated, UTC.
 2026-09-05T01:10:23Z	down	http 4xx
 2026-09-05T05:42:51Z	up
+2026-09-25T22:28:40Z	down	probe failed
