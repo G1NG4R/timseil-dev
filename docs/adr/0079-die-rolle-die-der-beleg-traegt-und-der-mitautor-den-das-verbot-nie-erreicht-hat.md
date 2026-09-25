@@ -106,6 +106,28 @@ Damit benennt die Regel auch die Dependabot-Ausnahme, statt sie sechzehnmal zu
 verlieren: `Co-Authored-By` ist keine verbotene Zeile mehr, sondern eine
 geführte. Autor bleibt in jedem Fall G1NG4R.
 
+**Nachtrag vom 25.09.2026 — wo die Zeile stehen muss, damit sie ankommt.** Diese
+Festlegung sagte, die Zeile gehöre in die Commits, und `CLAUDE.md` hielt sie
+deshalb aus dem PR-Body heraus, „sonst steht sie zweimal". Die Abnahme von U2
+hat nachgezählt: sie steht auf keinem einzigen Squash. Die Ursache steht an der
+Quelle und ist gemessen, nicht erschlossen — das Repository ist auf
+`squash_merge_commit_title: PR_TITLE` und `squash_merge_commit_message: PR_BODY`
+gestellt, GitHub baut den Squash-Commit also aus der PR-Beschreibung und nie aus
+den Branch-Commits. Die Regel war in sich geschlossen falsch: sie legte die
+Zeile genau dorthin, wo `main` sie nicht liest.
+
+**Die Zeile steht ab jetzt am Ende des PR-Bodys**, und weiter auch in den
+Branch-Commits. Doppelt werden kann sie nicht, weil der Squash nur den Body
+sieht; fehlen kann sie nur noch, wenn sie niemand schreibt. Die verworfene
+Alternative wäre gewesen, die Einstellung auf `COMMIT_MESSAGES` zu drehen — das
+ersetzte die PR-Beschreibung durch aneinandergehängte Commit-Nachrichten und
+wäre der schlechtere Tausch.
+
+Die sechs Squashes von U0 bis zur U3-Abnahme bleiben stumm. `main` ist gegen
+Force-Push gesperrt, dieselbe Lage wie bei den sechzehn Dependabot-Squashes, und
+es gilt derselbe Satz wie oben: das ist ein Befund über die Regel und nicht über
+die Disziplin.
+
 ### 4. Log-Beiträge schreibt Tim
 
 `web/content/posts/` ist ab jetzt ausschließlich Tims Text — auch keine
