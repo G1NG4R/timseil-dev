@@ -1,5 +1,5 @@
-// Package seed writes the curated content of the site — two systems, five
-// modules, 22 tracks, 13 evidence rows — and nothing else.
+// Package seed writes the curated content of the site — two systems, six
+// modules, 14 tracks, 19 evidence rows — and nothing else.
 //
 // Nothing else is the load-bearing half. A seed that also wrote ops_days or
 // metric_snapshots would be inventing measurements, and every number this site
@@ -38,13 +38,14 @@ func (c Counts) String() string {
 //
 // The failure it catches is quiet and expensive: seed.sql inserts its evidence
 // through a JOIN on track names, so renaming a track on one side only drops an
-// evidence row without any error. The track would then turn from APPLIED to
-// QUEUED on the live page, and the page would be wrong in exactly the way the
+// evidence row without any error. The track would then fall a stage on the live
+// page — APPLIED to LEARNING where the cluster still backs it, LEARNING to
+// QUEUED where nothing does — and the page would be wrong in exactly the way the
 // whole site argues against. Verified before COMMIT, so a miscount reaches
 // nothing.
 //
 // Changing the content means changing this line too. That is the intent.
-var Expected = Counts{Systems: 2, Modules: 5, Tracks: 22, Evidence: 13}
+var Expected = Counts{Systems: 2, Modules: 6, Tracks: 14, Evidence: 19}
 
 // Apply seeds the database inside one transaction and returns what it wrote.
 // Running it twice is the same as running it once.

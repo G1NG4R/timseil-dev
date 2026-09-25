@@ -187,9 +187,11 @@ func assemble(
 	return httpx.Training{
 		Modules:    modules,
 		TrackCount: trackCount,
-		// Distinct systems behind the lines this document actually carries. On
-		// launch day every one of the thirteen points at 02 timseil.dev, so the
-		// header reads one system rather than rounding the log up to thirteen.
+		// Distinct systems behind the lines this document actually carries, not
+		// the lines themselves: nineteen evidence rows across two systems read
+		// EVIDENCE: 02 SYSTEMS rather than rounding the log up to nineteen. It
+		// was one system until U3, which is the case the header was written
+		// for and the one it no longer meets.
 		EvidenceSystems: len(systems),
 	}
 }

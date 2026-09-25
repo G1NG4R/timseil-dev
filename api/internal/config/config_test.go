@@ -445,7 +445,7 @@ func TestDurationsAndNumbersAreRead(t *testing.T) {
 		EnvDBMinConns:       "0",
 		EnvRateLimitPerMin:  "30",
 		EnvRateLimitBurst:   "15",
-		EnvSiteSystemSlug:   "vat-check",
+		EnvSiteSystemSlug:   "talos-prod",
 	})
 	cfg := mustLoad(t)
 
@@ -461,7 +461,7 @@ func TestDurationsAndNumbersAreRead(t *testing.T) {
 	if cfg.RateLimit.PerMinute != 30 || cfg.RateLimit.Burst != 15 {
 		t.Errorf("RateLimit = %+v", cfg.RateLimit)
 	}
-	if cfg.SiteSystemSlug != "vat-check" {
+	if cfg.SiteSystemSlug != "talos-prod" {
 		t.Errorf("SiteSystemSlug = %q", cfg.SiteSystemSlug)
 	}
 }

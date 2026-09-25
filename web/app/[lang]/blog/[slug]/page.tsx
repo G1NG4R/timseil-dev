@@ -119,7 +119,7 @@ function sourceHref(post: PostMeta): string {
 }
 
 /** The case study for the system an entry names, when that system has one.
- *  `vat-check` is a system with no page, so an entry about it would link
+ *  `talos-prod` is a system with no page, so an entry about it would link
  *  nowhere — invariant 5, decided once in content/case-studies/index.ts. */
 function systemLink(post: PostMeta, locale: Locale): string | null {
   if (post.systemId === null) return null;

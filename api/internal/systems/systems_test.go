@@ -102,12 +102,12 @@ func liveRow() store.ListSystemsRow {
 	}
 }
 
-func queuedRow() store.ListSystemsRow {
+func buildingRow() store.ListSystemsRow {
 	reason := "internal"
 	return store.ListSystemsRow{
-		Slug: "vat-check", SystemNo: "01", Name: "VAT Check API", State: "queued",
+		Slug: "talos-prod", SystemNo: "01", Name: "talos-prod", State: "in_build",
 		SourceAccess: "private", SourceReason: &reason,
-		Stack: []string{"Python", "FastAPI"},
+		Stack: []string{"Talos", "Kubernetes"},
 	}
 }
 
@@ -116,7 +116,7 @@ func dayOne() *stubQueries {
 	live := liveRow()
 	url := *live.SourceUrl
 	return &stubQueries{
-		list: []store.ListSystemsRow{queuedRow(), live},
+		list: []store.ListSystemsRow{buildingRow(), live},
 		system: store.GetSystemBySlugRow{
 			ID: 2, Slug: live.Slug, SystemNo: live.SystemNo, Name: live.Name,
 			State: live.State, SourceAccess: live.SourceAccess, SourceUrl: &url,
@@ -126,9 +126,9 @@ func dayOne() *stubQueries {
 	}
 }
 
-// queuedOnly answers the detail endpoint for the system that is not live.
-func queuedOnly() *stubQueries {
-	row := queuedRow()
+// buildingOnly answers the detail endpoint for the system that is not live.
+func buildingOnly() *stubQueries {
+	row := buildingRow()
 	reason := *row.SourceReason
 	return &stubQueries{
 		list: []store.ListSystemsRow{row},
@@ -225,7 +225,7 @@ func TestEverySystemThatIsNotLiveHasNullInEveryMetricField(t *testing.T) {
 	live.Uptime90d, live.P95Ms, live.ErrorRate = &uptime, &p95, &rate
 	live.MeasuredAt = pgtype.Timestamptz{Time: measured, Valid: true}
 
-	q := &stubQueries{list: []store.ListSystemsRow{queuedRow(), live}}
+	q := &stubQueries{list: []store.ListSystemsRow{buildingRow(), live}}
 
 	rec := getList(t, newHandler(t, q), "")
 	if rec.Code != http.StatusOK {
@@ -278,7 +278,7 @@ func TestEverySystemThatIsNotLiveHasNullInEveryMetricField(t *testing.T) {
 // The same rule on the detail endpoint. It reaches the metrics through a
 // different query, so it can break on its own.
 func TestTheDetailOfASystemThatIsNotLiveHasNullMetrics(t *testing.T) {
-	rec := getDetail(t, newHandler(t, queuedOnly()), "vat-check", "", "")
+	rec := getDetail(t, newHandler(t, buildingOnly()), "talos-prod", "", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
@@ -291,7 +291,7 @@ func TestTheDetailOfASystemThatIsNotLiveHasNullMetrics(t *testing.T) {
 			continue
 		}
 		if string(value) != "null" {
-			t.Errorf("a queued system carries %s = %s", field, value)
+			t.Errorf("a system that is not live carries %s = %s", field, value)
 		}
 	}
 }
@@ -330,11 +330,11 @@ func TestALiveSystemWithNoMeasurementCarriesNullsNotZeros(t *testing.T) {
 // system. Absent and empty are two different claims: "this system has no
 // operation grid" is true for a system in build, "its grid is blank" is not.
 func TestTheOperationArraysAreAbsentUnlessTheSystemIsLive(t *testing.T) {
-	body := decode(t, getDetail(t, newHandler(t, queuedOnly()), "vat-check", "", ""))
+	body := decode(t, getDetail(t, newHandler(t, buildingOnly()), "talos-prod", "", ""))
 
 	for _, key := range []string{"days", "incidents", "deploys"} {
 		if _, present := body[key]; present {
-			t.Errorf("a queued system carries %q", key)
+			t.Errorf("a system that is not live carries %q", key)
 		}
 	}
 }
@@ -703,7 +703,7 @@ func TestABrokenDatabaseIsAProblemAndNotAnEmptyAnswer(t *testing.T) {
 // Postgres — systems_source_axis_ck forbids it. If it ever does, the answer is a
 // 500 with a log line, not a system quietly rendered as closed.
 func TestARowThatBreaksTheSourceAxisIsAFailureNotAGuess(t *testing.T) {
-	broken := queuedRow()
+	broken := buildingRow()
 	broken.SourceReason = nil // private with no reason
 
 	rec := getList(t, newHandler(t, &stubQueries{list: []store.ListSystemsRow{broken}}), "")
@@ -751,16 +751,16 @@ func TestTheSourceAxisSurvivesTheMapping(t *testing.T) {
 
 	for _, system := range payload.Systems {
 		switch system.Slug {
-		case "vat-check":
+		case "talos-prod":
 			if system.Source.Access != "private" || system.Source.Reason != "internal" {
-				t.Errorf("vat-check source = %+v, want private / internal", system.Source)
+				t.Errorf("talos-prod source = %+v, want private / internal", system.Source)
 			}
 			if system.Source.URL != "" {
 				t.Errorf("a private system carries a url: %q", system.Source.URL)
 			}
 			// The point of the separate axis: closed, and also not running.
-			if system.State != "queued" {
-				t.Errorf("vat-check state = %q, want queued", system.State)
+			if system.State != "in_build" {
+				t.Errorf("talos-prod state = %q, want in_build", system.State)
 			}
 		case "timseil-dev":
 			if system.Source.Access != "public" || system.Source.URL == "" {

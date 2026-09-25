@@ -12,6 +12,116 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## U3 · 25.09.2026 — Seed: Systeme und Training Log
+
+`vat-check` ist weg, `talos-prod` erbt die 01 als `in_build` mit privater
+Quelle, und der Baum schrumpft von 5 Modulen / 22 Tracks / 13 Belegen auf
+**6 / 14 / 19**. Gemessen, nicht behauptet: der Seed-Container meldet
+`2 systems, 6 modules, 14 tracks, 19 evidence`, `/api/training` antwortet mit
+`applied 8` und `learning 6`, `/api/systems` mit 01 `talos-prod in_build
+private·internal` und 02 `timseil-dev live public`. Kein `core`, kein `queued`.
+Schema, View und Contract sind unberührt.
+
+### Gefunden
+
+- **ADR 0079 widerspricht sich in der Zahl, die diese Phase erzeugt.** Zeile 142
+  sagt „sechs Tracks auf `learning`, acht auf `applied`", Zeile 169 sagt „Acht
+  Tracks fallen auf `learning`". Gegen `v_track_states` nachgerechnet und gegen
+  die laufende API gemessen sind es sechs; Zeile 169 ist korrigiert. Die Zahl
+  stand seit dem 24.09. in dem Dokument, das die Phase begründet, und **keine
+  Prüfregel kann sie fangen** — sie ist Prosa über eine Ableitung, und bis U3
+  gab es die Ableitung nicht, an der man sie hätte messen können.
+- **Das `grep`-Kriterium von U3 ist in U3 nicht erfüllbar.** „`grep -rn
+  'vat-check' web/ api/ stack.yaml README.md` findet nichts mehr" steht im
+  Sitzungsplan neben A4, und A4 verlangt im selben Atemzug das explizite
+  `DELETE FROM systems WHERE slug = 'vat-check'` — ein Upsert kann eine Zeile
+  nicht entfernen, und `system_no` ist `UNIQUE` und nicht deferrable, also kann
+  `'01'` nicht wandern, solange die alte Zeile sie hält. Drei Fundstellen
+  bleiben deshalb in `seed.sql` stehen, alle im selben Statement und seinem
+  Kommentar. Löschbar erst, wenn die Produktion den Seed einmal gelaufen ist —
+  **Kandidat für U9**, nicht für heute.
+- **A4 ist eine Karte, keine Koordinatenliste, und zwar um den Faktor drei.**
+  A4 nennt 14 Dateien; betroffen waren ~45. Nicht genannt und trotzdem rot oder
+  falsch: `api/internal/store/training_db_test.go` (vier Tests, nicht nur der
+  Kommentar auf Zeile 215), `systems_db_test.go`, `health_db_test.go`,
+  `api/internal/systems/systems_test.go`, `training_test.go`, `config_test.go`,
+  `problem_test.go`, `fixtures.go`, `fixtures_db_test.go`,
+  `track_states_db_test.go`, vier weitere Web-Testdateien,
+  `web/content/case-studies/timseil-dev.ts`, `docs/runbooks/seed.md`,
+  `docs/systemhandbuch.md`. Auch die Zeilennummern sind gewandert
+  (`blog/[slug]/page.tsx` ist 122, nicht 102). Für U4 bis U9 heißt das: die
+  Listen im Sitzungsplan suchen lassen, nicht anspringen.
+- **Eine Erwartung ist durch jeden `grep` gefallen, weil sie den Slug nicht
+  nennt.** `systems.test.ts` prüfte `"Python · FastAPI · Docker · SQLite"` —
+  der ganze alte Stack als eine Zeichenkette, ohne das Wort `vat-check` darin.
+  Gefunden hat sie `make check`, nicht die Suche. Dieselbe Form steckte in
+  `web/lib/work/stacks.test.ts` und in `filter.test.ts`. **Ein Slug-`grep`
+  findet einen Datensatz nicht, der ohne seinen Namen auskommt.**
+- **Ein Test wäre still vakuös geworden, und das ist genau die Form aus
+  ADR 0057.** `TestNoTrackIsLostOnTheWayOut` zählte Tracks ohne Belegzeile und
+  verglich mit neun. Nach U3 sind es null — die Zusicherung hätte null gegen
+  null gehalten, wäre grün geblieben und hätte aufgehört, den Left-Join zu
+  beweisen, für den sie existiert. Sie **baut den Fall jetzt selbst**: eine
+  Belegzeile wird gelöscht, und der Track muss trotzdem zurückkommen, als
+  `queued`. Beim Umschreiben gefunden, nicht von einer Prüfregel.
+- **`queued` ist aus der Produktion verschwunden, und zwei Dateien hatten es zu
+  ihrer Identität gemacht.** `store/systems_db_test.go` hieß die Konstante
+  `queuedSlug`; sie meinte immer „nicht live" und heißt jetzt `buildingSlug`.
+  In der Dev-Galerie war `in_build` fünf Phasen lang der Zustand, *den die
+  Produktion nicht herstellen kann* (#289, H6) — jetzt ist `queued` es. Die
+  erfundene dritte Zeile hat deshalb das Wort getauscht statt den Slug: die
+  Galerie zeichnet weiter alle drei und weiter genau einen, den es nirgends
+  gibt. **Abweichung vom Plan**, der die erste Zeile erfinden wollte; so bleibt
+  die Aussage „die ersten zwei Zeilen sind die des Seeds" wahr.
+- **`api/migrations/fixtures_db_test.go:73` blieb grün und richtig, weil sich
+  zwei Änderungen aufhoben** — ein System ist weiterhin nicht live. Nur der
+  Klammerkommentar `(vat-check)` war falsch. Die Sorte Stelle, die kein Lauf
+  meldet.
+- **`launchDay` im Handler-Test war der alte Seed, Zeile für Zeile.** Ihn
+  mitzuziehen hätte die Abdeckung *verkleinert*: der neue Seed erzeugt kein
+  `queued`, und der Track ohne Beleg ist die Zeile, für die ADR 0018 diesen
+  Endpunkt überhaupt gebaut hat. Die Bühne bleibt also stehen und heißt jetzt
+  `everyState` — was sie ist. Die Seed-Zahlen werden dort geprüft, wo ein
+  echter Server antwortet.
+- **`make check` sieht keinen einzigen Test dieser Phase.** Zwölf Tests gingen
+  rot, alle nur unter `make check-db`; `make check` war vom ersten bis zum
+  letzten Schritt grün, obwohl der Seed schon ausgetauscht war. In CI sind es
+  getrennte Jobs, in Produktion hängt `api` an
+  `seed: service_completed_successfully` — ein Seed, der nicht durchläuft, ist
+  kein roter Test, sondern ein Container, der nicht startet.
+- **Die STACK-Zeile auf `/work` wächst um zwölf Chips und hält.** Gemessen an
+  allen sieben Prüfbreiten gegen den laufenden Dev-Stack: kein horizontaler
+  Scroll, kein Element über die Fensterkante. Die Chip-Zeile wird höher —
+  54 px bei 1440, 85 px von 1081 bis 899, 116 px bei 719, **209 px bei 390**,
+  also sieben Reihen auf dem Telefon. Das ist kein Defekt und keine
+  Regression, aber es ist die Zeile, die U7 als erstes wiedersieht.
+- **`/work/talos-prod` ist der neue bewusste 404**, und `case-study.spec.ts`
+  misst ihn wirklich — das Tor ist `caseStudyFor()`, nicht die API.
+  `work.spec.ts:136` misst ihn dagegen weiterhin **nullmal**: ohne API rendert
+  `/work` keine einzige Zeile, die Zusicherung ist vakuös wahr. Das ist #359
+  und steht seit dem 25.09. hier; **keine neue Meldung**, nur der Hinweis, dass
+  der Fall durch U3 sichtbarer geworden ist.
+
+### Verschoben
+
+- **`web/app/dev/components/page.tsx` zitiert einen veralteten
+  `stack.gen.json`.** Die timseil.dev-Zeile der Galerie nennt `React 19.2`,
+  `pgx 5.10`, `goose 3.27`, `Alloy 1.18`; `make check-stack` liest heute
+  `19.3`, `5.11`, `3.28`, `1.19`. Die Drift ist älter als U3 und betrifft die
+  Zeile, die diese Phase nicht angefasst hat. Eine Fixture, die sich
+  „transcribed from stack.gen.json" nennt und es nicht mehr ist — aber keine
+  Prüfregel ohne einen Vorfall, und ein Vorfall ist es nicht.
+  *Ursprungsphase: U3 · 25.09.2026.*
+- **Die Komponentenliste in ADR 0079 nennt Flannel und Cloudflare Tunnel
+  nicht**, `stack.yaml` führt beide. Tim hat die zwölf Namen gegen den Cluster
+  bestätigt, die Liste im ADR wird damit als **beispielhaft** gelesen und nicht
+  als abschließend. Die Grenze selbst — keine Adressen, Ports, VPN,
+  Schutzwerkzeuge, kein VLAN-Zuschnitt — ist unberührt und eingehalten: der
+  Track heißt `Cluster networking`, und `bgp peering`, `bgp mode` und `dns-01`
+  aus dem A5-Entwurf stehen nirgends. Ob der ADR die Liste nachzieht, ist eine
+  Entscheidung und kein Nachmittag.
+  *Ursprungsphase: U3 · 25.09.2026.*
+
 ## Wo wir stehen — 25.09.2026, U2 abgenommen: `v0.40.0`, ein bezeugter Tausch, und eine Zeile, die nie angekommen ist
 
 `5c26356` läuft, **`v0.40.0`**. Merge **10:35:55Z**, `publish` 10:36:02Z bis

@@ -14,6 +14,7 @@ package store_test
 
 import (
 	"context"
+	"maps"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,17 +24,22 @@ import (
 	"github.com/G1NG4R/timseil-dev/api/internal/store"
 )
 
-// The seed as B4 declares it. These four numbers are the launch-day log, and
-// they are asserted rather than described because the build plan and the
-// handbook describe them wrongly: both say "9 learning", and both are older than
-// ADR 0003. `learning` needs a system in `in_build`; on launch day none exists,
-// so a track with nothing to point at is `queued`.
+// The seed as U3 declares it. These numbers are the log, and they are asserted
+// rather than described because every prose copy of them has drifted at least
+// once.
+//
+// The shape changed with ADR 0079: the old tree carried nine tracks with no
+// evidence at all, and `queued` was the biggest bucket in it. Now every track
+// has a line, `learning` is what the cluster alone backs, and `queued` is a
+// state the seed no longer produces — it survives in the view for the day a
+// track loses its last evidence line, which is what TestNoTrackIsLostOnTheWayOut
+// builds on purpose.
 const (
-	seedModules  = 5
-	seedTracks   = 22
-	seedEvidence = 13
-	seedApplied  = 13
-	seedQueued   = 9
+	seedModules  = 6
+	seedTracks   = 14
+	seedEvidence = 19
+	seedApplied  = 8
+	seedLearning = 6
 )
 
 func trainingStates(t *testing.T, q *store.Queries) map[string]int {
@@ -51,9 +57,9 @@ func trainingStates(t *testing.T, q *store.Queries) map[string]int {
 	return states
 }
 
-// ------------------------------------------------------------- the launch day
+// ----------------------------------------------------------- what is seeded
 
-func TestTheSeededTrainingLogIsFiveModulesAndTwentyTwoTracks(t *testing.T) {
+func TestTheSeededTrainingLogIsSixModulesAndFourteenTracks(t *testing.T) {
 	q := loaded(t, fixtures.TwoSystems)
 	ctx := context.Background()
 
@@ -89,71 +95,89 @@ func TestTheSeededTrainingLogIsFiveModulesAndTwentyTwoTracks(t *testing.T) {
 	}
 }
 
-// The launch-day states, counted from the database rather than claimed.
+// The seeded states, counted from the database rather than claimed.
 //
-// Zero core is the point of the whole log: something built once means having got
-// it to run once. Zero learning is what the derivation actually says on a
-// database whose only unbuilt system is `queued`.
-func TestTheSeededTrackStatesAreThirteenAppliedAndNineQueued(t *testing.T) {
+// Zero core is still the point of the log: core needs two live systems under one
+// track, and the cluster is `in_build` until the cutover in U9. Zero queued is
+// the half that is new — a track with nothing to point at was the normal case
+// before U3 and does not exist after it.
+func TestTheSeededTrackStatesAreEightAppliedAndSixLearning(t *testing.T) {
 	states := trainingStates(t, loaded(t, fixtures.TwoSystems))
 
-	for state, want := range map[string]int{"applied": seedApplied, "queued": seedQueued} {
+	for state, want := range map[string]int{"applied": seedApplied, "learning": seedLearning} {
 		if states[state] != want {
 			t.Errorf("%s = %d, want %d (all states: %v)", state, states[state], want, states)
 		}
 	}
-	for _, state := range []string{"core", "learning"} {
+	for _, state := range []string{"core", "queued"} {
 		if states[state] != 0 {
-			t.Errorf("%s = %d on launch day, want 0", state, states[state])
+			t.Errorf("%s = %d on the seeded database, want 0", state, states[state])
 		}
 	}
 }
 
 // No track falls out of the query, and this is the C3 counterpart to the golden
-// test of C2.
+// test of C2. An inner join against track_evidence would drop every track with
+// no evidence line — and the log would then show a fuller profile than the one
+// that exists, which is the single failure mode this site is built against.
 //
-// Nine of the twenty-two tracks have no evidence at all. An inner join against
-// track_evidence would drop exactly those nine — and the log would then show a
-// fuller profile than the one that exists, which is the single failure mode this
-// site is built against. Counted against the table so that the assertion cannot
-// be satisfied by a query that lost rows and a constant that was updated to
-// match.
+// Before U3 the seed itself supplied that case: nine of twenty-two tracks had no
+// evidence at all. It no longer does — all fourteen are backed — so the test now
+// BUILDS the case instead of counting on it. That is the whole point of the
+// rewrite: left as it was, the assertion would have counted zero against zero
+// and stayed green while proving nothing (ADR 0057).
 func TestNoTrackIsLostOnTheWayOut(t *testing.T) {
 	q := loaded(t, fixtures.TwoSystems)
-
-	rows, err := q.ListTracksWithState(context.Background())
-	if err != nil {
-		t.Fatalf("ListTracksWithState: %v", err)
-	}
+	ctx := context.Background()
+	sqlDB := dbtest.App(t)
 
 	var inTable int
-	sqlDB := dbtest.App(t)
 	if err := sqlDB.QueryRow(`SELECT count(*) FROM tracks`).Scan(&inTable); err != nil {
 		t.Fatalf("counting tracks: %v", err)
 	}
-	if len(rows) != inTable {
-		t.Errorf("the query returns %d of %d tracks — the ones without evidence "+
-			"are the ones that go missing", len(rows), inTable)
-	}
 
-	evidenced := map[int64]bool{}
-	evidence, err := q.ListTrackEvidence(context.Background())
+	rows, err := q.ListTracksWithState(ctx)
 	if err != nil {
-		t.Fatalf("ListTrackEvidence: %v", err)
+		t.Fatalf("ListTracksWithState: %v", err)
 	}
-	for _, row := range evidence {
-		evidenced[row.TrackID] = true
+	if len(rows) != inTable {
+		t.Fatalf("the query returns %d of %d tracks", len(rows), inTable)
 	}
 
-	withoutEvidence := 0
+	// Strip one track of its evidence. Nothing else changes, and the seed offers
+	// no such track on its own.
+	var stripped int64
+	if err := sqlDB.QueryRow(`
+		DELETE FROM track_evidence
+		 WHERE track_id = (SELECT min(track_id) FROM track_evidence)
+		RETURNING track_id`).Scan(&stripped); err != nil {
+		t.Fatalf("stripping a track of its evidence: %v", err)
+	}
+
+	rows, err = q.ListTracksWithState(ctx)
+	if err != nil {
+		t.Fatalf("ListTracksWithState after the delete: %v", err)
+	}
+	if len(rows) != inTable {
+		t.Errorf("the query returns %d of %d tracks — the one without evidence "+
+			"is the one that goes missing", len(rows), inTable)
+	}
+
+	var found bool
 	for _, row := range rows {
-		if !evidenced[row.TrackID] {
-			withoutEvidence++
+		if row.TrackID != stripped {
+			continue
+		}
+		found = true
+		// It comes back, and it comes back honest: no evidence is `queued`,
+		// which is the state the seed itself no longer produces.
+		if row.State != "queued" {
+			t.Errorf("track %d has no evidence left and reads %q, want %q",
+				stripped, row.State, "queued")
 		}
 	}
-	if withoutEvidence != seedQueued {
-		t.Errorf("tracks without an evidence line = %d, want %d",
-			withoutEvidence, seedQueued)
+	if !found {
+		t.Errorf("track %d lost its evidence and fell out of the query entirely", stripped)
 	}
 }
 
@@ -168,16 +192,22 @@ func TestEveryEvidenceLinePointsAtARealSystem(t *testing.T) {
 		t.Fatalf("ListTrackEvidence: %v", err)
 	}
 
+	seen := map[string]bool{}
 	for _, row := range rows {
 		if row.Slug == "" || row.SystemNo == "" {
 			t.Errorf("track %d carries an evidence line with no system: %+v", row.TrackID, row)
 		}
-		// The seed backs every line with 02 timseil.dev, which is why the log
-		// header reads one system and not thirteen.
-		if row.Slug != liveSlug {
-			t.Errorf("track %d is backed by %q, and the seed backs all thirteen "+
-				"lines with %q", row.TrackID, row.Slug, liveSlug)
+		if row.Slug != liveSlug && row.Slug != buildingSlug {
+			t.Errorf("track %d is backed by %q, and the seed declares only %q and %q",
+				row.TrackID, row.Slug, buildingSlug, liveSlug)
 		}
+		seen[row.Slug] = true
+	}
+	// Both systems back something. Since U3 the log header reads
+	// EVIDENCE: 02 SYSTEMS, and one slug going missing here is how that header
+	// would quietly become wrong.
+	if len(seen) != 2 {
+		t.Errorf("the evidence lines name %d systems, want both: %v", len(seen), seen)
 	}
 }
 
@@ -211,19 +241,14 @@ func TestAnEmptyDatabaseHasAnEmptyTrainingLog(t *testing.T) {
 
 // Moving a system moves the tracks it proves, and nothing writes a state.
 //
-// This is phase C3's acceptance criterion and it needs a stage the seed does not
-// provide: with `timseil.dev` live and `vat-check` queued there is no `learning`
-// anywhere. So the test builds the movement itself — the same system, walked
-// through the three states that matter — and reads the query after each step.
+// This is phase C3's acceptance criterion: the same system walked through the
+// three states that matter, with the query read after each step. Nothing is
+// written to any track at any point.
 //
-// The query is what is observed rather than the view directly, because the view
-// is already covered by the property test in api/migrations. What is new here is
-// that the endpoint's own read path carries the movement: nothing between
-// v_track_states and the response caches, copies or overrides a state.
-//
-// The thirteen tracks are the ones the seed backs with that system; the other
-// nine stay queued throughout, which is the second half of the assertion — a
-// state change must not leak into tracks that have nothing to do with it.
+// The whole distribution is asserted, not one bucket of it. A state change that
+// leaked into tracks it has nothing to do with would otherwise pass — and after
+// U3 that risk is real in a way it was not before, because talos-prod backs
+// eleven of the fourteen tracks and timseil.dev eight, five of them the same.
 func TestSettingASystemLiveMovesTheTracksItProves(t *testing.T) {
 	q := loaded(t, fixtures.TwoSystems)
 	sqlDB := dbtest.App(t)
@@ -238,67 +263,54 @@ func TestSettingASystemLiveMovesTheTracksItProves(t *testing.T) {
 
 	for _, step := range []struct {
 		systemState string
-		trackState  string
+		want        map[string]int
 	}{
-		// Where the seed stands: one live system behind thirteen tracks.
-		{"live", "applied"},
-		// The system goes back into build. Nothing is written to any track, and
-		// all thirteen have to fall back to learning.
-		{"in_build", "learning"},
+		// Where the seed stands: eight tracks applied, six backed by the
+		// cluster alone.
+		{"live", map[string]int{"applied": seedApplied, "learning": seedLearning}},
+		// The site goes back into build. Nothing is written to any track, and
+		// every one of the fourteen falls to learning — both systems are now
+		// `in_build`, so nothing is proven by anything running.
+		{"in_build", map[string]int{"learning": seedTracks}},
 		// Live again — the jump the build plan names as the criterion.
-		{"live", "applied"},
-		// And the honest floor: a system nobody is building proves nothing.
-		{"queued", "queued"},
+		{"live", map[string]int{"applied": seedApplied, "learning": seedLearning}},
+		// And the honest floor: a system nobody is building proves nothing. The
+		// three tracks only this system backs fall all the way to queued; the
+		// eleven the cluster still backs stay at learning, which is the second
+		// half of the assertion.
+		{"queued", map[string]int{"learning": 11, "queued": 3}},
 	} {
 		setState(step.systemState)
 
-		states := trainingStates(t, q)
-		if states[step.trackState] < seedApplied {
-			t.Errorf("with %s in state %q, only %d tracks are %q — want the %d it backs "+
-				"(all states: %v)",
-				liveSlug, step.systemState, states[step.trackState], step.trackState,
-				seedApplied, states)
-		}
-		// The nine self-study tracks are not affected by any of this. With
-		// `queued` as the track state they merge into the same bucket, so that
-		// step checks the total instead.
-		if step.trackState != "queued" && states["queued"] != seedQueued {
-			t.Errorf("with %s in state %q, queued = %d — want the %d tracks with no "+
-				"evidence, untouched", liveSlug, step.systemState, states["queued"], seedQueued)
-		}
-		if step.trackState == "queued" && states["queued"] != seedTracks {
-			t.Errorf("with %s in state %q, queued = %d — want all %d tracks",
-				liveSlug, step.systemState, states["queued"], seedTracks)
+		if states := trainingStates(t, q); !maps.Equal(states, step.want) {
+			t.Errorf("with %s in state %q the log reads %v, want %v",
+				liveSlug, step.systemState, states, step.want)
 		}
 	}
 }
 
 // Two live systems behind one track is `core`, and the boundary is `>= 2` rather
-// than `= 2`. The seed reaches neither, so the test writes the second system's
-// evidence line — the only case in this file that adds a row rather than moving
-// one, because `core` cannot otherwise be observed through the read path at all.
+// than `= 2`.
+//
+// The seed reaches it by moving, not by writing: five tracks are backed by both
+// systems, so setting the cluster live turns exactly those five core and leaves
+// the other nine applied. Before U3 this test had to insert an evidence line of
+// its own, because no track was backed twice — that row is gone, and with it the
+// only place in this file that added content rather than moving it.
+//
+// This is also the shape the cutover in U9 produces, asserted here before it
+// happens rather than after.
 func TestTwoLiveSystemsBehindATrackAreCore(t *testing.T) {
 	q := loaded(t, fixtures.TwoSystems)
 	sqlDB := dbtest.App(t)
 
-	if _, err := sqlDB.Exec(`UPDATE systems SET state = 'live' WHERE slug = $1`, queuedSlug); err != nil {
-		t.Fatalf("setting %s live: %v", queuedSlug, err)
-	}
-	// The same track the seed already backs with 02, now backed by 01 as well.
-	if _, err := sqlDB.Exec(`
-		INSERT INTO track_evidence (track_id, system_id, detail)
-		SELECT e.track_id, s.id, 'second system'
-		  FROM track_evidence e
-		  JOIN systems s ON s.slug = $1
-		 WHERE e.track_id = (SELECT min(track_id) FROM track_evidence)
-		 LIMIT 1`, queuedSlug); err != nil {
-		t.Fatalf("adding a second evidence line: %v", err)
+	if _, err := sqlDB.Exec(`UPDATE systems SET state = 'live' WHERE slug = $1`, buildingSlug); err != nil {
+		t.Fatalf("setting %s live: %v", buildingSlug, err)
 	}
 
-	states := trainingStates(t, q)
-	if states["core"] != 1 {
-		t.Errorf("core = %d, want exactly the one track two live systems back "+
-			"(all states: %v)", states["core"], states)
+	want := map[string]int{"core": 5, "applied": 9}
+	if states := trainingStates(t, q); !maps.Equal(states, want) {
+		t.Errorf("with both systems live the log reads %v, want %v", states, want)
 	}
 }
 

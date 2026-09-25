@@ -13,9 +13,9 @@ import {
 
 /** The gallery's three systems, reduced to what the axes read. */
 const ROWS = [
-  { slug: "vat-check", st: "queued", sk: ["python", "fastapi", "docker", "sqlite"] },
+  { slug: "talos-prod", st: "in_build", sk: ["talos", "kubernetes", "flux", "sops"] },
   { slug: "timseil-dev", st: "live", sk: ["next.js", "react", "go", "postgresql"] },
-  { slug: "not-a-real-system", st: "in_build", sk: ["go"] },
+  { slug: "not-a-real-system", st: "queued", sk: ["go"] },
 ] as const;
 
 const slugs = (axis: Axis) => applyFilter(ROWS, axis).map((row) => row.slug);
@@ -75,7 +75,7 @@ describe("the stack match is whole-token", () => {
 
 describe("the two axes narrow together", () => {
   it("passes everything through when neither is set", () => {
-    assert.deepEqual(slugs(NO_FILTER), ["vat-check", "timseil-dev", "not-a-real-system"]);
+    assert.deepEqual(slugs(NO_FILTER), ["talos-prod", "timseil-dev", "not-a-real-system"]);
   });
 
   it("keeps the answer's order rather than the filter's", () => {

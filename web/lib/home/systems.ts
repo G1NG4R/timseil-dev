@@ -32,9 +32,10 @@ export interface SystemEntry extends SystemRowView {
    * Where the row leads, or nothing.
    *
    * A SYSTEM IS NOT A CASE STUDY — content/case-studies/index.ts holds the
-   * argument, and this is the place it becomes visible. `vat-check` is queued,
-   * has no repository and nothing written about it, so `/work/vat-check` is a
-   * 404; a row that linked there would be a promise the router refuses. The
+   * argument, and this is the place it becomes visible. `talos-prod` is
+   * in_build, its repository is private and nothing is written about it, so
+   * `/work/talos-prod` is a 404; a row that linked there would be a promise the
+   * router refuses. The
    * component renders the exit as text when this is `null`.
    */
   readonly href: string | null;

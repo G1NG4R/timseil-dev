@@ -48,12 +48,12 @@ describe("the version goes and the name stays", () => {
   });
 
   it("leaves a bare name alone", () => {
-    // The whole `vat-check` stack. None of its sources live in this repository,
-    // so none of them has a version to read and the sheet draws it that way
-    // too.
-    assert.deepEqual(stackKey("Python"), { key: "python", label: "Python" });
-    assert.deepEqual(stackKey("FastAPI"), { key: "fastapi", label: "FastAPI" });
-    assert.deepEqual(stackKey("SQLite"), { key: "sqlite", label: "SQLite" });
+    // The whole `talos-prod` stack. None of its sources live in this
+    // repository, so none of them has a version to read and the sheet draws it
+    // that way too.
+    assert.deepEqual(stackKey("Talos"), { key: "talos", label: "Talos" });
+    assert.deepEqual(stackKey("Flux"), { key: "flux", label: "Flux" });
+    assert.deepEqual(stackKey("cert-manager"), { key: "cert-manager", label: "cert-manager" });
   });
 
   it("does not mistake a digit inside a name for a version", () => {

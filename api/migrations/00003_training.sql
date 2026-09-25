@@ -1,6 +1,6 @@
 -- modules, tracks, track_evidence — the training log. Handbook ch. 10.
 --
--- 22 tracks in five modules. The interesting thing about this file is what is
+-- The training tree. The interesting thing about this file is what is
 -- NOT in it.
 --
 -- tracks HAS NO STATE COLUMN. The state of a track is derived from its evidence

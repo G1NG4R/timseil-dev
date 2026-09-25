@@ -296,13 +296,16 @@ database and the page cannot come to different conclusions about the same
 person.
 
 **The seed carries content, never measurements.** `make seed` writes two systems,
-five modules, 22 tracks and the 13 evidence rows that back them — and not one row
+six modules, 14 tracks and the 19 evidence rows that back them — and not one row
 of operational data. So `timseil.dev` is `live` from the first run and still reads
 `— NO DATA` in every metric tile, because on day one nothing has been measured.
-Counting it out: 13 tracks `applied`, 9 `queued`, none `core`. None `core` is the
-strict reading and the intended one — building something once means getting it to
-run once, and running it twice is a different claim
-([ADR 0013](docs/adr/0013-seed-is-content-not-measurement.md)).
+Counting it out: 8 tracks `applied`, 6 `learning`, none `core` and none `queued`.
+None `core` is the strict reading and the intended one — building something once
+means getting it to run once, and running it twice is a different claim
+([ADR 0013](docs/adr/0013-seed-is-content-not-measurement.md)). Every track has
+at least one system behind it, which is what
+[ADR 0079](docs/adr/0079-die-rolle-die-der-beleg-traegt-und-der-mitautor-den-das-verbot-nie-erreicht-hat.md)
+cut the log down to.
 
 **No version number is typed onto a page.** `stack.yaml` names what is worth
 showing and points at the file that declares each version; `make gen` reads them
@@ -448,7 +451,7 @@ the same page.
 |---|---|---|---|
 | `/` | `/de` | `/fr` | home — the statement, the training log, the systems, the uplink and the log, in that order |
 | `/work` | `/de/work` | `/fr/work` | the systems |
-| `/work/<slug>` | `/de/work/<slug>` | `/fr/work/<slug>` | one system in full — a case study exists for a system that has been written about, and `/work/vat-check` is a 404 because none has |
+| `/work/<slug>` | `/de/work/<slug>` | `/fr/work/<slug>` | one system in full — a case study exists for a system that has been written about, and `/work/talos-prod` is a 404 because none has |
 | `/blog` | `/de/blog` | `/fr/blog` | the log — the label says `LOG`, the route says `/blog` |
 | `/blog/<slug>` | `/de/blog/<slug>` | `/fr/blog/<slug>` | one entry, rendered from `web/content/posts/<slug>.mdx` — the slug is the filename, which is also what `incidents.post_slug` points at |
 | `/about` | `/de/about` | `/fr/about` | the operator |

@@ -33,7 +33,7 @@ const (
 	// Empty is a migrated database with no rows: every metric null, no grid.
 	Empty = "empty"
 	// TwoSystems is the seed exactly as production gets it. The golden case for
-	// C2: vat-check is not live, so every one of its metric fields is null.
+	// C2: talos-prod is not live, so every one of its metric fields is null.
 	TwoSystems = "two-systems"
 	// DayOne adds the 91-cell grid with every cell nodata.
 	DayOne = "day-one"

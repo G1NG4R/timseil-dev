@@ -470,12 +470,12 @@ describe("what a notch says when it is opened", () => {
 const SEEDED = {
   systems: [
     {
-      slug: "vat-check",
+      slug: "talos-prod",
       systemNo: "01",
-      name: "VAT Check API",
-      state: "queued",
+      name: "talos-prod",
+      state: "in_build",
       source: { access: "private", reason: "internal" },
-      stack: ["Python", "FastAPI", "Docker", "SQLite"],
+      stack: ["Talos", "Kubernetes", "Flannel", "MetalLB", "Traefik", "cert-manager", "Cloudflare Tunnel", "Flux", "SOPS", "kube-prometheus-stack", "CloudNativePG", "Velero"],
       metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
     },
     {
@@ -519,10 +519,10 @@ describe("what the system list says when it is broken", () => {
   // after a deploy the answer can come from the previous build, and a field the
   // contract gained this week is simply absent.
   it("keeps a row whose every other field is missing", () => {
-    const rows = systemRows({ systems: [{ slug: "vat-check" }] } as unknown as SystemList);
+    const rows = systemRows({ systems: [{ slug: "talos-prod" }] } as unknown as SystemList);
 
     assert.deepEqual(rows, [
-      { slug: "vat-check", no: "--", name: "vat-check", state: null, stack: null, source: null },
+      { slug: "talos-prod", no: "--", name: "talos-prod", state: null, stack: null, source: null },
     ]);
   });
 
@@ -533,7 +533,7 @@ describe("what the system list says when it is broken", () => {
   // a dictionary key and the row can carry it.
   it("carries the state word for in_build now that one exists", () => {
     const rows = systemRows({
-      systems: [{ slug: "vat-check", state: "in_build" }],
+      systems: [{ slug: "talos-prod", state: "in_build" }],
     } as unknown as SystemList);
 
     assert.equal(rows[0].state, "in_build");
@@ -582,7 +582,7 @@ describe("what the system list says when it answers", () => {
     assert.deepEqual(
       rows.map((row) => [row.no, row.name, row.state]),
       [
-        ["01", "VAT Check API", "queued"],
+        ["01", "talos-prod", "in_build"],
         ["02", "timseil.dev", "live"],
       ],
     );
@@ -598,7 +598,12 @@ describe("what the system list says when it answers", () => {
   });
 
   it("joins the stack the way the spec rail does", () => {
-    assert.equal(systemRows(SEEDED)[0].stack, "Python · FastAPI · Docker · SQLite");
+    assert.equal(
+      systemRows(SEEDED)[0].stack,
+      "Talos · Kubernetes · Flannel · MetalLB · Traefik · cert-manager · " +
+        "Cloudflare Tunnel · Flux · SOPS · kube-prometheus-stack · " +
+        "CloudNativePG · Velero",
+    );
   });
 
   it("carries the source axis, which is not the state", () => {

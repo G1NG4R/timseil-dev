@@ -389,10 +389,11 @@ export const timseilDev: CaseStudy = {
     ],
 
     next: {
-      name: "VAT Check API",
+      name: "talos-prod",
       detail:
-        "Specified, not written. It gets a page when it has a system to point " +
-        "at rather than a plan.",
+        "A bare-metal Kubernetes cluster, still being built and in a private " +
+        "repository. It gets a page when there is something running on it to " +
+        "point at.",
     },
   },
 

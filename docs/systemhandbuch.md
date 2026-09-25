@@ -319,7 +319,7 @@ CHECK ((source_access='public'  AND source_url    IS NOT NULL)
 
 ### `tracks`, `modules`, `track_evidence`
 
-22 Tracks in fünf Modulen: Languages, Backend, Data, DevOps, Foundations.
+14 Tracks in sechs Modulen: Platform, Network, Delivery, Observability, Data & backup, Workflow. Bis U3 waren es 22 in fünf Modulen entlang eines Lehrplans; ADR 0079 hat daraus das gemacht, was ein System belegt.
 
 **`tracks` hat keine Zustandsspalte.** Der Zustand entsteht in `track_evidence` — der Tabelle, die einen Track mit einem System verbindet und dazu einen Detailtext trägt:
 
@@ -384,7 +384,7 @@ GROUP BY t.id, t.module_id, t.name;
 
 **`core` verlangt zwei laufende Systeme.** Das ist streng, und die Strenge ist der Punkt. Etwas einmal gebaut zu haben heißt, es einmal zum Laufen gebracht zu haben. Es zweimal in Betrieb zu haben heißt, die Fälle kennengelernt zu haben, die beim ersten Mal Glück waren.
 
-**Am Launch-Tag steht deshalb kein einziger Track auf `core`.** 22 Tracks, davon 13 `applied` aus timseil.dev, 9 `learning` ohne System. Die Kopfzeile sagt: `SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM`.
+**Es steht deshalb kein einziger Track auf `core`.** 14 Tracks, davon 8 `applied` — dort belegt timseil.dev live mit — und 6 `learning`, die nur der Cluster trägt, solange er `in_build` ist. Keiner auf `queued`: jeder Track hat mindestens eine Belegzeile. Die Kopfzeile sagt: `SELF-TRACKED · 14 TRACKS · EVIDENCE: 02 SYSTEMS`.
 
 Das sieht schwach aus. Es ist das Gegenteil: eine Seite, die bei sich selbst streng ist, ist glaubwürdig, wenn sie über andere Dinge spricht.
 
@@ -501,7 +501,7 @@ openapi.yaml ─┬→ oapi-codegen        → api/internal/httpx/gen.go
 | `GET /api/health` | Liveness, Version, Commit-SHA, Ops-Metriken |
 | `GET /api/systems` | Liste mit Zustand, Quelle, nullable Metriken |
 | `GET /api/systems/{slug}` | Detail + Incidents + Deploys + 91-Tage-Raster |
-| `GET /api/training` | 5 Module, 22 Tracks, **abgeleitete** Zustände, Belege |
+| `GET /api/training` | 6 Module, 14 Tracks, **abgeleitete** Zustände, Belege |
 | `GET /api/contributions` | GitHub-Graph, serverseitig gecacht |
 | `POST /api/contact` | Formular, rate-limited |
 | `POST /api/internal/probe` | Token, externer Uptime-Check |
@@ -1238,7 +1238,7 @@ API liefert `lowercase`, Oberfläche zeigt `UPPERCASE`.
 
 **Terminal Noir** — Der Standard unter sieben Themes; verbindlich für die Struktur.
 
-**Trainings-Log** — `SYS.01`. 22 Tracks in fünf Modulen mit abgeleiteten Zuständen und Belegzeilen.
+**Trainings-Log** — `SYS.01`. 14 Tracks in sechs Modulen mit abgeleiteten Zuständen und Belegzeilen.
 
 ## D. Entscheidungsregister
 

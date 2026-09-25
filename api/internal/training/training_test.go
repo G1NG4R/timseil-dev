@@ -54,15 +54,18 @@ var errUnreachable = errors.New("failed to connect to `host=db user=timseil_app`
 
 // ------------------------------------------------------------------ the stage
 
-// launchDay is the seed as B4 declares it, in miniature: five modules, tracks in
-// sheet order, evidence pointing at one system. The numbers it produces are the
-// ones the db test asserts against the real seed — 22 tracks, 13 applied, 9
-// queued, one system in the header.
+// everyState is a stage rather than a transcription: five modules and 22 tracks
+// in sheet order, thirteen of them backed by one live system and nine backed by
+// nothing at all.
 //
-// It is deliberately NOT nine learning. The build plan and the handbook say so
-// and they are older than ADR 0003: `learning` needs a system in `in_build`, and
-// on launch day none exists. A track with nothing to point at is `queued`.
-func launchDay() *stubQueries {
+// IT USED TO BE THE SEED, AND ON PURPOSE IT IS NOT ANY MORE. Until U3 it mirrored
+// api/internal/seed/seed.sql line for line. ADR 0079 then cut the log to fourteen
+// tracks that all have evidence, which would have taken `queued` out of this file
+// with it — and `queued` is the row ADR 0018 says this endpoint exists for, the
+// one an inner join would silently drop. So the stage keeps the branch the seed
+// no longer produces, and the seed's own numbers are asserted where they belong:
+// against a real server, in api/migrations/seed_db_test.go.
+func everyState() *stubQueries {
 	modules := []store.ListModulesRow{
 		{ModuleNo: "01", Title: "Languages"},
 		{ModuleNo: "02", Title: "Backend"},
@@ -191,12 +194,12 @@ func allTracks(body jsonTraining) []jsonTrack {
 	return out
 }
 
-// ----------------------------------------------------------------- launch day
+// ------------------------------------------------------------ the whole log
 
 // The numbers the log claims about itself have to be the numbers a reader can
 // count in it. This is the whole endpoint in one assertion.
-func TestTheLaunchDayLogCountsItself(t *testing.T) {
-	rec := get(t, newHandler(t, launchDay()), "")
+func TestTheLogCountsItself(t *testing.T) {
+	rec := get(t, newHandler(t, everyState()), "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
@@ -230,11 +233,12 @@ func TestTheLaunchDayLogCountsItself(t *testing.T) {
 			t.Errorf("%s = %d, want %d (states: %v)", state, states[state], want, states)
 		}
 	}
-	// Zero core is the point of a launch-day log, and zero learning is what the
-	// derivation actually says: nothing is in_build yet.
+	// This stage holds one live system and nothing in build, so core and
+	// learning are both empty. The seed's own distribution is a different
+	// question and is asserted against a real server.
 	for _, state := range []string{"core", "learning"} {
 		if states[state] != 0 {
-			t.Errorf("%s = %d on launch day, want 0", state, states[state])
+			t.Errorf("%s = %d on this stage, want 0", state, states[state])
 		}
 	}
 }
@@ -243,7 +247,7 @@ func TestTheLaunchDayLogCountsItself(t *testing.T) {
 // keep their place, they carry an empty array rather than a missing one, and
 // they say why.
 func TestATrackWithoutEvidenceIsAnEmptyArrayAndANote(t *testing.T) {
-	body := decode(t, get(t, newHandler(t, launchDay()), ""))
+	body := decode(t, get(t, newHandler(t, everyState()), ""))
 
 	withoutEvidence := 0
 	for _, track := range allTracks(body) {
@@ -274,7 +278,7 @@ func TestATrackWithoutEvidenceIsAnEmptyArrayAndANote(t *testing.T) {
 // expects, and it is one forgotten `make` away. Asserted on the raw JSON,
 // because that is where the difference lives.
 func TestNoEvidenceArrayIsEverNull(t *testing.T) {
-	body := decode(t, get(t, newHandler(t, launchDay()), ""))
+	body := decode(t, get(t, newHandler(t, everyState()), ""))
 
 	for _, track := range allTracks(body) {
 		if string(track.Evidence) == "null" {
@@ -292,8 +296,8 @@ func TestNoEvidenceArrayIsEverNull(t *testing.T) {
 }
 
 // The header counts systems, not lines. Two tracks proven by one system are one
-// system — the launch-day case — and the count only rises when a second system
-// actually exists.
+// system, and the count only rises when a second system actually exists — which
+// since U3 the seed itself does.
 func TestTheHeaderCountsDistinctSystems(t *testing.T) {
 	detail := "shipped"
 	base := []store.ListModulesRow{{ModuleNo: "01", Title: "Languages"}}
@@ -316,7 +320,7 @@ func TestTheHeaderCountsDistinctSystems(t *testing.T) {
 		"two systems": {
 			evidence: []store.ListTrackEvidenceRow{
 				{TrackID: 1, Slug: "timseil-dev", SystemNo: "02", Detail: &detail},
-				{TrackID: 2, Slug: "vat-check", SystemNo: "01", Detail: &detail},
+				{TrackID: 2, Slug: "talos-prod", SystemNo: "01", Detail: &detail},
 			},
 			want: 2,
 		},
@@ -358,7 +362,7 @@ func TestAnEmptyDatabaseIsAnEmptyLog(t *testing.T) {
 // module_no, tracks by sort_order. The handler may not re-sort and may not lose
 // the order to a map.
 func TestTheOrderOfTheQueryIsTheOrderOfTheAnswer(t *testing.T) {
-	body := decode(t, get(t, newHandler(t, launchDay()), ""))
+	body := decode(t, get(t, newHandler(t, everyState()), ""))
 
 	wantModules := []string{"01", "02", "03", "04", "05"}
 	for i, want := range wantModules {
@@ -378,10 +382,10 @@ func TestTheOrderOfTheQueryIsTheOrderOfTheAnswer(t *testing.T) {
 
 	// Ten requests over the same data: a map iterated instead of a slice would
 	// show up here as a moving tag.
-	h := newHandler(t, launchDay())
+	h := newHandler(t, everyState())
 	first := get(t, h, "").Header().Get("ETag")
 	for i := 0; i < 10; i++ {
-		if got := get(t, newHandler(t, launchDay()), "").Header().Get("ETag"); got != first {
+		if got := get(t, newHandler(t, everyState()), "").Header().Get("ETag"); got != first {
 			t.Fatalf("the tag moved between two identical answers: %q then %q", first, got)
 		}
 	}
@@ -390,7 +394,7 @@ func TestTheOrderOfTheQueryIsTheOrderOfTheAnswer(t *testing.T) {
 // ---------------------------------------------------------- caching and 304
 
 func TestTheCacheDirectiveAndETagArePresent(t *testing.T) {
-	rec := get(t, newHandler(t, launchDay()), "")
+	rec := get(t, newHandler(t, everyState()), "")
 
 	if got := rec.Header().Get("Cache-Control"); got != cacheControl {
 		t.Errorf("Cache-Control = %q, want %q", got, cacheControl)
@@ -403,8 +407,8 @@ func TestTheCacheDirectiveAndETagArePresent(t *testing.T) {
 // With generatedAt inside the hash the tag would change every time the clock
 // does, and the 304 path would be dead code that nobody notices.
 func TestTheETagDoesNotMoveWithTheClock(t *testing.T) {
-	first := newHandler(t, launchDay())
-	second := newHandler(t, launchDay())
+	first := newHandler(t, everyState())
+	second := newHandler(t, everyState())
 	second.now = func() time.Time { return time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC) }
 
 	if a, b := get(t, first, "").Header().Get("ETag"), get(t, second, "").Header().Get("ETag"); a != b {
@@ -413,11 +417,11 @@ func TestTheETagDoesNotMoveWithTheClock(t *testing.T) {
 }
 
 func TestAMatchingETagIs304(t *testing.T) {
-	h := newHandler(t, launchDay())
+	h := newHandler(t, everyState())
 	tag := get(t, h, "").Header().Get("ETag")
 
 	for _, match := range []string{tag, "*", `W/"nonsense", ` + tag} {
-		rec := get(t, newHandler(t, launchDay()), match)
+		rec := get(t, newHandler(t, everyState()), match)
 		if rec.Code != http.StatusNotModified {
 			t.Errorf("If-None-Match %q = %d, want 304", match, rec.Code)
 		}
@@ -426,7 +430,7 @@ func TestAMatchingETagIs304(t *testing.T) {
 		}
 	}
 
-	if rec := get(t, newHandler(t, launchDay()), `"someone else's"`); rec.Code != http.StatusOK {
+	if rec := get(t, newHandler(t, everyState()), `"someone else's"`); rec.Code != http.StatusOK {
 		t.Errorf("a foreign tag = %d, want 200", rec.Code)
 	}
 }
@@ -435,9 +439,9 @@ func TestAMatchingETagIs304(t *testing.T) {
 // stop being valid. This is the reader-facing half of invariant 2: the derived
 // state is what the tag is computed over.
 func TestAChangedTrackStateChangesTheTag(t *testing.T) {
-	before := get(t, newHandler(t, launchDay()), "").Header().Get("ETag")
+	before := get(t, newHandler(t, everyState()), "").Header().Get("ETag")
 
-	moved := launchDay()
+	moved := everyState()
 	moved.tracks[0].State = "core"
 	after := get(t, newHandler(t, moved), "").Header().Get("ETag")
 
@@ -447,7 +451,7 @@ func TestAChangedTrackStateChangesTheTag(t *testing.T) {
 }
 
 func TestGeneratedAtIsTheInjectedTimeInUTC(t *testing.T) {
-	body := decode(t, get(t, newHandler(t, launchDay()), ""))
+	body := decode(t, get(t, newHandler(t, everyState()), ""))
 	if body.GeneratedAt != "2026-08-17T12:00:00Z" {
 		t.Errorf("generatedAt = %q, want the injected time in UTC", body.GeneratedAt)
 	}
@@ -462,17 +466,17 @@ func TestGeneratedAtIsTheInjectedTimeInUTC(t *testing.T) {
 func TestABrokenDatabaseIsAProblemAndNotAPartialLog(t *testing.T) {
 	cases := map[string]func() *stubQueries{
 		"the modules": func() *stubQueries {
-			q := launchDay()
+			q := everyState()
 			q.modulesErr = errUnreachable
 			return q
 		},
 		"the tracks": func() *stubQueries {
-			q := launchDay()
+			q := everyState()
 			q.tracksErr = errUnreachable
 			return q
 		},
 		"the evidence": func() *stubQueries {
-			q := launchDay()
+			q := everyState()
 			q.evidenceErr = errUnreachable
 			return q
 		},
@@ -511,7 +515,7 @@ func TestABrokenDatabaseIsAProblemAndNotAPartialLog(t *testing.T) {
 // uppercases them for display (handbook ch. 14); an API that shipped
 // `SHIPPED IN` would put a rendering decision in the payload.
 func TestTheStatesAndDetailsAreLowercase(t *testing.T) {
-	body := decode(t, get(t, newHandler(t, launchDay()), ""))
+	body := decode(t, get(t, newHandler(t, everyState()), ""))
 
 	for _, track := range allTracks(body) {
 		if track.State != strings.ToLower(track.State) {

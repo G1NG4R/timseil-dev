@@ -18,12 +18,12 @@ import { workEntries } from "./entries.ts";
 const SEEDED = {
   systems: [
     {
-      slug: "vat-check",
+      slug: "talos-prod",
       systemNo: "01",
-      name: "VAT Check API",
-      state: "queued",
+      name: "talos-prod",
+      state: "in_build",
       source: { access: "private", reason: "internal" },
-      stack: ["Python", "FastAPI", "Docker", "SQLite"],
+      stack: ["Talos", "Kubernetes", "Flannel", "MetalLB", "Traefik", "cert-manager", "Cloudflare Tunnel", "Flux", "SOPS", "kube-prometheus-stack", "CloudNativePG", "Velero"],
       metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
     },
     {
@@ -73,7 +73,7 @@ describe("an answer this build cannot fully read", () => {
 
   it("keeps a row whose stack and metrics are missing", () => {
     const body = {
-      systems: [{ slug: "vat-check", state: "queued" }],
+      systems: [{ slug: "talos-prod", state: "in_build" }],
       generatedAt: "x",
     } as unknown as SystemList;
     const [row] = workEntries(body, POSTS, en);
@@ -114,7 +114,7 @@ describe("the two rows the seed produces", () => {
 
   it("links only the system that has a page", () => {
     // content/case-studies/index.ts holds the argument: a system is not a case
-    // study. `/work/vat-check` is a 404, so a row that linked there would be a
+    // study. `/work/talos-prod` is a 404, so a row that linked there would be a
     // promise the router refuses.
     assert.equal(rows[0].href, null);
     assert.equal(rows[1].href, "/work/timseil-dev");

@@ -89,7 +89,7 @@ func TestTheCacheDirectiveIsTheContractsOwn(t *testing.T) {
 	if declared != cacheControl {
 		t.Errorf("the handler sends %q, the contract declares %q", cacheControl, declared)
 	}
-	if got := get(t, newHandler(t, launchDay()), "").Header().Get("Cache-Control"); got != declared {
+	if got := get(t, newHandler(t, everyState()), "").Header().Get("Cache-Control"); got != declared {
 		t.Errorf("the response carries %q", got)
 	}
 }
@@ -103,7 +103,7 @@ func TestTheDeclaredMediaTypeIsWhatIsSent(t *testing.T) {
 		t.Fatalf("the contract declares no content for a 200 on %s", trainingPath)
 	}
 
-	sent := get(t, newHandler(t, launchDay()), "").Header().Get("Content-Type")
+	sent := get(t, newHandler(t, everyState()), "").Header().Get("Content-Type")
 	if !strings.HasPrefix(sent, declared) {
 		t.Errorf("Content-Type = %q, contract declares %q", sent, declared)
 	}
@@ -116,7 +116,7 @@ func TestTheContractsETagIsSent(t *testing.T) {
 	if _, declared := operation(t, loadSpec(t))["200"].Headers["ETag"]; !declared {
 		t.Fatalf("the contract declares no ETag for %s", trainingPath)
 	}
-	if got := get(t, newHandler(t, launchDay()), "").Header().Get("ETag"); got == "" {
+	if got := get(t, newHandler(t, everyState()), "").Header().Get("ETag"); got == "" {
 		t.Error("no ETag")
 	}
 }
@@ -142,7 +142,7 @@ func TestEveryDeclaredResponseIsReachable(t *testing.T) {
 		}
 	}
 
-	h := newHandler(t, launchDay())
+	h := newHandler(t, everyState())
 	if rec := get(t, h, ""); rec.Code != http.StatusOK {
 		t.Errorf("200 is unreachable: got %d", rec.Code)
 	}
@@ -172,8 +172,8 @@ func TestTheRequiredFieldsArePresentOnAnEmptyLog(t *testing.T) {
 	}
 
 	for what, q := range map[string]Queries{
-		"the launch-day log": launchDay(),
-		"an empty database":  &stubQueries{},
+		"the whole log":     everyState(),
+		"an empty database": &stubQueries{},
 	} {
 		var body map[string]json.RawMessage
 		rec := get(t, newHandler(t, q), "")

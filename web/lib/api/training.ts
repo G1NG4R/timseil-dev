@@ -218,7 +218,7 @@ export function modules(body: Training | null): readonly ModuleView[] {
 /**
  * The line over the log: what it is, how big it is, and where it comes from.
  *
- * `SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM · SOURCE: /api/training`
+ * `SELF-TRACKED · 14 TRACKS · EVIDENCE: 02 SYSTEMS · SOURCE: /api/training`
  *
  * BOTH NUMBERS ARE THE ANSWER'S, NOT A COUNT TAKEN HERE. ADR 0018 decided that
  * on the other side of the wire and gave the reason this side has to honour:

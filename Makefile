@@ -948,8 +948,8 @@ check-topology: require-images require-network ## The D2 acceptance: from zero, 
 	@rows=$$($(COMPOSE) exec -T db psql -U "$$(grep -E '^POSTGRES_USER=' .env | cut -d= -f2-)" \
 		-d "$$(grep -E '^POSTGRES_DB=' .env | cut -d= -f2-)" -tAc \
 		'select (select count(*) from systems)||chr(47)||(select count(*) from tracks)||chr(47)||(select count(*) from track_evidence)' 2>/dev/null | tr -d ' \r'); \
-		[ "$$rows" = "2/22/13" ] || { printf '  ✗ seeded rows are %s, want 2/22/13\n' "$$rows"; exit 1; }; \
-		printf '  ✓ 2 systems, 22 tracks, 13 evidence rows\n'
+		[ "$$rows" = "2/14/19" ] || { printf '  ✗ seeded rows are %s, want 2/14/19\n' "$$rows"; exit 1; }; \
+		printf '  ✓ 2 systems, 14 tracks, 19 evidence rows\n'
 # 4. The limits and the hardening are APPLIED, not merely written down. Compose
 #    outside swarm honours deploy.resources.limits; this is where that stops
 #    being a claim.

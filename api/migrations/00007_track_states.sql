@@ -27,7 +27,7 @@
 --
 --   No materialised view. ADR 0003, "Was das kostet": a materialised view needs
 --   a named refresh time, and without one it is a claim with an expiry date. At
---   22 tracks and two systems the recomputation is not measurable.
+--   a tree this size and two systems the recomputation is not measurable.
 --
 -- The counters are part of the view, not a by-product. They let the test check
 -- the counting separately from the CASE — a miscounted FILTER that happens to

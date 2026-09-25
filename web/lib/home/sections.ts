@@ -91,8 +91,8 @@ export const SECTIONS: readonly Section[] = [
   {
     id: "SYS.01",
     title: "TRAINING LOG",
-    // Filled by H4. The first of the four to lose its excuse — 22 tracks in
-    // five modules, read from /api/training, and the derivation of every state
+    // Filled by H4. The first of the four to lose its excuse — 14 tracks in
+    // six modules, read from /api/training, and the derivation of every state
     // in v_track_states rather than in this repository.
     reasonKey: null,
     owedBy: null,

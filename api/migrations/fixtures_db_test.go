@@ -70,7 +70,7 @@ func TestFixtureTwoSystemsIsExactlyTheSeed(t *testing.T) {
 		}
 	}
 	if n := scalar(t, db, `SELECT count(*) FROM systems WHERE state <> 'live'`); n != 1 {
-		t.Errorf("got %d systems that are not live, want exactly 1 (vat-check)", n)
+		t.Errorf("got %d systems that are not live, want exactly 1 (talos-prod)", n)
 	}
 }
 
