@@ -12,6 +12,66 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Zwischendurch — 25.09.2026: sechs Nullen, die aus dem `grep` kamen und nicht aus `main`
+
+Die U2-Abnahme hat gemeldet, dass kein U-Squash die `Co-Authored-By`-Zeile
+trägt. Darauf ist eine Änderung an `CLAUDE.md`, ein Nachtrag in ADR 0079 und
+der PR #407 gebaut worden. Die Meldung war falsch, und der Nachweis, der sie
+bestätigen sollte, hat denselben Fehler ein zweites Mal gemacht.
+
+### Der Fehler war die Suche, nicht die Regel
+
+Gezählt wurde mit `grep -c '^Co-Authored-By:'`. GitHub hängt den Trailer aus den
+Branch-Commits an den Squash und **normalisiert ihn dabei klein**:
+
+```
+Co-authored-by: Claude Code <noreply@anthropic.com>
+```
+
+Verankert und case-sensitiv gesucht ergibt das auf jedem einzelnen Squash null.
+Sechs Nullen hintereinander sehen nicht aus wie ein kaputtes Muster, sondern wie
+ein Befund — das ist der ganze Mechanismus. Case-insensitiv gezählt tragen
+`c042823`, `5ab4592`, `1713c1e`, `5c26356`, `518eb99` und `a310ac1` die Zeile
+alle sechs.
+
+**Der Gegenbeleg lag im Repository und ist überlesen worden.** Der Body von
+`1713c1e` sagt wörtlich, der Squash habe „the single `Co-Authored-By` line"
+getragen. Ein Eintrag, der einem anderen Eintrag derselben Datei widerspricht,
+ist ein Anlass zum Nachlesen und nicht zum Weiterzählen.
+
+### Was nicht falsch war, und warum es trotzdem nicht reichte
+
+`squash_merge_commit_title: PR_TITLE` und `squash_merge_commit_message: PR_BODY`
+stimmen; die Einstellung ist gemessen. Der Fehlschluss war, daraus zu folgern,
+der Squash trage **nur** den Body. Er trägt den Body **und** die
+Co-Author-Zeilen der Commits, die er ersetzt. **Eine gemessene Einstellung ist
+kein gemessenes Verhalten** — und das ist dieselbe Lehre wie die aus der
+U2-Abnahme, nur an einem anderen Werkzeug: *vor der Behauptung die Form der
+Antwort lesen, nicht den Pfad raten.* Dort war es `jq` und ein Pfad, hier ein
+`grep` und eine Großschreibung.
+
+### Der Preis steht auf `main`
+
+`a2684275` (#407) trägt die Zeile **zweimal** — einmal aus dem PR-Body, einmal
+von GitHub angehängt. Genau die Doppelung, vor der die alte Regel gewarnt hat.
+`main` ist gegen Force-Push gesperrt, also bleibt sie stehen; dieselbe Lage wie
+bei den sechzehn Dependabot-Squashes aus dem U0-Eintrag.
+
+Zurückgenommen sind die `CLAUDE.md`-Änderung und der ADR-Nachtrag. Dazu kommt
+eine Zeile, die vorher nirgends stand: **wer prüft, ob die Zeile angekommen ist,
+sucht case-insensitiv.** Keine neue Prüfregel — ein Satz an der Stelle, an der
+sonst wieder falsch gezählt wird.
+
+### Nicht gemacht
+
+- **Keine Prüfregel in `check-repo.sh` oder `selftest.sh`.** Der Vorfall ist
+  benannt und wäre damit nach „Maß halten" zulässig — aber was hier zu prüfen
+  wäre, gehört dem Merge-Dialog von GitHub und nicht diesem Baum. Ein Werkzeug,
+  das einen fremden Dialog nachbaut, prüft seine eigene Annahme.
+- **Keine Issue-Triage.** Stufe U läuft; aufgeräumt wird nach U9.
+
+---
+
 ## Wo wir stehen — 25.09.2026, U3 abgenommen: `v0.41.0`, 14 Tracks in Produktion, und eine elfte Fundstelle, die kein lokaler Lauf sehen konnte
 
 `518eb99` läuft, **`v0.41.0`**. Merge **14:36:17Z**, neuer Prozess ab
@@ -238,6 +298,12 @@ verlorene Verbindung, drei Läufe, drei Abbrüche — findet hier keinen vierten
 `state live`.
 
 ### Der Fund der Abnahme: die `Co-Authored-By`-Zeile steht auf keinem U-Commit
+
+> **Falsch, korrigiert am 25.09.2026 — siehe den Eintrag ganz oben.** Die Zeile
+> steht auf allen sechs Squashes. Die Tabelle darunter zählt mit einem
+> verankerten, case-sensitiven `grep`, und GitHub schreibt den Trailer klein.
+> Der Abschnitt bleibt stehen, weil der Fehler und nicht nur seine Korrektur
+> lesbar sein soll.
 
 Nachgezählt auf `main`, nicht erschlossen:
 
