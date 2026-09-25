@@ -12,6 +12,106 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 25.09.2026, U2 abgenommen: `v0.40.0`, ein bezeugter Tausch, und eine Zeile, die nie angekommen ist
+
+`5c26356` läuft, **`v0.40.0`**. Merge **10:35:55Z**, `publish` 10:36:02Z bis
+10:39:40Z, `deploy` 10:50:02Z bis 10:50:26Z, neuer Prozess ab **10:50:39Z**.
+Wanduhr vom Merge bis zum neuen Prozess: **885 s**; die Pipeline meldet
+`durationSec 866`, `result ok`. Uhrzeit mit `date -u` gelesen — 10:35Z liegt
+dreizehn Stunden vor dem Dokploy-Fenster.
+
+Der `feat:`-Titel hat wieder getan, was er soll: `v0.39.0` → **`v0.40.0`**,
+Minor, mit `(#403)` im Subject.
+
+### Der Zeuge lief, und er hat etwas gesehen
+
+**874 Anfragen je Pfad, 874×200, kein einziger Nicht-200 über den
+Container-Tausch.** Der Lauf endete nach 874 s, weil er den neuen Prozess sah
+und die dreißig Sekunden Nachlauf abwartete — er ist nicht ausgelaufen. Damit
+steht wieder ein **bezeugter sauberer Tausch**, der erste seit H13a: neun statt
+acht, und **#304** bekommt einen Datenpunkt in die entlastende Richtung.
+
+Dass er lief, ist die Korrektur an U1, wo er es nicht tat. Der erste Versuch
+dieser Abnahme lief trotzdem ins Leere: gestartet um 01:18Z, gemergt wurde erst
+neun Stunden später. **1800 s Reißleine sind kein Vorlauf, sondern ein Fenster**
+— der Zeuge gehört in dieselbe Minute wie der Merge, nicht in dieselbe Sitzung.
+
+Der verlorene Lauf hat dabei etwas gemessen, das sonst niemand misst: **1799
+Anfragen auf `/` und 1799 auf `/api/health`, alle 200, dreißig Minuten
+Ruhezustand, null Abbrüche.** Die Notiz aus H8b — im Ruhezustand pro Lauf eine
+verlorene Verbindung, drei Läufe, drei Abbrüche — findet hier keinen vierten.
+
+### Auf der Seite gemessen
+
+| Fläche | Stand |
+|---|---|
+| Nav auf `/` | `WORK · ABOUT · CONTACT`, kein `href="/blog"` |
+| Marker | `SYS.01 · SYS.02 · SYS.03` |
+| `/blog` | 200, `ENTRIES 00`, `robots: noindex`, **keine `LATEST`-Kachel** (ADR 0071 §4) |
+| `feed.xml` | 200, **0 `<item>`** — der gültige leere Kanal aus ADR 0047 |
+| `sitemap.xml` | **21 URLs, keine davon `/blog`** — sechs Routen plus die Case Study, mal drei Sprachen |
+| Case Study | 0 Incidents in Produktion, also keine Kerbe, an der sich der Slug-als-Text-Zweig zeigen könnte |
+
+`errorRate 0`, `uptime90d 85,60 %`, Fenster 91 Tage mit 91 Tageseinträgen,
+`state live`.
+
+### Der Fund der Abnahme: die `Co-Authored-By`-Zeile steht auf keinem U-Commit
+
+Nachgezählt auf `main`, nicht erschlossen:
+
+| Commit | Phase | `Co-Authored-By`-Zeilen |
+|---|---|---|
+| `c042823` | U0 | 0 |
+| `5ab4592` | U1 | 0 |
+| `1713c1e` | U1-Abnahme | 0 |
+| `5c26356` | U2 | 0 |
+
+Die Ursache steht an der Quelle und nicht in einer Vermutung:
+
+```
+squash_merge_commit_title:   PR_TITLE
+squash_merge_commit_message: PR_BODY
+```
+
+**GitHub baut den Squash-Body aus der PR-Beschreibung, nie aus den
+Branch-Commits.** Damit ist die Regel in `CLAUDE.md` in sich geschlossen falsch:
+sie legt die Zeile in die Branch-Commits *und* hält sie aus dem PR-Body heraus,
+„sonst steht sie zweimal" — unter `PR_BODY` steht sie dadurch **null**-mal. Die
+Zeile ist seit U0 in jedem Branch-Commit sauber gesetzt und jedes Mal beim Merge
+verschwunden.
+
+Das trifft genau, wogegen ADR 0079 geschrieben ist: *„die Historie ist stumm
+darüber, wie dieses Repository gebaut wurde."* Sie ist es weiterhin, nur aus
+einem anderen Grund als vorher. Rückwirkend ist nichts zu retten — `main` ist
+gegen Force-Push gesperrt, dieselbe Lage wie bei den sechzehn
+Dependabot-Squashes aus dem U0-Eintrag.
+
+**Vorschlag, nicht ausgeführt:** die Zeile ans Ende des PR-Bodys. Unter
+`PR_BODY` landet sie dann genau einmal auf `main`, und die Doppelung, vor der
+die Regel warnt, kann gar nicht entstehen. Die Alternative — die Einstellung auf
+`COMMIT_MESSAGES` drehen — ersetzte die PR-Beschreibung durch aneinandergehängte
+Commit-Nachrichten und wäre der schlechtere Tausch. **Das ist eine Änderung an
+`CLAUDE.md` und an ADR 0079s vierter Festlegung, also Tims Entscheidung.**
+
+### Die Null kam zum zweiten Mal vom falschen Pfad
+
+`.ops.lastDeploy` gibt es nicht. `deploys[]`, `incidents[]`, `metrics{}` und
+`days[]` liegen auf der **obersten** Ebene der Antwort von
+`/api/systems/{slug}`; `jq` machte aus dem fehlenden Pfad brav eine `null`, und
+beinahe hätte hier „kein Deploy-Eintrag" gestanden. Dieselbe Falle wie in der
+U1-Abnahme, eine Phase später, mit einem anderen Schlüssel.
+
+**Die Lehre von U1 war zu eng formuliert.** Sie hieß „`/api/ops` existiert
+nicht". Sie heißt: *vor der Behauptung die Form der Antwort lesen, nicht den
+Pfad raten* — `jq -c 'keys'` kostet eine Zeile und hätte beide Male gereicht.
+
+### Was diese Abnahme nicht beweist
+
+`p95Ms 89,3` bei `measuredAt 10:50:39.971Z` — dieselbe Sekunde, in der der neue
+Prozess startete. **Das Fenster enthält den Container-Tausch**, also die
+mittlere Kategorie aus der H12c-Abnahme. Über die Seite im Ruhezustand sagt
+diese Zahl nichts, genau wie bei U1.
+
 ## U2 · 25.09.2026 — Posts raus, Log nur mit Posts: der leere Ordner hält den Build an, zweimal
 
 Die 25 KI-geschriebenen Beiträge sind weg (ADR 0079), und Nav-Punkt, SYS.04 und
@@ -141,6 +241,12 @@ Dokploy-Fenster.
 Der `feat:`-Titel hat getan, was er soll: `v0.38.2` → **`v0.39.0`**, Minor. Der
 Squash hat das `(#401)` gesetzt und die eine `Co-Authored-By`-Zeile aus den zwei
 Branch-Commits übernommen — genau einmal, wie seit U0 vorgesehen.
+
+> **Nachgezählt am 25.09.2026, und der Satz oben stimmt nicht.** `5ab4592` trägt
+> **keine** `Co-Authored-By`-Zeile, so wenig wie `c042823` oder `1713c1e`. Die
+> Zeile ist nie angekommen. Der Satz bleibt hier stehen, weil eine stille
+> Korrektur dieselbe Falle ein zweites Mal stellt; gemessen und begründet steht
+> es in der U2-Abnahme.
 
 Auf der Seite gemessen: Meta-Description, `og:` und `twitter:description`,
 JSON-LD `jobTitle` und `WebSite`, RSS-Kanal und alle vier Hero-Zeilen tragen den
