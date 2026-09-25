@@ -29,6 +29,34 @@ export const NAV = [
 
 export type NavId = (typeof NAV)[number]["id"];
 
+/** One entry of the navigation, as `NAV` writes it. */
+export type NavEntry = (typeof NAV)[number];
+
+/**
+ * The entries the chrome actually draws.
+ *
+ * `NAV` KEEPS ALL FOUR, AND THE FILTER IS WHY IT CAN. That tuple is CHR.01
+ * transcribed out of the Chrome sheet, and the sheet draws four — it is an
+ * oracle, and an oracle that edits itself to match the build is not one. What
+ * changes is not which entries exist but which of them have somewhere to send a
+ * reader: since U2 the log holds nothing until Tim writes the first entry
+ * (ADR 0079), and a menu item that opens an empty page is an invitation to
+ * nothing.
+ *
+ * TAKING THE ROW OUT OF `NAV` INSTEAD WOULD COST FOUR FILES. `NavId` would lose
+ * `"log"`, `navLabels()` in lib/i18n/messages.ts would stop compiling,
+ * sections.test.ts' "every way back is a route the navigation knows" would no
+ * longer find `/blog`, and pages.test.ts' "every nav target is a page this table
+ * knows" would quietly change its meaning. One derivation instead.
+ *
+ * `activeNav("/blog")` IS STILL `"log"`. The route did not go anywhere — it
+ * answers, it draws its own empty panel, and a bookmark still lands on it. Only
+ * the link is gone.
+ */
+export function navEntries(hasLog: boolean): readonly NavEntry[] {
+  return hasLog ? NAV : NAV.filter((entry) => entry.id !== "log");
+}
+
 /** Long carries the contact block and the social row; short is the meta bar
  *  alone. Both carry PRIVACY and IMPRINT — that is why short is the fallback
  *  for a route nobody planned. */

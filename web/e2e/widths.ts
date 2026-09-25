@@ -1,3 +1,5 @@
+import { POSTS_DIR, readPosts } from "../lib/content/posts";
+
 /**
  * The seven widths, in one place, because they are one list.
  *
@@ -21,17 +23,36 @@ export function heightFor(width: Width): number {
 }
 
 /**
- * A log entry. H9a — the sixth page with a spec of its own.
+ * Whether this repository holds a log, and the oldest entry if it does.
  *
- * THE OLDEST ENTRY, NOT THE NEWEST, and the choice is about which state is on
- * the screen. `001-…` has no previous entry, so its foot draws the sheet's one
- * empty state without anything having to be arranged; the newest entry draws
- * the other half of the same row, and blog-post.spec.ts visits it by name for
- * that. A slug is hard-coded here for the reason CASE_STUDY is: the rig has no
- * api, and a list read at test time would be a second implementation of
- * lib/content/posts.ts.
+ * READ, NOT WRITTEN, AND THE COMMENT THIS REPLACES SAID NOT TO. It read: "a slug
+ * is hard-coded here for the reason CASE_STUDY is: the rig has no api, and a
+ * list read at test time would be a second implementation of
+ * lib/content/posts.ts." The first half still holds. The second one does not
+ * apply to what is below, because this is not a second implementation — it is
+ * the first one, imported. `e2e/notfound.spec.ts` reaches into `../lib/` the
+ * same way and for the same reason.
+ *
+ * WHAT ACTUALLY FORCED IT is U2: the constant named
+ * `001-zero-downtime-measured-not-claimed`, and ADR 0079 deleted that file along
+ * with the other twenty-four. A hard-coded slug in a repository whose log is
+ * empty is not a fact that went stale, it is an address that cannot exist. The
+ * older finding above — `BLOG_POST_NEWEST` was wrong before its own branch
+ * merged — is why this reads the OLDEST rather than "the newest": a constant
+ * that says "the newest" is a fact about the corpus written where the corpus
+ * cannot reach it, and that is still true.
+ *
+ * THE OLDEST, NOT THE NEWEST, for the reason it was always the oldest: `001-…`
+ * has no previous entry, so its foot draws the sheet's one empty state without
+ * anything having to be arranged.
  */
-export const BLOG_POST = "/blog/001-zero-downtime-measured-not-claimed";
+const POSTS = readPosts(POSTS_DIR).posts;
+
+/** Whether the specs that need an entry have one. `test.skip` reads it. */
+export const HAS_LOG = POSTS.length > 0;
+
+/** The oldest entry's route, or `null` while nobody has written one. */
+export const BLOG_POST = POSTS.length === 0 ? null : `/blog/${POSTS[POSTS.length - 1].slug}`;
 
 // THERE IS NO `BLOG_POST_NEWEST`, AND THE FIRST DRAFT OF THIS FILE HAD ONE. It
 // named `021-…`, and the phase that wrote it shipped `022-…` in the same pull
@@ -49,7 +70,9 @@ export const BLOG_POST = "/blog/001-zero-downtime-measured-not-claimed";
  *
  * A ROUTE AND NOT A SLUG, which is the difference from `BLOG_POST` above. There
  * is one index and it is at one address, so nothing here can go stale the way
- * `BLOG_POST_NEWEST` did within a single pull request.
+ * `BLOG_POST_NEWEST` did within a single pull request. It stays in `ROUTES`
+ * whether or not the log holds anything: since U2 it answers with its own empty
+ * panel, which is a state an accessibility sweep should be walking over.
  */
 export const BLOG = "/blog";
 
@@ -60,6 +83,10 @@ export const BLOG = "/blog";
  * rather than a crawl because a crawl cannot tell a route that is missing from
  * a route that was never meant to be there, and the point of an accessibility
  * sweep is to be exhaustive over something stated.
+ *
+ * ONE OF THEM IS CONDITIONAL SINCE U2. An entry's route is in this list while an
+ * entry exists; with none, `/blog/<anything>` is a 404 and sweeping it would be
+ * sweeping the 404, which `notfound.spec.ts` already owns.
  */
 export const ROUTES = [
   "/",
@@ -70,12 +97,11 @@ export const ROUTES = [
   // exist; there is one.
   "/work/timseil-dev",
   BLOG,
-  // H9a. The first entry, and it is the OLDEST rather than the newest on
-  // purpose: `001-…` is the one post whose foot draws the empty state on the
-  // PREVIOUS side, so an accessibility sweep over this route sweeps the state
-  // as well as the page. The newest entry's own empty state is blog-post.spec's
-  // to drive, because it can navigate to it.
-  BLOG_POST,
+  // H9a. The oldest entry, on purpose: it is the one post whose foot draws the
+  // empty state on the PREVIOUS side, so an accessibility sweep over this route
+  // sweeps the state as well as the page. The newest entry's own empty state is
+  // blog-post.spec's to drive, because it can navigate to it.
+  ...(BLOG_POST === null ? [] : [BLOG_POST]),
   "/contact",
   "/privacy",
   "/imprint",
@@ -291,7 +317,14 @@ export const HOME_DRAWN_WIDTHS = [1440, 390] as const;
  * page for the same reason at every width, so the edge it makes is a fact about
  * the stylesheet and not about the fixture.
  */
-export const HOME_SWITCHES = [1080, 900, 720, 560] as const;
+// AND U2 TOOK THE FOURTH ONE AWAY AGAIN, WHICH IS THE SAME SENTENCE READ
+// BACKWARDS. The 560 edge exists on this page because `.log-row-link` gives up
+// its columns there — so it is an edge of SYS.04, and SYS.04 is not drawn while
+// the log is empty (ADR 0079). The rule in layout.css is unchanged and the
+// switch is not missing; there is nothing on the page that answers to it, which
+// is exactly what `/work` says about the same number one entry down. It comes
+// back with the first entry, together with the probe that reads it.
+export const HOME_SWITCHES = HAS_LOG ? ([1080, 900, 720, 560] as const) : ([1080, 900, 720] as const);
 
 /**
  * The widths a sheet draws the WORK INDEX at. Three, like the case study and

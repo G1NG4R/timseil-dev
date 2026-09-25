@@ -13,7 +13,7 @@
 import { expect, test } from "@playwright/test";
 
 import { at, edges, moved, type Probe } from "./sweep";
-import { HOME, HOME_SWITCHES } from "./widths";
+import { HAS_LOG, HOME, HOME_SWITCHES } from "./widths";
 
 /** What the homepage's switches move. */
 const PROBES: readonly Probe[] = [
@@ -31,7 +31,15 @@ const PROBES: readonly Probe[] = [
   // is an `<li>` holding one link and the link is what has columns to give up,
   // so `.log-row` computes `list-item` at every width and would have reported
   // that this switch had stopped happening. It had not; the probe had.
-  { key: "logRow", kind: "computed", selector: ".log-row-link", prop: "display" },
+  //
+  // AND IT IS THE ONE PROBE ON THIS PAGE THAT CAN STOP HAVING A SUBJECT. U2
+  // emptied content/posts (ADR 0079), so there is no row to read until Tim
+  // writes the first entry — the probe is dropped rather than left to measure a
+  // selector that matches nothing, which is how a sweep reports a switch as
+  // "unchanged" because it never found either side of it.
+  ...(HAS_LOG
+    ? [{ key: "logRow", kind: "computed", selector: ".log-row-link", prop: "display" } as const]
+    : []),
 ];
 
 /**
@@ -59,11 +67,15 @@ const SWITCH_MOVES: Record<number, string[]> = {
   // ZWEISPALTER … Kein Bauteil bekommt seinen eigenen Wert." What arrives at 560
   // is the value `.work-row` and `.log-row` have shared in layout.css since G1;
   // this is the phase in which something finally moves across it.
+  // REACHED ONLY WHILE THE LOG HOLDS AN ENTRY. SYS.04 is not drawn when it is
+  // empty (U2, ADR 0079), so `HOME_SWITCHES` drops 560 with it and this row is
+  // not looked up — it stays because the rule in layout.css did not move and the
+  // edge comes back with the first entry.
   560: ["logRow"],
 };
 
 test.describe("the homepage changes shape only where it is allowed to", () => {
-  test("every edge between 1440 and 390 is one of the four", async ({ page }) => {
+  test("every edge between 1440 and 390 is one the sheet allows", async ({ page }) => {
     await page.goto(HOME);
 
     const found = await edges(page, PROBES);

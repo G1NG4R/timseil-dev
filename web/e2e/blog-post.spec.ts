@@ -17,7 +17,23 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { BLOG_POST } from "./widths";
+import { BLOG_POST, HAS_LOG } from "./widths";
+
+// SKIPPED WHILE THE LOG IS EMPTY, AND THE SPEC STAYS IN THE TREE. U2 removed the
+// twenty-five entries this file was written against (ADR 0079); the renderer it
+// measures did not go anywhere, and the day Tim writes the first entry these
+// tests run again without anybody editing them. A skip is visible in the run,
+// which is the difference between this and a file that would have passed over
+// nothing — the failure `010-two-tests-were-green-because-nothing-was-there` is
+// named after. What holds the EMPTY state is e2e/log-gate.spec.ts.
+test.skip(() => !HAS_LOG, "the log holds no entries — U2, ADR 0079");
+
+/** The route the tests below open. `BLOG_POST` is `null` exactly when the skip
+ *  above fires, so the fallback is never opened — it is here because a type has
+ *  to be a string and an address that answers is a better placeholder than one
+ *  that does not. */
+const POST = BLOG_POST ?? "/blog/__no-entries__";
+
 
 function widthOf(page: Page): number {
   const size = page.viewportSize();
@@ -26,7 +42,7 @@ function widthOf(page: Page): number {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto(BLOG_POST);
+  await page.goto(POST);
 });
 
 test("the entry has exactly one h1, and it is the title", async ({ page }) => {
@@ -175,7 +191,7 @@ test("the crumb goes back to the index", async ({ page }) => {
 test("the entry is complete without JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  await page.goto(BLOG_POST);
+  await page.goto(POST);
 
   await expect(page.locator("main h1")).toHaveCount(1);
   await expect(page.locator(".post-body h2").first()).toBeVisible();

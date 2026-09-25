@@ -14,7 +14,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { ERROR_IN_A_HOLE, NOT_FOUND } from "./widths";
+import { ERROR_IN_A_HOLE, HAS_LOG, NOT_FOUND } from "./widths";
 
 /** WCAG 2.2 AA asks for 24. This project's rule is 44, and 44 is what is checked. */
 const MIN = 44;
@@ -158,11 +158,18 @@ test.describe("targets a finger has to hit", () => {
   // passes a 44px rule by accident and could stop doing so the day the dek gets
   // shorter. The count is asserted for the same reason it always was: a run that
   // measured nothing would otherwise be green.
+  //
+  // AND TWO SINCE U2, WHICH IS THE SAME COUNT READ BACKWARDS. SYS.04 contributed
+  // four of the six — its three row links and the `CASE STUDY →` in its head —
+  // and the section is not drawn while the log is empty (ADR 0079). The number
+  // is still asserted rather than loosened to "more than none", because that is
+  // what makes it notice the day a row stops being a link; it just has two
+  // values now, one per state of the log.
   test("the homepage's own controls are at least 44 x 44", async ({ page }) => {
     await page.goto("/");
     const targets = await measure(page, "main");
 
-    expect(targets.length, "no interactive element found on the homepage").toBe(6);
+    expect(targets.length, "no interactive element found on the homepage").toBe(HAS_LOG ? 6 : 2);
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
 

@@ -128,6 +128,19 @@ export interface SheetRun {
   /** The floor. It moves up with each phase that adds measurements; it never
    *  moves down without someone saying why. */
   minimumEntries: number;
+  /**
+   * Which entries this run can actually measure, when some of them describe a
+   * block the page does not draw today.
+   *
+   * U2 IS WHY IT EXISTS AND IT IS DELIBERATELY NARROW. The homepage oracle holds
+   * ten `home-log-*` entries, and with the log emptied (ADR 0079) SYS.04 is not
+   * on the page — twenty tests would go red against a section that is absent by
+   * decision. The ORACLE IS NOT TOUCHED: it is generated from `docs/design/`,
+   * which is read-only, and `minimumEntries` still counts every entry it holds,
+   * so a shrinking oracle is still a failure. What this filters is which of them
+   * a run declares, and the day an entry exists it declares them all again.
+   */
+  applies?: (entry: Entry) => boolean;
 }
 
 /** Declares one `describe` per width, so a failure names the artboard it came from. */
@@ -137,11 +150,15 @@ export function runSheetOracle({
   ready,
   drawnWidths,
   minimumEntries,
+  applies,
 }: SheetRun): void {
+  const declared = applies === undefined ? oracle.entries : oracle.entries.filter(applies);
+  // THE WIDTHS COME OFF THE WHOLE ORACLE, NOT OFF THE FILTERED LIST, so the
+  // refusal at the bottom still asks the question it was written to ask.
   const widths = [...new Set(oracle.entries.map((entry) => entry.width))].sort((a, b) => b - a);
 
   for (const width of widths) {
-    const here = oracle.entries.filter((entry) => entry.width === width);
+    const here = declared.filter((entry) => entry.width === width);
 
     test.describe(`what the sheet draws at ${String(width)}`, () => {
       test.use({ viewport: { width, height: HEIGHT } });

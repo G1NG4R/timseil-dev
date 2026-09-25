@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { POSTS_DIR, readPosts, type PostMeta } from "../content/posts.ts";
+import type { PostMeta } from "../content/posts.ts";
 import { tagChips, tagLabel } from "./tags.ts";
 
 /** Only the fields this file reads. The rest of `PostMeta` is another file's. */
@@ -97,12 +97,28 @@ describe("the word on a chip", () => {
   });
 });
 
-describe("every tag in the repository", () => {
-  const { posts } = readPosts(POSTS_DIR);
+// TAGS, BUILT RATHER THAN READ. This block swept web/content/posts/ until U2
+// emptied it (ADR 0079). Two of its three assertions were about `tagChips` —
+// every written tag gets exactly one chip, and the counters add up to the
+// sightings — and they hold against a list made here, where the overlaps are
+// chosen instead of inherited.
+//
+// THE THIRD ONE IS GONE AND WAS THE ONLY REAL LOSS. "holds more chips than the
+// sheet draws" measured this repository against the Blog Index artboard, which
+// draws `ALL` plus seven over ten invented entries; with no entries there is no
+// measurement to make and no disagreement to record. ADR 0071 §3 keeps the
+// decision — the chips are derived from the corpus and are not capped — and the
+// number comes back on its own when there is a corpus to count.
+describe("tags this file writes", () => {
+  const posts = [
+    post(["ci-cd", "deploys"]),
+    post(["ci-cd", "traefik"]),
+    post(["design"]),
+  ];
   const chips = tagChips(posts);
 
   it("has a chip, and every chip holds at least one entry", () => {
-    // The whole decision of this phase, as an assertion: no threshold, no cap.
+    // The whole decision of that phase, as an assertion: no threshold, no cap.
     // A chip that matched nothing would be the dead control lib/work/stacks.ts
     // refuses, and a tag without a chip would be a subject nobody can filter by.
     const written = new Set(posts.flatMap((one) => one.tags));
@@ -116,12 +132,6 @@ describe("every tag in the repository", () => {
     const sightings = posts.reduce((total, one) => total + one.tags.length, 0);
     const counted = chips.reduce((total, chip) => total + Number(chip.count), 0);
     assert.equal(counted, sightings);
-  });
-
-  it("holds more chips than the sheet draws, which is the finding and not a defect", () => {
-    // The Blog Index artboard draws `ALL` plus seven, over ten invented
-    // entries. This asserts the two numbers are allowed to differ, so that a
-    // future reader meets the decision rather than re-opening it.
-    assert.ok(chips.length > 7, `expected more than the sheet's seven, got ${String(chips.length)}`);
+    assert.equal(sightings, 5);
   });
 });

@@ -1,0 +1,33 @@
+# The log
+
+Entries in this directory are written by Tim and by nobody else — not a draft,
+not on request. ADR 0079 carries the reason: a log that explains what someone
+learned cannot have been written by something else. Spelling help is fine.
+
+One entry is one file, named `NNN-slug.mdx`. The filename **is** the slug: it is
+the string `incidents.post_slug` points at, the address `/blog/<slug>` answers
+to, and the number the entry's eyebrow prints. `lib/content/posts.ts` reads the
+frontmatter and refuses a file that cannot produce an honest row.
+
+## Why this file is here, and why it is `.mdx` rather than `.gitkeep`
+
+The directory is empty as of U2, and four things need it to exist anyway. A
+`.gitkeep` would satisfy the first one and none of the rest.
+
+1. **Git does not track empty directories.** Without a file here the directory
+   would leave the tree, `readdirSync` would throw, and the site would say
+   `— NO DATA`: *the image shipped without its own content*. Nothing is broken —
+   nothing has been written yet, and those are different sentences.
+2. **`compose.dev.yaml` mounts this path read-only** so that the `#32` database
+   test can see both halves of `incidents.post_slug`. A missing path is created
+   by Docker, as root, in the working tree.
+3. **`next.config.ts` traces this directory into the standalone image.** A glob
+   with no matches copies nothing.
+4. **`app/[lang]/blog/[slug]/page.tsx` imports an entry through a bundler
+   context.** The context is scoped to `content/posts/*.mdx`, and Turbopack
+   cannot resolve one that matches no file — with an empty directory the build
+   stops at `Module not found`. So the anchor has to be an `.mdx`, and this is
+   it.
+
+It is not an entry and cannot become one: `README.mdx` is not `NNN-slug.mdx`, so
+the reader never offers it and `/blog/README` is a 404.

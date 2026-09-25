@@ -27,13 +27,25 @@
  * each for a reason in ADR 0070, and an entry for an element that does not
  * exist would be a red test standing in for a decision.
  */
+import { test } from "@playwright/test";
+
 import generated from "./oracle/blog-post.gen.json";
 import { runSheetOracle, type Oracle } from "./sheet";
-import { BLOG_POST, BLOG_POST_DRAWN_WIDTHS } from "./widths";
+import { BLOG_POST, BLOG_POST_DRAWN_WIDTHS, HAS_LOG } from "./widths";
+
+// SKIPPED WHILE THE LOG IS EMPTY, AND THE SPEC STAYS IN THE TREE. U2 removed the
+// twenty-five entries this file was written against (ADR 0079); the renderer it
+// measures did not go anywhere, and the day Tim writes the first entry these
+// tests run again without anybody editing them. A skip is visible in the run,
+// which is the difference between this and a file that would have passed over
+// nothing — the failure `010-two-tests-were-green-because-nothing-was-there` is
+// named after. What holds the EMPTY state is e2e/log-gate.spec.ts.
+test.skip(() => !HAS_LOG, "the log holds no entries — U2, ADR 0079");
+
 
 runSheetOracle({
   oracle: generated as unknown as Oracle,
-  route: BLOG_POST,
+  route: BLOG_POST ?? "/blog/__no-entries__",
   drawnWidths: BLOG_POST_DRAWN_WIDTHS,
   // 34, and none of them carries an `on:` — the third page in a row with that
   // property, and the first where it is a property of the CONTENT rather than

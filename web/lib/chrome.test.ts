@@ -18,6 +18,7 @@ import {
   type FooterVariant,
   type NavId,
   NAV,
+  navEntries,
   activeNav,
   footerVariant,
   stripLocale,
@@ -30,7 +31,7 @@ const PLAN: [string, string, NavId | null, FooterVariant][] = [
   ["Case Study 02", "/work/timseil-dev", "work", "short"],
   ["Case Study — Vorlage", "/work/some-other-system", "work", "short"],
   ["Blog Index", "/blog", "log", "long"],
-  ["Blog Post", "/blog/001-zero-downtime-measured-not-claimed", "log", "long"],
+  ["Blog Post", "/blog/001-an-entry-somebody-wrote", "log", "long"],
   ["About", "/about", "about", "long"],
   ["Contact", "/contact", "contact", "short"],
   ["Legal · privacy", "/privacy", null, "short"],
@@ -100,6 +101,34 @@ void test("the four entries are four, in the sheet's order", () => {
     NAV.map((entry) => entry.label),
     ["WORK", "LOG", "ABOUT", "CONTACT"],
   );
+});
+
+// U2's gate, and the refusal that has to stand beside it. The log holds nothing
+// until Tim writes the first entry (ADR 0079), so the chrome draws three rows —
+// but `NAV` still holds four, because it is the Chrome sheet transcribed and an
+// oracle that edits itself to match the build has stopped being one. Somebody
+// tidying the LOG row out of the tuple lands here.
+void test("the log entry is drawn only while there is a log", () => {
+  assert.deepEqual(
+    navEntries(false).map((entry) => entry.label),
+    ["WORK", "ABOUT", "CONTACT"],
+  );
+  assert.deepEqual(navEntries(true), NAV);
+
+  assert.equal(
+    NAV.length,
+    4,
+    "the row was taken out of NAV instead of being filtered — the sheet draws four",
+  );
+});
+
+// THE ROUTE DID NOT GO ANYWHERE. `/blog` still answers, still draws its own
+// empty panel and is still in `lib/notfound/mounted.ts`; only the link is gone.
+// So the page that a bookmark lands on still marks itself as the current place.
+void test("a reader who kept the bookmark still lands on a page that knows it", () => {
+  assert.equal(activeNav("/blog"), "log");
+  assert.equal(activeNav("/de/blog"), "log");
+  assert.equal(footerVariant("/blog"), "long");
 });
 
 // A route nobody planned still has to reach the imprint. Long would give it an

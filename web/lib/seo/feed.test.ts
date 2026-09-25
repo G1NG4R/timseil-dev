@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { SITE_URL } from "../site.ts";
-import { POSTS_DIR, readPosts } from "../content/posts.ts";
+import type { PostMeta } from "../content/posts.ts";
 import { type FeedItem, escapeXml, feedItems, renderFeed, rfc822 } from "./feed.ts";
 
 const POST: FeedItem = {
@@ -91,54 +91,57 @@ void test("a log that could not be read still renders a valid channel", () => {
   assert.ok(!xml.includes("<item>"), "no items, and no empty item either");
 });
 
+// ENTRIES THIS FILE WRITES. Four tests below read the first post out of
+// web/content/posts/ until U2 emptied it (ADR 0079) — `readPosts(POSTS_DIR).posts`
+// destructured to `undefined`, which is a crash rather than a failure. An entry
+// built here says the same things and says them about chosen values: a summary
+// that is not the dek, and markup in both.
+const ENTRY: PostMeta = {
+  slug: "001-a-slug",
+  title: 'Zero-downtime & the "three seconds" <nobody> measured',
+  deck: "One line above the fold.",
+  published: "2026-09-05",
+  systemId: "timseil-dev",
+  tags: ["ci-cd"],
+  summary: "Two sentences a stranger reads in a reader. A & B < C.",
+  updated: null,
+};
+
 void test("an entry becomes an item with the summary as its description", () => {
-  const [post] = readPosts(POSTS_DIR).posts;
-  const [item] = feedItems([post]);
+  const [item] = feedItems([ENTRY]);
 
   // NOT the deck. lib/content/posts.ts names this reader when it draws the
   // line: the summary is "the only text about a post that leaves this site".
-  assert.equal(item.description, post.summary);
-  assert.notEqual(item.description, post.deck);
-  assert.equal(item.title, post.title);
+  assert.equal(item.description, ENTRY.summary);
+  assert.notEqual(item.description, ENTRY.deck);
+  assert.equal(item.title, ENTRY.title);
 });
 
 void test("the item link is the English address, with no language segment", () => {
-  const [post] = readPosts(POSTS_DIR).posts;
-  const [item] = feedItems([post]);
+  const [item] = feedItems([ENTRY]);
   // One feed, not three. A `/de` prefix here would give three feeds one identity.
-  assert.equal(item.link, `${SITE_URL}/blog/${post.slug}`);
+  assert.equal(item.link, `${SITE_URL}/blog/${ENTRY.slug}`);
   assert.ok(!item.link.includes("/de/") && !item.link.includes("/fr/"));
 });
 
 void test("a published date becomes UTC midnight, whatever the container's timezone", () => {
-  const [item] = feedItems([
-    {
-      slug: "001-a-slug",
-      title: "t",
-      deck: "d",
-      published: "2026-09-05",
-      systemId: null,
-      tags: ["go"],
-      summary: "s",
-      updated: null,
-    },
-  ]);
+  const [item] = feedItems([{ ...ENTRY, published: "2026-09-05" }]);
   assert.equal(item.published.toISOString(), "2026-09-05T00:00:00.000Z");
 });
 
-// The whole corpus, through the renderer that used to be handed nothing.
-void test("every entry in the repository survives the renderer", () => {
-  const { posts } = readPosts(POSTS_DIR);
+// THE SWEEP OVER THE CORPUS IS GONE AND ITS ASSERTION IS NOT. It used to render
+// every file in web/content/posts/ and then refuse to be vacuous — "a repository
+// with no entries would make this vacuous" is the line it carried — which is
+// exactly the state U2 puts this repository in. So the document is rendered over
+// entries written here, and the scan for a raw `&`, `<` or `>` runs over a title
+// and a summary that both carry all three.
+void test("every entry it is handed survives the renderer", () => {
+  const posts = [ENTRY, { ...ENTRY, slug: "002-b-slug", published: "2026-09-01" }];
   const xml = renderFeed(feedItems(posts));
 
   assert.equal(xml.split("<item>").length - 1, posts.length);
-  // The sitemap and the feed listed different numbers of entries for exactly
-  // one phase, and this is the assertion that closes it: whatever the log
-  // holds, the feed holds.
-  assert.ok(posts.length > 0, "a repository with no entries would make this vacuous");
+  assert.ok(posts.length > 0, "a feed over no entries would make this vacuous");
 
-  // A raw `&`, `<` or `>` anywhere in the document is the defect this file was
-  // written for, arriving through prose rather than through a fixture.
   const inner = xml.replaceAll(/&(?:amp|lt|gt|quot|apos);/g, "");
   for (const line of inner.split("\n")) {
     const value = /<(?:title|description)>(.*)<\/(?:title|description)>/.exec(line)?.[1];
@@ -148,7 +151,9 @@ void test("every entry in the repository survives the renderer", () => {
 });
 
 void test("the newest entry is the first item", () => {
-  const { posts } = readPosts(POSTS_DIR);
+  // `feedItems` preserves the order it is given, and `readPosts` gives newest
+  // first — so this is about the renderer keeping its hands off the order.
+  const posts = [ENTRY, { ...ENTRY, slug: "002-b-slug", title: "Older", published: "2025-01-01" }];
   const items = feedItems(posts);
   assert.equal(items[0].title, posts[0].title);
 });

@@ -24,6 +24,8 @@
  */
 import { expect, test } from "@playwright/test";
 
+import { HAS_LOG } from "./widths";
+
 const GALLERY = "/dev/components";
 
 test.beforeEach(async ({ page }) => {
@@ -104,9 +106,15 @@ test("the post-mortem is a link when the entry exists and text when it does not"
   await expect(posts).toHaveCount(2);
 
   // Exactly one, not "at least one". Two would mean the guard is gone; none
-  // would mean the link was never built, and this phase would have shipped the
-  // decision without the thing it decided.
-  await expect(page.locator(".incident-post a")).toHaveCount(1);
+  // would mean the link was never built, and H9c would have shipped the decision
+  // without the thing it decided.
+  //
+  // AND NONE IS THE RIGHT ANSWER SINCE U2. The corpus is empty (ADR 0079), so no
+  // slug resolves and both notches draw their name as text — which is not the
+  // guard being gone but the site having one state here instead of two. The
+  // gallery reads the directory rather than faking a lookup, precisely so this
+  // number follows the repository: it is 1 again the day a post-mortem exists.
+  await expect(page.locator(".incident-post a")).toHaveCount(HAS_LOG ? 1 : 0);
 
   // THE NAME IS THE SAME STRING EITHER WAY. A linked entry and an unlinked one
   // read alike and differ only in whether the name goes anywhere.
@@ -119,6 +127,10 @@ test("the post-mortem is a link when the entry exists and text when it does not"
 // right and answers 404 is exactly the thing the old refusal was protecting the
 // page from, and only a request can tell the two apart.
 test("the post-mortem link lands on the entry it names", async ({ page }) => {
+  // There is no link to walk while the log is empty, and a link that could not
+  // be walked is the defect this test was written to catch.
+  test.skip(!HAS_LOG, "the log holds no entries — U2, ADR 0079");
+
   const link = page.locator(".incident-post a");
   const href = await link.getAttribute("href");
   const name = await link.innerText();

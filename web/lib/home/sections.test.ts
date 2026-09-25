@@ -13,7 +13,7 @@ import test from "node:test";
 
 import { NAV } from "../chrome.ts";
 import { en } from "../i18n/messages/en.ts";
-import { SECTIONS, markerNumber } from "./sections.ts";
+import { SECTIONS, markerNumber, visibleSections } from "./sections.ts";
 
 /**
  * HOME.01, transcribed from the sheet a second time and on purpose.
@@ -58,6 +58,32 @@ void test("the numbers ascend, without a gap and without a repeat", () => {
     "the sheet's rule is that the number IS the order",
   );
 });
+
+// U2's gate, held where HOME.01 is held. SYS.04 is the log, and since ADR 0079
+// the log holds nothing until Tim writes the first entry — so the page stops
+// drawing the section rather than drawing a panel that apologises for it.
+//
+// THE RULE ABOVE IS ASKED OF BOTH LISTS, and that is the whole proof that the
+// gate does not break it: `SYS.01 · SYS.02 · SYS.03` ascends without a gap in
+// exactly the way four markers do. HOME.01 fixes an ORDER, not a count.
+void test("the log section is drawn only while there is a log", () => {
+  assert.deepEqual(visibleSections(true), SECTIONS);
+
+  const shown = visibleSections(false).map((section) => section.id);
+  assert.deepEqual(shown, ["SYS.01", "SYS.02", "SYS.03"]);
+
+  for (const list of [visibleSections(true), visibleSections(false)]) {
+    const numbers = list.map((section) => markerNumber(section.id));
+    assert.deepEqual(
+      numbers,
+      numbers.map((_, index) => index + 1),
+      "a drawn page whose markers skip a number",
+    );
+  }
+
+  assert.equal(SECTIONS.length, 4, "SYS.04 was taken out of the list instead of being filtered");
+});
+
 
 // TWO TESTS STOOD HERE UNTIL H5c AND BOTH WOULD NOW LOOP OVER NOTHING.
 //

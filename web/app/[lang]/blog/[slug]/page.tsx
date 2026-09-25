@@ -51,8 +51,28 @@ import { REPO_URL } from "@/lib/site";
 // has no pathname to read, and the build stops. Turbopack refuses
 // `dynamicParams: false` under cacheComponents, so this is the prerender list
 // rather than the accept list — an unknown slug still reaches the component.
+//
+// AND SINCE U2 THE LIST CAN BE EMPTY, WHICH CACHE COMPONENTS REFUSES. The log
+// holds nothing until Tim writes the first entry (ADR 0079), and a build with no
+// entries stops with "all `generateStaticParams` functions must return at least
+// one result" — the check that proves a route reads no `cookies()`, `headers()`
+// or `searchParams` needs one sample to run against. The answer is the one the
+// Next documentation prescribes for a route whose params are not known at build
+// time: hand it a placeholder and let the page refuse it
+// (generate-static-params.md:310-312).
+//
+// THE PLACEHOLDER CANNOT COLLIDE WITH AN ENTRY, and that is not a convention but
+// a consequence: `SLUG` in lib/content/posts.ts — copied from the constraint on
+// `incidents.post_slug` — demands three digits and then lowercase words, so no
+// file can ever answer to this name. `postFor` returns null for it two functions
+// down and the route leaves through `notFound()`, which is what it already does
+// for every other address nobody wrote.
+const NO_ENTRIES = "__no-entries__";
+
 export function generateStaticParams() {
-  return (postsOrNull()?.posts ?? []).map((post) => ({ slug: post.slug }));
+  const posts = postsOrNull()?.posts ?? [];
+  if (posts.length === 0) return [{ slug: NO_ENTRIES }];
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 /**

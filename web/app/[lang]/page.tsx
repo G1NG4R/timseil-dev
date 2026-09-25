@@ -52,8 +52,9 @@ import { TrainingLog } from "@/components/home/TrainingLog";
 import { TerminalPanelLive } from "@/components/home/Live";
 import { TerminalPanel } from "@/components/home/TerminalPanel";
 import { JsonLd } from "@/components/JsonLd";
+import { hasLog } from "@/lib/content/posts";
 import { homePosts } from "@/lib/home/posts";
-import { SECTIONS } from "@/lib/home/sections";
+import { SECTIONS, visibleSections } from "@/lib/home/sections";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { siteLd } from "@/lib/seo/jsonld";
 import { seoFor } from "@/lib/seo/pages";
@@ -87,6 +88,11 @@ export default async function Home() {
   // BY ID AND NOT BY INDEX. `SECTIONS[1]` would be a second place that knows
   // the order, and the order is HOME.01's — the marker is the key everywhere
   // else on this page, including in the table below.
+  // READ ONCE AND ASKED TWICE: the section draws it, and `visibleSections`
+  // decides whether the section is drawn at all. Two calls would be two reads of
+  // one directory in one render, and — worse — two chances to disagree.
+  const posts = homePosts();
+
   const exitFor = (id: string) => {
     const exit = SECTIONS.find((section) => section.id === id)?.exit ?? null;
     return exit === null
@@ -171,7 +177,7 @@ export default async function Home() {
     "SYS.04": (
       <Log
         key="SYS.04"
-        read={homePosts()}
+        read={posts}
         locale={locale}
         caseStudyHref={study === null ? null : localeHref(locale, caseStudyPath(study))}
         exit={exitFor("SYS.04")}
@@ -212,7 +218,7 @@ export default async function Home() {
           transcription of the sheet, because four markers written out by hand
           in a page are four markers somebody can reorder without disagreeing
           with anything. K-26 records that happening once already. */}
-      {SECTIONS.map((section) => drawn[section.id] ?? null)}
+      {visibleSections(hasLog(posts)).map((section) => drawn[section.id] ?? null)}
 
       {/* THE LAST BLOCK INSIDE `<main>`, and not a fifth marker. HOME.01 counts
           four; the foot is the sixth item of its sequence and carries no

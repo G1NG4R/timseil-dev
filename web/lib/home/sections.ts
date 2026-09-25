@@ -146,6 +146,33 @@ export const SECTIONS: readonly Section[] = [
 ];
 
 /**
+ * The markers this page draws today.
+ *
+ * `SECTIONS` KEEPS ALL FOUR, AND THAT IS WHY THIS FUNCTION CAN EXIST. HOME.01 is
+ * an ORDER — "die Marker müssen aufsteigend stehen" — and an order is not a
+ * statement about what has something to show. Taking SYS.04 out of the list
+ * would make the transcription disagree with the sheet it transcribes, and the
+ * test above holds the list against exactly that sheet.
+ *
+ * WHY THE SECTION GOES RATHER THAN SAYING `00 ENTRIES`. Until U2 an empty log
+ * was a directory that had been read and held nothing, and `00` was the honest
+ * word for it. Since ADR 0079 the log holds nothing because nobody has written
+ * the first entry yet, and a panel explaining that absence would be this page
+ * apologising for a section it has not started. ADR 0071 settled the same
+ * question one line lower for the head — "`LATEST` verschwindet, statt `— NO
+ * DATA` zu sagen … in Wahrheit hat nichts stattgefunden" — and this is that
+ * sentence applied to the section instead of to its heading.
+ *
+ * THE PANEL ITSELF STAYS BUILT. components/home/Log.tsx still draws `00
+ * ENTRIES` and `— NO DATA`, and /dev/components still reaches both; the page is
+ * what stops asking. A component deleted for want of a caller is a component
+ * that has to be written again.
+ */
+export function visibleSections(hasLog: boolean): readonly Section[] {
+  return hasLog ? SECTIONS : SECTIONS.filter((section) => section.id !== "SYS.04");
+}
+
+/**
  * The ordinal a marker carries, or `null` if it is not one of ours.
  *
  * Written as a parser rather than an index lookup so that the test can ask the

@@ -30,7 +30,7 @@ import type { ContributionLevel, Contributions } from "@/lib/api/contributions";
 import type { Incident, OpsCell, SystemDetail, SystemList } from "@/lib/api/systems";
 import { modules, type ModuleView } from "@/lib/api/training";
 import { Log } from "@/components/home/Log";
-import type { PostRead } from "@/lib/content/posts";
+import { postsOrNull, type PostRead } from "@/lib/content/posts";
 import { STATIONS } from "@/lib/about/trajectory";
 import { postMortemHrefs } from "@/lib/case/postmortem";
 import { BlogList } from "@/components/blog/BlogList";
@@ -164,7 +164,7 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
 const GALLERY_LOG: PostRead = {
   posts: [
     {
-      slug: "014-eighty-pixels-that-were-never-mine",
+      slug: "003-eighty-pixels-that-were-never-mine",
       title: "Eighty pixels that were never mine",
       deck: "A contribution graph was drawn eighty pixels narrower than the column it sits in.",
       published: "2026-09-01",
@@ -176,7 +176,7 @@ const GALLERY_LOG: PostRead = {
       updated: null,
     },
     {
-      slug: "013-the-column-the-test-rig-could-not-see",
+      slug: "002-the-column-the-test-rig-could-not-see",
       title: "The column the test rig could not see",
       deck: "A description column on my homepage computed to zero pixels wide.",
       published: "2026-09-01",
@@ -188,7 +188,7 @@ const GALLERY_LOG: PostRead = {
       updated: null,
     },
     {
-      slug: "001-zero-downtime-measured-not-claimed",
+      slug: "001-zero-downtime-measured-not-claimed-in-the-gallery",
       title: "Zero-downtime, measured instead of claimed",
       deck: "My build plan promised about three seconds and no 5xx.",
       published: "2026-08-23",
@@ -336,10 +336,29 @@ const GALLERY_SYSTEMS = {
 // files that do not exist.
 //
 // A gallery that kept both would show one state of a two-state component, which
-// is the failure H9b's blog gallery was built to stop. INC-001 now names a real
-// entry so the link can be walked; INC-002 keeps an invented one, which is what
-// the fixture data actually produces and what a notch looks like when its
-// post-mortem has not been written yet.
+// is the failure H9b's blog gallery was built to stop. H9c solved it by pointing
+// INC-001 at an entry the corpus really held — and U2 emptied the corpus
+// (ADR 0079), which took the resolving state away again without anything on this
+// page going red. So neither slug names a file any more and the lookup is
+// injected below: the two states are now a property of this fixture rather than
+// of the directory, which is what a gallery is for.
+/**
+ * The entry INC-001 cites, read off the directory rather than typed in.
+ *
+ * THE COUPLING THIS REMOVES IS IN THE BACKLOG UNDER H9c: "die Galerie hängt an
+ * einem echten Slug — wird der Eintrag umbenannt, fällt der Link auf 404". H9c
+ * pointed INC-001 at `010-…` by hand, and U2 deleted that file, so the hand-typed
+ * slug went stale exactly the way the note predicted. Reading the newest entry
+ * instead means the two-state demonstration comes back on its own the day Tim
+ * writes his first post-mortem, and nobody has to remember this file.
+ *
+ * The fallback is an address nothing answers to, which is the point: with no
+ * entries both notches draw their name as text, and that is the only state this
+ * site can be in.
+ */
+const GALLERY_RESOLVING_SLUG =
+  postsOrNull()?.posts[0]?.slug ?? "001-a-post-mortem-nobody-has-written";
+
 const GALLERY_INCIDENT: Incident[] = [
   {
     id: "INC-001",
@@ -347,7 +366,7 @@ const GALLERY_INCIDENT: Incident[] = [
     durationSec: 2520,
     cause: "postgres hit its memory limit while a migration held a lock",
     fix: "limit raised, migration split into two steps, lock timeout set",
-    postSlug: "010-two-tests-were-green-because-nothing-was-there",
+    postSlug: GALLERY_RESOLVING_SLUG,
   },
   // TWO, NOT ONE, AND A TEST NEEDED THE SECOND. `selected` is a difference
   // rather than an appearance — the first `:target` rule was invisible beside an
@@ -364,7 +383,23 @@ const GALLERY_INCIDENT: Incident[] = [
   },
 ];
 
-/** Resolved the way the case study resolves them, against the real corpus. */
+/**
+ * Resolved the way the case study resolves them: against the real directory.
+ *
+ * A FABRICATED LOOKUP WAS TRIED HERE FIRST AND THE RIG REFUSED IT. Injecting one
+ * would draw the resolving state whatever the repository holds, which reads like
+ * the right answer for a gallery — until `e2e/gallery.ops.spec.ts:121` fetches
+ * the href it drew and requires a 200. With no entries no `/blog/<slug>` answers,
+ * so a link drawn here would be exactly what the old refusal existed to prevent:
+ * "a link that looks right and answers 404". Invariant 5, asked of the server
+ * rather than of the string.
+ *
+ * SO THE GALLERY SHOWS THE STATE THE SITE IS ACTUALLY IN, and since U2 that is
+ * one state rather than two: nobody has written a post-mortem, so no notch can
+ * link to one. That is the honest reading of backlog H9b's finding in reverse —
+ * a page that carries its own content cannot show the states its content
+ * excludes — and it is not something a fixture may paper over.
+ */
 const GALLERY_POST_HREFS = postMortemHrefs(GALLERY_INCIDENT, "en");
 
 // The gallery — every component this site has, in every state its sheet

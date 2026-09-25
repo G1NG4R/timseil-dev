@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 import { type ReactNode, useRef, useState } from "react";
 
 import { Clock } from "@/components/Clock";
-import { NAV, type NavId, activeNav } from "@/lib/chrome";
+import { type NavId, activeNav, navEntries } from "@/lib/chrome";
 import {
   LOCALES,
   LOCALE_NAMES,
@@ -65,10 +65,14 @@ export interface MenuStrings {
 export function MobileMenu({
   status,
   labels,
+  hasLog,
   strings,
 }: {
   status: ReactNode;
   labels: Record<NavId, string>;
+  /** Whether the log entry is drawn. The same boolean NavLinks gets, so the
+   *  header and the menu cannot disagree about it. */
+  hasLog: boolean;
   strings: MenuStrings;
 }) {
   const [open, setOpen] = useState(false);
@@ -137,7 +141,14 @@ export function MobileMenu({
 
         <div className="menu-body">
           <nav aria-label="Main">
-            {NAV.map((entry, index) => {
+            {/* THE NUMBER IS A POSITION, NOT AN IDENTITY, and U2 is where the
+                difference shows: with the log entry gone the rows read 01 · 02 ·
+                03, and that is right — it is where a finger lands in this list,
+                not what the entry is called. An entry's own number is the
+                opposite (lib/content/posts.ts: "nie neu vergeben, auch wenn ein
+                Eintrag verschwindet"), which is why that one is read off the
+                slug and this one is counted. ADR 0079. */}
+            {navEntries(hasLog).map((entry, index) => {
               const on = entry.id === active;
               return (
                 <Link

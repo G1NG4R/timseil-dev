@@ -24,7 +24,17 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { BLOG } from "./widths";
+import { BLOG, HAS_LOG } from "./widths";
+
+// SKIPPED WHILE THE LOG IS EMPTY, AND THE SPEC STAYS IN THE TREE. U2 removed the
+// twenty-five entries this file was written against (ADR 0079); the renderer it
+// measures did not go anywhere, and the day Tim writes the first entry these
+// tests run again without anybody editing them. A skip is visible in the run,
+// which is the difference between this and a file that would have passed over
+// nothing — the failure `010-two-tests-were-green-because-nothing-was-there` is
+// named after. What holds the EMPTY state is e2e/log-gate.spec.ts.
+test.skip(() => !HAS_LOG, "the log holds no entries — U2, ADR 0079");
+
 
 /** The counter, as the two numbers it states. */
 async function shown(page: Page): Promise<{ shown: number; total: number }> {

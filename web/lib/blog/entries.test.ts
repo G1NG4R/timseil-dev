@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { POSTS_DIR, readPosts, type PostMeta } from "../content/posts.ts";
+import type { PostMeta } from "../content/posts.ts";
 import { byYear, latestPublished, yearOf } from "./entries.ts";
 
 function post(published: string, slug = "001-a-slug"): PostMeta {
@@ -91,20 +91,34 @@ describe("grouping", () => {
   });
 });
 
-describe("the whole log", () => {
-  const { posts } = readPosts(POSTS_DIR);
+// A LOG, BUILT RATHER THAN READ. Until U2 this block read web/content/posts/ and
+// asserted these three things about whatever was in it; the directory is empty
+// now (ADR 0079), and a sweep over nothing passes without grouping anything.
+// What was being tested was never the corpus — it was `byYear` over a list that
+// arrives newest first, which is what `readPosts` guarantees — so the list is
+// made here, with two years and a tie on one day, and the assertions get harder
+// rather than softer.
+describe("a log this file builds", () => {
+  const posts = [
+    post("2026-09-05", "004-d"),
+    post("2026-09-01", "003-c"),
+    post("2026-09-01", "002-b"),
+    post("2025-12-31", "001-a"),
+  ];
 
   it("groups into years that descend, without anything sorting them", () => {
     const years = byYear(posts).map((group) => group.year);
+    assert.deepEqual(years, ["2026", "2025"]);
     assert.deepEqual(years, [...years].sort().reverse());
   });
 
   it("names its newest entry as the date the first row carries", () => {
     assert.equal(latestPublished(posts), posts[0]?.published);
+    assert.equal(latestPublished(posts), "2026-09-05");
   });
 
   it("puts every entry in exactly one group", () => {
     const grouped = byYear(posts).flatMap((group) => group.posts.map((one) => one.slug));
-    assert.deepEqual(grouped, posts.map((one) => one.slug));
+    assert.deepEqual(grouped, ["004-d", "003-c", "002-b", "001-a"]);
   });
 });

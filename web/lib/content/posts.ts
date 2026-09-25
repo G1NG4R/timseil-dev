@@ -239,10 +239,11 @@ export function frontmatter(raw: string): ReadonlyMap<string, string> | null {
 /**
  * A frontmatter value with its quotes taken off.
  *
- * SINGLE QUOTES WITH `''` AS THE ESCAPE is the one form that actually occurs —
- * `012-the-preview-had-a-shorter-cascade-than-the-page.mdx` writes
- * `the site''s nine stylesheets` — and it is the only escape YAML gives a
- * single-quoted scalar. Double quotes are accepted because they cost one branch;
+ * SINGLE QUOTES WITH `''` AS THE ESCAPE is the one form that ever occurred — one
+ * of the entries U2 removed wrote `the site''s nine stylesheets` — and it is the
+ * only escape YAML gives a single-quoted scalar. The form is still the one to
+ * read, because it is the one a writer reaches for; the file that proved it is
+ * gone, and posts.test.ts holds the case against a fixture instead. Double quotes are accepted because they cost one branch;
  * their backslash escapes are NOT interpreted, because no file uses one and
  * inventing an unpacking nobody wrote is how a reader starts lying.
  */
@@ -395,7 +396,19 @@ export const POSTS_DIR = join(process.cwd(), "content", "posts");
  * comment there is the one that explains it.
  */
 export function readPosts(dir: string, read: DirReader = nodeReader): PostRead {
-  const files = read.list(dir).filter((file) => file.endsWith(".mdx")).sort();
+  // CANDIDATES ARE FILES THAT COULD BE AN ENTRY, WHICH IS NARROWER THAN `.mdx`.
+  // Until U2 the two were the same set, because every file in the directory was
+  // a post. The directory now also holds `README.mdx`, which is there so that
+  // git keeps an empty directory and so that the bundler context in
+  // app/[lang]/blog/[slug]/page.tsx has something to resolve — and a filename
+  // the incidents constraint would reject is not an entry that could not be
+  // read, it is not an entry. Left in, it landed in `skipped` and took a WARN
+  // with it, and a log line calls `new Date()`: under Cache Components that is
+  // an unstable value in a prerender, so the homepage stopped building over a
+  // README. `skipped` keeps the meaning it was given — somebody wrote a post and
+  // nobody can see it — and that meaning is why it must not fill up with files
+  // that were never posts.
+  const files = read.list(dir).filter((file) => SLUG.test(file)).sort();
 
   const posts: PostMeta[] = [];
   const skipped: string[] = [];
@@ -457,6 +470,27 @@ export function postsOrNull(): PostRead | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Whether this site has a log to show at all.
+ *
+ * ONE QUESTION, FOUR SURFACES. The navigation, the homepage's SYS.04, the
+ * sitemap's `/blog` row and the page's own `robots` all have to agree about it,
+ * and four copies of one question are how two of them start disagreeing — the
+ * `finiteNumber` mistake H4 made and wrote down. So it is asked once, here,
+ * beside the read it is asking about.
+ *
+ * `null` COUNTS AS YES, AND THAT IS THE ONE DECISION IN THIS FUNCTION. A
+ * directory that could not be read is a deploy defect, not a state of the
+ * content: the image shipped without `content/posts`, and `postsOrNull` returns
+ * `null` precisely so that the page can say so. Gating on
+ * `read?.posts.length > 0` would make SYS.04 disappear on a broken image —
+ * silently, together with the `— NO DATA` panel that exists to report it. This
+ * gate hides an empty truth. It must never hide a fault.
+ */
+export function hasLog(read: PostRead | null): boolean {
+  return read === null || read.posts.length > 0;
 }
 
 /**

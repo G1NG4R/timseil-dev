@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { POSTS_DIR, readPosts, type PostMeta } from "../content/posts.ts";
+import type { PostMeta } from "../content/posts.ts";
 import { tagChips } from "./tags.ts";
 import {
   ALL_TAGS,
@@ -160,8 +160,22 @@ describe("the echo in the empty panel", () => {
   });
 });
 
-describe("every entry in the repository", () => {
-  const { posts } = readPosts(POSTS_DIR);
+// ENTRIES THIS FILE WRITES, AND THE REASON THE SWITCH WAS OVERDUE. Until U2 this
+// block read web/content/posts/; the directory is empty now (ADR 0079), and the
+// block went on passing — three assertions over a list with nothing in it, green
+// because every loop ran nought times and the one flat assertion asks for a
+// count of zero. That is the shape
+// `010-two-tests-were-green-because-nothing-was-there` is named after, and it
+// was still standing in this file at the moment the corpus went away.
+//
+// The three claims are properties of `applyFilter` and `haystack`, so they are
+// made against entries chosen to exercise them: a year in a date that must not
+// be searchable, a title word long enough to look for, and two tags.
+describe("entries this file writes", () => {
+  const posts = [
+    post({ slug: "001-a", title: "The migration that locked the table", tags: ["postgres"] }),
+    post({ slug: "002-b", title: "Ninety-one days and one gap", tags: ["uptime", "postgres"] }),
+  ];
   const rows = posts.map((one) => ({ tags: one.tags, text: haystack(one) }));
 
   it("is reachable through at least one of its own tags", () => {
@@ -175,13 +189,18 @@ describe("every entry in the repository", () => {
   it("is findable by a word from its own title", () => {
     for (const one of posts) {
       const word = one.title.toLowerCase().split(/\s+/).find((part) => part.length > 5) ?? "";
-      if (word === "") continue;
+      assert.notEqual(word, "", `${one.slug} has no word long enough to search for`);
       const shown = applyFilter(rows, { tag: ALL_TAGS, q: normaliseQuery(word) });
       assert.ok(shown.length >= 1, `${one.slug} cannot be found by "${word}"`);
     }
   });
 
+  // THE DATE IS NOT IN THE HAYSTACK, and this is the assertion that says so. A
+  // search for a year would otherwise return every entry written in it —
+  // ADR 0071 §3: "das Datum bleibt draußen, weil `2026` sonst zweiundzwanzig
+  // Einträge zurückgäbe, ohne dass jemand nach einem Jahr gesucht hat."
   it("is not returned by a search for its year", () => {
+    assert.ok(posts.every((one) => one.published.startsWith("2026")));
     assert.equal(applyFilter(rows, { tag: ALL_TAGS, q: "2026" }).length, 0);
   });
 });

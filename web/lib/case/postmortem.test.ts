@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { Incident } from "../api/systems.ts";
-import { POSTS_DIR, readPosts, type PostMeta } from "../content/posts.ts";
+import type { PostMeta } from "../content/posts.ts";
 
 import { postMortemHrefs } from "./postmortem.ts";
 
@@ -103,15 +103,16 @@ describe("a post-mortem that is in the repository", () => {
   });
 });
 
-// The half that outlives this phase, and the reason the default argument is
-// `postFor` rather than something a caller must remember to pass.
-describe("the reader the page actually uses", () => {
-  it("resolves an entry this repository holds right now", () => {
-    const posts = readPosts(POSTS_DIR).posts;
-    assert.ok(posts.length > 0, "the corpus is empty");
-
-    const newest = posts[0];
-    const hrefs = postMortemHrefs([incident("INC-001", newest.slug)], "en");
-    assert.equal(hrefs.get(newest.slug), `/blog/${newest.slug}`);
-  });
-});
+// THE BLOCK THAT STOOD HERE RESOLVED AN ENTRY THIS REPOSITORY HELD, to prove
+// that the default argument — `postFor` rather than something a caller must
+// remember to pass — reaches the real directory. U2 emptied that directory
+// (ADR 0079), so there is no entry to resolve and the assertion it opened with,
+// "the corpus is empty", is now the truth rather than a guard.
+//
+// WHAT THE PAGE DOES IS UNCHANGED, AND THAT IS THE POINT OF U2's THIRD LINE.
+// An incident whose post-mortem nobody has written shows its slug as text —
+// `postMortemHrefs` skips what it cannot resolve, `components/case/IncidentLog.tsx`
+// draws `{href === null ? incident.postSlug : <Link…>}` — which is exactly the
+// state this file's head describes from H9c: "TODAY NOT ONE `post_slug` ANYWHERE
+// IN THIS PROJECT NAMES A FILE THAT EXISTS." Both branches are held above,
+// against an injected lookup, where they run without a disk.

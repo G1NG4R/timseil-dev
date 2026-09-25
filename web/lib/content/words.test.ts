@@ -1,10 +1,7 @@
 // What the reading time is allowed to count, and the two things it must not.
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, it } from "node:test";
 
-import { POSTS_DIR } from "./posts.ts";
 import { WORDS_PER_MINUTE, minutesLabel, readingSize, wordsLabel } from "./words.ts";
 
 function file(frontmatter: string, body: string): string {
@@ -74,18 +71,9 @@ describe("the labels", () => {
   });
 });
 
-// The half that outlives this phase: every post has a plausible size, so a file
-// that loses its body to a fence this reader cannot close reports here.
-describe("every post in the repository", () => {
-  const sizes = readdirSync(POSTS_DIR)
-    .filter((name) => name.endsWith(".mdx"))
-    .map((name) => ({ name, size: readingSize(readFileSync(join(POSTS_DIR, name), "utf8")) }));
-
-  it("has a body long enough to be an entry and short enough to be one", () => {
-    for (const { name, size } of sizes) {
-      assert.ok(size.words > 300, `${name} counts ${String(size.words)} words — a fence left open?`);
-      assert.ok(size.words < 5000, `${name} counts ${String(size.words)} words`);
-      assert.ok(size.minutes >= 1, `${name} rounds to no minutes`);
-    }
-  });
-});
+// THE BLOCK THAT STOOD HERE READ EVERY FILE IN web/content/posts/. U2 emptied
+// that directory (ADR 0079), and what was left of the block was the one file
+// still in it — the README that keeps the directory alive — being measured as if
+// it were an entry. A sweep over a corpus is worth what the corpus is worth;
+// with none, it is a test that either checks nothing or checks the wrong file.
+// The properties of `readingSize` itself are held against fixtures above.
