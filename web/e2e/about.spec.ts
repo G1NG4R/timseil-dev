@@ -79,15 +79,19 @@ test("no bracketed placeholder reaches the document", async ({ page }) => {
   // THE BROKEN CASE OF THIS PHASE. `[LANGUAGES]`, `[SPEC]`, `[BOOK OR PAPER]`,
   // `[ONE LINE]`, `[PORTRAIT PHOTO]`, `[99.98%]` and `[Y1]`–`[Y5]` are all
   // drawn on the About sheet, and every one of them is a claim this page cannot
-  // make. `[SOON]` is the exception BY NAME and not by shape: it is this site's
-  // own word for a named absence, lib/state/words.ts owns it, and it says that
-  // nothing is there rather than standing in for something.
-  const text = (await page.locator("main").innerText()).replaceAll("[SOON]", "");
+  // make.
+  //
+  // AND `[SOON]` IS NO LONGER AN EXCEPTION. It used to be carved out by name:
+  // the site's own word for a named absence, which says nothing is there rather
+  // than standing in for something. U5 wrote the six station paragraphs, the
+  // word left the page with them, and the carve-out went with it — a filter for
+  // a string that cannot occur is a filter that hides the next one.
+  const text = await page.locator("main").innerText();
 
   expect([...text.matchAll(/\[[^\]]*\]/g)].map((m) => m[0]), "a placeholder shipped").toEqual([]);
 });
 
-test("no section is a shell, and the only [SOON] left is the rail's", async ({ page }) => {
+test("no section is a shell, and [SOON] is gone from this page", async ({ page }) => {
   // THIS ASSERTION TURNED OVER IN U4 RATHER THAN DISAPPEARING, and the turn is
   // the acceptance criterion of the phase: "no [SOON] on About except in the
   // trajectory". It counted two empty panels in H7a and one after H7b built
@@ -101,21 +105,23 @@ test("no section is a shell, and the only [SOON] left is the rail's", async ({ p
   // the table; this asks it of the document.
   await expect(page.locator("main .st-empty-panel")).toHaveCount(0);
 
-  // AND THE WORD ITSELF IS DOWN TO ONE HOME. Five of the six trajectory
-  // stations print `[SOON]` inside their panel, because their paragraphs are
-  // Tim's to write and U5 is the phase that asks for them. Anything outside
-  // `.tl-soon` would be a section this page is still promising.
-  const soon = page.locator("main", { hasText: "[SOON]" });
-  await expect(soon).toBeVisible();
-  const outside = await page.evaluate(() =>
+  // AND THE WORD IS DOWN TO NO HOMES, WHICH IS THE CRITERION OF U5. This
+  // assertion has now turned over twice rather than being deleted either time:
+  // H7a counted two empty panels, H7b one, U4 held it to "none outside the
+  // trajectory" while five stations still printed it, and U5 wrote the six
+  // paragraphs. Each turn left the criterion with something standing behind it;
+  // a deleted test would have left it with a sentence in a plan.
+  //
+  // COUNTED OVER THE WHOLE OF `main` AND NOT OVER A SELECTOR, because the point
+  // is the absence of a word rather than the state of a component: `.tl-soon`
+  // is gone from the stylesheet, so a selector for it would pass by finding
+  // nothing no matter what the page said.
+  const occurrences = await page.evaluate(() =>
     [...document.querySelectorAll("main *")].filter(
-      (node) =>
-        node.children.length === 0 &&
-        node.textContent.includes("[SOON]") &&
-        node.closest(".tl-soon") === null,
+      (node) => node.children.length === 0 && node.textContent.includes("[SOON]"),
     ).length,
   );
-  expect(outside, "[SOON] outside the trajectory").toBe(0);
+  expect(occurrences, "[SOON] survived U5").toBe(0);
 });
 
 test("the tiles under WHAT I RUN name the cluster and nothing else", async ({ page }) => {
@@ -185,7 +191,9 @@ test.describe("the trajectory rail", () => {
     await expect(page.locator(".tl-item")).toHaveCount(6);
     await expect(page.locator(".tl-input").nth(5)).toBeChecked();
     await expect(page.locator(".tl-panel:visible")).toHaveCount(1);
-    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Platform work");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
+      "Bare-metal cluster",
+    );
   });
 
   test("no label is a year, and the last one is NOW", async ({ page }) => {
@@ -207,23 +215,19 @@ test.describe("the trajectory rail", () => {
     await page.locator(".tl-input").nth(5).focus();
 
     await page.keyboard.press("ArrowLeft");
-    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own infrastructure");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Talos lab");
 
     await page.keyboard.press("ArrowLeft");
-    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
-      "Go, and the container habit",
-    );
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own VPS");
 
     await page.keyboard.press("ArrowRight");
-    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own infrastructure");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Talos lab");
 
     // Up and down move too, and that is the platform's answer rather than ours:
     // a radio group is one control on both axes, which is what the rail needs
     // when it stands up below 720.
     await page.keyboard.press("ArrowUp");
-    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
-      "Go, and the container habit",
-    );
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own VPS");
 
     // One stop for the group: tabbing again leaves it.
     await page.keyboard.press("Tab");
@@ -245,7 +249,9 @@ test.describe("the trajectory rail", () => {
     await page.keyboard.press("ArrowLeft");
 
     await expect(page.locator(".tl-input").nth(5)).toBeChecked();
-    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Platform work");
+    await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
+      "Bare-metal cluster",
+    );
   });
 
   test("the fill line ends under the chosen dot, not past it", async ({ page }) => {
@@ -275,18 +281,31 @@ test.describe("the trajectory rail", () => {
       .toBe(42);
   });
 
-  test("a station with nothing shipped draws no shipped cell", async ({ page }) => {
+  test("the shipped cell comes in three shapes, and only one of them links", async ({ page }) => {
+    // NOTHING SHIPPED — NO CELL. ADR 0055's cut, for the fifth time on this
+    // site: a station that shipped nothing gets no row rather than an em dash.
     await page.locator(".tl-item").nth(0).click();
     await expect(page.locator(".tl-panel:visible .tl-shipped")).toHaveCount(0);
 
-    await page.locator(".tl-item").nth(4).click();
-    const shipped = page.locator(".tl-panel:visible .tl-shipped a");
-    await expect(shipped).toHaveText("02 timseil.dev");
+    // SHIPPED, AND THERE IS A PAGE — A LINK. Invariant 5: it goes somewhere.
+    // The station numbers and the system numbers share a notation, so the cell
+    // carries the NAME as well; a bare `02` would be indistinguishable from the
+    // station two rows up, and since U5 there is a station `01` as well.
+    await page.locator(".tl-item").nth(3).click();
+    await expect(page.locator(".tl-panel:visible .tl-shipped a")).toHaveText("02 timseil.dev");
 
-    // Invariant 5: it goes somewhere. The station numbers and the system
-    // numbers share a notation, so the cell carries the NAME as well — a bare
-    // `02` would be indistinguishable from the station two rows up.
-    await shipped.click();
+    // SHIPPED, AND THERE IS NO PAGE — A NAME, AND NO `<a>` AT ALL. ADR 0079 §2
+    // gives the cluster no case study, and `/work` draws its row the same way.
+    // The `<a>` count is the assertion; the text alone would pass against a
+    // link, which is the failure this is here to catch.
+    await page.locator(".tl-item").nth(5).click();
+    const cluster = page.locator(".tl-panel:visible .tl-shipped");
+    await expect(cluster).toHaveText("01 talos-prod");
+    await expect(cluster.locator("a")).toHaveCount(0);
+
+    // Last, because it leaves the page.
+    await page.locator(".tl-item").nth(3).click();
+    await page.locator(".tl-panel:visible .tl-shipped a").click();
     await page.waitForURL("**/work/timseil-dev");
   });
 });
@@ -310,16 +329,14 @@ test("the rail works with JavaScript turned off", async ({ browser }, testInfo) 
   await page.goto("/about");
 
   await expect(page.locator(".tl-item")).toHaveCount(6);
-  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Platform work");
+  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Bare-metal cluster");
 
   await page.locator(".tl-item").nth(4).click();
-  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own infrastructure");
+  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Talos lab");
 
   await page.locator(".tl-input").nth(4).focus();
   await page.keyboard.press("ArrowLeft");
-  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText(
-    "Go, and the container habit",
-  );
+  await expect(page.locator(".tl-panel:visible .tl-head-title")).toHaveText("Own VPS");
 
   await context.close();
 });

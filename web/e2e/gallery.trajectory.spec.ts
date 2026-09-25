@@ -34,12 +34,13 @@ test("exactly one panel is open, and it is the resting one", async ({ page }) =>
 });
 
 test("the three states are drawn, and past and future differ", async ({ page }) => {
-  // The inventory asks for `jahr aktiv` and `inaktiv`. What the sheet actually
-  // draws is THREE buckets — active, past, future — and the two inactive ones
-  // are not the same: a station behind you carries a half-accent ring, one
-  // ahead of you a plain one. A test that only asked "active differs from the
-  // rest" would pass with past and future identical, which is the drawing
-  // collapsed by one state.
+  // The registry asks for `station aktiv` and `inaktiv` — the inventory wrote
+  // the first `jahr aktiv` and U5 renamed it, because there are no years by
+  // decision now (ADR 0080). What the sheet actually draws is THREE buckets —
+  // active, past, future — and the two inactive ones are not the same: a
+  // station behind you carries a half-accent ring, one ahead of you a plain
+  // one. A test that only asked "active differs from the rest" would pass with
+  // past and future identical, which is the drawing collapsed by one state.
   const part = page.locator(PART);
   await part.locator(".tl-item").nth(2).click();
 
@@ -78,7 +79,7 @@ test("two rails in one document do not share a selection", async ({ page }) => {
   );
 });
 
-test("a station with nothing shipped draws no shipped cell", async ({ page }) => {
+test("the gallery draws the same three shipped cells the page does", async ({ page }) => {
   // ADR 0055's cut, for the fourth time: no cell rather than an em dash. The
   // sheet draws `—` on two of its six.
   const part = page.locator(PART);
@@ -86,7 +87,16 @@ test("a station with nothing shipped draws no shipped cell", async ({ page }) =>
   await part.locator(".tl-item").nth(0).click();
   await expect(part.locator(".tl-panel:visible .tl-shipped")).toHaveCount(0);
 
-  await part.locator(".tl-item").nth(4).click();
-  await expect(part.locator(".tl-panel:visible .tl-shipped")).toHaveCount(1);
+  await part.locator(".tl-item").nth(3).click();
   await expect(part.locator(".tl-panel:visible .tl-shipped")).toHaveText("02 timseil.dev");
+  await expect(part.locator(".tl-panel:visible .tl-shipped a")).toHaveCount(1);
+
+  // THE ONE A FIXTURE COULD HAVE GOT WRONG. This gallery built `/work/<slug>`
+  // by hand until U5, which was the page's answer only while every shipped
+  // system had a page. `01 talos-prod` has none (ADR 0079 §2), so a hand-built
+  // path would have drawn a link into a 404 here — a state the site itself
+  // cannot produce, which is the one thing a fixture must never show.
+  await part.locator(".tl-item").nth(5).click();
+  await expect(part.locator(".tl-panel:visible .tl-shipped")).toHaveText("01 talos-prod");
+  await expect(part.locator(".tl-panel:visible .tl-shipped a")).toHaveCount(0);
 });

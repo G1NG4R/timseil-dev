@@ -12,6 +12,104 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## U5 · 25.09.2026 — Trajectory: die Rail hat den Hero widerlegt
+
+Die Rail zeichnet den Weg vom Homelab zum Cluster. Sechs Stationen, keine
+Jahreszahlen, jede mit einem Absatz — und damit steht auf `/about` kein `[SOON]`
+mehr. Mechanik unberührt: es bleibt die Radiogruppe aus ADR 0066, null Byte
+JavaScript. Reine `web/`-Phase. Entschieden in ADR 0080.
+
+### Der stärkste Fund: `aboutLede` stand seit U4 falsch, und die Rail hat es gezeigt
+
+Jeder Entwurf dieser Phase hatte den Service Desk als Station `01` — die
+Reihenfolge, die ein Lebenslauf nahelegt: erst die Stelle, dann das Hobby. Sie
+ist falsch herum. Der Hypervisor zu Hause stand am Anfang und ist der Grund,
+warum der Service Desk stattgefunden hat.
+
+**Der Fund ist nicht die Reihenfolge, sondern wo sie stand.** `aboutLede` sagte
+seit U4:
+
+> „I came **from the helpdesk** and learned the rest by building: **a VPS, a
+> Proxmox homelab**, and now a Kubernetes cluster on bare metal."
+
+Zweimal falsch, im Hero derselben Seite, zwei Bildschirmhöhen über der Rail. Die
+Zeile ist in U4 entstanden, gelesen und freigegeben worden, und sie ist
+niemandem aufgefallen — weil nichts danebenstand, das ihr widersprechen konnte.
+Genau das ist die Rail jetzt: die ausführlichste von drei Flächen, die dieselbe
+Reihenfolge behaupten. Die erste Fläche, die eine Prosa-Zeile widerlegt hat,
+seit es Prosa auf dieser Seite gibt.
+
+Mitgezogen sind `aboutLede` und `OPERATOR · ROUTE`. Die ROUTE-Zeile wollte
+zuerst ein drittes Glied — `Homelab → helpdesk → self-taught` —, und die Messung
+hat es abgewiesen: bei 390 zwei Zeilen, als einzige der sieben Kartenzeilen und
+ausgerechnet die in Signalfarbe. Sie heißt jetzt `Self-taught, from the lab up`
+und ist an allen zehn gemessenen Breiten einzeilig. Der bessere Grund ist aber
+nicht die Zeilenzahl: eine Karte, die die Stationen aufzählt, ist eine zweite,
+kürzere Fassung der Rail eine Sektion darunter, und genau so fängt das an, was
+diese Phase an `aboutLede` gefunden hat.
+
+`homeBio` auf `/` bleibt: eine Aussage über den beruflichen Weg, auf einer
+anderen Seite, ohne Rail daneben.
+
+### Der dritte Fund: der Überlauf-Test sieht fünf von sechs Panels nicht
+
+`about.spec.ts` prüft `scrollWidth <= clientWidth` an jeder Breite. Fünf der
+sechs Trajectory-Panels stehen auf `display: none`, und eine verborgene Box
+trägt nichts zu `scrollWidth` bei — der Test misst also immer nur das offene
+Panel. Ein `.tag` ist `white-space: nowrap`; eines, das zu breit für seine
+Spalte ist, wäre in fünf von sechs Stationen unsichtbar geblieben, bis jemand
+die falsche anklickt.
+
+Von Hand nachgemessen: jede Station einzeln geöffnet, zehn Breiten, das
+breiteste Tag jeder Station mindestens 1 px schmaler als seine Reihe. **Keine
+neue Prüfregel** — ein Vorfall ist es nicht, nur eine Lücke, die benannt gehört.
+Wer sie schließen will, hat mit dieser Zeile den Auslöser, den „Maß halten"
+verlangt, sobald sie einmal zuschlägt.
+
+**Was das über die Prüfungen sagt:** eine Reihenfolge steht an drei Stellen und
+nichts hält sie gegeneinander. Ein Test darüber wäre ein Test über Prosa, und
+den gibt es hier nicht. Die Kopplung ist, dass alle drei auf einer Seite stehen —
+mehr ist es nicht, und es hat diesmal gereicht.
+
+### Der zweite Fund: ein Gate, das seit H7b nur zufällig dieselbe Antwort gab
+
+`app/dev/components/page.tsx` setzte die Belegzeile der Galerie mit
+`` `/work/${station.shipped.slug}` `` **von Hand** zusammen, während die Seite
+`caseStudyFor` fragt. Zwei Ausdrücke für eine Frage, und sie stimmten überein,
+solange jedes ausgelieferte System eine Seite hatte — was bis U5 der Fall war,
+weil genau eine Station etwas auslieferte und genau eine Case Study existierte.
+
+`01 talos-prod` löst das auf: seit U3 ist der Cluster System `01`, und ADR 0079
+§2 gibt ihm keine Case Study. Die Seite hätte die Zeile als Text gezeichnet, die
+Galerie als **Link auf eine 404** — in der Fläche, deren einzige Aufgabe es ist,
+Zustände zu zeigen, die die Seite auch erzeugt. Der Kommentar daneben behauptete
+dabei wörtlich das Gegenteil: *„THE GALLERY GATES THE LINK THE WAY THE PAGE
+DOES."*
+
+Die Form ist bekannt und steht in diesem Notizblock schon zweimal: ein Kommentar
+beschreibt eine Absicht, der Code daneben erfüllt sie durch Zufall, und der
+Zufall hält, bis sich die Daten bewegen. Die Galerie stellt jetzt dieselbe Frage
+wie die Seite — ein Ausdruck, nicht zwei.
+
+### Und eine Frage, die U8 beantworten muss
+
+Die sechs Stationsabsätze liegen in `lib/about/trajectory.ts` und nicht im
+Wörterbuch. Das ist die Anordnung, die `/about` ohnehin hat: `PRINCIPLES` und
+`STACK` stehen seit H7a als englische Sätze in `lib/about/content.ts`, nicht in
+`messages/en.ts`. Es macht aber eine Frage fällig, die bisher niemand gestellt
+hat, weil die Fläche klein war — **was `/de` mit der Prosa der About-Seite tut.**
+U8s Kriterium lautet „`/de` zeigt keinen englischen Block mehr", und `isComplete`
+kann dabei wahr sein, während drei Tabellen englisch bleiben. Die Antwort ist
+für alle drei dieselbe und nicht speziell für die Rail.
+
+### Nicht gemacht
+
+- **Keine Issue-Triage.** Stufe U läuft; aufgeräumt wird nach U9.
+- **Kein Blatt angefasst.** Die Abweichung von `docs/design/` ist in Stufe U
+  gewollt und im Code begründet (ADR 0079).
+
+---
+
 ## Wo wir stehen — 25.09.2026, U4 abgenommen: `v0.42.0`, ein Tausch ohne eine einzige Nicht-200, und eine Null, die diesmal vorher auffiel
 
 `db787fe` läuft, **`v0.42.0`**. Merge **17:47:45Z**, neuer Prozess ab

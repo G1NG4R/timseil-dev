@@ -458,25 +458,32 @@ export const en = {
   // Kubernetes cluster" are three things that exist; what runs ON the cluster
   // is not claimed here, for the reason homeBio gives one block up.
   aboutLede:
-    "I came from the helpdesk and learned the rest by building: a VPS, a " +
-    "Proxmox homelab, and now a Kubernetes cluster on bare metal. I work with " +
-    "Claude Code, as a tool and as a tutor — and whatever I run, I can explain.",
+    "It started with a hypervisor at home, went through a service desk, and " +
+    "kept going by building: a VPS, and now a Kubernetes cluster on bare " +
+    "metal. I work with Claude Code, as a tool and as a tutor — and whatever " +
+    "I run, I can explain.",
 
-  // ── H7b · the trajectory rail ───────────────────────────────────────────
+  // ── U5 · the trajectory rail ────────────────────────────────────────────
   //
-  // `PICKED UP` and `SHIPPED` are the sheet's own labels and they are
-  // nomenclature, so they are not here — TrajectoryRail takes them as props
+  // THE RAIL HAS NO KEY HERE ANY MORE, and that is the phase rather than an
+  // omission. `PICKED UP` and `SHIPPED` are the sheet's own labels and they are
+  // nomenclature, so they never were here — TrajectoryRail takes them as props
   // already resolved, for the reason WorkFilters gives about `STATUS` and
   // `STACK`: they name a group on the screen, and a second table for them is
   // how two spellings of one word start.
   //
-  // THIS IS THE SENTENCE FIVE OF SIX STATIONS PRINT, and it is one sentence
-  // rather than five because the absence has one cause. A station with no prose
-  // is not a station that failed to load; it is one whose paragraph is written
-  // in the content phase, by me, and the panel says exactly that.
-  aboutStationSoon:
-    "This station is a place on the path, not a paragraph yet — the words are " +
-    "written in the content phase rather than guessed here.",
+  // `aboutStationSoon` WAS THE SENTENCE FIVE OF SIX STATIONS PRINTED while
+  // their paragraphs were unwritten. U5 wrote all six, so the sentence has
+  // nothing left to say and the key is deleted rather than kept for a caller
+  // that no longer exists. The six paragraphs live in lib/about/trajectory.ts,
+  // beside the station each one is about, which is where this page already
+  // keeps its prose: `PRINCIPLES` and `STACK` in lib/about/content.ts
+  // are English sentences in a `lib/` table and have been since H7a. A sentence
+  // that only exists next to the tags and the shipped system it is about cannot
+  // drift from them, and that is worth more here than a key would be. What it
+  // costs is written down where it comes due: U8 has to decide what `/de` does
+  // with the About page's prose, and the answer is the same for all three
+  // tables rather than special to this one.
 
   // THREE KEYS STOOD HERE UNTIL U4 AND ALL THREE ARE GONE, for two different
   // reasons that are worth keeping apart.

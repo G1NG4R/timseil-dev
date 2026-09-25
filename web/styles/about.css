@@ -446,21 +446,6 @@
   margin: 0;
 }
 
-/* The five that have no paragraph yet. `[SOON]` keeps the accent so the eye
-   reads it as the site's own token rather than as a word in the sentence. */
-.tl-soon {
-  max-width: 62ch;
-  font: 400 var(--t-body-15)/var(--lh-body) var(--body);
-  color: var(--steel);
-  margin: 0;
-}
-
-.tl-soon-mark {
-  font: 500 var(--t-mono-11)/1 var(--mono);
-  letter-spacing: var(--ls-label);
-  color: var(--dim);
-}
-
 .tl-aside-label {
   font: 600 var(--t-mono-9)/1 var(--mono);
   letter-spacing: var(--ls-head);
