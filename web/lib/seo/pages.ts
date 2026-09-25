@@ -23,7 +23,7 @@
 import type { Metadata } from "next";
 
 import { caseStudyPaths } from "../../content/case-studies/index.ts";
-import { postPaths } from "../content/posts.ts";
+import { hasLog, postPath, postsOrNull, type PostRead } from "../content/posts.ts";
 import { alternatesFor } from "../i18n/alternates.ts";
 import { type Locale, localeHref } from "../i18n/routes.ts";
 import { AUTHOR, SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
@@ -54,15 +54,26 @@ import { AUTHOR, SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
  *  the phase that fills it is named in the comment beside it before it is
  *  written. Nothing on this site starts being indexed because somebody forgot
  *  to decide. */
-const FIXED_PAGES = [
-  { path: "/", indexable: true },
-  { path: "/work", indexable: true },
-  { path: "/blog", indexable: true }, // filled by H9b
-  { path: "/about", indexable: true }, // filled by H7
-  { path: "/contact", indexable: true }, // filled by H8
-  { path: "/imprint", indexable: true }, // filled by H12c
-  { path: "/privacy", indexable: true }, // filled by H12b
-] as const;
+function fixedPages(hasEntries: boolean): readonly PageEntry[] {
+  return [
+    { path: "/", indexable: true },
+    { path: "/work", indexable: true },
+    // THE ONE ROW THAT IS DERIVED, AND U2 IS WHY. Every other boolean here was
+    // written by the phase that filled the page; this one is read off the
+    // directory, because `/blog` says exactly as much as the log holds. With no
+    // entries the index is a heading, a counter reading zero and a way back to
+    // `/work` — true, worth serving to somebody who kept the bookmark, and
+    // nothing a crawler should file away as what this site has to say about
+    // writing. The row goes back to `true` the day Tim writes the first entry,
+    // and app/sitemap.ts follows without an edit, which is the whole reason
+    // there is one table. ADR 0079.
+    { path: "/blog", indexable: hasEntries }, // filled by H9b, gated by U2
+    { path: "/about", indexable: true }, // filled by H7
+    { path: "/contact", indexable: true }, // filled by H8
+    { path: "/imprint", indexable: true }, // filled by H12c
+    { path: "/privacy", indexable: true }, // filled by H12b
+  ];
+}
 
 export interface PageEntry {
   readonly path: string;
@@ -92,17 +103,41 @@ export interface PageEntry {
  * not. The index says something now, so the row is `true` and the sitemap picked
  * it up without an edit — which is the whole point of there being one table.
  *
+ * AND U2 TURNED THE TABLE INTO A BUILDER, for the one row that stopped being a
+ * decision. `/blog` says as much as the log holds, so its boolean is read rather
+ * than written — and a builder is the only shape that can be asked the question
+ * twice, which is what makes both of U2's cases testable without a disk.
+ *
  * THE POST ROWS COME FROM THE FILESYSTEM AND THE CASE-STUDY ROWS DO NOT, which
- * is the one wrinkle worth naming. `postPaths()` reads a directory at module
- * scope; it answers `[]` rather than throwing when it cannot, because this table
- * is imported by every page and a log that could not be listed must not be able
- * to take the homepage down with it. lib/content/posts.ts carries that argument.
+ * is the one wrinkle worth naming. The read happens once, below, and is passed
+ * in; it answers `null` rather than throwing when the directory cannot be read,
+ * because this table is imported by every page and a log that could not be
+ * listed must not be able to take the homepage down with it. `hasLog` counts
+ * that `null` as a log for the same reason — the failure belongs on the page
+ * that reports it, not in a row that quietly disappears.
  */
-export const PAGES: readonly PageEntry[] = [
-  ...FIXED_PAGES,
-  ...caseStudyPaths().map((path) => ({ path, indexable: true })),
-  ...postPaths().map((path) => ({ path, indexable: true })),
-];
+export function pagesFor(read: PostRead | null): readonly PageEntry[] {
+  return [
+    ...fixedPages(hasLog(read)),
+    ...caseStudyPaths().map((path) => ({ path, indexable: true })),
+    ...(read?.posts ?? []).map((post) => ({ path: postPath(post), indexable: true })),
+  ];
+}
+
+/**
+ * The table, built once against the directory this image holds.
+ *
+ * A BUILDER WITH A MODULE VALUE BESIDE IT, AND NOT ONE EXPRESSION, because only
+ * a builder can be asked the question twice. `pagesFor(anEmptyRead)` and
+ * `pagesFor(aReadWithOneEntry)` are the broken case and the good case of U2's
+ * whole gate, in one function, without a test having to touch a disk or a page
+ * having to import anything new.
+ *
+ * IT STILL MUST NOT THROW. Every page imports this module, so a read that failed
+ * has to come back as `null` and be counted as a log (see `hasLog`) rather than
+ * take the site down because a directory could not be listed.
+ */
+export const PAGES: readonly PageEntry[] = pagesFor(postsOrNull());
 
 /** The image every page points at, and the feed every page announces. Both are
  *  route handlers at the root, outside `app/[lang]/` — lib/i18n/routes.ts says

@@ -8,11 +8,9 @@
 // once is the built document — e2e/blog-post.spec.ts follows every rail link to
 // an element and fails when one of them resolves to nothing.
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, it } from "node:test";
 
-import { POSTS_DIR } from "./posts.ts";
+
 import { TOC_MINIMUM, showsToc, toc } from "./toc.ts";
 
 function file(body: string): string {
@@ -83,25 +81,9 @@ describe("whether the rail is drawn at all", () => {
   });
 });
 
-describe("every post in the repository", () => {
-  const rails = readdirSync(POSTS_DIR)
-    .filter((name) => name.endsWith(".mdx"))
-    .map((name) => ({ name, entries: toc(readFileSync(join(POSTS_DIR, name), "utf8")) }));
-
-  it("has headings, and none of them lost its id", () => {
-    for (const { name, entries } of rails) {
-      assert.ok(entries.length > 0, `${name} has no h2 at all`);
-      for (const entry of entries) {
-        assert.ok(entry.id.length > 0, `${name}: "${entry.text}" slugged to nothing`);
-        assert.doesNotMatch(entry.text, /`/, `${name}: "${entry.text}" kept a backtick`);
-      }
-    }
-  });
-
-  it("has unique ids within each post", () => {
-    for (const { name, entries } of rails) {
-      const ids = entries.map((entry) => entry.id);
-      assert.equal(new Set(ids).size, ids.length, `${name} repeats an id`);
-    }
-  });
-});
+// THE BLOCK THAT STOOD HERE READ EVERY FILE IN web/content/posts/. U2 emptied
+// that directory (ADR 0079), and what was left of the block was the one file
+// still in it — the README that keeps the directory alive — being measured as if
+// it were an entry. A sweep over a corpus is worth what the corpus is worth;
+// with none, it is a test that either checks nothing or checks the wrong file.
+// The properties of `toc` itself are held against fixtures above.

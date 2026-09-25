@@ -20,7 +20,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { HOME_REGIONS, settled } from "./streaming";
-import { HOME, MOBILE_BREAKPOINT } from "./widths";
+import { HAS_LOG, HOME, MOBILE_BREAKPOINT } from "./widths";
 
 /** The width this project is running at. */
 function widthOf(page: Page): number {
@@ -39,13 +39,17 @@ test.describe("HOME.01, on the page rather than in the list", () => {
   // one that passes on a broken page: four `toBeVisible()` calls are just as
   // green when the markers read 02 · 01 · 03 · 04, which is the copy K-26
   // found.
-  test("the four markers stand in ascending order", async ({ page }) => {
-    await expect(page.locator("main .sec-id")).toHaveText([
-      "SYS.01",
-      "SYS.02",
-      "SYS.03",
-      "SYS.04",
-    ]);
+  //
+  // AND SINCE U2 THE LAST ONE IS CONDITIONAL. SYS.04 is the log, and the log
+  // holds nothing until Tim writes the first entry (ADR 0079) — the page drops
+  // the section rather than drawing a panel that apologises for it, and
+  // lib/home/sections.ts carries that argument. What the sheet fixes is the
+  // ORDER, and three markers ascend exactly the way four do; e2e/log-gate.spec.ts
+  // is where the absence itself is asserted.
+  test("the markers stand in ascending order", async ({ page }) => {
+    await expect(page.locator("main .sec-id")).toHaveText(
+      HAS_LOG ? ["SYS.01", "SYS.02", "SYS.03", "SYS.04"] : ["SYS.01", "SYS.02", "SYS.03"],
+    );
   });
 
   // Every empty panel says WHY it is empty. STATE.05: a dead state without a
@@ -141,6 +145,10 @@ test.describe("HOME.01, on the page rather than in the list", () => {
 // rows are real rows, its count is a real count, and both are asserted where
 // they ship instead of in a gallery that frames its own components.
 test.describe("SYS.04, the log", () => {
+  // The section is not on the page while the log is empty (U2, ADR 0079). These
+  // assertions are about rows, and rows come back with the first entry.
+  test.skip(() => !HAS_LOG, "the log holds no entries — U2, ADR 0079");
+
   test("draws the three newest entries, newest first", async ({ page }) => {
     const rows = page.locator(".log-row");
     await expect(rows).toHaveCount(3);

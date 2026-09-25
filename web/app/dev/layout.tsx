@@ -53,7 +53,7 @@ import "../../styles/home.css";
 // measurement said `display: list-item` where the page says `grid`: the
 // preview column never appeared, the name column never grew, and every number
 // taken off it would have been a number about a page that does not exist.
-// `012-the-preview-had-a-shorter-cascade-than-the-page.mdx` is that post.
+// One of the entries U2 removed was written about exactly that.
 import "../../styles/work.css";
 // H7, and the line is here on the FIRST commit of the phase rather than after a
 // measurement said `display: block`. Twice is a coincidence to argue with;

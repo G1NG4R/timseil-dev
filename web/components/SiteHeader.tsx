@@ -24,6 +24,7 @@ import { NoData } from "@/components/state/NoData";
 import { StatusDot } from "@/components/state/StatusDot";
 import { Wordmark } from "@/components/Wordmark";
 import { footerHealthNow } from "@/lib/api/readers";
+import { hasLog, postsOrNull } from "@/lib/content/posts";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { navLabels, type Messages } from "@/lib/i18n/messages";
 import { stateLabel } from "@/lib/state/words";
@@ -45,6 +46,12 @@ import { stateLabel } from "@/lib/state/words";
 export async function SiteHeader() {
   const { messages, textLang } = await getDictionary();
   const labels = navLabels(messages);
+  // THE ONE READ THE CHROME MAKES, AND IT STAYS INSIDE THE STATIC SHELL.
+  // `readdirSync` is synchronous and touches files that are in the image, so it
+  // is not the dynamic access this file's head forbids — no headers(), no
+  // cookies(), nothing that needs a request. The two nav components get the
+  // answer as a boolean and turn it into rows through the same `navEntries`.
+  const hasEntries = hasLog(postsOrNull());
 
   return (
     <header className="col" lang={textLang}>
@@ -52,7 +59,7 @@ export async function SiteHeader() {
         <Wordmark />
         <span className="head-spacer" />
         <div className="nav-desktop">
-          <NavLinks labels={labels} />
+          <NavLinks labels={labels} hasLog={hasEntries} />
           <span className="head-rule" aria-hidden="true" />
           <LangMenu
             strings={{
@@ -69,6 +76,7 @@ export async function SiteHeader() {
             that depends on the viewport is a tree the server gets wrong. */}
         <MobileMenu
           labels={labels}
+          hasLog={hasEntries}
           strings={{
             menuAria: messages.menuAria,
             closeAria: messages.menuCloseAria,

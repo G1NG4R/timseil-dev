@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { NAV, type NavId, activeNav } from "@/lib/chrome";
+import { type NavId, activeNav, navEntries } from "@/lib/chrome";
 import { localeHref, localeOf } from "@/lib/i18n/routes";
 import { SCRAMBLE_PASSES, parseMs, scrambleFrame } from "@/lib/scramble";
 
@@ -79,20 +79,26 @@ function scramble(el: HTMLElement, label: string): void {
  * On `/` none of them is active. That is the build plan's sentence and
  * lib/chrome.ts's first assertion.
  *
+ * SINCE U2 THE LOG ENTRY IS CONDITIONAL, AND THE CONDITION ARRIVES AS A BOOLEAN
+ * RATHER THAN AS A LIST. The server knows whether this repository holds an
+ * entry; `navEntries` turns that into the rows, here and in the mobile menu, so
+ * the two cannot come out different. A list crossing the boundary instead would
+ * be the same answer serialised twice.
+ *
  * THE LABELS ARRIVE AS A PROP AND THE ROUTES DO NOT. `lib/chrome.ts` holds the
  * four routes, which are the same in every language — the sheet's matrix:
  * "Navigation: übersetzt, Route bleibt /blog". The words are prose and come
  * from the dictionary, so the server passes exactly these four strings across
  * the boundary rather than the whole of it.
  */
-export function NavLinks({ labels }: { labels: Record<NavId, string> }) {
+export function NavLinks({ labels, hasLog }: { labels: Record<NavId, string>; hasLog: boolean }) {
   const pathname = usePathname();
   const active = activeNav(pathname);
   const locale = localeOf(pathname);
 
   return (
     <nav className="nav-links" aria-label="Main">
-      {NAV.map((entry) => {
+      {navEntries(hasLog).map((entry) => {
         const on = entry.id === active;
         const label = labels[entry.id];
         return (

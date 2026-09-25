@@ -15,7 +15,7 @@
 import generated from "./oracle/home.gen.json";
 import { runSheetOracle, type Oracle } from "./sheet";
 import { HOME_REGIONS, settled } from "./streaming";
-import { HOME, HOME_DRAWN_WIDTHS } from "./widths";
+import { HAS_LOG, HOME, HOME_DRAWN_WIDTHS } from "./widths";
 
 runSheetOracle({
   oracle: generated as unknown as Oracle,
@@ -40,4 +40,13 @@ runSheetOracle({
   // oracle that has to stand in the gallery grows with every section that
   // connects to the API — and shrinks with the one that does not.
   minimumEntries: 66,
+  //
+  // AND TEN OF THEM DESCRIBE A SECTION THE PAGE NO LONGER DRAWS. U2 emptied
+  // content/posts (ADR 0079), so SYS.04 is not on `/` — every `home-log-*` entry
+  // would be measured against an element that is not there, which is twenty red
+  // tests about a decision rather than about a drawing. They are not declared
+  // while the log is empty and they all come back with the first entry. The
+  // oracle is untouched: it is generated from `docs/design/`, `minimumEntries`
+  // still counts all 66, and a shrinking oracle is still a failure.
+  applies: (entry) => HAS_LOG || !entry.id.startsWith("home-log-"),
 });

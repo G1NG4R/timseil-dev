@@ -14,8 +14,23 @@ import { NAV } from "../chrome.ts";
 import { LOCALES } from "../i18n/routes.ts";
 import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
 import { CASE_STUDIES, caseStudyPath } from "../../content/case-studies/index.ts";
-import { postPath, postsOrNull } from "../content/posts.ts";
-import { PAGES, indexablePaths, seoFor } from "./pages.ts";
+import { postPath, type PostMeta, type PostRead } from "../content/posts.ts";
+import { PAGES, indexablePaths, pagesFor, seoFor } from "./pages.ts";
+
+/** The two reads this table is asked about, written rather than found: U2
+ *  emptied web/content/posts/, so the good case has to be made here. */
+const NO_ENTRIES: PostRead = { posts: [], skipped: [] };
+const ENTRY: PostMeta = {
+  slug: "001-a-slug",
+  title: "A title",
+  deck: "One line about it.",
+  published: "2026-09-05",
+  systemId: "timseil-dev",
+  tags: ["ci-cd"],
+  summary: "A paragraph for a stranger in a reader.",
+  updated: null,
+};
+const ONE_ENTRY: PostRead = { posts: [ENTRY], skipped: [] };
 
 // A page added to `app/[lang]/` without a line in PAGES has not been decided
 // about, and the harmless-looking default is the wrong one: it would be
@@ -43,11 +58,16 @@ void test("every fixed route and every case study is indexable, and nothing else
   // list and the tail by the two tests below — one per content registry. Writing
   // twenty-one slugs out here would be a second copy of content/posts, and the
   // copy is the one that goes stale.
-  const fixed = indexablePaths().filter((path) => !path.startsWith("/blog/"));
+  //
+  // AND SINCE U2 ONE OF THEM IS NOT FIXED. `/blog` says as much as the log
+  // holds, so it is left out of this list and asserted in both of its states by
+  // the test below. Everything else here is a decision a phase wrote down.
+  const fixed = indexablePaths().filter(
+    (path) => !path.startsWith("/blog/") && path !== "/blog",
+  );
   assert.deepEqual(fixed, [
     "/",
     "/work",
-    "/blog",
     "/about",
     "/contact",
     "/imprint",
@@ -59,9 +79,6 @@ void test("every fixed route and every case study is indexable, and nothing else
   assert.equal(seoFor("en", "/work").robots, undefined);
   assert.equal(seoFor("en", "/about").robots, undefined);
   assert.equal(seoFor("en", "/contact").robots, undefined);
-  // H9b. The index and its entries now agree, and for one phase they did not —
-  // pages.ts argues that asymmetry and this is the line that closed it.
-  assert.equal(seoFor("en", "/blog").robots, undefined);
   // H12b. The page H8 owed a visitor since the day a form appeared on this
   // site now exists, so it stops refusing crawlers. It is also the reason the
   // two legal routes flipped one phase apart rather than together: a privacy
@@ -78,16 +95,42 @@ void test("every fixed route and every case study is indexable, and nothing else
 // an unknown path, so it would be a 500 on the post rather than a missing
 // sitemap line.
 void test("every log entry has a row, and every row says it may be indexed", () => {
-  const read = postsOrNull();
-  assert.notEqual(read, null, "the posts directory could not be read");
-
-  const known = new Map(PAGES.map((page) => [page.path, page.indexable]));
-  for (const post of read?.posts ?? []) {
+  const known = new Map(pagesFor(ONE_ENTRY).map((page) => [page.path, page.indexable]));
+  for (const post of ONE_ENTRY.posts) {
     const path = postPath(post);
     assert.ok(known.has(path), `no page entry for ${path}`);
     assert.equal(known.get(path), true, `${path} is written but not indexable`);
-    assert.doesNotThrow(() => seoFor("en", path));
   }
+});
+
+// U2's gate, asked of the table that decides it. `/blog` is the one row here
+// that is read rather than written, and these are its two states: a log with an
+// entry says something and may be found, a log with none says nothing and asks
+// not to be. `app/sitemap.ts` follows `indexablePaths()` without a line of its
+// own, which is why this is the only place the question has to be asked.
+void test("`/blog` is indexable exactly while the log holds an entry", () => {
+  const empty = new Map(pagesFor(NO_ENTRIES).map((page) => [page.path, page.indexable]));
+  const filled = new Map(pagesFor(ONE_ENTRY).map((page) => [page.path, page.indexable]));
+
+  assert.equal(empty.get("/blog"), false);
+  assert.equal(filled.get("/blog"), true);
+
+  // The entry rows come and go with it, so the sitemap cannot list an address
+  // nobody wrote — the failure ADR 0047 records from the other direction.
+  assert.equal([...empty.keys()].filter((path) => path.startsWith("/blog/")).length, 0);
+  assert.deepEqual(
+    [...filled.keys()].filter((path) => path.startsWith("/blog/")),
+    ["/blog/001-a-slug"],
+  );
+});
+
+// A DIRECTORY THAT COULD NOT BE READ IS NOT AN EMPTY ONE. `postsOrNull` answers
+// `null` for an image that shipped without its own content, and the table has to
+// treat that as a fault rather than as a state of the log — otherwise `/blog`
+// would quietly drop out of the sitemap on a broken deploy.
+void test("a directory that could not be read leaves `/blog` alone", () => {
+  const broken = new Map(pagesFor(null).map((page) => [page.path, page.indexable]));
+  assert.equal(broken.get("/blog"), true);
 });
 
 // The drift this table was restructured to make impossible: a case study that

@@ -1,22 +1,17 @@
 // The frontmatter reader, against the files it will actually be given and
 // against the ones it must refuse.
 //
-// TWO HALVES, AND THE SECOND ONE IS THE POINT. The broken cases below are
-// invented, and invented cases only ever prove that the author thought of them.
-// The half that survives this phase is the last block: it reads every file in
-// web/content/posts/ and asserts that all of them parse — so the day a
-// fifteenth post is written with a quote the reader cannot take off, this goes
-// red here rather than dropping a row on the homepage.
-//
-// lib/content/pipeline.test.ts reads a repository file from a test for the same
-// reason and by the same route.
+// EVERY CASE HERE IS INVENTED, AND UNTIL U2 THAT WAS ONLY HALF THE FILE. The
+// other half read web/content/posts/ and asserted that all of it parses. The
+// directory is empty since U2, so that half is gone and the block where it stood
+// says why — an invented case proves that the author thought of it, and a block
+// over an empty directory does not even prove that.
 import assert from "node:assert/strict";
-import { readdirSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import {
-  POSTS_DIR,
   frontmatter,
+  hasLog,
   postMeta,
   readPosts,
   tagList,
@@ -309,73 +304,92 @@ describe("reading a directory", () => {
   });
 });
 
-// The half that outlives this phase.
-describe("every post in the repository", () => {
-  const read = readPosts(POSTS_DIR);
-  const onDisk = readdirSync(POSTS_DIR).filter((name) => name.endsWith(".mdx"));
+// THE BLOCK THAT USED TO STAND HERE READ EVERY FILE IN web/content/posts/ AND
+// ASSERTED THAT ALL OF THEM PARSE. U2 emptied that directory (ADR 0079: the log
+// is Tim's to write), and a block that iterates nothing passes without checking
+// anything — which is the defect
+// `010-two-tests-were-green-because-nothing-was-there` was written about, now
+// applied to its own deletion. What it asserted about PROSE — that two titles
+// exceed the sheet's 58 characters, that no summary is half a dek — were
+// measurements of files that no longer exist. What it asserted about the READER
+// is below, against fixtures, where it runs.
+//
+// The frontmatter guard over the real directory therefore does not exist while
+// the directory is empty. That is a cost and it is written down in backlog.md
+// rather than papered over with a block that would report success either way.
 
-  it("parses, with none skipped", () => {
-    assert.deepEqual(read.skipped, [], "a post in the repository cannot be read");
-    assert.equal(read.posts.length, onDisk.length);
+describe("a file that could not be an entry", () => {
+  function reader(files: Record<string, string>): DirReader {
+    return { list: () => Object.keys(files), text: (_dir, file) => files[file] ?? "" };
+  }
+
+  // THE DIRECTORY HOLDS A README.mdx SINCE U2, and it is there so that git keeps
+  // the directory, the compose mount finds a path, the tracer copies something
+  // and the bundler context in app/[lang]/blog/[slug]/page.tsx resolves. It is
+  // an `.mdx` because the context is scoped to `*.mdx` — and a reader that
+  // called it a broken post logged a WARN, which calls `new Date()`, which under
+  // Cache Components is an unstable value in a prerender. The homepage stopped
+  // building over a README. `skipped` means "somebody wrote an entry and nobody
+  // can see it"; a file that could never be an entry does not belong in it.
+  it("is neither a post nor a file that was skipped", () => {
+    const read = readPosts("posts", reader({ "README.mdx": "# The log", "015-good.mdx": GOOD }));
+
+    assert.deepEqual(read.posts.map((post) => post.slug), ["015-good"]);
+    assert.deepEqual(read.skipped, []);
   });
 
-  it("has a title, a dek and a date in each", () => {
-    for (const post of read.posts) {
-      assert.ok(post.title.length > 0, `${post.slug} has no title`);
-      assert.ok(post.deck.length > 0, `${post.slug} has no dek`);
-      assert.match(post.published, /^\d{4}-\d{2}-\d{2}$/, `${post.slug} has no date`);
-      // The quotes are off. A row that still carried them would look like a
-      // rendering bug and be a parsing one.
-      assert.doesNotMatch(post.title, /^['"]/, `${post.slug} kept its quotes`);
-    }
+  it("still names an entry it cannot read", () => {
+    const read = readPosts("posts", reader({ "README.mdx": "# x", "016-bad.mdx": "no block" }));
+
+    assert.deepEqual(read.posts, []);
+    assert.deepEqual(read.skipped, ["016-bad.mdx"]);
   });
 
-  // #192's acceptance, in one assertion: the thing that renders a post is the
-  // thing that validates its frontmatter, and it now reaches every key.
-  it("has the tags and the summary the post page draws", () => {
-    for (const post of read.posts) {
-      assert.ok(post.tags.length > 0, `${post.slug} has no tags`);
-      assert.ok(post.summary.length > 0, `${post.slug} has no summary`);
-      // A summary that fits on one line is a dek written twice. The sheet asks
-      // for two to three sentences; this only refuses the degenerate case.
-      assert.ok(
-        post.summary.length > post.deck.length / 2,
-        `${post.slug} has a summary shorter than half its dek`,
-      );
-    }
+  // THE FINDING H9a MADE, KEPT AS A PROPERTY OF THE READER INSTEAD OF AS A SWEEP
+  // OVER PROSE — and moving it is what showed that it was never quite the
+  // property it claimed. Frontmatter never reaches remark, so a backtick there
+  // has no renderer, and lib/content/body.ts strips the marks at read time: from
+  // `deck` and from `summary`. NOT from `title`, which `postMeta` only unquotes.
+  // The old sweep asserted all three and was green because no title in the
+  // corpus happened to carry one — a statement about twenty-five files, not
+  // about the reader. Asserted here is what the reader does; the gap is in
+  // backlog.md, because closing it is a change to what a future title renders
+  // and this phase deletes posts rather than changing how one is read.
+  it("strips the marks from the two strings it passes through plainText", () => {
+    const meta = postMeta(
+      "015-a-post.mdx",
+      file(
+        "title: 'A title'\ndeck: 'A `code` dek.'\npublished: 2026-09-01\n" +
+          "tags: ['testing']\nsummary: |\n  A `code` paragraph.",
+      ),
+    );
+
+    assert.notEqual(meta, null);
+    assert.doesNotMatch(meta?.deck ?? "", /`/);
+    assert.doesNotMatch(meta?.summary ?? "", /`/);
+  });
+});
+
+// The gate U2 hangs on this reader: four surfaces ask it, and they must agree.
+describe("whether this site has a log", () => {
+  const entry = postMeta("015-a-post.mdx", GOOD);
+  assert.notEqual(entry, null, "the fixture this file builds every case from stopped parsing");
+  const one = { posts: entry === null ? [] : [entry], skipped: [] };
+
+  it("says no for a directory that was read and holds nothing", () => {
+    assert.equal(hasLog({ posts: [], skipped: [] }), false);
   });
 
-  // THE FINDING H9a MADE, HELD SO IT CANNOT COME BACK. One dek and five
-  // summaries in this repository write inline code with backticks, and the
-  // homepage had been drawing one of them with the marks in since H5c —
-  // frontmatter never reaches remark, so a mark there has no renderer.
-  // lib/content/body.ts strips them at read time; this is what proves it, and
-  // it also refuses the next mark somebody adds.
-  it("hands on no markup in the strings a page prints", () => {
-    for (const post of read.posts) {
-      assert.doesNotMatch(post.title, /`/, `${post.slug}: title carries a backtick`);
-      assert.doesNotMatch(post.deck, /`/, `${post.slug}: dek carries a backtick`);
-      assert.doesNotMatch(post.summary, /`/, `${post.slug}: summary carries a backtick`);
-    }
+  it("says yes for one entry", () => {
+    assert.equal(hasLog(one), true);
   });
 
-  // NOT AN ASSERTION, A MEASUREMENT. The Blog Post sheet's Bausteine table says
-  // a title is "max 58 Zeichen, sonst bricht er mobil dreizeilig", and two of
-  // the titles in this repository are longer. They are published; the rule
-  // arrived after they were written, and shortening a published headline to
-  // satisfy a drawing is the tail wagging the dog. So the number is reported
-  // and styles/blog.css carries the three-line break — but the count is held,
-  // so a THIRD one is a decision somebody makes rather than a drift.
-  it("has at most two titles over the sheet's 58 characters", () => {
-    const long = read.posts.filter((post) => post.title.length > 58).map((post) => post.slug);
-    assert.deepEqual(long, [
-      "015-the-run-was-green-and-it-reused-my-own-server",
-      "007-two-sheets-drew-the-same-row-differently",
-    ]);
-  });
-
-  it("comes back newest first", () => {
-    const dates = read.posts.map((post) => post.published);
-    assert.deepEqual(dates, [...dates].sort().reverse());
+  // THE ONE THAT IS NOT OBVIOUS, AND THE REASON IT IS WRITTEN DOWN. `null` is a
+  // directory that could not be read — an image shipped without its own content.
+  // Counting it as "no log" would make the navigation entry and SYS.04 vanish on
+  // a broken deploy, silently, together with the `— NO DATA` panel that exists
+  // to report exactly that. The gate hides an empty truth, never a fault.
+  it("says yes for a directory it could not read, so nothing hides a broken image", () => {
+    assert.equal(hasLog(null), true);
   });
 });

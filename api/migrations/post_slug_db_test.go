@@ -37,6 +37,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -50,6 +51,17 @@ import (
 // spellings can stay one string.
 const postsDir = "../../web/content/posts"
 
+// slugShape is the constraint on `incidents.post_slug`, spelled a third time.
+//
+// 00004_operations.sql has it and so does web/lib/content/posts.ts, and the
+// comment there says why the copies are deliberate: a file one side accepts and
+// the other rejects is a file no incident could cite. Until U2 this test could
+// get away with "ends in .mdx", because every file in the directory was an
+// entry. The directory now also holds a README.mdx that keeps git, the compose
+// mount, the file tracer and the bundler context alive — and counting it as a
+// post-mortem would put a slug in `held` that nothing wrote.
+var slugShape = regexp.MustCompile(`^[0-9]{3}-[a-z0-9]+(-[a-z0-9]+)*$`)
+
 // postMortemsOnDisk is the set of slugs this repository actually holds, read as
 // filenames rather than as frontmatter: the filename IS the slug, which is the
 // whole reason ADR 0002 put the log in the repository.
@@ -61,6 +73,9 @@ func postMortemsOnDisk(t *testing.T) map[string]struct{} {
 		// NOT t.Skip. A check that quietly disappears when it cannot find the
 		// corpus is a check that reports success for the one failure it exists
 		// to catch — the image or the mount that shipped without the content.
+		// This one is still fatal, and U2 is the reason it is worth saying which
+		// of the two failures each branch is: a directory that is not there is a
+		// mount that did not happen, and that is a defect.
 		t.Fatalf("reading %s: %v", postsDir, err)
 	}
 
@@ -70,12 +85,20 @@ func postMortemsOnDisk(t *testing.T) map[string]struct{} {
 		if entry.IsDir() || filepath.Ext(name) != ".mdx" {
 			continue
 		}
-		held[strings.TrimSuffix(name, ".mdx")] = struct{}{}
+		slug := strings.TrimSuffix(name, ".mdx")
+		if !slugShape.MatchString(slug) {
+			continue
+		}
+		held[slug] = struct{}{}
 	}
 
-	if len(held) == 0 {
-		t.Fatalf("%s holds no entries", postsDir)
-	}
+	// AN EMPTY SET IS NOT A FAILURE ANY MORE, AND UNTIL U2 IT WAS. The old line
+	// read `t.Fatalf("%s holds no entries", postsDir)`, and it was right for a
+	// repository whose log was full: nothing then could empty that directory
+	// except a mistake. ADR 0079 emptied it on purpose — the entries are Tim's to
+	// write — so "no entries" is now a true statement about this repository and
+	// not a broken read of it. The read itself is still fatal one branch up,
+	// which is where the defect it was guarding against actually lives.
 	return held
 }
 
@@ -128,19 +151,18 @@ func TestEveryIncidentNamesAPostMortemThatExists(t *testing.T) {
 // The broken case, which is what makes the test above a check rather than a
 // green run over an empty table.
 func TestTheCheckFindsAnIncidentWhosePostMortemWasNeverWritten(t *testing.T) {
-	held := postMortemsOnDisk(t)
 	db := dbtest.FreshSchema(t)
 	systemID := insertSystem(t, db)
 
-	// One real and one invented, so the finder has to tell them apart rather
-	// than reject everything. The real one is read out of the corpus instead of
-	// typed here: a slug spelled into a test is a slug that goes stale, which is
-	// the defect H9c spent a second repair on in lib/work/log.test.ts.
-	var real string
-	for slug := range held {
-		real = slug
-		break
-	}
+	// One held and one not, so the finder has to tell them apart rather than
+	// reject everything. It used to take the held one out of the corpus, because
+	// a slug spelled into a test is a slug that goes stale — the defect H9c spent
+	// a second repair on in lib/work/log.test.ts. U2 emptied the corpus, so there
+	// is none to take, and the objection does not survive the move: a slug that
+	// never leaves this function cannot go stale against anything. What is under
+	// test is the FINDER, not the directory, so the directory is not consulted.
+	const real = "001-a-post-mortem-somebody-wrote"
+	held := map[string]struct{}{real: {}}
 
 	insert := `INSERT INTO incidents (id, system_id, started_at, duration_sec, cause, fix, post_slug)
 	           VALUES ($1, $2, now(), 2520, 'the migration held a lock', 'lock_timeout on the role', $3)`
