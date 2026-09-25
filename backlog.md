@@ -12,6 +12,85 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 25.09.2026, U4 abgenommen: `v0.42.0`, ein Tausch ohne eine einzige Nicht-200, und eine Null, die diesmal vorher auffiel
+
+`db787fe` läuft, **`v0.42.0`**. Merge **17:47:45Z**, neuer Prozess ab
+**18:14:57.764Z**. Wanduhr vom Merge bis zum neuen Prozess: **1633 s**; die
+Pipeline meldet `durationSec 1614`, `result ok`. Uhrzeit mit `date -u` gelesen —
+17:47Z liegt sechs Stunden vor dem Dokploy-Fenster.
+
+Der `feat(web):`-Titel hat getan, was er soll: `v0.41.0` → **`v0.42.0`**, Minor,
+mit `(#408)` im Subject.
+
+### Der Zeuge stand davor, und er hat nichts gesehen — das ist der Punkt
+
+Zum ersten Mal seit H13a lief `witness.sh --until-restart` über einen
+vollständigen Tausch. **1667 Anfragen je Pfad, 1667 × 200 auf `/` und 1667 × 200
+auf `/api/health`.** Keine 404, keine 502, keine abgerissene Verbindung. Neun
+Sekunden der 1667 tragen keine Stichprobe — das sind die Sekunden, in denen eine
+Anfrage länger als eine Sekunde brauchte, nicht Sekunden ohne Antwort.
+
+**Das ist der Datenpunkt, den U3 nicht liefern konnte.** Die U3-Abnahme hat
+ausdrücklich festgehalten, dass sie für #304 nichts beiträgt, „damit die
+U4-Abnahme nicht auf eine Serie zurückgreift, die eine Lücke hat". Die Lücke ist
+jetzt geschlossen, und zwar mit einem sauberen Tausch. Das ist **eine**
+Beobachtung, keine Quote: #304 sagt selbst, dass zwei Stichproben nicht sagen
+können, wie oft es passiert. Drei können es auch nicht — aber sie sind mehr als
+zwei, und diese eine ist die erste, die über die volle Dauer misst.
+
+### Gegen Produktion gemessen
+
+| | |
+|---|---|
+| `/api/health` | `sha db787fe` · `version v0.42.0` · `status ok` · `ops.systemsLive 1` von `2` |
+| `/about` OPERATOR | 7 Zeilen: `Junior DevOps` · `Kubernetes · GitOps` · `Helpdesk → self-taught` · **`TOOLING · Claude Code`** |
+| `/about` WHAT I RUN | 6 Kacheln, 12 Namen, `TALOS-PROD · BARE METAL` |
+| Marker | `SYS.05.01 · SYS.05.02 · SYS.05.03` — kein `SYS.05.04` |
+| Rolle auf `/about` | `grep -i backend` auf dem gerenderten `main`: **kein Treffer** |
+| `[SOON]` auf `/about` | **genau eins**, im offenen Trajectory-Panel |
+| `READ THE CASE STUDY` | weg |
+| `homeBio` auf `/` | steht, und `/` trägt das Wort `backend` **nullmal** |
+
+**Die Rail klickt, in beide Richtungen und per Tastatur:** Ruhelage
+`Platform work` → Klick auf 03 `First service in public` → `ArrowRight`
+`Go, and the container habit` → Klick auf NOW zurück auf `Platform work`.
+ADR 0066 unberührt.
+
+**Die sieben Prüfbreiten sind Zahl für Zahl identisch zur lokalen Messung.**
+Kachelraster drei Spuren bei 1440 · 1081 · 1079 · 1024, zwei bei 899 · 719 · 390;
+`scrollWidth == clientWidth` an allen sieben; kein Abschnittstitel zweizeilig.
+Der schmalste Textkasten misst **121 px** gegen die **91 px**, die
+`CloudNativePG` braucht. Kein Unterschied zwischen Dev-Stack und Produktion.
+
+### Die Null kam zum dritten Mal vom falschen Pfad — und fiel diesmal vorher auf
+
+`.systemsLive` auf der obersten Ebene gibt es nicht; die Antwort trägt dort nur
+`generatedAt`, `ops`, `sha`, `startedAt`, `status`, `version`. `systemsLive`
+liegt unter `ops`, zusammen mit `p95Ms`, `uptime90d` und `lastDeploy`.
+
+Derselbe Fehler wie in der U1- und der U2-Abnahme, dieselbe Form. Der
+Unterschied ist, dass `jq -c 'keys'` diesmal **vor** der Behauptung lief, wie es
+die U2-Abnahme aufgeschrieben hat: *vor der Behauptung die Form der Antwort
+lesen, nicht den Pfad raten.* Die Lehre hat gehalten. Eine Zeile `keys` hat sie
+eingelöst.
+
+### Was diese Abnahme nicht beweist
+
+**Die p95 misst wieder den Tausch.** `p95Ms 86,1` bei `measuredAt
+18:14:57.773Z` — dieselbe Sekunde, in der der neue Prozess startete. Über die
+Seite im Ruhezustand sagt die Zahl nichts. Dritte Abnahme in Folge mit derselben
+Einschränkung.
+
+`uptime90d 85,6 %` ist die Sondenreihe und älter als diese Phase.
+
+**Und der Tag hat zwei Deploys mehr gekostet, als die Phase brauchte.** #407 war
+auf einen Messfehler gebaut, #409 hat ihn zurückgenommen; der Eintrag darunter
+sagt, wie. `a2684275` trägt die Co-Author-Zeile seitdem doppelt und bleibt so
+stehen. Der U4-Squash trägt sie **genau einmal** — die wiederhergestellte Regel
+ist damit an ihrem ersten Feature-Merge geprüft und hat gehalten.
+
+---
+
 ## Zwischendurch — 25.09.2026: sechs Nullen, die aus dem `grep` kamen und nicht aus `main`
 
 Die U2-Abnahme hat gemeldet, dass kein U-Squash die `Co-Authored-By`-Zeile
