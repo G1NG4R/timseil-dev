@@ -12,6 +12,75 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 25.09.2026, U3 abgenommen: `v0.41.0`, 14 Tracks in Produktion, und eine elfte Fundstelle, die kein lokaler Lauf sehen konnte
+
+`518eb99` läuft, **`v0.41.0`**. Merge **14:36:17Z**, neuer Prozess ab
+**14:54:50.423Z**. Wanduhr vom Merge bis zum neuen Prozess: **1113 s**; die
+Pipeline meldet `durationSec 1122`, `result ok`. Uhrzeit mit `date -u` gelesen —
+14:36Z liegt neun Stunden vor dem Dokploy-Fenster.
+
+Der `feat(api):`-Titel hat getan, was er soll: `v0.40.0` → **`v0.41.0`**, Minor,
+mit `(#405)` im Subject.
+
+### Gegen Produktion gemessen
+
+| | |
+|---|---|
+| `/api/health` | `sha 518eb99` · `version v0.41.0` · `status ok` · `systemsLive 1` von `2` |
+| `/api/training` | 6 Module · 14 Tracks · `evidenceSystems 2` · **8 `applied`, 6 `learning`** |
+| `/api/systems` | 01 `talos-prod` `in_build` private·internal, Stack 12, **alle Metriken `null`** · 02 `timseil-dev` live public, Stack 11 |
+| `/work/talos-prod` | **404** · `/work/timseil-dev` 200 · `/work` 200 · `/` 200 |
+| Work-Index | `talos-prod` fünfmal genannt, **null** Links darauf; ein Link auf `timseil-dev` |
+
+**Im Browser, nicht nur im Abzug:** die Kopfzeile liest
+`SELF-TRACKED · 14 TRACKS · EVIDENCE: 02 SYSTEMS · SOURCE: /api/training`, und
+alle vierzehn Zeilen stehen mit ihren Belegen da — sechs LEARNING, die nur der
+Cluster trägt, acht APPLIED. Kein Wort aus dem alten Baum ist auf der Seite
+übrig. Der Filter klickt: ALL 2 → IN BUILD 1 → ALL 2.
+
+**Die STACK-Zeile hält.** An allen sieben Prüfbreiten gegen Produktion: kein
+horizontaler Scroll, kein Element über die Fensterkante. Die Chip-Zeile wird
+höher — 54 px bei 1440, 85 px von 1081 bis 899, 116 px bei 719, **209 px bei
+390**. Identisch zur lokalen Messung vor dem Merge, also kein Unterschied
+zwischen Dev-Stack und Produktion.
+
+### Der stärkste Fund: eine Prüfung, die kein lokaler Lauf erreichen kann
+
+`make check-topology` (`Makefile:951`) trug die alten Zahlen fest verdrahtet und
+ließ die CI mit `✗ seeded rows are 2/14/19, want 2/22/13` auflaufen — **nachdem**
+derselbe Job `✓ seed ran and exited 0` gemeldet hatte. Der Seed war richtig, die
+Prüfung dahinter hielt an der alten Behauptung fest.
+
+Das Bemerkenswerte ist nicht die Zeile, sondern **wo sie liegt**. Die Phase hat
+jetzt drei Ebenen, die je etwas anderes sehen:
+
+| Lauf | sah von U3 |
+|---|---|
+| `make check` | **nichts** — vom ersten bis zum letzten Schritt grün, auch mit ausgetauschtem Seed |
+| `make check-db` | die zwölf roten Tests |
+| CI-Job `images` | genau diese eine Zeile, und sonst niemand |
+
+`check-topology` hängt am `images`-Job, der erst die Container baut. Eine
+vollständige lokale Abnahme — `check`, `check-db`, `e2e`, `dev-reset && dev` —
+konnte sie nicht sehen. Danach gezielt gesucht: in `Makefile`, `tools/` und
+`.github/workflows/` steht keine weitere fest verdrahtete Seed-Zahl. Damit ist
+das die **elfte** Fundstelle einer Liste, die A4 mit vierzehn Dateien angesetzt
+hatte und die bei ~45 endete.
+
+### Was diese Abnahme nicht beweist
+
+**Der Zeuge lief nicht.** Für diesen Tausch gibt es keine Messung von außen über
+den Container-Wechsel — #304 bekommt keinen Datenpunkt, in keine Richtung. Die
+Zahlen oben sind alle **nach** dem Deploy erhoben; über die Sekunden während des
+Tauschs sagen sie nichts. Das ist keine Vermutung über den Tausch, sondern das
+Fehlen einer Beobachtung, und es steht hier, damit die U4-Abnahme nicht auf eine
+Serie zurückgreift, die eine Lücke hat.
+
+`uptime90d 85,6 %` auf `timseil-dev` ist die Sondenreihe und älter als diese
+Phase; sie gehört nicht zu U3.
+
+---
+
 ## U3 · 25.09.2026 — Seed: Systeme und Training Log
 
 `vat-check` ist weg, `talos-prod` erbt die 01 als `in_build` mit privater
@@ -51,6 +120,9 @@ Schema, View und Contract sind unberührt.
   `docs/systemhandbuch.md`. Auch die Zeilennummern sind gewandert
   (`blog/[slug]/page.tsx` ist 122, nicht 102). Für U4 bis U9 heißt das: die
   Listen im Sitzungsplan suchen lassen, nicht anspringen.
+  **Nachtrag aus der CI:** eine fünfzehnte Stelle fand erst der `images`-Job —
+  `make check-topology` mit `2/22/13` im Makefile. Kein lokaler Lauf erreicht
+  sie; die Abnahme oben sagt, warum.
 - **Eine Erwartung ist durch jeden `grep` gefallen, weil sie den Slug nicht
   nennt.** `systems.test.ts` prüfte `"Python · FastAPI · Docker · SQLite"` —
   der ganze alte Stack als eine Zeichenkette, ohne das Wort `vat-check` darin.
