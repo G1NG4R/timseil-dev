@@ -12,6 +12,80 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 25.09.2026, U5 abgenommen: `v0.43.0`, der zweite saubere Tausch in Folge, und ein `grep`, der zu weit griff
+
+`8b02a61` läuft, **`v0.43.0`**. Merge **21:32:30Z**, neuer Prozess ab
+**21:50:07.775Z**. Wanduhr vom Merge bis zum neuen Prozess: **1057 s**; die
+Pipeline meldet `durationSec 1068`, `result ok`. Uhrzeit mit `date -u` gelesen —
+21:32Z liegt gut zwei Stunden vor dem Dokploy-Fenster.
+
+Der `feat(web):`-Titel hat getan, was er soll: `v0.42.0` → **`v0.43.0`**, Minor,
+mit `(#411)` im Subject.
+
+### Der Zeuge hat den zweiten vollständigen Tausch gesehen, und wieder nichts
+
+**1103 Anfragen je Pfad, 1103 × 200 auf `/` und 1103 × 200 auf `/api/health`.**
+Keine 404, keine 502, keine abgerissene Verbindung. Zehn der 1103 Sekunden
+tragen keine Stichprobe — Sekunden, in denen eine Anfrage länger als eine
+Sekunde brauchte, nicht Sekunden ohne Antwort.
+
+Das ist die **zweite** Beobachtung über die volle Dauer, nach U4. Für #304 heißt
+das weiterhin wenig und etwas mehr als vorher: zwei saubere Läufe sind keine
+Quote, aber sie sind zwei. Der Tausch war diesmal deutlich kürzer — 1057 s
+gegen 1633 s bei U4 —, was denselben Vorbehalt trägt wie jede Einzelmessung
+hier: es ist eine Beobachtung, keine Verbesserung, die jemand herbeigeführt hat.
+
+### Gegen Produktion gemessen
+
+| | |
+|---|---|
+| `/api/health` | `sha 8b02a61` · `version v0.43.0` · `status ok` · `ops.systemsLive 1` von `2` |
+| `[SOON]` im `main` von `/about` | **null** — das Kriterium der Phase |
+| Stationen | `Homelab` · `Helpdesk` · `First website` · `Own VPS` · `Talos lab` · `Bare-metal cluster` |
+| Belegzellen | `02 timseil.dev` **mit** `<a>`, `01 talos-prod` **ohne** |
+| Hero | `Self-taught, from the lab up` · `It started with a hypervisor at home` |
+| Alte Rolle | `grep -ci backend` auf `/about`: **0** |
+| Prüfbreiten | zehn gemessen, **Zeile für Zeile identisch** zur lokalen Messung |
+
+**Die Rail bedient sich, und zwar auch ohne JavaScript.** Mit Skripten:
+Ruhelage `Bare-metal cluster` → `ArrowLeft` `Talos lab` → `ArrowLeft` `Own VPS`
+→ `ArrowRight` `Talos lab`; von Station 01 aus läuft `ArrowLeft` auf `NOW` um.
+Ohne Skripte, im selben Lauf: Ruhelage `Bare-metal cluster`, Klick auf 05
+`Talos lab`, `ArrowLeft` `Own VPS`. Das ist die Zusicherung aus ADR 0066, zum
+ersten Mal gegen Produktion gefahren statt gegen das Rig.
+
+### Der Fund der Abnahme: `grep -c` auf dem ganzen Dokument zählt den Footer mit
+
+Die erste Abfrage meldete `[SOON]` **einmal** auf `/about` und sah damit aus wie
+ein gerissenes Kriterium. Sie war zu breit gegriffen: `grep -c` zählt **Zeilen**,
+das gerenderte HTML ist praktisch eine einzige, und die Fundstelle lag nicht in
+der Rail, sondern im Footer — `LINKEDIN ↗ [SOON]` und `X ↗ [SOON]`, auf jeder
+Seite dieser Site.
+
+Nachgezählt im `main`, wo das Kriterium hingehört: **null**. Im ganzen Dokument
+sind es **vier** — zwei gerendert im Footer, zwei ihre Kopien in der
+RSC-Nutzlast. Sie gehören K2: *„LinkedIn/X-Zeile nur rendern, wenn eine URL
+existiert."*
+
+**Die Lehre ist nicht „grep ist ungenau", sondern dass die Abnahme denselben
+Ausschnitt messen muss wie die Zusicherung.** `e2e/about.spec.ts` zählt seit U5
+im `main` und war grün; die Abnahme zählte im Dokument und war rot. Zwei Zahlen
+über zwei verschiedene Flächen, und die falsche stand fast in diesem Eintrag.
+Dieselbe Form wie die `null` aus dem falschen Pfad in U1, U2 und U4 — nur
+diesmal am Ausschnitt statt am Schlüssel.
+
+### Was diese Abnahme nicht beweist
+
+**Die p95 misst wieder den Tausch.** `p95Ms 83,9` bei `measuredAt
+21:50:33.707Z` — 26 Sekunden nach dem Start des neuen Prozesses. Über die
+Antwortzeiten im Normalbetrieb sagt sie nichts, genau wie bei U4.
+
+**`uptime90d 85,68 %` ist kein Befund.** Das Fenster trägt die Tage, an denen
+noch nichts gemessen wurde; Invariante 6 zählt einen Tag ohne Messung als
+`nodata` und nicht als Ausfall.
+
+---
+
 ## U5 · 25.09.2026 — Trajectory: die Rail hat den Hero widerlegt
 
 Die Rail zeichnet den Weg vom Homelab zum Cluster. Sechs Stationen, keine
