@@ -12,6 +12,119 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## U2 · 25.09.2026 — Posts raus, Log nur mit Posts: der leere Ordner hält den Build an, zweimal
+
+Die 25 KI-geschriebenen Beiträge sind weg (ADR 0079), und Nav-Punkt, SYS.04 und
+die Sitemap-Zeile gehen mit ihnen. Das Löschen war der kleinere Teil.
+
+### Der stärkste Fund: „leer" ist ein Zustand, den dieser Build nicht kennt
+
+Zwei Abbrüche, beide **vor** dem ersten Test, beide von Werkzeugen und nicht von
+einer Prüfregel — kein `make check`, kein `node --test` und kein Playwright hätte
+sie gefunden, weil sie den Build selbst anhalten:
+
+1. **Turbopack, bei leerem Verzeichnis:**
+   `Module not found: Can't resolve '../../../../content/posts/' <dynamic> '.mdx'`.
+   `app/[lang]/blog/[slug]/page.tsx:145` ist ein Bundler-**Kontext**; einen, der
+   auf null Dateien passt, kann er nicht auflösen. Der Kommentar darüber sagt es
+   seit H9a selbst — „the bundler compiled every file in the directory" — und
+   niemand hatte den Fall, in dem es keine gibt.
+2. **Cache Components, danach:** *„all `generateStaticParams` functions must
+   return at least one result."* Eine dynamische Route mit leerer Parameterliste
+   ist unter Next 16 ein Build-Fehler; die Prüfung, die beweist, dass eine Route
+   kein `cookies()` liest, braucht eine Probe, gegen die sie laufen kann.
+
+Beides ist gelöst, wie die versionsgenaue Doku es vorschreibt
+(`generate-static-params.md:310-312`): ein Platzhalter-Slug, den die Seite mit
+`notFound()` abweist, und eine getrackte `web/content/posts/README.mdx`. Die
+README ist kein `.gitkeep`, weil sie vier Gründe tragen muss: Git kennt keine
+leeren Verzeichnisse, der Compose-Mount braucht den Pfad, der File-Tracer
+kopiert einen Glob ohne Treffer nicht ins Image, und der Kontext oben braucht
+eine `.mdx`.
+
+**Gemessen statt angenommen:** `web/.next/standalone/content/posts/README.mdx`
+liegt nach `npm run build` wirklich im Standalone-Baum. Ohne sie fehlte das
+Verzeichnis dort, `readdirSync` würfe, und die Seite sagte `— NO DATA` —
+„das Image wurde ohne seinen Inhalt ausgeliefert" — wo in Wahrheit nichts
+stattgefunden hat.
+
+### Gemessen
+
+| Gate | Ergebnis |
+|---|---|
+| `make check` | grün, 876 Unit-Tests |
+| `make e2e`, leeres Verzeichnis | 2210 grün, 0 rot, 338 übersprungen |
+| `make e2e`, Korpus zurückgespielt | 2539 grün, 0 rot, 33 übersprungen — das „mit einem Test-Post erscheint alles wieder", mit der vollen Suite statt mit einem Blick |
+| `make check-db` | grün, `api/migrations` in 15,3 s |
+| lokaler Produktionsserver | Nav dreiteilig, Marker 01·02·03, `/blog` = `ENTRIES 00` + `noindex` ohne `LATEST`-Feld (ADR 0071 §4), `feed.xml` 200 ohne `<item>`, Sitemap ohne `/blog`, `/blog/__no-entries__` = 404 |
+
+Der #32-Test sagt seine Null jetzt aus, wie sein eigener Kopfkommentar es
+verlangt: `checked 0 incident(s) against 0 entries in ../../web/content/posts`.
+Der kaputte Fall daneben besteht weiter — er baut seine Menge synthetisch, und
+damit ist der **Finder** bewiesen, ohne dass es ein Verzeichnis braucht.
+
+### Gefunden
+
+- **Der Reader zählte die README als kaputten Post, und das hielt den Build an.**
+  `skipped` löst ein `log("WARN", …)` aus, eine Logzeile ruft `new Date()`, und
+  ein `new Date()` im Prerender ist unter Cache Components ein unstabiler Wert:
+  die Startseite baute nicht mehr, wegen einer README. `readPosts` nimmt jetzt
+  nur noch Dateien in der Slug-Form als Kandidaten — `skipped` heißt „jemand hat
+  einen Eintrag geschrieben und niemand sieht ihn", und ein Name, der nie ein
+  Eintrag sein konnte, gehört nicht hinein.
+- **`postMeta` strippt `deck` und `summary`, den `title` aber nicht.** Der alte
+  Sweep behauptete alle drei und war grün, weil kein Titel im Korpus je ein
+  Backtick trug — eine Aussage über 25 Dateien, nicht über den Reader. Beim Umzug
+  auf Fixtures ging sie rot und hat sich damit selbst erklärt. **Nicht
+  repariert:** das änderte, was ein künftiger Titel rendert, und diese Phase
+  löscht Beiträge, statt zu ändern, wie einer gelesen wird.
+- **Zwei Testblöcke blieben grün, als der Korpus wegfiel, weil sie nullmal
+  liefen** — `toc.test.ts:86` und `filter.test.ts:163`. Das ist genau die Form,
+  die `010-two-tests-were-green-because-nothing-was-there` beschreibt, gefunden
+  an dem Tag, an dem dieser Beitrag gelöscht wurde. Ein dritter, `words.test.ts`,
+  ging rot — weil er die README als Beitrag vermaß.
+- **Die Galerie konnte ihren Zwei-Zustands-Beweis nicht behalten, und ein
+  Fixture durfte das nicht überdecken.** Ein eingespeister Lookup zeichnete den
+  auflösenden Zustand wieder — bis `gallery.ops.spec.ts:121` den gezeichneten
+  Link wirklich abrief und 200 verlangte. Mit leerem Log antwortet kein
+  `/blog/<slug>`, also wäre es „ein Link, der richtig aussieht und 404 gibt"
+  gewesen: Invariante 5, an den Server gestellt statt an die Zeichenkette. Die
+  Galerie zeigt jetzt den Zustand, in dem die Seite wirklich ist — einen statt
+  zwei —, und ihr Slug wird aus dem Verzeichnis **abgeleitet** statt getippt.
+  Damit ist die Kopplung aus H9c weg, die im Backlog stand: „die Galerie hängt
+  an einem echten Slug".
+- **SYS.04 trug mehr, als auf ihr stand.** Vier der sechs Fingerziele auf `/`
+  waren ihre (drei Zeilenlinks und `CASE STUDY →`), und die 560er-Kante des
+  Sweeps ist ihre allein — `.log-row-link` gibt dort seine Spalten auf. Beide
+  Zahlen folgen jetzt dem Log, statt eine Konstante zu sein, die beim nächsten
+  Beitrag von Hand nachgezogen werden müsste.
+- **Zehn der 66 Orakel-Einträge der Startseite sind `home-log-*`**, und
+  `minimumEntries: 66` hätte die 20 roten Tests nicht erklärt: es misst die Länge
+  des Orakels, nicht die Seite. `runSheetOracle` nimmt jetzt ein optionales
+  Prädikat; das Orakel selbst ist unberührt, weil es aus `docs/design/` erzeugt
+  wird.
+- **#359 ist vom Randfall zum Normalfall geworden.** `/blog/<slug>` ist für jeden
+  Slug ein „kein Post", und dieser Fall rendert nur im Browser. Die Ursache steht
+  seit H13a hier, aber nicht im Issue. Keine Triage in einer U-Phase — die Zeile
+  steht da, damit U3 sie nicht als neu meldet.
+- **#193 löst sich mit der Löschung auf** (ein Beitrag zitierte einen deutschen
+  ADR als Beleg für einen englischen Leser). Geschlossen wird er in der Triage
+  nach U9.
+- **Vierzig Kommentarstellen behaupten einen Korpus von vierzehn, fünfzehn oder
+  einundzwanzig Beiträgen** — der Stand war 25. Die Drift ist älter als U2;
+  nachgezogen wurde nur, was in einer Datei stand, die diese Phase ohnehin
+  geöffnet hat.
+
+### Verschoben
+
+- **Der Frontmatter-Wächter über dem echten Verzeichnis existiert nicht mehr**,
+  solange das Verzeichnis leer ist. Der Block, der jede Datei parste, ist
+  gefallen statt vakuös grün zu bleiben; die Reader-Eigenschaften stehen gegen
+  Fixtures. Der Tag, an dem der erste eigene Beitrag entsteht, ist der Tag, an
+  dem jemand entscheidet, ob er zurückkommt.
+- **Der `title` geht ohne `plainText` durch** (siehe oben). Eine Zeile, eine
+  Entscheidung, keine dieser Phase.
+
 ## Wo wir stehen — 24.09.2026, U1 abgenommen: `v0.39.0` steht, und die eine `null` kam von mir
 
 `5ab4592` läuft, **`v0.39.0`**. Merge **21:33:52Z**, `publish` 21:33:58Z bis
