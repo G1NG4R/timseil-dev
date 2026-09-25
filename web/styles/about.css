@@ -9,11 +9,12 @@
    the display step falls to 34 and nothing else moves.
 
    NO NEW TOKENS, AND NO COLOUR THAT IS NOT ONE. Every colour, radius and
-   duration below already exists. The geometry literals are the four measures
-   the sheet gives — `14ch`, `64ch`, `62ch`, `52ch` — plus three component
-   dimensions: `80px` for the label column of the operator card, `30px` for the
-   numeral column of a principle, `5px` for the mark on a tile, and `13px` for
-   the corner arms `.marks` asks a consumer to name. Each is one component's own
+   duration below already exists. The geometry literals are the measures the
+   sheet gives — `14ch`, `64ch`, `52ch`; the fourth, `62ch`, left with the
+   closing strip in U4 — plus three component dimensions: `80px` for the label
+   column of the operator card, `30px` for the numeral column of a principle,
+   `5px` for the mark on a tile, and `13px` for the corner arms `.marks` asks a
+   consumer to name. Each is one component's own
    size, in the same class as home.css's 620px cap and case.css's 660px, and
    check-tokens.sh polices colour, radius and duration rather than geometry.
 
@@ -128,9 +129,14 @@
 
 /* ── SYS.05.02 · WHAT I RUN ─────────────────────────────────────────────── */
 
+/* THREE TRACKS AND NOT THE SHEET'S FOUR. The drawing gives four tiles for the
+   four axes of one host running compose; U4 shows six for the axes of a cluster
+   (ADR 0079), and six divides by three and by two while four would leave a row
+   of two beside two holes in the section whose whole job is to look like
+   evidence. layout.css carries the switch and the arithmetic under it. */
 .run-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s-20);
   margin: 0 0 var(--s-20);
   padding: 0;
@@ -164,45 +170,25 @@
   background: var(--acc);
 }
 
+/* The tile's one line of text since U4: the components on that axis, joined.
+   The type step is the sheet's and did not move — what went is the sentence
+   under it, `.run-detail`, and with it the only prose a tile carried. */
 .run-title {
   font: 500 var(--t-mono-12)/1.3 var(--mono);
   color: var(--ink);
   margin: 0;
 }
 
-.run-detail {
-  font: 400 var(--t-mono-11)/1.6 var(--mono);
-  color: var(--steel);
-  margin: var(--s-6) 0 0;
-}
+/* `.run-detail`, `.run-note`, `.run-note-text` AND `.run-note-exit` LEFT IN U4,
+   and they are named here rather than simply deleted because one of them comes
+   back. The strip under the grid said "The page you are reading is served by
+   that stack" beside a link to the case study; the tiles above it now name
+   talos-prod, which does not serve this page yet and has no case study to link
+   to. U9 draws it again after the cutover, about the machine it will then be
+   true of. `.run-detail` does not come back: a tile names what runs.
 
-/* The closing strip: the sentence on the left, the way to the evidence on the
-   right. It wraps rather than scrolls, and the gap is the only thing holding
-   the two apart — the sheet uses a `flex:1` spacer element, which is a node
-   that exists to be empty. */
-.run-note {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--s-14);
-  padding: var(--s-16) var(--s-20);
-  border: 1px solid var(--line-soft);
-  background-color: var(--panel);
-  margin: 0;
-}
-
-.run-note-text {
-  font: 400 var(--t-body-13)/1.6 var(--body);
-  color: var(--steel);
-  max-width: 62ch;
-}
-
-.run-note-exit {
-  font: 600 var(--t-mono-10)/1 var(--mono);
-  letter-spacing: var(--ls-label);
-  white-space: nowrap;
-}
+   Deleted rather than kept for later, on this file's own terms — a rule nobody
+   can reach is not a spare part, it is a claim that something exists. */
 
 /* ── SYS.05.03 · HOW I WORK ─────────────────────────────────────────────── */
 

@@ -48,10 +48,21 @@ export interface Section {
 }
 
 /**
- * The four sub-sections, in the order the About sheet draws them.
+ * The sub-sections, in the order the About sheet draws them — three of the
+ * four it counts.
  *
  * THERE IS NO FIFTH. The hero above and the contact block below carry no
- * `SYS.05.NN`, and the sheet counts four.
+ * `SYS.05.NN`.
+ *
+ * AND SINCE U4 THERE IS NO FOURTH EITHER. `SYS.05.04 OFF-SYSTEM` was the one
+ * section on this page whose content was nobody's to derive — the sheet drew a
+ * bracketed German paragraph and three rows of which two were brackets, so H7a
+ * shipped it as a shell that said whose turn it was and named K2. ADR 0079
+ * takes the turn away rather than postponing it: the one human line on this
+ * site is a thing Tim writes when he has it, and a section standing empty
+ * waiting for it is a promise the page keeps making. It is removed here, not
+ * hidden, and sections.test.ts holds the removal against the sheet in writing
+ * rather than letting the transcription quietly shrink.
  */
 export const SECTIONS: readonly Section[] = [
   {
@@ -71,13 +82,20 @@ export const SECTIONS: readonly Section[] = [
   {
     id: "SYS.05.02",
     title: "WHAT I RUN",
-    // `[SPEC]` IS GONE FROM THIS LINE ON PURPOSE. The sheet writes "ONE VPS ·
-    // [SPEC] · ADMINISTERED BY ME", and the bracket wants the host's size. That
-    // is the current state of this machine, and CLAUDE.md's rule is that no
-    // outward surface carries it — not the README, not an ADR, and not a page.
-    // What is left is the shape of the arrangement, which ADR 0008 already
-    // publishes.
-    meta: "ONE VPS · ADMINISTERED BY ME",
+    // `[SPEC]` IS GONE FROM THIS LINE ON PURPOSE, AND THE HOST HAS CHANGED
+    // UNDER IT. The sheet writes "ONE VPS · [SPEC] · ADMINISTERED BY ME", and
+    // the bracket wants the host's size — the current state of this machine,
+    // which CLAUDE.md keeps off every outward surface. That argument is
+    // unchanged; what moved is which machine the section is about. Since U3
+    // the main evidence is talos-prod (ADR 0079), so the line names it and the
+    // one fact about it that is neither a measurement nor a route: it is bare
+    // metal, and it is mine.
+    //
+    // THREE WORDS WHERE THERE WERE FIVE, which matters to layout.css: the rule
+    // that a section title must not be squeezed into two lines by its own meta
+    // was written with this line as the worst case on the site. It no longer
+    // is, and the comment there says so.
+    meta: "TALOS-PROD · BARE METAL",
     reasonKey: null,
     owedBy: null,
   },
@@ -90,29 +108,43 @@ export const SECTIONS: readonly Section[] = [
     reasonKey: null,
     owedBy: null,
   },
-  {
-    id: "SYS.05.04",
-    title: "OFF-SYSTEM",
-    meta: null,
-    // The one human moment on the page, and the only section whose content is
-    // nobody's to derive. The sheet draws a bracketed German paragraph and three
-    // rows of which two are brackets and the third names a system that does not
-    // exist. K2 is the content phase; until it runs, the section says so.
-    reasonKey: "aboutOffSystemSoon",
-    owedBy: "K2",
-  },
 ];
 
 /**
  * The ordinal a marker carries, or `null` if it is not one of this page's.
  *
  * A PARSER AND NOT AN INDEX LOOKUP, so the test can ask the sheet's own
- * question — "do these read 01, 02, 03, 04 going down the page" — of a list it
- * did not build. `SYS.05` on its own is the page, not a section, and answers
- * `null` like anything else that is not a sub-marker.
+ * question — "do these read 01, 02, 03 going down the page" — of a list it did
+ * not build. `SYS.05` on its own is the page, not a section, and answers `null`
+ * like anything else that is not a sub-marker.
+ *
+ * IT STILL READS TWO DIGITS AFTER U4 DROPPED THE FOURTH SECTION. The parser
+ * describes the sheet's notation, not the length of the list below it, and a
+ * parser narrowed to the markers that happen to exist today would have to be
+ * widened again the next time one is added.
  */
 export function subMarkerNumber(id: string): number | null {
   const match = /^SYS\.05\.(\d{2})$/.exec(id);
   if (match === null) return null;
   return Number.parseInt(match[1], 10);
+}
+
+/**
+ * Whether a section answers for itself: filled, or owed by a named phase.
+ *
+ * THE PREDICATE IS HERE AND NOT IN THE TEST, and U4 is why. `reasonKey` and
+ * `owedBy` are independently nullable, so the compiler accepts a section that
+ * is both filled and owed, or neither — the defect lib/gallery/registry.ts
+ * names for components: a row nobody answers for. Until U4 the test could ask
+ * the question of the shipped list and be sure of getting an answer, because
+ * two of the four sections were shells. None is now, so a test written that way
+ * would only ever see one half of the rule.
+ *
+ * Exported, it can be asked of a row that does NOT ship — which is how
+ * sections.test.ts builds the broken case itself rather than waiting for one to
+ * appear. ADR 0057 is the form; the training log's left join is where the same
+ * trap was caught one stage earlier.
+ */
+export function accountedFor(section: Section): boolean {
+  return (section.reasonKey === null) === (section.owedBy === null);
 }

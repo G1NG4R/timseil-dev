@@ -294,6 +294,20 @@ const DIVERGENCE = {
     'read as a component waiting for a later phase, it reads as one that ' +
     'failed to load. `.st-wait` holds a height for two seconds; this stands ' +
     'for four phases, which is a different question with the same shape.',
+  // ── U4 ───────────────────────────────────────────────────────────────────
+  'six-axes-not-four':
+    'The About sheet draws WHAT I RUN as four tiles — EDGE, SERVICES, ' +
+    'PIPELINE, WATCH — which are the four axes of one host running compose, ' +
+    'and every one of them describes the VPS. ADR 0079 makes talos-prod the ' +
+    'main evidence for the role this page claims, and a section drawn to ' +
+    'prove the positioning has to name the machine the positioning rests on. ' +
+    'A cluster has six axes here and twelve components across them, taken ' +
+    'whole from stack.yaml so the page holds no second list; six divides by ' +
+    'three and by two, four would leave a row of two beside two holes. The ' +
+    'tiles also lost the sentence under each title — none of those sentences ' +
+    'can be written about a cluster in a private repository without either ' +
+    'inventing a measurement or publishing how it is wired, and ADR 0079 ' +
+    'rules out the second. The switch stays at 900 and still moves this grid.',
   // ── H5a ──────────────────────────────────────────────────────────────────
   'stack-column-bounded':
     'The sheet gives the stack column `auto` and draws five items in it — ' +
@@ -1940,8 +1954,9 @@ const ABOUT_MAP = [
     id: 'about-run-columns',
     sheet: 'about', artboard: '1a', width: 1440, line: 179,
     decl: 'grid-template-columns', says: 'repeat(4,1fr)',
-    reading: 'four tiles, one per axis of the machine this page is served by',
-    measure: { kind: 'track-count', selector: '.run-grid' }, expect: 4,
+    reading: 'a tile per axis of the machine this page is the evidence for',
+    measure: { kind: 'track-count', selector: '.run-grid' }, expect: 3,
+    diverges: { class: 'six-axes-not-four', sheet: '4' },
   },
   {
     id: 'about-run-gap',
@@ -1979,6 +1994,12 @@ const ABOUT_MAP = [
     measure: { kind: 'computed', selector: '.run-title', prop: 'font-size' }, expect: '12px',
     diverges: { class: 'half-pixel', sheet: '12.5px' },
   },
+  // THE NEXT FOUR DESCRIBE BLOCKS `/about` NO LONGER DRAWS, AND THEY STAY HERE.
+  // This file transcribes read-only sheets; what the page builds today is a
+  // question for the spec, which filters them through `applies` and still
+  // counts them in `minimumEntries`. e2e/about.sheet.spec.ts says which of the
+  // four are owed back and which are not. Deleting them here would shrink the
+  // oracle, and a shrinking oracle is the one failure the runner cannot catch.
   {
     id: 'about-run-detail-size',
     sheet: 'about', artboard: '1a', width: 1440, line: 183,

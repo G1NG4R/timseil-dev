@@ -9,11 +9,15 @@ import { OPERATOR } from "@/lib/about/content";
  * Lebenslauf-Liste: dieselbe Spec-Grammatik wie die Case Study, damit die Seite
  * Teil desselben Systems bleibt."
  *
- * A `<dl>` AND NOT A GRID OF SPANS. Six label/value pairs are a description
- * list by definition, and the sheet draws them as one — `grid-template-columns:
- * 80px 1fr`. The grid is declared on the `<dl>` itself and the `<dt>`/`<dd>`
- * are its items, so the markup carries the relationship and the stylesheet
- * carries the arrangement. `.spec` on the case study made the same call.
+ * A `<dl>` AND NOT A GRID OF SPANS. Label/value pairs are a description list by
+ * definition, and the sheet draws them as one — `grid-template-columns: 80px
+ * 1fr`. The grid is declared on the `<dl>` itself and the `<dt>`/`<dd>` are its
+ * items, so the markup carries the relationship and the stylesheet carries the
+ * arrangement. `.spec` on the case study made the same call.
+ *
+ * SEVEN ROWS SINCE U4, WHERE THE SHEET DRAWS SIX. `TOOLING · Claude Code` is
+ * the addition, and the row count was never fixed — the same property that let
+ * H7a drop `LANGUAGES` lets this one arrive. ADR 0079 §3 argues the row itself.
  *
  * `.marks` IS THE FOURTH CONSUMER. ui.css says why the eight corner gradients
  * became a class in H4 — a third copy was the incident — and this is the fourth

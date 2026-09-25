@@ -33,7 +33,12 @@ function widthOf(page: Page): number {
  * order still ships a page in the wrong one if the renderer stops reading it.
  * K-26 is that having happened once on the homepage.
  */
-const MARKERS = ["SYS.05.01", "SYS.05.02", "SYS.05.03", "SYS.05.04"];
+// THREE SINCE U4. `SYS.05.04 OFF-SYSTEM` is not postponed, it is gone — ADR
+// 0079 stops owing the one human line rather than letting a section stand empty
+// until somebody writes it. This list is held against the PAGE; the record of
+// what the sheet drew and what was taken off it lives in sections.test.ts,
+// which is where a removal has to be argued in writing.
+const MARKERS = ["SYS.05.01", "SYS.05.02", "SYS.05.03"];
 
 test.beforeEach(async ({ page }) => {
   // No `settled`. There is no streamed region on this page, which is the whole
@@ -67,7 +72,7 @@ test("every section is a landmark with the name already on the screen", async ({
     }),
   );
 
-  expect(names).toEqual(["TRAJECTORY", "WHAT I RUN", "HOW I WORK", "OFF-SYSTEM"]);
+  expect(names).toEqual(["TRAJECTORY", "WHAT I RUN", "HOW I WORK"]);
 });
 
 test("no bracketed placeholder reaches the document", async ({ page }) => {
@@ -82,40 +87,78 @@ test("no bracketed placeholder reaches the document", async ({ page }) => {
   expect([...text.matchAll(/\[[^\]]*\]/g)].map((m) => m[0]), "a placeholder shipped").toEqual([]);
 });
 
-test("the section that is not built says so, and says why", async ({ page }) => {
-  // STATE.05: "ein toter Zustand ohne Begründung ist ein Bug." A shell that
-  // only said `[SOON]` would be the dead state the sheet refuses.
+test("no section is a shell, and the only [SOON] left is the rail's", async ({ page }) => {
+  // THIS ASSERTION TURNED OVER IN U4 RATHER THAN DISAPPEARING, and the turn is
+  // the acceptance criterion of the phase: "no [SOON] on About except in the
+  // trajectory". It counted two empty panels in H7a and one after H7b built
+  // the rail; there are none now, because SYS.05.04 was removed rather than
+  // filled. A test that was simply deleted would have left the criterion with
+  // nothing standing behind it.
   //
-  // IT WAS TWO IN H7a AND IS ONE NOW, and this line going red is what a test
-  // like this is for: SYS.05.01 stopped being a shell when H7b built the rail,
-  // so the count had to move with it. What is left is SYS.05.04, whose one
-  // human sentence is nobody's to derive — K2 writes it.
-  const panels = page.locator("main .st-empty-panel");
-  await expect(panels).toHaveCount(1);
+  // STATE.05 STILL HOLDS — "ein toter Zustand ohne Begründung ist ein Bug" —
+  // and the way it gets broken again is by adding a shell, so the assertion is
+  // that there is not one. lib/about/sections.test.ts asks the same question of
+  // the table; this asks it of the document.
+  await expect(page.locator("main .st-empty-panel")).toHaveCount(0);
 
-  await expect(panels.locator(".st-empty-head")).toHaveText("[SOON]");
-  const reason = await panels.locator(".st-empty-reason").innerText();
-  expect(reason.length, "an empty panel with no reason").toBeGreaterThan(40);
+  // AND THE WORD ITSELF IS DOWN TO ONE HOME. Five of the six trajectory
+  // stations print `[SOON]` inside their panel, because their paragraphs are
+  // Tim's to write and U5 is the phase that asks for them. Anything outside
+  // `.tl-soon` would be a section this page is still promising.
+  const soon = page.locator("main", { hasText: "[SOON]" });
+  await expect(soon).toBeVisible();
+  const outside = await page.evaluate(() =>
+    [...document.querySelectorAll("main *")].filter(
+      (node) =>
+        node.children.length === 0 &&
+        node.textContent.includes("[SOON]") &&
+        node.closest(".tl-soon") === null,
+    ).length,
+  );
+  expect(outside, "[SOON] outside the trajectory").toBe(0);
 });
 
-test("the way to the evidence is a link, and it goes to the case study", async ({ page }) => {
-  // The sheet draws a `<span>` with a pointer cursor and no href. SYS.05.02 is
-  // the section that argues this page's positioning is demonstrated rather than
-  // claimed, so its one exit has to be reachable — by a keyboard as well as a
-  // mouse.
-  const exit = page.getByRole("link", { name: /READ THE CASE STUDY/ });
-  await expect(exit).toHaveCount(1);
+test("the tiles under WHAT I RUN name the cluster and nothing else", async ({ page }) => {
+  // THE SECTION EXISTS TO PROVE RATHER THAN CLAIM, and after U4 the thing it
+  // proves is talos-prod (ADR 0079). Held on the rendered page and not only in
+  // the table, because lib/about/content.test.ts can be green while the
+  // component drops a field — the argument components/about/StackTiles.tsx
+  // makes for owning the separator.
+  const tiles = page.locator("main .run-tile");
+  await expect(tiles).toHaveCount(6);
 
-  await exit.click();
-  await page.waitForURL("**/work/timseil-dev");
-  await expect(page.locator("main h1:visible")).toHaveText("This site is the system it describes.");
+  const labels = await tiles.locator(".run-label").allInnerTexts();
+  expect(labels.map((label) => label.trim())).toEqual([
+    "BASE",
+    "NETWORK",
+    "EDGE",
+    "DELIVERY",
+    "DATA",
+    "WATCH",
+  ]);
+
+  // THE CLOSING STRIP IS GONE WITH THE SENTENCE THAT CARRIED IT. It read "The
+  // page you are reading is served by that stack" beside a link to the case
+  // study — true of the VPS, not of the tiles above it, and the link resolved
+  // to timseil.dev, a different system from the one on display. U9 draws it
+  // again after the cutover. Until then `/about` has no outgoing evidence link,
+  // which is a real loss and is recorded as one.
+  await expect(page.locator("main .run-note")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /READ THE CASE STUDY/ })).toHaveCount(0);
 });
 
 test("no section title is squeezed into two lines by its own meta", async ({ page }) => {
-  // THE DEFECT THIS PHASE MEASURED, AND IT WAS NOT ONLY THIS PAGE'S. `.sec` is
-  // one flex row and it had carried five heads without complaint, because a
-  // meta is normally two or three words. SYS.05.02's is seven, and at 390 the
-  // title `WHAT I RUN` was squeezed from 94px to 84 and broke in half.
+  // THE DEFECT H7 MEASURED, AND IT WAS NOT ONLY THIS PAGE'S. `.sec` is one flex
+  // row and it had carried five heads without complaint, because a meta is
+  // normally two or three words. SYS.05.02's was seven — `ONE VPS ·
+  // ADMINISTERED BY ME` — and at 390 the title `WHAT I RUN` was squeezed from
+  // 94px to 84 and broke in half.
+  //
+  // U4 SHORTENED THAT META TO THREE WORDS AND THE TEST STAYS. `TALOS-PROD ·
+  // BARE METAL` is no longer the worst case on the site; the homepage's SYS.01
+  // is, and it was the reason the switch is 900 rather than 560 in the first
+  // place. A guard that only ever watched the line that provoked it would have
+  // retired here, one page before the defect it also covers.
   //
   // Bisecting that turned up the same thing on `/`: SYS.01's title wraps from
   // 560 up to 744 — a 185px band, in production since H4 — because no test

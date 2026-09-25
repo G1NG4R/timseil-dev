@@ -37,7 +37,6 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { aboutLd } from "@/lib/seo/jsonld";
 import { seoFor } from "@/lib/seo/pages";
-import { SITE_SYSTEM_SLUG } from "@/lib/site";
 import { SOON, stateLabel } from "@/lib/state/words";
 
 import type { ReactNode } from "react";
@@ -65,18 +64,11 @@ export default async function Page() {
   // claims a translation the page does not have.
   const { locale, resolved, messages } = await getDictionary();
 
-  // The evidence SYS.05.02 points at. `caseStudyFor` is the gate in front of
-  // /work/[slug] and the only list of which systems have a page, so asking it
-  // is the same question the route asks — and `null` here is a sentence with no
-  // link rather than a link to a 404. The homepage resolves its log head the
-  // same way and for the same reason.
-  const study = caseStudyFor(SITE_SYSTEM_SLUG);
-
-  // WHY A TABLE AND NOT FOUR `if`s: the same argument app/[lang]/page.tsx
-  // reached in H5c. Four keys with no fallthrough is a table by definition, and
-  // a missing key would drop a section silently — which e2e/about.spec.ts
-  // catches by reading the markers back off the rendered page and holding them
-  // against the sheet's order, exactly as home.spec.ts does for HOME.01.
+  // WHY A TABLE AND NOT THREE `if`s: the same argument app/[lang]/page.tsx
+  // reached in H5c. Keys with no fallthrough are a table by definition, and a
+  // missing key would drop a section silently — which e2e/about.spec.ts catches
+  // by reading the markers back off the rendered page and holding them against
+  // the sheet's order, exactly as home.spec.ts does for HOME.01.
   // THE PANELS ARE BUILT HERE AND HANDED TO THE RAIL AS NODES. The rail owns
   // the selection, the stylesheet owns which panel that reveals, and neither
   // knows what a panel contains — the seam ADR 0064 drew for the work index,
@@ -103,22 +95,8 @@ export default async function Page() {
     "SYS.05.01": (
       <TrajectoryRail name="tl" labelledBy={titleIdFor("SYS.05.01")} panels={panels} />
     ),
-    "SYS.05.02": (
-      <StackTiles
-        note={messages.aboutStackNote}
-        study={
-          study === null
-            ? null
-            : {
-                href: localeHref(locale, caseStudyPath(study)),
-                label: messages.aboutCaseStudy,
-              }
-        }
-      />
-    ),
+    "SYS.05.02": <StackTiles />,
     "SYS.05.03": <Principles />,
-    // K2. The one line on this page nobody can derive.
-    "SYS.05.04": null,
   };
 
   return (
@@ -156,10 +134,24 @@ export default async function Page() {
             {section.reasonKey === null ? (
               drawn[section.id]
             ) : (
+              // NOTHING REACHES THIS BRANCH SINCE U4, and it stays anyway.
+              // `OFF-SYSTEM` was the last section owed by a phase (ADR 0079
+              // removed it, not postponed it), so today every section is
+              // filled and the ternary always takes its first arm.
+              //
+              // Keeping it is not sentiment. `Section` still carries the
+              // `reasonKey`/`owedBy` pair, sections.test.ts still refuses a row
+              // that sets one without the other, and the day a section is added
+              // before its content exists — K2 has one in mind — the page has
+              // to say so rather than render a hole. STATE.05: a dead state
+              // without a reason is a bug. Deleting the arm would mean deleting
+              // the pair, and the pair is the thing that makes the next shell
+              // announce itself.
+              //
               // `[SOON]` AND NOT `— NO DATA`. The two are different sentences
               // and lib/state/words.ts owns both: `— NO DATA` says a
               // measurement was attempted and did not arrive, `[SOON]` says the
-              // thing does not exist yet. Nothing was measured here.
+              // thing does not exist yet. Nothing would be measured here.
               <EmptyState heading={SOON} reason={messages[section.reasonKey]} />
             )}
           </section>

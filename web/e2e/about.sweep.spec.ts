@@ -11,10 +11,16 @@
  * every component it draws is in the document at every width, and an edge that
  * is missing here is missing from the page.
  *
- * THE 900 EDGE IS THE ONE THIS PHASE HAD TO DERIVE. The sheet draws four tiles
- * at 1440 and two at 390 and says nothing about where they swap; layout.css
- * carries the arithmetic and the measurement that chose 900 over 720. This file
- * is what stops that choice from being quietly undone.
+ * THE 900 EDGE IS THE ONE H7 HAD TO DERIVE. The sheet draws four tiles at 1440
+ * and two at 390 and says nothing about where they swap; layout.css carries the
+ * arithmetic and the measurement that chose 900 over 720. This file is what
+ * stops that choice from being quietly undone.
+ *
+ * U4 CHANGED WHAT MOVES AT IT, NOT WHERE IT IS. The tile grid is three tracks
+ * above 900 now and still two below, because the section draws six tiles of the
+ * cluster rather than four of the VPS (ADR 0079). `SWITCH_MOVES` is untouched:
+ * the same five things move, and the probe below asks whether they move rather
+ * than what they move to.
  */
 import { expect, test } from "@playwright/test";
 
