@@ -523,21 +523,6 @@ export function postPath(post: PostMeta): string {
 }
 
 /**
- * Every entry route, newest first.
- *
- * IT RETURNS `[]` RATHER THAN THROWING when the directory cannot be read, and
- * that is the same decision `postsOrNull` makes one function up. lib/seo/pages.ts
- * builds its table out of this at module scope: a throw there would take down
- * every page on the site because the log could not be listed, which is a worse
- * answer than a sitemap that is briefly short of twenty-one URLs. The route
- * itself is prerendered, so in a built image this cannot be the first thing that
- * goes wrong — it can only be the second.
- */
-export function postPaths(): readonly string[] {
-  return (postsOrNull()?.posts ?? []).map(postPath);
-}
-
-/**
  * The raw text of one entry's file, or nothing.
  *
  * WHY THE PAGE NEEDS THE SOURCE AND NOT ONLY THE META. Two of the things the

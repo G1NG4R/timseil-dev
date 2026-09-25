@@ -103,11 +103,18 @@ export interface PageEntry {
  * not. The index says something now, so the row is `true` and the sitemap picked
  * it up without an edit — which is the whole point of there being one table.
  *
+ * AND U2 TURNED THE TABLE INTO A BUILDER, for the one row that stopped being a
+ * decision. `/blog` says as much as the log holds, so its boolean is read rather
+ * than written — and a builder is the only shape that can be asked the question
+ * twice, which is what makes both of U2's cases testable without a disk.
+ *
  * THE POST ROWS COME FROM THE FILESYSTEM AND THE CASE-STUDY ROWS DO NOT, which
- * is the one wrinkle worth naming. `postPaths()` reads a directory at module
- * scope; it answers `[]` rather than throwing when it cannot, because this table
- * is imported by every page and a log that could not be listed must not be able
- * to take the homepage down with it. lib/content/posts.ts carries that argument.
+ * is the one wrinkle worth naming. The read happens once, below, and is passed
+ * in; it answers `null` rather than throwing when the directory cannot be read,
+ * because this table is imported by every page and a log that could not be
+ * listed must not be able to take the homepage down with it. `hasLog` counts
+ * that `null` as a log for the same reason — the failure belongs on the page
+ * that reports it, not in a row that quietly disappears.
  */
 export function pagesFor(read: PostRead | null): readonly PageEntry[] {
   return [

@@ -103,6 +103,12 @@ damit ist der **Finder** bewiesen, ohne dass es ein Verzeichnis braucht.
   des Orakels, nicht die Seite. `runSheetOracle` nimmt jetzt ein optionales
   Prädikat; das Orakel selbst ist unberührt, weil es aus `docs/design/` erzeugt
   wird.
+- **Der Umbau selbst hat ein Bauteil ohne Verbraucher zurückgelassen.**
+  `postPaths()` hatte genau einen Aufrufer — die Tabelle in `lib/seo/pages.ts` —,
+  und der liest den Korpus jetzt einmal und reicht ihn durch. Übrig blieb eine
+  exportierte Funktion, die nur noch in einem Kommentar vorkam: die Form, die
+  #292 offenhält. Beim Selbst-Review gefunden, nicht von einer Prüfregel —
+  `eslint` sieht einen Export nicht als tot an. Entfernt.
 - **#359 ist vom Randfall zum Normalfall geworden.** `/blog/<slug>` ist für jeden
   Slug ein „kein Post", und dieser Fall rendert nur im Browser. Die Ursache steht
   seit H13a hier, aber nicht im Issue. Keine Triage in einer U-Phase — die Zeile
