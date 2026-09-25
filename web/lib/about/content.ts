@@ -5,28 +5,36 @@
 // these strings rather than about their arrangement — see `placeholders()`
 // below and content.test.ts.
 //
-// EVERY LINE HERE IS A CLAIM ABOUT A RUNNING SYSTEM, AND THREE OF THE SHEET'S
-// DID NOT SURVIVE IT. The design note calls SYS.05.02 "die About-Version der
-// Architektur-Platte — belegt die Positionierung, statt sie zu behaupten". Held
-// against the repository, the section it draws contains three assertions
-// nothing here can back:
+// EVERY LINE HERE IS A CLAIM ABOUT A RUNNING SYSTEM, AND IN U4 THE SYSTEM
+// CHANGED. The design note calls SYS.05.02 "die About-Version der
+// Architektur-Platte — belegt die Positionierung, statt sie zu behaupten", and
+// that is exactly why the section could not stay as it was: until U3 the
+// evidence was the VPS, and since U3 the main evidence is talos-prod, the
+// bare-metal cluster that carries the role this page claims (ADR 0079). A
+// section whose job is to prove the positioning has to name the machine the
+// positioning now rests on.
 //
-//   1. `SERVICES · 4 containers`. compose.yaml defines ten services. The number
-//      is not off by a rounding, it is a different number, and it is the kind
-//      that would go stale the next time one is added.
-//   2. `WATCH · Nightly dump off the box. The restore has been tested.` The
-//      backup job is build plan L6 and the restore drill is L6 and M5. Neither
-//      has run. This is the eight invented boot lines of ADR 0058 in another
-//      costume.
-//   3. `ONE VPS · [SPEC] · ADMINISTERED BY ME`. Handled in sections.ts: the
-//      bracket wants the host's size, and that does not go outward.
+// WHAT THE SHEET DREW HERE, AND WHAT BECAME OF IT. H7a held three of its
+// assertions against this repository and none survived: `SERVICES · 4
+// containers` (compose.yaml defines ten), `WATCH · Nightly dump off the box.
+// The restore has been tested.` (neither job had run) and `ONE VPS · [SPEC] ·
+// ADMINISTERED BY ME` (the bracket wants this host's size, which does not go
+// outward). U4 does not re-argue them: two of the three tiles they belonged to
+// are gone, and the meta is handled in sections.ts. The record of why stays
+// here because it is the reason this file carries a test at all.
 //
-// AND THE CORRECTION FOR (2) IS SILENCE, NOT `[SOON]`. Everywhere else on this
-// site an absent thing says so and names the phase that brings it — the
-// terminal frame, the empty sections, the gallery inventory. A tile reading
-// "BACKUPS [SOON]" would say, on a public page, that this host is not backed up
-// yet. CLAUDE.md forbids exactly that sentence. So the tile names what is
-// measured today and the gap is recorded in backlog.local.md instead.
+// THE TILES ARE A GROUPING NOW, NOT A LIST. Every name under WHAT I RUN comes
+// out of `stack.yaml` under `talos-prod` — the same twelve names `/work` prints
+// as chips, read through `api/internal/seed/stack.gen.json`. content.test.ts
+// holds each one against that file, so this is one list rendered twice rather
+// than two lists that will disagree. The U3 acceptance found that exact drift
+// one page over, in a fixture that called itself "transcribed from
+// stack.gen.json" and had stopped being it.
+//
+// AND STILL NO SENTENCES. A tile says what runs, not how well it runs: the
+// bodies the sheet drew are gone with the VPS they described. The correction to
+// a claim about a host was silence in H7a and it is silence now — the state of
+// this machine lives in backlog.local.md, never on a public page.
 
 /** One row of the OPERATOR card: a label, a value, and whether it is the accent. */
 export interface OperatorRow {
@@ -51,52 +59,78 @@ export interface OperatorRow {
  */
 export const OPERATOR: readonly OperatorRow[] = [
   { label: "NAME", value: "Tim Seil" },
-  { label: "ROLE", value: "Backend · DevOps" },
+  { label: "ROLE", value: "Junior DevOps" },
   { label: "BASE", value: "Luxembourg · UTC+1" },
-  { label: "PRIMARY", value: "Go · TypeScript" },
-  { label: "ROUTE", value: "Self-taught", accent: true },
+  { label: "PRIMARY", value: "Kubernetes · GitOps" },
+  { label: "ROUTE", value: "Helpdesk → self-taught", accent: true },
+  // `TOOLING` IS THE WHOLE OF WHAT THIS PAGE SAYS ABOUT THE ASSISTANT, and
+  // ADR 0079 §3 is why it is a row and not a badge: "ein Etikett ist eine
+  // Behauptung, eine Belegzeile und ein Commit-Trailer sind nachlesbar." It
+  // stands in the same grammar as the five rows above it, it is checkable in
+  // the commit history, and the skill behind it is a track in the training log
+  // with its own evidence like any other. A footer reading "built with Claude
+  // Code" would be the claim without the evidence.
+  //
+  // BEFORE `MAIL` AND NOT AFTER IT: the address is the one row that asks the
+  // reader to do something, and it stays last for the same reason the contact
+  // block sits at the foot of every page.
+  { label: "TOOLING", value: "Claude Code" },
   { label: "MAIL", value: "contact@timseil.dev" },
 ];
 
-/** One tile of SYS.05.02: the axis, what stands on it, and what that buys. */
+/**
+ * One tile of SYS.05.02: an axis of the cluster, and the components on it.
+ *
+ * `names` AND NOT A FINISHED STRING, and the reason is the test rather than the
+ * markup. A joined line can only be held against `stack.gen.json` by parsing it
+ * back apart, and a separator is a rendering decision: StackTiles owns the
+ * ` · `, the same way the work index owns the one between its chips.
+ *
+ * NO `detail`. The sheet gives every tile a sentence under its title, and those
+ * sentences described the VPS — "Certificates renew themselves", "Lint, test,
+ * build, deploy, verify". None of them can be written about a cluster in a
+ * private repository without either inventing a measurement or publishing how
+ * it is wired, and ADR 0079 rules out the second. So a tile names what runs and
+ * stops, which is also what makes the membership test possible.
+ */
 export interface StackTile {
   readonly label: string;
-  readonly title: string;
-  readonly detail: string;
+  readonly names: readonly string[];
 }
 
 /**
- * The four tiles, with the sheet's own English wherever the repository can
- * stand behind it.
+ * Six tiles, and between them exactly the twelve names `stack.yaml` carries for
+ * `talos-prod`.
  *
- * TWO TITLES MOVED, AND BOTH FOR THE SAME REASON. `4 containers` became the
- * arrangement rather than a count, because the count is wrong and a right one
- * would need a generated artefact this content phase has no business building
- * (`tools/gen-compose-excerpt.mjs` quotes ONE service, by design). `Probe ·
- * logs · backups` lost its third word and its second sentence, because the
- * probe and the retention are stage F and shipped, and the backup is not.
+ * THE SHEET DRAWS FOUR AND THEY WERE ABOUT A DIFFERENT MACHINE — `EDGE`,
+ * `SERVICES`, `PIPELINE`, `WATCH`, the four axes of a single host running
+ * compose. A cluster has more axes and fewer sentences, and ADR 0079 makes it
+ * the evidence this section exists to show. The divergence is deliberate and
+ * the grid that draws it is declared in about.css; `.run-grid` says why three
+ * columns rather than four.
+ *
+ * THE LABELS ARE AXES AND THE ORDER IS THE STACK, bottom up: what the machines
+ * run, how they are wired, how a request reaches them, how code arrives, where
+ * the state lives, and who is watching. A reader who knows Kubernetes can check
+ * that ordering against their own mental model, which is more than a reader can
+ * do with an alphabetical list.
+ *
+ * WHAT IS NOT HERE AND IS NOT AN OVERSIGHT: no versions (no file in THIS
+ * repository can be read for a version of anything running there, so every
+ * number would have to be typed), no workloads (nothing on the cluster is
+ * public and measured yet — it is `in_build`, invariant 3), and nothing about
+ * how the cluster is reached or segmented. The last one is the boundary
+ * ADR 0079 draws in writing, and U3 already held it once: the seed's networking
+ * track carries `metallb` and not the routing underneath it, on the grounds
+ * that "a track name is a sentence on a public page. Unsure counts as yes."
  */
 export const STACK: readonly StackTile[] = [
-  {
-    label: "EDGE",
-    title: "Reverse proxy · TLS",
-    detail: "Certificates renew themselves. Nothing else terminates TLS.",
-  },
-  {
-    label: "SERVICES",
-    title: "Compose, health-gated",
-    detail: "Web, API, database, and the collectors that watch them.",
-  },
-  {
-    label: "PIPELINE",
-    title: "Push → live",
-    detail: "Lint, test, build, deploy, verify. Rollback is one tag.",
-  },
-  {
-    label: "WATCH",
-    title: "Probe · logs · metrics",
-    detail: "A probe measures this address on a schedule, and the answers are kept.",
-  },
+  { label: "BASE", names: ["Talos", "Kubernetes"] },
+  { label: "NETWORK", names: ["Flannel", "MetalLB"] },
+  { label: "EDGE", names: ["Cloudflare Tunnel", "Traefik", "cert-manager"] },
+  { label: "DELIVERY", names: ["Flux", "SOPS"] },
+  { label: "DATA", names: ["CloudNativePG", "Velero"] },
+  { label: "WATCH", names: ["kube-prometheus-stack"] },
 ];
 
 /** One of the four principles of SYS.05.03. */

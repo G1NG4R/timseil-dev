@@ -311,13 +311,24 @@ export const en = {
   // rather than the machine. THE SHEET DRAWS A BRIEF, NOT A TEXT — "[BIO — 2–3
   // lines: self-taught systems engineer in Luxembourg; what he runs, how it is
   // hosted, why it is built this way]" — so this is written to that brief, and
-  // every clause in it is something the repository can be held to: one host
-  // (ADR 0008), GitHub Actions as the only thing that builds and deploys
-  // (compose.yaml carries no `build:`), and the rule at the top of CLAUDE.md.
+  // every clause in it is something the repository can be held to.
+  //
+  // U4 CHANGED THE ROLE AND KEPT THE VPS, and the second half is the load
+  // bearing one. ADR 0079 makes talos-prod the main evidence, so the cluster
+  // and its two named components come first — but this site is not on it yet
+  // (`state='in_build'`, invariant 3), and the sentence that IS checkable today
+  // is the one about the host that answers this request. U9 is the phase that
+  // swaps them, after the cutover, and it is written down there.
+  //
+  // WHAT IS DELIBERATELY NOT SAID: that the cluster runs my own services. The
+  // draft in the rebuild plan said so; `/api/systems` does not, because nothing
+  // public is measured on it. A bio is prose and nothing tests it, which is
+  // exactly why it gets held to the same rule as a number.
   homeBio:
-    "Self-taught backend and infrastructure engineer in Luxembourg. This site " +
-    "and its API run on one VPS I administer myself, built and deployed by " +
-    "GitHub Actions. Every claim on it is bound to a system you can check.",
+    "Junior DevOps engineer in Luxembourg, self-taught from the helpdesk up. " +
+    "I run a Kubernetes cluster on bare metal at home — Talos, GitOps with " +
+    "Flux — and this site on a VPS I administer myself. I build with Claude " +
+    "Code, and every claim here is bound to a system you can check.",
 
   // ── H6 · /work ──────────────────────────────────────────────────────────
   //
@@ -412,12 +423,17 @@ export const en = {
   // ── H7 · /about ─────────────────────────────────────────────────────────
   //
   // WHAT IS NOT HERE, and it is most of the sheet. `SYS.05`, `OPERATOR`,
-  // `TRAJECTORY`, `WHAT I RUN`, `HOW I WORK`, `OFF-SYSTEM`, `NAME`, `ROLE`,
-  // `BASE`, `PRIMARY`, `ROUTE`, `MAIL`, `EDGE`, `SERVICES`, `PIPELINE` and
-  // `WATCH` are nomenclature — LANG.01, "Übersetzt wird Prosa, nicht
-  // Nomenklatur" — and a German About page would still read SYS.05.02 WHAT I
-  // RUN. So they live in lib/about/, where a test can hold their order, and the
-  // prose lives here.
+  // `TRAJECTORY`, `WHAT I RUN`, `HOW I WORK`, the card's `NAME`, `ROLE`,
+  // `BASE`, `PRIMARY`, `ROUTE`, `TOOLING` and `MAIL`, and the tiles' `BASE`,
+  // `NETWORK`, `EDGE`, `DELIVERY`, `DATA` and `WATCH` are nomenclature — LANG.01, "Übersetzt wird
+  // Prosa, nicht Nomenklatur" — and a German About page would still read
+  // SYS.05.02 WHAT I RUN. So they live in lib/about/, where a test can hold
+  // their order, and the prose lives here.
+  //
+  // `OFF-SYSTEM`, `SERVICES` AND `PIPELINE` LEFT THIS LIST IN U4 rather than
+  // moving anywhere: the section and the two tiles are gone (ADR 0079). A list
+  // of names that outlives the names is the defect U1 found twice in site.ts,
+  // where two comments counted their own readers and both counted low.
   //
   // `AVAILABLE` IS ABSENT FOR THE THIRD REASON THE HOMEPAGE BLOCK GIVES: it is
   // already a state word (`stateAvailable`), and a second key for one word is
@@ -429,14 +445,22 @@ export const en = {
   // ONE PARAGRAPH WHERE THE SHEET DRAWS TWO. The second is
   // "[BIO — 2–3 Sätze in deiner Stimme: …]", a bracket asking for a voice, and
   // ADR 0055 refused two image placeholders on the case study with the argument
-  // that carries here unchanged. The first paragraph is the sheet's own English
-  // and says the whole thing; a page is not improved by a second one that says
-  // nothing.
+  // that carries here unchanged. One paragraph says the whole thing; a page is
+  // not improved by a second one that says nothing.
+  //
+  // THE LAST USER-VISIBLE LINE OF THE OLD ROLE, AND U4 IS WHERE IT GOES. Since
+  // U1 this key was the only place on the site still reading "Backend and
+  // DevOps engineer" — deliberately, because the alternative was one phase
+  // touching en.ts, site.ts, the seed, About, the trajectory and the case study
+  // at once. ADR 0079 names that cost under "Was das kostet".
+  //
+  // IT NAMES THE PATH AND NOT THE PAYLOAD. "a VPS, a Proxmox homelab, and now a
+  // Kubernetes cluster" are three things that exist; what runs ON the cluster
+  // is not claimed here, for the reason homeBio gives one block up.
   aboutLede:
-    "Backend and DevOps engineer in Luxembourg, working in Go and TypeScript. " +
-    "Self-taught, from systems fundamentals through to deployment — which in " +
-    "practice means every service I describe here is one I also have to keep " +
-    "running.",
+    "I came from the helpdesk and learned the rest by building: a VPS, a " +
+    "Proxmox homelab, and now a Kubernetes cluster on bare metal. I work with " +
+    "Claude Code, as a tool and as a tutor — and whatever I run, I can explain.",
 
   // ── H7b · the trajectory rail ───────────────────────────────────────────
   //
@@ -454,21 +478,20 @@ export const en = {
     "This station is a place on the path, not a paragraph yet — the words are " +
     "written in the content phase rather than guessed here.",
 
-  // AND THIS ONE ADMITS A DIFFERENT KIND OF ABSENCE. The section above is owed
-  // by a phase; this one is owed by me. The sheet draws a bracketed German
-  // paragraph and three rows of which two are brackets and the third names a
-  // system that does not exist — so there is nothing to render, and the honest
-  // sentence says whose turn it is.
-  aboutOffSystemSoon:
-    "The one line on this page that is not about a system is the one line " +
-    "nobody can derive. It is written in the content phase, not guessed here.",
-
-  // The closing strip of SYS.05.02. It is the whole argument of the section in
-  // two sentences, and the link beside it is the evidence.
-  aboutStackNote:
-    "The page you are reading is served by that stack. If it is slow, that is " +
-    "on me.",
-  aboutCaseStudy: "READ THE CASE STUDY",
+  // THREE KEYS STOOD HERE UNTIL U4 AND ALL THREE ARE GONE, for two different
+  // reasons that are worth keeping apart.
+  //
+  // `aboutOffSystemSoon` said whose turn the one human line was. SYS.05.04 is
+  // not owed by K2 any more; it is not on the page at all (ADR 0079), and a
+  // sentence explaining an absent section is an absence of its own.
+  //
+  // `aboutStackNote` — "The page you are reading is served by that stack" — and
+  // `aboutCaseStudy` were the closing strip under WHAT I RUN. The strip is not
+  // merely redundant after U4, it is WRONG: the tiles name talos-prod, this
+  // page is served by the VPS, and the link resolved to the timseil.dev case
+  // study, which is a different system. U9 brings the strip back once the
+  // cutover makes the sentence true again, and it will be a different sentence
+  // because it will be said about a different machine.
 
   // ── H8 · /contact ───────────────────────────────────────────────────────
   //

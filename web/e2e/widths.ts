@@ -449,9 +449,14 @@ export const ABOUT_DRAWN_WIDTHS = [1440, 390] as const;
  * handed rather than keep a rule nobody could reach.
  *
  * 900 IS THIS PAGE'S OWN AND IT WAS DERIVED, NOT DRAWN. The sheet draws four
- * tiles at 1440 and two at 390 and says nothing about where they swap;
- * layout.css carries the arithmetic and the measurement. The principle grid
- * takes the same switch, which the same comment argues for rather than assumes.
+ * tiles at 1440 and two at 390 and says nothing about where they swap; the
+ * build draws six and three since U4, and layout.css carries both the
+ * divergence and the arithmetic. The principle grid takes the same switch,
+ * which the same comment argues for rather than assumes — and since U4 it is
+ * the principle grid that the argument rests on, because the tile grid stopped
+ * needing this width when its tiles stopped carrying prose. The number did not
+ * move; the reason under it did, and layout.css says so rather than leaving a
+ * figure nobody can re-derive.
  *
  * 720 is the display step, K-08 — `h1` goes 62 to 34, which the sheet draws at
  * both of its widths.

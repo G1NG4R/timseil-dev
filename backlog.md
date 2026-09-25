@@ -72,6 +72,113 @@ sonst wieder falsch gezählt wird.
 
 ---
 
+## U4 · 25.09.2026 — About-Seite und Bio: die Zahl 900 hat ihr Argument verloren
+
+`/about` trägt die Rolle nicht mehr. Die Operator-Karte liest `Junior DevOps`,
+`Kubernetes · GitOps`, `Helpdesk → self-taught` und eine siebte Zeile `TOOLING ·
+Claude Code`; WHAT I RUN zeigt sechs Kacheln mit genau den zwölf Namen, die
+`stack.yaml` für `talos-prod` führt; `homeBio` und `aboutLede` sind neu; die
+Sektion OFF-SYSTEM ist weg, und mit ihr das letzte `[SOON]` außerhalb der
+Trajectory. Reine `web/`-Phase — kein `api/`, kein Contract, kein Seed.
+
+### Der stärkste Fund: der Schalter bei 900 steht noch, seine Herleitung nicht
+
+`layout.css` hat den 900er-Schalter in H7 **wegen** WHAT I RUN bekommen. Die
+Rechnung stand im Kommentar: vier Kacheln, jede mit einer Prosazeile von 70
+Zeichen, wollten eine 836-px-Spalte, also ein 916-px-Fenster, und 900 war der
+nächste deklarierte Schalter darunter. Die Prinzipien-Spalten hätten bis 720
+laufen können und haben sich den Schalter geteilt.
+
+In U4 fallen die Prosazeilen weg. Was eine Kachel jetzt bindet, ist der längste
+nicht umbrechbare Lauf in einer Namensliste — am gebauten Blatt bei
+`width: min-content` gemessen: `CloudNativePG` **91 px**, `prometheus-` 77,
+`Talos · Kubernetes` und die EDGE-Liste je 70, `Flannel · MetalLB` 49,
+`Flux · SOPS` 28. Drei Spuren schaffen 91 px ab etwa **513 px Fenster**. Das
+Kachelraster braucht diesen Schalter also nicht mehr; von den beiden Rastern
+ist jetzt das Prinzipien-Raster das engere, und das ist die genaue Umkehrung
+der Lage, die die Zahl gewählt hat.
+
+**Die Zahl bleibt trotzdem.** Zwei Raster 180 px auseinander zu schalten
+erzeugt ein Band, in dem die Seite drei Kacheln und ein Prinzip breit ist; bei
+900 schaltet ohnehin der Kopf, es entsteht also kein Band, das es nicht schon
+gibt. Der Preis ist kosmetisch: zwischen 899 und 720 stehen zwei Kacheln, wo
+drei passten. Aufgeschrieben, weil eine Zahl, deren Begründung verfallen ist
+und die niemand nachrechnen kann, beim nächsten Mal als gegeben gilt.
+
+### Gefunden
+
+- **Die vakuöse Zusicherung war nicht die, auf die der Plan gezeigt hat.** Der
+  Paar-Test in `sections.test.ts` („a section is either filled or owed") hält
+  auch mit drei gefüllten Sektionen — er vergleicht zwei Booleans je Zeile und
+  läuft dreimal. Vakuös wurde die Zusicherung daneben, *„every reason a section
+  names exists in the dictionary"*: ihr Rumpf steht hinter
+  `if (section.reasonKey === null) continue;` und lief nach dem Streichen von
+  SYS.05.04 **null Mal**. Die Form aus ADR 0057, eine Phase nach dem Fund bei
+  `TestNoTrackIsLostOnTheWayOut`. Ersetzt durch die positive Fassung, die
+  `lib/home/sections.test.ts` in H5c schon benutzt hat; der Paar-Test baut
+  seinen kaputten Fall jetzt selbst, dafür ist `accountedFor` aus dem Testrumpf
+  nach `sections.ts` gewandert.
+- **Das Entwurfs-Oracle steht in keiner Liste des Sitzungsplans, und es kostet
+  fünf Einträge.** `about.gen.json` wird aus `tools/gen-sheet-oracle.mjs`
+  erzeugt, steht in `GENERATED` und wird von `check-contract` auf Drift
+  geprüft. Vier Einträge messen `.run-detail` und den Schlussstreifen, einer die
+  Spuranzahl. Der Reflex — sie im Generator löschen — wäre falsch gewesen:
+  `e2e/sheet.ts` hat dafür seit U2 das `applies`-Prädikat, und der Satz steht
+  dort wörtlich („a shrinking oracle is still a failure"). Also filtert der
+  Spec, `minimumEntries: 61` bleibt, und nur die Spuranzahl ändert ihren Wert —
+  mit einer registrierten `DIVERGENCE`-Klasse, ohne die das Skript anhält.
+  Der Filter ist zweigeteilt benannt: der Streifen ist bis U9 geschuldet,
+  `.run-detail` kommt nie zurück.
+- **Der Beleg-Link war nicht überflüssig, sondern falsch.** `READ THE CASE
+  STUDY` wurde über `caseStudyFor(SITE_SYSTEM_SLUG)` aufgelöst, zeigte also auf
+  timseil.dev. Unter sechs talos-prod-Kacheln wäre das ein Ausgang zu einem
+  anderen System. Der ganze `.run-note`-Streifen fällt damit weg, Satz und Link,
+  und `/about` hat bis U9 **keinen ausgehenden Beleg-Link** mehr. Bewusst
+  entschieden; die Zeile steht hier, damit U9 sie wiederfindet.
+- **`VLANs · BGP` hätte eine Entscheidung von U3 zurückgenommen.** Der
+  Kachel-Entwurf nannte sie; `seed.sql:89-92` hat vier Tage vorher das Gegenteil
+  entschieden und die Begründung mitgeschrieben („a track name is a sentence on
+  a public page. Unsure counts as yes."). Stattdessen sind die Kacheln jetzt
+  eine **Gruppierung von `stack.yaml`** — zwölf Namen, keine dreizehnte Liste —
+  und `content.test.ts` hält sie in beide Richtungen gegen
+  `api/internal/seed/stack.gen.json`. Ein erfundener Name macht den Test rot;
+  gegengeprüft, nicht angenommen. Über die Repo-Grenze zu lesen ist die Bewegung
+  aus `lib/seo/pages.test.ts` (seed.sql) und `lib/contact/fields.test.ts`
+  (Contract).
+- **Zwei Lint-Fehler kamen aus angenommenen Typen, nicht aus der Logik.**
+  `node.textContent` ist in diesem DOM-Lib `string`, nicht `string | null` — das
+  `?? ""` war unerreichbar. Und eine Index-Signatur ohne `| undefined` macht die
+  Wache gegen ein fehlendes `talos-prod` zu totem Code, den der Linter meldet;
+  die Signatur trägt das `| undefined` jetzt, damit die Wache eine Wache bleibt.
+  Beide Male hätte kein Test etwas gesagt.
+- **Ein E2E-Flake in `contact.spec.ts`, der nichts mit dieser Phase zu tun
+  hat.** `a 202 is a receipt, and the text stays in the field` bei `w899` meldete
+  `data-state="rejected"` statt `accepted`; derselbe Test einzeln nachgezogen
+  ist grün. Der volle Lauf war sonst 2205 grün, 1 rot. Die Datei hängt an keiner
+  Datei dieser Phase. Notiert, nicht triagiert.
+
+### Verschoben
+
+- **Das Kachelraster könnte bis 720 laufen, tut es aber nicht.** Siehe oben —
+  eine Entscheidung, keine Rechnung, und sie kostet zwischen 899 und 720 eine
+  Kachelspalte. Ob das ein vierter Schalter wert ist, entscheidet eine Phase,
+  die das Prinzipien-Raster ohnehin anfasst.
+  *Ursprungsphase: U4 · 25.09.2026.*
+- **Der Schlussstreifen und seine zwei Wörterbuch-Schlüssel kommen in U9
+  zurück.** `aboutStackNote` und `aboutCaseStudy` sind gelöscht, nicht
+  auskommentiert; der Satz, der zurückkommt, wird ein anderer sein, weil er
+  dann über den Cluster gesagt wird. Die drei Oracle-Einträge stehen als
+  `NOT_DRAWN_TODAY` im Spec und warten dort benannt.
+  *Ursprungsphase: U4 · 25.09.2026.*
+- **Die `reasonKey`-Verzweigung auf `/about` hat keinen Auslöser mehr.** Nach
+  U4 ist keine Sektion geschuldet, der Zweig wird nie genommen. Er bleibt
+  stehen, weil das Paar `reasonKey`/`owedBy` das Gerät aus ADR 0065 §3 ist und
+  K2 eine Sektion im Sinn hat; ein Kommentar sagt, dass heute niemand ihn
+  auslöst. Wer ihn löscht, löscht das Paar mit.
+  *Ursprungsphase: U4 · 25.09.2026.*
+
+---
+
 ## Wo wir stehen — 25.09.2026, U3 abgenommen: `v0.41.0`, 14 Tracks in Produktion, und eine elfte Fundstelle, die kein lokaler Lauf sehen konnte
 
 `518eb99` läuft, **`v0.41.0`**. Merge **14:36:17Z**, neuer Prozess ab
