@@ -62,7 +62,18 @@ export const OPERATOR: readonly OperatorRow[] = [
   { label: "ROLE", value: "Junior DevOps" },
   { label: "BASE", value: "Luxembourg · UTC+1" },
   { label: "PRIMARY", value: "Kubernetes · GitOps" },
-  { label: "ROUTE", value: "Helpdesk → self-taught", accent: true },
+  // THE BEGINNING WAS WRONG, AND THE FIX IS NOT A LONGER CHAIN. `Helpdesk →
+  // self-taught` read the way a CV reads — job first, hobby after — and the
+  // hypervisor at home came before the service desk and is the reason it
+  // happened. The obvious repair was a third link, `Homelab → helpdesk →
+  // self-taught`; measured at 390 it took TWO LINES, alone among the seven rows
+  // and in the one colour the card draws in signal.
+  //
+  // So the row says where it started and stops. The stations are one section
+  // down with a paragraph and a tag row each, and a card that recites them is
+  // a second, shorter copy of the rail — which is how two surfaces start
+  // disagreeing. U5 found `aboutLede` doing exactly that.
+  { label: "ROUTE", value: "Self-taught, from the lab up", accent: true },
   // `TOOLING` IS THE WHOLE OF WHAT THIS PAGE SAYS ABOUT THE ASSISTANT, and
   // ADR 0079 §3 is why it is a row and not a badge: "ein Etikett ist eine
   // Behauptung, eine Belegzeile und ein Commit-Trailer sind nachlesbar." It

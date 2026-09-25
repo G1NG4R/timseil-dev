@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import type { Station } from "@/lib/about/trajectory";
-import { SOON } from "@/lib/state/words";
 
 /**
  * One station opened: what it is called, what it says, what was picked up, and
@@ -19,28 +18,38 @@ import { SOON } from "@/lib/state/words";
  * `aria-pressed`. A control that cannot be pressed is the dead state STATE.05
  * calls a bug, and a chip is a control by its shape alone.
  *
- * `[SOON]` AND NOT `— NO DATA`, five times out of six. lib/state/words.ts owns
- * both and they are different sentences: `— NO DATA` says a measurement was
- * attempted and did not arrive, `[SOON]` says the thing does not exist yet. No
- * measurement was attempted for a paragraph.
+ * `[SOON]` IS GONE FROM THIS FILE, AND NOT BY BEING SWITCHED OFF. Until U5 five
+ * of the six bodies were `null` and this component printed the site's word for
+ * a named absence in their place. U5 wrote the paragraphs, so `body` is a
+ * `string` and the branch that handled its absence is deleted rather than left
+ * unreachable. That is the opposite of the treatment the section shell gets one
+ * file up in app/[lang]/about/page.tsx, and ADR 0080 says why: that branch
+ * still has the `reasonKey`/`owedBy` pair behind it and a phase that means to
+ * use it. This one had U5, and U5 has happened.
+ *
+ * A SHIPPED SYSTEM WITHOUT A PAGE PRINTS ITS NAME AND DOES NOT LINK. `/work`
+ * already draws the cluster's row that way: ADR 0079 §2 gives `talos-prod` no
+ * case study, so there is nothing to open. Invariant 5 asks that evidence never
+ * point into nothing, and a name that is not a link points nowhere by
+ * construction — the arrangement that breaks the invariant is an `<a>`, which is
+ * why `href` now gates the link and not the whole cell. ADR 0055's cut still
+ * stands where it was aimed: a station that shipped NOTHING gets no cell, not an
+ * em dash.
  */
 export function TrajectoryPanel({
   station,
-  soon,
   pickedUp,
   shippedLabel,
   href,
 }: {
   station: Station;
-  /** Why the prose is not here yet. Prose, from the dictionary. */
-  soon: string;
   /** The label over the tag row. Nomenclature, but it names the group, so the
    *  page hands it in already resolved rather than the component inventing a
    *  second copy. */
   pickedUp: string;
   shippedLabel: string;
-  /** Resolved by the page, and `null` where there is no case study to open —
-   *  invariant 5. Then the cell is absent rather than dead. */
+  /** Resolved by the page: the case study for this station's system, or `null`
+   *  where that system has no page. Then the name stands without a link. */
   href: string | null;
 }) {
   return (
@@ -54,13 +63,7 @@ export function TrajectoryPanel({
           <span className="tl-head-title">{station.title}</span>
         </p>
 
-        {station.body === null ? (
-          <p className="tl-soon">
-            <span className="tl-soon-mark">{SOON}</span> {soon}
-          </p>
-        ) : (
-          <p className="tl-body">{station.body}</p>
-        )}
+        <p className="tl-body">{station.body}</p>
       </div>
 
       <div className="tl-aside">
@@ -73,14 +76,15 @@ export function TrajectoryPanel({
           ))}
         </p>
 
-        {/* NO CELL AT ALL WHERE NOTHING SHIPPED, which is ADR 0055's cut for the
-            fourth time on this site: a system nobody has built gets no row
-            rather than an em dash. The sheet draws `—` on two of its six. */}
-        {station.shipped === null || href === null ? null : (
+        {station.shipped === null ? null : (
           <>
             <p className="tl-aside-label">{shippedLabel}</p>
             <p className="tl-shipped">
-              <Link href={href}>{station.shipped.label}</Link>
+              {href === null ? (
+                station.shipped.label
+              ) : (
+                <Link href={href}>{station.shipped.label}</Link>
+              )}
             </p>
           </>
         )}

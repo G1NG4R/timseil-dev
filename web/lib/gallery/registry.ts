@@ -214,25 +214,33 @@ export const PARTS: readonly Part[] = [
   {
     id: "TrajectoryRail",
     where: "about",
-    states: ["jahr aktiv", "inaktiv", "tastatur ← →"],
+    states: ["station aktiv", "inaktiv", "tastatur ← →"],
     origin: "inventory",
     module: "components/about/TrajectoryRail.tsx",
     owedBy: null,
     preview: true,
-    // THE FIRST STATE IS NAMED FOR A THING THIS RAIL DOES NOT HAVE. "jahr aktiv"
-    // is the inventory's word, and there are no years: nothing in this
-    // repository carries a date for a station, so the label is the position and
-    // `NOW` for the last. lib/about/trajectory.ts carries that argument. The
-    // state itself is built and drawn — it is the ACTIVE station — and the
-    // transcription is left alone, because the inventory is a second reading of
-    // the handoff and not a description of what shipped.
+    // THE FIRST STATE IS THE ONE TRANSCRIPTION ON THIS TABLE THAT WAS CHANGED,
+    // and U5 is why. The inventory writes "jahr aktiv". H7b left it alone on
+    // the grounds that this table is a second reading of the handoff rather
+    // than a description of what shipped, and that was right while the missing
+    // years were an ABSENCE — nothing in the repository carried a date, so the
+    // label became the position and `NOW` for the last (ADR 0066 §5).
+    //
+    // U5 turned the absence into a DECISION: the rail has no years because this
+    // site does not claim any, and the paragraphs that were owed are written
+    // (ADR 0080). A transcription can outlive a gap in the data; it cannot name
+    // a state that the site has decided against, because then the only reading
+    // left is that somebody forgot. The state is the same drawn thing either
+    // way — the ACTIVE station — so only its name moved.
     //
     // "tastatur ← →" IS BUILT AND IS NOT A COMPONENT STATE. It is a radio
     // group, so the arrows are the browser's; there is no class, no attribute
     // and nothing for the gallery to draw. What CAN be shown is what the keys
     // move between, which is the other two states — and e2e/about.spec.ts
     // presses them, which is the only place that assertion can live.
-    note: "no years: the label is the position. arrows are the platform's, not a state.",
+    note:
+      "renamed from the inventory's 'jahr aktiv' in U5: no years, by decision. " +
+      "arrows are the platform's, not a state.",
   },
   {
     id: "SpecRail",
@@ -251,9 +259,13 @@ export const PARTS: readonly Part[] = [
     origin: "inventory",
     // H9b. THE INVENTORY CALLS IT A CARD AND THE SHEET DRAWS A ROW — "Mono-Liste,
     // keine Karten — Zeilen scannen sich schneller als Kacheln". The
-    // transcription is left alone, which is the treatment ADR 0066 gave
-    // `TrajectoryRail`'s "jahr aktiv": this table is a second reading of the
+    // transcription is left alone: this table is a second reading of the
     // handoff and not a description of what shipped.
+    //
+    // THE ID IS STILL A NAME AND NOT A CLAIM, which is the line U5 drew when it
+    // DID rename `TrajectoryRail`'s first state. Two words for one drawn thing
+    // stay as they are; a word for a thing the site has decided against does
+    // not. "Card" and "row" are the first case — nobody decided against cards.
     //
     // BOTH STATES ARE DRAWN, AND `hover` NEEDS A POINTER RATHER THAN A PROP.
     // It is two declarations in styles/blog.css on a row that is itself a link,

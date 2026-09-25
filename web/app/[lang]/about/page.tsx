@@ -74,16 +74,19 @@ export default async function Page() {
   // knows what a panel contains — the seam ADR 0064 drew for the work index,
   // kept in a phase that needed no island to keep it.
   //
-  // `caseStudyFor` GATES THE ONE LINK, and it is the same question `/work/[slug]`
-  // asks: a station whose system has no page gets no shipped cell rather than a
-  // link into a 404. Invariant 5.
+  // `caseStudyFor` GATES THE LINK, and it is the same question `/work/[slug]`
+  // asks. Since U5 two stations ship a system and only one of them has a page:
+  // `talos-prod` has none by ADR 0079 §2, so its cell prints the name and does
+  // not link. The gate answers a narrower question than it used to — not
+  // "is there a cell" but "is there something to open" — and the cell itself is
+  // the panel's own business. Invariant 5 either way: no `<a>` is written
+  // without a page behind it.
   const panels = STATIONS.map((station) => {
     const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug);
     return (
       <TrajectoryPanel
         key={station.key}
         station={station}
-        soon={messages.aboutStationSoon}
         pickedUp="PICKED UP"
         shippedLabel="SHIPPED"
         href={study === null ? null : localeHref(locale, caseStudyPath(study))}

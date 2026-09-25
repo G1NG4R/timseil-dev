@@ -32,6 +32,7 @@ import { modules, type ModuleView } from "@/lib/api/training";
 import { Log } from "@/components/home/Log";
 import { postsOrNull, type PostRead } from "@/lib/content/posts";
 import { STATIONS } from "@/lib/about/trajectory";
+import { caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
 import { postMortemHrefs } from "@/lib/case/postmortem";
 import { BlogList } from "@/components/blog/BlogList";
 import { PostCard } from "@/components/blog/PostCard";
@@ -1274,12 +1275,14 @@ export default function GalleryPage() {
           <span className="gal-where">`/about` · SYS.05.01 · six stations, no script</span>
         </div>
         <p className="gal-states">
-          The inventory asks for `jahr aktiv`, `inaktiv` and `tastatur ← →`, and
-          two of the three are below: the chosen station and the ones that are
-          not. The third has nothing to draw — this is a radio group, so the
-          arrows are the browser&rsquo;s and there is no class for them. Press
-          them here and the rail answers; `e2e/about.spec.ts` is where that is
-          asserted, because a keystroke is not a state.
+          The registry asks for `station aktiv`, `inaktiv` and `tastatur ← →`,
+          and two of the three are below: the chosen station and the ones that
+          are not. The inventory wrote the first one `jahr aktiv`; U5 renamed it,
+          because the rail has no years by decision now rather than for want of
+          data (ADR 0080). The third has nothing to draw — this is a radio group,
+          so the arrows are the browser&rsquo;s and there is no class for them.
+          Press them here and the rail answers; `e2e/about.spec.ts` is where that
+          is asserted, because a keystroke is not a state.
         </p>
         <p className="gal-states">
           The rail rests on `NOW`. Everything behind the chosen station carries a
@@ -1290,20 +1293,25 @@ export default function GalleryPage() {
           <TrajectoryRail
             name="gal-tl"
             labelledBy="gal-tl-name"
-            panels={STATIONS.map((station) => (
-              <TrajectoryPanel
-                key={station.key}
-                station={station}
-                soon={en.aboutStationSoon}
-                pickedUp="PICKED UP"
-                shippedLabel="SHIPPED"
-                /* THE GALLERY GATES THE LINK THE WAY THE PAGE DOES, so a station
-                   whose system has no page draws no shipped cell here either. A
-                   fixture that handed every station an href would draw a state
-                   the site cannot produce. */
-                href={station.shipped === null ? null : `/work/${station.shipped.slug}`}
-              />
-            ))}
+            panels={STATIONS.map((station) => {
+              // THE GALLERY ASKS THE PAGE'S QUESTION, NOT ITS OWN. This built
+              // the path by hand until U5, which was the same answer only while
+              // every shipped system had a page. It stopped being one the moment
+              // `01 talos-prod` arrived: ADR 0079 §2 gives the cluster no case
+              // study, and a hand-built path would have drawn this gallery a
+              // link into a 404 — a state the site itself cannot produce, which
+              // is the one thing a fixture must never do.
+              const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug);
+              return (
+                <TrajectoryPanel
+                  key={station.key}
+                  station={station}
+                  pickedUp="PICKED UP"
+                  shippedLabel="SHIPPED"
+                  href={study === null ? null : caseStudyPath(study)}
+                />
+              );
+            })}
           />
         </div>
       </section>
