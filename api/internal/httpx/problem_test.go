@@ -17,7 +17,7 @@ import (
 )
 
 func request(id string) *http.Request {
-	r := httptest.NewRequest(http.MethodGet, "/api/systems/vat-check", nil)
+	r := httptest.NewRequest(http.MethodGet, "/api/systems/talos-prod", nil)
 	if id != "" {
 		r = r.WithContext(reqid.With(r.Context(), id))
 	}
@@ -55,7 +55,7 @@ func TestAProblemCarriesTheContractShape(t *testing.T) {
 			t.Errorf("the document has no %q — RFC 9457 requires it", key)
 		}
 	}
-	if body["instance"] != "/api/systems/vat-check" {
+	if body["instance"] != "/api/systems/talos-prod" {
 		t.Errorf("instance = %v", body["instance"])
 	}
 }

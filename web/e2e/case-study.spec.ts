@@ -166,8 +166,8 @@ test("nothing is left over from the streaming", async ({ page }) => {
 });
 
 // The registry is the gate: one system has a case study and the other does not.
-// A page of em dashes for `vat-check` would be worse than a 404.
+// A page of em dashes for `talos-prod` would be worse than a 404.
 test("a system without a written case study has no page", async ({ page }) => {
-  expect((await page.goto("/work/vat-check"))?.status()).toBe(404);
+  expect((await page.goto("/work/talos-prod"))?.status()).toBe(404);
   expect((await page.goto("/work/nope"))?.status()).toBe(404);
 });

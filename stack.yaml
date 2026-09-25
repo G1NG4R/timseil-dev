@@ -56,10 +56,23 @@ systems:
     - { name: "Loki",       from: "compose.yaml", key: "services.loki.image" }
     - { name: "Alloy",      from: "compose.yaml", key: "services.alloy.image" }
 
-  # 01 · VAT Check API — queued, and none of its sources live here. Bare names,
-  # no versions: the sheet shows it that way too, and a name cannot drift.
-  vat-check:
-    - { name: "Python" }
-    - { name: "FastAPI" }
-    - { name: "Docker" }
-    - { name: "SQLite" }
+  # 01 · talos-prod — a bare-metal Kubernetes cluster in its own, private
+  # repository. Bare names, no versions, and here the reason is structural
+  # rather than a matter of taste: no file in THIS repo can be read for a
+  # version of anything running there, so every number would have to be typed,
+  # and typing one is what this file exists to refuse. Component names only,
+  # nothing about how the cluster is reached or segmented — ADR 0079 draws that
+  # line and U3 is the phase that first has to hold it.
+  talos-prod:
+    - { name: "Talos" }
+    - { name: "Kubernetes" }
+    - { name: "Flannel" }
+    - { name: "MetalLB" }
+    - { name: "Traefik" }
+    - { name: "cert-manager" }
+    - { name: "Cloudflare Tunnel" }
+    - { name: "Flux" }
+    - { name: "SOPS" }
+    - { name: "kube-prometheus-stack" }
+    - { name: "CloudNativePG" }
+    - { name: "Velero" }

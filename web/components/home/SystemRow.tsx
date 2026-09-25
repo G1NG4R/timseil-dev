@@ -16,9 +16,10 @@ import { stateLabel } from "@/lib/state/words";
  *
  * THE EXIT IS A LINK ONLY WHEN THERE IS SOMEWHERE TO GO. `href` is `null` for a
  * system with no case study, and lib/home/systems.ts says why that is the honest
- * shape rather than a gap: `/work/vat-check` is a 404, and a row that led there
- * would be the dead control STATE.05 refuses. So the arrow is dropped instead of
- * greyed out, and the state word beside it already says why: QUEUED.
+ * shape rather than a gap: `/work/talos-prod` is a 404, and a row that led
+ * there would be the dead control STATE.05 refuses. So the arrow is dropped
+ * instead of greyed out, and the state word beside it already says why:
+ * IN BUILD.
  *
  * ONE LINK PER ROW, AND THE SHEET DRAWS TWO. Its fourth column carries
  * `CASE STUDY →` under the stack, and the sixth carries `→`; both go to the same

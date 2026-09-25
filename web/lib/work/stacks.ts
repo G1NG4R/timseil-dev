@@ -46,7 +46,7 @@ export interface StackTag {
  *
  * Everything from the last space before a run that starts with a digit:
  * `Next.js 16.3` → `Next.js`, `Go 1.26` → `Go`, `Node 24` → `Node`. A bare name
- * has no such run and survives whole, which is every entry of the `vat-check`
+ * has no such run and survives whole, which is every entry of the `talos-prod`
  * stack — none of its sources live in this repository, so none of them has a
  * version to read.
  */

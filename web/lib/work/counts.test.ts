@@ -8,7 +8,7 @@ import { listed, statusCounts, workCount, workMeta } from "./counts.ts";
 /** The two rows the seed produces, in the answer's order. */
 const SEEDED = {
   systems: [
-    { slug: "vat-check", systemNo: "01", name: "VAT Check API", state: "queued" },
+    { slug: "talos-prod", systemNo: "01", name: "talos-prod", state: "in_build" },
     { slug: "timseil-dev", systemNo: "02", name: "timseil.dev", state: "live" },
   ],
   generatedAt: "2026-09-02T00:00:00Z",
@@ -111,12 +111,12 @@ describe("the tiles and the counter make one claim, not two", () => {
 });
 
 describe("the stat rail tallies the states the contract declares", () => {
-  it("reads the seed as two systems, one live, none building, one queued", () => {
-    assert.deepEqual(statusCounts([{ state: "queued" }, { state: "live" }]), {
+  it("reads the seed as two systems, one live, one building, none queued", () => {
+    assert.deepEqual(statusCounts([{ state: "in_build" }, { state: "live" }]), {
       all: 2,
       live: 1,
-      in_build: 0,
-      queued: 1,
+      in_build: 1,
+      queued: 0,
     });
   });
 

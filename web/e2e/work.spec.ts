@@ -133,7 +133,7 @@ test("nothing here links into a page that does not exist", async ({ page }) => {
   // Invariant 5, as a count rather than a hope. A missing link is invisible in a
   // screenshot; an extra one is not, and `/blog/<slug>` is a 404 until H9.
   await expect(page.locator('main a[href*="/blog/"]')).toHaveCount(0);
-  await expect(page.locator('main a[href="/work/vat-check"]')).toHaveCount(0);
+  await expect(page.locator('main a[href="/work/talos-prod"]')).toHaveCount(0);
 });
 
 test("the header does not offer the page the reader is on", async ({ page }) => {

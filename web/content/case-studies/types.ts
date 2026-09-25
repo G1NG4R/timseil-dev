@@ -119,10 +119,10 @@ export interface CaseStudy {
    * what a machine writes.
    *
    * A SYSTEM WITHOUT A CASE STUDY THEREFORE HAS NO BLURB, and that is the honest
-   * shape rather than a gap to fill: `vat-check` is queued, has no repository and
-   * nothing written about it. The row renders no description cell at all — ADR
-   * 0055 made the same call about the hop latencies, where `— NO DATA` would have
-   * promised a number that nobody is going to measure.
+   * shape rather than a gap to fill: `talos-prod` is in_build, its repository is
+   * private and nothing is written about it. The row renders no description
+   * cell at all — ADR 0055 made the same call about the hop latencies, where
+   * `— NO DATA` would have promised a number that nobody is going to measure.
    */
   readonly blurb: string;
   /** The one red line on the page. */

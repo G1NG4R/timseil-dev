@@ -35,12 +35,14 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("the fixture draws every state the contract declares", async ({ page }) => {
-  // Two rows the seed produces and one it cannot. `in_build` has never existed
-  // in production and had no word at all until H6 closed #289.
+  // Two rows the seed produces and one it does not. Until U3 the row it could
+  // not produce was IN BUILD, which had no word at all until H6 closed #289;
+  // ADR 0079 put the cluster into that state and took every QUEUED row out of
+  // the seed, so the invented row moved to the other end of the list.
   await expect(page.locator(`${ROWS} .work-state`)).toHaveText([
-    "QUEUED",
-    "LIVE",
     "IN BUILD",
+    "LIVE",
+    "QUEUED",
   ]);
 });
 
@@ -75,7 +77,7 @@ test("the window in the label is the contract's and not the request's", async ({
 });
 
 test("a row with nowhere to go carries no control at all", async ({ page }) => {
-  // STATE.05 refuses a dead control. `/work/vat-check` is a 404 — a system is
+  // STATE.05 refuses a dead control. `/work/talos-prod` is a 404 — a system is
   // not a case study — so the arrow is absent rather than greyed out, and the
   // state column beside it is what says why.
   const rows = page.locator(ROWS);
@@ -321,11 +323,11 @@ test("set is inverted, and the difference is a fill rather than a shade", async 
 });
 
 test("the two axes narrow together, and the panel says which two", async ({ page }) => {
-  // The combination neither chip reaches alone: one row is LIVE, one is Python,
-  // and no row is both. This is the only way `/work` reaches nought, because a
-  // derived stack chip can never be empty on its own.
+  // The combination neither chip reaches alone: one row is LIVE, one carries
+  // Talos, and no row is both. This is the only way `/work` reaches nought,
+  // because a derived stack chip can never be empty on its own.
   await chip(page, "LIVE").click();
-  await chip(page, "Python").click();
+  await chip(page, "Talos").click();
 
   await expect(page.locator(ROWS)).toHaveCount(0);
   await expect(page.locator(`${PART} .work-count`).first()).toHaveText(
@@ -339,12 +341,12 @@ test("the two axes narrow together, and the panel says which two", async ({ page
   await expect(panel.locator(".st-empty-reason")).toContainText("narrow together");
   // And it echoes back what is narrowing, so the cause is read rather than
   // inferred — both of them, in the order the rows are drawn.
-  await expect(panel.locator(".st-empty-filters span")).toHaveText(["LIVE", "Python"]);
+  await expect(panel.locator(".st-empty-filters span")).toHaveText(["LIVE", "Talos"]);
 });
 
 test("the way back puts both axes on their sentinel", async ({ page }) => {
   await chip(page, "LIVE").click();
-  await chip(page, "Python").click();
+  await chip(page, "Talos").click();
 
   await page.locator(`${PART} .st-empty-panel .btn`).first().click();
 
@@ -392,9 +394,9 @@ test("the row carries what the chip selects it by", async ({ page }) => {
   // element a chip claims is the element that carries the claim.
   const rows = page.locator(ROWS);
 
-  await expect(rows.nth(0)).toHaveAttribute("data-st", "queued");
+  await expect(rows.nth(0)).toHaveAttribute("data-st", "in_build");
   await expect(rows.nth(1)).toHaveAttribute("data-st", "live");
-  await expect(rows.nth(2)).toHaveAttribute("data-st", "in_build");
+  await expect(rows.nth(2)).toHaveAttribute("data-st", "queued");
 
   const sk = await rows.nth(2).getAttribute("data-sk");
   expect(sk?.split(" ")).toContain("go");

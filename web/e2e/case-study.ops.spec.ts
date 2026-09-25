@@ -188,8 +188,8 @@ test("the result is two lists and a card that does not point into nothing", asyn
     expect(await panels.nth(i).locator("li").count()).toBeGreaterThan(0);
   }
 
-  // The next system has no page — `vat-check` is queued and the registry gives
-  // it none — so the card links to the index, and a link to `/work/<anything>`
+  // The next system has no page — `talos-prod` is in_build and the registry
+  // gives it none — so the card links to the index, and a link to `/work/<x>`
   // here would be a 404 by construction.
   const card = page.locator(".cs-next");
   await expect(card).toHaveCount(1);

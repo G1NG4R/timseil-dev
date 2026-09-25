@@ -122,7 +122,14 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
 } as never);
 
 /**
- * The two systems the seed holds, plus the one it cannot.
+ * The two systems the seed holds, plus the state it no longer produces.
+ *
+ * U3 TURNED THE THIRD ROW AROUND, and the swap is the point rather than
+ * housekeeping. `in_build` used to be the state the seed had never held and
+ * `queued` was its biggest bucket; since ADR 0079 the cluster is `in_build` and
+ * no row anywhere is `queued`. The invented row therefore moved to the other
+ * word: the gallery still draws all three, and it still draws exactly one that
+ * production cannot.
  *
  * THE FIRST TWO ARE PRODUCTION'S OWN ROWS, transcribed from
  * api/internal/seed/seed.sql rather than invented — the point of the part below
@@ -277,12 +284,28 @@ const GALLERY_STRIP: SystemDetail = {
 const GALLERY_SYSTEMS = {
   systems: [
     {
-      slug: "vat-check",
+      slug: "talos-prod",
       systemNo: "01",
-      name: "VAT Check API",
-      state: "queued",
+      name: "talos-prod",
+      state: "in_build",
       source: { access: "private", reason: "internal" },
-      stack: ["Python", "FastAPI", "Docker", "SQLite"],
+      // Bare names, every one of them: no source of this system lives in this
+      // repository, so `stack.gen.json` has no version to read for any of it.
+      // Transcribed from api/internal/seed/stack.gen.json.
+      stack: [
+        "Talos",
+        "Kubernetes",
+        "Flannel",
+        "MetalLB",
+        "Traefik",
+        "cert-manager",
+        "Cloudflare Tunnel",
+        "Flux",
+        "SOPS",
+        "kube-prometheus-stack",
+        "CloudNativePG",
+        "Velero",
+      ],
       metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
     },
     {
@@ -316,8 +339,8 @@ const GALLERY_SYSTEMS = {
     {
       slug: "not-a-real-system",
       systemNo: "03",
-      name: "A system being built",
-      state: "in_build",
+      name: "A system not started yet",
+      state: "queued",
       source: { access: "private", reason: "nda" },
       stack: ["Go 1.26"],
       metrics: { uptime90d: null, p95Ms: null, errorRate: null, measuredAt: null },
@@ -789,7 +812,7 @@ export default function GalleryPage() {
           <span className="gal-where">SYS.NN · title · optional meta</span>
         </div>
         <div className="gal-demo" style={{ display: "block" }}>
-          <SectionHead id="SYS.01" title="Training log" meta="22 tracks" />
+          <SectionHead id="SYS.01" title="Training log" meta="14 tracks" />
           <SectionHead id="SYS.02" title="Systems" />
         </div>
       </section>
@@ -901,18 +924,19 @@ export default function GalleryPage() {
         <p className="gal-states">
           Both rows the seed holds, and the difference between them is the part
           worth looking at: `timseil.dev` is LIVE and carries an arrow, and
-          `VAT Check API` is QUEUED and carries none. STATE.05 refuses a dead
+          `talos-prod` is IN BUILD and carries none. STATE.05 refuses a dead
           control, so a row with nowhere to go has no control at all — the state
           column beside it is what says why.
         </p>
         <p className="gal-states">
-          A third row stands under them that production cannot produce: a system
-          the contract calls `in_build`, which the seed has never held. It read
-          `— NO DATA` for five phases because the vocabulary had no word that
-          meant it; H6 closed issue 289 and it now reads IN BUILD, carrying the
-          same tone and the same dash as QUEUED. That sameness is the decision
-          rather than an oversight — nothing is measured in either state, so the
-          fill cannot separate them and the word is what does.
+          A third row stands under them that production no longer produces: a
+          system the contract calls `queued`, which the seed held until U3 and
+          does not any more. The row above it read `— NO DATA` for five phases
+          because the vocabulary had no word for IN BUILD; H6 closed issue 289
+          and it now carries the same tone and the same dash as QUEUED. That
+          sameness is the decision rather than an oversight — nothing is
+          measured in either state, so the fill cannot separate them and the
+          word is what does.
         </p>
         <p className="gal-states">
           Rendered through the real section, so the head above the rows is the
@@ -940,12 +964,13 @@ export default function GalleryPage() {
           in one place.
         </p>
         <p className="gal-states">
-          Three rows, from the same fixture SystemRow uses: `vat-check` is QUEUED
-          and carries no operating figure at all — nobody measures the uptime of
-          a system that is not running, and ADR 0055 says that gets no cell
-          rather than `— NO DATA`. `timseil.dev` is LIVE and carries the label
-          with an empty value, because that measurement was attempted and has not
-          arrived. The third is IN BUILD, which production cannot produce.
+          Three rows, from the same fixture SystemRow uses: `talos-prod` is
+          IN BUILD and carries no operating figure at all — nobody measures the
+          uptime of a system that is not running, and ADR 0055 says that gets no
+          cell rather than `— NO DATA`. `timseil.dev` is LIVE and carries the
+          label with an empty value, because that measurement was attempted and
+          has not arrived. The third is QUEUED, which production no longer
+          produces.
         </p>
         <p className="gal-states">
           The fourth row under it is the same component with `body={null}`: the

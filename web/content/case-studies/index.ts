@@ -8,9 +8,10 @@
 // proves the segment is safe, this proves the page was meant to exist.
 //
 // A SYSTEM IS NOT A CASE STUDY. The seed holds two systems and this file holds
-// one study: `vat-check` is queued, has no repository and nothing written about
-// it, so `/work/vat-check` is a 404 rather than a page of em dashes. The Work
-// Index in H6 lists both systems and links only the one that has a page.
+// one study: `talos-prod` is in_build, its repository is private and nothing is
+// written about it, so `/work/talos-prod` is a 404 rather than a page of em
+// dashes. The Work Index in H6 lists both systems and links only the one that
+// has a page.
 //
 // AND lib/seo/pages.ts READS THIS LIST rather than keeping a second one. A path
 // that is renderable but absent from the SEO table throws at build time, which

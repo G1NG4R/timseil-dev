@@ -30,7 +30,7 @@ describe("a post that names no system this list holds", () => {
 
     assert.equal(logEntriesFor(posts, "timseil-dev"), 1);
     assert.equal(logEntriesFor(posts, "timsiel-dev"), 1);
-    assert.equal(logEntriesFor(posts, "vat-check"), 0);
+    assert.equal(logEntriesFor(posts, "talos-prod"), 0);
   });
 
   it("counts a post with no systemId towards nothing", () => {

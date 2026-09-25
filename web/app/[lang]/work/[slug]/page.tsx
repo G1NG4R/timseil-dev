@@ -74,8 +74,9 @@ export function generateStaticParams() {
   return CASE_STUDIES.map((study) => ({ slug: study.slug }));
 }
 
-// The two systems the seed creates are not two case studies: `vat-check` is
-// queued, has no repository and nothing written about it, so it has no page.
+// The two systems the seed creates are not two case studies: `talos-prod` is
+// in_build, its repository is private and nothing is written about it, so it
+// has no page.
 // The registry is the gate, and `caseStudyFor` is the only thing that decides
 // which segments exist — an unknown one is a 404 before anything leaves this
 // container. lib/http/url.ts proves a segment is safe to put in a URL; this

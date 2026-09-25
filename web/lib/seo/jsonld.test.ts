@@ -168,13 +168,13 @@ void test("the log and the work index describe themselves with the same shape", 
 void test("a row with nowhere to go carries no url", () => {
   const list = listOf(collectionLd("en", "/work", "Selected work", [
     { name: "timseil.dev", path: "/work/timseil-dev" },
-    { name: "vat-check", path: null },
+    { name: "talos-prod", path: null },
   ]));
   const items = list.itemListElement as Record<string, unknown>[];
 
   assert.equal(items[0]?.url, `${SITE_URL}/work/timseil-dev`);
   assert.ok(!("url" in (items[1] ?? {})), "a system with no page must not be given one");
-  assert.equal(items[1]?.name, "vat-check");
+  assert.equal(items[1]?.name, "talos-prod");
 });
 
 void test("every url in the list is absolute, because a crawler is not on this host", () => {

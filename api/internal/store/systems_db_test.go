@@ -26,8 +26,13 @@ import (
 )
 
 const (
-	liveSlug   = "timseil-dev"
-	queuedSlug = "vat-check"
+	liveSlug = "timseil-dev"
+	// System 01 is the one that is not live, and after U3 that is a cluster
+	// being built rather than an API that was only ever specified. The name
+	// says `building` and not `queued` because the seed no longer holds a
+	// single `queued` row — what these tests need is "not live", and `in_build`
+	// is what carries that now.
+	buildingSlug = "talos-prod"
 )
 
 // loaded brings the schema up, builds one of the four fixture sets, and hands
@@ -91,9 +96,9 @@ func TestListSystemsIsOrderedByNumber(t *testing.T) {
 	if len(rows) != 2 {
 		t.Fatalf("got %d systems, want the two the seed writes", len(rows))
 	}
-	if rows[0].Slug != queuedSlug || rows[1].Slug != liveSlug {
+	if rows[0].Slug != buildingSlug || rows[1].Slug != liveSlug {
 		t.Errorf("order = %q, %q — want %q (01) before %q (02)",
-			rows[0].Slug, rows[1].Slug, queuedSlug, liveSlug)
+			rows[0].Slug, rows[1].Slug, buildingSlug, liveSlug)
 	}
 }
 
@@ -128,9 +133,9 @@ func TestTheListRefusesMetricsForASystemThatIsNotLive(t *testing.T) {
 	sqlDB := dbtest.App(t)
 	_, err := sqlDB.Exec(`
 		INSERT INTO metric_snapshots (system_id, measured_at, uptime_90d, p95_ms, error_rate)
-		SELECT id, now(), 99.9, 120, 0.001 FROM systems WHERE slug = 'vat-check'`)
+		SELECT id, now(), 99.9, 120, 0.001 FROM systems WHERE slug = 'talos-prod'`)
 	if err != nil {
-		t.Fatalf("writing a measurement for the queued system: %v", err)
+		t.Fatalf("writing a measurement for the system that is not live: %v", err)
 	}
 
 	rows, err := q.ListSystems(context.Background())
@@ -138,11 +143,11 @@ func TestTheListRefusesMetricsForASystemThatIsNotLive(t *testing.T) {
 		t.Fatalf("ListSystems: %v", err)
 	}
 	for _, row := range rows {
-		if row.Slug != queuedSlug {
+		if row.Slug != buildingSlug {
 			continue
 		}
 		if row.Uptime90d != nil || row.P95Ms != nil || row.ErrorRate != nil || row.MeasuredAt.Valid {
-			t.Errorf("the list returned a measurement for a queued system: %v %v %v",
+			t.Errorf("the list returned a measurement for a system that is not live: %v %v %v",
 				row.Uptime90d, row.P95Ms, row.ErrorRate)
 		}
 	}
@@ -220,13 +225,13 @@ func TestTheSourceAxisIsEitherOr(t *testing.T) {
 			liveSlug, open.SourceAccess, open.SourceUrl, open.SourceReason)
 	}
 
-	closed, err := q.GetSystemBySlug(ctx, queuedSlug)
+	closed, err := q.GetSystemBySlug(ctx, buildingSlug)
 	if err != nil {
-		t.Fatalf("GetSystemBySlug(%q): %v", queuedSlug, err)
+		t.Fatalf("GetSystemBySlug(%q): %v", buildingSlug, err)
 	}
 	if closed.SourceAccess != "private" || closed.SourceReason == nil || closed.SourceUrl != nil {
 		t.Errorf("%s = %s / url %v / reason %v, want private with a reason and no url",
-			queuedSlug, closed.SourceAccess, closed.SourceUrl, closed.SourceReason)
+			buildingSlug, closed.SourceAccess, closed.SourceUrl, closed.SourceReason)
 	}
 }
 
@@ -431,11 +436,11 @@ func TestIncidentsAndDeploysStayInsideTheWindow(t *testing.T) {
 
 // A system with no operational history at all answers with an empty grid rather
 // than an error — and the grid is still the full window, all of it nodata.
-// vat-check is queued, so day-one.sql never gave it a single cell.
+// talos-prod is in_build, so day-one.sql never gave it a single cell.
 func TestASystemWithNoHistoryStillGetsAFullGrid(t *testing.T) {
 	q := loaded(t, fixtures.Incident)
 	ctx := context.Background()
-	id := systemID(t, q, queuedSlug)
+	id := systemID(t, q, buildingSlug)
 
 	rows, err := q.OpsDaysForSystem(ctx, store.OpsDaysForSystemParams{SystemID: id, WindowSize: 91})
 	if err != nil {

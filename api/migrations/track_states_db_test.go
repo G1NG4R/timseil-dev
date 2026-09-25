@@ -350,8 +350,8 @@ func TestFlippingASystemToLiveMovesItsTracks(t *testing.T) {
 	var systemID int64
 	if err := db.QueryRow(`
 		INSERT INTO systems (slug, system_no, name, state, source_access, source_url)
-		VALUES ('vat-check', '01', 'vat-check', 'in_build', 'public',
-		        'https://github.com/G1NG4R/vat-check')
+		VALUES ('ghost-api', '01', 'ghost-api', 'in_build', 'public',
+		        'https://github.com/G1NG4R/ghost-api')
 		RETURNING id`).Scan(&systemID); err != nil {
 		t.Fatalf("seeding the system: %v", err)
 	}

@@ -151,7 +151,7 @@ export const PARTS: readonly Part[] = [
     where: "SYS.01",
     // NOT FROM THE INVENTORY, and that is the whole reason this entry took a
     // phase to appear. The handoff lists `SkillRow` and no card around it, so
-    // H4 built one — five modules are five boxes, and a grid of rows with
+    // H4 built one — a module is a box, and a grid of rows with
     // headings between them would have been a card with the box left off.
     // The backlog carried it as "gebaut, aber nicht inventarisiert" from
     // 01.09.2026 until H5a, which is the file this phase had open anyway.

@@ -44,16 +44,17 @@ func scalar(t *testing.T, db *sql.DB, query string, args ...any) int {
 }
 
 // TestSeedIsTheAcceptanceCriterion is the phase's stated criterion, counted
-// rather than claimed: 13 applied, 9 queued, no core, and one system behind
-// every piece of evidence.
+// rather than claimed: 8 applied, 6 learning, no core, and both systems behind
+// the evidence.
 //
-// The build plan and the handbook say "9 learning" here. They are older than the
-// derivation. `learning` means an in_build system exists, and on launch day none
-// does — vat-check is `queued`, timseil.dev is `live`. A track with no evidence
-// at all is `queued`, because "I am learning this" with nothing to point at is
-// self-assessment, and invariant 2 exists to keep self-assessment out of the
-// log. ADR 0003 carries the reasoning; the four documents that say otherwise are
-// corrected in K1.
+// U3 turned this test around. `learning` means an in_build system exists, and
+// until then none did — so `learning` was the bucket asserted to be empty and
+// `queued` was the biggest one in the log. Now talos-prod is `in_build` and
+// backs six tracks on its own, while every track has at least one line, so
+// `queued` is what must be zero. A track with no evidence at all would still be
+// `queued`, because "I am learning this" with nothing to point at is
+// self-assessment and invariant 2 exists to keep self-assessment out of the log.
+// ADR 0003 carries the derivation, ADR 0079 the content.
 func TestSeedIsTheAcceptanceCriterion(t *testing.T) {
 	db, counts := seeded(t)
 
@@ -79,23 +80,24 @@ func TestSeedIsTheAcceptanceCriterion(t *testing.T) {
 		t.Fatalf("reading the derivation: %v", err)
 	}
 
-	want := map[string]int{"applied": 13, "queued": 9}
+	want := map[string]int{"applied": 8, "learning": 6}
 	for state, n := range want {
 		if states[state] != n {
 			t.Errorf("%s: got %d tracks, want %d", state, states[state], n)
 		}
 	}
-	// Zero core is the whole point of the launch-day log: something built once is
-	// something run once. Two live systems is a different claim.
-	for _, state := range []string{"core", "learning"} {
+	// Zero core is still the whole point: core needs two live systems under one
+	// track, and the cluster is in_build until the cutover. Zero queued is what
+	// U3 added — nine tracks used to sit there with nothing to point at.
+	for _, state := range []string{"core", "queued"} {
 		if n := states[state]; n != 0 {
-			t.Errorf("%s: got %d tracks, want 0 on launch day", state, n)
+			t.Errorf("%s: got %d tracks, want 0 on the seeded database", state, n)
 		}
 	}
 
-	// The log header: EVIDENCE: 01 SYSTEM. One, and it says one.
-	if n := scalar(t, db, `SELECT count(DISTINCT system_id) FROM track_evidence`); n != 1 {
-		t.Errorf("evidence systems: got %d, want 1", n)
+	// The log header: EVIDENCE: 02 SYSTEMS. Two, and it says two.
+	if n := scalar(t, db, `SELECT count(DISTINCT system_id) FROM track_evidence`); n != 2 {
+		t.Errorf("evidence systems: got %d, want 2", n)
 	}
 }
 
@@ -232,7 +234,9 @@ func TestSeedRefusesASystemNothingDeclares(t *testing.T) {
 
 // The guard that matters most, held to its broken case: seed.sql inserts its
 // evidence through a join on track names, so a rename on one side only drops a
-// row in silence and a track turns from APPLIED to QUEUED on the live page.
+// row in silence and a track falls a stage on the live page — APPLIED to
+// LEARNING where the cluster still backs it, LEARNING to QUEUED where nothing
+// does.
 //
 // Forcing the count to disagree proves two things at once — that the mismatch is
 // caught, and that the transaction rolls back rather than leaving half a log.
@@ -242,7 +246,7 @@ func TestSeedRefusesToCommitAWrongCount(t *testing.T) {
 
 	original := seed.Expected
 	t.Cleanup(func() { seed.Expected = original })
-	seed.Expected = seed.Counts{Systems: 2, Modules: 5, Tracks: 22, Evidence: 12}
+	seed.Expected = seed.Counts{Systems: 2, Modules: 6, Tracks: 14, Evidence: 18}
 
 	if _, err := seed.Apply(context.Background(), db); err == nil {
 		t.Fatal("the seed committed a count it did not expect")

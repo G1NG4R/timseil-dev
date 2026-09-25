@@ -133,13 +133,13 @@ func TestMetricsAreRefusedForASystemThatIsNotLive(t *testing.T) {
 	sqlDB := dbtest.App(t)
 	_, err := sqlDB.Exec(`
 		INSERT INTO metric_snapshots (system_id, measured_at, uptime_90d, p95_ms, error_rate)
-		SELECT id, now(), 99.9, 120, 0.001 FROM systems WHERE slug = 'vat-check'`)
+		SELECT id, now(), 99.9, 120, 0.001 FROM systems WHERE slug = 'talos-prod'`)
 	if err != nil {
-		t.Fatalf("writing a measurement for the queued system: %v", err)
+		t.Fatalf("writing a measurement for the system that is not live: %v", err)
 	}
 
-	// vat-check is seeded as queued, so its measurement must not be readable.
-	if _, err := q.LatestMetrics(ctx, "vat-check"); !errors.Is(err, pgx.ErrNoRows) {
+	// talos-prod is seeded as in_build, so its measurement must not be readable.
+	if _, err := q.LatestMetrics(ctx, "talos-prod"); !errors.Is(err, pgx.ErrNoRows) {
 		t.Errorf("LatestMetrics returned numbers for a system that is not live: %v", err)
 	}
 }

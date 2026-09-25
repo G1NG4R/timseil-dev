@@ -35,7 +35,7 @@ import type { WorkEntry } from "@/lib/work/entries";
  *
  * A ROW WITH NOWHERE TO GO CARRIES NO CONTROL AT ALL — not a greyed-out one.
  * STATE.05 refuses a dead control, the state column beside it already says
- * QUEUED, and `/work/vat-check` is a 404 that no arrow may promise.
+ * IN BUILD, and `/work/talos-prod` is a 404 that no arrow may promise.
  */
 export function WorkRow({ entry, messages }: { entry: WorkEntry; messages: Messages }) {
   return (

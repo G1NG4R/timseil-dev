@@ -166,7 +166,7 @@ erste Aufgabe, die ausschließlich Tim erledigen kann.
   die Kehrseite von „privat": für `talos-prod` gibt es keine Quelle zum
   Nachlesen, nur Komponentennamen und ein Gespräch. Ein Leser, der mehr will,
   bekommt nichts — bis der Cutover den Cluster messbar macht.
-- **Acht Tracks fallen auf `learning`, und die Seite sieht kleiner aus.** Wer
+- **Sechs Tracks fallen auf `learning`, und die Seite sieht kleiner aus.** Wer
   22 Zeilen gegen 14 zählt, sieht einen Rückbau. Die 14 halten einer Nachfrage
   stand, die 22 nicht; der Tausch wird bewusst gemacht und nicht kommentiert.
 - **`Co-Authored-By` ist von nun an Disziplin ohne Werkzeug.** Es gibt keine

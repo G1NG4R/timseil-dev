@@ -210,10 +210,13 @@ docker compose -f compose.dev.yaml exec db psql -U timseil_boot -d timseil \
   -c "SELECT count(*) FROM metric_snapshots"
 ```
 
-Erwartet: `applied 13` und `queued 9`, ein belegendes System, `vat-check` ohne
-Versionsnummer im Stack, null Snapshots.
+Erwartet: `applied 8` und `learning 6`, zwei belegende Systeme, `talos-prod`
+ohne Versionsnummer im Stack, null Snapshots.
 
-**Zu den 9:** Handbuch Kapitel 11, Build-Plan B4, `docs/design/README.md` und das
-Homepage-Blatt sagen dort `learning`. Das ist nicht erreichbar — `learning` setzt
-ein `in_build`-System voraus, und zum Launch gibt es keins. Die Begründung, warum
-die Ableitung gewinnt, steht im Nachtrag von ADR 0003.
+**Zu den 6:** `learning` setzt ein `in_build`-System voraus. Bis U3 gab es keins,
+deshalb war die Zeile hier jahrelang `queued 9` — Handbuch Kapitel 11,
+Build-Plan B4, `docs/design/README.md` und das Homepage-Blatt sagten schon damals
+`learning`, und die Begründung, warum die Ableitung gewinnt, steht im Nachtrag
+von ADR 0003. Seit ADR 0079 ist `talos-prod` `in_build` und belegt sechs Tracks
+allein; `queued` erzeugt der Seed nicht mehr, weil jeder Track mindestens eine
+Belegzeile hat.

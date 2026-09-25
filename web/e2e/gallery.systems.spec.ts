@@ -39,12 +39,12 @@ test.beforeEach(async ({ page }) => {
 //
 // STATE.05 refuses a dead control — "ein toter Zustand ohne Begründung ist ein
 // Bug" — and the inventory asks for `disabled (queued)`. What got built is an
-// ABSENT exit, because `/work/vat-check` is a 404 and a greyed-out arrow would
+// ABSENT exit, because `/work/talos-prod` is a 404 and a greyed-out arrow would
 // be a control that explains nothing. This goes red if anybody renders one.
 test("a row with nowhere to go carries no control at all", async ({ page }) => {
   const rows = page.locator(ROWS);
 
-  // Row 0 is `vat-check`: queued, no case study, therefore no link.
+  // Row 0 is `talos-prod`: in_build, no case study, therefore no link.
   await expect(rows.nth(0).locator(".sys-exit a")).toHaveCount(0);
   await expect(rows.nth(0).locator(".sys-exit")).toHaveText("");
 
@@ -56,19 +56,19 @@ test("a row with nowhere to go carries no control at all", async ({ page }) => {
 // The state column is what says WHY the row above has no arrow, and it has to
 // say it in a word rather than in the absence of one.
 test("the state column carries a word for every row", async ({ page }) => {
-  await expect(page.locator(`${ROWS} .sys-state`)).toHaveText(["QUEUED", "LIVE", "IN BUILD"]);
+  await expect(page.locator(`${ROWS} .sys-state`)).toHaveText(["IN BUILD", "LIVE", "QUEUED"]);
 });
 
-// #289, closed in H6, and the reason the third fixture row has existed since
-// H5a. Until this phase the assertion here was `— NO DATA`: the contract
-// declared `in_build`, the vocabulary had no word for it, and inventing one
-// would have been a word with no tone, no dot and no dictionary key behind it.
-// The Work Index draws a legend that defines all three system states, so the
-// word now has all three and the row carries it.
+// The third fixture row has existed since H5a and has always held whichever
+// state production did not. Until U3 that was `in_build` — #289, closed in H6,
+// gave the word a tone, a dot and a dictionary key so the row could stop
+// reading `— NO DATA`. ADR 0079 then put the cluster into `in_build` and took
+// every `queued` row out of the seed, so the row swapped words and the test
+// kept its job.
 test("the state the seed cannot produce is drawn, not excused", async ({ page }) => {
   const row = page.locator(ROWS).nth(2);
 
-  await expect(row.locator(".sys-state")).toHaveText("IN BUILD");
+  await expect(row.locator(".sys-state")).toHaveText("QUEUED");
 
   // AND THE DOT SAYS UNMEASURED, WHICH IS THE HALF WORTH ASSERTING. IN BUILD
   // and QUEUED carry the same mark on purpose — nothing is measured in either,

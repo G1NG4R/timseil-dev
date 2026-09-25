@@ -6,8 +6,9 @@ import { NO_DATA } from "../state/words.ts";
 import { evidenceLine, modules, trackView, trainingMeta, type Training } from "./training.ts";
 
 // THE EMPTY ROW IS THE FIRST TEST AND NOT THE LAST, because it is the row this
-// endpoint exists for: nine of the twenty-two tracks have no evidence at launch,
-// and ADR 0018 records that an inner join would have dropped exactly them. Every
+// endpoint exists for: a track with no evidence at all, which ADR 0018 records
+// an inner join would have dropped in silence. Since U3 the seed produces none of
+// them, which makes this block the only place the shape is held at all. Every
 // block below asks what happens when something is missing before it asks what
 // happens when everything is there.
 
@@ -181,16 +182,20 @@ describe("the tree comes back in the order it arrived", () => {
 
 describe("the line over the log", () => {
   it("reads the seed's own answer back", () => {
-    const body = { trackCount: 22, evidenceSystems: 1 } as unknown as Training;
+    const body = { trackCount: 14, evidenceSystems: 2 } as unknown as Training;
     assert.equal(
       trainingMeta(body),
-      "SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM · SOURCE: /api/training",
+      "SELF-TRACKED · 14 TRACKS · EVIDENCE: 02 SYSTEMS · SOURCE: /api/training",
     );
   });
 
-  it("counts systems in the plural once there are two", () => {
-    const body = { trackCount: 22, evidenceSystems: 6 } as unknown as Training;
-    assert.ok(trainingMeta(body).includes("EVIDENCE: 06 SYSTEMS"));
+  // The singular used to be the seed's own case and is now the one it does not
+  // reach: since U3 both systems back something. It is asserted here rather than
+  // dropped, because one system is what the answer says the day before a second
+  // one has anything on it.
+  it("counts one system in the singular", () => {
+    const body = { trackCount: 14, evidenceSystems: 1 } as unknown as Training;
+    assert.ok(trainingMeta(body).includes("EVIDENCE: 01 SYSTEM ·"));
   });
 
   it("uses the api's count even when the tree disagrees with it", () => {

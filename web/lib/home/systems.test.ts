@@ -12,7 +12,7 @@ import { systemEntries } from "./systems.ts";
 // fixture would mean one edit could quietly satisfy both.
 const SEEDED = {
   systems: [
-    { slug: "vat-check", systemNo: "01", name: "VAT Check API", state: "queued" },
+    { slug: "talos-prod", systemNo: "01", name: "talos-prod", state: "in_build" },
     { slug: "timseil-dev", systemNo: "02", name: "timseil.dev", state: "live" },
   ],
 } as unknown as SystemList;
@@ -24,7 +24,7 @@ describe("a system is not a case study", () => {
   it("links the system that has a page and not the one that does not", () => {
     const entries = systemEntries(SEEDED);
 
-    assert.equal(entries[0].href, null, "vat-check has no case study and must not link");
+    assert.equal(entries[0].href, null, "talos-prod has no case study and must not link");
     assert.equal(entries[1].href, "/work/timseil-dev");
   });
 

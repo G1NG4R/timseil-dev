@@ -11,7 +11,7 @@ import { NO_DATA } from "@/lib/state/words";
  *
  * THE HEAD IS INSIDE THIS COMPONENT AND NOT ABOVE IT, which is the one
  * structural decision here. The sheet puts the counts in the section head —
- * `SELF-TRACKED · 22 TRACKS · EVIDENCE: 01 SYSTEM · SOURCE: /api/training` —
+ * `SELF-TRACKED · 14 TRACKS · EVIDENCE: 02 SYSTEMS · SOURCE: /api/training` —
  * and those are the answer's numbers, so the head cannot be rendered before the
  * answer is. Keeping the head outside the streamed region would have meant
  * either a head with no meta (H2a's compromise, taken when there were no

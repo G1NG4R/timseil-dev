@@ -11,12 +11,13 @@ import type { NextSystem as Next } from "@/content/case-studies/types";
  * a page that makes one upstream call — for a card. Writing them here instead
  * would put a measured value in a file whose first line says it holds none.
  *
- * IT LINKS TO THE WORK INDEX, NOT TO THE SYSTEM. `vat-check` is `queued`, has no
- * repository and nothing written about it, so `content/case-studies/index.ts`
- * gives it no page and `/work/vat-check` is a 404 by design. A card that linked
- * there would be evidence pointing into nothing — invariant 5, in a place the
- * database cannot enforce it. The index is the page whose job this is, and H6 is
- * where the card can be given a real source.
+ * IT LINKS TO THE WORK INDEX, NOT TO THE SYSTEM. `talos-prod` is `in_build`, its
+ * repository is private and nothing is written about it, so
+ * `content/case-studies/index.ts` gives it no page and `/work/talos-prod` is a
+ * 404 by design. A card that linked there would be evidence pointing into
+ * nothing — invariant 5, in a place the database cannot enforce it. The index
+ * is the page whose job this is, and H6 is where the card can be given a real
+ * source.
  */
 export function NextSystem({
   next,
