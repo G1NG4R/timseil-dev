@@ -12,6 +12,152 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 26.09.2026, U6 abgenommen: `v0.44.1`, zwei Merges an einem Tag, und ein Kriterium, das zu weit griff
+
+`b400a17` läuft, **`v0.44.1`**. Die Phase hat zwei Merges gebraucht: #413 hat die
+Prosa der Fallstudie entfernt, #414 hat `.01 PROBLEM` drei Stunden später
+zurückgeholt. Der zweite war keine Nacharbeit an einem Fehler im Code, sondern an
+einem Fehler im Kriterium — das ist der Fund der Stufe und steht unten.
+
+| | #413 · U6 | #414 · U6a |
+|---|---|---|
+| Squash | `2de8c80` | `b400a17` |
+| Merge | **12:45:48Z** | **14:15:02Z** |
+| Version | `v0.43.0` → **`v0.44.0`** | → **`v0.44.1`** |
+| `durationSec` | 1031, `result ok` | 1039, `result ok` |
+| Wanduhr Merge → Deploy-Meldung | 1033 s | 1041 s |
+| Zeuge | 1071 × 200 je Pfad | 1074 × 200 je Pfad |
+
+Uhrzeiten mit `date -u` gelesen, jedes Mal. 12:45Z und 14:15Z liegen beide gut
+neun Stunden vor dem Dokploy-Fenster.
+
+### Der Zeuge hat beide Tausche von vorn gesehen
+
+**#413:** 1071 Anfragen je Pfad, 1071 × 200 auf `/` und 1071 × 200 auf
+`/api/health`, drei Sekunden ohne Stichprobe.
+**#414:** Start **14:14:55Z**, sieben Sekunden vor dem Merge. 1074 Anfragen je
+Pfad, 1074 × 200 auf beiden, fünf Sekunden ohne Stichprobe.
+
+Keine 404, keine 502, keine abgerissene Verbindung, in keinem der beiden Läufe.
+Für **#304** sind das die **dritte und vierte** bezeugte Beobachtung über die
+volle Dauer, nach U4 und U5. Vier saubere Tausche sind keine Quote, aber sie sind
+vier — und zum ersten Mal zwei am selben Tag, auf demselben Host, mit demselben
+Ergebnis.
+
+### Die Uhr, die keine zweite Uhr ist
+
+Bei #414 stehen drei Zeitpunkte nebeneinander, und sie sagen drei verschiedene
+Dinge:
+
+| | |
+|---|---|
+| `ops.lastDeploy.at` | 14:32:23Z — **1041 s** nach dem Merge |
+| `startedAt` des Prozesses, der jetzt antwortet | 14:32:35.645832365Z — **1054 s** nach dem Merge |
+| Zeuge sieht „ein neuer Prozess antwortet" | ≈ 14:32:19Z — erschlossen aus Laufende minus 30 s Nachlauf |
+
+**Der Prozess, der die Seite jetzt ausliefert, ist 12,6 s nach der
+Deploy-Meldung gestartet.** Sechsmal `startedAt` abgefragt, im Abstand von zwei
+Sekunden: immer derselbe Wert, also keine Zwillinge mehr im Spiel. Woher die
+12,6 s kommen, ist hier **nicht** geklärt — `witness.sh` sagt über sich selbst,
+dass ein Wechsel in `startedAt` beweist, dass ein neuer Prozess aufgetaucht ist,
+und nicht, dass der alte weg ist. Das ist eine Messung mit einer offenen Frage
+daran, keine Schlussfolgerung. Notiert, nicht erklärt.
+
+### Gegen Produktion gemessen
+
+| | |
+|---|---|
+| `/api/health` | `sha b400a17` · `version v0.44.1` · `status ok` · `ops.systemsLive 1` von `2` |
+| Sektionen | `01 PROBLEM` · `02 BUILD` · `03 OPERATIONS` |
+| `.01` | 3 Absätze, 5 Constraints |
+| Spec-Rail | `STACK` · `YEAR` · `STATUS` · `SOURCE` — vier Zeilen, keine ROLE |
+| Pipeline | 7 Stationen |
+| Raster | **91 Zellen** — `nodata 56`, `ok 32`, `outage 3`, identisch zu `/api/systems/timseil-dev` |
+| Kacheln | `80.05 %` über *35 of 91 days measured*, `218.5 ms`, `0.00 %`, `290 s`, `0` |
+| Alte Rolle | `/` · `/work` · `/work/timseil-dev` · `/about` · `/blog` · `/contact` → **0**, in `main` **und** im ganzen Dokument |
+| Schluss-`grep` (A11) | **4 Zeilen**, keine davon eine Rolle |
+
+**Sektionshöhen Zeile für Zeile identisch zur lokalen Messung:** 515 / 334 /
+242 + 337, bei `clientWidth 1048`, Inhaltsspalte 968, `.cs-prob` einspaltig,
+Constraints `443.947px 443.947px`. Der einzige Unterschied zum lokalen Lauf ist
+das Raster — 91 Zellen gegen 0, weil das e2e-Rig keine API hat.
+
+`uptime90d 80,05 %` ist kein Befund: das Fenster trägt die Tage, an denen noch
+nichts gemessen wurde, und die Kachel sagt daneben, wie viele es sind.
+
+---
+
+### Der Fund der Stufe: ein Kriterium kann richtig sein und trotzdem zu weit greifen
+
+ADR 0081 §1 hat entschieden: *was ein System erzeugt oder eine Prüfung hält,
+bleibt.* Das ist das richtige Kriterium **für eine Behauptung über das System**.
+Der Anfrageweg und die Entscheidungstabelle sind zu Recht gefallen — sie
+behaupten Nachprüfbares, und nichts hielt sie dagegen.
+
+`.01 PROBLEM` behauptet nichts über das System. Es begründet, dass es das System
+gibt. Darauf angewandt heißt „nichts hält es" nur, dass **kein System erzeugen
+kann, warum jemand etwas gebaut hat** — wahr, und ohne Beweiskraft. Eine Seite,
+deren ganzes Argument „jede Behauptung hat einen Beleg" lautet, schuldet dem
+Leser den Satz, der das Argument ausspricht. Der Nachtrag zu ADR 0081 schärft es:
+
+> Was eine Sache über das System behauptet, braucht einen Beleg. Was begründet,
+> warum es das System gibt, braucht einen Autor.
+
+**Und der unbequeme Teil.** Das Kriterium ist durch ein ADR gegangen, gegen 24
+Dateien angewandt, durch `make check` und **2170** e2e-Tests gefahren, im Diff
+gegengelesen, gemergt und gegen Produktion gemessen. Jede Stufe war grün. Keine
+davon konnte melden, dass der Block fehlt — sie prüfen, ob die Seite tut, was
+sie soll, nicht ob sie sagen sollte, was sie sagt.
+
+Der Fund ist also nicht „ein Test hat gefehlt". **Die Abnahme hatte keinen
+Leser.** Die einzige Prüfung, die das findet, ist jemand, der die Seite liest.
+
+### Gefunden
+
+- **Eine Messung nach einer Client-Navigation liest die verlassene Route.** Der
+  erste Produktionslauf dieser Abnahme meldete alle Sektionshöhen als **0** und
+  **121** Raster-Zellen. Beides war echt gemessen und beides war falsch: der Tab
+  stand auf `/`, und die Fallstudie war noch mounted — zwei `<h1>` im Dokument,
+  die alte Route versteckt statt entfernt. Das ist der Befund aus H6a und H12c,
+  hier zum dritten Mal, diesmal gegen die eigene Abnahme. **Die Reparatur ist
+  eine Zeile:** `location.href` in derselben Abfrage mitlesen, in der man misst.
+- **`Makefile:1105` sagt, e2e laufe „not in the pipeline yet".**
+  `.github/workflows/ci.yml:207` hat den Job seit H1, und
+  `web/content/case-studies/timseil-dev.ts` führt die Stufe `E2E` mit
+  `job: "e2e"` — von `lib/content/pipeline.test.ts` gegen genau diese
+  Workflow-Datei gehalten. **Der Test hält den Job-Namen, nicht die Behauptung
+  darüber, ob es den Job gibt.** Ein Kommentar kann neben einem Test veralten,
+  der ihn fast prüft.
+- **Zwei unabhängige Uhren waren bei #413 eine Sekunde auseinander** — Wanduhr
+  1033 s gegen `durationSec` 1031 —, bei #414 dreizehn. Der Unterschied ist die
+  Wahl des Endpunkts, nicht die Genauigkeit: die eine Zahl endet an der
+  Deploy-Meldung, die andere am `startedAt` des überlebenden Prozesses.
+- **Eine gemergte Zahl bewegt sich, wenn ein Kommentar sie zitiert.** Der erste
+  Entwurf des neuen Absatz-Kommentars zitierte die alte Rollenformulierung
+  wörtlich. Der Schluss-`grep` liest diese Datei und zählt **Zeilen** — die
+  veröffentlichte Vier wäre eine Fünf geworden und hätte ausgesehen, als hätte
+  die Phase etwas übersehen.
+
+### Was diese Abnahme nicht beweist
+
+**Die Zustände oberhalb von 1080 hat niemand gegen Produktion gesehen.** Das
+Fenster hier ist 1048 breit und der Tiling-WM gibt es nicht her; die 380er-Rail
+bei 1440 ist lokal durch das Blatt-Orakel belegt (`problem-rail-width`) und
+gegen Produktion **nicht**. Die volle Suite gegen die Seite zu ziehen wurde
+bewusst nicht gemacht — mehrere hundert Anfragen gegen einen Host mit einem
+Bouncer davor ist eine Vier-Stunden-Sperre als Preis für eine Zahl, die das Rig
+schon liefert.
+
+### Verschoben
+
+- Die Triage der Stufe H und aller offenen Issues läuft nach **U9**, nicht
+  vorher. #297, #292 und #294 lösen sich durch U6 auf und sind notiert, nicht
+  geschlossen.
+- Die 12,6 s zwischen Deploy-Meldung und `startedAt` — offen, siehe oben.
+- Der Makefile-Kommentar — Reparatur ist eine Zeile, gehört in die Triage.
+
+---
+
 ## Wo wir stehen — 25.09.2026, U5 abgenommen: `v0.43.0`, der zweite saubere Tausch in Folge, und ein `grep`, der zu weit griff
 
 `8b02a61` läuft, **`v0.43.0`**. Merge **21:32:30Z**, neuer Prozess ab
