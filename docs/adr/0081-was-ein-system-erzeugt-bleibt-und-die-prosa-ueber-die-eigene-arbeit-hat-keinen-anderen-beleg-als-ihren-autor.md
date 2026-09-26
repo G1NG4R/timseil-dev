@@ -68,7 +68,8 @@ Angewandt auf die achtzehn Felder:
 
 | Fällt | Warum |
 |---|---|
-| `lead`, `problem[]`, `constraints[]` | Argument |
+| `lead` | Argument |
+| ~~`problem[]`, `constraints[]`~~ | **Zurückgenommen am selben Tag — siehe Nachtrag** |
 | `architecture.hops[]`, `.lanes[]`, `.decisions[]` | Argument. Der Anfrageweg spiegelt `docs/architecture/c4-container.md`, aber **nichts hält die zehn Texte dagegen** — genau die Lücke, die `pipeline.test.ts` für die Pipeline geschlossen hat |
 | `build.phases[]` | Argument |
 | `operations.observability[]` | Argument |
@@ -220,6 +221,13 @@ zitierte die ROLE-Zeile im Kommentar und fällt mit ihr.
 
 ### Die Seite ist kurz, und sie sagt nichts über sich selbst
 
+> **Korrigiert im Nachtrag vom 26.09.2026.** Die drei folgenden Abschnitte
+> beschreiben den Stand, den #413 gemergt hat. Er hielt drei Stunden; `.01
+> PROBLEM` steht seitdem wieder da, und die Zahlen darin sind entsprechend um
+> eine Sektion, zwei Felder, zwei Wörterbuch-Schlüssel und acht Orakel-Einträge
+> daneben. Sie bleiben stehen, weil ein ADR festhält, was an einem Tag
+> entschieden wurde.
+
 Fünf Sektionen werden zwei. 409 Zeilen Inhalt werden 144, neunzehn Bauteile
 werden zwölf, 928 Zeilen `case.css` werden 548. Was ein Leser findet, ist eine
 Messtafel: eine Überschrift, vier Spec-Zeilen, fünf Kacheln, der Compose-Block,
@@ -260,6 +268,72 @@ kein Vorfall, keine Regel — eine Zeile im Backlog unter *Idee*.
 
 `hosting: "self-hosted"` wird beim Cutover mehrdeutig. Das ist U9.
 
+## Nachtrag vom 26.09.2026 — das Kriterium war zu grob, und `.01 PROBLEM` kommt zurück
+
+**§1 hat `problem[]` und `constraints[]` gefällt, und das war falsch.** Drei
+Stunden nach dem Merge von #413 stehen beide wieder auf der Seite, als `.01`,
+mit angepasstem erstem Absatz. Die übrigen Streichungen bleiben.
+
+### Was der Fehler war
+
+Nicht die Regel, sondern ihre Reichweite. „Ein System erzeugt es, oder eine
+Prüfung hält es" ist ein gutes Kriterium **für eine Behauptung über das System** —
+eine Zahl, eine Versionsangabe, ein Job-Name, eine Station im Anfrageweg. Der
+Anfrageweg und die Entscheidungstabelle sind zu Recht gefallen: sie behaupten
+Sachverhalte, die anderswo nachprüfbar wären, und nichts hielt sie dagegen. Das
+ist ein Argument in der Form einer Messung, und genau das lehnt diese Seite ab.
+
+`.01 PROBLEM` ist keine Behauptung über das System. Es ist die Begründung
+dafür, dass es das System überhaupt gibt:
+
+> „A portfolio that only shows screenshots asks the reader to take the
+> engineering on trust."
+
+Auf so einen Satz ist das Kriterium nicht anwendbar, und es anzuwenden hieß, ihn
+mit „nichts hält ihn" zu erledigen — was wahr ist und nichts beweist. Kein
+System kann erzeugen, warum jemand etwas gebaut hat. **Eine Seite, deren ganzes
+Argument „jede Behauptung hat einen Beleg" lautet, schuldet dem Leser den Satz,
+der das Argument ausspricht.** Ohne ihn ist die Fallstudie eine Messtafel, die
+nicht sagt, wofür sie steht — und die Regel, die sie erklären sollte, steht
+nirgends auf der Seite, die nach ihr gebaut ist.
+
+Die fünf Constraints kommen mit, und bei ihnen ist der Fall sogar enger: Kapitel
+3 des Build-Plans lehnt WebGL ab, indem es *„bricht Constraint 04 deiner eigenen
+Fallstudie"* zurückzitiert. Ein nummerierter Satz, aus dem ein anderes Dokument
+argumentiert, ist das Nächste an einer gehaltenen Aussage, was diese Datei zu
+bieten hat. §1 hat ihn als „Argument" abgeräumt und dabei den Verbraucher
+übersehen.
+
+### Die geschärfte Fassung des Kriteriums
+
+> **Was eine Sache über das System behauptet, braucht einen Beleg: ein System
+> erzeugt es, oder eine Prüfung hält es. Was begründet, warum es das System
+> gibt, braucht einen Autor — und der ist Tim.**
+
+Der zweite Satz nimmt §1 nichts weg. Er sagt, worauf der erste zielt. Nach ihm
+bleiben alle Streichungen von U6 bestehen außer diesen beiden.
+
+### Was das kostet, und was es über das Vorgehen sagt
+
+- **Ein gemergter Stand war drei Stunden lang ärmer als nötig.** Der Weg dahin
+  war kein Versehen: das Kriterium wurde entschieden, aufgeschrieben, gegen 24
+  Dateien angewandt und durch 2170 Tests gefahren. Es war nur an einer Stelle zu
+  breit gefasst, und keine der 2170 Prüfungen konnte das melden — sie prüfen,
+  ob die Seite tut, was sie soll, nicht ob sie sagen sollte, was sie sagt.
+- **Der erste Absatz musste angefasst werden.** Er trug die alte Rolle
+  (*„for a backend and platform role"*), eine der zwei Fundstellen, die U6
+  geräumt hat, und dürfte so nicht zurückkommen. Er nennt jetzt die Rolle, die
+  ADR 0079 festgelegt hat. Der Schluss-grep aus §7 bleibt bei **vier** Zeilen —
+  nachgezählt, nicht angenommen, und der Kommentar an der Stelle zitiert die
+  alte Formulierung bewusst **nicht**, weil der grep Zeilen zählt und ein Zitat
+  die veröffentlichte Zahl bewegt hätte.
+- **Die Zahlen aus U6 verschieben sich, und sie werden nachgetragen statt
+  stehengelassen**: 144 Zeilen Inhalt werden 190, neun Felder werden elf, zwei
+  Sektionen werden drei, das Orakel erklärt 36 statt 28 Einträge, und U8 spart
+  13 statt 15 Schlüssel.
+
+---
+
 ## Verworfene Alternativen
 
 **Die Prosa umschreiben statt löschen.** Derselbe Vorschlag, den ADR 0079 für
@@ -274,6 +348,11 @@ billigste Weg, und er hätte das Abnahmekriterium der Phase wörtlich erfüllt.
 Er lässt eine Fallstudie stehen, die erklärt, warum diese Seite jeder Behauptung
 einen Beleg abverlangt, und deren eigene Erklärung keinen hat. Das ist die
 Gattung Widerspruch, die ADR 0079 überhaupt erst nötig gemacht hat.
+
+*Der Nachtrag oben gibt dieser Alternative in einem Punkt recht: für
+`.01 PROBLEM` war sie die richtige Antwort, und zwar genau deshalb, weil die
+Erklärung der Seite nicht dieselbe Sorte Behauptung ist wie die Zahlen darauf.
+Für die übrigen sechs Blöcke bleibt sie verworfen.*
 
 **Den Anfrageweg behalten.** Der stärkste Einzelfall: fünf Stationen, fünf
 Lanes, und für ein Gespräch der nützlichste Block der Seite. Er ist auch

@@ -11,12 +11,19 @@
 // extended to this one, and it states what may stand here until Tim writes the
 // rest — what a system produces, or what a check holds, and nothing else.
 //
-// SO THE PAGE IS FIVE MEASUREMENTS AND TWO SENTENCES. The crumb, the eyebrow, the
+// SO THE PAGE IS FIVE MEASUREMENTS AND ONE ARGUMENT. The crumb, the eyebrow, the
 // spec rail, the five tiles and the 91-day grid with its incident log all come
 // from one answer. The compose block is cut out of `compose.yaml` by `make gen`.
 // The pipeline is seven names that lib/content/pipeline.test.ts holds against
-// `.github/workflows/ci.yml`. The `<h1>` and the caption are the two lines a
-// person typed, and both are about the system rather than about its author.
+// `.github/workflows/ci.yml`.
+//
+// AND `.01 PROBLEM` IS THE ARGUMENT, restored a few hours after U6 removed it.
+// Nothing holds it, which is why the phase cut it — and it is the only text on
+// this page that says why the site is a running system rather than a set of
+// screenshots. The addendum to ADR 0081 carries the correction: "nothing holds
+// it" is true of a page's reason for existing and is not an argument against
+// printing it. What the criterion still refuses is an argument shaped like a
+// measurement, which is what the request path and the result section were.
 //
 // THE EMPTY STATE IS STILL THE ONE THAT SHIPS FIRST, and it is not an oversight:
 // api/internal/seed/seed.sql writes no measurements, so against a fresh database
@@ -42,6 +49,7 @@ import { CaseCrumb } from "@/components/case/CaseCrumb";
 import { CaseEyebrow } from "@/components/case/CaseEyebrow";
 import { CaseHero } from "@/components/case/CaseHero";
 import { ComposeExcerpt } from "@/components/case/ComposeExcerpt";
+import { Constraints } from "@/components/case/Constraints";
 import {
   CaseCrumbLive,
   CaseEyebrowLive,
@@ -149,14 +157,32 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
         </Suspense>
       </div>
 
-      {/* `.01` USED TO BE `.03`, and the numbers are renumbered rather than left
-          with gaps: they are visible, and a page that opens at `.03` claims two
-          sections a reader cannot find. The head spans the content column and the
-          block runs its full width — `.cs-arch` stood here, a 1fr/420px row with
-          the build phases in the rail, and with the phases gone the rail would be
-          the empty frame this phase's acceptance criterion forbids. */}
+      {/* The head spans both columns and the body below it is the two-column
+          row — that is how the sheet draws it, and it is also the only way the
+          hairline reaches the full content width. `.cs-prob` is the 380px
+          rail; the hero above uses the 400px one. */}
       <section className="cs-section" aria-labelledby="sec-01">
-        <SectionHead id="01" title={messages.csBuild} titleId="sec-01" />
+        <SectionHead id="01" title={messages.csProblem} titleId="sec-01" />
+
+        <div className="cs-prob">
+          <div className="cs-prose">
+            {study.problem.map((paragraph) => (
+              <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+            ))}
+          </div>
+
+          <Constraints items={study.constraints} label={messages.csConstraints} />
+        </div>
+      </section>
+
+      {/* `.02` WAS `.03` BEFORE U6 AND `.01` FOR THREE HOURS AFTER IT. The numbers
+          are renumbered every time rather than left with gaps: they are visible,
+          and a page that opens at `.02` claims a section a reader cannot find.
+          The head spans the content column and the block runs its full width —
+          `.cs-arch` stood here, a 1fr/420px row with the build phases in the
+          rail, and with the phases gone the rail would be an empty frame. */}
+      <section className="cs-section" aria-labelledby="sec-02">
+        <SectionHead id="02" title={messages.csBuild} titleId="sec-02" />
 
         <ComposeExcerpt caption={study.composeCaption} />
       </section>
@@ -171,8 +197,8 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
           list of what must not be published, and CLAUDE.md's rule is wider. It
           is left out rather than drawn as `— NO DATA`, because an em dash says a
           number is coming and this one is being withheld. ADR 0057. */}
-      <section className="cs-section" aria-labelledby="sec-02">
-        <SectionHead id="02" title={messages.csOperations} titleId="sec-02" />
+      <section className="cs-section" aria-labelledby="sec-03">
+        <SectionHead id="03" title={messages.csOperations} titleId="sec-03" />
 
         <Pipeline stages={study.stages} label={messages.csPushToLive} />
 

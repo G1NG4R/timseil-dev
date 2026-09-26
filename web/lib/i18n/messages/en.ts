@@ -109,18 +109,26 @@ export const en = {
   csYear: "YEAR",
   csStatus: "STATUS",
   csSource: "SOURCE",
+  csProblem: "PROBLEM",
+  csConstraints: "CONSTRAINTS",
   csErrorRate: "ERROR RATE",
   csIncidents: "INCIDENTS",
 
   // H2a, and one word of it left after U6. The section heads ARCHITECTURE, SIDE
   // LANES, DECISIONS, DECISION, ALTERNATIVE, WHY THIS ONE and PHASES went with
-  // the blocks they named; `.01 BUILD` now holds the generated compose block on
+  // the blocks they named; `.02 BUILD` now holds the generated compose block on
   // its own.
   //
-  // FIFTEEN KEYS WENT IN THAT PHASE, and the number is worth writing down here
+  // THIRTEEN KEYS WENT IN THAT PHASE, and the number is worth writing down here
   // because `Messages` is `Record<keyof typeof en, string>` — every key in this
   // file is a line U8 owes a German and a French reader. A heading nobody draws
   // is a translation nobody can check.
+  //
+  // IT WAS FIFTEEN FOR THREE HOURS. `csProblem` and `csConstraints` went with the
+  // rest and came back with `.01`, which is the addendum to ADR 0081 — and the
+  // reason this count is written as a sentence rather than left to be inferred:
+  // a number in a comment that nobody recomputes is the defect this file's own
+  // neighbours keep finding.
   //
   // THERE IS STILL NO KEY FOR A SECTION META. The sheet captions rows "HOP
   // LATENCIES ARE PLACEHOLDERS", "CAPTURES ARE PLACEHOLDERS" and "STAGE TIMINGS

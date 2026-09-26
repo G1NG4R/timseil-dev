@@ -1,5 +1,5 @@
 /**
- * `.01 BUILD` on the built page — the compose excerpt, and the section around it.
+ * `.02 BUILD` on the built page — the compose excerpt, and the section around it.
  *
  * IT WAS `case-study.arch.spec.ts` AND IT HELD ELEVEN TESTS. Six of them measured
  * the request path, the side lanes, the decision table and the build phases, and
@@ -30,8 +30,8 @@ import excerpt from "../content/generated/compose-api.gen.json";
 import { settled } from "./streaming";
 import { CASE_STUDY } from "./widths";
 
-/** The two sections `/work/timseil-dev` has after U6, in the order it draws them. */
-const SECTIONS = ["sec-01", "sec-02"] as const;
+/** The three sections `/work/timseil-dev` draws, in the order it draws them. */
+const SECTIONS = ["sec-01", "sec-02", "sec-03"] as const;
 
 test.beforeEach(async ({ page }) => {
   await page.goto(CASE_STUDY);
@@ -55,16 +55,18 @@ test("the sections keep their distance, including the last one", async ({ page }
     return sections.map((section) => Math.round(parseFloat(getComputedStyle(section).marginBlockEnd)));
   });
 
-  expect(gaps.length).toBeGreaterThanOrEqual(2);
+  expect(gaps.length).toBeGreaterThanOrEqual(3);
   expect(new Set(gaps).size).toBe(1);
   expect(gaps[0]).toBeGreaterThan(0);
 });
 
 test("the sections are numbered from one, with no gap", async ({ page }) => {
-  // U6 RENUMBERED THEM AND THIS IS THE ASSERTION THAT HOLDS IT. `.03` and `.04`
-  // became `.01` and `.02` rather than staying where they were, because the
-  // numbers are on the screen and a page that opens at `.03` claims two sections
-  // a reader cannot find — invariant 5 about a different kind of pointer.
+  // THE NUMBERS HAVE MOVED TWICE AND THIS IS THE ASSERTION THAT HOLDS THEM. U6
+  // made `.03` and `.04` into `.01` and `.02`; restoring the problem section
+  // pushed them to `.02` and `.03`. Each time they were renumbered rather than
+  // left with a gap, because the numbers are on the screen and a page that opens
+  // at `.02` claims a section a reader cannot find — invariant 5 about a
+  // different kind of pointer.
   //
   // The ids and the visible ordinals are two separate spellings of the same
   // sequence, so both are read: `SectionHead` puts the ordinal in `.sec-id` and
@@ -77,7 +79,7 @@ test("the sections are numbered from one, with no gap", async ({ page }) => {
   expect(ids).toEqual([...SECTIONS]);
 
   const ordinals = await page.locator("main .cs-section .sec-id").allInnerTexts();
-  expect(ordinals).toEqual(["01", "02"]);
+  expect(ordinals).toEqual(["01", "02", "03"]);
 });
 
 test("each section is present exactly once and is named by its head", async ({ page }) => {
@@ -115,7 +117,7 @@ test("the compose block has the content column to itself", async ({ page }) => {
   // takes the column, and this is the assertion that says so rather than a
   // comment claiming it.
   const [block, column] = await Promise.all([
-    page.locator("section[aria-labelledby=\"sec-01\"] .compose").boundingBox(),
+    page.locator("section[aria-labelledby=\"sec-02\"] .compose").boundingBox(),
     page.locator("main.col").boundingBox(),
   ]);
 
@@ -133,7 +135,7 @@ test("the section says nothing the repository stopped believing", async ({ page 
   // host". All four are older than ADR 0005 and ADR 0007, and two of them are
   // English UI copy rather than annotation — quoting them would put a false
   // claim on a page whose whole argument is that it does not do that.
-  const text = await page.locator('section[aria-labelledby="sec-01"]').innerText();
+  const text = await page.locator('section[aria-labelledby="sec-02"]').innerText();
   for (const stale of ["React Router", "PostgreSQL 16", "SQLite", "metrics stack", "wget", "env_file"]) {
     expect(text).not.toContain(stale);
   }
@@ -147,8 +149,8 @@ test("this half of the page is still nothing to operate", async ({ page }) => {
   // had ever clicked. The grid's notches are anchors and they are in `.02`, a
   // section this assertion does not reach.
   const focusable = page.locator(
-    'section[aria-labelledby="sec-01"] a, section[aria-labelledby="sec-01"] button, ' +
-      'section[aria-labelledby="sec-01"] [tabindex]',
+    'section[aria-labelledby="sec-02"] a, section[aria-labelledby="sec-02"] button, ' +
+      'section[aria-labelledby="sec-02"] [tabindex]',
   );
   await expect(focusable).toHaveCount(0);
 });

@@ -26,7 +26,14 @@ import { settled } from "./streaming";
 import { CASE_STUDY, DRAWN_WIDTHS } from "./widths";
 
 /**
- * The ids of the 22, spelled out rather than matched by prefix.
+ * The ids of the 14, spelled out rather than matched by prefix.
+ *
+ * IT WAS 22 FOR THREE HOURS. Eight of them measure `.01 PROBLEM` — the prose
+ * rail and the constraints plate — and the addendum to ADR 0081 put that section
+ * back, so they measure something again and were removed from this list rather
+ * than left in it. A filter that silences an entry the page DOES draw is the
+ * same defect as an oracle that shrank, one level down: both end as a run that
+ * asserts less and says nothing about it.
  *
  * A PREFIX WOULD BE SHORTER AND WRONG HERE. `home-log-` names one section; these
  * span six, and three of them (`mobile-`, `tablet-`) share their prefix with
@@ -42,15 +49,6 @@ import { CASE_STUDY, DRAWN_WIDTHS } from "./widths";
  * going red. `home.sheet.spec.ts` never met this because `HAS_LOG` is imported.
  */
 const CUT_IN_U6 = new Set([
-  // `.01 PROBLEM` — the prose column and the constraints plate beside it
-  "problem-rail-width",
-  "constraint-number-column",
-  "constraint-ordinal-gap",
-  "constraint-row-gap",
-  "constraint-face",
-  "constraint-panel",
-  "mobile-constraints-one-column",
-  "tablet-constraints-two-columns",
   // `.02 ARCHITECTURE` — the request path, the side lanes, the decision table
   "arch-panel-padding",
   "arch-arrow-track",
@@ -87,20 +85,21 @@ runSheetOracle({
   // phase that had a reason to want it lower and did not take it.
   minimumEntries: 39,
   //
-  // TWENTY-TWO OF THE FIFTY DESCRIBE BLOCKS THIS PAGE NO LONGER DRAWS. U6 cut the
-  // problem section, the request path, the side lanes, the decision table, the
-  // build phases and the result section (ADR 0081), so every entry below would be
-  // measured against an element that is absent by decision rather than by
-  // accident.
+  // FOURTEEN OF THE FIFTY DESCRIBE BLOCKS THIS PAGE NO LONGER DRAWS. U6 cut the
+  // request path, the side lanes, the decision table, the build phases and the
+  // result section (ADR 0081), so every entry below would be measured against an
+  // element that is absent by decision rather than by accident. The problem
+  // section was cut with them and restored the same day; its eight entries are
+  // not in this list.
   //
   // THE ORACLE IS NOT TOUCHED, which is the whole point of doing it here instead
   // of in the generator. It is written out of `docs/design/`, which is read-only
   // and still draws all five sections; `minimumEntries` still counts all 50, so a
   // shrinking oracle is still a failure; and the three drawn widths still carry
-  // entries — 1440: 18, 1024: 5, 390: 5 — so `drawnWidths` still holds. Striking
-  // them from `tools/gen-sheet-oracle.mjs` would have meant dropping the floor
-  // from 39 to 28, and a floor that falls is the shape in which a measurement
-  // disappears without anyone noticing.
+  // entries — so `drawnWidths` still holds. Striking them from
+  // `tools/gen-sheet-oracle.mjs` would have meant dropping the floor below 39,
+  // and a floor that falls is the shape in which a measurement disappears
+  // without anyone noticing.
   //
   // SAME MECHANISM AS U2's `home-log-*`, and the day Tim writes a constraints
   // list they all come back without anybody raising a number.

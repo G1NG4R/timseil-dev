@@ -18,13 +18,20 @@
 // stay English either way.
 //
 // WHAT U6 TOOK OUT, because a file this short should say why it is short. It held
-// a lead paragraph, a red alert line, a role, a three-paragraph problem
-// statement, five constraints, five request-path stations, five side lanes, four
-// decisions with their alternatives, four build phases, four observability lines
-// and a result section with two lists and a card. All of it was an argument about
-// work someone else did the typing for. ADR 0079 §4 made that case for the log and
-// named no other directory; ADR 0081 extended it to this one and states the test
-// the survivors passed: a system produces them, or a check holds them.
+// a lead paragraph, a red alert line, a role, five request-path stations, five
+// side lanes, four decisions with their alternatives, four build phases, four
+// observability lines and a result section with two lists and a card. All of it
+// was an argument about work someone else did the typing for. ADR 0079 §4 made
+// that case for the log and named no other directory; ADR 0081 extended it to
+// this one and states the test the survivors passed: a system produces them, or a
+// check holds them.
+//
+// AND WHAT IT TOOK OUT AND PUT BACK THE SAME DAY: the problem statement and the
+// five constraints. They fail that test — nothing holds them — and they are the
+// only text left that says why this site is a running system instead of a set of
+// screenshots. A page that argues "every claim has evidence" and then cannot
+// state the argument has removed the wrong thing. The addendum to ADR 0081
+// carries it, and the first paragraph names the role the systems carry.
 //
 // The stack is deliberately NOT written here. It arrives from `systems.stack`,
 // which `make gen` fills out of go.mod, package.json and compose.yaml — chapter
@@ -68,6 +75,49 @@ export const timseilDev: CaseStudy = {
   year: "2026 — ongoing",
   /** The half of STATUS that is not the state word. The word comes from the api. */
   hosting: "self-hosted",
+
+  problem: [
+    // This sentence named the old positioning until U6 and was one of its two
+    // last user-visible traces — the other was the rail's ROLE row. The words are
+    // not repeated here on purpose: `tmp/umbau.md`'s closing grep reads this file
+    // and counts LINES, so a comment quoting the old title would raise the number
+    // the acceptance publishes and look like the phase had missed something.
+    //
+    // ADR 0079 settled what the systems here carry, and the sentence names that
+    // instead — DevOps, without the "junior" the eyebrow and the bio already say.
+    // It belongs there, where a reader meets it first; repeating it inside an
+    // argument would weaken the argument rather than qualify it.
+    "A portfolio that only shows screenshots asks the reader to take the " +
+      "engineering on trust. For a DevOps role that is the wrong thing to ask: " +
+      "the parts worth judging are service boundaries, deploys, and what " +
+      "happens at three in the morning when a container dies.",
+    "So the site had to be a running system rather than a description of one. " +
+      "The front end is a client of a real API. The API has its own database, " +
+      "its own container, its own health check. The infrastructure is mine to " +
+      "break: DNS, TLS, reverse proxy, logs, backups, restarts.",
+    // The sheet's third paragraph named a tracked file as the training log's
+    // source. It is Postgres through the API (ADR 0005), and the uptime series
+    // comes from a probe that runs outside this host on purpose — if the host
+    // dies, the record of it has to survive (build plan 4.2). Both corrected
+    // here rather than quoted wrong.
+    "The second constraint was honesty. Nothing on the page is allowed to be a " +
+      "decorative number. If a value is shown, something has to produce it — " +
+      "the training log comes from Postgres through the API, the contribution " +
+      "graph from the GitHub API, and the uptime series from a probe that runs " +
+      "outside this host, so that an outage is still recorded when the machine " +
+      "that would record it is the one that is down.",
+  ],
+
+  // Five, numbered, as the sheet draws them. Build plan chapter 3 quotes the
+  // fourth back at itself when it refuses WebGL — "bricht Constraint 04 deiner
+  // eigenen Fallstudie" — so these are load-bearing text, not decoration.
+  constraints: [
+    "One VPS. No managed platform, no serverless.",
+    "Every displayed value has a source.",
+    "Deploy must be one command and one rollback.",
+    "Fast on a phone on mobile data.",
+    "Operable by keyboard, AA contrast throughout.",
+  ],
 
   // What the block under it is, and why it can be trusted. The sheet captions it
   // with a note about its own syntax colouring — "keys in Signal, values in

@@ -194,10 +194,71 @@
   font-size: var(--t-body-13);
   color: var(--steel);
 }
-/* ══ .01 BUILD ══════════════════════════════════════════════════════════════
+
+/* The plate the constraints sit on. The sheet draws the same surface as the
+   spec rail — panel fill, one hairline, no corner brackets, because "zwei
+   FUI-Devices pro Fläche" and this one has none. Template line 110. */
+.cs-panel {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  padding: var(--s-20) var(--s-26);
+}
+
+/* ── .01 PROBLEM ───────────────────────────────────────────────────────────
+   Reading measure 68 characters, which is the number that set the 1080 switch:
+   517px at 15px Geist, plus a 380px rail and an 80px gap, is 977. Foundations
+   fixes the measure and globals.css already caps `p` at 68ch — the class is
+   here so the section's spacing does not have to be set on every paragraph.  */
+
+.cs-prose p { margin: 0 0 var(--s-20); }
+.cs-prose p:last-child { margin-block-end: 0; }
+
+/* CORRECTED IN H1b, AND THE CORRECTION IS THE PHASE. The first build of this
+   component was written from the section's shape rather than from its
+   measurements, and the sheet comparison found six deviations in it at once:
+   no panel where the sheet draws one, a 26px ordinal column where the sheet
+   draws 16, Geist 13 where the sheet sets mono 11.5, spacing built out of
+   padding instead of the gap the sheet uses, hairlines between the rows that
+   the sheet does not draw at all, and Steel where the sheet uses Ink-2.
+
+   Six in one component is the answer to whether a mechanical comparison earns
+   its runtime. Case Study Template lines 110, 112 and 113. */
+.cs-constraints {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: constraint;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-12);
+  font: 400 var(--t-mono-11)/1.55 var(--mono);
+  color: var(--ink-2);
+}
+
+.cs-constraints li {
+  counter-increment: constraint;
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: var(--s-10);
+}
+
+/* The number is content, not decoration: it is how the constraints are referred
+   to elsewhere — build plan chapter 3 refuses WebGL by quoting "Constraint 04"
+   back at this list. `content` from a counter is announced by screen readers in
+   list context, and the item text stands on its own either way. */
+.cs-constraints li::before {
+  content: counter(constraint, decimal-leading-zero);
+  /* It inherits the row's face and size. The sheet gives the ordinal a colour
+     and nothing else, and a second type spec here would be a measurement with
+     no source. */
+  color: var(--acc);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══ .02 BUILD ══════════════════════════════════════════════════════════════
    WHAT H2a DREW HERE AND U6 TOOK OUT: the request path with its five stations,
    the side lanes, the decision table and the build phases — 260 lines of surface
-   for four blocks that argued. What is left of `.03 BUILD`, renumbered to `.01`,
+   for four blocks that argued. What is left of `.03 BUILD`, renumbered to `.02`,
    is the compose excerpt, and it is the one block in this half that a command
    writes: tools/gen-compose-excerpt.mjs cuts it out of the file the host runs.
    ADR 0081.
@@ -250,7 +311,7 @@
   font: 400 var(--t-mono-11)/1.7 var(--mono);
   color: var(--dim);
 }
-/* ══ .02 OPERATIONS ═════════════════════════════════════════════════════════
+/* ══ .03 OPERATIONS ═════════════════════════════════════════════════════════
    H2b. Everything below is drawn by the Case Study Template's `04.04` artboard
    and specified by the `Operation Grid` sheet, with the widths in layout.css as
    always.                                                                     */

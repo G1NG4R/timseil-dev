@@ -384,9 +384,7 @@ export const PRIVACY_DRAWN_WIDTHS = [1440, 390] as const;
  * The switches this page answers to.
  *
  * 1080 is where the hero and the body stop being two columns and the jump rail
- * goes away — the site's one two-column switch, taken whole rather than measured
- * again. It was `.cs-prob`'s until U6 deleted that rule; `.lg-body` carries the
- * same `1fr 380px / 80` and this page is one of its drawers. 900
+ * goes away — `.cs-prob`'s switch, taken whole rather than measured again. 900
  * is the chrome's (ADR 0044) and this page inherits it like every other. 720 is
  * the display step falling to 34.
  *
@@ -418,9 +416,7 @@ export const IMPRINT_DRAWN_WIDTHS = [1440, 390] as const;
  * The switches this page answers to, and they are `/privacy`'s exactly.
  *
  * 1080 is where the body stops being two columns and the jump rail goes away —
- * the site's one two-column switch, taken whole rather than measured again. It
- * was `.cs-prob`'s until U6 deleted that rule; `.lg-body` carries the pair now.
- * 900 is the
+ * `.cs-prob`'s switch, taken whole rather than measured again. 900 is the
  * chrome's (ADR 0044). 720 is the display step falling to 34, and since H12c it
  * is also where the operator's label column stops standing beside its value:
  * one width, two things, no new breakpoint.
@@ -503,9 +499,9 @@ export const NOT_FOUND_DRAWN_WIDTHS = [1440, 390] as const;
  *
  * 1080 is `.nf-main`, which this page inherits rather than declares — it joined
  * `.hero, .cs-spec, .cs-prob, .cs-arch` in layout.css's single-column rule in
- * H10a rather than taking a value of its own. Two of those four are gone since
- * U6 and the rule is the same rule; a list quoted as it stood on a day is not
- * wrong when the day passes.
+ * H10a rather than taking a value of its own. `.cs-arch` left that list in U6
+ * and the rule is the same rule; a list quoted as it stood on a day is not wrong
+ * when the day passes.
  *
  * 720 carries SEVEN components since H10b, which is what a switch is for. The
  * display step falls 108 → 58 (`--t-disp-58`, #247); REPLAY GLITCH goes away,
