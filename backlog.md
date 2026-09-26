@@ -86,6 +86,94 @@ noch nichts gemessen wurde; Invariante 6 zählt einen Tag ohne Messung als
 
 ---
 
+## U6a · 26.09.2026 — `.01 PROBLEM` kommt zurück, drei Stunden nach dem Merge
+
+**Tim hat den Block zurückgefordert, und er hatte recht.** Die drei Absätze und
+die fünf Constraints stehen wieder auf `/work/timseil-dev`, als `.01`; BUILD und
+OPERATIONS rücken auf `.02` und `.03`. Die übrigen Streichungen von U6 bleiben.
+
+### Der Fehler war nicht die Regel, sondern ihre Reichweite
+
+ADR 0081 §1 sagt: *„was ein System erzeugt oder eine Prüfung hält, bleibt."* Das
+ist richtig **für eine Behauptung über das System** — eine Zahl, eine
+Versionsangabe, ein Job-Name, eine Station im Anfrageweg. Der Anfrageweg und die
+Entscheidungstabelle sind zu Recht gefallen: sie behaupten Nachprüfbares, und
+nichts hielt sie dagegen.
+
+`.01 PROBLEM` behauptet nichts über das System. Es begründet, dass es das System
+gibt:
+
+> „A portfolio that only shows screenshots asks the reader to take the
+> engineering on trust."
+
+Auf so einen Satz ist das Kriterium nicht anwendbar. Es anzuwenden hieß, ihn mit
+„nichts hält ihn" zu erledigen — wahr, und ohne Beweiskraft. **Kein System kann
+erzeugen, warum jemand etwas gebaut hat.** Eine Seite, deren ganzes Argument
+„jede Behauptung hat einen Beleg" lautet, schuldet dem Leser den Satz, der das
+Argument ausspricht. Ohne ihn ist die Fallstudie eine Messtafel ohne Anlass.
+
+Die geschärfte Fassung steht im Nachtrag zu ADR 0081:
+
+> Was eine Sache über das System behauptet, braucht einen Beleg. Was begründet,
+> warum es das System gibt, braucht einen Autor.
+
+### Was das über den Prozess sagt, und es ist unbequem
+
+Das Kriterium wurde entschieden, in ein ADR geschrieben, gegen 24 Dateien
+angewandt, durch `make check` und **2170** e2e-Tests gefahren, von mir selbst im
+Diff gegengelesen, gemergt und gegen Produktion gemessen. Jede dieser Stufen war
+grün. **Keine davon konnte melden, dass der Block fehlt**, weil sie alle prüfen,
+ob die Seite tut, was sie soll — nicht, ob sie sagen sollte, was sie sagt.
+
+Der Fund ist also nicht „ein Test hat gefehlt". Es ist: **die Abnahme dieser
+Phase hatte keinen Leser.** Die Zahlen stimmten alle, und trotzdem war eine
+Seite entstanden, die ihre eigene Begründung nicht mehr trägt. Die einzige
+Prüfung, die das findet, ist jemand, der die Seite liest.
+
+### Die Constraints hatten sogar einen Verbraucher, und §1 hat ihn übersehen
+
+Kapitel 3 des Build-Plans lehnt WebGL ab, indem es *„bricht Constraint 04
+deiner eigenen Fallstudie"* zurückzitiert. Ein nummerierter Satz, aus dem ein
+anderes Dokument argumentiert, ist das Nächste an einer **gehaltenen** Aussage,
+was diese Datei zu bieten hat — die Fundstelle stand im alten Dateikommentar
+(*„load-bearing text, not decoration"*) und wurde beim Löschen mitgelöscht statt
+gelesen.
+
+### Gefunden
+
+- **Ein Kommentar über eine Zeile kann die Zahl bewegen, die über sie berichtet
+  wird.** Der erste Entwurf des neuen Absatz-Kommentars zitierte die alte
+  Formulierung wörtlich. Der Schluss-grep aus A11 liest `timseil-dev.ts` und
+  zählt **Zeilen**: die veröffentlichte Vier wäre eine Fünf geworden, und
+  sie hätte ausgesehen, als hätte U6 etwas übersehen. Der Kommentar sagt jetzt,
+  warum er das Zitat weglässt.
+- **Eine zweite Zusicherung derselben Sache wird zur Falle, sobald sich die
+  Seite ändert.** `case-study.spec.ts` verbot neben `/\bbackend\b/i` auch
+  `/\bROLE\b/` — eine zweite Schreibweise des Tests „die Spec-Rail hat vier
+  Zeilen". Mit `.01 PROBLEM` steht „For a DevOps role" auf der Seite, und
+  **allein das fehlende `i`-Flag** hielt den Test grün. Eine Wache, die wegen
+  eines Flags besteht, auf das sich niemand berufen wollte, ist schlechter als
+  keine. Entfernt; die Rail wird dort geprüft, wo die Rail geprüft wird.
+- **Der Orakel-Filter kann in die andere Richtung falsch werden.** `CUT_IN_U6`
+  ging von 22 auf 14: acht Einträge messen `.01` und messen wieder etwas. Ein
+  Filter, der einen Eintrag stummschaltet, den die Seite **zeichnet**, ist
+  derselbe Defekt wie ein geschrumpftes Orakel, eine Ebene tiefer — beide enden
+  als Lauf, der weniger zusichert und nichts darüber sagt. Der Lauf erklärt
+  jetzt **36** statt 28 Einträge.
+- **Die zwei Sweep-Proben kommen zurück, und der Grund ist derselbe wie beim
+  Löschen.** `.cs-prob` und `.cs-constraints` zeichnen wieder, also ist ihre
+  Abwesenheit in `PROBES` jetzt die Lücke, die sie vorher geschlossen hat. Alle
+  vier Kanten haben die ganze Zeit gehalten; `SWITCHES` hat sich nie bewegt.
+
+### Nicht gemacht
+
+- **Kein `.cs-arch`.** Die 420er-Rail bleibt gelöscht — die Build-Phasen kommen
+  nicht zurück, und ein Paar ohne Zeichner ist die Behauptung, dass es etwas
+  gibt.
+- **Keine Issue-Triage.** Unverändert nach U9.
+
+---
+
 ## U6 · 26.09.2026 — Case Study: die Prosa fällt, und zwei Blöcke bleiben, die der Plan nicht aufzählt
 
 Die Fallstudie hatte 409 Zeilen Inhalt, achtzehn Felder, fünf Sektionen und

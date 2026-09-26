@@ -9,17 +9,23 @@
 // those come from /api/systems/{slug}, and lib/api/systems.ts reads them. If a
 // field ever wants a number, that is the signal it belongs in the api instead.
 //
-// AND AS OF U6 THERE ARE NINE OF THEM, where there were eighteen. The phase cut
+// AND AS OF U6 THERE ARE ELEVEN OF THEM, where there were eighteen. The phase cut
 // the argument out of this file and kept what something else produces or holds:
 // `composeCaption` explains a block `make gen` writes, `stages` is a list of
 // names lib/content/pipeline.test.ts holds against the workflow, and the rest is
-// a slug, a date and three labels. What went is the problem statement, the
-// constraints, the request path, the decision table, the build phases, the
-// observability panel and the result — nine fields that were right or wrong the
-// way a sentence is, with nothing able to tell which. ADR 0081 carries the rule.
-// ADR 0079 §4 is where the argument was first made — about `web/content/posts/`,
-// which is the only directory it names; 0081 §1 is the decision to extend it
-// here, and it is a decision rather than a reading.
+// a slug, a date and three labels. What went is the request path, the decision
+// table, the build phases, the observability panel and the result. ADR 0081
+// carries the rule; ADR 0079 §4 is where the argument was first made — about
+// `web/content/posts/`, which is the only directory it names.
+//
+// TWO CAME BACK, AND THE ADDENDUM TO ADR 0081 SAYS WHY. `problem` and
+// `constraints` were cut with the rest and restored a few hours later, because
+// the criterion that cut them — "nothing holds it" — is true of them and is not
+// the whole question. They are the only text on the page that says WHY it is
+// built this way, and a page whose entire argument is "every claim has evidence"
+// still owes the reader the sentence that states the argument. The constraints
+// are load-bearing besides: build plan chapter 3 refuses WebGL by quoting
+// Constraint 04 back at this list.
 
 /**
  * One stage of the pipeline that puts a commit on the server.
@@ -99,6 +105,31 @@ export interface CaseStudy {
   readonly year: string;
   /** The qualifier after the state word in the spec rail's STATUS row. */
   readonly hosting: string;
+
+  /**
+   * `.01 PROBLEM` — three paragraphs on why the site is a running system.
+   *
+   * THE ONE BLOCK HERE THAT NOTHING CHECKS AND THAT STAYS ANYWAY. Every other
+   * surviving field is produced or held: the compose caption describes a
+   * generator, `stages` is held against `ci.yml`. This is an argument, and the
+   * addendum to ADR 0081 is the decision that an argument about why the system
+   * exists is not the same as an argument dressed up as a measurement.
+   *
+   * IT MAY NOT NAME A ROLE THAT NO SYSTEM CARRIES. The first paragraph read
+   * "for a backend and platform role" until U6, which was one of the two last
+   * user-visible traces of the positioning ADR 0079 took back. It names the
+   * role the systems do carry, or it names none.
+   */
+  readonly problem: readonly string[];
+  /**
+   * The five numbered constraints in the rail beside it.
+   *
+   * LOAD-BEARING TEXT, NOT DECORATION, and the build plan proves it rather than
+   * asserting it: chapter 3 refuses WebGL by quoting "bricht Constraint 04
+   * deiner eigenen Fallstudie" back at this list. A numbered claim that another
+   * document argues from is the closest this file gets to a held one.
+   */
+  readonly constraints: readonly string[];
 
   /**
    * The caption over the compose block — what it is, and why it can be trusted.

@@ -1,16 +1,17 @@
 /**
- * `.02 OPERATIONS` on the built page.
+ * `.03 OPERATIONS` on the built page.
  *
  * IT WAS `.04`, AND `.05 RESULT` WAS ITS OTHER HALF. U6 cut the result section
  * and renumbered what was left (ADR 0081), so this file covers one section and
- * the two tests that used to loop over a pair now name one.
+ * the two tests that used to loop over a pair now name one. It was `.02` for the
+ * three hours between that phase and the addendum that put `.01 PROBLEM` back.
  *
  * NO SUFFIX, so this file runs at all seven widths, the same as
  * `case-study.build.spec.ts` and for the same reason: every rule below has a
  * width at which it is the interesting one. Measurements against a drawing live
  * in `case-study.sheet.spec.ts`, which runs at the three widths that have one.
  *
- * IT WAITS ON EVERY STREAMED REGION, and unlike `.01` it has to. The
+ * IT WAITS ON EVERY STREAMED REGION, and unlike `.01` and `.02` it has to. The
  * grid and the incident log are behind a `<Suspense>` boundary, so between the
  * fallback and its replacement both are in the document — which is exactly the
  * race #279 was paid for twice. `settled()` is imported, never copied; H2a found
@@ -33,7 +34,7 @@ import { CASE_STUDY } from "./widths";
 const ROWS = 7;
 
 /** `.02` since U6, `.04` before it. Named once so a renumbering has one place. */
-const SECTION = "sec-02";
+const SECTION = "sec-03";
 
 async function widthOf(page: Page): Promise<number> {
   return page.evaluate(() => window.innerWidth);

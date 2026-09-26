@@ -1293,6 +1293,10 @@ zwei Blöcke behalten, die diese Zeile nicht aufzählt: den Compose-Ausschnitt,
 den `make gen` schreibt, und die Pipeline, deren Job-Namen ein Test gegen
 `ci.yml` hält. Die Aufzählung hier sortiert nach der Quelle, das Kriterium nach
 der Prüfbarkeit.
+**Und ein Block ist zurückgekommen**: `.01 PROBLEM`, die drei Absätze, die
+sagen, warum diese Seite ein laufendes System ist. Der Nachtrag zu ADR 0081
+schärft das Kriterium dafür — was über das System behauptet wird, braucht einen
+Beleg; was begründet, warum es das System gibt, braucht einen Autor.
 
 **U7 · Laden vs. Fehler, Systemtexte** — ein Suspense-Fallback ist ein Ladezustand und kein Fehler; die übrigen Platzhalter werden vereinheitlicht oder entfernt.
 *Fertig wenn:* API langsam zeigt den Ladezustand, API tot den Fehlertext, und das rohe HTML trägt keine Fehlermeldung, solange die API antwortet.

@@ -253,7 +253,14 @@ test("the old role is nowhere a reader can see it", async ({ page }) => {
   // AND NOT VIA A SELECTOR. `.spec-key` with the text ROLE no longer exists, so a
   // locator for it would go green by finding nothing — the failure mode the
   // trajectory rail's own `[SOON]` test records. The text is asked for instead.
+  //
+  // ONE WORD, NOT TWO. An earlier draft also refused `/\bROLE\b/`, which was a
+  // second spelling of the assertion above it — "the spec rail is four rows" —
+  // and it became a trap the moment `.01 PROBLEM` came back: that section says
+  // "For a DevOps role", and only the absent `i` flag kept the test green. A
+  // guard that passes because of a flag nobody meant to rely on is worse than no
+  // guard, so the rail is checked where the rail is checked and this asks the one
+  // question it was written for.
   const text = await page.locator("main").innerText();
   expect(text).not.toMatch(/\bbackend\b/iu);
-  expect(text).not.toMatch(/\bROLE\b/u);
 });
