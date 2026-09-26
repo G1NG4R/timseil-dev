@@ -1,12 +1,16 @@
 /**
- * `.04 OPERATIONS` and `.05 RESULT` on the built page.
+ * `.02 OPERATIONS` on the built page.
+ *
+ * IT WAS `.04`, AND `.05 RESULT` WAS ITS OTHER HALF. U6 cut the result section
+ * and renumbered what was left (ADR 0081), so this file covers one section and
+ * the two tests that used to loop over a pair now name one.
  *
  * NO SUFFIX, so this file runs at all seven widths, the same as
- * `case-study.arch.spec.ts` and for the same reason: every rule below has a
+ * `case-study.build.spec.ts` and for the same reason: every rule below has a
  * width at which it is the interesting one. Measurements against a drawing live
  * in `case-study.sheet.spec.ts`, which runs at the three widths that have one.
  *
- * IT WAITS ON EVERY STREAMED REGION, and unlike `.02` and `.03` it has to. The
+ * IT WAITS ON EVERY STREAMED REGION, and unlike `.01` it has to. The
  * grid and the incident log are behind a `<Suspense>` boundary, so between the
  * fallback and its replacement both are in the document — which is exactly the
  * race #279 was paid for twice. `settled()` is imported, never copied; H2a found
@@ -28,6 +32,9 @@ import { CASE_STUDY } from "./widths";
 /** Seven rows. The grid's own shape, and the divisor for its column count. */
 const ROWS = 7;
 
+/** `.02` since U6, `.04` before it. Named once so a renumbering has one place. */
+const SECTION = "sec-02";
+
 async function widthOf(page: Page): Promise<number> {
   return page.evaluate(() => window.innerWidth);
 }
@@ -37,17 +44,15 @@ test.beforeEach(async ({ page }) => {
   await settled(page);
 });
 
-test("both sections are present exactly once and are named by their heads", async ({ page }) => {
-  for (const id of ["sec-04", "sec-05"]) {
-    const section = page.locator(`section[aria-labelledby="${id}"]`);
-    await expect(section).toHaveCount(1);
+test("the section is present exactly once and is named by its head", async ({ page }) => {
+  const section = page.locator(`section[aria-labelledby="${SECTION}"]`);
+  await expect(section).toHaveCount(1);
 
-    // An aria-labelledby pointing at an element that never got its id is a
-    // region with no name at all, and it fails silently in every browser.
-    const title = page.locator(`#${id}`);
-    await expect(title).toHaveCount(1);
-    await expect(title).not.toBeEmpty();
-  }
+  // An aria-labelledby pointing at an element that never got its id is a
+  // region with no name at all, and it fails silently in every browser.
+  const title = page.locator(`#${SECTION}`);
+  await expect(title).toHaveCount(1);
+  await expect(title).not.toBeEmpty();
 });
 
 test("the pipeline is seven stages, numbered in order", async ({ page }) => {
@@ -173,52 +178,32 @@ test("the incident log explains itself when it is empty", async ({ page }) => {
 
   // The state that actually ships. STATE.05: an empty list owes a reason, and a
   // panel that could render without one eventually would.
-  const empty = page.locator("section[aria-labelledby='sec-04'] .st-empty-panel");
+  const empty = page.locator(`section[aria-labelledby="${SECTION}"] .st-empty-panel`);
   await expect(empty).toHaveCount(1);
   await expect(empty.locator(".st-empty-reason")).not.toBeEmpty();
 });
 
-test("the result is two lists and a card that does not point into nothing", async ({ page }) => {
-  const panels = page.locator(".cs-result .cs-panel");
-  await expect(panels).toHaveCount(2);
+test("the section says nothing the repository stopped believing", async ({ page }) => {
+  const text = await page.locator(`section[aria-labelledby="${SECTION}"]`).innerText();
 
-  // Both lists say something. A `.05` with an empty "what I would change" would
-  // be the section quietly becoming a list of wins.
-  for (let i = 0; i < 2; i += 1) {
-    expect(await panels.nth(i).locator("li").count()).toBeGreaterThan(0);
-  }
-
-  // The next system has no page — `talos-prod` is in_build and the registry
-  // gives it none — so the card links to the index, and a link to `/work/<x>`
-  // here would be a 404 by construction.
-  const card = page.locator(".cs-next");
-  await expect(card).toHaveCount(1);
-  const href = (await card.getAttribute("href")) ?? "";
-  expect(href).toMatch(/\/work$/);
-});
-
-test("neither section says anything the repository stopped believing", async ({ page }) => {
-  for (const id of ["sec-04", "sec-05"]) {
-    const text = await page.locator(`section[aria-labelledby="${id}"]`).innerText();
-
-    // The first six are the sheets' own stale copy. The last four are the DATA
-    // SAFETY panel, which is not built: three of its four rows are named in the
-    // `Operations` sheet's own list of what must not be published, and a phase
-    // that quietly reinstated one of them would leave no other trace.
-    for (const stale of [
-      "React Router",
-      "PostgreSQL 16",
-      "SQLite",
-      "metrics stack",
-      "go test ./...",
-      "compose pull",
-      "pg_dump",
-      "Restore drill",
-      "DATA SAFETY",
-      "Backup",
-    ]) {
-      expect(text, `${id} contains "${stale}"`).not.toContain(stale);
-    }
+  // The first six are the sheets' own stale copy. The last four are the DATA
+  // SAFETY panel, which is not built: three of its four rows are named in the
+  // `Operations` sheet's own list of what must not be published, and a phase
+  // that quietly reinstated one of them would leave no other trace. All ten were
+  // already about this section, so U6 removed none of them.
+  for (const stale of [
+    "React Router",
+    "PostgreSQL 16",
+    "SQLite",
+    "metrics stack",
+    "go test ./...",
+    "compose pull",
+    "pg_dump",
+    "Restore drill",
+    "DATA SAFETY",
+    "Backup",
+  ]) {
+    expect(text, `${SECTION} contains "${stale}"`).not.toContain(stale);
   }
 });
 
@@ -227,7 +212,7 @@ test("nothing here needs JavaScript to be operated", async ({ page }) => {
   // an anchor: no button, no [tabindex], no element with a click handler bound
   // by a client component — which is what "zero bytes of our own JavaScript"
   // means in markup rather than in a bundle report.
-  const section = "section[aria-labelledby='sec-04']";
+  const section = `section[aria-labelledby="${SECTION}"]`;
   await expect(page.locator(`${section} button`)).toHaveCount(0);
   await expect(page.locator(`${section} [tabindex]`)).toHaveCount(0);
 

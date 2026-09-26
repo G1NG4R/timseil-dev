@@ -1288,6 +1288,11 @@ Pro Phase: bauen, **Leerzustand zuerst**, Visual-Regression-Baselines, axe-core 
 
 **U6 · Case Study** — die Prosa-Blöcke fallen weg, die Mess-Blöcke bleiben (Live, Ops, Metriken, Incident-Log).
 *Fertig wenn:* die Seite trägt sich ohne leere Rahmen an allen Prüfbreiten, und **keine nutzersichtbare Stelle nennt mehr die alte Rolle** — die Schlussprüfung über U1 bis U6.
+**Das Kriterium dafür, was ein Mess-Block ist, steht in ADR 0081** — und es hat
+zwei Blöcke behalten, die diese Zeile nicht aufzählt: den Compose-Ausschnitt,
+den `make gen` schreibt, und die Pipeline, deren Job-Namen ein Test gegen
+`ci.yml` hält. Die Aufzählung hier sortiert nach der Quelle, das Kriterium nach
+der Prüfbarkeit.
 
 **U7 · Laden vs. Fehler, Systemtexte** — ein Suspense-Fallback ist ein Ladezustand und kein Fehler; die übrigen Platzhalter werden vereinheitlicht oder entfernt.
 *Fertig wenn:* API langsam zeigt den Ladezustand, API tot den Fehlertext, und das rohe HTML trägt keine Fehlermeldung, solange die API antwortet.

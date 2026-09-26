@@ -18,10 +18,10 @@
 // WHY SEVERAL BOUNDARIES AND NOT ONE. Under `cacheComponents` everything outside
 // a Suspense boundary has to be prerenderable, and `systemNow` calls
 // `connection()` — it is runtime data by construction. One boundary around the
-// whole page would put the headline, the lead, the problem section and all of
-// `.02`, `.03` and `.05` behind the api too, and every one of those is in the
-// repository. Five boundaries keep the static shell static and leave five small
-// holes for the measured words.
+// whole page would put the headline, the compose block and the pipeline behind
+// the api too, and none of those three waits for anything: two are in the
+// repository and the third is generated into it. Five boundaries keep the static
+// shell static and leave five small holes for the measured words.
 //
 // FIVE CALLS ARE ONE REQUEST. `systemCached` is a `use cache` function keyed by
 // the slug, so the later callers read the fill the first one made. The footer
@@ -90,16 +90,14 @@ export async function CaseEyebrowLive({ slug, name, messages }: Common & { name:
 
 export async function SpecRailLive({
   slug,
-  role,
   year,
   hosting,
   messages,
-}: Common & { role: string; year: string; hosting: string }) {
+}: Common & { year: string; hosting: string }) {
   const system = await systemNow(slug, OPS_WINDOW_CASE);
 
   return (
     <SpecRail
-      role={role}
       // The stack is never typed on this site: it comes from `systems.stack`,
       // which make gen fills out of go.mod, package.json and compose.yaml. That
       // is what makes design corrections #1 and #2 unreachable rather than

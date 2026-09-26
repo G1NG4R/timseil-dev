@@ -25,6 +25,52 @@ import { runSheetOracle, type Oracle } from "./sheet";
 import { settled } from "./streaming";
 import { CASE_STUDY, DRAWN_WIDTHS } from "./widths";
 
+/**
+ * The ids of the 22, spelled out rather than matched by prefix.
+ *
+ * A PREFIX WOULD BE SHORTER AND WRONG HERE. `home-log-` names one section; these
+ * span six, and three of them (`mobile-`, `tablet-`) share their prefix with
+ * entries that DO still apply — `mobile-h1-size` and `tablet-spec-two-pairs`
+ * measure the hero and the rail, which both survived. A `startsWith` that
+ * silenced those would be the filter doing the damage the filter exists to
+ * avoid.
+ *
+ * AND IT STANDS BEFORE THE CALL, NOT AFTER IT. `runSheetOracle` invokes `applies`
+ * on its first line — `oracle.entries.filter(applies)` — so a `const` declared
+ * below the call is still in its temporal dead zone when the closure reads it,
+ * and the whole file fails to collect with a ReferenceError rather than one test
+ * going red. `home.sheet.spec.ts` never met this because `HAS_LOG` is imported.
+ */
+const CUT_IN_U6 = new Set([
+  // `.01 PROBLEM` — the prose column and the constraints plate beside it
+  "problem-rail-width",
+  "constraint-number-column",
+  "constraint-ordinal-gap",
+  "constraint-row-gap",
+  "constraint-face",
+  "constraint-panel",
+  "mobile-constraints-one-column",
+  "tablet-constraints-two-columns",
+  // `.02 ARCHITECTURE` — the request path, the side lanes, the decision table
+  "arch-panel-padding",
+  "arch-arrow-track",
+  "arch-lanes-columns",
+  "arch-lanes-gap",
+  "decision-first-column",
+  "mobile-path-scrolls",
+  "mobile-lanes-columns",
+  "mobile-decisions-stack",
+  "mobile-decision-card-gap",
+  // `.03 BUILD` — the phases, and the `.cs-arch` rail that held them. The compose
+  // block stayed and `compose-size` with it.
+  "build-rail-width",
+  "build-gap",
+  "phases-gap",
+  // `.05 RESULT`
+  "result-columns",
+  "result-gap",
+]);
+
 runSheetOracle({
   oracle: generated as unknown as Oracle,
   route: CASE_STUDY,
@@ -37,6 +83,26 @@ runSheetOracle({
   ready: settled,
   drawnWidths: DRAWN_WIDTHS,
   // 26 after H1b, 39 after H2a. The floor moves up with each phase that adds
-  // measurements; it never moves down without someone saying why.
+  // measurements; it never moves down without someone saying why — and U6 is the
+  // phase that had a reason to want it lower and did not take it.
   minimumEntries: 39,
+  //
+  // TWENTY-TWO OF THE FIFTY DESCRIBE BLOCKS THIS PAGE NO LONGER DRAWS. U6 cut the
+  // problem section, the request path, the side lanes, the decision table, the
+  // build phases and the result section (ADR 0081), so every entry below would be
+  // measured against an element that is absent by decision rather than by
+  // accident.
+  //
+  // THE ORACLE IS NOT TOUCHED, which is the whole point of doing it here instead
+  // of in the generator. It is written out of `docs/design/`, which is read-only
+  // and still draws all five sections; `minimumEntries` still counts all 50, so a
+  // shrinking oracle is still a failure; and the three drawn widths still carry
+  // entries — 1440: 18, 1024: 5, 390: 5 — so `drawnWidths` still holds. Striking
+  // them from `tools/gen-sheet-oracle.mjs` would have meant dropping the floor
+  // from 39 to 28, and a floor that falls is the shape in which a measurement
+  // disappears without anyone noticing.
+  //
+  // SAME MECHANISM AS U2's `home-log-*`, and the day Tim writes a constraints
+  // list they all come back without anybody raising a number.
+  applies: (entry) => !CUT_IN_U6.has(entry.id),
 });

@@ -36,13 +36,26 @@ import { expect, test } from "@playwright/test";
 import { HEIGHT, STEP, at, edges, moved, type Probe } from "./sweep";
 import { CASE_STUDY, COLUMN_TABLE, SWITCHES, column } from "./widths";
 
-/** What the case study's four switches move. */
+/**
+ * What the case study's four switches move.
+ *
+ * TWO PROBES LEFT IN U6, AND REMOVING THEM IS THE POINT RATHER THAN THE FALLOUT.
+ * `.cs-prob` and `.cs-constraints` went with the problem section (ADR 0081), and
+ * `sweep.ts` returns `"absent"` for an element it cannot find — the same string
+ * at every width, so the probe would have stopped taking part in any switch and
+ * stayed green. That is exactly the drift `SWITCH_MOVES` below was written
+ * against, and the honest form of it is a shorter list with a reason, not a
+ * locator that matches nothing.
+ *
+ * ALL FOUR EDGES SURVIVE, WHICH IS WHY `SWITCHES` DOES NOT MOVE: 1080 still has
+ * `.cs-spec`, `.spec-body` and the rail, 900 the header, 720 `.spec-body` and the
+ * display step, 560 the tiles. Counted, not assumed — a switch that lost every
+ * mover would be a fifth edge to delete, and this phase deletes none.
+ */
 const PROBES: readonly Probe[] = [
   { key: "hero", kind: "tracks", selector: ".cs-spec" },
-  { key: "prob", kind: "tracks", selector: ".cs-prob" },
   { key: "spec", kind: "tracks", selector: ".spec-body" },
   { key: "tiles", kind: "tracks", selector: ".ops-tiles" },
-  { key: "cons", kind: "tracks", selector: ".cs-constraints" },
   { key: "rail", kind: "computed", selector: ".spec", prop: "position" },
   { key: "h1", kind: "computed", selector: "h1", prop: "font-size" },
   { key: "head", kind: "computed", selector: ".head", prop: "height" },
@@ -66,17 +79,20 @@ const PROBES: readonly Probe[] = [
  * reasons attached; two copies of a number is how the two start disagreeing.
  */
 const SWITCH_MOVES: Record<number, string[]> = {
-  // The five two-column rows collapse together — "EIN SCHALTER FÜR ALLE
-  // ZWEISPALTER" — and the rail stops sticking in the same query, because a
-  // rail under its section would otherwise stick to the bottom of it.
-  1080: ["cons", "hero", "prob", "rail", "spec"],
+  // The two-column rows collapse together — "EIN SCHALTER FÜR ALLE ZWEISPALTER"
+  // — and the rail stops sticking in the same query, because a rail under its
+  // section would otherwise stick to the bottom of it. There were five rows on
+  // this page and there are three; `.cs-prob` and `.cs-arch` were deleted in U6,
+  // and the switch is unchanged because it never belonged to either.
+  1080: ["hero", "rail", "spec"],
   // The header switches to the menu button, and its height with it. ADR 0044.
   900: ["button", "head", "nav"],
   // The display step, the first tile wrap — and the spec rail again, which is
   // the entry measurement corrected rather than reasoned: the two-pair grid it
   // takes below 1080 needs 300px per pair, and at a 639px column the second
-  // pair would break mid-word, so H1a stacks key over value here as well.
-  720: ["cons", "h1", "spec", "tiles"],
+  // pair would break mid-word, so H1a stacks key over value here as well. The
+  // constraints used to move here too; U6 removed them, not the switch.
+  720: ["h1", "spec", "tiles"],
   // Two columns cannot divide five; the fifth runs the full width.
   560: ["tiles"],
 };
