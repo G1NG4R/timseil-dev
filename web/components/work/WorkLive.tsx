@@ -3,6 +3,7 @@ import { systemsNow } from "@/lib/api/readers";
 import type { PostMeta } from "@/lib/content/posts";
 import type { Messages } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/routes";
+import { DOWN, readOk } from "@/lib/state/read";
 
 /**
  * The answered half of `/work`.
@@ -39,5 +40,13 @@ export async function WorkLive({
   locale: Locale;
   messages: Messages;
 }) {
-  return <WorkList body={await systemsNow()} posts={posts} locale={locale} messages={messages} />;
+  const body = await systemsNow();
+  return (
+    <WorkList
+      read={body === null ? DOWN : readOk(body)}
+      posts={posts}
+      locale={locale}
+      messages={messages}
+    />
+  );
 }

@@ -58,15 +58,16 @@ import {
   SpecRailLive,
 } from "@/components/case/Live";
 import { MetricRow } from "@/components/case/MetricRow";
-import { EMPTY_GRID, NO_POST_HREFS, OpsSection } from "@/components/case/OpsSection";
+import { NO_POST_HREFS, OpsSection } from "@/components/case/OpsSection";
 import { Pipeline } from "@/components/case/Pipeline";
 import { SpecRail } from "@/components/case/SpecRail";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { CASE_STUDIES, caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
-import { metricTiles } from "@/lib/api/systems";
+import { systemWaitSource } from "@/lib/api/systems";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { seoFor } from "@/lib/seo/pages";
+import { WAITING } from "@/lib/state/read";
 
 // THE SLUGS ARE KNOWN AT BUILD TIME, and saying so is not an optimisation — it
 // is what makes the route prerenderable at all. Without this list Next has to
@@ -109,9 +110,10 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
   const backHref = localeHref(locale, "/work");
 
   // The five `<Suspense>` holes are the only places the api is asked, and each
-  // fallback is the same component in its resting state — never a spinner and
-  // never a blank, because "no answer yet" and "no answer at all" look the same
-  // to a reader and this page has to be honest about both. U7 separates the two.
+  // fallback is the same component with `WAITING` in it — never a spinner and
+  // never a blank. U7 separated the two misses that used to share one look: a
+  // region that has not been answered yet says what it is fetching and from
+  // where, and only a region whose read FAILED says so.
   return (
     <>
       <Suspense fallback={<CaseCrumb href={backHref} back={messages.navWork} label={study.slug} />}>
@@ -152,7 +154,16 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
       </div>
 
       <div className="cs-metrics">
-        <Suspense fallback={<MetricRow tiles={metricTiles(null, messages)} note={study.emptyNote} />}>
+        <Suspense
+          fallback={
+            <MetricRow
+              read={WAITING}
+              note={study.emptyNote}
+              waitSource={systemWaitSource(study.slug)}
+              messages={messages}
+            />
+          }
+        >
           <MetricRowLive slug={study.slug} note={study.emptyNote} messages={messages} />
         </Suspense>
       </div>
@@ -205,10 +216,10 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
         <Suspense
           fallback={
             <OpsSection
-              grid={EMPTY_GRID}
-              incidents={null}
+              read={WAITING}
               postHrefs={NO_POST_HREFS}
               label={messages.csOperation}
+              waitSource={systemWaitSource(study.slug)}
               messages={messages}
             />
           }
