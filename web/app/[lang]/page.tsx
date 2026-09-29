@@ -152,9 +152,10 @@ export default async function Home() {
     ),
 
     // TWO BOUNDARIES INSIDE ONE SECTION, the first on this site. The fallback of
-    // each is its own component in its resting state, which is the ADR 0044
+    // each is its own component with `WAITING` in it, which is the ADR 0044
     // split every streamed region here uses — and it is what lets
-    // /dev/components draw both with no api at all.
+    // /dev/components draw both with no api at all. Since U7 each of them draws
+    // three states rather than two: only the read that FAILED says so.
     "SYS.03": (
       <Uplink
         key="SYS.03"
