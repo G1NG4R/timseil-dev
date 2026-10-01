@@ -42,6 +42,7 @@ import { en } from "@/lib/i18n/messages/en";
 import { sessionLines } from "@/lib/contact/log";
 import type { ContactRequest } from "@/lib/contact/payload";
 import { CONTACT_STATE_KEYS, type ContactStateKey } from "@/lib/contact/states";
+import { DOWN, WAITING, readOk } from "@/lib/state/read";
 import { retryLine, waitLine } from "@/lib/state/retry";
 import { MARKS, STATE_KEYS, stateLabel, type DayState, type StateKey } from "@/lib/state/words";
 
@@ -943,7 +944,7 @@ export default function GalleryPage() {
           list is in the document at all.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <Systems body={GALLERY_SYSTEMS} messages={en} />
+          <Systems read={readOk(GALLERY_SYSTEMS)} messages={en} />
         </div>
       </section>
 
@@ -971,16 +972,22 @@ export default function GalleryPage() {
           produces.
         </p>
         <p className="gal-states">
-          The fourth row under it is the same component with `body={null}`: the
-          resting state, which is also what a failed read looks like. Its four
-          tiles say `— NO DATA` rather than `00`, and the two are different
-          claims — `00` means the api answered and there are none.
+          Under it the same component twice more, for the two states that used
+          to be one. `WAITING` is what a Suspense fallback renders: the
+          counter says `— NO DATA` and the panel says what it is fetching and
+          from where. `DOWN` is a read that failed, and only that one names an
+          endpoint that did not answer. Both keep four tiles reading `— NO DATA`
+          rather than `00` — `00` would mean the api answered and there are
+          none.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <WorkList body={GALLERY_SYSTEMS} posts={GALLERY_LOG.posts} locale="en" messages={en} />
+          <WorkList read={readOk(GALLERY_SYSTEMS)} posts={GALLERY_LOG.posts} locale="en" messages={en} />
         </div>
         <div className="gal-demo" style={{ display: "block" }}>
-          <WorkList body={null} posts={[]} locale="en" messages={en} />
+          <WorkList read={WAITING} posts={[]} locale="en" messages={en} />
+        </div>
+        <div className="gal-demo" style={{ display: "block" }}>
+          <WorkList read={DOWN} posts={[]} locale="en" messages={en} />
         </div>
       </section>
 
@@ -1205,7 +1212,7 @@ export default function GalleryPage() {
           were cut for.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph body={GALLERY_CALENDAR} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR)} messages={en} />
         </div>
         <p className="gal-states">
           The second one begins on a Wednesday, which no live answer has yet
@@ -1214,17 +1221,20 @@ export default function GalleryPage() {
           nothing on `/` would look wrong enough to notice.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph body={GALLERY_CALENDAR_OFFSET} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR_OFFSET)} messages={en} />
         </div>
         <p className="gal-states">
           The third is old. The api answers with the last good calendar and its
           age for as long as it has one, so `from cache` is not a panel — it is
-          the same picture wearing a larger number. Only the cold start, where
-          GitHub has never replied, draws the fourth.
+          the same picture wearing a larger number. The two under it are the
+          states U7 pulled apart: `WAITING` is the Suspense fallback and says
+          what it is fetching, and `DOWN` is the cold start where GitHub has never
+          replied, which is the only one that makes a claim about the endpoint.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph body={GALLERY_CALENDAR_STALE} messages={en} />
-          <ContributionGraph body={null} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR_STALE)} messages={en} />
+          <ContributionGraph read={WAITING} messages={en} />
+          <ContributionGraph read={DOWN} messages={en} />
         </div>
       </section>
 
@@ -1243,11 +1253,14 @@ export default function GalleryPage() {
         <p className="gal-states">
           `degraded` and `outage` are in the fixture and not in production, for
           the reason the `in_build` row above gives: this is where a state gets
-          looked at before a visitor meets it.
+          looked at before a visitor meets it. Under the row, the same two misses
+          the calendar above draws: a wait that names its address, and a read that
+          failed.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <OpsStrip body={GALLERY_STRIP} messages={en} />
-          <OpsStrip body={null} messages={en} />
+          <OpsStrip read={readOk(GALLERY_STRIP)} messages={en} />
+          <OpsStrip read={WAITING} messages={en} />
+          <OpsStrip read={DOWN} messages={en} />
         </div>
       </section>
 

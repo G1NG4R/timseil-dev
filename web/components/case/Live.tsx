@@ -3,11 +3,18 @@
 //
 // WHY THEY ARE SEPARATE FROM THE COMPONENTS THEY RENDER. Each one is an async
 // Server Component the page puts inside a `<Suspense>`, and the fallback is the
-// SAME component with the same props in their resting state. That is the seam
-// ADR 0044 described and G4 built for the footer: one component draws both
-// answers, so "we have no numbers" and "we have these numbers" cannot drift
-// into two different layouts. Keeping the fetch out of the presentational
-// components is what lets the gallery render them without an api at all.
+// SAME component. That is the seam ADR 0044 described and G4 built for the
+// footer: one component draws every answer, so "we have no numbers" and "we have
+// these numbers" cannot drift into two different layouts. Keeping the fetch out
+// of the presentational components is what lets the gallery render them without
+// an api at all.
+//
+// SINCE U7 EACH OF THEM ALSO SAYS WHICH MISS IT IS. `systemNow` answers `null`
+// for a read that failed, and `null` was what a fallback had to pass too, so
+// three regions of this page said something about the api — or about a window
+// nobody had measured — while the answer was still in flight. This layer is the
+// only one that knows the difference, so this is where it is named: `DOWN` here,
+// `WAITING` in page.tsx, and the component holds all three.
 //
 // FIVE SINCE H2b, AND THE FIFTH IS ONE BOUNDARY AROUND TWO COMPONENTS. The grid
 // and the incident log read the same two arrays of the same answer and stand
@@ -39,14 +46,14 @@ import { postMortemHrefs } from "@/lib/case/postmortem";
 import {
   OPS_WINDOW_CASE,
   incidentList,
-  metricTiles,
-  opsGrid,
   sourceView,
   stackLine,
+  systemWaitSource,
 } from "@/lib/api/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/routes";
 import { systemStateWord } from "@/lib/state/derive";
+import { DOWN, readOk } from "@/lib/state/read";
 
 /** What every one of them needs, and what the fallbacks repeat. */
 interface Common {
@@ -119,25 +126,34 @@ export async function MetricRowLive({
 }: Common & { note: { label: string; text: string } }) {
   const system = await systemNow(slug, OPS_WINDOW_CASE);
 
-  // `null` goes straight in: metricTiles draws the same five labels with
-  // nothing under them, so the row that says "no answer" and the row that says
-  // "nothing measured yet" are the same markup and cannot drift.
-  return <MetricRow tiles={metricTiles(system, messages)} note={note} />;
+  // THE FIVE TILES STILL DRAW `— NO DATA` FOR EITHER MISS, and they have to: a
+  // tile cannot tell a wait from an outage. What U7 changed is the note under
+  // them. `EMPTY ON PURPOSE` explains a system that has not run yet, and a
+  // failed read is not that, so the state goes in whole and MetricRow chooses.
+  return (
+    <MetricRow
+      read={system === null ? DOWN : readOk(system)}
+      note={note}
+      waitSource={systemWaitSource(slug)}
+      messages={messages}
+    />
+  );
 }
 
 /**
  * `.04`'s two measured parts, waiting together.
  *
- * THE FALLBACK IS THE SAME COMPONENT WITH NOTHING IN IT — literally the same
- * one: `OpsSection` is rendered here with an answer and in page.tsx with
- * `EMPTY_GRID`, which is the seam ADR 0044 describes. An empty grid and an empty
- * log are exactly what a system with no history renders, so "no answer yet" and
- * "no answer at all" cannot drift into two layouts. There is no spinner here for
- * the same reason there is none anywhere else on this page.
+ * THE FALLBACK IS THE SAME COMPONENT — literally the same one: `OpsSection` is
+ * rendered here with an answer and in page.tsx with `WAITING`, which is the seam
+ * ADR 0044 describes. The grid is the same figure in both, down to its caption.
+ * There is no spinner here for the same reason there is none anywhere else.
  *
- * `null` GOES STRAIGHT IN. `opsGrid(null)` is no cells and `incidentList(null)`
- * is `null`, and both components already draw that — the api being down and the
- * system never having run produce one picture, and it is the honest one.
+ * WHAT `null` USED TO COST. Until U7 the api being down and the system never
+ * having run produced one picture and one sentence — `NO INCIDENTS IN THIS
+ * WINDOW`, a claim about a window nobody had measured — and the fallback made
+ * the same claim a beat earlier. Three meanings, one panel. The state goes in
+ * whole now; `incidentList(null)` still means "not live", and that is the one of
+ * the three that is still allowed to reach the incident log.
  */
 export async function OpsLive({
   slug,
@@ -146,19 +162,23 @@ export async function OpsLive({
   gridLabel,
 }: Common & { locale: Locale; gridLabel: string }) {
   const system = await systemNow(slug, OPS_WINDOW_CASE);
-  const incidents = incidentList(system);
 
   return (
     <OpsSection
-      grid={opsGrid(system)}
-      incidents={incidents}
+      read={system === null ? DOWN : readOk(system)}
       // RESOLVED HERE AND NOT IN THE COMPONENT, which is where every href on
       // this site is decided: `postMortemHrefs` reads the repository, and a
       // presentational component that read a directory could not be rendered by
       // the gallery. It is also the only place that has both halves — the api's
       // slugs and the page's locale.
-      postHrefs={postMortemHrefs(incidents, locale)}
+      //
+      // `incidentList` RUNS TWICE ON PURPOSE, here and inside the component. It
+      // is a pure filter over one array, and the two calls have two jobs: this
+      // one resolves addresses, that one draws entries. Passing the result down
+      // instead would put the answer in two props that can disagree.
+      postHrefs={postMortemHrefs(incidentList(system), locale)}
       label={gridLabel}
+      waitSource={systemWaitSource(slug)}
       messages={messages}
     />
   );

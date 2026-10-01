@@ -176,6 +176,29 @@ export const en = {
     "window was measured, and an incident here would carry its cause, its fix " +
     "and the entry that explains it.",
 
+  // U7 · THE TWO SENTENCES THIS PAGE OWED, and the phase is a correction rather
+  // than an addition. Both regions had exactly one sentence for two states: the
+  // grid and the log said `NO INCIDENTS IN THIS WINDOW` when nothing had
+  // answered, and the five tiles said they were empty on purpose. Measured
+  // against production on 28.09.2026, both appeared twice per response while the
+  // answers they contradict were in the same document.
+  //
+  // THEY NAME `/api/systems` WITHOUT THE SLUG, unlike the wait beside them. The
+  // four `…Down` sentences on the homepage are all written this way and a fifth
+  // spelling of the same claim would be the drift this file exists to prevent;
+  // the resolved path is in the wait, where lib/state/lines.ts wants an address
+  // a reader can go and check. `lib/api/systems.ts#systemWaitSource` writes that
+  // one, and it is not prose.
+  csOpsDown:
+    "The grid and the log are read from /api/systems, and that endpoint did not " +
+    "answer this request. No day is drawn and no incident is listed rather than " +
+    "a window assembled from somewhere else.",
+
+  csMetricsDown:
+    "The five tiles are read from /api/systems, and that endpoint did not answer " +
+    "this request. They stay empty rather than carrying a number from somewhere " +
+    "else — and this is not the day-one emptiness the note beside them explains.",
+
   // H3 · the homepage: the hero's sentences and the four reasons a section is
   // still empty.
   //
