@@ -12,6 +12,81 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## U7 · 29.09.2026 — Laden vs. Fehler: acht Sätze über einen Ausfall, die in Produktion standen
+
+Der Fund ist nicht, dass ein Zustand fehlte. Der Fund ist, dass die Seite ihn
+**gemeldet hat**, und zwar den falschen. Gemessen am 28.09. gegen Produktion,
+`v0.44.1`, mit antwortender API:
+
+| Seite | Status · Bytes | Im Dokument |
+|---|---|---|
+| `/` | 200 · 154 622 B | **6×** „…did not answer this request" + 2× die Kalender-Variante — neben 44 Zeilen echter Antwortdaten |
+| `/work` | 200 · 45 649 B | **2×** `workListDown` |
+| `/work/timseil-dev` | 200 · 78 133 B | **2×** `EMPTY ON PURPOSE` — „diese fünf Kacheln füllen sich ab dem ersten Betriebstag", neben `80,05 %` Uptime |
+
+Je zweimal, weil ein gestreamtes Dokument den Fallback **und** seinen Ersatz
+trägt: einmal als Markup, einmal in der Flight-Nutzlast. Nach der Reparatur,
+gegen den Dev-Stack von Null mit antwortender API: **0 · 0 · 0**, und
+`fetching ` 12× auf `/`, 3× auf `/work`, 6× auf der Fallstudie.
+
+Ursache: `body: T | null`, und `null` kam aus zwei Richtungen — vom
+`<Suspense>`-Fallback und von einem `*Now()`, dessen Anfrage scheiterte.
+`app/[lang]/work/[slug]/page.tsx` hat es selbst angekündigt: *„U7 separates the
+two."* Entscheidung, Messungen und vier verworfene Alternativen in ADR 0082.
+
+### Gefunden
+
+- **Der Ladezustand lag seit G6 fertig im Repository und hat nie gerendert.**
+  `components/state/LoadingLines.tsx`, `.st-wait` und `--st-lines` in
+  `styles/state.css` („a wait holds the height the answer will need"), und in der
+  Inventur steht `ContributionGraph` mit `loading (skeleton)` als **erstem** von
+  vier Zuständen. Verbraucher außerhalb der Galerie: keiner, über elf
+  Suspense-Grenzen und sechs Stufen. Ein Bauteil, das eine Galerie zeigt, gilt
+  als gebaut — und niemand fragt, ob es irgendwo eingebaut ist.
+- **Ein Kommentar kann eine Entscheidung zitieren, die so nie gefallen ist.**
+  Jede `*Live`-Datei und beide Seiten berufen sich für „Fallback = Ruhezustand"
+  auf **ADR 0044**. Im ADR steht der Satz nicht: 0044 beschreibt die Naht für
+  `FooterMeta` — *eine* Komponente zeichnet jeden Zustand —, und daraus ist in
+  sieben Dateien eine Regel über das *Aussehen* geworden. Die Naht war richtig
+  und bleibt; ihre Folgerung hat sich unterwegs dazugeschrieben.
+- **`grep -c` hat hier zu wenig gezählt, nicht zu viel.** Auf `/` gibt
+  `grep -c "did not answer this request"` **1**, weil das Dokument eine Zeile
+  ist; `grep -o … | wc -l` gibt 6. Der U5-Fund war eine Zahl, die zu hoch war
+  (der Footer zählte mit) — dieser ist dieselbe Mechanik in die andere Richtung,
+  und `-c` ist bei einer minifizierten Seite die falsche Zählung.
+- **`incidentList` trennt `null` und `[]` seit H2b im eigenen Kopf, und
+  `IncidentLog` hat beide in einen Zweig geschrieben.** `NO INCIDENTS IN THIS
+  WINDOW` ist eine Behauptung über ein Fenster; drei Zustände haben sie geteilt,
+  einer hatte eine Messung dahinter. Invariante 1, eine Ebene über den Zahlen.
+
+### Verschoben
+
+- **Eine Antwort mit null Einträgen sagt weiter „der Endpunkt hat nicht
+  geantwortet".** `/work` und `/blog` haben für diesen Fall je einen eigenen Satz
+  (`workListNone`, `blogNoEntriesReason`), die vier Regionen der Startseite
+  nicht. Ohne kaputten Seed nicht erreichbar, und es kostet vier Sätze statt einer
+  Verzweigung — also U7 bewusst nicht. Für die Triage nach U9.
+- **`DegradedNotice` bleibt ohne Verbraucher**, jetzt mit Begründung in ADR 0082
+  §Verworfene Alternativen statt als Lücke.
+- **Die 129 px leeres Raster unter `.ops-live`** bleiben, wie im U6-Backlog
+  notiert. Es ist ein Rahmen, keine Behauptung; U7 hat nur die Tafel darunter
+  angefasst.
+- **`FooterLead` trägt `LINKEDIN ↗ [SOON]` und `X ↗ [SOON]` in jeder Fußzeile.**
+  K2 hat die Regel — „nur rendern, wenn eine URL existiert" — und besitzt die
+  Fußzeile; U7 hat sie nicht vorweggenommen. Die übrigen `[SOON]` sind benannte
+  Abwesenheiten mit einem Schuldner: Terminal-Rahmen (J1), Fehlerbudget auf der
+  404 (Stufe M).
+- **Stufe U hat in `docs/design/INDEX.md` keine Zeile.** U7 ist thematisch das
+  `State Language`-Blatt (dort H13 · G6 · M2); gelesen wurde es nicht, weil die
+  Regel des Index „fehlt deine Phase, such nicht weiter" heißt und STATE.05 in
+  `lib/state/lines.ts`, `words.ts` und `state.css` transkribiert vorliegt. Wenn
+  die Zuordnung für U-Phasen gelten soll, gehört sie in den Index.
+
+### Idee
+
+- **Zwei Schlüssel zurück an U8.** `csOpsDown` und `csMetricsDown`; U6 hatte
+  fünfzehn erspart. Kein Problem, nur die Buchhaltung dazu.
+
 ## Wo wir stehen — 26.09.2026, U6 abgenommen: `v0.44.1`, zwei Merges an einem Tag, und ein Kriterium, das zu weit griff
 
 `b400a17` läuft, **`v0.44.1`**. Die Phase hat zwei Merges gebraucht: #413 hat die

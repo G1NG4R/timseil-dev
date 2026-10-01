@@ -1,5 +1,6 @@
 import { JsonLd } from "@/components/JsonLd";
 import { EmptyState } from "@/components/state/EmptyState";
+import { LoadingLines } from "@/components/state/LoadingLines";
 import { WorkFilters, type FilterRowNode, type StatusChip } from "@/components/work/WorkFilters";
 import { WorkHeader } from "@/components/work/WorkHeader";
 import { WorkRow } from "@/components/work/WorkRow";
@@ -10,20 +11,26 @@ import type { Messages } from "@/lib/i18n/messages/en";
 import type { Locale } from "@/lib/i18n/routes";
 import { localeHref } from "@/lib/i18n/routes";
 import { collectionLd } from "@/lib/seo/jsonld";
+import { readData, type Read } from "@/lib/state/read";
 import { NO_DATA, stateLabel } from "@/lib/state/words";
 import { listed, statusCounts, workCount, workMeta } from "@/lib/work/counts";
 import { workEntries } from "@/lib/work/entries";
 import { stackTags } from "@/lib/work/stacks";
 
+/** What this region fetches. Machine's voice, not translated — lib/state/lines.ts. */
+const WAIT_WHAT = "systems";
+const WAIT_SOURCE = "ops-api /api/systems";
+
 /**
  * `/work` whole: the head with its four counts, the filters, the counter, and
  * the list.
  *
- * ONE COMPONENT FOR THE RESTING STATE AND THE ANSWER, which is the seam ADR
- * 0044 described and every streamed region on this site uses. `body` is `null`
- * both while the request is in flight and after it has failed, and the two look
- * the same to a reader on purpose: "no answer yet" and "no answer at all" are
- * both "this page cannot say", and a spinner would claim to know which.
+ * ONE COMPONENT FOR EVERY STATE OF THE ANSWER, which is the seam ADR 0044
+ * described and every streamed region on this site uses. What U7 changed is that
+ * there are three of them rather than two: `read.kind` is `waiting` in the
+ * fallback and `down` after a failed read, and the panel says which. The counter
+ * and the four tiles still say `— NO DATA` for both, because a count cannot tell
+ * them apart — and a spinner would have claimed to know which without saying so.
  *
  * THE HEAD IS INSIDE THE STREAMED REGION, unlike the legend and the contact
  * line under it. Its four tiles and its counter are all statements about the
@@ -57,18 +64,18 @@ import { stackTags } from "@/lib/work/stacks";
  * and four state components off the wire.
  */
 export function WorkList({
-  body,
+  read,
   posts,
   locale,
   messages,
 }: {
-  /** The answer, or `null` for both the fallback and a failed read. */
-  body: SystemList | null;
+  read: Read<SystemList>;
   /** The log entries, read from this image's own content/posts. */
   posts: readonly PostMeta[];
   locale: Locale;
   messages: Messages;
 }) {
+  const body = readData(read);
   const entries = workEntries(body, posts, messages);
   const counts = listed(body) ? statusCounts(entries) : null;
 
@@ -106,8 +113,16 @@ export function WorkList({
 
       {counts === null ? (
         <>
+          {/* `.work-count` IN ALL THREE STATES, and it is what e2e/streaming.ts
+              waits on to say the region arrived. The counter says `— NO DATA`
+              while nothing has answered, because a count cannot tell a wait from
+              an outage; the panel under it can, and since U7 it does. */}
           <p className="work-count">{workMeta(body)}</p>
-          <EmptyState heading={NO_DATA} reason={messages.workListDown} />
+          {read.kind === "waiting" ? (
+            <LoadingLines what={WAIT_WHAT} source={WAIT_SOURCE} />
+          ) : (
+            <EmptyState heading={NO_DATA} reason={messages.workListDown} />
+          )}
         </>
       ) : entries.length === 0 ? (
         <>
