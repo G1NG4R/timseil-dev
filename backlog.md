@@ -12,6 +12,126 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 01.10.2026, U7 abgenommen: `v0.45.0`, der fünfte saubere Tausch, und eine rote Sperre, die nicht uns gehörte
+
+`9b20f4f` läuft, **`v0.45.0`**. Die Phase hat einen Merge gebraucht — und davor
+einen fremden: **#418** musste zuerst, weil `scan` auf `main` rot war und der
+Branch das erbte. Die Reihenfolge wurde dafür gedreht, nicht die Entscheidung.
+Der Befund selbst steht in `backlog.local.md`; hier steht die Aufgabe, und sie
+ist erledigt: **Abhängigkeits-Advisories vor dem Merge gegen die ausgelieferte
+Version geprüft.**
+
+| | #421 · U7 |
+|---|---|
+| Squash | `9b20f4f` |
+| Merge | **19:22:41Z** |
+| Version | `v0.44.1` → **`v0.45.0`** |
+| `durationSec` | 849, `result ok` |
+| Wanduhr Merge → Deploy-Meldung | 855 s |
+| Zeuge | 934 × 200 je Pfad |
+
+Uhrzeit mit `date -u` gelesen, jedes Mal. 19:22Z liegt viereinhalb Stunden vor
+dem Dokploy-Fenster.
+
+### Der Zeuge hat den fünften Tausch gesehen, und wieder nichts
+
+Start **19:21:49Z**, 52 Sekunden vor dem Merge. 934 Anfragen je Pfad, 934 × 200
+auf `/` und 934 × 200 auf `/api/health`, zwei Sekunden ohne Stichprobe. Keine
+404, keine 502, keine abgerissene Verbindung.
+
+Für **#304** ist das die **fünfte** bezeugte Beobachtung über die volle Dauer,
+nach U4, U5, U6 und U6a. Fünf saubere Tausche sind keine Quote, aber sie sind
+fünf, und alle fünf mit derselben Methode gemessen.
+
+### Die Uhr aus U6, zum zweiten Mal
+
+| | |
+|---|---|
+| `ops.lastDeploy.at` | 19:36:53Z — **855 s** nach dem Merge |
+| `startedAt` des Prozesses, der jetzt antwortet | 19:37:07.946Z — **870 s** nach dem Merge |
+| Abstand | **14,9 s** |
+
+In U6 waren es 12,6 s. **Zweite Beobachtung, gleiche Richtung, nicht erklärt.**
+Dass der Prozess, der die Seite ausliefert, nach der Deploy-Meldung startet, ist
+jetzt zweimal gemessen und bleibt eine offene Frage — keine Schlussfolgerung.
+
+### Gegen Produktion gemessen
+
+Die Zusicherung der Phase lautet: **API langsam zeigt den Ladezustand, API tot
+den Fehlertext, und das rohe HTML trägt keine Fehlermeldung, solange die API
+antwortet.** Die dritte Hälfte ist die, die nur gegen eine antwortende API
+messbar ist:
+
+| Seite | 28.09., `v0.44.1` | 01.10., `v0.45.0` |
+|---|---|---|
+| `/` | **6×** „did not answer" + 2× Kalender-Variante | **0** · 4 Wartetafeln |
+| `/work` | **2×** | **0** · 1 Wartetafel |
+| `/work/timseil-dev` | **2×** `EMPTY ON PURPOSE` | **0** · 2 Wartetafeln |
+
+`st-wait` steht 8 / 2 / 4 Mal im Dokument — zwei Kopien je Tafel, Markup und
+Flight-Nutzlast. Und `EMPTY ON PURPOSE` fehlt aus dem **richtigen** Grund, nicht
+weil ein Fehlertext an seine Stelle getreten ist: die Kacheln sind gefüllt.
+
+| | |
+|---|---|
+| `/api/health` | `sha 9b20f4f` · `version v0.45.0` · `status ok` · `ops.systemsLive 1` von `2` |
+| Kacheln | `81,26 %` über *40 of 91 days measured*, `80,2 MS`, `0,00 %`, `331 S`, `0` |
+| Raster | **91 Zellen** — `nodata 51`, `ok 37`, `outage 3`, **identisch zu `/api/systems/timseil-dev?window=91`** |
+| Zwei Zahlen, die sich gegenseitig halten | 37 + 3 gemessene Tage = die **40** der Uptime-Kachel |
+| Incident-Log | `NO INCIDENTS IN THIS WINDOW` — jetzt als `ok`-Zustand, über ein Fenster, das gemessen wurde |
+| `/` | 154 324 B, **298 B kleiner als vor der Phase** |
+
+Die 298 Bytes sind der Nebeneffekt, auf den niemand gewettet hätte: vier
+Prosa-Sätze über einen Ausfall sind länger als vier Log-Zeilen, die sagen, was
+geholt wird.
+
+### Gefunden
+
+- **Eine Wartezeile steht dreimal im Dokument, die Tafel zweimal.** Nachgesehen
+  statt geraten: Markup einmal, Flight-Nutzlast zweimal — dort ist die Zeile
+  einmal der React-**Key** des `<li>` und einmal sein Inhalt, weil
+  `LoadingLines` seit G6 `key={line}` schreibt. Drei Vorkommen, drei Pfade, kein
+  Rätsel. Eine Zahl, die man nicht zuordnen kann, gehört nicht in eine Abnahme.
+- **`grep -c` zählt auf dieser Seite zu wenig.** Das gelieferte Dokument ist
+  eine Zeile, also gibt `grep -c "did not answer this request"` **1**, wo
+  `grep -o … | wc -l` **6** gibt. Der U5-Fund war dieselbe Mechanik in die
+  andere Richtung — eine Zahl, die zu hoch war, weil der Footer mitzählte. Für
+  gelieferte HTML gilt: `-o` und zählen, nie `-c`.
+- **`make check` kann einen Merge nicht freigeben, und das ist Absicht.**
+  `check-vuln` hängt am `scan`-Job, nicht an `make check` (ADR 0031: „was `make
+  check` trägt und was die Pipeline trägt"). Diese Phase ist der erste Fall, in
+  dem der Unterschied einen Merge aufgehalten hat — lokal war neun Mal alles
+  grün, und die Sperre lag trotzdem da. Die Trennung bleibt richtig; was fehlte,
+  war die Erwartung, dass „lokal grün" nicht „mergefähig" heißt.
+- **Ein Titel-Check kann einen fremden PR blockieren, und niemand sieht nach.**
+  #418 lag seit dem 28.09. vollständig grün außer seinem Titel: 74 Zeichen plus
+  ` (#418)` sind 82, die Grenze ist 72 (#354). Drei Tage, ein Retitle. Die
+  Dependabot-PRs werden gelesen, wenn man sie braucht — und der, den man am
+  dringendsten brauchte, war der blockierte.
+
+### Was diese Abnahme nicht beweist
+
+**Den Wartezustand hat gegen Produktion niemand *gesehen*.** Er ist dort in den
+Bytes nachgewiesen, 4 / 1 / 2 Tafeln, und das ist die einzige Form, in der er
+gegen eine antwortende API überhaupt messbar ist: er lebt so lange, wie der
+Lesezug dauert. Wie er *aussieht*, ist im Rig und in der Galerie gemessen, wo
+`/dev/components` ihn neben seinen Geschwistern zeichnet — und die Galerie ist
+in Produktion abgeschaltet.
+
+**Die Zustände oberhalb von 1080 hat wieder niemand gegen Produktion gesehen**,
+aus dem Grund, der seit U4 in jeder dieser Abschnitte steht: das Fenster hier
+ist 1048 breit. Die volle Suite gegen die Seite zu ziehen wurde bewusst nicht
+gemacht.
+
+**Und die 14,9 s sind gemessen, nicht verstanden.**
+
+### Verschoben
+
+- Die Triage der Stufe H und aller offenen Issues läuft nach **U9**.
+- Die vier restlichen Dependabot-PRs: #416, #417, #419, #420.
+- Die offenen Punkte der Phase stehen im U7-Eintrag darunter, samt der Antwort
+  mit null Einträgen, die weiter den Ausfall-Satz erreicht.
+
 ## U7 · 29.09.2026 — Laden vs. Fehler: acht Sätze über einen Ausfall, die in Produktion standen
 
 Der Fund ist nicht, dass ein Zustand fehlte. Der Fund ist, dass die Seite ihn
