@@ -2,11 +2,17 @@ import Link from "next/link";
 
 import { SystemRow } from "@/components/home/SystemRow";
 import { EmptyState } from "@/components/state/EmptyState";
+import { LoadingLines } from "@/components/state/LoadingLines";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { type SystemList, systemsMeta } from "@/lib/api/systems";
 import { systemEntries } from "@/lib/home/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
+import { readData, type Read } from "@/lib/state/read";
 import { NO_DATA } from "@/lib/state/words";
+
+/** What this region fetches. Machine's voice, not translated — lib/state/lines.ts. */
+const WAIT_WHAT = "systems";
+const WAIT_SOURCE = "ops-api /api/systems";
 
 /**
  * SYS.02 whole: the head with its count, and one row per system.
@@ -30,6 +36,11 @@ import { NO_DATA } from "@/lib/state/words";
  * with `homeSys02Down` says which read failed. Same shape, same argument, as
  * SYS.01 — and a different sentence, because it is a different endpoint.
  *
+ * AND SINCE U7 THAT SENTENCE WAITS FOR ITS TURN. `read.kind` is `waiting` in the
+ * fallback, and a region that has not been answered yet says what it is fetching
+ * instead of that the endpoint did not answer. The head, the section and the
+ * layout are unchanged in all three states.
+ *
  * AND IT KEEPS THE WAY OUT, which is the half H5a nearly dropped. `SysSection`
  * rendered `WORK →` inside the panel while this was a shell, and replacing that
  * component with this one took the link with it — leaving `exit` in
@@ -41,18 +52,23 @@ import { NO_DATA } from "@/lib/state/words";
  * systems while /api/systems is down has one: /work lists them from H6 on. It is
  * NOT rendered under a list that answered — there the rows are the way out, and
  * a second route to the same place is the extra tab stop SystemRow turns down.
+ *
+ * AND NOT UNDER A REGION THAT IS STILL WAITING EITHER, which is the one thing U7
+ * moves here. A way back belongs to an emptiness that has settled; offered under
+ * a wait it is a second link to press while the first answer is still in flight.
  */
+
 export function Systems({
-  body,
+  read,
   exit = null,
   messages,
 }: {
-  /** The answer, or `null` for both the fallback and a failed read. */
-  body: SystemList | null;
+  read: Read<SystemList>;
   /** The way out of the empty state. `null` in the gallery, where there is a list. */
   exit?: { href: string; label: string } | null;
   messages: Messages;
 }) {
+  const body = readData(read);
   const entries = systemEntries(body);
 
   return (
@@ -65,13 +81,17 @@ export function Systems({
       />
 
       {entries.length === 0 ? (
-        <EmptyState heading={NO_DATA} reason={messages.homeSys02Down}>
-          {exit === null ? null : (
-            <p className="home-exit">
-              <Link href={exit.href}>{exit.label} →</Link>
-            </p>
-          )}
-        </EmptyState>
+        read.kind === "waiting" ? (
+          <LoadingLines what={WAIT_WHAT} source={WAIT_SOURCE} />
+        ) : (
+          <EmptyState heading={NO_DATA} reason={messages.homeSys02Down}>
+            {exit === null ? null : (
+              <p className="home-exit">
+                <Link href={exit.href}>{exit.label} →</Link>
+              </p>
+            )}
+          </EmptyState>
+        )
       ) : (
         <ol className="sys-list">
           {entries.map((entry) => (

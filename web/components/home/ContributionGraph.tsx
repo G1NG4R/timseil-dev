@@ -1,9 +1,15 @@
 import type { CSSProperties } from "react";
 
 import { EmptyState } from "@/components/state/EmptyState";
+import { LoadingLines } from "@/components/state/LoadingLines";
 import { contributionsMeta, graphLabel, graphView, type Contributions } from "@/lib/api/contributions";
 import type { Messages } from "@/lib/i18n/messages/en";
+import { readData, type Read } from "@/lib/state/read";
 import { NO_DATA } from "@/lib/state/words";
+
+/** What this region fetches. Machine's voice, not translated — lib/state/lines.ts. */
+const WAIT_WHAT = "contribution calendar";
+const WAIT_SOURCE = "ops-api /api/contributions";
 
 /**
  * The first block of SYS.03: a year of commits, seven rows deep.
@@ -32,21 +38,31 @@ import { NO_DATA } from "@/lib/state/words";
  * A LEVEL THE CONTRACT DOES NOT DECLARE IS DRAWN AS THE OUTLINE, not as the
  * empty step: `l0` means measured and empty, `null` means unreadable, and giving
  * them one shape would file the second under the first.
+ *
+ * AND THE SAME DISTINCTION ONE LEVEL UP SINCE U7. `homeUplinkGraphDown` is the
+ * sharpest of the four down sentences — it says there has never been an answer to
+ * keep, which is a claim about this endpoint's whole history — and it was printed
+ * by every fallback, milliseconds before the calendar arrived. Now it waits for
+ * its turn and `read.kind` decides. `.upl-graph` is the wrapper in all three
+ * states; e2e/streaming.ts waits on it.
  */
 export function ContributionGraph({
-  body,
+  read,
   messages,
 }: {
-  /** The answer, or `null` for both the fallback and a failed read. */
-  body: Contributions | null;
+  read: Read<Contributions>;
   messages: Messages;
 }) {
-  const view = graphView(body);
+  const view = graphView(readData(read));
 
   if (view.days === 0) {
     return (
       <div className="upl-graph">
-        <EmptyState heading={NO_DATA} reason={messages.homeUplinkGraphDown} />
+        {read.kind === "waiting" ? (
+          <LoadingLines what={WAIT_WHAT} source={WAIT_SOURCE} />
+        ) : (
+          <EmptyState heading={NO_DATA} reason={messages.homeUplinkGraphDown} />
+        )}
       </div>
     );
   }

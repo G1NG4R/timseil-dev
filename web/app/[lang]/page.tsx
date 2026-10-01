@@ -61,6 +61,7 @@ import { seoFor } from "@/lib/seo/pages";
 import { SITE_SYSTEM_SLUG } from "@/lib/site";
 import { caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
+import { WAITING } from "@/lib/state/read";
 import { stateLabel } from "@/lib/state/words";
 
 // The canonical, the four `hreflang` links, the feed and the social card — one
@@ -136,7 +137,7 @@ export default async function Home() {
     // and its two blocks stream under it separately, because they read two
     // endpoints with two freshnesses.
     "SYS.01": (
-      <Suspense key="SYS.01" fallback={<TrainingLog body={null} messages={messages} />}>
+      <Suspense key="SYS.01" fallback={<TrainingLog read={WAITING} messages={messages} />}>
         <TrainingLive messages={messages} />
       </Suspense>
     ),
@@ -144,26 +145,27 @@ export default async function Home() {
     "SYS.02": (
       <Suspense
         key="SYS.02"
-        fallback={<Systems body={null} exit={systemsExit} messages={messages} />}
+        fallback={<Systems read={WAITING} exit={systemsExit} messages={messages} />}
       >
         <SystemsLive exit={systemsExit} messages={messages} />
       </Suspense>
     ),
 
     // TWO BOUNDARIES INSIDE ONE SECTION, the first on this site. The fallback of
-    // each is its own component in its resting state, which is the ADR 0044
+    // each is its own component with `WAITING` in it, which is the ADR 0044
     // split every streamed region here uses — and it is what lets
-    // /dev/components draw both with no api at all.
+    // /dev/components draw both with no api at all. Since U7 each of them draws
+    // three states rather than two: only the read that FAILED says so.
     "SYS.03": (
       <Uplink
         key="SYS.03"
         graph={
-          <Suspense fallback={<ContributionGraph body={null} messages={messages} />}>
+          <Suspense fallback={<ContributionGraph read={WAITING} messages={messages} />}>
             <ContributionGraphLive messages={messages} />
           </Suspense>
         }
         strip={
-          <Suspense fallback={<OpsStrip body={null} messages={messages} />}>
+          <Suspense fallback={<OpsStrip read={WAITING} messages={messages} />}>
             <OpsStripLive messages={messages} />
           </Suspense>
         }
