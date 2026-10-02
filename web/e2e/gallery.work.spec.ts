@@ -131,14 +131,17 @@ test("the stat rail counts the same rows the list drew", async ({ page }) => {
   await expect(values).toHaveText(["03", "01", "01", "01"]);
 });
 
-test("the resting state says nothing rather than zero", async ({ page }) => {
-  // The second demo under the same heading is `body={null}` — the fallback, and
-  // also what a failed read looks like. Its rail collapses to one tile because
-  // the absence is one fact, not four.
+test("a region with no answer says nothing rather than zero", async ({ page }) => {
+  // The second demo under the same heading is `read={WAITING}` — the fallback —
+  // and the third is `read={DOWN}`, a read that failed. U7 split those two; the
+  // rail is the half they still share, because a count cannot tell them apart.
+  // It collapses to one tile in both: the absence is one fact, not four.
   const rails = page.locator(`${PART} .work-stats`);
 
-  await expect(rails.nth(1)).not.toHaveAttribute("data-counted", "");
-  await expect(rails.nth(1).locator(".work-stat dd")).toHaveText("— NO DATA");
+  for (const index of [1, 2]) {
+    await expect(rails.nth(index)).not.toHaveAttribute("data-counted", "");
+    await expect(rails.nth(index).locator(".work-stat dd")).toHaveText("— NO DATA");
+  }
 });
 
 test("the row changes shape only at the two widths layout.css gives it", async ({ page }) => {

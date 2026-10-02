@@ -1,8 +1,18 @@
 import { EmptyState } from "@/components/state/EmptyState";
+import { LoadingLines } from "@/components/state/LoadingLines";
 import { SITE_SYSTEM_SLUG } from "@/lib/site";
 import { opsGrid, type SystemDetail } from "@/lib/api/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
+import { readData, type Read } from "@/lib/state/read";
 import { NO_DATA, dayLabel } from "@/lib/state/words";
+
+/** What this region fetches. Machine's voice, not translated — lib/state/lines.ts.
+ *
+ *  THE PATH IS THE SITE'S OWN SYSTEM, resolved rather than written: this block
+ *  reads one system's days, and `/api/systems` alone would name the list instead
+ *  — an address a reader could check and find the wrong document at. */
+const WAIT_WHAT = "operation days";
+const WAIT_SOURCE = `ops-api /api/systems/${SITE_SYSTEM_SLUG}`;
 
 /**
  * The second block of SYS.03: thirty days of operation, one row deep.
@@ -33,20 +43,24 @@ import { NO_DATA, dayLabel } from "@/lib/state/words";
  * this is the sentence it has to answer first.
  */
 export function OpsStrip({
-  body,
+  read,
   messages,
 }: {
-  /** The answer, or `null` for both the fallback and a failed read. */
-  body: SystemDetail | null;
+  read: Read<SystemDetail>;
   messages: Messages;
 }) {
+  const body = readData(read);
   const grid = opsGrid(body);
   const days = grid.cells.length;
 
   if (days === 0) {
     return (
       <div className="upl-ops">
-        <EmptyState heading={NO_DATA} reason={messages.homeUplinkStripDown} />
+        {read.kind === "waiting" ? (
+          <LoadingLines what={WAIT_WHAT} source={WAIT_SOURCE} />
+        ) : (
+          <EmptyState heading={NO_DATA} reason={messages.homeUplinkStripDown} />
+        )}
       </div>
     );
   }
