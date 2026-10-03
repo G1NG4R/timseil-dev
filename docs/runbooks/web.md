@@ -506,9 +506,22 @@ curl -s -o /dev/null -w '%{http_code} -> %{redirect_url}\n' $B/en/about   # 308 
 curl -s -o /dev/null -w '%{http_code}\n' $B/english     # 404
 curl -s -o /dev/null -w '%{http_code}\n' $B/es/about    # 404
 
-# 5 — der unübersetzte Block sagt es selbst
-curl -s $B/de | grep -o '<\(header\|main\|footer\)[^>]*lang="[a-z]*"'
+# 5 — der unübersetzte Block sagt es selbst, und seit U8 ist das nur noch FR
+curl -s $B/fr | grep -o '<\(header\|main\|footer\)[^>]*lang="[a-z]*"'   # drei Treffer
+curl -s $B/de | grep -o '<\(header\|main\|footer\)[^>]*lang="[a-z]*"'   # KEIN Treffer
 curl -s $B/  | grep -c 'lang="en"'      # 1 — nur <html>, sonst keine Marke
+
+# 6 — U8 · die englischen Inseln. /de/privacy und /de/imprint sind deutsch
+#     beschriftet und tragen ihren Rechtstext englisch, also sagt der Block es
+#     selbst (ADR 0083, Entscheidung 2).
+curl -s $B/de/privacy | grep -o '<html lang="[a-z]*"'           # de
+curl -s $B/de/privacy | grep -o 'class="lg" lang="[a-z]*"'      # lang="en"
+
+# 7 — U8 · gezählt, nicht gelistet. Die ausgelieferte Seite ist EINE Zeile, also
+#     zählt `grep -c` immer 1 und beweist nichts. `grep -o … | wc -l` zählt
+#     Vorkommen (U5- und U7-Fund).
+curl -s $B/de | grep -o 'I run the systems behind the screen' | wc -l   # 0
+curl -s $B/de | grep -o 'Ich betreibe die Systeme' | wc -l             # >= 1
 ```
 
 ### Was nur der Browser zeigt
@@ -519,10 +532,18 @@ die keinen Seitenaufbau macht". **Zustand vom DOM lesen, nicht aus
 Ereignislisten** — ein `close`-Event ist über die Browser-Erweiterung nicht
 beobachtbar (Backlog, 28.08.2026, G3).
 
+**Und seit U8 liegen zwei Sprach-Chromes im Dokument.** `/about` und `/de/about`
+sind verschiedene `[lang]`-Segmente, also verschiedene Layout-Instanzen, und
+`cacheComponents: true` hält bis zu drei Routen montiert und nur versteckt —
+nach einem Wechsel gibt es **zwei** `.lang-button` und **sechs**
+`.lang-option`. `querySelector` greift dann den falschen. Auf das Sichtbare
+filtern, nicht auf den ersten Treffer.
+
 ```js
 // auf /de/about, in der Konsole
-const en = [...document.querySelectorAll(".lang-option")].find(li => li.textContent.startsWith("EN"));
-document.querySelector(".lang-button").click();
+const vis = sel => [...document.querySelectorAll(sel)].filter(el => el.offsetParent !== null);
+const en = vis(".lang-option").find(li => li.textContent.startsWith("EN"));
+vis(".lang-button")[0].click();
 en.click();
 await new Promise(r => setTimeout(r, 1200));
 ({ url: location.pathname,                                   // /about
