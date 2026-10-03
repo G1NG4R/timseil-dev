@@ -90,7 +90,7 @@ export function BlogHeader({
           <div className="blog-stat" data-stat="system">
             <dt>{messages.blogIndexSystem}</dt>
             <dd>
-              <Link href={caseStudyHref}>CASE STUDY →</Link>
+              <Link href={caseStudyHref}>{messages.caseStudyExit} →</Link>
             </dd>
           </div>
         )}

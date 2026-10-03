@@ -68,7 +68,7 @@ export function OpsStrip({
   // Counted, never typed — the thirty is `cells.length`, and the window in the
   // source line is the one that was actually asked for.
   const caption =
-    `${messages.csOperation} · LAST ${String(days)} ${messages.csDays.toUpperCase()} · ` +
+    `${messages.csOperation} · ${messages.csLast} ${String(days)} ${messages.csDays.toUpperCase()} · ` +
     messages.csOneCellOneDay;
 
   return (
