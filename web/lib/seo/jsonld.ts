@@ -22,9 +22,10 @@
 //	dateModified    the only date available at build time is the build's own.
 //
 // `inLanguage` IS DERIVED, NOT WRITTEN. It comes from `resolved` — the language
-// the strings on the page actually are — so `/de` says `en` today and starts
-// saying `de` by itself on the day P6 fills the dictionary. Writing `de` here
-// would be the graph claiming a translation the page does not have.
+// the strings on the page actually are — so it said `en` on `/de` until U8 and
+// started saying `de` by itself on the day the dictionary filled up. Writing
+// `de` here would have been the graph claiming a translation the page did not
+// have; `/fr` still says `en`, and still for that reason.
 
 import type { Locale } from "../i18n/routes.ts";
 import { AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../site.ts";

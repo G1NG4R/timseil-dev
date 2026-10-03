@@ -61,7 +61,20 @@ export default async function Page() {
   const { locale } = await getDictionary();
 
   return (
-    <div className="lg">
+    // AN ISLAND, AND IT SETS ITS OWN `lang`. The 1.842 words of legal text on
+    // this page and the imprint stay English in every language: a translated
+    // legal text is a legal statement, not prose, and H12's rule for these two
+    // pages is that the text has to agree with what the code does. `<main>` on
+    // /de carries no `lang` since U8 — German is complete — so without this
+    // attribute every paragraph below would claim to be German. ADR 0083,
+    // decision 2.
+    //
+    // ON `.lg` RATHER THAN ON THE SECTIONS. The plan for this phase named
+    // `.lg-section`, but the hero, the short version, the jump rail, the readout
+    // panel and the revision line all sit OUTSIDE any section and are just as
+    // English. An island around part of an English document is an island that
+    // solves half the problem.
+    <div className="lg" lang="en">
       {/* NO `.lg-hero-text` WRAPPER, because there is nothing to wrap it
           against: on `/privacy` that div is the first column of a grid whose
           second column is the readout panel, and here the headline has the row

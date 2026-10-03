@@ -203,8 +203,20 @@ export default async function Page({ params }: PageProps<"/[lang]/blog/[slug]">)
               headings carry ids from `rehype-slug`, tables come from
               `remark-gfm`, and mdx-components.tsx frames the two blocks that
               scroll. Nothing here styles it — styles/blog.css does, from
-              `.post-body`. */}
-          <article className="post-body">
+              `.post-body`.
+
+              `lang="en"` IS PERMANENT HERE AND IT IS THE THIRD ISLAND. LANG.01:
+              "Die Blog-Posts bleiben einsprachig englisch — dort steht
+              Fachliches, und Übersetzen wäre Arbeit ohne Leser." The frame
+              around it follows the URL like every other page; this element does
+              not, for ever. ADR 0083.
+
+              IT IS SET NOW THOUGH content/posts IS EMPTY (U2, ADR 0079). An
+              attribute that has to be remembered on the day the first entry
+              ships is an attribute that is forgotten then — and the page it
+              would be forgotten on is the one page on this site whose prose is
+              Tim's own. */}
+          <article className="post-body" lang="en">
             <MdxBody body={Body} />
           </article>
 
