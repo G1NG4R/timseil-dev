@@ -102,19 +102,29 @@ describe("the two cell texts", () => {
   // rules about it.
   it("says — NO DATA rather than nothing", () => {
     assert.equal(buildText(null), NO_DATA);
-    assert.equal(uptimeText(null), NO_DATA);
+    assert.equal(uptimeText("en", null), NO_DATA);
   });
 
   // The invariant, in one assertion. A measured zero is the reading that matters
   // most — a window that was down the whole time — and `uptime || NO_DATA` would
   // turn it into "we did not measure".
   it("prints a measured zero as a number", () => {
-    assert.equal(uptimeText(0), "0.00%");
+    assert.equal(uptimeText("en", 0), "0.00%");
   });
 
   it("prints two decimals, the way the sheet draws it", () => {
-    assert.equal(uptimeText(99.98), "99.98%");
-    assert.equal(uptimeText(100), "100.00%");
+    assert.equal(uptimeText("en", 99.98), "99.98%");
+    assert.equal(uptimeText("en", 100), "100.00%");
+  });
+
+  // U8. The same cell on /de and /fr, and the three forms LANG.01 draws:
+  // `99.98%` · `99,98 %` · `99,98 %`. The French space is U+202F and the German
+  // one U+00A0; lib/format/numbers.test.ts pins both by codepoint, and what is
+  // asserted here is that this cell goes through that file at all.
+  it("follows the language of the route", () => {
+    assert.equal(uptimeText("de", 99.98), "99,98\u00A0%");
+    assert.equal(uptimeText("fr", 99.98), "99,98\u202F%");
+    assert.equal(uptimeText("de", null), NO_DATA, "the placeholder is one token in three languages");
   });
 
 });

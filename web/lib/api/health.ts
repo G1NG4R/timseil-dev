@@ -12,9 +12,13 @@
 // the new web container talks to whichever api container answers, and for a few
 // seconds that can be the previous build. A field the contract gained this week
 // is then simply absent, and `body.ops.uptime90d` would be `undefined` — which
-// `Number.toFixed` renders as `NaN%` in a footer that exists to argue against
-// invented numbers.
+// every number formatter in the standard library renders as `NaN`, in a footer
+// that exists to argue against invented numbers. `Number.toFixed` did it until
+// U8 and `Intl.NumberFormat` does it now; the guard is `finiteNumber`, not the
+// formatter.
 
+import { percent } from "../format/numbers.ts";
+import type { Locale } from "../i18n/routes.ts";
 import { siteWord } from "../state/derive.ts";
 import { NO_DATA, type StateKey } from "../state/words.ts";
 
@@ -120,9 +124,15 @@ export function buildText(build: string | null): string {
   return build ?? NO_DATA;
 }
 
-export function uptimeText(uptime: number | null): string {
+export function uptimeText(locale: Locale, uptime: number | null): string {
   // Not `uptime || NO_DATA`. A measured zero is a number this site has to be
   // able to print — an outage that lasted the whole window is the one reading
   // that matters most — and `||` would turn it into "no data".
-  return uptime === null ? NO_DATA : `${uptime.toFixed(2)}%`;
+  //
+  // U8 PUT THE LOCALE IN FRONT OF IT. `toFixed(2)` is one language's answer:
+  // `99.98%` is right on `/` and wrong on `/de`, where the sheet writes
+  // `99,98 %`. The locale was already at the call site — FooterMeta reads it
+  // out of `getDictionary()` — it was just not passed on. lib/format/numbers.ts
+  // and ADR 0083.
+  return uptime === null ? NO_DATA : percent(locale, uptime);
 }

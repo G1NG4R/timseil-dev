@@ -76,7 +76,7 @@ export function WorkList({
   messages: Messages;
 }) {
   const body = readData(read);
-  const entries = workEntries(body, posts, messages);
+  const entries = workEntries(body, posts, messages, locale);
   const counts = listed(body) ? statusCounts(entries) : null;
 
   return (

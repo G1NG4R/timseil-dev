@@ -161,10 +161,16 @@ export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">)
               note={study.emptyNote}
               waitSource={systemWaitSource(study.slug)}
               messages={messages}
+              locale={locale}
             />
           }
         >
-          <MetricRowLive slug={study.slug} note={study.emptyNote} messages={messages} />
+          <MetricRowLive
+            slug={study.slug}
+            note={study.emptyNote}
+            messages={messages}
+            locale={locale}
+          />
         </Suspense>
       </div>
 

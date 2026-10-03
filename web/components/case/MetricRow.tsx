@@ -3,6 +3,7 @@ import { LoadingLines } from "@/components/state/LoadingLines";
 import { MetricTile } from "@/components/ui/MetricTile";
 import { metricTiles, type SystemDetail } from "@/lib/api/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
 import { readData, type Read } from "@/lib/state/read";
 import { NO_DATA } from "@/lib/state/words";
 
@@ -34,6 +35,7 @@ export function MetricRow({
   note,
   waitSource,
   messages,
+  locale,
 }: {
   read: Read<SystemDetail>;
   /** Why the five are empty, when the answer says they are. From the case study. */
@@ -41,12 +43,14 @@ export function MetricRow({
   /** The address the wait names, resolved by the caller. See OpsSection. */
   waitSource: string;
   messages: Messages;
+  /** Which language's decimal mark the five numbers carry. U8; ADR 0083. */
+  locale: Locale;
 }) {
   // DERIVED HERE SINCE U7, not handed in. The two callers used to run
   // `metricTiles` themselves and pass five tiles, which is why this component
   // could not tell a wait from an outage: `value: null` is the same in both, and
   // it has to be. The answer comes in whole now and the derivation happens once.
-  const tiles = metricTiles(readData(read), messages);
+  const tiles = metricTiles(readData(read), messages, locale);
   const measured = tiles.filter((tile) => tile.value !== null).length;
 
   return (

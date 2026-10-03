@@ -20,6 +20,7 @@ import type { SystemList } from "../api/systems.ts";
 import type { PostMeta } from "../content/posts.ts";
 import { type SystemEntry, systemEntries } from "../home/systems.ts";
 import type { Messages } from "../i18n/messages/en.ts";
+import type { Locale } from "../i18n/routes.ts";
 import { SITE_SYSTEM_SLUG } from "../site.ts";
 
 import { workFigure } from "./figure.ts";
@@ -82,6 +83,7 @@ export function workEntries(
   body: SystemList | null,
   posts: readonly PostMeta[],
   messages: Messages,
+  locale: Locale,
 ): readonly WorkEntry[] {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
   const bySlug = new Map<string, Record<string, unknown>>();
@@ -102,7 +104,7 @@ export function workEntries(
     return {
       ...entry,
       here: entry.slug === SITE_SYSTEM_SLUG,
-      figure: workFigure(entry.state, system.metrics, messages),
+      figure: workFigure(entry.state, system.metrics, messages, locale),
       logLine: logEntriesLine(logEntriesFor(posts, entry.slug)),
       tags: tagsOf(system.stack),
     };

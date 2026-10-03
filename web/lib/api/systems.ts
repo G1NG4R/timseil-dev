@@ -17,7 +17,9 @@
 // type describes the contract and not the bytes, and ADR 0035's overlapping
 // start puts a real case behind the difference.
 
+import { count, decimal } from "../format/numbers.ts";
 import type { Messages } from "../i18n/messages/en.ts";
+import type { Locale } from "../i18n/routes.ts";
 import { dayState, systemStateWord } from "../state/derive.ts";
 import { NO_DATA, type DayState, type StateWord } from "../state/words.ts";
 
@@ -171,24 +173,35 @@ export function coverage(body: SystemDetail | null): Coverage {
  * were not told which, and `UPTIME · 91 D` there would be the first invented
  * number on a page built to argue against them.
  */
-export function metricTiles(body: SystemDetail | null, messages: Messages): MetricValue[] {
+export function metricTiles(
+  body: SystemDetail | null,
+  messages: Messages,
+  locale: Locale,
+): MetricValue[] {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
   const metrics = raw.metrics as Record<string, unknown> | undefined;
   const cover = coverage(body);
 
   return [
     {
-      label: cover.window === 0 ? messages.uptime : `${messages.uptime} · ${String(cover.window)} D`,
-      value: uptimeValue(finiteNumber(metrics?.uptime90d)),
+      label:
+        cover.window === 0
+          ? messages.uptime
+          : `${messages.uptime} · ${count(locale, cover.window)} D`,
+      value: uptimeValue(locale, finiteNumber(metrics?.uptime90d)),
       unit: "%",
       // NO WINDOW MEANS NO NOTE, not a second em dash. When the api did not
       // answer, the tile already says `— NO DATA` where the number goes;
       // repeating it underneath would read as two separate absences and say
       // nothing about coverage, which is the one thing the line is for.
-      ...(cover.window === 0 ? {} : { note: coverageNote(cover) }),
+      ...(cover.window === 0 ? {} : { note: coverageNote(locale, cover) }),
     },
-    { label: "P95", value: p95Value(finiteNumber(metrics?.p95Ms)), unit: "MS" },
-    { label: messages.csErrorRate, value: errorRateValue(finiteNumber(metrics?.errorRate)), unit: "%" },
+    { label: "P95", value: p95Value(locale, finiteNumber(metrics?.p95Ms)), unit: "MS" },
+    {
+      label: messages.csErrorRate,
+      value: errorRateValue(locale, finiteNumber(metrics?.errorRate)),
+      unit: "%",
+    },
     // PIPELINE, NOT DEPLOY, AND THAT IS ISSUE #242 ANSWERED HALFWAY. H1 shipped
     // this tile as `DEPLOY · MEDIAN` and left the meaning open; H2b was the
     // phase that had to decide, and the decision is that the field should
@@ -198,14 +211,14 @@ export function metricTiles(body: SystemDetail | null, messages: Messages): Metr
     // redefining the field touches report-deploy.sh, deploy.sh, check-deployed's
     // tolerance and the contract, which is a different blast radius and its own
     // PR. ADR 0057.
-    { label: "PIPELINE · MEDIAN", value: deployMedianValue(raw.deploys), unit: "S" },
-    { label: messages.csIncidents, value: incidentCountValue(raw.incidents) },
+    { label: "PIPELINE · MEDIAN", value: deployMedianValue(locale, raw.deploys), unit: "S" },
+    { label: messages.csIncidents, value: incidentCountValue(locale, raw.incidents) },
   ];
 }
 
 /** `99.64`, or nothing. Two places, as the footer already prints it. */
-export function uptimeValue(uptime: number | null): string | null {
-  return uptime === null ? null : uptime.toFixed(2);
+export function uptimeValue(locale: Locale, uptime: number | null): string | null {
+  return uptime === null ? null : decimal(locale, uptime, 2);
 }
 
 /**
@@ -216,8 +229,8 @@ export function uptimeValue(uptime: number | null): string | null {
  * work to the request path, and a whole number would have shown that as a jump
  * between two integers rather than a movement.
  */
-export function p95Value(p95: number | null): string | null {
-  return p95 === null ? null : p95.toFixed(1);
+export function p95Value(locale: Locale, p95: number | null): string | null {
+  return p95 === null ? null : decimal(locale, p95, 1);
 }
 
 /**
@@ -232,12 +245,16 @@ export function p95Value(p95: number | null): string | null {
  * not measure. It reads `< 0.01` instead — the same distinction the empty tile
  * draws, one order down.
  */
-export function errorRateValue(rate: number | null): string | null {
+export function errorRateValue(locale: Locale, rate: number | null): string | null {
   if (rate === null) return null;
 
-  const percent = rate * 100;
-  if (percent > 0 && percent < 0.01) return "< 0.01";
-  return percent.toFixed(2);
+  const share = rate * 100;
+  // `< 0,01` ON `/de`, AND THE THRESHOLD ITSELF IS A NUMBER. The comparison is
+  // against the value, so it does not move with the language; what moves is the
+  // decimal mark in the string a reader sees. A hard-coded `"< 0.01"` under a
+  // German label would be the one place on the page where two marks disagree.
+  if (share > 0 && share < 0.01) return `< ${decimal(locale, 0.01, 2)}`;
+  return decimal(locale, share, 2);
 }
 
 /**
@@ -255,7 +272,7 @@ export function errorRateValue(rate: number | null): string | null {
  * send. Naming it here is the alternative to the tile quietly asserting a
  * meaning.
  */
-export function deployMedianValue(deploys: unknown): string | null {
+export function deployMedianValue(locale: Locale, deploys: unknown): string | null {
   if (!Array.isArray(deploys)) return null;
 
   const seconds = deploys
@@ -264,7 +281,7 @@ export function deployMedianValue(deploys: unknown): string | null {
     .sort((a, b) => a - b);
 
   if (seconds.length === 0) return null;
-  return String(seconds[Math.floor((seconds.length - 1) / 2)]);
+  return count(locale, seconds[Math.floor((seconds.length - 1) / 2)]);
 }
 
 /**
@@ -277,8 +294,8 @@ export function deployMedianValue(deploys: unknown): string | null {
  * either invent a zero for a queued system or hide a clean window behind an
  * em dash.
  */
-export function incidentCountValue(incidents: unknown): string | null {
-  return Array.isArray(incidents) ? String(incidents.length) : null;
+export function incidentCountValue(locale: Locale, incidents: unknown): string | null {
+  return Array.isArray(incidents) ? count(locale, incidents.length) : null;
 }
 
 /**
@@ -293,9 +310,15 @@ export function incidentCountValue(incidents: unknown): string | null {
  * placeholder, and `metricTiles` drops the line entirely rather than stacking a
  * second `— NO DATA` under the first.
  */
-export function coverageNote(cover: Coverage): string {
+export function coverageNote(locale: Locale, cover: Coverage): string {
   if (cover.window === 0) return NO_DATA;
-  return `${String(cover.measured)} of ${String(cover.window)} days measured`;
+  // THE TWO NUMBERS FOLLOW THE LOCALE AND THE SENTENCE AROUND THEM DOES NOT,
+  // YET. U8 localises the digits; U8a moves this line into the catalogue with
+  // the rest of lib/api/'s prose, where a German reader gets "8 von 91 Tagen
+  // gemessen". Localising half of it now is not a half-measure — it is the half
+  // this phase owns, and the half that would otherwise print a German page's
+  // only English decimal mark.
+  return `${count(locale, cover.measured)} of ${count(locale, cover.window)} days measured`;
 }
 
 /**
