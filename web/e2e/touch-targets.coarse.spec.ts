@@ -126,6 +126,45 @@ test.describe("targets a finger has to hit", () => {
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
 
+  // U8, AND THE SAME MEASUREMENT IN THE OTHER LANGUAGE. German runs longer in
+  // exactly the two places this block looks at: `SCHLIESSEN` in the menu bar
+  // where `CLOSE` stood, and `ÜBER MICH` among four nav rows. Neither is a
+  // height, which is why the question is a measurement rather than a glance —
+  // a label that wraps changes the box the finger has to find, and the sheet
+  // asks for 44 on the menu rows and 52 on the language chips.
+  //
+  // A SECOND ROUTE AND NOT A SECOND FILE. The rule is one rule; what changes is
+  // the length of the words inside it.
+  test("the open German menu's controls are at least 44 x 44", async ({ page }) => {
+    await page.goto("/de");
+    await page.locator("header button.nav-button").click();
+    await expect(page.locator("dialog.menu")).toHaveAttribute("open", "");
+
+    const targets = await measure(page, "dialog.menu");
+
+    expect(targets.length, "the menu opened with nothing in it to press").toBeGreaterThan(5);
+    expect(tooSmall(targets), report(targets)).toEqual([]);
+  });
+
+  // THE CHIPS ARE ASKED FOR SEPARATELY BECAUSE THE SHEET ASKS FOR MORE OF THEM:
+  // "Kopfknopf, Menüzeilen und Sprachchips liegen bei mindestens 44px, die
+  // Chips bei 52". 44 is the floor the block above enforces for everything;
+  // this is the one row that was drawn taller on purpose, and the only place
+  // that number is written down in a test.
+  test("the three language chips are the 52 the sheet draws", async ({ page }) => {
+    await page.goto("/de");
+    await page.locator("header button.nav-button").click();
+    await expect(page.locator("dialog.menu")).toHaveAttribute("open", "");
+
+    const chips = await measure(page, "dialog.menu .menu-langs");
+
+    expect(chips.length, "the language row drew no chips").toBe(3);
+    expect(
+      chips.filter((chip) => chip.h < 52),
+      report(chips),
+    ).toEqual([]);
+  });
+
   test("the footer's controls are at least 44 x 44", async ({ page }) => {
     await page.goto("/");
     const targets = await measure(page, "footer");

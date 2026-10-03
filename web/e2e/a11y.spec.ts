@@ -50,7 +50,30 @@ test("no carried accessibility rule is past its date", () => {
  * worth doing: what is being checked is the COMPONENT, and the component is the
  * same one `/` renders when the api is up.
  */
-const AXE_ROUTES = [...ROUTES, "/dev/components"];
+/**
+ * U8 · the two German routes, and the two rules this phase arms.
+ *
+ * `html-has-lang` AND `valid-lang` ARE WHY THEY ARE HERE. Both are about the
+ * attribute U8 moved: `<html lang="de">` with a `lang="en"` island inside it on
+ * /de/privacy is exactly the markup those rules exist to read, and until this
+ * phase nothing on this site had a second language to get it wrong in. `grep -n
+ * lang e2e/a11y.spec.ts` came back empty before today.
+ *
+ * TWO AND NOT NINE, WHICH IS A COST DECISION AND IS WRITTEN DOWN AS ONE. This
+ * list runs in every width project, so each entry is seven axe analyses; nine
+ * German routes would have doubled the file's share of a run that is already
+ * 17 to 30 minutes. `/de` carries the chrome, the hero and four empty states,
+ * `/de/privacy` carries the island — between them they hold every structure the
+ * language touches.
+ *
+ * AT EVERY WIDTH RATHER THAN ONCE, THOUGH, and that is not inertia. Contrast is
+ * computed against what is actually painted, and the one thing German reliably
+ * changes is how long a label is — a word that wraps puts text on a different
+ * background. That is a width question.
+ */
+const GERMAN = ["/de", "/de/privacy"];
+
+const AXE_ROUTES = [...ROUTES, "/dev/components", ...GERMAN];
 
 for (const route of AXE_ROUTES) {
   test(`axe finds nothing on ${route}`, async ({ page }, testInfo) => {
