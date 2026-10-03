@@ -12,6 +12,344 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## U8 · 03.10.2026 — Das Prädikat prüfte 143 Schlüssel und sprach für 3.040 Wörter
+
+Gezählt gegen den Baum von `b19015a`, nicht geschätzt.
+
+### Gefunden · die Lücke zwischen `isComplete` und `<main lang>`
+
+`isComplete` fragt die Schlüssel von `web/lib/i18n/messages/en.ts` ab — **143**.
+Daraus leitet `getDictionary()` `textLang` ab, und daran hängen vier Blöcke:
+Skip-Link, `<main>`, `<header>`, `<footer>`. Englische Prosa auf öffentlichen
+Seiten **außerhalb** dieses Katalogs:
+
+| Quelle | Wörter | Seite |
+|---|---|---|
+| `lib/legal/*` — `content` · `imprint` · `sections` · `readout` · `retention` | 1.842 | `/privacy`, `/imprint` |
+| `lib/about/*` — `trajectory` · `content` · `sections` | 454 | `/about` |
+| `content/case-studies/timseil-dev.ts` | 395 | `/work/timseil-dev` |
+| `lib/errors/words.ts` | 66 | jede Seite, im Fehlerfall |
+| `lib/contact/{validate,log,trace,fields}.ts` | 83 | `/contact` |
+| `lib/api/{systems,contributions,training}.ts` | ~74 | `/`, `/work`, Fallstudie |
+| `lib/state/{lines,retry}.ts` · `lib/notfound/trace.ts` | 82 | überall, im Warte- und Fehlerfall |
+| `lib/work/*` · `lib/blog/*` · `lib/home/posts.ts` | 45 | Zähler- und Quellzeilen |
+| **Summe** | **~3.040** | |
+
+In der Sekunde, in der `de.ts` den letzten Schlüssel bekommt, verliert `<main>`
+auf `/de` sein `lang="en"` — und jede dieser Zeichenketten behauptet danach,
+Deutsch zu sein. **Der Fund ist älter als die Phase**, nicht von ihr gemacht:
+die Lücke stand seit G5 offen und niemand hat sie je gemessen. `complete.ts`
+und ADR 0083 stellen sie ab, `languageComplete` ist das Prädikat, und der Test,
+der die Phase begründet, ist „vollständiger Katalog, ein Bündel fehlt → liefert
+Englisch".
+
+### Gefunden · die sechste Zeichenkette lag in einem Template, nicht im Markup
+
+Der Plan zählte **fünf** englische Literale im TSX auf: `SpecRail`, `WorkRow`,
+`Log`, `BlogHeader`, `NotFoundHero`. Es waren **sechs**.
+`components/home/OpsStrip.tsx` baut seine Bildunterschrift als
+
+```
+`${messages.csOperation} · LAST ${days} ${messages.csDays} · ${messages.csOneCellOneDay}`
+```
+
+— drei Teile aus dem Katalog und **ein englisches Wort in der Mitte des
+Templates**. Es steht auf `/`, also auf der Seite mit den meisten Lesern. Ein
+`grep` nach `>TEXT<` findet es nicht, weil es in keinem JSX-Textknoten liegt;
+gefunden wurde es beim Lesen der Aufrufer von `csDays`. **Die Suche nach
+Literalen muss Template-Strings mitlesen** — für U8a ist das die Lehre, denn
+`lib/api/*` baut seine Zeilen genauso.
+
+### Gefunden · 2 px Überlauf bei 720, und die Prüfbreiten können sie nicht sehen
+
+Der neue `/de`-Sweep tastet in 20er-Schritten von 1440 nach 390 und trifft
+damit **720**. Dort ist das Dokument 2 px breiter als das Fenster, bei 721 und
+722 sind es 3 px.
+
+| | |
+|---|---|
+| Route | `/work/timseil-dev` · `/de/…` · `/fr/…` — **alle drei identisch** |
+| Betroffene Breiten | 720 (2 px), 721–722 (3 px), ab 740 wieder sauber |
+| Das überlaufende Element | `span.st-nodata-text` — der `— NO DATA`-Lauf, **144 px**, bricht nicht |
+| Zustand | **nur im Ausfall.** Mit Zahlen in den Kacheln passt die Reihe |
+| Warum es niemand gesehen hat | `case-study.spec.ts` prüft `scrollWidth <= clientWidth` bereits — an den sieben Prüfbreiten, und die halten **719, aber nicht 720** |
+
+Nicht deutsch: U8 ist nur das erste, was diese Breite abtastet. Der eigentliche
+Fund ist das Loch in der Liste: CLAUDE.md verlangt „jeder Schalter beidseitig",
+der Kachel-Schalter liegt bei 720, und die Liste trägt nur die Seite darunter.
+Die 2 px sind das Symptom.
+
+Getragen als benannte Ausnahme in `e2e/de.sweep.spec.ts` (`CARRIED`), die rot
+wird, sobald die Zahl sich ändert. **Nicht reparierbar in dieser Phase ohne
+eine Entscheidung:** entweder eine achte Prüfbreite, oder die Reflow-Grenze aus
+`Intermediate Widths` verschiebt sich. Gehört in den Tracker.
+
+### Gefunden · `<Activity>` hält zwei Sprachen gleichzeitig im Dokument
+
+Der erste Umschalter-Test hat strict mode gerissen: nach `/de/about → /fr/about`
+lagen **zwei** `.lang-button` im Dokument, einer mit `aria-label="Language —
+Français"` und einer mit `"Sprache — Français"`. `/about` und `/de/about` sind
+verschiedene `[lang]`-Segmente, also verschiedene Layout-Instanzen, und
+`cacheComponents: true` hält bis zu drei Routen montiert und nur versteckt.
+Kein Defekt — `mobile-menu.coarse.spec.ts` ist über dasselbe Verhalten
+geschrieben —, aber der erste Test auf dieser Seite, der ihm begegnet. Ein
+`.first()` wäre dort ein Münzwurf darüber gewesen, welches Sprach-Chrome
+geklickt wird; der Test filtert auf `visible`.
+
+### Gefunden · der erste Entwurf des Nav-Tests verlangte vier Labels
+
+Rot gegen eine Seite, die recht hatte: `LOG` wird nicht gezeichnet, solange
+`content/posts` leer ist (U2, ADR 0079). Der Test folgt jetzt `HAS_LOG`, wie
+`log-gate.spec.ts`. Lehre für U8a: **jede neue Zusicherung über das Chrome muss
+dieses Gatter mitlesen.**
+
+### Gefunden · ein zweiter flackernder Test, und er hängt am Deploy-Gatter
+
+`contact.spec.ts:542` — „the duration is on the page, and it is what proves a
+real send" — einmal rot im zweiten vollen lokalen Lauf, grün im ersten.
+`.tx-log li[data-dir='in']` war nach 5 s nicht da; die geroutete Antwort kam
+nicht an oder kam zu spät.
+
+| | |
+|---|---|
+| Voller Lauf 1 | 2.352 grün, 348 übersprungen, 8,3 min |
+| Voller Lauf 2 | 2.351 grün, **1 rot**, 8,6 min |
+| Nur `contact.spec.ts` @ w1081 | 37 grün, 31 s |
+| Nur dieser Test, dreimal | **3 × grün** |
+
+Also Last, nicht Bruch: acht Worker, und jede Einsendung wartet die
+Verweildauer-Schwelle von 3.000 ms ab (ADR 0021 §2). **Nicht von U8 berührt** —
+`contact.spec.ts` ist unverändert, `lib/contact/*` auch, und die
+Katalogzeichenketten auf `/contact` sind in diesem Projekt englisch.
+
+Das ist der **zweite** Test dieser Art neben `touch-targets.coarse.spec.ts:172`,
+und `deploy` hängt an `e2e`. Zwei flackernde Tests an einem Gatter sind keine
+zwei Ärgernisse, sondern eine Sperre, die man nicht mehr lesen kann: wer bei
+Rot immer erst neu läuft, hat das Gatter abgeschafft. Gehört in den Tracker,
+zusammen mit #180/#181.
+
+### Gemessen · Deutsch kostet null Client-Bytes, und `make bundle-size` kann es nicht sagen
+
+Lokale Abnahme, `npm run build` + `npm run start -- --port 3200`, Server nach dem
+Build neu gestartet. Über die `<script src>` des vorgerenderten Dokuments,
+gzip, neun Dateien:
+
+| Route | Dateien | Byte gzip |
+|---|---|---|
+| `/` | 9 | 185.809 |
+| `/de` | 9 | **185.809 — identisch** |
+
+Erwartbar und trotzdem die Zahl, die #320 fehlte: U8 zieht fünf Zeichenketten
+aus dem Markup **in den Katalog**, und der Katalog wird serverseitig gelesen.
+Die einzige Client-Komponente, die eine neue Zeichenkette bekommt
+(`NotFoundHero`), bekommt sie als **Prop** — die liegt in der Flight-Nutzlast,
+nicht im JS. Erst U8a bezahlt echte Bytes, mit der zweiten Fassung von
+`lib/errors/words.ts`.
+
+**`make bundle-size` läuft nicht**, und das ist #301 und nicht U8:
+`static/chunks/2-*.js` hält Framework und eigene Module, das Werkzeug weigert
+sich statt zu raten. Die Zahl oben ist deshalb von Hand gemessen — dieselbe
+Methode, die die H3-Abnahme schon benutzen musste. **Sie ist nicht mit den
+143 KB aus ADR 0050 vergleichbar**: das Werkzeug zählt `polyfillFiles` und
+`rootMainFiles` aus `build-manifest.json`, diese Messung zählt jedes
+`<script src>` des Dokuments. Was vergleichbar ist, ist die **Differenz**, und
+die ist null.
+
+Achtung für die nächste Messung: `make bundle-size` macht `rm -rf .next` und
+baut neu. Ein laufender `next start` auf 3200 liefert danach aus einem
+gelöschten Build — Server **nach** dem Werkzeug neu starten, nicht davor.
+
+### Idee · `themeLabel` heißt im Blatt `THEMA`
+
+Übernommen wie gezeichnet, mit einem Kommentar daneben. `THEMA` ist auf Deutsch
+das Thema eines Textes, nicht ein Farbschema — `themeAria` sagt daneben
+`Farbschema` in Langform. Es ist eine Wortwahl, keine Messung, und die erste
+Zeile, die sich ändert, wenn sie auf der Seite falsch liest. Entscheidung von
+Tim, nicht von mir.
+
+### Verschoben · was U8a trägt
+
+- **Prosa:** About (454 W), Fallstudie (395 W), `errors/words.ts` (66 W),
+  `contact/validate.ts` (25 W), `state/{lines,retry}.ts` (41 W),
+  `api/{systems,contributions,training}.ts` (~74 W), die Zählerzeilen (45 W).
+- **`coverageNote`** — U8 lokalisiert die zwei Zahlen, der Satz
+  („8 of 91 days measured") bleibt englisch bis U8a.
+- **Ein Widerspruch, der vor U8a entschieden werden muss.** Der Plan führt
+  `lib/api/{systems,contributions,training}.ts` unter „übersetzen, über
+  `messages`". `contributions.ts` sagt über seine eigene Meta-Zeile das
+  Gegenteil: „The words are nomenclature and stay English, the call
+  `trainingMeta` and `systemsMeta` already make." Eine Quellenangabe
+  (`· SOURCE: /api/contributions`) bleibt — ein Zähler davor
+  (`1247 CONTRIBUTIONS`) ist eine Beschriftung über einer Zahl und wäre nach
+  STATE.05 deutsch, **samt Tausendertrennzeichen**. Deshalb ist die Zahl in U8
+  bewusst *nicht* lokalisiert worden: sie steht in einer Zeile, deren Sprache
+  noch nicht entschieden ist. `graphLabel` daneben ist ein zugänglicher Name,
+  also Prosa, und gehört in jedem Fall übersetzt.
+- **`make bundle-size` vor/nach** der zweiten Fassung von `lib/errors/words.ts`
+  — die eine Datei, die ins Client-Bündel geht (#237).
+- **Rechtstexte DE und FR**, 1.842 Wörter, eigene Phase mit Gegenleser.
+  Gehört als Issue angelegt.
+- **`/_not-found` kann nicht zurück nach Deutsch.** Die Route wird einmal für
+  die ganze Seite vorgerendert, hat also kein Sprachsegment: `/de/unsinn`
+  liefert eine englische 404 unter `<html lang="en">` — ehrlich, aber die fünf
+  Wege hinaus verlassen die Sprache.
+
+### Beantwortet · #221
+
+Kein dritter `localStorage`-Schlüssel. Invariante 9 gewinnt, und es kostet
+nichts: dasselbe Blatt macht die URL zur einzigen Wahrheit, `LangMenu` liest die
+aktive Zeile seit G5 aus `usePathname()`, und ein gespeicherter Wert könnte der
+Adresse nur widersprechen. Begründung in ADR 0083, Entscheidung 5. Schließen
+entscheidet Tim.
+
+---
+
+## Abhängigkeiten · 03.10.2026 — #420 und #417 gemergt, und der siebte bezeugte Tausch hat **ein Loch**
+
+Einmalige Freigabe für genau zwei Dependabot-PRs (#420, #417), beide nach
+00:00 UTC, sequenziell. `CLAUDE.md` ist unverändert — die Regel „Push und Merge
+entscheide ich" gilt beim nächsten PR wieder.
+
+| | #420 · `ci:` codeql-action 4.38.1 → 4.38.2 |
+|---|---|
+| Squash | `95dbf00` |
+| Merge | **00:03:32Z** (`date -u`, beidseitig gelesen) |
+| Version | `v0.45.0` → **`v0.45.0`** |
+| `e2e` 1. Lauf | **rot**, 00:03:37Z–00:17:01Z, `deploy` übersprungen |
+| `e2e` Neulauf | grün, 00:18:20Z–00:35:45Z (17m25s) |
+| `deploy` | 00:35:48Z–00:36:22Z, **34 s** |
+| `durationSec` | 1084, `result ok` |
+| Wanduhr Merge → Deploy-Meldung | **1967 s** — darin der rote `e2e` und der Neulauf |
+| Zeuge | **2013 × 200** je Pfad |
+| `check-deployed` | 8 Zusicherungen, eine hier nicht gefragt |
+
+| | #417 · `chore:` traefik-Digest in `compose.lab.yaml` |
+|---|---|
+| Squash | `b19015a` |
+| Merge | **00:56:02Z** |
+| Version | `v0.45.0` → **`v0.45.0`** |
+| Checks | neun von neun grün im **ersten** Lauf, `e2e` 17m5s |
+| `deploy` | 01:12:57Z–01:13:21Z, **24 s** |
+| `durationSec` | 1036, `result ok` |
+| Wanduhr Merge → Deploy-Meldung | **1038 s** |
+| Zeuge | 1078 Anfragen je Pfad, **1077 × 200 und 1 × 503 auf `/`** |
+| `check-deployed` | 8 Zusicherungen, eine hier nicht gefragt |
+
+**Ein `ci:`-Merge schneidet keine Version, und das ist Absicht.** `release.sh`
+gibt für `docs chore ci test refactor style build revert` kein Release aus; der
+Tag bleibt `v0.45.0`. Für #417 (`chore:`) gilt dasselbe. Das ist kein #338 —
+dort fehlte der Typ, hier ist er da und trägt bewusst keine Kerbe.
+
+**Die 1084 s sind die Pipeline, nicht der Tausch** (#242). Diese Abnahme ist der
+deutlichste Fall bisher: der `deploy`-Job war 34 s, die gemeldete Zahl ist
+32-mal so groß, weil der Neulauf von `e2e` darin steckt.
+
+### Der Zeuge hat den sechsten Tausch gesehen, und wieder nichts
+
+Start **00:03:12Z**, 20 Sekunden vor dem Merge, Deckel 2700 s statt 1800 —
+und der Deckel war nötig: zwischen Start und Tausch lagen **2013 s**, die
+Vorgabe hätte 213 s vor dem Tausch die Reißleine gezogen.
+
+```
+2013 Anfragen je Pfad ( / · /api/health ), 2013 × 200
+14 s ohne Stichprobe, keine abgerissene Verbindung
+✓ every answer was 200
+```
+
+Für **#304** ist das die **sechste** bezeugte Beobachtung über die volle Dauer,
+nach U4, U5, U6, U6a und U7 — und die erste über einen Tausch, den kein
+Phasen-Merge ausgelöst hat.
+
+### Der siebte Tausch hat ein Loch, und es ist das erste seit E4b
+
+**Eine Sekunde von 1078 auf `/` war `503`.** Nachgerechnet, nicht geschätzt —
+die Regel aus H5c und H7a lautet, dass `witness.sh` das Deploy-Fenster nicht
+kennt und jede rote Sekunde zuerst in Wanduhrzeit gehört:
+
+| | |
+|---|---|
+| Zeugenstart | 00:55:48Z |
+| rote Sekunde | 1077 → **01:13:44Z** |
+| Sekunde davor und danach | 1076 und 1078 → beide `200` |
+| `deploy`-Job | 01:12:57Z – **01:13:21Z** |
+| `api`-Prozess `startedAt` | **01:13:32.25Z** |
+| Zeugenende | 01:13:46Z (neuer `api`-Prozess + 30 s Nachlauf) |
+
+Die Sekunde liegt **23 s nach dem Ende des `deploy`-Jobs und 12 s nach dem
+Anlaufen des neuen `api`-Prozesses** — also im Nachlauf, genau dort, wo der
+`web`-Container erneuert wird. Bei H5c lag die rote Sekunde 116 s **vor** dem
+Tausch und bei H7a sieben Minuten davor; beide waren Scheinfunde. **Dieser ist
+keiner.**
+
+Zwei Dinge daran sind neu:
+
+- **Es ist ein `503`, kein `404`.** E4b hat zehn Sekunden `404` gemessen, mit
+  der Begründung, dass die Router Labels auf den Containern sind: ein Container,
+  der verschwindet, nimmt seinen Router mit und Traefik antwortet seine Vorgabe.
+  Ein `503` ist die andere Form — der Router **ist** da, der Dienst hat nur
+  keinen gesunden Endpunkt. Welche der beiden Formen auftritt, ist also nicht
+  gleichgültig, und bisher war nur die erste beschrieben.
+- **`/api/health` blieb über denselben Tausch 1078 × 200.** Beide Container
+  werden im selben Atemzug erneuert, aber nur einer hat ein Loch gezeigt. Das
+  stützt, was der Zeugen-Kopfkommentar vermutet: der Container, der die bekannten
+  Löcher erzeugt, ist `web`, und er kommt **nach** `api`.
+
+Für **#304** ist das die erste bezeugte Beobachtung mit einem Loch — nach sechs
+sauberen (U4, U5, U6, U6a, U7, #420). Eine Sekunde von 1078 ist **0,09 %** des
+Fensters, und die Zahl ist zu klein, um eine Quote zu sein; was sie beendet, ist
+die Vermutung, dass sechs saubere Tausche die Frage geschlossen hätten.
+
+### Die Uhr aus U6, zum dritten und vierten Mal
+
+| | #420 | #417 |
+|---|---|---|
+| `ops.lastDeploy.at` | 00:36:19Z | 01:13:20Z |
+| `measuredAt` des Prozesses, der jetzt antwortet | 00:36:30.837Z | 01:13:32.262Z |
+| Abstand | **11,8 s** | **12,3 s** |
+
+U6: 12,6 s · U7: 14,9 s · #420: 11,8 s · #417: 12,3 s. **Vier Beobachtungen,
+gleiche Richtung, nicht erklärt** — und alle vier zwischen 11,8 und 14,9 s, also
+eher eine Eigenschaft der Reihenfolge als Streuung. Dass der Prozess, der die
+Seite ausliefert, **nach** der Deploy-Meldung startet, ist jetzt die Regel und
+nicht die Ausnahme — und die rote Sekunde oben liegt in genau diesem Abstand.
+
+### Gefunden
+
+- **Der Zähl-Test in `touch-targets.coarse.spec.ts:172` flackert auch auf
+  `main`, und er ist damit eine Deploy-Sperre.** `expect(targets.length).toBe(2)`
+  fand **1**; der Test macht `page.goto("/")` und misst sofort, und seit #421
+  steht die Wartetafel vor dem leeren SYS.02-Panel — die zeichnet keinen Link.
+  Eine von 2585 Zusicherungen, Neulauf grün, nichts dazwischen geändert.
+  **Vier Beobachtungen in drei Tagen:** #419 und `main/3be6044` am 01.10.,
+  `main/95dbf00` am 03.10. — jedes Mal grün im zweiten Lauf. `publish` bleibt
+  dabei grün, es wird kein neues Image gebaut, der Digest bleibt derselbe und
+  `deploy` zieht nach. **Vorschlag: ein Issue.** Der Handgriff ist bekannt
+  (`gh run rerun <run> --failed`), aber er ist ein Handgriff, und ohne ihn steht
+  `main` eine Kerbe vor Produktion — hier 19 Minuten.
+- **Ein gepinnter Action-SHA lässt sich gegen seinen Versionskommentar
+  nachrechnen, und das kostet zwei Aufrufe.** Der Tag `v4.38.2` von
+  `github/codeql-action` ist **annotiert**: `git/ref/tags/v4.38.2` gibt ein
+  Tag-Objekt (`88585263…`), nicht den Commit. Erst `git/tags/<sha>` löst auf
+  `2892aa5e…` auf — genau den eingetragenen Pin. Wer nur die erste Antwort liest,
+  vergleicht zwei Dinge, die nie gleich sein können, und hält den Pin für falsch.
+- **Dasselbe für einen Docker-Digest, über die Registry-API.** `traefik:v3.7.13`
+  löst heute auf `sha256:24841fe…` auf, identisch mit dem Digest in #417 — und
+  `v3.7` zeigt auf denselben. Der Bump ist also ein Neubau derselben Zeile, kein
+  Versionssprung; der Kommentar `# traefik v3.7.13` bleibt wahr.
+- **Der stärkste Fund des Laufs steht oben:** die `503` auf `/` im Nachlauf des
+  siebten Tausches, 23 s nach dem Ende des `deploy`-Jobs. Sie gehört an **#304**,
+  und sie ist die erste, die die Umrechnung in Wanduhrzeit **überlebt** hat.
+  Vorschlag: die Messung als Kommentar an #304 — angelegt oder geschlossen hat
+  diese Sitzung nichts, der Tracker gehört dir.
+
+### Erledigt mit diesem Lauf
+
+Die Zeile „die vier restlichen Dependabot-PRs: #416, #417, #419, #420" aus der
+U7-Abnahme ist abgearbeitet: #416 und #419 lagen vorher, #420 und #417 hier.
+Offene Dependabot-PRs: keine.
+
+---
+
 ## Wo wir stehen — 01.10.2026, U7 abgenommen: `v0.45.0`, der fünfte saubere Tausch, und eine rote Sperre, die nicht uns gehörte
 
 `9b20f4f` läuft, **`v0.45.0`**. Die Phase hat einen Merge gebraucht — und davor
