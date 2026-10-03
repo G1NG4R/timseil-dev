@@ -3,6 +3,7 @@ import { systemNow } from "@/lib/api/readers";
 import { OPS_WINDOW_HOME } from "@/lib/api/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
 import { SITE_SYSTEM_SLUG } from "@/lib/site";
+import { DOWN, readOk } from "@/lib/state/read";
 
 /**
  * The fifth region of the homepage that waits for the api, and the first to name
@@ -15,5 +16,6 @@ import { SITE_SYSTEM_SLUG } from "@/lib/site";
  * serve one page's answer to the other.
  */
 export async function OpsStripLive({ messages }: { messages: Messages }) {
-  return <OpsStrip body={await systemNow(SITE_SYSTEM_SLUG, OPS_WINDOW_HOME)} messages={messages} />;
+  const body = await systemNow(SITE_SYSTEM_SLUG, OPS_WINDOW_HOME);
+  return <OpsStrip read={body === null ? DOWN : readOk(body)} messages={messages} />;
 }

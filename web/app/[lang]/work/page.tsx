@@ -37,6 +37,7 @@ import { postsOrNull } from "@/lib/content/posts";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { seoFor } from "@/lib/seo/pages";
+import { WAITING } from "@/lib/state/read";
 
 // SEO, in one call, out of the table in lib/seo/pages.ts — where `/work` is
 // `indexable: true` as of this phase. The stub wrote `robots: { index: false }`
@@ -54,7 +55,11 @@ export default async function Page() {
 
   return (
     <>
-      <Suspense fallback={<WorkList body={null} posts={posts?.posts ?? []} locale={locale} messages={messages} />}>
+      <Suspense
+        fallback={
+          <WorkList read={WAITING} posts={posts?.posts ?? []} locale={locale} messages={messages} />
+        }
+      >
         <WorkLive posts={posts?.posts ?? []} locale={locale} messages={messages} />
       </Suspense>
 

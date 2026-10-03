@@ -85,18 +85,31 @@ test("the coverage line stands under the uptime figure, and only there", async (
   }
 });
 
-// The amber note explains the em dashes above it and is written to disappear
-// when they fill. Its presence is therefore a statement about them, and the
-// coupling is what is asserted rather than the note.
-test("the reason the tiles are empty is shown exactly while they are", async ({ page }) => {
+// The note under the tiles explains the em dashes above it and is written to
+// disappear when they fill. Its presence is therefore a statement about them, and
+// the coupling is what is asserted rather than the note.
+//
+// AND SINCE U7 THERE ARE TWO SENTENCES, which is what this test used to hide. The
+// amber "EMPTY ON PURPOSE" explains a system that has not run yet; a read that
+// failed gets the dim panel that names the endpoint, the same one the four
+// regions on the homepage use. This rig has no api, so the second is what stands
+// here — and the first standing here was the defect: production served it beside
+// 80.05 % uptime.
+test("the reason the tiles are empty is the state that emptied them", async ({ page }) => {
   const filled = await page.locator('.ops-tiles .tile[data-has="yes"]').count();
   const note = page.locator(".cs-note-label");
+  const panel = page.locator(".cs-metrics .st-empty-panel");
 
   if (filled > 1) {
     await expect(note).toHaveCount(0);
-  } else {
-    await expect(note).toHaveText("EMPTY ON PURPOSE");
+    await expect(panel).toHaveCount(0);
+    return;
   }
+
+  await expect(note).toHaveCount(0);
+  await expect(panel.locator(".st-empty-head")).toHaveText("— NO DATA");
+  await expect(panel.locator(".st-empty-reason")).toContainText("/api/systems");
+  await expect(panel).not.toContainText("EMPTY ON PURPOSE");
 });
 
 test("the spec rail names no version this repository does not hold", async ({ page }) => {

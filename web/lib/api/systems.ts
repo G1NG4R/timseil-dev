@@ -56,6 +56,25 @@ export const OPS_WINDOW_CASE = 91;
 /** The homepage strip. One row, thirty cells, no notches — see components/home/OpsStrip. */
 export const OPS_WINDOW_HOME = 30;
 
+/**
+ * The address one system's numbers come from, for a region that is still waiting
+ * for them.
+ *
+ * U7. `loadingLines` in lib/state/lines.ts wants the source named because "naming
+ * the address turns a wait into a statement a reader can check", and the check
+ * only works if the address is the one that was asked: `/api/systems` is the
+ * list, and a reader who went there would find a different document. So the slug
+ * is resolved rather than left out.
+ *
+ * NO WINDOW IN IT, and that is the one thing left off. The same path is read with
+ * two windows — 91 for a case study, 30 for the homepage strip — and a wait that
+ * printed a `?window=` would be naming a cache key. The caption of an ANSWERED
+ * grid prints the window, because by then it is `cells.length` and not a request.
+ */
+export function systemWaitSource(slug: string): string {
+  return `ops-api /api/systems/${slug}`;
+}
+
 /** Every system, as the contract answers the list. */
 export type SystemList = GetBody<"/api/systems">;
 
