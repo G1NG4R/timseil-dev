@@ -12,6 +12,131 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 04.10.2026, U8 gemergt: `v0.46.0`, der achte bezeugte Tausch, und drei Trennzeichen in den Bytes
+
+`main` = `5fbcf0c`, Produktion = `5fbcf0c`, `v0.46.0`, `status ok`.
+**Die Phase ist damit nicht abgenommen** — U8a fehlt, und was dazwischen auf
+`/de` englisch steht, ist unten gemessen statt behauptet.
+
+### Der Tausch
+
+| | |
+|---|---|
+| Squash | `5fbcf0c` |
+| Merge | **21:24:30Z** (`date -u`, beidseitig gelesen) |
+| Version | `v0.45.0` → **`v0.46.0`** — erster `feat:`-Merge seit U7, also eine Kerbe |
+| Checks | **neun von neun grün im ersten Lauf** auf dem Branch, `e2e` 18m07s |
+| `e2e` auf `main` | 21:24:33Z–21:39:33Z (15m00s) |
+| `deploy` | 21:39:35Z–21:40:08Z, **33 s** |
+| `durationSec` | 936, `result ok`, `at` 21:40:06Z |
+| Wanduhr Merge → Deploy-Meldung | 936 s |
+| `check-deployed` | 8 Zusicherungen, eine hier nicht gefragt (#243) |
+
+**Die 936 s sind die Pipeline, nicht der Tausch** (#242): der `deploy`-Job war
+33 s, die gemeldete Zahl ist 28-mal so groß. Zufällig ist `durationSec` hier
+gleich der Wanduhrzeit von Merge bis Meldung — das ist kein neuer Befund,
+sondern dieselbe Verwechslung aus einem anderen Blickwinkel.
+
+`ops.lastDeploy.at` 21:40:06Z gegen `measuredAt` 21:40:11,375Z = **5,4 s**. Die
+vier Vorbeobachtungen lagen bei 11,8 · 12,3 · 12,6 · 14,9 s; das ist die
+niedrigste bisher und die fünfte Beobachtung derselben offenen Frage. Der neue
+`api`-Prozess steht seit **21:40:11,370663794Z**, also **3,4 s** nach dem Ende
+des `deploy`-Jobs.
+
+### Der Zeuge hat den achten Tausch gesehen, und diesmal ohne Loch
+
+Gestartet **während** `e2e`, nicht nach dem Merge — ein Skript hat den Job
+gepollt und bei 670 s Laufzeit angelegt. Deckel 2700 s.
+
+```
+Start 21:35:43Z · Ende 21:40:26Z · 283 s
+283 Anfragen je Pfad ( / · /api/health ), 283 × 200
+2 s ohne Stichprobe, keine abgerissene Verbindung
+✓ every answer was 200
+```
+
+Nachgerechnet, nicht gehofft: das Fenster umschließt `startedAt` des neuen
+Prozesses (21:40:11,37Z) mit **232 s Vorlauf und 18 s Nachlauf**. Für **#304**
+ist das der **achte** bezeugte Tausch und der **siebte ohne eine Nicht-200** —
+das Loch vom 03.10. (eine `503` auf `/`, 23 s nach dem Job) bleibt der einzige.
+
+### Drei Trennzeichen, in den Bytes der laufenden Seite
+
+Das ist die Messung, die lokal nicht möglich war: ohne API gibt es keine Zahl,
+an der ein Dezimalzeichen hängen könnte.
+
+| Route | Fußzeilen-Zelle, rohe Bytes |
+|---|---|
+| `/` | `UPTIME … 81.96%` |
+| `/de` | `VERFÜGBARKEIT … 81,96` + `C2 A0` + `%` |
+| `/fr` | `UPTIME … 81,96` + `E2 80 AF` + `%` |
+
+Also **U+00A0** im Deutschen und **U+202F** im Französischen, genau wie LANG.01
+sie vorschreibt, und das englische ohne Leerzeichen. Die Unit-Tests pinnen
+dieselben Codepoints; hier stehen sie auf dem Draht.
+
+Die fünf Kacheln auf `/de/work/timseil-dev`, gegen
+`/api/systems/timseil-dev?window=91` nachgerechnet:
+
+| Kachel | API | `/de` | `/` |
+|---|---|---|---|
+| `VERFÜGBARKEIT · 91 D` | `81.95652173913044` | **`81,96`** | `81.96` |
+| `P95` | `70.95588235294115` | **`71,0`** | `71.0` |
+| `FEHLERRATE` | `0` | **`0,00`** | `0.00` |
+| `PIPELINE · MEDIAN` | 181 Werte | **`342`** | `342` |
+| `VORFÄLLE` | `[]` | `0` | `0` |
+
+Ein gemessener Nullwert bleibt eine Zahl: `FEHLERRATE 0,00`, nicht `— NO DATA`.
+Die Deckungszeile unter der ersten Kachel sagt weiter `43 of 91 days measured` —
+englisch und absichtlich, U8 hat dort nur die Ziffern lokalisiert.
+
+### Die Attribute, über neun Routen gezählt
+
+| Route | `<html lang>` | Blöcke mit `lang="en"` |
+|---|---|---|
+| `/` | `en` | 1 (nur `<html>` selbst im `grep`) |
+| `/de` · `/de/about` · `/de/work` · `/de/blog` · `/de/contact` | `de` | **0** |
+| `/de/privacy` · `/de/imprint` | `de` | 1 — die Insel am `.lg` |
+| `/fr` | `fr` | 4 — Skip, Kopf, `<main>`, Fußzeile |
+
+Englische Katalogsätze in `/de`: **0** von sechs geprüften, jeder mit
+`grep -o … | wc -l` gezählt. Die deutschen stehen je zweimal im Dokument —
+Markup plus Flight-Nutzlast, wie ADR 0082 das schon gemessen hat.
+
+### Und was auf `/de` noch englisch ist — gemessen, nicht geschätzt
+
+Das ist der Preis, den ADR 0083 unter *Was das kostet* angekündigt hat, in
+Vorkommen auf der laufenden Seite:
+
+| Zeichenkette | Vorkommen | Quelle | fällt mit |
+|---|---|---|---|
+| `SHIPPED IN` | **16** auf `/de` | `lib/api/training.ts` | U8a |
+| `CONTRIBUTIONS` | 2 auf `/de` | `lib/api/contributions.ts` | U8a, nach der Nomenklatur-Entscheidung |
+| `Read the source before the docs` | 3 auf `/de/about` | `lib/about/content.ts` | U8a |
+| `Self-taught, from the lab up` | 2 auf `/de/about` | `lib/about/content.ts` | U8a |
+| `This site is the system it describes` | 2 auf `/de/work/timseil-dev` | `content/case-studies/timseil-dev.ts` | U8a |
+| `43 of 91 days measured` | 1 auf der Fallstudie | `lib/api/systems.ts#coverageNote` | U8a |
+
+**`LETZTE 30 TAGE` steht zweimal auf `/de`**, und `LAST 30 DAYS` keinmal — die
+sechste Zeichenkette aus dem Template ist in Produktion angekommen.
+
+### Gefunden · `/fr` trägt französische Zahlen in einem Block, der `lang="en"` sagt
+
+Auf `/fr` steht `81,96` + U+202F + `%` **innerhalb** von
+`<footer class="foot col" lang="en">`. Die Zahl folgt der Route-Locale, der Text
+der aufgelösten Sprache, und das sind auf `/fr` zwei verschiedene.
+
+Gewollt, und der Grund gehört aufgeschrieben, bevor jemand fragt: das Blatt
+sagt „ZAHLEN NACH LOCALE" und seine Locale-Tabelle **ist** die Routen-Tabelle.
+Ein Leser auf einer französischen Adresse erwartet `81,96`, auch wenn der Satz
+daneben englisch ist — und `lang` beschreibt natürliche Sprache, nicht die
+Gruppierung einer Ziffer. Die Gegenposition wäre, `resolved` statt `locale` zu
+nehmen: dann stimmten Block und Inhalt überein, und ein französischer Besucher
+bekäme englische Zahlen. **Entscheidung steht, Begründung jetzt hier** — sie
+stand vorher nirgends, und das war die eigentliche Lücke.
+
+---
+
 ## U8 · 03.10.2026 — Das Prädikat prüfte 143 Schlüssel und sprach für 3.040 Wörter
 
 Gezählt gegen den Baum von `b19015a`, nicht geschätzt.
