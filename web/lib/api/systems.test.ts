@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { de } from "../i18n/messages/de.ts";
 import { en } from "../i18n/messages/en.ts";
 import { NO_DATA } from "../state/words.ts";
 
@@ -50,7 +51,7 @@ function body(patch: Record<string, unknown> = {}): SystemDetail {
 
 describe("the five tiles when nothing has been measured", () => {
   it("says — NO DATA in all five rather than zero in any", () => {
-    const tiles = metricTiles(body(), en);
+    const tiles = metricTiles(body(), en, "en");
 
     assert.deepEqual(
       tiles.map((tile) => tile.value),
@@ -61,19 +62,19 @@ describe("the five tiles when nothing has been measured", () => {
   // The one exception above, and the reason it is one: an empty `incidents`
   // array is the api saying it looked. A queued system sends no array at all.
   it("counts an empty incident list as zero and a missing one as nothing", () => {
-    assert.equal(incidentCountValue([]), "0");
-    assert.equal(incidentCountValue(undefined), null);
-    assert.equal(incidentCountValue([{ id: "INC-001" }]), "1");
+    assert.equal(incidentCountValue("en", []), "0");
+    assert.equal(incidentCountValue("en", undefined), null);
+    assert.equal(incidentCountValue("en", [{ id: "INC-001" }]), "1");
   });
 
   it("labels the window with the number the answer carries", () => {
-    assert.equal(metricTiles(body(), en).at(0)?.label, "UPTIME · 91 D");
-    assert.equal(metricTiles(body({ window: 30, days: [] }), en).at(0)?.label, "UPTIME · 30 D");
+    assert.equal(metricTiles(body(), en, "en").at(0)?.label, "UPTIME · 91 D");
+    assert.equal(metricTiles(body({ window: 30, days: [] }), en, "en").at(0)?.label, "UPTIME · 30 D");
   });
 
   it("keeps the five in the order the sheet draws them", () => {
     assert.deepEqual(
-      metricTiles(body(), en).map((tile) => tile.label),
+      metricTiles(body(), en, "en").map((tile) => tile.label),
       ["UPTIME · 91 D", "P95", "ERROR RATE", "PIPELINE · MEDIAN", "INCIDENTS"],
     );
   });
@@ -84,13 +85,13 @@ describe("the five tiles when the api did not answer at all", () => {
   // both: five labels with nothing under them, and a window it was never told.
   it("still names all five", () => {
     assert.deepEqual(
-      metricTiles(null, en).map((tile) => tile.label),
+      metricTiles(null, en, "en").map((tile) => tile.label),
       ["UPTIME", "P95", "ERROR RATE", "PIPELINE · MEDIAN", "INCIDENTS"],
     );
   });
 
   it("puts no number and no window on any of them", () => {
-    const tiles = metricTiles(null, en);
+    const tiles = metricTiles(null, en, "en");
     assert.deepEqual(tiles.map((tile) => tile.value), [null, null, null, null, null]);
   });
 
@@ -98,13 +99,13 @@ describe("the five tiles when the api did not answer at all", () => {
   // "UPTIME / — NO DATA / — NO DATA", two absences stacked, and the second one
   // was supposed to be a statement about coverage.
   it("drops the coverage line rather than saying — NO DATA twice", () => {
-    assert.equal(metricTiles(null, en)[0].note, undefined);
+    assert.equal(metricTiles(null, en, "en")[0].note, undefined);
   });
 
   // The one that would be easy to get wrong: 91 is the contract's default, so
   // it is tempting to print it. It would be a number nobody was told.
   it("does not fall back to ninety-one", () => {
-    assert.doesNotMatch(metricTiles(null, en)[0].label, /91/);
+    assert.doesNotMatch(metricTiles(null, en, "en")[0].label, /91/);
   });
 
   it("reads nothing off a missing system elsewhere either", () => {
@@ -126,7 +127,7 @@ describe("the five tiles when a system is queued", () => {
 
   it("has no number anywhere", () => {
     assert.deepEqual(
-      metricTiles(queued, en).map((tile) => tile.value),
+      metricTiles(queued, en, "en").map((tile) => tile.value),
       [null, null, null, null, null],
     );
   });
@@ -138,37 +139,75 @@ describe("the five tiles when a system is queued", () => {
 
 describe("a measured zero is a measurement", () => {
   it("prints 0.00 for an error rate of zero rather than — NO DATA", () => {
-    assert.equal(errorRateValue(0), "0.00");
+    assert.equal(errorRateValue("en", 0), "0.00");
   });
 
   it("prints 0.00 for an uptime of zero, which is the reading that matters most", () => {
-    assert.equal(uptimeValue(0), "0.00");
+    assert.equal(uptimeValue("en", 0), "0.00");
   });
 
   it("prints a zero p95 rather than hiding it", () => {
-    assert.equal(p95Value(0), "0.0");
+    assert.equal(p95Value("en", 0), "0.0");
   });
 
   // The half a `!value` check would get wrong, and it is one character.
   it("carries all three through metricTiles", () => {
-    const tiles = metricTiles(body({ metrics: { uptime90d: 0, p95Ms: 0, errorRate: 0, measuredAt: null } }), en);
+    const tiles = metricTiles(body({ metrics: { uptime90d: 0, p95Ms: 0, errorRate: 0, measuredAt: null } }), en, "en");
     assert.deepEqual(tiles.slice(0, 3).map((tile) => tile.value), ["0.00", "0.0", "0.00"]);
+  });
+});
+
+// U8 · ADR 0083. The five tiles carry their unit in a separate span, so what a
+// locale moves here is the DECIMAL MARK and nothing else — no `%`, no space.
+// lib/format/numbers.test.ts pins the marks themselves; this is the assertion
+// that these five values go through that file at all.
+describe("the tiles follow the language of the route", () => {
+  it("writes a German decimal mark in all four numeric tiles", () => {
+    const measured = body({
+      metrics: { uptime90d: 99.98, p95Ms: 72.5, errorRate: 0.0007, measuredAt: null },
+    });
+
+    assert.deepEqual(
+      metricTiles(measured, de, "de")
+        .slice(0, 3)
+        .map((tile) => tile.value),
+      ["99,98", "72,5", "0,07"],
+    );
+  });
+
+  it("writes the threshold sentence with the language's own mark", () => {
+    assert.equal(errorRateValue("de", 0.00004), "< 0,01");
+    assert.equal(errorRateValue("fr", 0.00004), "< 0,01");
+  });
+
+  // THE LABEL IS GERMAN AND THE WINDOW IS COUNTED. `VERFÜGBARKEIT · 91 D` — the
+  // word from the dictionary, the number from `count()`, and `D` is a unit that
+  // does not move.
+  it("labels the window in German with the number the answer carries", () => {
+    assert.equal(metricTiles(body(), de, "de").at(0)?.label, `${de.uptime} · 91 D`);
+  });
+
+  it("counts the two numbers in the coverage note", () => {
+    assert.equal(coverageNote("de", { measured: 8, window: 91 }), "8 of 91 days measured");
+    // Four digits is where the separator starts to matter, and the note is the
+    // one place in this file where a count can reach it.
+    assert.equal(coverageNote("de", { measured: 1000, window: 2000 }), "1.000 of 2.000 days measured");
   });
 });
 
 describe("a rate too small to print is not zero", () => {
   it("says < 0.01 rather than 0.00 for a rate that would round away", () => {
-    assert.equal(errorRateValue(0.00004), "< 0.01");
-    assert.equal(errorRateValue(0.0000001), "< 0.01");
+    assert.equal(errorRateValue("en", 0.00004), "< 0.01");
+    assert.equal(errorRateValue("en", 0.0000001), "< 0.01");
   });
 
   it("prints the number as soon as two places can hold it", () => {
-    assert.equal(errorRateValue(0.0007), "0.07");
-    assert.equal(errorRateValue(0.0001), "0.01");
+    assert.equal(errorRateValue("en", 0.0007), "0.07");
+    assert.equal(errorRateValue("en", 0.0001), "0.01");
   });
 
   it("still says exactly 0.00 for an exact zero", () => {
-    assert.equal(errorRateValue(0), "0.00");
+    assert.equal(errorRateValue("en", 0), "0.00");
   });
 });
 
@@ -177,20 +216,20 @@ describe("values that are not numbers", () => {
   // answers, and a field the contract gained this week is simply absent.
   it("treats a missing metrics object as five absences", () => {
     assert.deepEqual(
-      metricTiles(body({ metrics: undefined }), en).map((tile) => tile.value),
+      metricTiles(body({ metrics: undefined }), en, "en").map((tile) => tile.value),
       [null, null, null, null, "0"],
     );
   });
 
   it("treats a string and a NaN as nothing, not as text", () => {
-    const tiles = metricTiles(body({ metrics: { uptime90d: "100", p95Ms: Number.NaN, errorRate: null } }), en);
+    const tiles = metricTiles(body({ metrics: { uptime90d: "100", p95Ms: Number.NaN, errorRate: null } }), en, "en");
     assert.equal(tiles[0].value, null);
     assert.equal(tiles[1].value, null);
   });
 
   it("survives a body with no window at all", () => {
     assert.deepEqual(coverage(body({ window: undefined, days: [] })), { measured: 0, window: 0 });
-    assert.equal(coverageNote({ measured: 0, window: 0 }), "— NO DATA");
+    assert.equal(coverageNote("en", { measured: 0, window: 0 }), "— NO DATA");
   });
 });
 
@@ -211,18 +250,18 @@ describe("coverage — issue #208", () => {
   // The sentence the issue was written for: the percentage looks the same
   // either way, so the count has to stand beside it.
   it("tells eight measured days from ninety-one", () => {
-    assert.equal(coverageNote(coverage(body({ days: days(8) }))), "8 of 91 days measured");
-    assert.equal(coverageNote(coverage(body({ days: days(91) }))), "91 of 91 days measured");
+    assert.equal(coverageNote("en", coverage(body({ days: days(8) }))), "8 of 91 days measured");
+    assert.equal(coverageNote("en", coverage(body({ days: days(91) }))), "91 of 91 days measured");
   });
 
   it("hangs the note on the uptime tile and on no other", () => {
-    const tiles = metricTiles(body({ days: days(8) }), en);
+    const tiles = metricTiles(body({ days: days(8) }), en, "en");
     assert.equal(tiles[0].note, "8 of 91 days measured");
     assert.deepEqual(tiles.slice(1).map((tile) => tile.note), [undefined, undefined, undefined, undefined]);
   });
 
   it("says nothing measured rather than nothing at all when the grid is absent", () => {
-    assert.equal(coverageNote(coverage(body({ days: undefined }))), "0 of 91 days measured");
+    assert.equal(coverageNote("en", coverage(body({ days: undefined }))), "0 of 91 days measured");
   });
 });
 
@@ -232,28 +271,28 @@ describe("the deploy median", () => {
   }
 
   it("takes the middle of an odd count", () => {
-    assert.equal(deployMedianValue(deploys(238, 263, 270)), "263");
+    assert.equal(deployMedianValue("en", deploys(238, 263, 270)), "263");
   });
 
   // A duration that happened, not the average of two that did. 42 and 43 have
   // no midpoint any deploy took.
   it("takes the lower of the two middles rather than their mean", () => {
-    assert.equal(deployMedianValue(deploys(42, 43)), "42");
-    assert.equal(deployMedianValue(deploys(238, 263, 270, 300)), "263");
+    assert.equal(deployMedianValue("en", deploys(42, 43)), "42");
+    assert.equal(deployMedianValue("en", deploys(238, 263, 270, 300)), "263");
   });
 
   it("does not care what order they arrived in", () => {
-    assert.equal(deployMedianValue(deploys(270, 238, 263)), "263");
+    assert.equal(deployMedianValue("en", deploys(270, 238, 263)), "263");
   });
 
   it("says nothing for an empty list and for no list", () => {
-    assert.equal(deployMedianValue([]), null);
-    assert.equal(deployMedianValue(undefined), null);
+    assert.equal(deployMedianValue("en", []), null);
+    assert.equal(deployMedianValue("en", undefined), null);
   });
 
   it("ignores an entry whose duration is not a number", () => {
-    assert.equal(deployMedianValue([{ durationSec: "42" }, { durationSec: 60 }]), "60");
-    assert.equal(deployMedianValue([{ durationSec: null }]), null);
+    assert.equal(deployMedianValue("en", [{ durationSec: "42" }, { durationSec: 60 }]), "60");
+    assert.equal(deployMedianValue("en", [{ durationSec: null }]), null);
   });
 });
 

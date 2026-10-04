@@ -11,7 +11,7 @@ import { NO_HEALTH, buildText, uptimeText, type FooterHealth } from "@/lib/api/h
 import { footerHealthNow } from "@/lib/api/readers";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { Messages } from "@/lib/i18n/messages";
-import { LOCALES, LOCALE_NAMES, localeHref } from "@/lib/i18n/routes";
+import { LOCALES, LOCALE_NAMES, type Locale, localeHref } from "@/lib/i18n/routes";
 import { stateLabel } from "@/lib/state/words";
 
 /**
@@ -52,8 +52,8 @@ export async function FooterMeta() {
           which is why streaming costs nothing in this design language and why
           there is no spinner to design.
         */}
-        <Suspense fallback={<MetaCells {...NO_HEALTH} messages={messages} />}>
-          <MetaCellsLive messages={messages} />
+        <Suspense fallback={<MetaCells {...NO_HEALTH} messages={messages} locale={locale} />}>
+          <MetaCellsLive messages={messages} locale={locale} />
         </Suspense>
 
         <span className="foot-cell">{messages.cvHint}</span>
@@ -92,7 +92,13 @@ export async function FooterMeta() {
  * null and a number for a number, and it is the same component in the fallback
  * and in the filled state, so the two cannot drift apart.
  */
-function MetaCells({ build, uptime, status, messages }: FooterHealth & { messages: Messages }) {
+function MetaCells({
+  build,
+  uptime,
+  status,
+  messages,
+  locale,
+}: FooterHealth & { messages: Messages; locale: Locale }) {
   return (
     <>
       {/* `BUILD` and `ONLINE` are not translated. The sheet names the set:
@@ -118,13 +124,13 @@ function MetaCells({ build, uptime, status, messages }: FooterHealth & { message
         )}
       </span>
       <span className="foot-cell">
-        {messages.uptime} {uptimeText(uptime)}
+        {messages.uptime} {uptimeText(locale, uptime)}
       </span>
     </>
   );
 }
 
 /** The same three cells, with the answer the api gave. */
-async function MetaCellsLive({ messages }: { messages: Messages }) {
-  return <MetaCells {...await footerHealthNow()} messages={messages} />;
+async function MetaCellsLive({ messages, locale }: { messages: Messages; locale: Locale }) {
+  return <MetaCells {...await footerHealthNow()} messages={messages} locale={locale} />;
 }

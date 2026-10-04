@@ -31,8 +31,10 @@ export interface RouteDictionary extends Dictionary {
   /** The value to put on a block's `lang` attribute, or `undefined` when the
    *  strings are in the route's own language and no attribute is needed.
    *
-   *  In G5 this is `"en"` on `/de` and `/fr`, because both dictionaries are
-   *  empty. When P6 fills one, it becomes `undefined` there by itself. */
+   *  From G5 to U8 this was `"en"` on `/de` and `/fr`, because both
+   *  dictionaries were empty. U8 filled German, so it became `undefined` there
+   *  by itself; `/fr` keeps it, and ADR 0083 says why that is the deliverable
+   *  rather than the debt. */
   readonly textLang: Locale | undefined;
 }
 

@@ -59,7 +59,7 @@ const POSTS: readonly PostMeta[] = [
 // ADR 0035's overlapping start makes every one of these reachable.
 describe("an answer this build cannot fully read", () => {
   it("draws no rows at all when nothing arrived", () => {
-    assert.deepEqual(workEntries(null, POSTS, en), []);
+    assert.deepEqual(workEntries(null, POSTS, en, "en"), []);
   });
 
   it("drops a row with no slug rather than rendering one that leads nowhere", () => {
@@ -68,7 +68,7 @@ describe("an answer this build cannot fully read", () => {
     // without one has nothing to draw.
     const body = { systems: [{ state: "live" }], generatedAt: "x" } as unknown as SystemList;
 
-    assert.deepEqual(workEntries(body, POSTS, en), []);
+    assert.deepEqual(workEntries(body, POSTS, en, "en"), []);
   });
 
   it("keeps a row whose stack and metrics are missing", () => {
@@ -76,7 +76,7 @@ describe("an answer this build cannot fully read", () => {
       systems: [{ slug: "talos-prod", state: "in_build" }],
       generatedAt: "x",
     } as unknown as SystemList;
-    const [row] = workEntries(body, POSTS, en);
+    const [row] = workEntries(body, POSTS, en, "en");
 
     assert.deepEqual(row.tags, []);
     assert.equal(row.figure, null);
@@ -96,14 +96,14 @@ describe("an answer this build cannot fully read", () => {
     } as unknown as SystemList;
 
     assert.deepEqual(
-      workEntries(body, POSTS, en)[0].tags.map((tag) => tag.key),
+      workEntries(body, POSTS, en, "en")[0].tags.map((tag) => tag.key),
       ["go"],
     );
   });
 });
 
 describe("the two rows the seed produces", () => {
-  const rows = workEntries(SEEDED, POSTS, en);
+  const rows = workEntries(SEEDED, POSTS, en, "en");
 
   it("keeps the api's order, which is the order of the numbers", () => {
     assert.deepEqual(

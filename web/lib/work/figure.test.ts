@@ -17,28 +17,28 @@ describe("a state that carries no measurement carries no cell", () => {
     // printing an uptime for a system that has never run.
     const metrics = { uptime90d: 99.98, p95Ms: 72.5, errorRate: 0, measuredAt: "2026-09-02T00:00:00Z" };
 
-    assert.equal(workFigure("queued", metrics, en), null);
-    assert.equal(workFigure("in_build", metrics, en), null);
+    assert.equal(workFigure("queued", metrics, en, "en"), null);
+    assert.equal(workFigure("in_build", metrics, en, "en"), null);
   });
 
   it("gives no figure to a state this build has no word for", () => {
     // ADR 0035: the wire can carry a vocabulary this build does not have. A
     // page that cannot say what a system IS has no business printing a number
     // about how well it runs.
-    assert.equal(workFigure(null, { uptime90d: 99.98 }, en), null);
+    assert.equal(workFigure(null, { uptime90d: 99.98 }, en, "en"), null);
   });
 
   it("does not confuse a system word with a health word", () => {
     // `online` is what this page says about its own delivery, never about a
     // system in the list. It is a valid StateWord and not a valid answer here.
-    assert.equal(workFigure("online", { uptime90d: 99.98 }, en), null);
-    assert.equal(workFigure("degraded", { uptime90d: 99.98 }, en), null);
+    assert.equal(workFigure("online", { uptime90d: 99.98 }, en, "en"), null);
+    assert.equal(workFigure("degraded", { uptime90d: 99.98 }, en, "en"), null);
   });
 });
 
 describe("a live system keeps its cell whether or not the number arrived", () => {
   it("prints the measurement when there is one", () => {
-    assert.deepEqual(workFigure("live", { uptime90d: 99.64 }, en), {
+    assert.deepEqual(workFigure("live", { uptime90d: 99.64 }, en, "en"), {
       label: "UPTIME · 91 D",
       value: "99.64",
       unit: "%",
@@ -51,7 +51,7 @@ describe("a live system keeps its cell whether or not the number arrived", () =>
     // has not arrived — `— NO DATA` in the cell. That is a different sentence
     // from the missing cell above, where nobody attempts anything.
     for (const metrics of [{ uptime90d: null }, {}, null, undefined, { uptime90d: "99.6" }]) {
-      assert.deepEqual(workFigure("live", metrics, en), {
+      assert.deepEqual(workFigure("live", metrics, en, "en"), {
         label: "UPTIME · 91 D",
         value: null,
         unit: "%",
@@ -63,7 +63,7 @@ describe("a live system keeps its cell whether or not the number arrived", () =>
     // `finiteNumber`, not a cast. NaN and Infinity are what a division by an
     // unmeasured window produces upstream, and both would print as words.
     for (const uptime90d of [Number.NaN, Number.POSITIVE_INFINITY]) {
-      assert.deepEqual(workFigure("live", { uptime90d }, en), {
+      assert.deepEqual(workFigure("live", { uptime90d }, en, "en"), {
         label: "UPTIME · 91 D",
         value: null,
         unit: "%",
@@ -75,7 +75,7 @@ describe("a live system keeps its cell whether or not the number arrived", () =>
     // Invariant 1 in a cell. A system that answered nothing for the whole
     // window measured 0, and that is the strongest thing this page can say
     // about it — it must never render as the absence of a measurement.
-    assert.deepEqual(workFigure("live", { uptime90d: 0 }, en), {
+    assert.deepEqual(workFigure("live", { uptime90d: 0 }, en, "en"), {
       label: "UPTIME · 91 D",
       value: "0.00",
       unit: "%",
@@ -97,7 +97,7 @@ describe("the window is the field's, not the request's", () => {
     // unlike the detail answer, which the case study labels from. So this label
     // cannot be derived from the body, and the assertion is that it is stable
     // regardless of what the body claims.
-    assert.deepEqual(workFigure("live", { uptime90d: 99.9, window: 30 }, en), {
+    assert.deepEqual(workFigure("live", { uptime90d: 99.9, window: 30 }, en, "en"), {
       label: "UPTIME · 91 D",
       value: "99.90",
       unit: "%",

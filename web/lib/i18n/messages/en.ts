@@ -114,6 +114,18 @@ export const en = {
   csErrorRate: "ERROR RATE",
   csIncidents: "INCIDENTS",
 
+  // U8 PULLED THIS ONE OUT OF THE MARKUP. It stood as a literal inside
+  // SpecRail.tsx, which made it a sentence no language could reach: a string in
+  // TSX is not in this file, so it is not in the shape every other language has
+  // to fill, and `languageComplete` could never have known about it. Six such
+  // literals came in with this phase as five keys — `Log` and `BlogHeader` drew
+  // the same phrase — and this is the only one that is a whole sentence.
+  //
+  // LOWERCASE, AND THE STYLESHEET LEAVES IT THAT WAY. It sits under
+  // `<> PRIVATE · NDA` as the reason for the absence of a link, and the rail
+  // around it shouts; a second shouting line would read as a second status.
+  csNoLink: "no link, and a reason instead",
+
   // H2a, and one word of it left after U6. The section heads ARCHITECTURE, SIDE
   // LANES, DECISIONS, DECISION, ALTERNATIVE, WHY THIS ONE and PHASES went with
   // the blocks they named; `.02 BUILD` now holds the generated compose block on
@@ -164,6 +176,20 @@ export const en = {
   csDays: "days",
   csWeeks: "weeks",
   csOneCellOneDay: "ONE CELL IS ONE DAY",
+
+  // A FIND OF U8 AND NOT A KEY THE PHASE SET OUT TO ADD. The homepage's
+  // operation strip composes its caption as
+  // `${csOperation} · LAST ${days} ${csDays} · ${csOneCellOneDay}` — four parts,
+  // three of them from this file and one of them an English word in the middle
+  // of the template. The plan for this phase listed five markup literals; this
+  // was the sixth, and it was in a template rather than in JSX, which is why
+  // reading the components for `>TEXT<` did not find it.
+  //
+  // IT IS NOT `csLastDays`. The number sits between the two words in English
+  // and in German alike — `LAST 30 DAYS` · `LETZTE 30 TAGE` — so the word and
+  // the plural noun stay two keys, and `csDays` is the one that was already
+  // here.
+  csLast: "LAST",
   csNoIncident: "NO INCIDENT",
   csOutage: "OUTAGE",
   csIncidentLog: "INCIDENT LOG",
@@ -331,6 +357,18 @@ export const en = {
    *  of two rows it belongs to. */
   homeSystemsExit: "Read the case study",
 
+  // THE SECTION ACTION ON TWO PAGES, WHICH IS WHY IT CARRIES NO PAGE PREFIX.
+  // `SYS.04`'s head on the homepage and the `SYSTEM` stat on the blog index both
+  // draw it, both at the same case study, and a `homeCaseStudy` beside a
+  // `blogCaseStudy` would be two keys that have to be translated the same way
+  // for ever. `availability` and `uptime` are here for the same reason.
+  //
+  // THE ARROW IS NOT IN THE STRING. Markup draws `{caseStudyExit} →`, the way
+  // `notFoundSelectedWork` and the empty-state exits already do — a glyph is
+  // not a word, and a translator who has it in the string is a translator who
+  // can lose it. U8 moved both literals here.
+  caseStudyExit: "CASE STUDY",
+
   // The foot of the homepage, and the only prose on this page about the person
   // rather than the machine. THE SHEET DRAWS A BRIEF, NOT A TEXT — "[BIO — 2–3
   // lines: self-taught systems engineer in Luxembourg; what he runs, how it is
@@ -443,6 +481,12 @@ export const en = {
   workContact:
     "Nothing here quite what you are looking for? I am happy to walk you " +
     "through how one of these systems is built.",
+
+  // THE ONE ALERT-RED BADGE ON `/work`, and U8 moved it out of WorkRow.tsx. It
+  // is a statement about where the READER is standing rather than a state of
+  // the system — the component says so at its own line and refuses `MARKS` for
+  // it — which makes it prose, and prose a German reader should get in German.
+  workHere: "YOU ARE HERE",
 
   // ── H7 · /about ─────────────────────────────────────────────────────────
   //
@@ -781,6 +825,14 @@ export const en = {
   // — and a German 404 would still read STATUS 404. The router trace is not
   // here either: it is a log, and lib/notfound/trace.ts composes it, the same
   // way lib/state/lines.ts composes an error panel.
+
+  // AND THE STATUS LINE IS BOTH, which is why it is split rather than carried
+  // whole. `ERR 404` is the code and stays in the markup beside the dot; what
+  // follows the em dash is a sentence about what the server did, and U8 brought
+  // it here out of NotFoundHero.tsx. The component is the one client island on
+  // the page, so it takes this as a prop like its other four strings.
+  notFoundStatus: "ROUTE NOT RESOLVED",
+
   notFoundLede:
     "This route does not resolve. The request reached the server; there is " +
     "simply nothing mounted at that path.",

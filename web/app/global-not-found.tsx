@@ -139,11 +139,17 @@ function TracePanel({ path, traceId }: { path: string | null; traceId: string | 
 export default function GlobalNotFound() {
   // THE SHELL IS ENGLISH, AND IT HAS TO BE. This route is prerendered once for
   // the whole site, so there is no language segment to read and nothing to vary
-  // on — `/de/nonsense` gets this page with English ways out. Today that costs
-  // one thing only, the `/de` prefix on five links: the German and French
-  // dictionaries are empty overlays, so every page on this site already serves
-  // English text (lib/i18n/messages.ts, "KEINE HALBEN SEITEN"). When P6 fills a
-  // language it will cost more than that, and the backlog says so.
+  // on — `/de/nonsense` gets this page with English ways out.
+  //
+  // U8 TURNED THAT FROM A ROUNDING ERROR INTO A VISIBLE ONE, and the page stays
+  // honest about it rather than hiding it. Until this phase both other overlays
+  // were empty, so every page on the site served English anyway and the only
+  // cost was the missing `/de` prefix on five links. German is translated now,
+  // so a reader who mistypes a `/de` address lands on an English 404 — under
+  // `<html lang="en">`, which is the true statement about this document. What it
+  // cannot do is carry them back into German, and `localeHref(DEFAULT_LOCALE)`
+  // means the five ways out leave the language. That is the backlog entry, not a
+  // defect in this file: the fix is a language segment this route does not have.
   const locale = DEFAULT_LOCALE;
   const { messages } = resolveMessages(locale);
 
@@ -167,6 +173,7 @@ export default function GlobalNotFound() {
           <section className="nf">
             <div className="nf-main">
               <NotFoundHero
+                statusLabel={messages.notFoundStatus}
                 lede={messages.notFoundLede}
                 returnLabel={messages.notFoundReturn}
                 workLabel={messages.notFoundSelectedWork}

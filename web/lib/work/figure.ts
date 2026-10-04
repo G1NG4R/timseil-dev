@@ -22,7 +22,9 @@
 
 import { type MetricValue, uptimeValue } from "../api/systems.ts";
 import { finiteNumber } from "../api/values.ts";
+import { count } from "../format/numbers.ts";
 import type { Messages } from "../i18n/messages/en.ts";
+import type { Locale } from "../i18n/routes.ts";
 import type { StateWord } from "../state/words.ts";
 
 /**
@@ -60,14 +62,15 @@ export function workFigure(
   state: StateWord | null,
   metrics: unknown,
   messages: Messages,
+  locale: Locale,
 ): MetricValue | null {
   if (state !== "live") return null;
 
   const raw = (metrics ?? {}) as Record<string, unknown>;
 
   return {
-    label: `${messages.uptime} · ${String(UPTIME_WINDOW_DAYS)} D`,
-    value: uptimeValue(finiteNumber(raw.uptime90d)),
+    label: `${messages.uptime} · ${count(locale, UPTIME_WINDOW_DAYS)} D`,
+    value: uptimeValue(locale, finiteNumber(raw.uptime90d)),
     unit: "%",
   };
 }

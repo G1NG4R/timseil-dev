@@ -66,14 +66,14 @@ export function SpecRail({
 
         <dt className="spec-key">{messages.csSource}</dt>
         <dd className="spec-val">
-          <SourceValue source={source} />
+          <SourceValue source={source} noLink={messages.csNoLink} />
         </dd>
       </dl>
     </aside>
   );
 }
 
-function SourceValue({ source }: { source: SourceView }) {
+function SourceValue({ source, noLink }: { source: SourceView; noLink: string }) {
   if (source === null) return <NoData />;
 
   if (source.access === "public") {
@@ -93,7 +93,7 @@ function SourceValue({ source }: { source: SourceView }) {
   return (
     <>
       {`<> PRIVATE · ${source.reason.toUpperCase()}`}
-      <span className="spec-why">no link, and a reason instead</span>
+      <span className="spec-why">{noLink}</span>
     </>
   );
 }

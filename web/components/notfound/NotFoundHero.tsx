@@ -54,6 +54,7 @@ import { useState } from "react";
  * about its own reset.
  */
 export function NotFoundHero({
+  statusLabel,
   lede,
   returnLabel,
   workLabel,
@@ -61,6 +62,10 @@ export function NotFoundHero({
   homeHref,
   workHref,
 }: {
+  /** What follows `ERR 404 —`. U8 brought it out of the markup below: a string
+   *  in TSX is a string no language can reach, and `ERR 404` is the only half of
+   *  that line that is a code rather than a sentence. */
+  statusLabel: string;
   lede: string;
   returnLabel: string;
   workLabel: string;
@@ -83,7 +88,7 @@ export function NotFoundHero({
     <div className="nf-lead">
       <p className="nf-status" data-tone="alert">
         <span className="nf-dot" aria-hidden="true" />
-        ERR 404 — ROUTE NOT RESOLVED
+        ERR 404 — {statusLabel}
       </p>
 
       {/* THE BREAK IS THE SHEET'S, not a consequence of the column width. Both

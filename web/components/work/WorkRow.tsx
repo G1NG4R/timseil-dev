@@ -63,7 +63,7 @@ export function WorkRow({ entry, messages }: { entry: WorkEntry; messages: Messa
               state of the system, so it is not a `StateWord` and carries no
               dot — `MARKS` would have to invent a ninth meaning for a badge
               that means "you". */}
-          {entry.here ? <span className="work-here">YOU ARE HERE</span> : null}
+          {entry.here ? <span className="work-here">{messages.workHere}</span> : null}
         </span>
 
         {/* Absent rather than `— NO DATA` when nobody wrote one. ADR 0055:

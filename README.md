@@ -462,11 +462,24 @@ the same page.
 each page has exactly one canonical URL. Every page emits `hreflang` for all
 three plus `x-default`.
 
-**The two other languages are not translated yet.** They serve the English text
-and say so — `<html lang="de">` with `lang="en"` on the blocks that fell back,
-rather than half a page in German. Filling them is post-launch work; the
-mechanism, the routes and the switcher are not
-([ADR 0046](docs/adr/0046-die-sprachroute-englisch-ohne-praefix-und-die-sprache-die-die-url-traegt.md)).
+**German is translated. French is not, and says so.** `/fr` serves the English
+text under `<html lang="fr">` with `lang="en"` on the blocks that fell back,
+rather than half a page in French — a language nobody can proof-read is a claim
+without evidence, which is the one rule this repository has. Filling it is its
+own phase, with a reader.
+
+A language counts as translated when the string catalogue carries it **and**
+every registered block of page content does. The catalogue is not the whole
+page: when the predicate asked only about the catalogue it spoke for about
+3.040 words of prose it had never seen, and a page that dropped its `lang="en"`
+would have claimed all of them
+([ADR 0083](docs/adr/0083-eine-sprache-ist-vollstaendig-wenn-jede-wortquelle-sie-traegt-und-die-url-merkt-sich-die-wahl-schon.md),
+[ADR 0046](docs/adr/0046-die-sprachroute-englisch-ohne-praefix-und-die-sprache-die-die-url-traegt.md)).
+
+**The legal texts stay English in every language, and the block says so.**
+`/de/imprint` and `/de/privacy` are German-labelled documents with an
+`lang="en"` island around the text itself: a translated legal text is a legal
+statement, not prose, and it gets its own phase and its own reader.
 
 **The entries are written in English only.** The frame around them — the labels,
 the contents rail, the foot — follows the language of the URL like every other

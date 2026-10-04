@@ -14,18 +14,26 @@
 //
 // So a language is all or nothing. An incomplete overlay is not blended with
 // English key by key; it is set aside, English is served whole, and `resolved`
-// says `en` so the caller can put `lang="en"` on the block. In G5 that is every
-// block on `/de` and `/fr`, because both overlays are empty — which is exactly
-// the acceptance criterion the build plan writes for this phase: "Switcher
+// says `en` so the caller can put `lang="en"` on the block. From G5 to U8 that
+// was every block on `/de` and `/fr`, because both overlays were empty — which
+// was exactly the acceptance criterion the build plan wrote for G5: "Switcher
 // funktioniert auch mit leeren Sprachen."
 //
-// When P6 fills a language, the attribute disappears on its own. Nothing has to
-// remember to remove it.
+// SINCE U8 IT IS `/fr` ALONE, and the French overlay is empty on purpose rather
+// than on the way to being filled: ADR 0083's first decision is that a language
+// nobody can proof-read is a claim without evidence. The attribute on `/de`
+// disappeared on its own when the overlay filled up. Nothing had to remember to
+// remove it.
+//
+// WHAT COUNTS AS FILLED MOVED OUT OF THIS FILE IN U8. It used to be
+// `isComplete`, which walks the keys of messages/en.ts — a true answer to a
+// smaller question than `<main lang>` asks, because about 3.040 words of page
+// prose live outside that catalogue. complete.ts holds the whole predicate and
+// ADR 0083 holds the reasoning; this file asks it and is otherwise unchanged.
 
 import type { NavId } from "../chrome.ts";
-import { de } from "./messages/de.ts";
+import { OVERLAYS, languageComplete } from "./complete.ts";
 import { en, type Messages } from "./messages/en.ts";
-import { fr } from "./messages/fr.ts";
 import { DEFAULT_LOCALE, type Locale } from "./routes.ts";
 
 export type { Messages };
@@ -38,24 +46,9 @@ export interface Dictionary {
   readonly resolved: Locale;
 }
 
-const OVERLAYS: Record<Locale, Partial<Messages>> = { en, de, fr };
-
-/** Does this language carry every key, with something in it?
- *
- *  A present-but-empty string counts as missing. A translator who deletes the
- *  text and leaves the key would otherwise ship a blank label, and a blank
- *  label is the UI equivalent of a number nobody measured. */
-export function isComplete(overlay: Partial<Messages>): boolean {
-  return Object.keys(en).every((key) => {
-    const value = overlay[key as keyof Messages];
-    return typeof value === "string" && value.length > 0;
-  });
-}
-
 export function resolveMessages(locale: Locale): Dictionary {
-  const overlay = OVERLAYS[locale];
-  if (locale !== DEFAULT_LOCALE && isComplete(overlay)) {
-    return { messages: { ...en, ...overlay }, resolved: locale };
+  if (locale !== DEFAULT_LOCALE && languageComplete(locale)) {
+    return { messages: { ...en, ...OVERLAYS[locale] }, resolved: locale };
   }
   return { messages: { ...en }, resolved: DEFAULT_LOCALE };
 }

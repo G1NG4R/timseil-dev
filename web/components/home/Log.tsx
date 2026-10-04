@@ -74,7 +74,9 @@ export function Log({
         title="LOG"
         titleId="sec-sys-04"
         action={
-          caseStudyHref === null ? undefined : <Link href={caseStudyHref}>CASE STUDY →</Link>
+          caseStudyHref === null ? undefined : (
+            <Link href={caseStudyHref}>{messages.caseStudyExit} →</Link>
+          )
         }
         meta={logMeta(read)}
       />

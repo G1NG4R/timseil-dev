@@ -123,7 +123,8 @@ export async function MetricRowLive({
   slug,
   note,
   messages,
-}: Common & { note: { label: string; text: string } }) {
+  locale,
+}: Common & { note: { label: string; text: string }; locale: Locale }) {
   const system = await systemNow(slug, OPS_WINDOW_CASE);
 
   // THE FIVE TILES STILL DRAW `— NO DATA` FOR EITHER MISS, and they have to: a
@@ -136,6 +137,7 @@ export async function MetricRowLive({
       note={note}
       waitSource={systemWaitSource(slug)}
       messages={messages}
+      locale={locale}
     />
   );
 }
