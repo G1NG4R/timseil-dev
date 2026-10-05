@@ -31,6 +31,11 @@
 // maintain, and the thing it would assert is already assertable on the
 // delivered page.
 
+import {
+  type ContentBundle,
+  type ResolvedContent,
+  resolveContent,
+} from "./bundle.ts";
 import { de } from "./messages/de.ts";
 import { en, type Messages } from "./messages/en.ts";
 import { fr } from "./messages/fr.ts";
@@ -58,15 +63,11 @@ export function isComplete(overlay: Partial<Messages>): boolean {
   });
 }
 
-/**
- * A block of page content in as many languages as have been written.
- *
- * ENGLISH IS REQUIRED AND EVERY OTHER LANGUAGE IS OPTIONAL, which is the type
- * doing two jobs at once: French stays legally empty — ADR 0083's first
- * decision — and a typo in a language key (`ger:`, `de_DE:`) is a compiler
- * error rather than a bundle that silently never resolves.
- */
-export type ContentBundle<T> = { readonly en: T } & Partial<Record<Locale, T>>;
+// THE THREE BUNDLE NAMES LIVE IN `bundle.ts` AND ARE RE-EXPORTED HERE, so that
+// a caller does not have to know the split exists. The split is a byte count, not
+// a taste: this file imports all three catalogues, and `app/[lang]/error.tsx` is a
+// client component that reads one bundle. `bundle.ts` says the rest.
+export { type ContentBundle, type ResolvedContent, resolveContent };
 
 /**
  * Every bundle a page reads its words from.
@@ -101,26 +102,4 @@ export function languageComplete(
   bundles: readonly ContentBundle<unknown>[] = BUNDLES,
 ): boolean {
   return isComplete(OVERLAYS[locale]) && bundlesComplete(locale, bundles);
-}
-
-/** What a bundle resolves to, and which language that was. The shape
- *  `resolveMessages` returns, for the same reason: the second value is what a
- *  block puts on its `lang` attribute. */
-export interface ResolvedContent<T> {
-  readonly value: T;
-  readonly resolved: Locale;
-}
-
-/**
- * Read one bundle in the route's language, or in English.
- *
- * IT DOES NOT ASK `languageComplete`. A page that calls this is already being
- * rendered in a language the dictionary resolved; asking a second time would be
- * a second answer that can disagree with the first. What this guards is the
- * narrower case: a bundle registered after the dictionary was read, or read
- * directly by a test.
- */
-export function resolveContent<T>(bundle: ContentBundle<T>, locale: Locale): ResolvedContent<T> {
-  const value = bundle[locale];
-  return value === undefined ? { value: bundle.en, resolved: "en" } : { value, resolved: locale };
 }
