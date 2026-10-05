@@ -15,6 +15,7 @@ import test from "node:test";
 
 import { NAV } from "../chrome.ts";
 import { isComplete } from "./complete.ts";
+import { placeholdersIn } from "./fill.ts";
 import { de } from "./messages/de.ts";
 import { en, type Messages } from "./messages/en.ts";
 import { fr } from "./messages/fr.ts";
@@ -78,6 +79,35 @@ void test("German differs from English everywhere except the named nomenclature"
   );
 
   assert.deepEqual(identical.sort(), [...SAME].sort());
+});
+
+// A SENTENCE WITH A HOLE IN IT HAS TO HAVE THE SAME HOLES IN EVERY LANGUAGE.
+// U8a gave the catalogue templates — `{measured} von {window} Tagen gemessen` —
+// and `fill` throws on a value nobody asked for. So a translator who drops
+// `{window}` from the German sentence does not ship a sentence missing a number;
+// it takes the page down at build time. This test is the earlier, cheaper place
+// to find that out, and it reads both sides rather than trusting one.
+//
+// THE SET AND NOT THE ORDER, because reordering is the whole reason templates
+// exist: German may put the window first.
+void test("every German value carries the placeholders its English original does", () => {
+  const drifted = Object.keys(en).filter((key) => {
+    const english = [...placeholdersIn(en[key as keyof typeof en])].sort();
+    const german = [...placeholdersIn(de[key as keyof Messages])].sort();
+    return english.join("·") !== german.join("·");
+  });
+
+  assert.deepEqual(drifted, []);
+});
+
+// THE BROKEN CASE, BUILT RATHER THAN WAITED FOR. Today every value in the
+// catalogue is a finished string, so the test above passes without having been
+// exercised — and a test that has never been red is a test nobody has read.
+void test("a translation that lost a placeholder is found, not filled in", () => {
+  const english = "{measured} of {window} days measured";
+  const german = "{measured} von 91 Tagen gemessen";
+
+  assert.notDeepEqual([...placeholdersIn(english)].sort(), [...placeholdersIn(german)].sort());
 });
 
 void test("English resolves to English", () => {

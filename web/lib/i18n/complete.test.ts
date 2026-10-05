@@ -21,6 +21,7 @@ import { describe, it } from "node:test";
 import {
   BUNDLES,
   type ContentBundle,
+  bundleShapes,
   bundlesComplete,
   isComplete,
   languageComplete,
@@ -106,6 +107,57 @@ describe("resolveContent", () => {
     const bundle: ContentBundle<string> = { en: "station" };
 
     assert.deepEqual(resolveContent(bundle, "fr"), { value: "station", resolved: "en" });
+  });
+});
+
+describe("a language can be present and still be the wrong shape", () => {
+  // THE REGISTER AS IT SHIPS. Empty today because BUNDLES is; it is the
+  // assertion that stops being free the moment U8a registers the first bundle.
+  it("every registered bundle has the same shape in every language it carries", () => {
+    assert.deepEqual(bundleShapes(), []);
+  });
+
+  // THE CASE `Record` ALREADY CATCHES, stated anyway because the next bundle
+  // might not be keyed. Five of six stations: present, resolvable, and a page
+  // with a hole in it.
+  it("five stations against six is a shape complaint, not a finished language", () => {
+    const six: ContentBundle<Record<string, string>> = {
+      en: { s1: "a", s2: "b", s3: "c", s4: "d", s5: "e", s6: "f" },
+      de: { s1: "a", s2: "b", s3: "c", s4: "d", s5: "e" },
+    };
+
+    assert.deepEqual(bundleShapes([six]), ["[0].de: missing s6"]);
+    // AND THE OTHER PREDICATE STILL SAYS YES, which is the whole point of there
+    // being two: German is there, so the language is finished.
+    assert.equal(bundlesComplete("de", [six]), true);
+  });
+
+  // THE CASE NOTHING ELSE CATCHES. `readonly string[]` has no length in the type
+  // system, so four constraints against five type-check and drop a line.
+  it("four constraints against five is a shape complaint", () => {
+    const study: ContentBundle<{ constraints: readonly string[] }> = {
+      en: { constraints: ["a", "b", "c", "d", "e"] },
+      de: { constraints: ["a", "b", "c", "d"] },
+    };
+
+    assert.deepEqual(bundleShapes([study]), ["[0].de.constraints: 4 of 5"]);
+  });
+
+  it("a nested object that lost a key says where", () => {
+    const nested: ContentBundle<{ hero: { title: string; body: string } }> = {
+      en: { hero: { title: "t", body: "b" } },
+      de: { hero: { title: "t" } as { title: string; body: string } },
+    };
+
+    assert.deepEqual(bundleShapes([nested]), ["[0].de.hero: missing body"]);
+  });
+
+  // FRENCH IS ABSENT, NOT MISSHAPEN, and the two must not be the same complaint:
+  // an empty language is ADR 0083's first decision and has to stay silent here.
+  it("a language that is not there is not a shape complaint", () => {
+    const only: ContentBundle<string> = { en: "station", de: "Station" };
+
+    assert.deepEqual(bundleShapes([only]), []);
   });
 });
 
