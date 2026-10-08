@@ -117,7 +117,7 @@ export function WorkList({
               waits on to say the region arrived. The counter says `— NO DATA`
               while nothing has answered, because a count cannot tell a wait from
               an outage; the panel under it can, and since U7 it does. */}
-          <p className="work-count">{workMeta(body)}</p>
+          <p className="work-count">{workMeta(body, messages)}</p>
           {read.kind === "waiting" ? (
             <LoadingLines what={WAIT_WHAT} source={WAIT_SOURCE} />
           ) : (
@@ -126,7 +126,7 @@ export function WorkList({
         </>
       ) : entries.length === 0 ? (
         <>
-          <p className="work-count">{workCount(0, 0)}</p>
+          <p className="work-count">{workCount(0, 0, messages)}</p>
           <EmptyState heading={NO_DATA} reason={messages.workListNone} />
         </>
       ) : (
@@ -148,6 +148,10 @@ export function WorkList({
             noMatchHead: messages.workNoMatchHead,
             noMatchReason: messages.workNoMatchReason,
             reset: messages.workReset,
+            // The counter's two words, because the island is the one that knows
+            // how many rows survived the axes. Two strings and not a dictionary.
+            workShowing: messages.workShowing,
+            workFigures: messages.workFigures,
           }}
         />
       )}

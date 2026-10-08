@@ -382,6 +382,16 @@ export const de: Messages = {
   contributionsGraph: "{total} Contributions über {days} Tage, {from} bis {to}",
   contributionsGraphEmpty: "Contribution-Kalender {state}",
 
+  // U8a. `ZEIGT … VON … BEITRÄGEN` ist Dativ, und genau deshalb steht der ganze
+  // Satz im Schlüssel: `BEITRÄGE` wäre hier falsch und ist in
+  // `blogIndexEntries` richtig.
+  workShowing: "ZEIGT {shown} VON {total}",
+  blogShowing: "ZEIGT {shown} VON {total} BEITRÄGEN",
+  workFigures: "ZAHLEN AUS /api/systems",
+  logCount: "{count} {entries} IM LOG",
+  homeLogLatest: "NEUESTE {count}",
+  blogFilterSearch: 'SUCHE: "{q}"',
+
   based: "MIT SITZ IN LUXEMBURG",
   privacy: "DATENSCHUTZ",
   imprint: "IMPRESSUM",

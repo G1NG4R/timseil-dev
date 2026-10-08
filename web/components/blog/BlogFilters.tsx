@@ -33,10 +33,11 @@ import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/state/EmptyState";
 import { FilterChip } from "@/components/work/FilterChip";
-import { blogCount } from "@/lib/blog/counts";
+import { type BlogCountWords, blogCount } from "@/lib/blog/counts";
 import {
   ALL_TAGS,
   type Axis,
+  type FilterWords,
   activeLabels,
   applyFilter,
   isFiltered,
@@ -95,7 +96,8 @@ export function BlogFilters({
     noMatchHead: string;
     noMatchReason: string;
     reset: string;
-  };
+  } & BlogCountWords &
+    FilterWords;
 }) {
   const [tag, setTag] = useState<string>(ALL_TAGS);
   // The raw field value is its own state and the axis is derived from it. One
@@ -183,14 +185,14 @@ export function BlogFilters({
           shorten is otherwise told nothing by a press that changed everything
           below it. `blogCount` is the one author of the sentence. */}
       <p className="blog-count" aria-live="polite">
-        {blogCount(rows.length, shown.length)}
+        {blogCount(rows.length, shown.length, strings)}
       </p>
 
       {shown.length === 0 ? (
         <EmptyState
           heading={strings.noMatchHead}
           reason={strings.noMatchReason}
-          filters={activeLabels(axis, chips)}
+          filters={activeLabels(axis, chips, strings)}
         >
           {/* The way back. STATE.05 asks for one and the sheet draws one. It is
               a button rather than the sheet's `<span onClick>` for the reason

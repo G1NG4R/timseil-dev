@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { de } from "../i18n/messages/de.ts";
+import { en } from "../i18n/messages/en.ts";
+
 import type { SystemList } from "../api/systems.ts";
 
 import { listed, statusCounts, workCount, workMeta } from "./counts.ts";
@@ -18,7 +21,7 @@ const SEEDED = {
 // a lie rather than a measurement.
 describe("a body that never said how many systems there are", () => {
   it("refuses to count an answer that did not arrive", () => {
-    assert.equal(workMeta(null), "— NO DATA · FIGURES FROM /api/systems");
+    assert.equal(workMeta(null, en), "— NO DATA · FIGURES FROM /api/systems");
   });
 
   it("refuses to count an answer whose list is missing or not a list", () => {
@@ -27,7 +30,7 @@ describe("a body that never said how many systems there are", () => {
     // and there are no systems, which is not what happened.
     for (const systems of [undefined, null, "two", 2, {}]) {
       assert.equal(
-        workMeta({ systems, generatedAt: "x" } as unknown as SystemList),
+        workMeta({ systems, generatedAt: "x" } as unknown as SystemList, en),
         "— NO DATA · FIGURES FROM /api/systems",
       );
     }
@@ -37,7 +40,7 @@ describe("a body that never said how many systems there are", () => {
     // THE THIRD CASE, and the one that separates this from the two above. The
     // api answered and said there are none.
     assert.equal(
-      workMeta({ systems: [], generatedAt: "x" }),
+      workMeta({ systems: [], generatedAt: "x" }, en),
       "SHOWING 00 OF 00 · FIGURES FROM /api/systems",
     );
   });
@@ -45,13 +48,17 @@ describe("a body that never said how many systems there are", () => {
   it("keeps naming its source even when it cannot count", () => {
     // The head that is still waiting names what it is waiting for — the reason
     // the counter is inside the streamed region at all.
-    assert.match(workMeta(null), /FIGURES FROM \/api\/systems$/);
+    assert.match(workMeta(null, en), /FIGURES FROM \/api\/systems$/);
   });
 });
 
 describe("the counter counts the rows and not the array", () => {
   it("reads the seed as two of two", () => {
-    assert.equal(workMeta(SEEDED), "SHOWING 02 OF 02 · FIGURES FROM /api/systems");
+    assert.equal(workMeta(SEEDED, en), "SHOWING 02 OF 02 · FIGURES FROM /api/systems");
+    // NO NOUN AFTER THE NUMBERS HERE, which is why this sentence needs only one
+    // German form where the blog counter needs the dative.
+    assert.equal(workMeta(SEEDED, de), "ZEIGT 02 VON 02 · ZAHLEN AUS /api/systems");
+    assert.equal(workMeta(null, de), "— NO DATA · ZAHLEN AUS /api/systems");
   });
 
   it("drops a row with no slug from both numbers", () => {
@@ -63,11 +70,11 @@ describe("the counter counts the rows and not the array", () => {
       generatedAt: "x",
     } as unknown as SystemList;
 
-    assert.equal(workMeta(body), "SHOWING 01 OF 01 · FIGURES FROM /api/systems");
+    assert.equal(workMeta(body, en), "SHOWING 01 OF 01 · FIGURES FROM /api/systems");
   });
 
   it("pads to two digits, as every number on this page does", () => {
-    assert.match(workMeta({ systems: [], generatedAt: "x" }), /SHOWING 00 OF 00/);
+    assert.match(workMeta({ systems: [], generatedAt: "x" }, en), /SHOWING 00 OF 00/);
   });
 });
 
@@ -76,17 +83,17 @@ describe("the counter line the island writes", () => {
   // answer, because the island has the rows and no body. Both callers going
   // through it is what stops `FIGURES FROM` becoming `SOURCE:` on one of them.
   it("narrows the first number and keeps the second", () => {
-    assert.equal(workCount(2, 1), "SHOWING 01 OF 02 · FIGURES FROM /api/systems");
+    assert.equal(workCount(2, 1, en), "SHOWING 01 OF 02 · FIGURES FROM /api/systems");
   });
 
   it("says nought without saying nothing", () => {
     // A filter that matched nothing is a measurement over an answer that
     // exists — which is why this is a different sentence from `— NO DATA`.
-    assert.equal(workCount(2, 0), "SHOWING 00 OF 02 · FIGURES FROM /api/systems");
+    assert.equal(workCount(2, 0, en), "SHOWING 00 OF 02 · FIGURES FROM /api/systems");
   });
 
   it("pads both numbers past nine", () => {
-    assert.equal(workCount(12, 10), "SHOWING 10 OF 12 · FIGURES FROM /api/systems");
+    assert.equal(workCount(12, 10, en), "SHOWING 10 OF 12 · FIGURES FROM /api/systems");
   });
 });
 
@@ -100,13 +107,13 @@ describe("the tiles and the counter make one claim, not two", () => {
       const answered = listed(body as unknown as SystemList);
 
       assert.equal(answered, false);
-      assert.match(workMeta(body as unknown as SystemList), /^— NO DATA/);
+      assert.match(workMeta(body as unknown as SystemList, en), /^— NO DATA/);
     }
   });
 
   it("calls an empty list an answer, because it is one", () => {
     assert.equal(listed({ systems: [], generatedAt: "x" }), true);
-    assert.match(workMeta({ systems: [], generatedAt: "x" }), /^SHOWING 00 OF 00/);
+    assert.match(workMeta({ systems: [], generatedAt: "x" }, en), /^SHOWING 00 OF 00/);
   });
 });
 

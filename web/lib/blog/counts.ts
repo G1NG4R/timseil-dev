@@ -8,6 +8,8 @@
 // exactly one deploy".
 
 import { padTwo } from "../api/values.ts";
+import { fill } from "../i18n/fill.ts";
+import type { Messages } from "../i18n/messages/en.ts";
 import { NO_DATA } from "../state/words.ts";
 
 /** Where the entries come from. Named on the page, per HOME.01's rule that a
@@ -25,8 +27,11 @@ export const POSTS_SOURCE = "content/posts";
  * assembling these five words is how `SOURCE:` becomes `FIGURES FROM` on one of
  * them.
  */
-export function blogCount(total: number, shown: number): string {
-  return `SHOWING ${padTwo(shown)} OF ${padTwo(total)} ENTRIES · SOURCE: ${POSTS_SOURCE}`;
+export type BlogCountWords = Pick<Messages, "blogShowing" | "sourceLabel">;
+
+export function blogCount(total: number, shown: number, words: BlogCountWords): string {
+  const showing = fill(words.blogShowing, { shown: padTwo(shown), total: padTwo(total) });
+  return `${showing} · ${words.sourceLabel}: ${POSTS_SOURCE}`;
 }
 
 /**

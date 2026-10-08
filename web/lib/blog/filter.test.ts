@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { de } from "../i18n/messages/de.ts";
+import { en } from "../i18n/messages/en.ts";
+
 import type { PostMeta } from "../content/posts.ts";
 import { tagChips } from "./tags.ts";
 import {
@@ -141,22 +144,32 @@ describe("the echo in the empty panel", () => {
   const chips = tagChips([post({ tags: ["ci-cd"] })]);
 
   it("says nothing when nothing is narrowing", () => {
-    assert.deepEqual(activeLabels(NO_FILTER, chips), []);
+    assert.deepEqual(activeLabels(NO_FILTER, chips, en), []);
   });
 
   it("names its axis, because one is a subject and the other is free text", () => {
-    assert.deepEqual(activeLabels({ tag: "ci-cd", q: "witness" }, chips), [
+    assert.deepEqual(activeLabels({ tag: "ci-cd", q: "witness" }, chips, en), [
       "TAG: CI-CD",
       'SEARCH: "witness"',
     ]);
   });
 
+  // `TAG:` STAYS AND `SEARCH:` MOVES, which is the whole rule in one assertion:
+  // the first is the same word in German — messages.test.ts keeps `blogTags` in
+  // its nomenclature list for that reason — and the second is not.
+  it("translates the axis that is a word and keeps the one that is a label", () => {
+    assert.deepEqual(activeLabels({ tag: "ci-cd", q: "witness" }, chips, de), [
+      "TAG: CI-CD",
+      'SUCHE: "witness"',
+    ]);
+  });
+
   it("echoes the query as typed rather than shouting it back", () => {
-    assert.deepEqual(activeLabels({ tag: ALL_TAGS, q: "witness" }, chips), ['SEARCH: "witness"']);
+    assert.deepEqual(activeLabels({ tag: ALL_TAGS, q: "witness" }, chips, en), ['SEARCH: "witness"']);
   });
 
   it("prints a tag with no chip rather than explaining half the emptiness", () => {
-    assert.deepEqual(activeLabels({ tag: "rust", q: "" }, chips), ["TAG: RUST"]);
+    assert.deepEqual(activeLabels({ tag: "rust", q: "" }, chips, en), ["TAG: RUST"]);
   });
 });
 

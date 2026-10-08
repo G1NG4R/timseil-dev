@@ -928,6 +928,32 @@ export const en = {
   contributionsGraph: "{total} contributions over {days} days, {from} to {to}",
   contributionsGraphEmpty: "Contribution calendar {state}",
 
+  // U8a · the counters and the lines that name a source
+  //
+  // `workShowing` AND `blogShowing` ARE TWO KEYS FOR ONE ENGLISH SENTENCE, and
+  // German is the reason. "ZEIGT 03 VON 12" needs nothing after it; put the noun
+  // in and it takes the dative — "ZEIGT 03 VON 12 BEITRÄGEN", where
+  // `blogIndexEntries` right above says `BEITRÄGE`. One key per sentence is what
+  // lets both be right at once.
+  workShowing: "SHOWING {shown} OF {total}",
+  blogShowing: "SHOWING {shown} OF {total} ENTRIES",
+
+  // `FIGURES FROM`, NOT `SOURCE:`, and lib/work/counts.ts carries the reason:
+  // SYS.02's head names where the LIST came from, this line stands over rows
+  // whose operating numbers came from the same place.
+  workFigures: "FIGURES FROM /api/systems",
+
+  // The log row's own count. The noun is `blogEntry`/`blogIndexEntries` — the
+  // two that were already in this file — rather than a third spelling of the
+  // same word.
+  logCount: "{count} {entries} IN THE LOG",
+  homeLogLatest: "LATEST {count}",
+
+  // `TAG:` stays where it is rendered, for the reason `blogTags` is in
+  // messages.test.ts's nomenclature list: it is the same word in German. `SEARCH`
+  // is not.
+  blogFilterSearch: 'SEARCH: "{q}"',
+
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",
   imprint: "IMPRINT",

@@ -10,6 +10,8 @@
 
 import { type SystemList, systemRows } from "../api/systems.ts";
 import { padTwo } from "../api/values.ts";
+import { fill } from "../i18n/fill.ts";
+import type { Messages } from "../i18n/messages/en.ts";
 import { NO_DATA, type StateWord } from "../state/words.ts";
 
 /** The four numbers of the stat rail, in the order the sheet draws them. */
@@ -73,8 +75,11 @@ export function listed(body: SystemList | null): boolean {
  * and has no answer to hand. Two call sites building the same string out of the
  * same four words is how `FIGURES FROM` becomes `SOURCE:` on one of them.
  */
-export function workCount(total: number, shown: number): string {
-  return `SHOWING ${padTwo(shown)} OF ${padTwo(total)} · FIGURES FROM /api/systems`;
+export type WorkCountWords = Pick<Messages, "workShowing" | "workFigures">;
+
+export function workCount(total: number, shown: number, words: WorkCountWords): string {
+  const showing = fill(words.workShowing, { shown: padTwo(shown), total: padTwo(total) });
+  return `${showing} · ${words.workFigures}`;
 }
 
 /**
@@ -101,10 +106,10 @@ export function workCount(total: number, shown: number): string {
  * says the same about the contribution graph's: it "entfällt beim
  * API-Anschluss".
  */
-export function workMeta(body: SystemList | null): string {
-  if (!listed(body)) return `${NO_DATA} · FIGURES FROM /api/systems`;
+export function workMeta(body: SystemList | null, words: WorkCountWords): string {
+  if (!listed(body)) return `${NO_DATA} · ${words.workFigures}`;
 
   const total = systemRows(body).length;
 
-  return workCount(total, total);
+  return workCount(total, total, words);
 }

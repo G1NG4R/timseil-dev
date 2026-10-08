@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { de } from "../i18n/messages/de.ts";
+import { en } from "../i18n/messages/en.ts";
+
 import { padTwo } from "../api/values.ts";
 import type { PostMeta } from "../content/posts.ts";
 
@@ -59,19 +62,27 @@ describe("what the row says about the count", () => {
     // way back from a log with no entry about this system. The line is absent
     // instead — the same call the row makes about the exit it does not draw for
     // a system with no case study.
-    assert.equal(logEntriesLine(0), null);
-    assert.equal(logEntriesLine(-1), null);
+    assert.equal(logEntriesLine(0, en), null);
+    assert.equal(logEntriesLine(-1, en), null);
   });
 
   it("says ENTRY for one and ENTRIES for the rest", () => {
-    assert.equal(logEntriesLine(1), "01 ENTRY IN THE LOG");
-    assert.equal(logEntriesLine(2), "02 ENTRIES IN THE LOG");
-    assert.equal(logEntriesLine(15), "15 ENTRIES IN THE LOG");
+    assert.equal(logEntriesLine(1, en), "01 ENTRY IN THE LOG");
+    assert.equal(logEntriesLine(2, en), "02 ENTRIES IN THE LOG");
+  });
+
+  // THE NOUN IS `blogEntry`/`blogIndexEntries`, the two the catalogue already
+  // held — a third spelling of the same word is the drift ADR 0083's glossary is
+  // written against.
+  it("pluralises in German on the same two nouns the blog uses", () => {
+    assert.equal(logEntriesLine(1, de), "01 BEITRAG IM LOG");
+    assert.equal(logEntriesLine(2, de), "02 BEITRÄGE IM LOG");
+    assert.equal(logEntriesLine(15, en), "15 ENTRIES IN THE LOG");
   });
 
   it("pads to two digits and does not truncate past them", () => {
-    assert.equal(logEntriesLine(9), "09 ENTRIES IN THE LOG");
-    assert.equal(logEntriesLine(120), "120 ENTRIES IN THE LOG");
+    assert.equal(logEntriesLine(9, en), "09 ENTRIES IN THE LOG");
+    assert.equal(logEntriesLine(120, en), "120 ENTRIES IN THE LOG");
   });
 
   it("carries no arrow, because no URL expresses the list it would open", () => {
@@ -81,7 +92,7 @@ describe("what the row says about the count", () => {
     // this system", and ADR 0071 §8 kept filter state out of the URL, so no
     // address on this site narrows the index to a system. If somebody adds an
     // arrow here, this is what says the destination is still not there.
-    assert.equal(logEntriesLine(1)?.includes("→"), false);
+    assert.equal(logEntriesLine(1, en)?.includes("→"), false);
   });
 });
 
@@ -110,7 +121,7 @@ describe("a list this file holds", () => {
     // entry, written in on purpose.
     assert.equal(logEntriesFor(posts, "timseil-dev"), 2);
     assert.equal(
-      logEntriesLine(logEntriesFor(posts, "timseil-dev")),
+      logEntriesLine(logEntriesFor(posts, "timseil-dev"), en),
       `${padTwo(2)} ENTRIES IN THE LOG`,
     );
   });
@@ -118,13 +129,13 @@ describe("a list this file holds", () => {
   it("says nothing about a system nobody has written about", () => {
     // The honest shape rather than a gap: a system with no entry drops the line
     // instead of drawing `00 ENTRIES`.
-    assert.equal(logEntriesLine(logEntriesFor(posts, "talos-prod")), null);
+    assert.equal(logEntriesLine(logEntriesFor(posts, "talos-prod"), en), null);
   });
 
   // AND THE STATE THIS SITE IS ACTUALLY IN SINCE U2, asserted rather than
   // stumbled into: with no entries at all, the row on /work carries no line.
   it("drops the line entirely when there is no log", () => {
     assert.equal(logEntriesFor([], "timseil-dev"), 0);
-    assert.equal(logEntriesLine(0), null);
+    assert.equal(logEntriesLine(0, en), null);
   });
 });

@@ -28,6 +28,8 @@
 // live in rather than from an endpoint.
 
 import { padTwo } from "../api/values.ts";
+import { fill, plural } from "../i18n/fill.ts";
+import type { Messages } from "../i18n/messages/en.ts";
 import type { PostMeta } from "../content/posts.ts";
 
 /**
@@ -59,13 +61,19 @@ export function logEntriesFor(posts: readonly PostMeta[], slug: string): number 
  *
  * IT PLURALISES ON THE COUNT, which the sheet does implicitly: the row draws
  * `01 ENTRY IN THE LOG →` and the design note writes `ENTRIES IN THE LOG`. One
- * entry is an entry.
+ * entry is an entry. The two nouns are `blogEntry` and `blogIndexEntries`, which
+ * were in the catalogue before this line needed them — a third spelling of the
+ * same word is the drift ADR 0083's glossary is written against.
  *
  * ZERO-PADDED, like every other number on this page.
  */
-export function logEntriesLine(count: number): string | null {
+export type LogCountWords = Pick<Messages, "logCount" | "blogEntry" | "blogIndexEntries">;
+
+export function logEntriesLine(count: number, words: LogCountWords): string | null {
   if (count <= 0) return null;
 
-  const noun = count === 1 ? "ENTRY" : "ENTRIES";
-  return `${padTwo(count)} ${noun} IN THE LOG`;
+  return fill(words.logCount, {
+    count: padTwo(count),
+    entries: plural(count, words.blogEntry, words.blogIndexEntries),
+  });
 }

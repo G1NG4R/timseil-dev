@@ -78,7 +78,7 @@ export function Log({
             <Link href={caseStudyHref}>{messages.caseStudyExit} →</Link>
           )
         }
-        meta={logMeta(read)}
+        meta={logMeta(read, messages)}
       />
 
       {entries.length === 0 ? (

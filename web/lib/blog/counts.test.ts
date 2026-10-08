@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { de } from "../i18n/messages/de.ts";
+import { en } from "../i18n/messages/en.ts";
+
 import { NO_DATA } from "../state/words.ts";
 import { POSTS_SOURCE, blogCount, blogEntries, blogLatest } from "./counts.ts";
 
@@ -33,15 +36,23 @@ describe("a directory that was read and holds nothing", () => {
 
 describe("the counter over the list", () => {
   it("states both numbers and its source", () => {
-    assert.equal(blogCount(23, 6), `SHOWING 06 OF 23 ENTRIES · SOURCE: ${POSTS_SOURCE}`);
+    assert.equal(blogCount(23, 6, en), `SHOWING 06 OF 23 ENTRIES · SOURCE: ${POSTS_SOURCE}`);
   });
 
   it("pads both numbers, because the line is drawn in tabular figures", () => {
-    assert.match(blogCount(9, 1), /SHOWING 01 OF 09 ENTRIES/);
+    assert.match(blogCount(9, 1, en), /SHOWING 01 OF 09 ENTRIES/);
   });
 
   it("says 00 of 00 for a log that was read and is empty", () => {
-    assert.match(blogCount(0, 0), /^SHOWING 00 OF 00 ENTRIES/);
+    assert.match(blogCount(0, 0, en), /^SHOWING 00 OF 00 ENTRIES/);
+  });
+
+  // THE DATIVE IS WHY THIS SENTENCE IS ONE KEY. `blogIndexEntries` says
+  // `BEITRÄGE` two lines up in the catalogue and it would be wrong here; the
+  // work counter has no noun after the numbers and needs no second form. Two
+  // keys for one English sentence, and both of them right.
+  it("counts in the language of the route, and declines the noun", () => {
+    assert.equal(blogCount(23, 6, de), `ZEIGT 06 VON 23 BEITRÄGEN · QUELLE: ${POSTS_SOURCE}`);
   });
 
   it("names a source with no port, which changes nothing about the rule", () => {
