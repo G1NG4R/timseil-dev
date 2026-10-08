@@ -187,11 +187,20 @@ describe("the tiles follow the language of the route", () => {
     assert.equal(metricTiles(body(), de, "de").at(0)?.label, `${de.uptime} · 91 D`);
   });
 
-  it("counts the two numbers in the coverage note", () => {
-    assert.equal(coverageNote("de", { measured: 8, window: 91 }), "8 of 91 days measured");
+  // U8 LOCALISED THE DIGITS AND LEFT THE SENTENCE, AND THIS TEST SAID SO. It
+  // asserted "8 of 91 days measured" for `de` on purpose, as the measured half of
+  // a half-done job. U8a finished it, so the assertion moves with the sentence —
+  // and the dative is the reason the whole sentence is one key: `Tage` would be
+  // wrong here and is right in the graph's name.
+  it("counts the two numbers in the coverage note, in the language of the route", () => {
+    assert.equal(coverageNote("de", { measured: 8, window: 91 }, de), "8 von 91 Tagen gemessen");
+    assert.equal(coverageNote("en", { measured: 8, window: 91 }, en), "8 of 91 days measured");
     // Four digits is where the separator starts to matter, and the note is the
     // one place in this file where a count can reach it.
-    assert.equal(coverageNote("de", { measured: 1000, window: 2000 }), "1.000 of 2.000 days measured");
+    assert.equal(
+      coverageNote("de", { measured: 1000, window: 2000 }, de),
+      "1.000 von 2.000 Tagen gemessen",
+    );
   });
 });
 
@@ -229,7 +238,7 @@ describe("values that are not numbers", () => {
 
   it("survives a body with no window at all", () => {
     assert.deepEqual(coverage(body({ window: undefined, days: [] })), { measured: 0, window: 0 });
-    assert.equal(coverageNote("en", { measured: 0, window: 0 }), "— NO DATA");
+    assert.equal(coverageNote("en", { measured: 0, window: 0 }, en), "— NO DATA");
   });
 });
 
@@ -250,8 +259,8 @@ describe("coverage — issue #208", () => {
   // The sentence the issue was written for: the percentage looks the same
   // either way, so the count has to stand beside it.
   it("tells eight measured days from ninety-one", () => {
-    assert.equal(coverageNote("en", coverage(body({ days: days(8) }))), "8 of 91 days measured");
-    assert.equal(coverageNote("en", coverage(body({ days: days(91) }))), "91 of 91 days measured");
+    assert.equal(coverageNote("en", coverage(body({ days: days(8) })), en), "8 of 91 days measured");
+    assert.equal(coverageNote("en", coverage(body({ days: days(91) })), en), "91 of 91 days measured");
   });
 
   it("hangs the note on the uptime tile and on no other", () => {
@@ -261,7 +270,7 @@ describe("coverage — issue #208", () => {
   });
 
   it("says nothing measured rather than nothing at all when the grid is absent", () => {
-    assert.equal(coverageNote("en", coverage(body({ days: undefined }))), "0 of 91 days measured");
+    assert.equal(coverageNote("en", coverage(body({ days: undefined })), en), "0 of 91 days measured");
   });
 });
 
@@ -658,18 +667,18 @@ describe("the count in the section head", () => {
   // The number is `rows.length`, and the seed holding two is exactly the
   // coincidence that lets a typed `02` survive being wrong.
   it("counts the rows it drew and names the endpoint", () => {
-    assert.equal(systemsMeta(SEEDED), "02 SYSTEMS · SOURCE: /api/systems");
+    assert.equal(systemsMeta(SEEDED, en), "02 SYSTEMS · SOURCE: /api/systems");
   });
 
   it("says — NO DATA rather than zero when there was no answer", () => {
-    assert.equal(systemsMeta(null), `${NO_DATA} SYSTEMS · SOURCE: /api/systems`);
+    assert.equal(systemsMeta(null, en), `${NO_DATA} SYSTEMS · SOURCE: /api/systems`);
   });
 
   // An answer that arrived and held nothing is a different statement from no
   // answer at all: the api said there are none. `00` is a measurement.
   it("distinguishes an empty answer from a missing one", () => {
     assert.equal(
-      systemsMeta({ systems: [] } as unknown as SystemList),
+      systemsMeta({ systems: [] } as unknown as SystemList, en),
       "00 SYSTEMS · SOURCE: /api/systems",
     );
   });
@@ -677,16 +686,16 @@ describe("the count in the section head", () => {
   // The distinction the three-way branch exists for. A body that arrived and
   // carries no readable list is not a body that said "none".
   it("does not print a zero for an answer that said nothing", () => {
-    assert.equal(systemsMeta({} as unknown as SystemList), `${NO_DATA} SYSTEMS · SOURCE: /api/systems`);
+    assert.equal(systemsMeta({} as unknown as SystemList, en), `${NO_DATA} SYSTEMS · SOURCE: /api/systems`);
     assert.equal(
-      systemsMeta({ systems: "two" } as unknown as SystemList),
+      systemsMeta({ systems: "two" } as unknown as SystemList, en),
       `${NO_DATA} SYSTEMS · SOURCE: /api/systems`,
     );
   });
 
   it("makes the noun agree with the count", () => {
     assert.equal(
-      systemsMeta({ systems: [{ slug: "a" }] } as unknown as SystemList),
+      systemsMeta({ systems: [{ slug: "a" }] } as unknown as SystemList, en),
       "01 SYSTEM · SOURCE: /api/systems",
     );
   });

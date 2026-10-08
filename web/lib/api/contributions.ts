@@ -16,6 +16,10 @@
 // lib/api/values.ts carries: the generated type describes the contract, not the
 // bytes, and ADR 0035's overlapping start puts a real case behind the difference.
 
+import { count as grouped } from "../format/numbers.ts";
+import { fill } from "../i18n/fill.ts";
+import type { Messages } from "../i18n/messages/en.ts";
+import type { Locale } from "../i18n/routes.ts";
 import { NO_DATA } from "../state/words.ts";
 
 import type { GetBody } from "./client.ts";
@@ -175,7 +179,7 @@ export function ageLabel(seconds: number): string {
 /**
  * The line under the graph: how many, over how long, from where, how old.
  *
- * `652 CONTRIBUTIONS · LAST 367 DAYS · SOURCE: /api/contributions · 22M OLD`
+ * `1.247 CONTRIBUTIONS · LETZTE 367 TAGE · QUELLE: /api/contributions · 22M ALT`
  *
  * THE DAY COUNT IS COUNTED. The sheet writes "LAST 365 DAYS" and the answer
  * carries 367 — 53 weeks, the last of them short. 365 is a round number about a
@@ -203,16 +207,32 @@ export function ageLabel(seconds: number): string {
  * hour-shaped line regularly, and a threshold picked to avoid that would be a
  * number invented here.
  *
- * The words are nomenclature and stay English, the call `trainingMeta` and
- * `systemsMeta` already make.
+ * THIS COMMENT SAID THE WORDS WERE NOMENCLATURE AND IT WAS WRONG, which the
+ * backlog carried as an open contradiction until U8a decided it. `LAST … DAYS`
+ * is a label over a number and `SOURCE` is one over an endpoint — STATE.05 moves
+ * both. What does NOT move is `CONTRIBUTIONS`: it is GitHub's term for the thing
+ * being counted, and `Beiträge` is this site's word for a log entry (ADR 0083's
+ * glossary). One word cannot be two things.
+ *
+ * AND THE TOTAL IS GROUPED NOW. A label in German over an ungrouped four-figure
+ * number would be the one English decimal habit left on the page; `count` is the
+ * same helper the tiles use, locale first.
  */
-export function contributionsMeta(view: GraphView): string {
+export function contributionsMeta(view: GraphView, messages: Messages, locale: Locale): string {
   const parts: string[] = [];
 
-  parts.push(view.total === null ? NO_DATA : `${String(view.total)} CONTRIBUTIONS`);
-  parts.push(view.days === 0 ? NO_DATA : `LAST ${String(view.days)} DAYS`);
-  parts.push("SOURCE: /api/contributions");
-  if (view.ageSec !== null) parts.push(`${ageLabel(view.ageSec)} OLD`);
+  parts.push(
+    view.total === null
+      ? NO_DATA
+      : fill(messages.contributionsTotal, { total: grouped(locale, view.total) }),
+  );
+  parts.push(
+    view.days === 0 ? NO_DATA : fill(messages.contributionsDays, { days: String(view.days) }),
+  );
+  parts.push(`${messages.sourceLabel}: /api/contributions`);
+  if (view.ageSec !== null) {
+    parts.push(fill(messages.contributionsAge, { age: ageLabel(view.ageSec) }));
+  }
 
   return parts.join(" · ");
 }
@@ -226,9 +246,18 @@ export function contributionsMeta(view: GraphView): string {
  * the picture makes, which is the total over the span. So the cells are hidden
  * and the figure is a single `role="img"` with this name.
  */
-export function graphLabel(view: GraphView): string {
+export function graphLabel(view: GraphView, messages: Messages, locale: Locale): string {
   if (view.total === null || view.from === null || view.to === null) {
-    return `Contribution calendar ${NO_DATA}`;
+    return fill(messages.contributionsGraphEmpty, { state: NO_DATA });
   }
-  return `${String(view.total)} contributions over ${String(view.days)} days, ${view.from} to ${view.to}`;
+  // THE DAY COUNT IS NOT GROUPED AND THE TOTAL IS. 367 is a span and reads as
+  // one number in both languages; the total passes four figures and would
+  // otherwise be the only ungrouped one on a German page. The dates stay ISO,
+  // which LANG.01 settles for every date on this site.
+  return fill(messages.contributionsGraph, {
+    total: grouped(locale, view.total),
+    days: String(view.days),
+    from: view.from,
+    to: view.to,
+  });
 }

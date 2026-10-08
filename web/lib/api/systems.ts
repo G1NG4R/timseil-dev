@@ -18,6 +18,7 @@
 // start puts a real case behind the difference.
 
 import { count, decimal } from "../format/numbers.ts";
+import { fill, plural } from "../i18n/fill.ts";
 import type { Messages } from "../i18n/messages/en.ts";
 import type { Locale } from "../i18n/routes.ts";
 import { dayState, systemStateWord } from "../state/derive.ts";
@@ -194,7 +195,7 @@ export function metricTiles(
       // answer, the tile already says `— NO DATA` where the number goes;
       // repeating it underneath would read as two separate absences and say
       // nothing about coverage, which is the one thing the line is for.
-      ...(cover.window === 0 ? {} : { note: coverageNote(locale, cover) }),
+      ...(cover.window === 0 ? {} : { note: coverageNote(locale, cover, messages) }),
     },
     { label: "P95", value: p95Value(locale, finiteNumber(metrics?.p95Ms)), unit: "MS" },
     {
@@ -301,8 +302,8 @@ export function incidentCountValue(locale: Locale, incidents: unknown): string |
 /**
  * The second line under the uptime figure.
  *
- * Plain English and a count, not a percentage of a percentage. "8 of 91 days
- * measured" is a sentence a reader can hold against the grid H2 puts under it;
+ * A sentence and a count, not a percentage of a percentage. "8 of 91 days
+ * measured" is something a reader can hold against the grid H2 puts under it;
  * "8.8 % coverage" is a second number to interpret.
  *
  * A window of zero is not a coverage of zero — it is not knowing what the
@@ -310,15 +311,17 @@ export function incidentCountValue(locale: Locale, incidents: unknown): string |
  * placeholder, and `metricTiles` drops the line entirely rather than stacking a
  * second `— NO DATA` under the first.
  */
-export function coverageNote(locale: Locale, cover: Coverage): string {
+export function coverageNote(locale: Locale, cover: Coverage, messages: Messages): string {
   if (cover.window === 0) return NO_DATA;
-  // THE TWO NUMBERS FOLLOW THE LOCALE AND THE SENTENCE AROUND THEM DOES NOT,
-  // YET. U8 localises the digits; U8a moves this line into the catalogue with
-  // the rest of lib/api/'s prose, where a German reader gets "8 von 91 Tagen
-  // gemessen". Localising half of it now is not a half-measure — it is the half
-  // this phase owns, and the half that would otherwise print a German page's
-  // only English decimal mark.
-  return `${count(locale, cover.measured)} of ${count(locale, cover.window)} days measured`;
+  // U8 LOCALISED THE DIGITS AND U8a MOVED THE SENTENCE, which is why this is a
+  // template and not two fragments with a number between them: German puts the
+  // noun in the dative — "8 von 91 TagEN gemessen" — and the same noun is
+  // accusative in `contributionsGraph`. One key per sentence is what lets both
+  // be right; lib/i18n/fill.ts carries the long version of that argument.
+  return fill(messages.csCoverage, {
+    measured: count(locale, cover.measured),
+    window: count(locale, cover.window),
+  });
 }
 
 /**
@@ -617,7 +620,7 @@ export function systemRows(body: SystemList | null): readonly SystemRowView[] {
  * TrainingLog.tsx's arrangement, and the reason the head is inside the streamed
  * region at all.
  */
-export function systemsMeta(body: SystemList | null): string {
+export function systemsMeta(body: SystemList | null, messages: Messages): string {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
 
   // THREE CASES AND NOT TWO. No body at all, a body with no readable list, and
@@ -628,7 +631,9 @@ export function systemsMeta(body: SystemList | null): string {
   const count = Array.isArray(raw.systems) ? systemRows(body).length : null;
 
   const label = count === null ? NO_DATA : padTwo(count);
-  const noun = count === 1 ? "SYSTEM" : "SYSTEMS";
+  // AN ABSENT COUNT TAKES THE PLURAL, which is what `— NO DATA SYSTEMS` has
+  // always read; the `?? 0` is that sentence and not a count of nothing.
+  const noun = plural(count ?? 0, messages.systemOne, messages.systemOther);
 
-  return `${label} ${noun} · SOURCE: /api/systems`;
+  return `${label} ${noun} · ${messages.sourceLabel}: /api/systems`;
 }

@@ -52,8 +52,10 @@ export function WorkHeader({
   counts: StatusCounts | null;
   messages: Messages;
 }) {
-  // `SYSTEMS` is nomenclature and stays where it is rendered — `systemsMeta`
-  // writes the same word inline one page over, for the same reason.
+  // `SYSTEMS` WAS NOMENCLATURE AND IT IS A NOUN OVER A NUMBER. `systemsMeta`
+  // wrote the same word inline one page over until U8a found that the German
+  // plural is `SYSTEME` and the singular is not; the catalogue carries both as
+  // `systemOne`/`systemOther`, and this label reads them in the same phase.
   const tiles =
     counts === null
       ? [{ key: "all", label: "SYSTEMS", value: null }]

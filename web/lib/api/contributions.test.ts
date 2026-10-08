@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { de } from "../i18n/messages/de.ts";
+import { en } from "../i18n/messages/en.ts";
+
 import { ageLabel, contributionsMeta, graphLabel, graphView, type Contributions } from "./contributions.ts";
 
 /** A week of seven days beginning on `sunday`, every one of them empty. */
@@ -118,11 +121,14 @@ describe("the caption counts what is drawn", () => {
   it("prints the api's total and the counted span", () => {
     const view = graphView(answer([week("2026-08-02")], { totalContributions: 652, cacheAgeSec: 1357 }));
 
-    assert.equal(contributionsMeta(view), "652 CONTRIBUTIONS · LAST 7 DAYS · SOURCE: /api/contributions · 22M OLD");
+    assert.equal(
+      contributionsMeta(view, en, "en"),
+      "652 CONTRIBUTIONS · LAST 7 DAYS · SOURCE: /api/contributions · 22M OLD",
+    );
   });
 
   it("names the endpoint even when there is nothing to say about it", () => {
-    const meta = contributionsMeta(graphView(null));
+    const meta = contributionsMeta(graphView(null), en, "en");
 
     assert.match(meta, /SOURCE: \/api\/contributions/);
     assert.match(meta, /— NO DATA/);
@@ -131,13 +137,49 @@ describe("the caption counts what is drawn", () => {
   // The cold 502: GitHub has never answered, so there is no age to print — and
   // an age of nothing must not read as an age of zero.
   it("leaves the age off entirely when there is none", () => {
-    assert.doesNotMatch(contributionsMeta(graphView(null)), /OLD/);
+    assert.doesNotMatch(contributionsMeta(graphView(null), en, "en"), /OLD/);
   });
 
   it("prints a fresh answer's age rather than hiding it", () => {
     const view = graphView(answer([week("2026-08-02")], { totalContributions: 1, cacheAgeSec: 0 }));
 
-    assert.match(contributionsMeta(view), /· 0S OLD$/);
+    assert.match(contributionsMeta(view, en, "en"), /· 0S OLD$/);
+  });
+});
+
+describe("the caption follows the language of the route", () => {
+  // THE ONE WORD THAT DOES NOT MOVE, pinned beside the three that do. ADR 0083:
+  // `CONTRIBUTIONS` is GitHub's term for the thing being counted, and `Beiträge`
+  // is this site's word for a log entry. The frame is German, the term is not.
+  it("translates the frame, keeps CONTRIBUTIONS, and groups the total", () => {
+    const view = graphView(
+      answer([week("2026-08-02")], { totalContributions: 1247, cacheAgeSec: 1357 }),
+    );
+
+    assert.equal(
+      contributionsMeta(view, de, "de"),
+      "1.247 CONTRIBUTIONS · LETZTE 7 TAGE · QUELLE: /api/contributions · 22M ALT",
+    );
+    // And English groups the same number its own way, on the same answer.
+    assert.match(contributionsMeta(view, en, "en"), /^1,247 CONTRIBUTIONS · LAST 7 DAYS/);
+  });
+
+  // THE NAME A SCREEN READER HEARS, which was English on /de until U8a — the
+  // class of word no `>TEXT<` grep finds, and the reason the accessible names
+  // are in this phase at all.
+  it("says the graph's name in German, with ISO dates and an accusative noun", () => {
+    const view = graphView(
+      answer([week("2026-08-02"), week("2026-08-09")], { totalContributions: 1247 }),
+    );
+
+    assert.equal(
+      graphLabel(view, de, "de"),
+      "1.247 Contributions über 14 Tage, 2026-08-02 bis 2026-08-15",
+    );
+  });
+
+  it("keeps the placeholder a token when there is nothing to name", () => {
+    assert.equal(graphLabel(graphView(null), de, "de"), "Contribution-Kalender — NO DATA");
   });
 });
 
@@ -163,10 +205,13 @@ describe("the graph carries one name and not three hundred", () => {
   it("says the claim the picture makes", () => {
     const view = graphView(answer([week("2026-08-02"), week("2026-08-09")], { totalContributions: 652 }));
 
-    assert.equal(graphLabel(view), "652 contributions over 14 days, 2026-08-02 to 2026-08-15");
+    assert.equal(
+      graphLabel(view, en, "en"),
+      "652 contributions over 14 days, 2026-08-02 to 2026-08-15",
+    );
   });
 
   it("says nothing it cannot support", () => {
-    assert.match(graphLabel(graphView(null)), /— NO DATA/);
+    assert.match(graphLabel(graphView(null), en, "en"), /— NO DATA/);
   });
 });

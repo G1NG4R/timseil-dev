@@ -160,8 +160,8 @@ export default async function Home() {
       <Uplink
         key="SYS.03"
         graph={
-          <Suspense fallback={<ContributionGraph read={WAITING} messages={messages} />}>
-            <ContributionGraphLive messages={messages} />
+          <Suspense fallback={<ContributionGraph read={WAITING} messages={messages} locale={locale} />}>
+            <ContributionGraphLive messages={messages} locale={locale} />
           </Suspense>
         }
         strip={

@@ -81,6 +81,8 @@ export const de: Messages = {
   themeAria: "Farbschema",
   altLabel: "ALT",
 
+  sourceLabel: "QUELLE",
+
   // STATE.05's rule, applied: the label is German and the data value in the api
   // stays `live`, `in_build`, `queued`. `LIVE` and `OFFLINE` are the two words a
   // German operator says in English anyway, and LANG.01 names `ONLINE` in the
@@ -108,7 +110,6 @@ export const de: Messages = {
 
   csYear: "JAHR",
   csStatus: "STATUS",
-  csSource: "QUELLE",
   csProblem: "PROBLEM",
   csConstraints: "RANDBEDINGUNGEN",
   csErrorRate: "FEHLERRATE",
@@ -285,7 +286,6 @@ export const de: Messages = {
   blogRead: "LESEZEIT",
   blogContents: "INHALT",
   blogSummary: "ZUSAMMENFASSUNG",
-  blogRunsIn: "LÄUFT IN",
   blogEditSource: "AUF GITHUB BEARBEITEN",
   // THE TWO FOOT LABELS ARE SYMMETRIC IN GERMAN AND ASYMMETRIC IN ENGLISH, and
   // that is grammar rather than a liberty: `PREVIOUS` is a complete label in
@@ -351,6 +351,36 @@ export const de: Messages = {
   notFoundSelectedWork: "AUSGEWÄHLTE ARBEITEN",
   notFoundReplay: "GLITCH WIEDERHOLEN",
   notFoundBudgetLede: "Solange du hier bist — beantworte die Anfragen.",
+
+  // U8a. Die Wörter stehen in ADR 0083; was hier zählt, ist `SPUR` für `track`
+  // und `BELEG` für `evidence` — zweimal anders geschrieben wäre ein Fund.
+  evidenceRunsIn: "LÄUFT IN",
+  evidenceShippedIn: "AUSGELIEFERT IN",
+  evidenceRunningIn: "IM EINSATZ IN",
+  evidencePlannedIn: "GEPLANT FÜR",
+  evidenceNone: "NOCH KEIN SYSTEM",
+  evidenceLabel: "BELEG",
+
+  // `SYSTEM` ist auf Deutsch dasselbe Wort, der Plural nicht.
+  systemOne: "SYSTEM",
+  systemOther: "SYSTEME",
+
+  trainingSelfTracked: "SELBST ERFASST",
+  trainingTracks: "{count} SPUREN",
+
+  // Dativ, und genau deshalb ist der ganze Satz der Schlüssel: `Tage` stünde
+  // hier falsch und in `contributionsGraph` richtig.
+  csCoverage: "{measured} von {window} Tagen gemessen",
+
+  // `CONTRIBUTIONS` bleibt GitHubs Wort — `Beiträge` gehört dem Log-Eintrag.
+  contributionsTotal: "{total} CONTRIBUTIONS",
+  contributionsDays: "LETZTE {days} TAGE",
+  contributionsAge: "{age} ALT",
+
+  // Vorgelesen, nicht gezeichnet. `Contributions` groß, weil es im Deutschen
+  // ein Substantiv ist, und Akkusativ: `über 367 Tage`.
+  contributionsGraph: "{total} Contributions über {days} Tage, {from} bis {to}",
+  contributionsGraphEmpty: "Contribution-Kalender {state}",
 
   based: "MIT SITZ IN LUXEMBURG",
   privacy: "DATENSCHUTZ",

@@ -30,7 +30,7 @@ const WAIT_SOURCE = "ops-api /api/training";
  * failed. ADR 0044's seam holds — one file draws all three, and the head, the
  * section and the scale are the same markup in each — but its old rule that "no
  * answer yet" and "no answer at all" should LOOK the same is what U7 revises.
- * `trainingMeta(null)` still puts `— NO DATA` where each count goes and keeps
+ * `trainingMeta(null, …)` still puts `— NO DATA` where each count goes and keeps
  * `SOURCE: /api/training`, because a count cannot tell the two apart either.
  *
  * THE EMPTY CASE IS A PANEL AND NOT A GRID OF NOTHING. An empty five-card grid
@@ -60,7 +60,7 @@ export function TrainingLog({
   messages: Messages;
 }) {
   const body = readData(read);
-  const cards = modules(body);
+  const cards = modules(body, messages);
 
   return (
     <section className="home-section trn" aria-labelledby="sec-sys-01">
@@ -68,7 +68,7 @@ export function TrainingLog({
         id="SYS.01"
         title="TRAINING LOG"
         titleId="sec-sys-01"
-        meta={trainingMeta(body)}
+        meta={trainingMeta(body, messages)}
       />
 
       {cards.length === 0 ? (

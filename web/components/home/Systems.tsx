@@ -20,7 +20,7 @@ const WAIT_SOURCE = "ops-api /api/systems";
  * THE HEAD IS INSIDE THE STREAMED REGION for TrainingLog's reason one section
  * up. The sheet puts `02 SYSTEMS` in the head, that is the answer's own count,
  * and a head rendered before the answer would either carry no meta or need a
- * second pass for one line. `systemsMeta(null)` writes `— NO DATA SYSTEMS` and
+ * second pass for one line. `systemsMeta(null, messages)` writes `— NO DATA SYSTEMS` and
  * keeps `SOURCE: /api/systems`, so the waiting head names what it waits for.
  *
  * THE LIST IS AN `<ol>` BECAUSE THE NUMBER IS THE ORDER. `01`, `02` are display
@@ -77,7 +77,7 @@ export function Systems({
         id="SYS.02"
         title="SELECTED WORK"
         titleId="sec-sys-02"
-        meta={systemsMeta(body)}
+        meta={systemsMeta(body, messages)}
       />
 
       {entries.length === 0 ? (

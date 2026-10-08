@@ -56,8 +56,8 @@ void test("German is translated, serves German and carries no lang attribute", (
 // EVERY KEY, NOT A SAMPLE OF THEM. The two assertions above name four strings;
 // this one is the whole catalogue, and it is the test that would catch a German
 // value that was left as its English original by accident rather than on
-// purpose. The twelve that ARE identical are nomenclature and are named — a
-// thirteenth has to be argued for here before it can ship.
+// purpose. The ones that ARE identical are nomenclature and are named — a new
+// one has to be argued for here before it can ship, and U8a argued for two.
 void test("German differs from English everywhere except the named nomenclature", () => {
   const SAME = [
     "navLog",
@@ -72,6 +72,16 @@ void test("German differs from English everywhere except the named nomenclature"
     "blogTags",
     "blogIndexFeed",
     "blogIndexSystem",
+
+    // U8a. `SYSTEM` is the same word in German and the plural beside it is not,
+    // which is why `systemOther` is not in this list — the pair is what proves
+    // the match was read rather than missed.
+    "systemOne",
+    // `CONTRIBUTIONS` is GitHub's term for the thing it counts, and `Beiträge`
+    // belongs to a log ENTRY in ADR 0083's glossary. The frame around this key
+    // DOES move — `contributionsDays` and `contributionsAge` are not here — so
+    // the line reads `1.247 CONTRIBUTIONS · LETZTE 367 TAGE` on /de.
+    "contributionsTotal",
   ];
 
   const identical = Object.keys(en).filter(

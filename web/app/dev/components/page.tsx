@@ -121,7 +121,7 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
     },
     { no: "02", title: "Backend", tracks: [] },
   ],
-} as never);
+} as never, en);
 
 /**
  * The two systems the seed holds, plus the state it no longer produces.
@@ -1212,7 +1212,7 @@ export default function GalleryPage() {
           were cut for.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph read={readOk(GALLERY_CALENDAR)} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR)} messages={en} locale="en" />
         </div>
         <p className="gal-states">
           The second one begins on a Wednesday, which no live answer has yet
@@ -1221,7 +1221,7 @@ export default function GalleryPage() {
           nothing on `/` would look wrong enough to notice.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph read={readOk(GALLERY_CALENDAR_OFFSET)} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR_OFFSET)} messages={en} locale="en" />
         </div>
         <p className="gal-states">
           The third is old. The api answers with the last good calendar and its
@@ -1232,9 +1232,9 @@ export default function GalleryPage() {
           replied, which is the only one that makes a claim about the endpoint.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph read={readOk(GALLERY_CALENDAR_STALE)} messages={en} />
-          <ContributionGraph read={WAITING} messages={en} />
-          <ContributionGraph read={DOWN} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR_STALE)} messages={en} locale="en" />
+          <ContributionGraph read={WAITING} messages={en} locale="en" />
+          <ContributionGraph read={DOWN} messages={en} locale="en" />
         </div>
       </section>
 

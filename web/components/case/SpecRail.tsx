@@ -64,7 +64,7 @@ export function SpecRail({
           {hosting}
         </dd>
 
-        <dt className="spec-key">{messages.csSource}</dt>
+        <dt className="spec-key">{messages.sourceLabel}</dt>
         <dd className="spec-val">
           <SourceValue source={source} noLink={messages.csNoLink} />
         </dd>

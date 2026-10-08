@@ -1,6 +1,7 @@
 import { ContributionGraph } from "@/components/home/ContributionGraph";
 import { contributionsNow } from "@/lib/api/readers";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
 import { DOWN, readOk } from "@/lib/state/read";
 
 /**
@@ -21,7 +22,19 @@ import { DOWN, readOk } from "@/lib/state/read";
  * block is drawn before ITS source has answered. One boundary around both would
  * make the operation strip wait for GitHub.
  */
-export async function ContributionGraphLive({ messages }: { messages: Messages }) {
+export async function ContributionGraphLive({
+  messages,
+  locale,
+}: {
+  messages: Messages;
+  locale: Locale;
+}) {
   const body = await contributionsNow();
-  return <ContributionGraph read={body === null ? DOWN : readOk(body)} messages={messages} />;
+  return (
+    <ContributionGraph
+      read={body === null ? DOWN : readOk(body)}
+      messages={messages}
+      locale={locale}
+    />
+  );
 }
