@@ -59,7 +59,7 @@ export function WorkLegend({ href, messages }: { href: string; messages: Message
           page to the training log, and the Routes matrix expects every claim to
           reach its evidence. One button, both widths. */}
       <Link className="work-legend-exit" href={href}>
-        {messages.workTrainingLog} →
+        {messages.trainingLog} →
       </Link>
     </aside>
   );

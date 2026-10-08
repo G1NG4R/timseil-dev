@@ -33,6 +33,7 @@ import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/state/EmptyState";
 import { FilterChip } from "@/components/work/FilterChip";
+import type { Messages } from "@/lib/i18n/messages/en";
 import { type BlogCountWords, blogCount } from "@/lib/blog/counts";
 import {
   ALL_TAGS,
@@ -97,7 +98,8 @@ export function BlogFilters({
     noMatchReason: string;
     reset: string;
   } & BlogCountWords &
-    FilterWords;
+    FilterWords &
+    Pick<Messages, "blogAllTags">;
 }) {
   const [tag, setTag] = useState<string>(ALL_TAGS);
   // The raw field value is its own state and the axis is derived from it. One
@@ -131,7 +133,7 @@ export function BlogFilters({
 
         <div className="blog-chips" role="group" aria-labelledby={`${id}-tag`}>
           <FilterChip
-            label="ALL"
+            label={strings.blogAllTags}
             count={String(rows.length).padStart(2, "0")}
             pressed={tag === ALL_TAGS}
             sentinel

@@ -126,11 +126,16 @@ test("the revision date is on the page and not in the chrome", async ({ page }) 
 // with `aria-current` and the mobile menu carries its own copy of the nav. A
 // test that reads "nothing in the header is current" is asking a different
 // question from the one the sheet answers, and getting a true answer to it.
+// AND THE SELECTOR IS THE CLASS, NOT THE NAME, SINCE U8a. It read
+// `nav[aria-label="Main"]` until the landmark's name became a catalogue key —
+// `Hauptnavigation` on /de. These two tests only visit the English routes, so the
+// old selector still matched; it matched for a reason that had stopped being
+// true, which is the kind of green that goes red in another phase.
 test("the main nav marks nothing active on this page", async ({ page }) => {
-  await expect(page.locator('nav[aria-label="Main"] a[aria-current]')).toHaveCount(0);
+  await expect(page.locator('nav.nav-links a[aria-current]')).toHaveCount(0);
   // And the nav is there to be marked, so the count above is a measurement
   // rather than a selector that matches nothing.
-  await expect(page.locator('nav[aria-label="Main"] a')).not.toHaveCount(0);
+  await expect(page.locator('nav.nav-links a')).not.toHaveCount(0);
 });
 
 // ── The way to the other legal page ────────────────────────────────────────

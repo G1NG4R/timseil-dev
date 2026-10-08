@@ -75,7 +75,7 @@ export function Systems({
     <section className="home-section sys" aria-labelledby="sec-sys-02">
       <SectionHead
         id="SYS.02"
-        title="SELECTED WORK"
+        title={messages.selectedWork}
         titleId="sec-sys-02"
         meta={systemsMeta(body, messages)}
       />

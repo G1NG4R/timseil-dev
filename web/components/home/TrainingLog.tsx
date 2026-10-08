@@ -66,7 +66,7 @@ export function TrainingLog({
     <section className="home-section trn" aria-labelledby="sec-sys-01">
       <SectionHead
         id="SYS.01"
-        title="TRAINING LOG"
+        title={messages.trainingLog}
         titleId="sec-sys-01"
         meta={trainingMeta(body, messages)}
       />

@@ -152,6 +152,7 @@ export function WorkList({
             // how many rows survived the axes. Two strings and not a dictionary.
             workShowing: messages.workShowing,
             workFigures: messages.workFigures,
+            workAnyStack: messages.workAnyStack,
           }}
         />
       )}

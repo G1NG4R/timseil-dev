@@ -233,7 +233,6 @@ export const de: Messages = {
   workLegendInBuild: "heißt: läuft, aber noch nicht für andere.",
   workLegendQueued: "heißt: spezifiziert, nicht geschrieben.",
   workLegendRule: "Nichts wird hochgestuft ohne die Zahl, die es belegt.",
-  workTrainingLog: "TRAININGS-LOG",
   workContact:
     "Nichts hier genau das, was du suchst? Ich erkläre dir gern, wie eines " +
     "dieser Systeme gebaut ist.",
@@ -348,7 +347,6 @@ export const de: Messages = {
   notFoundRouteContact: "Kanal öffnen",
   notFoundCvHint: "Der CV ist keine Route — tippe cv im Terminal auf /.",
   notFoundReturn: "ZURÜCK ZUR WURZEL",
-  notFoundSelectedWork: "AUSGEWÄHLTE ARBEITEN",
   notFoundReplay: "GLITCH WIEDERHOLEN",
   notFoundBudgetLede: "Solange du hier bist — beantworte die Anfragen.",
 
@@ -391,6 +389,28 @@ export const de: Messages = {
   logCount: "{count} {entries} IM LOG",
   homeLogLatest: "NEUESTE {count}",
   blogFilterSearch: 'SUCHE: "{q}"',
+
+  // U8a. `AUSGEWÄHLTE ARBEITEN` und `TRAININGS-LOG` standen schon hier — unter
+  // `notFoundSelectedWork` und `workTrainingLog`, und die Startseite zeichnete
+  // beide englisch ins Markup. Ein Wort, zwei Schreibweisen, dieselbe Sprache.
+  selectedWork: "AUSGEWÄHLTE ARBEITEN",
+  trainingLog: "TRAININGS-LOG",
+
+  // `UPLINK` ist auf Deutsch dasselbe Wort; die Zeile darunter ist ein Satz.
+  uplink: "UPLINK",
+  uplinkMeta: "ZWEI BLÖCKE · JEDER NENNT SEINE QUELLE",
+
+  channelSection: "KANAL",
+
+  trajectoryPickedUp: "AUFGENOMMEN",
+  trajectoryShipped: "AUSGELIEFERT",
+
+  workAnyStack: "BELIEBIG",
+  blogAllTags: "ALLE",
+
+  // Vorgelesen, nicht gezeichnet.
+  navMainAria: "Hauptnavigation",
+  contactTraceAria: "Vorschau der Anfrage",
 
   based: "MIT SITZ IN LUXEMBURG",
   privacy: "DATENSCHUTZ",

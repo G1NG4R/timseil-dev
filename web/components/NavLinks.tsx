@@ -91,13 +91,23 @@ function scramble(el: HTMLElement, label: string): void {
  * from the dictionary, so the server passes exactly these four strings across
  * the boundary rather than the whole of it.
  */
-export function NavLinks({ labels, hasLog }: { labels: Record<NavId, string>; hasLog: boolean }) {
+export function NavLinks({
+  labels,
+  hasLog,
+  mainAria,
+}: {
+  labels: Record<NavId, string>;
+  hasLog: boolean;
+  /** The landmark's accessible name. A string and not the dictionary, for
+   *  LangMenu's reason: every prop here is serialised into every page. */
+  mainAria: string;
+}) {
   const pathname = usePathname();
   const active = activeNav(pathname);
   const locale = localeOf(pathname);
 
   return (
-    <nav className="nav-links" aria-label="Main">
+    <nav className="nav-links" aria-label={mainAria}>
       {navEntries(hasLog).map((entry) => {
         const on = entry.id === active;
         const label = labels[entry.id];

@@ -87,8 +87,8 @@ export default async function Page() {
       <TrajectoryPanel
         key={station.key}
         station={station}
-        pickedUp="PICKED UP"
-        shippedLabel="SHIPPED"
+        pickedUp={messages.trajectoryPickedUp}
+        shippedLabel={messages.trajectoryShipped}
         href={study === null ? null : localeHref(locale, caseStudyPath(study))}
       />
     );

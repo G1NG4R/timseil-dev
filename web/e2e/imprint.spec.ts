@@ -128,9 +128,14 @@ test("the revision date is on the page and not in the chrome", async ({ page }) 
 // the current language with `aria-current` and the mobile menu carries its own
 // copy of the navigation, so the broader query finds three elements and answers
 // a question nobody asked. legal.spec.ts records that finding in full.
+// AND THE SELECTOR IS THE CLASS, NOT THE NAME, SINCE U8a. It read
+// `nav[aria-label="Main"]` until the landmark's name became a catalogue key —
+// `Hauptnavigation` on /de. These two tests only visit the English routes, so the
+// old selector still matched; it matched for a reason that had stopped being
+// true, which is the kind of green that goes red in another phase.
 test("the main nav marks nothing active on this page", async ({ page }) => {
-  await expect(page.locator('nav[aria-label="Main"] a[aria-current]')).toHaveCount(0);
-  await expect(page.locator('nav[aria-label="Main"] a')).not.toHaveCount(0);
+  await expect(page.locator('nav.nav-links a[aria-current]')).toHaveCount(0);
+  await expect(page.locator('nav.nav-links a')).not.toHaveCount(0);
 });
 
 // ── The way to the other legal page ────────────────────────────────────────

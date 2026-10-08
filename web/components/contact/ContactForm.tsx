@@ -62,6 +62,9 @@ import {
  */
 export interface ContactCopy {
   emailHint: string;
+  /** The trace panel's accessible name. ADR 0050's budget is why this rides in
+   *  the copy object rather than the dictionary. */
+  tracePreview: string;
   sending: string;
   accepted: string;
   invalid: string;
@@ -497,7 +500,7 @@ export function ContactForm({ copy }: { copy: ContactCopy }) {
         </p>
       </form>
 
-      <TxTrace body={sentBody ?? preview} lines={log} state={state} />
+      <TxTrace body={sentBody ?? preview} lines={log} state={state} aria={copy.tracePreview} />
     </div>
   );
 }

@@ -24,10 +24,14 @@ export function TxTrace({
   body,
   lines: log,
   state,
+  aria,
 }: {
   body: ContactRequest | null;
   lines: readonly LogLine[];
   state: ContactStateKey;
+  /** The panel's accessible name. The lines inside it stay English — a log is
+   *  the machine's voice — and the block says so with its own `lang`. */
+  aria: string;
 }) {
   const mark = CONTACT_MARKS[state];
 
@@ -45,7 +49,7 @@ export function TxTrace({
     // resting state it has no lines at all — an empty bordered box on a phone
     // would be a component announcing that it has nothing to say. layout.css
     // reads the attribute; the count is not a design value.
-    <aside className="tx" aria-label="Request preview" data-log={log.length > 0 ? "" : undefined}>
+    <aside className="tx" aria-label={aria} data-log={log.length > 0 ? "" : undefined}>
       {/* THE TONE IS ON THE HEAD AND NOT ON A WRAPPER INSIDE IT. state.css sets
           `--st-color` from `[data-tone]` on any element and `.st-dot` and
           `.st-word` paint with it, so the dot can stay where the sheet draws it

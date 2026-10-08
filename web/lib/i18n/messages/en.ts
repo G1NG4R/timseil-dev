@@ -477,7 +477,6 @@ export const en = {
   workLegendInBuild: "means it runs, but not yet for anyone else.",
   workLegendQueued: "means specified, not written.",
   workLegendRule: "Nothing is promoted without the figure to back it.",
-  workTrainingLog: "TRAINING LOG",
 
   // ROUTES GAP #06, AND THE SHEET CLOSED IT WITH THE WRONG TWO THINGS. The
   // Routes matrix marks `/work → /contact` as a content cross-reference that
@@ -857,7 +856,6 @@ export const en = {
   notFoundCvHint: "The CV is not a route — type cv in the terminal on /.",
 
   notFoundReturn: "RETURN TO ROOT",
-  notFoundSelectedWork: "SELECTED WORK",
 
   // H10b. The one control on this page that does not navigate, and the one
   // whose words say what happens rather than where you go. It IS a string
@@ -953,6 +951,51 @@ export const en = {
   // messages.test.ts's nomenclature list: it is the same word in German. `SEARCH`
   // is not.
   blogFilterSearch: 'SEARCH: "{q}"',
+
+  // U8a · the words that were drawn in the markup
+  //
+  // THE HOMEPAGE WAS THE STRAGGLER AND THE CATALOGUE HAD ALREADY DECIDED. Two of
+  // these were in this file before U8a and were read on other pages only:
+  // `workTrainingLog` on /work's legend and `notFoundSelectedWork` on the 404.
+  // The homepage drew both as JSX attributes, so /de said `TRAININGS-LOG` on
+  // /de/work and `TRAINING LOG` on /de — one word, two spellings, same site,
+  // same language. They are renamed here rather than copied: the page that reads
+  // a word should not have to be the page it was named after.
+  //
+  // AND THE COMMENT IN THE /work BLOCK ABOVE SAID THE OPPOSITE. It claimed
+  // LANG.01 puts the four section names in the nomenclature set and that "a
+  // German homepage still reads SYS.02 SELECTED WORK". The sheet's own matrix row
+  // for `Sektionstitel` translates `TRAINING LOG` as `TRAININGS-LOG`, and this
+  // catalogue had already done it. Corrected there, recorded here.
+  selectedWork: "SELECTED WORK",
+  trainingLog: "TRAINING LOG",
+
+  // `UPLINK` IS THE SAME WORD IN GERMAN and is read from here anyway, for the
+  // reason `navLog` is: a decision a reviewer can see beats one that looks like
+  // an oversight. Its meta line is a sentence and moves.
+  uplink: "UPLINK",
+  uplinkMeta: "TWO BLOCKS · EACH NAMES ITS SOURCE",
+
+  // SYS.06's head. `channel` beside it is the hero's verb phrase — "OPEN A
+  // CHANNEL" — and this is the section's name, which German spells `KANAL`.
+  channelSection: "CHANNEL",
+
+  // The two station labels the Trajectory rail draws. The /about block above
+  // calls them "the sheet's own labels", which is where they came from and not a
+  // reason to leave them English.
+  trajectoryPickedUp: "PICKED UP",
+  trajectoryShipped: "SHIPPED",
+
+  // The two sentinel chips. `ALL` and `ANY` are the only words in either filter
+  // row that are not a state word or a tag's own name.
+  workAnyStack: "ANY",
+  blogAllTags: "ALL",
+
+  // Two accessible names that were in the markup. A screen reader on /de heard
+  // `Main` and `Request preview` in English until U8a — the class of word no
+  // `>TEXT<` grep finds, which is the same lesson U8 learnt from a template.
+  navMainAria: "Main",
+  contactTraceAria: "Request preview",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { SectionHead } from "@/components/ui/SectionHead";
+import type { Messages } from "@/lib/i18n/messages/en";
 
 /**
  * SYS.03 whole: the head, and the two blocks under it.
@@ -24,16 +25,24 @@ import { SectionHead } from "@/components/ui/SectionHead";
  * Suspense wiring lives in app/[lang]/page.tsx with the other two — one file
  * that says which regions of this page stream.
  */
-export function Uplink({ graph, strip }: { graph: ReactNode; strip: ReactNode }) {
+export function Uplink({
+  graph,
+  strip,
+  messages,
+}: {
+  graph: ReactNode;
+  strip: ReactNode;
+  messages: Messages;
+}) {
   return (
     <section className="home-section upl" aria-labelledby="sec-sys-03">
       <SectionHead
         id="SYS.03"
-        title="UPLINK"
+        title={messages.uplink}
         titleId="sec-sys-03"
-        // The sheet's own line, in English. It is a statement and not a count,
-        // which is exactly why this head does not have to wait for anything.
-        meta="TWO BLOCKS · EACH NAMES ITS SOURCE"
+        // The sheet's own line. It is a statement and not a count, which is
+        // exactly why this head does not have to wait for anything.
+        meta={messages.uplinkMeta}
       />
       {graph}
       {strip}

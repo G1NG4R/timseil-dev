@@ -35,6 +35,7 @@ import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/state/EmptyState";
 import { FilterChip } from "@/components/work/FilterChip";
+import type { Messages } from "@/lib/i18n/messages/en";
 import { type WorkCountWords, workCount } from "@/lib/work/counts";
 import type { StateWord } from "@/lib/state/words";
 import {
@@ -99,7 +100,7 @@ export function WorkFilters({
     noMatchHead: string;
     noMatchReason: string;
     reset: string;
-  } & WorkCountWords;
+  } & WorkCountWords & Pick<Messages, "workAnyStack">;
 }) {
   const [axis, setAxis] = useState<Axis>(NO_FILTER);
   // Stable across the server pass and hydration, which a counter in this file
@@ -153,7 +154,7 @@ export function WorkFilters({
 
             <div className="work-chips" role="group" aria-labelledby={`${id}-stack`}>
               <FilterChip
-                label="ANY"
+                label={strings.workAnyStack}
                 pressed={axis.stack === ANY_STACK}
                 sentinel
                 onPress={() => {

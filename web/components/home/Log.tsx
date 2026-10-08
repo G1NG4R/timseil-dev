@@ -71,7 +71,7 @@ export function Log({
     <section className="home-section log" aria-labelledby="sec-sys-04">
       <SectionHead
         id="SYS.04"
-        title="LOG"
+        title={messages.navLog}
         titleId="sec-sys-04"
         action={
           caseStudyHref === null ? undefined : (

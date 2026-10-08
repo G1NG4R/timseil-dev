@@ -158,6 +158,7 @@ export default async function Home() {
     // three states rather than two: only the read that FAILED says so.
     "SYS.03": (
       <Uplink
+        messages={messages}
         key="SYS.03"
         graph={
           <Suspense fallback={<ContributionGraph read={WAITING} messages={messages} locale={locale} />}>

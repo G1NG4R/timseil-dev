@@ -82,6 +82,10 @@ void test("German differs from English everywhere except the named nomenclature"
     // DOES move — `contributionsDays` and `contributionsAge` are not here — so
     // the line reads `1.247 CONTRIBUTIONS · LETZTE 367 TAGE` on /de.
     "contributionsTotal",
+    // `UPLINK` is the same word in German. It is read from the catalogue anyway,
+    // for the reason `navLog` is: a decision a reviewer can see beats one that
+    // looks like an oversight, and the homepage drew it in the markup until U8a.
+    "uplink",
   ];
 
   const identical = Object.keys(en).filter(

@@ -620,7 +620,12 @@ export default function GalleryPage() {
           {CONTACT_STATE_KEYS.map((state) => (
             <div className="gal-case" key={state}>
               <span className="gal-case-label">{state}</span>
-              <TxTrace body={galleryBody(state)} lines={galleryLog(state)} state={state} />
+              <TxTrace
+                body={galleryBody(state)}
+                lines={galleryLog(state)}
+                state={state}
+                aria={en.contactTraceAria}
+              />
             </div>
           ))}
         </div>

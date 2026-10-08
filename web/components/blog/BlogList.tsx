@@ -156,6 +156,7 @@ export function BlogList({
           blogShowing: messages.blogShowing,
           sourceLabel: messages.sourceLabel,
           blogFilterSearch: messages.blogFilterSearch,
+          blogAllTags: messages.blogAllTags,
         }}
       />
     </>

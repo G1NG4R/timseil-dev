@@ -23,6 +23,9 @@ import {
  *  are the strings it needs and not the dictionary they came from. */
 export interface MenuStrings {
   readonly menuAria: string;
+  /** The nav landmark inside the dialog. A screen reader on /de heard `Main`
+   *  in English until U8a. */
+  readonly mainAria: string;
   readonly closeAria: string;
   readonly close: string;
   readonly langLabel: string;
@@ -140,7 +143,7 @@ export function MobileMenu({
         </div>
 
         <div className="menu-body">
-          <nav aria-label="Main">
+          <nav aria-label={strings.mainAria}>
             {/* THE NUMBER IS A POSITION, NOT AN IDENTITY, and U2 is where the
                 difference shows: with the log entry gone the rows read 01 · 02 ·
                 03, and that is right — it is where a finger lands in this list,

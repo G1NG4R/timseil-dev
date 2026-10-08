@@ -58,9 +58,9 @@ export function WorkHeader({
   // `systemOne`/`systemOther`, and this label reads them in the same phase.
   const tiles =
     counts === null
-      ? [{ key: "all", label: "SYSTEMS", value: null }]
+      ? [{ key: "all", label: messages.systemOther, value: null }]
       : [
-          { key: "all", label: "SYSTEMS", value: counts.all },
+          { key: "all", label: messages.systemOther, value: counts.all },
           { key: "live", label: stateLabel("live", messages), value: counts.live },
           { key: "in_build", label: stateLabel("in_build", messages), value: counts.in_build },
           { key: "queued", label: stateLabel("queued", messages), value: counts.queued },
