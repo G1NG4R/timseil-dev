@@ -149,6 +149,26 @@ mit `ERR_MODULE_NOT_FOUND`. Solange `BUNDLES` leer war, lief die Schleife nie,
 also war der Fehler unsichtbar — genau die Form einer Prüfung, die noch nicht
 fehlschlagen kann. Behoben in C6, mit der Begründung im Test.
 
+### Gefunden · zweimal stand im Katalog, Abschnittstitel seien Nomenklatur
+
+`en.ts` begründete für `/about`, die Köpfe `TRAJECTORY · WHAT I RUN · HOW I
+WORK` und die sieben Kartenbeschriftungen seien Nomenklatur — „a German About
+page would still read SYS.05.02 WHAT I RUN". C5 hatte dieselbe Behauptung über
+die vier Abschnittstitel der Startseite gefunden, während der Katalog für zwei
+von ihnen längst Deutsch trug, gelesen auf einer anderen Seite. ADR 0083,
+Entscheidung 6 entscheidet andersherum: eine Beschriftung über Inhalt ist ein
+Label. **Beide Kommentare sind korrigiert, nicht gelöscht** — der Fund ist
+nicht das eine falsche Wort, sondern dass dieselbe Begründung zweimal
+unabhängig aufgeschrieben wurde.
+
+### Gefunden · `Claude Code` steht auf `/about` zweimal, und ein Test hat es für einen Fehler gehalten
+
+Einmal als Zeile `WERKZEUG` der Operator-Karte, einmal im Satz der Lede über
+den Assistenten (ADR 0079 §3 will beides). Ein Zeuge, der über das ganze
+`<main>` zählte, prüfte damit `aboutLede` und behauptete, er prüfe die Karte.
+Der Test liest jetzt `.op-card`. Kein Seitenfehler — ein Messfehler, und die
+Sorte, die grün aussieht, sobald man die Zahl anpasst.
+
 ### Gemessen · `/de/about` überläuft nirgends zwischen 1440 und 390
 
 Sechs Bildunterschriften teilen eine Reihe, und `Bare-Metal-Cluster` ist die
