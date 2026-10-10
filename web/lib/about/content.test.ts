@@ -11,14 +11,37 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 
-import { OPERATOR, PRINCIPLES, STACK, placeholders, stationNumber } from "./content.ts";
+import {
+  ABOUT_WORDS_EN,
+  type AboutWords,
+  OPERATOR,
+  OPERATOR_KEYS,
+  PRINCIPLES,
+  PRINCIPLE_KEYS,
+  STACK,
+  STACK_KEYS,
+  aboutContentFor,
+  operatorRows,
+  placeholders,
+  principleList,
+  stackTiles,
+  stationNumber,
+} from "./content.ts";
+import { ABOUT_WORDS_DE } from "./content.de.ts";
+
+/** The page's tables in every language that has them, read the way /about reads
+ *  them: through the bundle, so an unwired translation cannot pass. */
+const LANGUAGES = [
+  { language: "en", content: aboutContentFor("en") },
+  { language: "de", content: aboutContentFor("de") },
+] as const;
 
 /** Every string this page prints out of these tables, flattened. */
-function shipped(): readonly string[] {
+function shipped(content: (typeof LANGUAGES)[number]["content"]): readonly string[] {
   return [
-    ...OPERATOR.flatMap((row) => [row.label, row.value]),
-    ...STACK.flatMap((tile) => [tile.label, ...tile.names]),
-    ...PRINCIPLES.flatMap((item) => [item.title, item.detail]),
+    ...content.operator.flatMap((row) => [row.label, row.value]),
+    ...content.stack.flatMap((tile) => [tile.label, ...tile.names]),
+    ...content.principles.flatMap((item) => [item.title, item.detail]),
   ];
 }
 
@@ -45,7 +68,12 @@ function clusterComponents(): readonly string[] {
 }
 
 void test("nothing this page prints is a bracketed placeholder", () => {
-  assert.deepEqual(placeholders(shipped()), []);
+  // IN BOTH LANGUAGES. The sheet's DE table is where `[FOLGT]` comes from
+  // (ADR 0083, decision 7), so a German bundle is exactly where the next
+  // bracket arrives.
+  for (const { language, content } of LANGUAGES) {
+    assert.deepEqual(placeholders(shipped(content)), [], language);
+  }
 });
 
 void test("placeholders() finds what the sheet actually carries", () => {
@@ -170,4 +198,102 @@ void test("stationNumber keeps two digits and does not truncate past nine", () =
   assert.equal(stationNumber(0), "01");
   assert.equal(stationNumber(9), "10");
   assert.equal(stationNumber(99), "100");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// U8a · what German may move and what it may not
+
+// ADR 0083, DECISION 6, AS AN ASSERTION: "die Beschriftung wird übersetzt, der
+// Datenwert und der Metrikname nicht." Six of the seven values are data and
+// have to be the same string in both languages; `ROUTE` is a sentence and has
+// to be a different one. Both halves, because each on its own is half the rule
+// — and the pair is what would have let `Luxembourg` quietly become `Luxemburg`
+// in one place while the imprint kept the other.
+void test("German translates every label and exactly one value", () => {
+  const english = new Map(OPERATOR.map((row) => [row.key, row]));
+  const german = new Map(aboutContentFor("de").operator.map((row) => [row.key, row]));
+
+  assert.deepEqual([...german.keys()], [...OPERATOR_KEYS]);
+
+  const moved: string[] = [];
+  for (const key of OPERATOR_KEYS) {
+    const before = english.get(key);
+    const after = german.get(key);
+    assert.ok(before !== undefined && after !== undefined, key);
+    if (before.value !== after.value) moved.push(key);
+  }
+
+  assert.deepEqual(moved, ["route"], "a datum was translated, or the sentence was not");
+
+  // `NAME` and `MAIL` are the same word in German. They are named here rather
+  // than left to a set comparison, so a label that stopped being translated by
+  // accident cannot hide behind them.
+  const same = OPERATOR_KEYS.filter((key) => english.get(key)?.label === german.get(key)?.label);
+  assert.deepEqual(same, ["name", "mail"]);
+
+  assert.equal(german.get("route")?.accent, true, "the accent follows the row, not the language");
+});
+
+// THE BROKEN CASE THIS FILE CAN BUILD ITSELF. A language that leaves the
+// sentence out does not ship a card with an empty row: the page is prerendered,
+// so `operatorRows` throws and the build stops. The fixture is the English
+// words with the one sentence removed, which is also the exact shape of a
+// translator deleting a line.
+void test("a card row with no value anywhere refuses to render", () => {
+  const silent: AboutWords = {
+    ...ABOUT_WORDS_EN,
+    operator: { ...ABOUT_WORDS_EN.operator, route: { label: "ROUTE", value: null } },
+  };
+
+  assert.throws(() => operatorRows(silent), /operator row route has no value/);
+});
+
+// ONE LABEL OF SIX STAYS, AND IT IS NAMED. `EDGE` is the word German ops speech
+// uses; `RAND` would be the translation nobody says. The other five move, and a
+// set comparison would let a second one stop moving without saying so.
+void test("German moves five of the six stack axes and keeps the component names", () => {
+  const english = stackTiles(ABOUT_WORDS_EN);
+  const german = stackTiles(ABOUT_WORDS_DE);
+
+  assert.deepEqual(
+    german.map((tile) => tile.key),
+    [...STACK_KEYS],
+  );
+
+  for (const [index, tile] of german.entries()) {
+    assert.deepEqual(tile.names, english[index].names, tile.key);
+  }
+
+  const same = german.filter((tile, index) => tile.label === english[index].label);
+  assert.deepEqual(
+    same.map((tile) => tile.label),
+    ["EDGE"],
+  );
+});
+
+void test("all four principles are written in German, title and detail", () => {
+  const english = principleList(ABOUT_WORDS_EN);
+  const german = principleList(ABOUT_WORDS_DE);
+
+  assert.equal(german.length, PRINCIPLE_KEYS.length);
+
+  for (const [index, item] of german.entries()) {
+    assert.notEqual(item.title, english[index].title, `title ${String(index)}`);
+    assert.notEqual(item.detail, english[index].detail, `detail ${String(index)}`);
+    assert.notEqual(item.title.trim(), "");
+    assert.notEqual(item.detail.trim(), "");
+  }
+});
+
+// THE GLOSSARY OF ADR 0083, DECISION 8, WHERE THIS PAGE TOUCHES IT. "Was zweimal
+// anders heißt, ist ein Fund": `outage` is `Ausfall` here and in the catalogue,
+// and `measurement` is `Messung`. The fourth principle is the one at risk — the
+// code says `incidents` and the English heading says `incident` — so the German
+// heading is held against the glossary rather than against the code.
+void test("the German principles use the glossary's words", () => {
+  const german = principleList(ABOUT_WORDS_DE);
+  const joined = german.map((item) => `${item.title} ${item.detail}`).join(" ");
+
+  assert.match(joined, /Ausfall/);
+  assert.equal(/Incident/i.test(joined), false, "the glossary says Ausfall");
 });

@@ -21,6 +21,10 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import { ABOUT_WORDS_EN, PRINCIPLE_KEYS } from "../lib/about/content";
+import { ABOUT_WORDS_DE } from "../lib/about/content.de";
+import { SECTION_IDS, SECTION_WORDS_EN } from "../lib/about/sections";
+import { SECTION_WORDS_DE } from "../lib/about/sections.de";
 import { STATION_KEYS, STATION_PROSE_EN } from "../lib/about/trajectory";
 import { STATION_PROSE_DE } from "../lib/about/trajectory.de";
 import { de } from "../lib/i18n/messages/de";
@@ -140,6 +144,76 @@ test.describe("the German route is German", () => {
       expect(countOf(html, english), `English station prose on /de: ${key}`).toBe(0);
       expect(countOf(html, german), `missing German station prose: ${key}`).toBe(1);
     }
+  });
+
+  // THE THREE SECTION HEADS, AND THE NOTE THEY DISPROVE. en.ts claimed until
+  // this phase that "a German About page would still read SYS.05.02 WHAT I
+  // RUN"; ADR 0083's sixth decision says a heading over content is a label, and
+  // a label is translated. The markers themselves are not — they are the
+  // sheet's notation — so they are counted as still being there.
+  test("the section heads on /de/about are German and the markers are not", async ({ page }) => {
+    await page.goto("/de/about");
+    const text = await mainText(page);
+
+    for (const id of SECTION_IDS) {
+      expect(countOf(text, id), `the marker ${id} left the page`).toBe(1);
+      expect(countOf(text, SECTION_WORDS_EN[id].title), `English head: ${id}`).toBe(0);
+      expect(countOf(text, SECTION_WORDS_DE[id].title), `missing German head: ${id}`).toBe(1);
+    }
+
+    // The rail's hint moves; the line that names the cluster does not, and
+    // sections.de.ts says why it is in the bundle anyway.
+    expect(countOf(text, "SELECT A STATION")).toBe(0);
+    expect(countOf(text, "STATION WÄHLEN")).toBe(1);
+    expect(countOf(text, "TALOS-PROD · BARE METAL")).toBe(1);
+  });
+
+  // DECISION 6 OF ADR 0083, READ OFF THE DELIVERED CARD — both halves of it.
+  // Every label is German, and the six values that are DATA are byte for byte
+  // the English ones: `Luxembourg` is a place, and the imprint spells it the
+  // same way. The seventh value is a sentence and is the only one that moves.
+  test("the operator card translates its labels and keeps its data", async ({ page }) => {
+    await page.goto("/de/about");
+
+    // THE CARD AND NOT THE WHOLE OF `<main>`, which this test found out the
+    // hard way: `Claude Code` is on this page TWICE — the `TOOLING` row and the
+    // lede's own sentence about the assistant — so a count over the page was
+    // asserting something about `aboutLede` while claiming to be about the
+    // card. ADR 0079 §3 is why the page says it in both places.
+    const text = (await page.locator(".op-card").innerText()).replace(/\s+/g, " ");
+
+    expect(countOf(text, "PRIMARY")).toBe(0);
+    expect(countOf(text, "SCHWERPUNKT")).toBe(1);
+    expect(countOf(text, "ROLLE")).toBe(1);
+    expect(countOf(text, "WERKZEUG")).toBe(1);
+
+    expect(countOf(text, "Luxembourg · UTC+1"), "a datum was translated").toBe(1);
+    expect(countOf(text, "Kubernetes · GitOps")).toBe(1);
+    expect(countOf(text, "Claude Code")).toBe(1);
+
+    const route = ABOUT_WORDS_EN.operator.route.value ?? "";
+    const routeDe = ABOUT_WORDS_DE.operator.route.value ?? "";
+    expect(route.length, "the English sentence is the fixture").toBeGreaterThan(0);
+    expect(countOf(text, route)).toBe(0);
+    expect(countOf(text, routeDe)).toBe(1);
+  });
+
+  test("the principles and the stack axes are German on /de/about", async ({ page }) => {
+    await page.goto("/de/about");
+    const text = await mainText(page);
+
+    for (const key of PRINCIPLE_KEYS) {
+      expect(countOf(text, ABOUT_WORDS_EN.principles[key].detail), `English: ${key}`).toBe(0);
+      expect(countOf(text, ABOUT_WORDS_DE.principles[key].detail), `missing German: ${key}`).toBe(1);
+    }
+
+    expect(countOf(text, "DELIVERY")).toBe(0);
+    expect(countOf(text, "AUSLIEFERUNG")).toBe(1);
+    expect(countOf(text, "ÜBERWACHUNG")).toBe(1);
+    // The one axis that reads the same in both languages, and the component
+    // names under all six, which never move.
+    expect(countOf(text, "EDGE")).toBe(1);
+    expect(countOf(text, "kube-prometheus-stack")).toBe(1);
   });
 });
 

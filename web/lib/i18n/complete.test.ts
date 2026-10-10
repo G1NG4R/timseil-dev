@@ -166,6 +166,25 @@ describe("the dictionary follows the whole predicate", () => {
     assert.equal(resolveMessages("de").resolved, "de");
     assert.equal(resolveMessages("fr").resolved, "en");
   });
+
+  // THE GENERAL FORM OF WHAT trajectory.test.ts ASSERTS FOR ONE BUNDLE, and the
+  // reason `languageComplete` reads both halves. A page puts catalogue strings
+  // and bundle strings inside one `<main>` under one `lang`; if the two ever
+  // resolved differently, that attribute would be wrong about half of what it
+  // covers. This holds every registered bundle against the dictionary at once,
+  // so a bundle added later cannot miss the question.
+  it("every registered bundle resolves to the language the catalogue does", () => {
+    for (const locale of LOCALES) {
+      const expected = resolveMessages(locale).resolved;
+      for (const [index, bundle] of BUNDLES.entries()) {
+        assert.equal(
+          resolveContent(bundle, locale).resolved,
+          expected,
+          `BUNDLES[${String(index)}] disagrees with the catalogue about ${locale}`,
+        );
+      }
+    }
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

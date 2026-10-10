@@ -31,7 +31,8 @@ import { JsonLd } from "@/components/JsonLd";
 import { EmptyState } from "@/components/state/EmptyState";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
-import { SECTIONS } from "@/lib/about/sections";
+import { sectionsFor } from "@/lib/about/sections";
+import { aboutContentFor } from "@/lib/about/content";
 import { stationsFor } from "@/lib/about/trajectory";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
@@ -70,6 +71,8 @@ export default async function Page() {
   // than letting this page serve a German label over an English paragraph.
   const { locale, resolved, messages } = await getDictionary();
   const { stations } = stationsFor(locale);
+  const { sections } = sectionsFor(locale);
+  const { operator, stack, principles } = aboutContentFor(locale);
 
   // WHY A TABLE AND NOT THREE `if`s: the same argument app/[lang]/page.tsx
   // reached in H5c. Keys with no fallthrough are a table by definition, and a
@@ -110,8 +113,8 @@ export default async function Page() {
         panels={panels}
       />
     ),
-    "SYS.05.02": <StackTiles />,
-    "SYS.05.03": <Principles />,
+    "SYS.05.02": <StackTiles tiles={stack} />,
+    "SYS.05.03": <Principles principles={principles} />,
   };
 
   return (
@@ -128,10 +131,10 @@ export default async function Page() {
           available={stateLabel("available", messages)}
           availability={messages.availability}
         />
-        <OperatorCard />
+        <OperatorCard rows={operator} />
       </div>
 
-      {SECTIONS.map((section) => {
+      {sections.map((section) => {
         // THE SECTION IS NAMED BY THE TITLE ALREADY ON THE SCREEN. SectionHead
         // renders a `<div>` rather than an `<h2>` — its own comment says why —
         // so `titleId` plus `aria-labelledby` is how a landmark gets a name

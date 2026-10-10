@@ -496,13 +496,24 @@ export const en = {
 
   // ── H7 · /about ─────────────────────────────────────────────────────────
   //
-  // WHAT IS NOT HERE, and it is most of the sheet. `SYS.05`, `OPERATOR`,
-  // `TRAJECTORY`, `WHAT I RUN`, `HOW I WORK`, the card's `NAME`, `ROLE`,
-  // `BASE`, `PRIMARY`, `ROUTE`, `TOOLING` and `MAIL`, and the tiles' `BASE`,
-  // `NETWORK`, `EDGE`, `DELIVERY`, `DATA` and `WATCH` are nomenclature — LANG.01, "Übersetzt wird
-  // Prosa, nicht Nomenklatur" — and a German About page would still read
-  // SYS.05.02 WHAT I RUN. So they live in lib/about/, where a test can hold
-  // their order, and the prose lives here.
+  // WHAT IS NOT HERE, and it is most of the sheet: the section heads
+  // `TRAJECTORY`, `WHAT I RUN` and `HOW I WORK`, the card's seven labels, the
+  // tiles' six axes and the four principles. They are in lib/about/, where a
+  // test can hold their order — and SINCE U8a THEY ARE TRANSLATED THERE, in a
+  // bundle beside the table each one belongs to.
+  //
+  // THE REASON THIS NOTE USED TO GIVE WAS WRONG, and it is worth keeping the
+  // correction rather than the sentence. It read: they "are nomenclature —
+  // LANG.01, 'Übersetzt wird Prosa, nicht Nomenklatur' — and a German About
+  // page would still read SYS.05.02 WHAT I RUN." ADR 0083's sixth decision
+  // answers the other way: "die Beschriftung wird übersetzt, der Datenwert und
+  // der Metrikname nicht." A heading over content is a label. C5 of U8a found
+  // the same claim about the homepage's four section titles and found German
+  // for two of them already sitting in this file, read on a different page.
+  //
+  // `SYS.05` AND `OPERATOR` ARE THE TWO THAT REALLY ARE NOMENCLATURE, and they
+  // are in the markup where they are drawn: one is a marker, the other names
+  // the system this page is.
   //
   // `OFF-SYSTEM`, `SERVICES` AND `PIPELINE` LEFT THIS LIST IN U4 rather than
   // moving anywhere: the section and the two tiles are gone (ADR 0079). A list
@@ -558,6 +569,11 @@ export const en = {
   // costs is written down where it comes due: U8 has to decide what `/de` does
   // with the About page's prose, and the answer is the same for all three
   // tables rather than special to this one.
+  //
+  // U8a GAVE THAT ANSWER AND IT IS THE SAME FOR ALL THREE: each table keeps its
+  // English where it is, and gains a `*.de.ts` beside it holding exactly the
+  // words that are words — registered in lib/i18n/complete.ts, so a missing one
+  // takes the whole language back to English rather than half a page.
 
   // THREE KEYS STOOD HERE UNTIL U4 AND ALL THREE ARE GONE, for two different
   // reasons that are worth keeping apart.
