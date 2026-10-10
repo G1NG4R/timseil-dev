@@ -949,7 +949,7 @@ export default function GalleryPage() {
           list is in the document at all.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <Systems read={readOk(GALLERY_SYSTEMS)} messages={en} />
+          <Systems read={readOk(GALLERY_SYSTEMS)} messages={en} locale="en" />
         </div>
       </section>
 
@@ -1317,7 +1317,7 @@ export default function GalleryPage() {
               // study, and a hand-built path would have drawn this gallery a
               // link into a 404 — a state the site itself cannot produce, which
               // is the one thing a fixture must never do.
-              const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug);
+              const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug, "en");
               return (
                 <TrajectoryPanel
                   key={station.key}

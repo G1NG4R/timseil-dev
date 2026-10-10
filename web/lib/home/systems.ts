@@ -16,6 +16,7 @@
 
 import { caseStudyFor, caseStudyPath } from "../../content/case-studies/index.ts";
 import { type SystemList, type SystemRowView, systemRows } from "../api/systems.ts";
+import type { Locale } from "../i18n/routes.ts";
 
 /** One row of SYS.02, with the two sources already joined. */
 export interface SystemEntry extends SystemRowView {
@@ -52,10 +53,18 @@ export interface SystemEntry extends SystemRowView {
  * row links exactly when the destination renders. Two lists of "which systems
  * have a page" would be one list too many — and the second one would be this
  * one, because it is the one nobody visits.
+ *
+ * AND IT TAKES A LOCALE SINCE U8a, FOR ONE FIELD: `blurb` is the one sentence
+ * this row prints, it comes out of the case study, and the case study has three
+ * languages. The number, the state and the stack do not — they come from the
+ * api, which has one.
  */
-export function systemEntries(body: SystemList | null): readonly SystemEntry[] {
+export function systemEntries(
+  body: SystemList | null,
+  locale: Locale,
+): readonly SystemEntry[] {
   return systemRows(body).map((row) => {
-    const study = caseStudyFor(row.slug);
+    const study = caseStudyFor(row.slug, locale);
 
     return {
       ...row,

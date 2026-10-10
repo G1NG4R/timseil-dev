@@ -51,6 +51,92 @@ export interface Stage {
   readonly job: string | null;
 }
 
+/**
+ * A stage box, minus its sentence: the two halves that are not language.
+ *
+ * THE TITLE IS NOMENCLATURE AND THE DETAIL IS NOT. Five of the seven words in
+ * the boxes ARE the `ci.yml` job names in capitals, and the other two name the
+ * event and the gate; a German page draws the same seven. The sentence under
+ * each box is prose and moves — which is also why the words are keyed BY the
+ * title: a translation that renamed a box would stop compiling rather than
+ * silently describe a pipeline nobody runs.
+ */
+export interface StageMark<Title extends string = string> {
+  readonly title: Title;
+  readonly job: string | null;
+}
+
+/**
+ * Every field of a case study that is a word in a language.
+ *
+ * U8a, AND THE SPLIT IS ADR 0083's SIXTH DECISION APPLIED TO A DOCUMENT: the
+ * slug, the date and the seven stage titles are what the page points at, and
+ * everything here is what it says. `CaseFacts` holds the other half, and
+ * `studyFrom` is the one place the two meet — so English reaches the page
+ * through the same assembly German does.
+ *
+ * `year` AND `hosting` ARE IN HERE, which is worth a line because they look
+ * like data and are not: the datum in `2026 — ongoing` is `2026`, and the word
+ * beside it is a word. Same for `self-hosted`, which qualifies the state word
+ * the api sends and is not the state.
+ */
+export interface CaseWords<StageTitle extends string = string> {
+  readonly headline: string;
+  readonly blurb: string;
+  readonly year: string;
+  readonly hosting: string;
+  readonly problem: readonly string[];
+  readonly constraints: readonly string[];
+  readonly composeCaption: string;
+  /** The sentence under each stage box, keyed by the word in the box. */
+  readonly stages: Readonly<Record<StageTitle, string>>;
+  readonly emptyNote: {
+    readonly label: string;
+    readonly text: string;
+  };
+}
+
+/** What a case study points at. The same in every language. */
+export interface CaseFacts<StageTitle extends string = string> {
+  /** The system's slug in `systems`. The route is `/work/<slug>`. */
+  readonly slug: string;
+  /** ISO date, `YYYY-MM-DD`. The page's real modification date for sitemap.ts. */
+  readonly updatedAt: string;
+  /** The seven boxes, in order. */
+  readonly stages: readonly StageMark<StageTitle>[];
+}
+
+/**
+ * One case study, assembled out of its facts and one language's words.
+ *
+ * IT IS HERE AND NOT IN index.ts BECAUSE OF THE IMPORT DIRECTION. The registry
+ * imports every study; a study that imported the assembler back out of the
+ * registry would close a cycle. This file already holds what both sides need
+ * and imports nothing itself.
+ */
+export function studyFrom<StageTitle extends string>(
+  facts: CaseFacts<StageTitle>,
+  words: CaseWords<StageTitle>,
+): CaseStudy {
+  return {
+    slug: facts.slug,
+    updatedAt: facts.updatedAt,
+    headline: words.headline,
+    blurb: words.blurb,
+    year: words.year,
+    hosting: words.hosting,
+    problem: words.problem,
+    constraints: words.constraints,
+    composeCaption: words.composeCaption,
+    stages: facts.stages.map((mark) => ({
+      title: mark.title,
+      job: mark.job,
+      detail: words.stages[mark.title],
+    })),
+    emptyNote: words.emptyNote,
+  };
+}
+
 export interface CaseStudy {
   /** The system's slug in `systems`. The route is `/work/<slug>`. */
   readonly slug: string;

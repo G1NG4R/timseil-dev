@@ -11,7 +11,7 @@ describe("the site knows which system it is", () => {
   // otherwise show up as an empty strip on a page whose whole claim is that it
   // measures itself.
   it("names a system this repository has written about", () => {
-    assert.notEqual(caseStudyFor(SITE_SYSTEM_SLUG), null);
+    assert.notEqual(caseStudyFor(SITE_SYSTEM_SLUG, "en"), null);
   });
 
   // The half a lookup cannot state: that the two files mean the SAME system

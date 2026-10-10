@@ -116,8 +116,12 @@ void test("two stations shipped a system, and exactly one has a page", () => {
     ["timseil-dev", "talos-prod"],
   );
 
-  assert.notEqual(caseStudyFor("timseil-dev"), null, "timseil.dev has a case study");
-  assert.equal(caseStudyFor("talos-prod"), null, "the cluster has none, and the cell says so");
+  assert.notEqual(caseStudyFor("timseil-dev", "en"), null, "timseil.dev has a case study");
+  assert.equal(
+    caseStudyFor("talos-prod", "en"),
+    null,
+    "the cluster has none, and the cell says so",
+  );
 });
 
 // U5 IS THE PHASE THAT WROTE THEM, so this replaces H7b's count of one. The

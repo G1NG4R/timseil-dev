@@ -17,6 +17,13 @@
 // Prosa, nicht Nomenklatur" — the labels around this text (UPTIME · 91 D, STACK)
 // stay English either way.
 //
+// AND U8a IS WHERE THE SECOND HALF OF THAT ARGUMENT COMES DUE. The prose is not
+// in the catalogue and it still has a language, so it is a bundle: the facts —
+// the slug, the date, the seven stage titles and their jobs — stand once below,
+// and every sentence lives in `CASE_WORDS_EN` beside its German counterpart in
+// timseil-dev.de.ts. `resolveMessages`' all-or-nothing rule is now the bundle's
+// rule too, by way of `BUNDLES` in lib/i18n/complete.ts.
+//
 // WHAT U6 TOOK OUT, because a file this short should say why it is short. It held
 // a lead paragraph, a red alert line, a role, five request-path stations, five
 // side lanes, four decisions with their alternatives, four build phases, four
@@ -38,9 +45,50 @@
 // 12.3's whole point is that nobody types a version into a page again. What this
 // file may name is a technology, never its version.
 
-import type { CaseStudy } from "./types.ts";
+import { type ContentBundle, resolveContent } from "../../lib/i18n/bundle.ts";
+import { type Locale } from "../../lib/i18n/routes.ts";
 
-export const timseilDev: CaseStudy = {
+import { CASE_WORDS_DE } from "./timseil-dev.de.ts";
+import { type CaseFacts, type CaseStudy, type CaseWords, studyFrom } from "./types.ts";
+
+/**
+ * The seven boxes of the pipeline, in order.
+ *
+ * FIVE OF THESE SEVEN WORDS ARE `ci.yml` JOB NAMES IN CAPITALS, which is what
+ * makes them nomenclature and what makes `pipeline.test.ts` possible. The words
+ * are also the keys the sentences hang off, so a tuple here fixes the order of
+ * the page and the completeness of every translation at once.
+ */
+export const STAGE_TITLES = [
+  "PUSH",
+  "CHECK",
+  "DB",
+  "E2E",
+  "PUBLISH",
+  "DEPLOY",
+  "VERIFY",
+] as const;
+
+/** One box of the pipeline. */
+export type StageTitle = (typeof STAGE_TITLES)[number];
+
+/**
+ * What this study points at: a slug, a date and seven stages.
+ *
+ * ── OPERATIONS ────────────────────────────────────────────────────────────
+ *
+ * NO VERSION, NO PORT, NO CADENCE, and no statement about what is or is not
+ * yet hardened on this host. The version rule is this file's own, at the top.
+ * The other three are CLAUDE.md's: the current state of a security question
+ * about this host does not go on a public page.
+ *
+ * The stages are the real jobs of .github/workflows/ci.yml, not the sheet's
+ * (`go test ./...`, `compose pull + up`). lib/content/pipeline.test.ts holds
+ * every `job` below against that file, so a renamed job is a red test rather
+ * than a page describing a pipeline that no longer exists. That test is the
+ * reason this field survived U6 and the observability panel beside it did not.
+ */
+const FACTS: CaseFacts<StageTitle> = {
   slug: "timseil-dev",
 
   // The date of the copy below, not a build time. sitemap.ts asked for exactly
@@ -59,9 +107,26 @@ export const timseilDev: CaseStudy = {
   //
   // So the rule, until something enforces it: EDIT THE WORDS IN THIS FILE, MOVE
   // THIS DATE. It is the one field here that is a claim about the file rather
-  // than a claim in it.
-  updatedAt: "2026-09-26",
+  // than a claim in it. U8a moves it because the page gained a second language,
+  // which is a change to what the page says.
+  updatedAt: "2026-10-10",
 
+  stages: [
+    // Not a job: it is the event the workflow answers.
+    { title: "PUSH", job: null },
+    { title: "CHECK", job: "check" },
+    { title: "DB", job: "db" },
+    { title: "E2E", job: "e2e" },
+    { title: "PUBLISH", job: "publish" },
+    { title: "DEPLOY", job: "deploy" },
+    // Inside `deploy`, not beside it: a verification that could be skipped
+    // as its own job is not a gate.
+    { title: "VERIFY", job: null },
+  ],
+};
+
+/** Everything this study says, in English. */
+export const CASE_WORDS_EN: CaseWords<StageTitle> = {
   headline: "This site is the system it describes.",
 
   // The row on the homepage and on `/work`. The sheet writes "This site as a
@@ -127,60 +192,17 @@ export const timseilDev: CaseStudy = {
     "runs, by the same command that generates the types — and the build turns " +
     "red if that file moves and this block does not follow it.",
 
-  // ── OPERATIONS ────────────────────────────────────────────────────────────
-  //
-  // NO VERSION, NO PORT, NO CADENCE, and no statement about what is or is not
-  // yet hardened on this host. The version rule is this file's own, at the top.
-  // The other three are CLAUDE.md's: the current state of a security question
-  // about this host does not go on a public page.
-  //
-  // The stages are the real jobs of .github/workflows/ci.yml, not the sheet's
-  // (`go test ./...`, `compose pull + up`). lib/content/pipeline.test.ts holds
-  // every `job` below against that file, so a renamed job is a red test rather
-  // than a page describing a pipeline that no longer exists. That test is the
-  // reason this field survived U6 and the observability panel beside it did not.
-  stages: [
-    {
-      title: "PUSH",
-      detail: "A squash merge onto main. Nothing deploys from a branch.",
-      // Not a job: it is the event the workflow answers.
-      job: null,
-    },
-    {
-      title: "CHECK",
-      detail: "Everything `make check` runs: vet, eslint, tsc, both unit suites, every rule.",
-      job: "check",
-    },
-    {
-      title: "DB",
-      detail: "Every migration up, then down, against a real Postgres.",
-      job: "db",
-    },
-    {
-      title: "E2E",
-      detail: "The browser suite at seven widths, against a production build.",
-      job: "e2e",
-    },
-    {
-      title: "PUBLISH",
-      detail: "Two images, tagged with the commit they were built from. Never `latest`.",
-      job: "publish",
-    },
-    {
-      title: "DEPLOY",
-      detail: "The server pulls the tag and swaps the container. It never builds.",
-      job: "deploy",
-    },
-    {
-      title: "VERIFY",
-      detail:
-        "A gate that asks the new container what it is running. It answers " +
-        "with the commit, or the previous tag goes back.",
-      // Inside `deploy`, not beside it: a verification that could be skipped
-      // as its own job is not a gate.
-      job: null,
-    },
-  ],
+  stages: {
+    PUSH: "A squash merge onto main. Nothing deploys from a branch.",
+    CHECK: "Everything `make check` runs: vet, eslint, tsc, both unit suites, every rule.",
+    DB: "Every migration up, then down, against a real Postgres.",
+    E2E: "The browser suite at seven widths, against a production build.",
+    PUBLISH: "Two images, tagged with the commit they were built from. Never `latest`.",
+    DEPLOY: "The server pulls the tag and swaps the container. It never builds.",
+    VERIFY:
+      "A gate that asks the new container what it is running. It answers " +
+      "with the commit, or the previous tag goes back.",
+  },
 
   // Verbatim from Case Study 02, which draws the five tiles empty and says why
   // underneath. It is shown only while all five are empty — see components/case.
@@ -192,3 +214,21 @@ export const timseilDev: CaseStudy = {
       "the thing this page exists to argue against.",
   },
 };
+
+/** This study's words, per language. Registered in lib/i18n/complete.ts. */
+export const TIMSEIL_DEV_WORDS: ContentBundle<CaseWords<StageTitle>> = {
+  en: CASE_WORDS_EN,
+  de: CASE_WORDS_DE,
+};
+
+/** The study in English. The registry's default and every test's fixture. */
+export const timseilDev: CaseStudy = studyFrom(FACTS, CASE_WORDS_EN);
+
+/** The study in the route's language, and the language it came back in. */
+export function timseilDevFor(locale: Locale): {
+  readonly study: CaseStudy;
+  readonly resolved: Locale;
+} {
+  const { value, resolved } = resolveContent(TIMSEIL_DEV_WORDS, locale);
+  return { study: studyFrom(FACTS, value), resolved };
+}

@@ -92,7 +92,7 @@ export default async function Page() {
   // the panel's own business. Invariant 5 either way: no `<a>` is written
   // without a page behind it.
   const panels = stations.map((station) => {
-    const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug);
+    const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug, locale);
     return (
       <TrajectoryPanel
         key={station.key}

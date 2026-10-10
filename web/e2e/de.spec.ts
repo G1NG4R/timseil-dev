@@ -21,6 +21,8 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import { CASE_WORDS_DE } from "../content/case-studies/timseil-dev.de";
+import { CASE_WORDS_EN, STAGE_TITLES } from "../content/case-studies/timseil-dev";
 import { ABOUT_WORDS_EN, PRINCIPLE_KEYS } from "../lib/about/content";
 import { ABOUT_WORDS_DE } from "../lib/about/content.de";
 import { SECTION_IDS, SECTION_WORDS_EN } from "../lib/about/sections";
@@ -197,6 +199,54 @@ test.describe("the German route is German", () => {
     expect(countOf(text, route)).toBe(0);
     expect(countOf(text, routeDe)).toBe(1);
   });
+
+  // THE LONGEST PROSE OF THE PHASE, AND THE PAGE WITH THE MOST LABELS AROUND
+  // IT. Three paragraphs, five constraints, a caption and seven stage
+  // sentences — and seven stage TITLES that must not move, because five of them
+  // are `ci.yml` job names and lib/content/pipeline.test.ts holds them against
+  // the workflow.
+  test("the case study argues in German on /de/work/timseil-dev", async ({ page }) => {
+    await page.goto("/de/work/timseil-dev");
+    const text = await mainText(page);
+
+    expect(countOf(text, CASE_WORDS_EN.headline)).toBe(0);
+    expect(countOf(text, CASE_WORDS_DE.headline)).toBe(1);
+
+    for (const [index, paragraph] of CASE_WORDS_EN.problem.entries()) {
+      expect(countOf(text, paragraph), `English paragraph ${String(index)}`).toBe(0);
+      expect(countOf(text, CASE_WORDS_DE.problem[index]), `German paragraph ${String(index)}`).toBe(
+        1,
+      );
+    }
+
+    for (const [index, line] of CASE_WORDS_EN.constraints.entries()) {
+      expect(countOf(text, line), `English constraint ${String(index)}`).toBe(0);
+      expect(countOf(text, CASE_WORDS_DE.constraints[index]), `German constraint`).toBe(1);
+    }
+
+    expect(countOf(text, CASE_WORDS_EN.composeCaption)).toBe(0);
+    expect(countOf(text, CASE_WORDS_DE.composeCaption)).toBe(1);
+
+    for (const title of STAGE_TITLES) {
+      expect(countOf(text, CASE_WORDS_EN.stages[title]), `English stage ${title}`).toBe(0);
+      expect(countOf(text, CASE_WORDS_DE.stages[title]), `German stage ${title}`).toBe(1);
+    }
+
+    // THE BOXES THEMSELVES, READ OFF THE MARKUP AND NOT OUT OF THE PAGE TEXT.
+    // `DB` and `CHECK` are words that turn up inside a compose excerpt and
+    // inside `Health-Check`; the seven titles are a list, so they are asserted
+    // as one.
+    await expect(page.locator(".pipeline .pipe-title")).toHaveText([...STAGE_TITLES]);
+  });
+
+  // `blurb` HAS NO WITNESS HERE, AND THAT IS THE RIG RATHER THAN AN OVERSIGHT.
+  // It is the one sentence of a case study drawn somewhere else — the row's
+  // description on the homepage and on /work — which is why `systemEntries`
+  // takes a locale at all. Both lists come from `/api/systems`, this rig has
+  // none, and a page with no rows has no descriptions: SYS.02 is an outage
+  // panel and /work draws `workListDown`. Asserted in lib/home/systems.test.ts
+  // against the seeded answer instead, and counted on the delivered page in the
+  // production acceptance, where the api answers.
 
   test("the principles and the stack axes are German on /de/about", async ({ page }) => {
     await page.goto("/de/about");

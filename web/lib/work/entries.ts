@@ -98,7 +98,7 @@ export function workEntries(
     }
   }
 
-  return systemEntries(body).map((entry) => {
+  return systemEntries(body, locale).map((entry) => {
     const system = bySlug.get(entry.slug) ?? {};
 
     return {

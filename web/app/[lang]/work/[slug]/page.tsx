@@ -95,7 +95,7 @@ export function generateStaticParams() {
 // cannot give.
 export async function generateMetadata({ params }: PageProps<"/[lang]/work/[slug]">): Promise<Metadata> {
   const { lang, slug } = await params;
-  const study = caseStudyFor(slug);
+  const study = caseStudyFor(slug, asLocale(lang));
   if (study === null) notFound();
 
   return seoFor(asLocale(lang), caseStudyPath(study));
@@ -103,10 +103,15 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/work/[slug
 
 export default async function Page({ params }: PageProps<"/[lang]/work/[slug]">) {
   const { slug } = await params;
-  const study = caseStudyFor(slug);
-  if (study === null) notFound();
 
+  // THE DICTIONARY FIRST, BECAUSE THE STUDY NOW HAS A LANGUAGE. Until U8a the
+  // gate ran before anything else and the words came with it; a study is
+  // assembled per language now, so the route has to know which one it is in
+  // before it asks. The gate itself is unchanged — an unknown slug is still a
+  // 404 before anything leaves this container.
   const { locale, messages } = await getDictionary();
+  const study = caseStudyFor(slug, locale);
+  if (study === null) notFound();
   const backHref = localeHref(locale, "/work");
 
   // The five `<Suspense>` holes are the only places the api is asked, and each

@@ -31,6 +31,7 @@
 // maintain, and the thing it would assert is already assertable on the
 // delivered page.
 
+import { TIMSEIL_DEV_WORDS } from "../../content/case-studies/timseil-dev.ts";
 import { ABOUT } from "../about/content.ts";
 import { ABOUT_SECTIONS } from "../about/sections.ts";
 import { TRAJECTORY } from "../about/trajectory.ts";
@@ -90,7 +91,12 @@ export { type ContentBundle, type ResolvedContent, resolveContent };
  * walked, never to be read through. A page imports its own bundle and knows its
  * own type; `languageComplete` only asks whether a key is there.
  */
-export const BUNDLES: readonly ContentBundle<unknown>[] = [TRAJECTORY, ABOUT, ABOUT_SECTIONS];
+export const BUNDLES: readonly ContentBundle<unknown>[] = [
+  TRAJECTORY,
+  ABOUT,
+  ABOUT_SECTIONS,
+  TIMSEIL_DEV_WORDS,
+];
 
 /** Does every registered bundle carry this language? */
 export function bundlesComplete(

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { CASE_STUDIES } from "../../content/case-studies/index.ts";
+import { CASE_WORDS_DE } from "../../content/case-studies/timseil-dev.de.ts";
 import type { SystemList } from "../api/systems.ts";
 
 import { systemEntries } from "./systems.ts";
@@ -22,7 +23,7 @@ describe("a system is not a case study", () => {
   // it — "the seed holds two systems and this file holds one study" — and here
   // is where a reader can see the consequence.
   it("links the system that has a page and not the one that does not", () => {
-    const entries = systemEntries(SEEDED);
+    const entries = systemEntries(SEEDED, "en");
 
     assert.equal(entries[0].href, null, "talos-prod has no case study and must not link");
     assert.equal(entries[1].href, "/work/timseil-dev");
@@ -31,12 +32,25 @@ describe("a system is not a case study", () => {
   // A missing sentence is not a missing measurement. `— NO DATA` there would
   // claim something was asked for and did not arrive; nobody asks for prose.
   it("gives a system with no study no blurb, and not — NO DATA", () => {
-    assert.equal(systemEntries(SEEDED)[0].blurb, null);
+    assert.equal(systemEntries(SEEDED, "en")[0].blurb, null);
   });
 
   it("takes the blurb from the study rather than from the answer", () => {
     const [study] = CASE_STUDIES;
-    assert.equal(systemEntries(SEEDED)[1].blurb, study.blurb);
+    assert.equal(systemEntries(SEEDED, "en")[1].blurb, study.blurb);
+  });
+
+  // THE ROW FOLLOWS THE ROUTE'S LANGUAGE, AND THIS IS THE ONLY PLACE IT CAN BE
+  // SHOWN. `blurb` is the one sentence a case study puts on another page, so
+  // U8a gave this function a locale — and e2e cannot witness it: both lists
+  // come from `/api/systems` and the e2e rig has none, so there are no rows to
+  // carry a description. The seeded answer is the fixture that does.
+  it("takes the blurb in the route's language", () => {
+    const german = systemEntries(SEEDED, "de")[1].blurb;
+    const english = systemEntries(SEEDED, "en")[1].blurb;
+
+    assert.equal(german, CASE_WORDS_DE.blurb);
+    assert.notEqual(german, english);
   });
 
   // The blurb is one line by intent — `lead` is four sentences written for a
@@ -56,13 +70,13 @@ describe("a system is not a case study", () => {
 describe("the join changes nothing else", () => {
   it("keeps the answer's order", () => {
     assert.deepEqual(
-      systemEntries(SEEDED).map((entry) => entry.no),
+      systemEntries(SEEDED, "en").map((entry) => entry.no),
       ["01", "02"],
     );
   });
 
   it("has no entries when the read failed", () => {
-    assert.deepEqual(systemEntries(null), []);
+    assert.deepEqual(systemEntries(null, "en"), []);
   });
 
   // A system the api sends that this repository has never heard of still gets a
@@ -70,7 +84,7 @@ describe("the join changes nothing else", () => {
   it("keeps a system the repository knows nothing about", () => {
     const entries = systemEntries({
       systems: [{ slug: "some-future-thing", systemNo: "03", name: "Later", state: "queued" }],
-    } as unknown as SystemList);
+    } as unknown as SystemList, "en");
 
     assert.equal(entries.length, 1);
     assert.equal(entries[0].blurb, null);
