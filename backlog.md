@@ -161,6 +161,18 @@ Label. **Beide Kommentare sind korrigiert, nicht gelöscht** — der Fund ist
 nicht das eine falsche Wort, sondern dass dieselbe Begründung zweimal
 unabhängig aufgeschrieben wurde.
 
+### Gefunden · `blurb` ist auf Deutsch nicht bezeugbar, solange das Rig keine API hat
+
+Die eine Fallstudien-Zeile, die auf einer **anderen** Seite steht — die
+Beschreibung der Systemzeile auf `/` und `/work`. Deshalb nimmt `systemEntries`
+seit C8 eine Locale. Bezeugen lässt sie sich im e2e-Rig nicht: beide Listen
+kommen aus `/api/systems`, das Rig hat keine, und eine Seite ohne Zeilen hat
+keine Beschreibungen (`/de` zeigt ein Ausfall-Panel, `/de/work` die Wartetafel).
+Geprüft wird sie jetzt gegen die geseedete Antwort in `lib/home/systems.test.ts`
+— **und sie gehört in die Produktionsabnahme**: `Diese Seite als System —
+gebaut, ausgeliefert und gemessen …` muss auf `/de` **1×** vorkommen, die
+englische Fassung **0×**.
+
 ### Gefunden · `Claude Code` steht auf `/about` zweimal, und ein Test hat es für einen Fehler gehalten
 
 Einmal als Zeile `WERKZEUG` der Operator-Karte, einmal im Satz der Lede über
