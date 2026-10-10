@@ -1308,6 +1308,7 @@ export default function GalleryPage() {
           <TrajectoryRail
             name="gal-tl"
             labelledBy="gal-tl-name"
+            stations={STATIONS}
             panels={STATIONS.map((station) => {
               // THE GALLERY ASKS THE PAGE'S QUESTION, NOT ITS OWN. This built
               // the path by hand until U5, which was the same answer only while

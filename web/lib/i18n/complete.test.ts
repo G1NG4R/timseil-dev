@@ -220,12 +220,20 @@ describe("the bundle register has no holes", () => {
       for (const value of Object.values(bundle)) registered.add(value);
     }
 
+    // THE ROOT IS CARRIED BACK IN, and U8a is the phase that found out why.
+    // `translationModules` answers relative to the root it was handed, which is
+    // what lets the fixture above assert one bare filename — so the import here
+    // has to put `lib/` or `content/` back in front of it. Registering the first
+    // real bundle turned that into `ERR_MODULE_NOT_FOUND`; with an empty list
+    // the loop never ran and the mistake was invisible.
     const orphans: string[] = [];
-    for (const path of [...translationModules("lib"), ...translationModules("content")]) {
-      const loaded = (await import(`../../${path}`)) as Record<string, unknown>;
-      const exported = Object.values(loaded);
+    for (const root of ["lib", "content"]) {
+      for (const path of translationModules(root)) {
+        const loaded = (await import(`../../${root}/${path}`)) as Record<string, unknown>;
+        const exported = Object.values(loaded);
 
-      if (!exported.some((value) => registered.has(value))) orphans.push(path);
+        if (!exported.some((value) => registered.has(value))) orphans.push(`${root}/${path}`);
+      }
     }
 
     assert.deepEqual(

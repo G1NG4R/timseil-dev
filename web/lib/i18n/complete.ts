@@ -31,6 +31,8 @@
 // maintain, and the thing it would assert is already assertable on the
 // delivered page.
 
+import { TRAJECTORY } from "../about/trajectory.ts";
+
 import {
   type ContentBundle,
   type ResolvedContent,
@@ -72,16 +74,21 @@ export { type ContentBundle, type ResolvedContent, resolveContent };
 /**
  * Every bundle a page reads its words from.
  *
- * IT IS EMPTY IN U8, AND IT IS HERE ANYWAY. The mechanism has to be green
- * before the first translation leans on it: `complete.test.ts` proves the
- * missing-bundle case against a fixture today, and U8a registers About, the
- * case study and the scattered lines against the same list.
+ * IT WAS EMPTY IN U8 AND IT WAS HERE ANYWAY. The mechanism had to be green
+ * before the first translation leaned on it: `complete.test.ts` proved the
+ * missing-bundle case against a fixture, and U8a is the phase that fills the
+ * list.
+ *
+ * ONE ENTRY IS ONE COMMIT, AND THAT IS NOT A STYLE RULE. A bundle registered
+ * here without a `de` makes `languageComplete("de")` false, which sends every
+ * word on /de back to English — the whole page, not the untranslated part. So a
+ * module arrives in this list in the same commit that finishes it.
  *
  * `unknown` RATHER THAN A UNION, because this list exists to be counted and
  * walked, never to be read through. A page imports its own bundle and knows its
  * own type; `languageComplete` only asks whether a key is there.
  */
-export const BUNDLES: readonly ContentBundle<unknown>[] = [];
+export const BUNDLES: readonly ContentBundle<unknown>[] = [TRAJECTORY];
 
 /** Does every registered bundle carry this language? */
 export function bundlesComplete(

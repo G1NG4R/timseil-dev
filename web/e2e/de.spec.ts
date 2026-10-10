@@ -21,6 +21,8 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import { STATION_KEYS, STATION_PROSE_EN } from "../lib/about/trajectory";
+import { STATION_PROSE_DE } from "../lib/about/trajectory.de";
 import { de } from "../lib/i18n/messages/de";
 import { en } from "../lib/i18n/messages/en";
 import { HAS_LOG, MOBILE_BREAKPOINT } from "./widths";
@@ -83,12 +85,13 @@ test.describe("the German route is German", () => {
     );
   });
 
-  // THE WITNESSES ARE CATALOGUE STRINGS AND NOTHING ELSE, which is what makes
-  // this test honest about the phase it is in. U8 translates the catalogue;
+  // THE WITNESSES IN THIS TEST ARE CATALOGUE STRINGS, and the one below it reads
+  // a BUNDLE — which is the whole split U8a added. U8 translated the catalogue;
   // U8a translates the page prose in lib/about/, content/case-studies/ and the
-  // scattered modules, and until it merges there IS English inside `<main>` on
-  // /de. Asserting "no English anywhere" here would be a test that has to be
-  // weakened to pass, which is worse than one that says what it covers.
+  // scattered modules, one bundle per commit, and each one arrives here with a
+  // witness of its own. Asserting "no English anywhere" in a single test would
+  // be an assertion that has to be weakened on the way, which is worse than
+  // several that each say what they cover.
   test("no English catalogue sentence survives inside main", async ({ page }) => {
     await page.goto("/de");
     const text = await mainText(page);
@@ -118,6 +121,25 @@ test.describe("the German route is German", () => {
 
     expect(countOf(text, en.workDeck)).toBe(0);
     expect(countOf(text, de.workDeck)).toBe(1);
+  });
+
+  // THE FIRST BUNDLE ON THE PAGE, READ OFF THE PAGE. `lib/i18n/complete.ts`
+  // registers it and `trajectory.test.ts` proves the resolution; what neither
+  // can see is that all six panels are RENDERED — five of them are hidden by a
+  // stylesheet until a radio is checked, and `innerText` of a hidden panel is
+  // empty. So this counts in the markup instead, which is also the only place
+  // the sixth paragraph was ever at risk.
+  test("the six trajectory paragraphs on /de/about are German", async ({ page }) => {
+    await page.goto("/de/about");
+    const html = await page.locator("#main").innerHTML();
+
+    for (const key of STATION_KEYS) {
+      const german = STATION_PROSE_DE[key].body;
+      const english = STATION_PROSE_EN[key].body;
+
+      expect(countOf(html, english), `English station prose on /de: ${key}`).toBe(0);
+      expect(countOf(html, german), `missing German station prose: ${key}`).toBe(1);
+    }
   });
 });
 
@@ -163,6 +185,24 @@ test.describe("the French route is honest about being English", () => {
 
     expect(countOf(text, en.homeHeadline)).toBe(1);
     expect(countOf(text, de.homeHeadline)).toBe(0);
+  });
+
+  // THE BROKEN CASE, ON A REAL ROUTE AND NOT A FIXTURE. A bundle resolves per
+  // language exactly as the catalogue does, so the page that has German
+  // paragraphs has English ones one segment over — and the `lang="en"` on
+  // `<main>` is what keeps those paragraphs from claiming to be French. This is
+  // the assertion that goes red the day a bundle answers `fr` without anybody
+  // having written French.
+  test("the trajectory on /fr/about is English and the block says so", async ({ page }) => {
+    await page.goto("/fr/about");
+
+    await expect(page.locator("#main")).toHaveAttribute("lang", "en");
+
+    const html = await page.locator("#main").innerHTML();
+    for (const key of STATION_KEYS) {
+      expect(countOf(html, STATION_PROSE_EN[key].body), key).toBe(1);
+      expect(countOf(html, STATION_PROSE_DE[key].body), key).toBe(0);
+    }
   });
 });
 

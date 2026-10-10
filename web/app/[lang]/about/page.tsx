@@ -32,7 +32,7 @@ import { EmptyState } from "@/components/state/EmptyState";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { caseStudyFor, caseStudyPath } from "@/content/case-studies/index";
 import { SECTIONS } from "@/lib/about/sections";
-import { STATIONS } from "@/lib/about/trajectory";
+import { stationsFor } from "@/lib/about/trajectory";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { asLocale, localeHref } from "@/lib/i18n/routes";
 import { aboutLd } from "@/lib/seo/jsonld";
@@ -59,10 +59,17 @@ function titleIdFor(id: string): string {
 
 export default async function Page() {
   // `resolved` is the language the STRINGS on this page are in, which is not
-  // always the language of the route: `/de` serves English until P6 fills the
-  // dictionary. The graph gets that value rather than the route's, so it never
-  // claims a translation the page does not have.
+  // always the language of the route: `/fr` serves English because ADR 0083
+  // leaves French empty. The structured data gets that value rather than the
+  // route's, so it never claims a translation the page does not have.
+  //
+  // AND THE STATIONS ARE ASKED THE SAME QUESTION, in the same breath. The
+  // paragraphs are a bundle rather than catalogue keys, so they resolve on their
+  // own — and `languageComplete` is what makes the two answers the same one:
+  // a bundle that is missing a language takes the catalogue down with it rather
+  // than letting this page serve a German label over an English paragraph.
   const { locale, resolved, messages } = await getDictionary();
+  const { stations } = stationsFor(locale);
 
   // WHY A TABLE AND NOT THREE `if`s: the same argument app/[lang]/page.tsx
   // reached in H5c. Keys with no fallthrough are a table by definition, and a
@@ -81,7 +88,7 @@ export default async function Page() {
   // "is there a cell" but "is there something to open" — and the cell itself is
   // the panel's own business. Invariant 5 either way: no `<a>` is written
   // without a page behind it.
-  const panels = STATIONS.map((station) => {
+  const panels = stations.map((station) => {
     const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug);
     return (
       <TrajectoryPanel
@@ -96,7 +103,12 @@ export default async function Page() {
 
   const drawn: Record<string, ReactNode> = {
     "SYS.05.01": (
-      <TrajectoryRail name="tl" labelledBy={titleIdFor("SYS.05.01")} panels={panels} />
+      <TrajectoryRail
+        name="tl"
+        labelledBy={titleIdFor("SYS.05.01")}
+        stations={stations}
+        panels={panels}
+      />
     ),
     "SYS.05.02": <StackTiles />,
     "SYS.05.03": <Principles />,
