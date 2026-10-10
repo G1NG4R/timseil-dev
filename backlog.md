@@ -137,6 +137,28 @@ stand vorher nirgends, und das war die eigentliche Lücke.
 
 ---
 
+## U8a · 10.10.2026 — Die Prosa, und ein Register, das nicht fehlschlagen konnte
+
+### Gefunden · der Bündel-Walker in `complete.test.ts` konnte nicht grün werden und nicht rot
+
+`translationModules()` antwortet relativ zu der Wurzel, die man ihm übergibt —
+damit der Fixture-Test *einen* nackten Dateinamen prüfen kann. Die Importzeile
+daneben hing `../../` davor und verlor damit das `lib/`: das erste wirklich
+registrierte Bündel landete auf `web/about/trajectory.de.ts` und der Test starb
+mit `ERR_MODULE_NOT_FOUND`. Solange `BUNDLES` leer war, lief die Schleife nie,
+also war der Fehler unsichtbar — genau die Form einer Prüfung, die noch nicht
+fehlschlagen kann. Behoben in C6, mit der Begründung im Test.
+
+### Gemessen · `/de/about` überläuft nirgends zwischen 1440 und 390
+
+Sechs Bildunterschriften teilen eine Reihe, und `Bare-Metal-Cluster` ist die
+längste. 53 Stichproben, kein Überlauf, `/de/about` steht ab C6 in
+`de.sweep.spec.ts`' `ROUTES`. `about.spec.ts` liest `scrollWidth` an sieben
+Breiten und hätte eine Unterschrift, die bei *einer* Breite aus ihrer Spalte
+wächst, nicht sehen können.
+
+---
+
 ## U8 · 03.10.2026 — Das Prädikat prüfte 143 Schlüssel und sprach für 3.040 Wörter
 
 Gezählt gegen den Baum von `b19015a`, nicht geschätzt.
