@@ -204,6 +204,29 @@ längste. 53 Stichproben, kein Überlauf, `/de/about` steht ab C6 in
 Breiten und hätte eine Unterschrift, die bei *einer* Breite aus ihrer Spalte
 wächst, nicht sehen können.
 
+### Gefunden · der Insel-Test war nicht deterministisch, und `main` hat es gezeigt
+
+Der C10-Test lief über `logs.nth(i)` und rief `.evaluate()` je Element. Auf dem
+Branch grün, auf `main` **zweimal rot**: 30 s Timeout bei 719, und bei 390 eine
+Strict-Mode-Verletzung — `.term-body ul.st-log` löste auf **zwei** Elemente auf.
+
+Die Seite hält diese Tafel zeitweise wirklich doppelt: die Suspense-Rückfallebene
+von SYS.INIT **ist** dieselbe Komponente wie ihre Antwort, und unter
+`cacheComponents` bleibt die verborgene Kopie im Dokument. Derselbe Effekt, den
+der Sprachumschalter-Test seit H10 mit zwei Kopfzeilen aufgeschrieben hat — nur
+hat ihn diesmal niemand erwartet, weil der Branch-Lauf grün war.
+
+Der Test liest die Regel jetzt **einmal** aus dem Dokument und prüft eine
+**Menge**: jeder `ul.st-log` trägt die richtige Antwort, egal wie viele Kopien
+die Seite gerade hält. Verborgene werden mitgeprüft, und das ist richtig — ein
+verborgener Block mit der falschen Sprache ist beim nächsten Paint ein
+sichtbarer. 776–936 ms statt 30 s Timeout.
+
+**Die Lehre ist nicht „Schleifen sind langsam".** Ein grüner Branch-Lauf beweist
+bei acht Workern nicht, dass ein Test deterministisch ist; er beweist, dass
+diese eine Verteilung ihn nicht getroffen hat. #429 ist über zwei fremde Tests
+derselben Art — dieser hier war unserer.
+
 ### Verschoben · was U8a nicht trägt, und warum nicht
 
 **`lib/contact/validate.ts` kann nicht deutsch werden, und das hat der Code
