@@ -141,6 +141,15 @@ Bündel in U8a und für jede deutsche UI-Zeile danach:
 | p95 / latency | Antwortzeit (`p95` bleibt `p95`) |
 | entry (Log) | Beitrag |
 | track | Spur |
+| constraint | Randbedingung |
+| label / heading (über Inhalt) | Beschriftung |
+| theme (Farbschema) | Farbe |
+| latest `n` | letzte `n` |
+| shipped / delivery | ausgeliefert · Auslieferung |
+| trajectory (Lebensweg) | Werdegang |
+| self-hosted | selbst gehostet |
+| contribution (GitHub) | Contribution |
+| homelab · helpdesk · edge | unverändert |
 
 ## Konsequenzen
 
@@ -202,6 +211,158 @@ der man etwas vergessen kann. Der Korpus-Test fängt ein Modul, das als Bündel
 geschrieben und nicht registriert wurde — er fängt **nicht** eine Prosa-Quelle,
 die nie ein Bündel geworden ist. Diese Lücke bleibt offen und wird durch Lesen
 geschlossen, nicht durch ein Werkzeug.
+
+## Nachtrag vom 11.10.2026 — U8a, und was die Prosa über die Form entschieden hat
+
+U8 hat die Mechanik gebaut und `BUNDLES` leer gelassen; U8a füllt sie. Fünf
+Bündel, **879 Wörter** deutscher Seitenprosa (gezählt in den fünf `*.de.ts`,
+Kommentare abgezogen), 968 Unit-Tests. Was unten steht, sind die Entscheidungen,
+die beim Übersetzen fällig wurden und in dieser ADR noch nicht standen.
+
+### 1 · Ein Bündel trennt Fakten von Wörtern, und ein Tupel zählt beides
+
+Entscheidung 6 trennt Beschriftung von Datenwert. Beim Schreiben wurde daraus
+eine Dateiform: **was Sprache ist, steht je Sprache; was keine ist, genau
+einmal.** Die Station behält Label, Tags und die ausgelieferte Zelle; die
+Fallstudie behält Slug, Datum und die sieben Stufennamen (fünf davon sind
+`ci.yml`-Jobnamen in Großbuchstaben); die Operator-Karte behält `Tim Seil`,
+`Luxembourg · UTC+1`, `Kubernetes · GitOps`, `Claude Code` und die Adresse.
+
+Länge und Reihenfolge sind damit eine **Compilerfrage**: ein Tupel von
+Schlüsseln, daraus eine Union, daraus `Record<Key, Prosa>`. Eine Sprache mit
+fünf von sechs Absätzen kompiliert nicht. Was der Compiler nicht sieht, sieht
+`bundleShapes()` — Arraylängen und Objektschlüssel, niemals Werte — und das ist
+**bewusst nicht Teil von `languageComplete`**: eine fehlende Sprache ist eine
+Übersetzung, die nicht passiert ist, und die ehrliche Antwort darauf ist
+Englisch; eine abweichende Form ist ein Programmierfehler, und die ehrliche
+Antwort darauf ist ein roter Test.
+
+Eine Zeile, in der die Trennlinie durch den **Wert** läuft, gibt es: `WEG` auf
+der Operator-Karte, weil dort ein Satz steht und kein Datum. Die Typen machen
+das zur einzigen Zeile, die es sein kann — `value: string | null`, und
+`bundleShapes` weist beide Verwechslungen ab, das übersetzte Datum wie den
+nicht übersetzten Satz.
+
+**Ein Commit = ein Bündel, vollständig.** Ein in `BUNDLES` registriertes Bündel
+ohne `de` macht `languageComplete("de")` falsch und schickt **ganz** `/de` auf
+Englisch zurück — nicht den untersetzten Teil, die ganze Seite. Der Schnitt der
+Phase folgt daraus und nicht umgekehrt.
+
+### 2 · Ganze Sätze mit Löchern, weil Deutsch dekliniert
+
+U8 hat Zahlzeilen aus Fragmenten gebaut (`csLast` + `csDays`). Das geht auf
+Deutsch nicht: *8 von 91 **Tagen** gemessen* gegen *über 367 **Tage*** ist
+dasselbe Substantiv in zwei Fällen am selben Schlüssel. Also ist der Satz der
+Schlüssel, mit `{name}`-Löchern — `lib/i18n/fill.ts`, `fill` und `plural`, und
+es importiert **nichts**, weil es über die zwei Filter-Inseln die Client-Grenze
+mitgeht.
+
+**Der kaputte Fall wirft** (Präzedenz `lib/seo/pages.ts`): jede Aufrufstelle
+prerendert, ein Build-Fehler ist früher als `{window}` auf der Seite. Und
+`messages.test.ts` prüft über alle Schlüssel, dass jede deutsche Zeile die
+Löcher ihres englischen Originals trägt — wer `{window}` löscht, nimmt die Seite
+beim Build herunter, und dieser Test ist die billigere Stelle, das zu erfahren.
+
+### 3 · Die Maschinenstimme, in einem Satz
+
+> Was von einem Upstream kam oder ein Request-Feld benennt, bleibt englisch; was
+> die Seite über sich selbst sagt, wird übersetzt.
+
+Deshalb bleiben `lib/state/{lines,retry}.ts` und `lib/contact/{log,trace}.ts`,
+wie sie sind — und **ihr Block sagt es selbst**: `lang="en"` auf
+`ul.st-log` in `ErrorPanel` und `LoadingLines`, auf `pre.tx-body` und
+`ul.st-log.tx-log` in `TxTrace`. Das Attribut sitzt auf der Liste und nicht auf
+dem Panel, weil die Überschrift darüber Prosa aus dem Katalog ist.
+
+**Und es ist kein Selektor, obwohl der Plan einen wollte.** Es gibt einen
+vierten `.st-log` auf dieser Seite: das Terminal. Es zeichnet
+`stateLabel(…, messages)` und liest auf `/de` `terminal GEPLANT` — eine Insel
+dort wäre ein Attribut, das Englisch sagt, über einem deutschen Wort. Es ist der
+eine Log-Block ohne Insel, und der e2e-Test ist als **Regel** geschrieben
+(„jeder `ul.st-log` auf `/de` ist eine Insel, außer dem des Terminals"), damit
+der nächste ohne Edit hineinfällt.
+
+`lib/notfound/trace.ts` bekommt keine Insel und keinen Schlüssel:
+`global-not-found.tsx` setzt `<html lang="en">` auf das ganze Dokument, die Seite
+**ist** die Insel, und ein Katalogschlüssel dort wäre eine Übersetzung, durch
+die niemand je übersetzen kann.
+
+### 4 · Der Rückfallweg, präzisiert — und die Naht, die bleibt
+
+Die Fehlerseite ist die eine Seite ohne Server-Eltern: Next rendert sie mit
+`error` und `retry` und nichts sonst, also kann ihr niemand Wörter hineingeben.
+Sie liest ihr Bündel selbst, über `lib/i18n/bundle.ts` — das Modul importiert
+**einen Typ**, und deshalb kostet ein Bündel in einer Client-Komponente das
+Bündel und nicht drei Kataloge. Gemessen, auf demselben Baum, `.next` beide Male
+entfernt: **185.382 B → 185.650 B** gzip über neun Skripte, also **+268 B** für
+die ganze deutsche Fehlerseite. (`make bundle-size` verweigert weiter, #301; die
+Zahl ist jedes `<script src>` des gelieferten Dokuments, gzippt und summiert.)
+
+**Die Naht:** jede serverseitige Seite fragt `languageComplete`, das den Katalog
+**und** jedes Bündel liest; diese eine fragt `resolveContent` über das Bündel vor
+ihr. Auseinanderlaufen können sie nur, wenn ein registriertes Bündel seine
+Sprache verliert — und das macht `complete.test.ts` rot. Es ist also kein Code,
+der die beiden zusammenhält, sondern ein Test, und das steht jetzt im Kopf von
+`lib/errors/words.ts`.
+
+**Was bei einem Budget-Riss zu tun ist, und was nicht.** Die naheliegende
+Reaktion wäre, `de` aus einem Bündel zu streichen. Das ist die falsche: es macht
+`languageComplete("de")` falsch und nimmt **ganz** `/de` mit. Der Weg ist, das
+Bündel **nicht zu registrieren** und die Insel von Hand an seinem Block zu
+setzen — und das weist der Platten-Walker in `complete.test.ts` ab, der jedes
+`*.de.ts` auf der Platte gegen `BUNDLES` hält. Es braucht dann eine **benannte
+Ausnahme mit `CARRIED`-Charakter**: ein Eintrag mit Begründung und Datum, wie
+`e2e/de.sweep.spec.ts` ihn für die 2 px bei 720 führt. Lieber eine Ausnahme, die
+man liest, als eine Sprache, die still verschwindet.
+
+### 5 · Zwei Wörter korrigiert, eines bewusst stehengelassen
+
+`themeLabel` las `THEMA`, weil das Blatt es so zeichnet — und U8 hatte die Zeile
+schon geschrieben, die das erledigt: „es ist eine Wortwahl, keine Messung, und
+die erste Zeile, die sich ändert, wenn sie auf der Seite falsch liest."
+`/de/blog` filtert **nach Thema**, also heißt die Fußzeile über sieben Farben
+jetzt `FARBE` — fünf Zeichen wie `THEME`, die Reihe bei 390 bleibt gemessen.
+`homeLogLatest` las `NEUESTE`, während der Katalog eine Zeile weiter oben
+`LETZTE {days} TAGE` sagt; jetzt `LETZTE`.
+
+Stehen bleibt `CONTRIBUTIONS`: GitHubs Begriff für das, was es zählt, und
+`Beiträge` ist in der Begriffsliste an einen **Log-Beitrag** vergeben. Der Rahmen
+bewegt sich (`LETZTE 367 TAGE`, `QUELLE:`, `22M ALT`), das Zählwort nicht — und
+`messages.test.ts` trägt es als begründeten Eintrag seiner `SAME`-Liste.
+
+### 6 · Vier Funde, die diese Phase nicht erfunden hat
+
+1. **`LÄUFT IN` war vergeben.** LANG.01 übersetzt `SHIPPED IN` genauso, und
+   `LÄUFT IN` steht seit H9 auf `RUNS IN`. Drei von vier Belegpräfixen hätten
+   ein Wort geteilt. Vierte benannte Abweichung vom Blatt.
+2. **Der Katalog behauptete zweimal, Abschnittstitel seien Nomenklatur** — für
+   die Startseite und für `/about` —, während er für zwei dieser Titel längst
+   Deutsch trug, gelesen auf einer anderen Seite. Beide Kommentare korrigiert.
+3. **Der Bündel-Walker konnte weder grün noch rot werden.** Er antwortet relativ
+   zu der Wurzel, die man ihm übergibt; die Importzeile daneben verlor das
+   `lib/`. Bei leerem Register lief die Schleife nie — die Form einer Prüfung,
+   die noch nicht fehlschlagen kann.
+4. **`blurb` ist im e2e-Rig nicht bezeugbar.** Die eine Fallstudienzeile, die
+   auf einer anderen Seite steht; beide Listen kommen aus `/api/systems`, das
+   Rig hat keine. Geprüft gegen die geseedete Antwort, gezählt in der
+   Produktionsabnahme.
+
+### 7 · Was Deutsch nicht werden konnte, und warum
+
+**`lib/contact/validate.ts`.** `ContactForm` füllt denselben `invalid`-Zustand
+mit den lokalen Ablehnungsgründen **und** mit `problem.invalidParams` aus der
+Go-API, und `reasonFor()` rendert beide in denselben Slot. Deutsch wäre die eine
+Hälfte und englisch die andere — für denselben Fehler im denselben Feld. Das
+geht nur mit einer Contract-Änderung, also in einer eigenen Phase.
+
+**`SITE_DESCRIPTION`.** Steht auf `/de` in sechs Metafeldern englisch unter
+`<html lang="de">`. `app/[lang]/layout.tsx` exportiert `metadata` statisch und
+kann ohne `generateMetadata` keine Sprache kennen. Eigenes Issue statt einer
+stillen Lücke.
+
+**Die Rechtstexte.** 1.842 Wörter, `/de/privacy` und `/de/imprint` bleiben eine
+englische Insel mit `lang="en"` auf `.lg` (Entscheidung 2). Eigene Phase, mit
+Gegenleser.
 
 ## Verworfene Alternativen
 

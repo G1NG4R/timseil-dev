@@ -137,7 +137,21 @@ stand vorher nirgends, und das war die eigentliche Lücke.
 
 ---
 
-## U8a · 10.10.2026 — Die Prosa, und ein Register, das nicht fehlschlagen konnte
+## U8a · 10.–11.10.2026 — Die Prosa, und ein Register, das nicht fehlschlagen konnte
+
+**Stand:** `phase/u8a-german-prose`, elf Commits, **nicht gemergt**. Fünf
+Bündel in `BUNDLES`, **879 Wörter** deutsche Seitenprosa (gezählt in den fünf
+`*.de.ts`, Kommentare abgezogen), 968 Unit-Tests, `make check` grün. Die
+Fehlerseite kostet **+268 B** gzip (185.382 → 185.650 B über neun Skripte,
+derselbe Baum, `.next` beide Male entfernt). ADR 0083 hat einen Nachtrag vom
+11.10. und **kein eigenes ADR daneben** — 0083 trägt U8a schon im `Betrifft`,
+und `check-adrs` liest den Backlog mit: wer hier die nächste Nummer hinschreibt,
+macht `make check` rot für eine Datei, die es nicht gibt. Genau so passiert.
+
+Was offen ist: die volle e2e-Suite, der Produktionsbuild von Hand bei den
+sieben Prüfbreiten **und 720**, der PR, und danach die Abnahme beider Hälften
+als `docs(backlog): u8 accepted`.
+
 
 ### Gefunden · der Bündel-Walker in `complete.test.ts` konnte nicht grün werden und nicht rot
 
@@ -173,6 +187,7 @@ Geprüft wird sie jetzt gegen die geseedete Antwort in `lib/home/systems.test.ts
 gebaut, ausgeliefert und gemessen …` muss auf `/de` **1×** vorkommen, die
 englische Fassung **0×**.
 
+
 ### Gefunden · `Claude Code` steht auf `/about` zweimal, und ein Test hat es für einen Fehler gehalten
 
 Einmal als Zeile `WERKZEUG` der Operator-Karte, einmal im Satz der Lede über
@@ -188,6 +203,50 @@ längste. 53 Stichproben, kein Überlauf, `/de/about` steht ab C6 in
 `de.sweep.spec.ts`' `ROUTES`. `about.spec.ts` liest `scrollWidth` an sieben
 Breiten und hätte eine Unterschrift, die bei *einer* Breite aus ihrer Spalte
 wächst, nicht sehen können.
+
+### Verschoben · was U8a nicht trägt, und warum nicht
+
+**`lib/contact/validate.ts` kann nicht deutsch werden, und das hat der Code
+entschieden.** `ContactForm.tsx:291` setzt die lokalen Ablehnungsgründe in
+denselben `invalid`-Zustand, den `:389` mit `problem.invalidParams` **aus der
+Go-API** füllt, und `reasonFor()` rendert beide in denselben Slot. Deutsch wäre
+die eine Hälfte und englisch die andere — für denselben Fehler im denselben
+Feld. Geht nur mit einer Contract-Änderung, also eigene Phase. **Kein Issue**,
+weil es keine Aufgabe ist, bis entschieden ist, ob der Contract Ablehnungsgründe
+übersetzt ausliefern soll.
+
+**Französisch bleibt leer** (ADR 0083, Entscheidung 1). `/fr` serviert Englisch
+und sagt es — und U8a hat genau dafür zwei echte Zeugen bekommen: `/fr/about`
+trägt `main[lang="en"]` über der englischen Stationsprosa, die Fehlerseite auf
+`/fr` trägt `lang="en"` auf `section.er`.
+
+**`updatedAt` wurde zum dritten Mal von Hand bewegt** (C8, auf `2026-10-10`).
+Steht als **#284** im Tracker, seit U6 mit demselben Grund. Dieses Mal war der
+Auslöser eine zweite Sprache, also eine echte Änderung an dem, was die Seite
+sagt — die Regel hat gehalten, nur hält sie niemand außer dem Leser der Datei.
+
+### In den Tracker gegangen — vier Issues
+
+| # | Was |
+|---|---|
+| **#428** | `design-correction` — Kachelreihe bricht bei 720, die Prüfbreiten halten 719. Die 2 px sind das Symptom, das Loch in der Breitenliste ist der Fund. |
+| **#429** | `chore` — zwei flackernde e2e-Tests am Deploy-Gatter (`contact.spec.ts:542`, `touch-targets.coarse.spec.ts:172`), mit **#291** als Nachbarn. Der Backlog verwies auf #180/#181, **beide geschlossen**. |
+| **#430** | `documentation` — Rechtstexte DE+FR, 1.842 Wörter, eigene Phase mit Gegenleser. Enthält die eine Zeile, die die Mechanik nicht mitbringt: `lang="en"` auf `.lg` ist ein Literal und muss zur gerechneten Fassung werden. |
+| **#431** | `chore` — `SITE_DESCRIPTION` englisch in sechs Feldern auf `/de`; braucht `generateMetadata()` im `[lang]`-Layout und respektiert dabei die flache `openGraph`-Verschmelzung. |
+
+### Idee · die Begriffsliste prüft sich nicht selbst
+
+ADR 0083, Entscheidung 8 ist mit U8a auf 20 Zeilen gewachsen und ist für `de.ts`
+**und** für jedes Bündel verbindlich. Geprüft wird sie von Hand. Einmal hat das
+schon gegriffen: `constraint` heißt im Katalog `RANDBEDINGUNGEN`, also musste der
+Absatz der Fallstudie `Randbedingung` sagen und nicht „Vorgabe" — und der Test,
+der das jetzt hält, liest `de.csConstraints` statt dem Übersetzer zu glauben.
+
+Denkbar wäre ein Test, der die Tabelle aus der ADR parst und jede deutsche
+Zeichenkette gegen die verbotene Seite hält. **Noch nicht entschieden** — eine
+Prüfregel braucht in diesem Repository einen Fehler, der wirklich passiert ist,
+und bisher ist es ein Fehler, der beim Schreiben auffiel. Wenn das Gegenteil
+passiert, ist das der Auslöser.
 
 ---
 
