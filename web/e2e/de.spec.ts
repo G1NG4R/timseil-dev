@@ -283,36 +283,55 @@ test.describe("the English islands", () => {
   // ADR 0083, DECISION 2, ON THE DELIVERED PAGE — AND AS A RULE RATHER THAN A
   // SAMPLE. A log is the machine's voice and stays English in every language,
   // so every block that holds one says so; the one exception is the terminal,
-  // whose lines are not all the machine's. Written as a loop over whatever the
-  // page actually draws, because the first draft of this test named `.st-panel`
-  // and found an empty state instead — and because the next `.st-log` somebody
-  // adds should land in this assertion without an edit.
+  // whose lines are not all the machine's. Written over whatever the page
+  // actually draws, because the first draft named `.st-panel` and found an
+  // empty state instead — and because the next `.st-log` somebody adds should
+  // land in this assertion without an edit.
+  //
+  // ONE SNAPSHOT AND NOT A LOOP OF LOCATORS, AND THAT IS A FIND RATHER THAN A
+  // STYLE. The loop this replaces walked `logs.nth(i)` and called `.evaluate()`
+  // per element; it passed on the branch and failed twice on main — a 30 s
+  // timeout at 719 and a strict-mode violation at 390, where
+  // `.term-body ul.st-log` resolved to TWO elements. The page really does hold
+  // two copies of that panel for part of its life: the Suspense fallback of
+  // SYS.INIT is the same component as its answer, and under `cacheComponents`
+  // the hidden one stays in the document. The switcher test two blocks down
+  // met the same thing with two headers and wrote it down in H10.
+  //
+  // So the rule is read once, from the document, and it is a rule about a SET:
+  // every `ul.st-log` carries the right answer, however many copies of it the
+  // page is holding. Hidden copies are checked too, which is correct — a hidden
+  // block that says the wrong language becomes a visible one on the next paint.
   test("every log block on /de is an island, except the terminal's", async ({ page }) => {
     await page.goto("/de");
+    await expect(page.locator("#main")).toBeVisible();
 
-    const logs = page.locator("ul.st-log");
-    const count = await logs.count();
-    expect(count, "no log block on /de at all").toBeGreaterThan(0);
+    const logs = await page.evaluate(() =>
+      [...document.querySelectorAll("ul.st-log")].map((node) => ({
+        terminal: node.closest(".term-body") !== null,
+        lang: node.getAttribute("lang"),
+      })),
+    );
 
-    for (let index = 0; index < count; index += 1) {
-      const log = logs.nth(index);
-      const inTerminal = await log.evaluate((node) => node.closest(".term-body") !== null);
+    expect(logs.length, "no log block on /de at all").toBeGreaterThan(0);
 
-      if (inTerminal) await expect(log).not.toHaveAttribute("lang", /./);
-      else await expect(log).toHaveAttribute("lang", "en");
-    }
+    const wrong = logs.filter((log) => (log.terminal ? log.lang !== null : log.lang !== "en"));
+    expect(wrong, "a log block claims the wrong language").toEqual([]);
   });
 
   // THE ONE `.st-log` THAT IS NOT AN ISLAND, and the reason C10 could not be a
   // CSS selector. The terminal draws `stateLabel(…, messages)`, so on /de it
   // reads `terminal GEPLANT` — an attribute saying English over a German word
   // would be the lie this whole decision exists to avoid.
+  //
+  // `.first()` BECAUSE THE PAGE MAY HOLD TWO OF THEM, for the reason the test
+  // above now carries in full. What is asserted here is what the panel SAYS;
+  // how many copies of it are in the document is that test's business, and the
+  // attribute is checked there across all of them.
   test("the terminal's log is German, so it carries no island", async ({ page }) => {
     await page.goto("/de");
 
-    const log = page.locator(".term-body ul.st-log");
-    await expect(log).not.toHaveAttribute("lang", /./);
-    await expect(log).toContainText(de.stateQueued);
+    await expect(page.locator(".term-body ul.st-log").first()).toContainText(de.stateQueued);
   });
 
   test("the request drawing on /de/contact says it is English", async ({ page }) => {
