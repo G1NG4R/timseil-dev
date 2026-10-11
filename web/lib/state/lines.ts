@@ -9,6 +9,14 @@
 // prose addressed to a reader. A translated status code would be unsearchable,
 // and searching is the only reason to print one.
 //
+// AND SINCE U8a THE BLOCK SAYS SO ITSELF. ADR 0083's second decision made this
+// sentence a decision rather than a state of affairs — German is filled now, so
+// a line that stays English sits inside `<html lang="de">` and has to admit it.
+// `ErrorPanel` and `LoadingLines` put `lang="en"` on the `<ul>` that holds
+// these lines; nothing changes here, which is the point. The attribute belongs
+// where the words are drawn, and a key in a catalogue that no reader could
+// translate through would have been the dishonest version of the same limit.
+//
 // THE `>` PROMPT IS NOT IN THESE STRINGS. styles/state.css draws it with a
 // `::before`, which keeps it out of the accessibility tree (a screen reader
 // should read the line, not the decoration) and out of anything a visitor

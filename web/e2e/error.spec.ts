@@ -180,6 +180,8 @@ test("the German 500 is German, and corrects nothing", async ({ page }) => {
 test("the German 500 keeps the machine's voice in English", async ({ page }) => {
   await page.goto(GERMAN_HOLE);
 
+  await expect(page.locator('[data-tone="alert"] ul.st-log')).toHaveAttribute("lang", "en");
+
   const lines = page.locator('[data-tone="alert"] .st-log > li');
   await expect(lines.nth(0)).toHaveText("web: 200 render failed");
   await expect(lines.nth(1)).toHaveText("last good measurement: — NO DATA");

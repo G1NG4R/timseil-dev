@@ -15,6 +15,13 @@
 // point at. That is the same standard the trace already holds itself to, and it
 // is the reason the trace prints no protocol version.
 //
+// WHICH IS ALSO WHY NONE OF THEM IS TRANSLATED. A measurement and a fact the
+// page can point at are the machine's voice; ADR 0083's second decision leaves
+// them English in every language, and `TxTrace` puts `lang="en"` on the list
+// that draws them. The sentence a VISITOR is addressed with after a send is not
+// in here — it is `.cf-status`, out of the dictionary, in the route's own
+// language.
+//
 // THE DURATION IS THE LOAD-BEARING LINE. ADR 0021 §2 answers a honeypot and a
 // short dwell with the same well-formed 202 a real send gets, so a status code
 // cannot tell a delivered message from one that went nowhere. What can is how

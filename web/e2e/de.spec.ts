@@ -280,6 +280,51 @@ test.describe("the English islands", () => {
     });
   }
 
+  // ADR 0083, DECISION 2, ON THE DELIVERED PAGE — AND AS A RULE RATHER THAN A
+  // SAMPLE. A log is the machine's voice and stays English in every language,
+  // so every block that holds one says so; the one exception is the terminal,
+  // whose lines are not all the machine's. Written as a loop over whatever the
+  // page actually draws, because the first draft of this test named `.st-panel`
+  // and found an empty state instead — and because the next `.st-log` somebody
+  // adds should land in this assertion without an edit.
+  test("every log block on /de is an island, except the terminal's", async ({ page }) => {
+    await page.goto("/de");
+
+    const logs = page.locator("ul.st-log");
+    const count = await logs.count();
+    expect(count, "no log block on /de at all").toBeGreaterThan(0);
+
+    for (let index = 0; index < count; index += 1) {
+      const log = logs.nth(index);
+      const inTerminal = await log.evaluate((node) => node.closest(".term-body") !== null);
+
+      if (inTerminal) await expect(log).not.toHaveAttribute("lang", /./);
+      else await expect(log).toHaveAttribute("lang", "en");
+    }
+  });
+
+  // THE ONE `.st-log` THAT IS NOT AN ISLAND, and the reason C10 could not be a
+  // CSS selector. The terminal draws `stateLabel(…, messages)`, so on /de it
+  // reads `terminal GEPLANT` — an attribute saying English over a German word
+  // would be the lie this whole decision exists to avoid.
+  test("the terminal's log is German, so it carries no island", async ({ page }) => {
+    await page.goto("/de");
+
+    const log = page.locator(".term-body ul.st-log");
+    await expect(log).not.toHaveAttribute("lang", /./);
+    await expect(log).toContainText(de.stateQueued);
+  });
+
+  test("the request drawing on /de/contact says it is English", async ({ page }) => {
+    await page.goto("/de/contact");
+
+    await expect(page.locator("pre.tx-body")).toHaveAttribute("lang", "en");
+    // And the panel's accessible name is not in it: that is prose, it arrives
+    // as a prop out of the dictionary, and it is why the attribute is on the
+    // `<pre>` rather than on the `<aside>` around it.
+    await expect(page.locator("aside.tx")).toHaveAttribute("aria-label", de.contactTraceAria);
+  });
+
   // The chrome AROUND the island is still German, which is the point of making
   // it an island rather than giving the page `lang="en"`.
   test("the island does not take the footer with it", async ({ page }) => {
