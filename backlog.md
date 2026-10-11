@@ -204,6 +204,25 @@ längste. 53 Stichproben, kein Überlauf, `/de/about` steht ab C6 in
 Breiten und hätte eine Unterschrift, die bei *einer* Breite aus ihrer Spalte
 wächst, nicht sehen können.
 
+### Gefunden · ein englisches `SOURCE:` hat die Phase überlebt, und die Abnahme hat es gefunden
+
+`components/home/OpsStrip.tsx:91` schreibt die Quellzeile der Uplink-Kachel.
+Auf `/de` las sie bis zur Abnahme:
+
+    OPERATION · LETZTE 30 TAGE · EINE ZELLE IST EIN TAG
+    SOURCE: /api/systems/timseil-dev?window=30
+
+Ein englisches Wort unter einer deutschen Bildunterschrift. **Warum C5 es nicht
+gefunden hat:** dort wurde nach `title=`/`label=`-Attributen und nach ganzen
+Textknoten gesucht; dieses `SOURCE:` ist ein nacktes Wort zwischen zwei
+Ausdrücken (`{body?.slug ?? …}` und `{String(days)}`) und fällt durch beide
+Raster. Der Schlüssel existierte längst — `sourceLabel`, den die drei anderen
+Metazeilen schon zusammensetzen.
+
+**Das ist der Wert der Abnahme gegen Produktion, in einem Wort.** Die volle
+e2e-Suite war grün, 2.437 Tests, und keiner hat danach gefragt. Gezählt wird
+jetzt über die ganze Seite: `SOURCE:` → 0 auf `/de`, `QUELLE:` > 0.
+
 ### Verschoben · was U8a nicht trägt, und warum nicht
 
 **`lib/contact/validate.ts` kann nicht deutsch werden, und das hat der Code
