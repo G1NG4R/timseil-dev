@@ -334,6 +334,26 @@ test.describe("the English islands", () => {
     await expect(page.locator(".term-body ul.st-log").first()).toContainText(de.stateQueued);
   });
 
+  // THE WORD U8a's ACCEPTANCE FOUND, AS AN ASSERTION. `SOURCE:` sat in
+  // OpsStrip.tsx as a bare text node between two expressions, so neither C5's
+  // grep for `title=`/`label=` attributes nor its grep for whole text nodes saw
+  // it — and the delivered page read `… EINE ZELLE IST EIN TAG` and then
+  // `SOURCE: /api/systems/…`. The endpoint stays, the label moves.
+  //
+  // IT IS COUNTED OVER THE WHOLE PAGE AND NOT OVER THE STRIP, because the
+  // defect was never about one component: the question is whether any block on
+  // /de still names its source in English. The rig has no api, so the strip
+  // itself is an empty state here — which is exactly why this has to be a count
+  // on the page and is checked against production in the acceptance too.
+  test("no block on /de labels its source in English", async ({ page }) => {
+    await page.goto("/de");
+
+    const html = await page.content();
+
+    expect(countOf(html, `${en.sourceLabel}:`), "an English source label on /de").toBe(0);
+    expect(countOf(html, `${de.sourceLabel}:`), "no German source label at all").toBeGreaterThan(0);
+  });
+
   test("the request drawing on /de/contact says it is English", async ({ page }) => {
     await page.goto("/de/contact");
 

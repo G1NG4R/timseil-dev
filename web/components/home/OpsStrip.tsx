@@ -88,7 +88,14 @@ export function OpsStrip({
             The constant is the unreachable fallback — there are no cells to
             caption without an answer. */}
         <span className="upl-source">
-          SOURCE: /api/systems/{body?.slug ?? SITE_SYSTEM_SLUG}?window={String(days)}
+          {/* THE LABEL IS A WORD AND THE ADDRESS IS NOT. U8a's acceptance found
+              this line still reading `SOURCE:` under a German caption on /de —
+              the one English literal the phase missed, because C5 grepped for
+              `title=`/`label=` attributes and for whole text nodes, and this is
+              a bare word sitting next to two expressions. `sourceLabel` is the
+              key the other three meta lines already compose with. */}
+          {messages.sourceLabel}: /api/systems/{body?.slug ?? SITE_SYSTEM_SLUG}?window=
+          {String(days)}
         </span>
       </figcaption>
 
