@@ -50,6 +50,43 @@ Pipeline und nicht der Tausch (#242). `startedAt` 17:01:46,878Z, also **14,9 s**
 nach der gemeldeten Deploy-Zeit; die Reihe davor war 5,4 · 11,8 · 12,3 · 12,6 ·
 14,9 · 13,0 s. Siebte Beobachtung, nichts Neues.
 
+### Gefunden · der zwölfte Tausch hat ein Loch, und es ist genau das des siebten
+
+Der Zeuge über den Doku-Merge `9277938` — der vierte Tausch des Tages, und der
+erste mit einer roten Sekunde. **Eine von 1.290 auf `/` war `503`.**
+Nachgerechnet statt geschätzt, nach der Regel aus H5c und H7a: `witness.sh`
+kennt das Deploy-Fenster nicht, und jede rote Sekunde gehört zuerst in
+Wanduhrzeit.
+
+| | |
+|---|---|
+| Zeugenstart | 17:24:02Z |
+| rote Sekunde | 1287 → **17:45:29Z** |
+| Sekunde davor und danach | 1286 und 1288 → beide `200` |
+| `deploy` gemeldet | `lastDeploy.at` **17:45:00Z** |
+| `api`-Prozess `startedAt` | **17:45:16,478Z** |
+| Zeugenende | 17:45:32,364Z |
+
+**12,9 s nach dem Anlaufen des neuen `api`-Prozesses** — und beim siebten Tausch
+waren es **12 s**. Zwei Beobachtungen, derselbe Versatz auf eine Sekunde genau,
+dieselbe Form:
+
+- **`503`, kein `404`.** Der Router ist da, der Dienst hat keinen gesunden
+  Endpunkt — die andere der beiden Formen, die E4b mit zehn Sekunden `404`
+  beschrieben hat.
+- **`/api/health` blieb über denselben Tausch 1.290 × 200.** Wieder nur einer
+  der beiden Container zeigt das Loch, und es ist wieder der, der die Seite
+  ausliefert.
+
+Für **#304** ist das die dritte belastbare Beobachtung und die erste, die einen
+**Versatz** nennt statt nur ein Vorkommen. Zwei Punkte sind keine Verteilung,
+aber zwei Punkte, die 0,9 s auseinanderliegen, sind auch kein Zufall: das Loch
+liegt nicht im `deploy`-Job, sondern **nach** dem Anlaufen des neuen
+api-Prozesses, dort wo der `web`-Container erneuert wird. Wer es sucht, misst
+ab `startedAt` und nicht ab dem Merge.
+
+Zählung nach heute: **zwölf bezeugte Tausche, zehn davon ohne eine Nicht-200.**
+
 ### Gegen Produktion gezählt, nicht behauptet
 
 `grep -o … | wc -l`, nie `grep -c`. **2** heißt Markup plus Flight-Payload
