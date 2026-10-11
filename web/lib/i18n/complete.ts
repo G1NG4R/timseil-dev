@@ -35,6 +35,7 @@ import { TIMSEIL_DEV_WORDS } from "../../content/case-studies/timseil-dev.ts";
 import { ABOUT } from "../about/content.ts";
 import { ABOUT_SECTIONS } from "../about/sections.ts";
 import { TRAJECTORY } from "../about/trajectory.ts";
+import { ERRORS } from "../errors/words.ts";
 
 import {
   type ContentBundle,
@@ -96,6 +97,7 @@ export const BUNDLES: readonly ContentBundle<unknown>[] = [
   ABOUT,
   ABOUT_SECTIONS,
   TIMSEIL_DEV_WORDS,
+  ERRORS,
 ];
 
 /** Does every registered bundle carry this language? */
