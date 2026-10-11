@@ -51,7 +51,7 @@ export default async function Page() {
   // The study this log points at, asked of the gate in front of /work/[slug] —
   // the same question the route asks, so `null` here is a head with no link
   // rather than a link to a 404. components/home/Log.tsx asks it the same way.
-  const study = caseStudyFor(SITE_SYSTEM_SLUG);
+  const study = caseStudyFor(SITE_SYSTEM_SLUG, locale);
   const feedHref = FEED_PATH;
 
   return (

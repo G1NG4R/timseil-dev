@@ -13,7 +13,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { type Section, SECTIONS, accountedFor, subMarkerNumber } from "./sections.ts";
+import {
+  type SectionFacts,
+  SECTIONS,
+  SECTION_IDS,
+  accountedFor,
+  sectionsFor,
+  subMarkerNumber,
+} from "./sections.ts";
 
 /** Transcribed from `docs/design/About - timseil.dev.dc.html`, lines 107, 174,
  *  210 and 235 — the four `SYS.05.NN` heads of the desktop artboard.
@@ -114,11 +121,14 @@ void test("a section is either filled or owed, never both and never neither", ()
 });
 
 void test("both halves of the pair are refused, and neither is refused too", () => {
-  const base = { id: "SYS.05.09", title: "TEST", meta: null } as const;
-  const owedAndFilled: Section = { ...base, reasonKey: "aboutHeadline", owedBy: null };
-  const neither: Section = { ...base, reasonKey: null, owedBy: "K2" };
-  const shell: Section = { ...base, reasonKey: "aboutHeadline", owedBy: "K2" };
-  const built: Section = { ...base, reasonKey: null, owedBy: null };
+  // THE PAIR AND NOTHING ELSE, since U8a narrowed `id` to the three markers the
+  // page draws. The row this test needs is one no page has, so it hands the
+  // predicate exactly what the predicate reads — which is also the assertion
+  // that it reads nothing else.
+  const owedAndFilled: SectionFacts = { reasonKey: "aboutHeadline", owedBy: null };
+  const neither: SectionFacts = { reasonKey: null, owedBy: "K2" };
+  const shell: SectionFacts = { reasonKey: "aboutHeadline", owedBy: "K2" };
+  const built: SectionFacts = { reasonKey: null, owedBy: null };
   assert.equal(accountedFor(owedAndFilled), false, "a reason with nobody owing it");
   assert.equal(accountedFor(neither), false, "a debt with no reason given");
   assert.equal(accountedFor(shell), true);
@@ -152,6 +162,57 @@ void test("no section meta carries a bracket the sheet drew", () => {
   // bracket wants the size of this host, and CLAUDE.md keeps the state of this
   // host off every outward surface.
   for (const section of SECTIONS) {
+    if (section.meta === null) continue;
+    assert.equal(/[[\]]/.test(section.meta), false, `${section.id}: ${section.meta}`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// U8a · the heads in German
+
+// WHAT H7 WROTE DOWN AND U8a WITHDREW. The note in sections.ts said a German
+// About page "would still read SYS.05.02 WHAT I RUN", on the grounds that a
+// section title is nomenclature. ADR 0083's sixth decision is the other answer
+// — a heading over content is a label, and a label is translated — and C5 of
+// this phase had already found the homepage drawing German section titles from
+// the catalogue while its own comment claimed the same exemption. So all three
+// move, and the assertion is that they move rather than that they are these
+// particular three words.
+void test("all three section titles are German on a German route", () => {
+  const german = sectionsFor("de").sections;
+
+  assert.deepEqual(
+    german.map((section) => section.id),
+    [...SECTION_IDS],
+  );
+
+  for (const [index, section] of german.entries()) {
+    assert.notEqual(section.title, SECTIONS[index].title, section.id);
+    assert.notEqual(section.title.trim(), "", section.id);
+  }
+});
+
+// THE META IS THE OTHER HALF, AND ONE OF THE TWO DOES NOT MOVE. A system name
+// plus `BARE METAL` reads the same in German; the rail's key hint does not.
+// Named rather than counted, for the reason the stack's `EDGE` is named one file
+// over: a set comparison lets a second line stop moving in silence.
+void test("the rail hint is German and TALOS-PROD · BARE METAL is not", () => {
+  const english = SECTIONS.map((section) => section.meta);
+  const german = sectionsFor("de").sections.map((section) => section.meta);
+
+  // The third section draws no meta in either language — a `null` that became a
+  // string would be a label for something the sheet never drew.
+  assert.deepEqual(
+    german.map((meta) => meta === null),
+    english.map((meta) => meta === null),
+  );
+
+  assert.notEqual(german[0], english[0], "the rail hint stayed English");
+  assert.equal(german[1], "TALOS-PROD · BARE METAL");
+});
+
+void test("no German section meta carries a bracket either", () => {
+  for (const section of sectionsFor("de").sections) {
     if (section.meta === null) continue;
     assert.equal(/[[\]]/.test(section.meta), false, `${section.id}: ${section.meta}`);
   }

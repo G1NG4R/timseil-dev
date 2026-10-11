@@ -21,6 +21,14 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
+import { CASE_WORDS_DE } from "../content/case-studies/timseil-dev.de";
+import { CASE_WORDS_EN, STAGE_TITLES } from "../content/case-studies/timseil-dev";
+import { ABOUT_WORDS_EN, PRINCIPLE_KEYS } from "../lib/about/content";
+import { ABOUT_WORDS_DE } from "../lib/about/content.de";
+import { SECTION_IDS, SECTION_WORDS_EN } from "../lib/about/sections";
+import { SECTION_WORDS_DE } from "../lib/about/sections.de";
+import { STATION_KEYS, STATION_PROSE_EN } from "../lib/about/trajectory";
+import { STATION_PROSE_DE } from "../lib/about/trajectory.de";
 import { de } from "../lib/i18n/messages/de";
 import { en } from "../lib/i18n/messages/en";
 import { HAS_LOG, MOBILE_BREAKPOINT } from "./widths";
@@ -83,12 +91,13 @@ test.describe("the German route is German", () => {
     );
   });
 
-  // THE WITNESSES ARE CATALOGUE STRINGS AND NOTHING ELSE, which is what makes
-  // this test honest about the phase it is in. U8 translates the catalogue;
+  // THE WITNESSES IN THIS TEST ARE CATALOGUE STRINGS, and the one below it reads
+  // a BUNDLE — which is the whole split U8a added. U8 translated the catalogue;
   // U8a translates the page prose in lib/about/, content/case-studies/ and the
-  // scattered modules, and until it merges there IS English inside `<main>` on
-  // /de. Asserting "no English anywhere" here would be a test that has to be
-  // weakened to pass, which is worse than one that says what it covers.
+  // scattered modules, one bundle per commit, and each one arrives here with a
+  // witness of its own. Asserting "no English anywhere" in a single test would
+  // be an assertion that has to be weakened on the way, which is worse than
+  // several that each say what they cover.
   test("no English catalogue sentence survives inside main", async ({ page }) => {
     await page.goto("/de");
     const text = await mainText(page);
@@ -119,6 +128,143 @@ test.describe("the German route is German", () => {
     expect(countOf(text, en.workDeck)).toBe(0);
     expect(countOf(text, de.workDeck)).toBe(1);
   });
+
+  // THE FIRST BUNDLE ON THE PAGE, READ OFF THE PAGE. `lib/i18n/complete.ts`
+  // registers it and `trajectory.test.ts` proves the resolution; what neither
+  // can see is that all six panels are RENDERED — five of them are hidden by a
+  // stylesheet until a radio is checked, and `innerText` of a hidden panel is
+  // empty. So this counts in the markup instead, which is also the only place
+  // the sixth paragraph was ever at risk.
+  test("the six trajectory paragraphs on /de/about are German", async ({ page }) => {
+    await page.goto("/de/about");
+    const html = await page.locator("#main").innerHTML();
+
+    for (const key of STATION_KEYS) {
+      const german = STATION_PROSE_DE[key].body;
+      const english = STATION_PROSE_EN[key].body;
+
+      expect(countOf(html, english), `English station prose on /de: ${key}`).toBe(0);
+      expect(countOf(html, german), `missing German station prose: ${key}`).toBe(1);
+    }
+  });
+
+  // THE THREE SECTION HEADS, AND THE NOTE THEY DISPROVE. en.ts claimed until
+  // this phase that "a German About page would still read SYS.05.02 WHAT I
+  // RUN"; ADR 0083's sixth decision says a heading over content is a label, and
+  // a label is translated. The markers themselves are not — they are the
+  // sheet's notation — so they are counted as still being there.
+  test("the section heads on /de/about are German and the markers are not", async ({ page }) => {
+    await page.goto("/de/about");
+    const text = await mainText(page);
+
+    for (const id of SECTION_IDS) {
+      expect(countOf(text, id), `the marker ${id} left the page`).toBe(1);
+      expect(countOf(text, SECTION_WORDS_EN[id].title), `English head: ${id}`).toBe(0);
+      expect(countOf(text, SECTION_WORDS_DE[id].title), `missing German head: ${id}`).toBe(1);
+    }
+
+    // The rail's hint moves; the line that names the cluster does not, and
+    // sections.de.ts says why it is in the bundle anyway.
+    expect(countOf(text, "SELECT A STATION")).toBe(0);
+    expect(countOf(text, "STATION WÄHLEN")).toBe(1);
+    expect(countOf(text, "TALOS-PROD · BARE METAL")).toBe(1);
+  });
+
+  // DECISION 6 OF ADR 0083, READ OFF THE DELIVERED CARD — both halves of it.
+  // Every label is German, and the six values that are DATA are byte for byte
+  // the English ones: `Luxembourg` is a place, and the imprint spells it the
+  // same way. The seventh value is a sentence and is the only one that moves.
+  test("the operator card translates its labels and keeps its data", async ({ page }) => {
+    await page.goto("/de/about");
+
+    // THE CARD AND NOT THE WHOLE OF `<main>`, which this test found out the
+    // hard way: `Claude Code` is on this page TWICE — the `TOOLING` row and the
+    // lede's own sentence about the assistant — so a count over the page was
+    // asserting something about `aboutLede` while claiming to be about the
+    // card. ADR 0079 §3 is why the page says it in both places.
+    const text = (await page.locator(".op-card").innerText()).replace(/\s+/g, " ");
+
+    expect(countOf(text, "PRIMARY")).toBe(0);
+    expect(countOf(text, "SCHWERPUNKT")).toBe(1);
+    expect(countOf(text, "ROLLE")).toBe(1);
+    expect(countOf(text, "WERKZEUG")).toBe(1);
+
+    expect(countOf(text, "Luxembourg · UTC+1"), "a datum was translated").toBe(1);
+    expect(countOf(text, "Kubernetes · GitOps")).toBe(1);
+    expect(countOf(text, "Claude Code")).toBe(1);
+
+    const route = ABOUT_WORDS_EN.operator.route.value ?? "";
+    const routeDe = ABOUT_WORDS_DE.operator.route.value ?? "";
+    expect(route.length, "the English sentence is the fixture").toBeGreaterThan(0);
+    expect(countOf(text, route)).toBe(0);
+    expect(countOf(text, routeDe)).toBe(1);
+  });
+
+  // THE LONGEST PROSE OF THE PHASE, AND THE PAGE WITH THE MOST LABELS AROUND
+  // IT. Three paragraphs, five constraints, a caption and seven stage
+  // sentences — and seven stage TITLES that must not move, because five of them
+  // are `ci.yml` job names and lib/content/pipeline.test.ts holds them against
+  // the workflow.
+  test("the case study argues in German on /de/work/timseil-dev", async ({ page }) => {
+    await page.goto("/de/work/timseil-dev");
+    const text = await mainText(page);
+
+    expect(countOf(text, CASE_WORDS_EN.headline)).toBe(0);
+    expect(countOf(text, CASE_WORDS_DE.headline)).toBe(1);
+
+    for (const [index, paragraph] of CASE_WORDS_EN.problem.entries()) {
+      expect(countOf(text, paragraph), `English paragraph ${String(index)}`).toBe(0);
+      expect(countOf(text, CASE_WORDS_DE.problem[index]), `German paragraph ${String(index)}`).toBe(
+        1,
+      );
+    }
+
+    for (const [index, line] of CASE_WORDS_EN.constraints.entries()) {
+      expect(countOf(text, line), `English constraint ${String(index)}`).toBe(0);
+      expect(countOf(text, CASE_WORDS_DE.constraints[index]), `German constraint`).toBe(1);
+    }
+
+    expect(countOf(text, CASE_WORDS_EN.composeCaption)).toBe(0);
+    expect(countOf(text, CASE_WORDS_DE.composeCaption)).toBe(1);
+
+    for (const title of STAGE_TITLES) {
+      expect(countOf(text, CASE_WORDS_EN.stages[title]), `English stage ${title}`).toBe(0);
+      expect(countOf(text, CASE_WORDS_DE.stages[title]), `German stage ${title}`).toBe(1);
+    }
+
+    // THE BOXES THEMSELVES, READ OFF THE MARKUP AND NOT OUT OF THE PAGE TEXT.
+    // `DB` and `CHECK` are words that turn up inside a compose excerpt and
+    // inside `Health-Check`; the seven titles are a list, so they are asserted
+    // as one.
+    await expect(page.locator(".pipeline .pipe-title")).toHaveText([...STAGE_TITLES]);
+  });
+
+  // `blurb` HAS NO WITNESS HERE, AND THAT IS THE RIG RATHER THAN AN OVERSIGHT.
+  // It is the one sentence of a case study drawn somewhere else — the row's
+  // description on the homepage and on /work — which is why `systemEntries`
+  // takes a locale at all. Both lists come from `/api/systems`, this rig has
+  // none, and a page with no rows has no descriptions: SYS.02 is an outage
+  // panel and /work draws `workListDown`. Asserted in lib/home/systems.test.ts
+  // against the seeded answer instead, and counted on the delivered page in the
+  // production acceptance, where the api answers.
+
+  test("the principles and the stack axes are German on /de/about", async ({ page }) => {
+    await page.goto("/de/about");
+    const text = await mainText(page);
+
+    for (const key of PRINCIPLE_KEYS) {
+      expect(countOf(text, ABOUT_WORDS_EN.principles[key].detail), `English: ${key}`).toBe(0);
+      expect(countOf(text, ABOUT_WORDS_DE.principles[key].detail), `missing German: ${key}`).toBe(1);
+    }
+
+    expect(countOf(text, "DELIVERY")).toBe(0);
+    expect(countOf(text, "AUSLIEFERUNG")).toBe(1);
+    expect(countOf(text, "ÜBERWACHUNG")).toBe(1);
+    // The one axis that reads the same in both languages, and the component
+    // names under all six, which never move.
+    expect(countOf(text, "EDGE")).toBe(1);
+    expect(countOf(text, "kube-prometheus-stack")).toBe(1);
+  });
 });
 
 test.describe("the English islands", () => {
@@ -133,6 +279,51 @@ test.describe("the English islands", () => {
       await expect(page.locator(".lg")).toHaveAttribute("lang", "en");
     });
   }
+
+  // ADR 0083, DECISION 2, ON THE DELIVERED PAGE — AND AS A RULE RATHER THAN A
+  // SAMPLE. A log is the machine's voice and stays English in every language,
+  // so every block that holds one says so; the one exception is the terminal,
+  // whose lines are not all the machine's. Written as a loop over whatever the
+  // page actually draws, because the first draft of this test named `.st-panel`
+  // and found an empty state instead — and because the next `.st-log` somebody
+  // adds should land in this assertion without an edit.
+  test("every log block on /de is an island, except the terminal's", async ({ page }) => {
+    await page.goto("/de");
+
+    const logs = page.locator("ul.st-log");
+    const count = await logs.count();
+    expect(count, "no log block on /de at all").toBeGreaterThan(0);
+
+    for (let index = 0; index < count; index += 1) {
+      const log = logs.nth(index);
+      const inTerminal = await log.evaluate((node) => node.closest(".term-body") !== null);
+
+      if (inTerminal) await expect(log).not.toHaveAttribute("lang", /./);
+      else await expect(log).toHaveAttribute("lang", "en");
+    }
+  });
+
+  // THE ONE `.st-log` THAT IS NOT AN ISLAND, and the reason C10 could not be a
+  // CSS selector. The terminal draws `stateLabel(…, messages)`, so on /de it
+  // reads `terminal GEPLANT` — an attribute saying English over a German word
+  // would be the lie this whole decision exists to avoid.
+  test("the terminal's log is German, so it carries no island", async ({ page }) => {
+    await page.goto("/de");
+
+    const log = page.locator(".term-body ul.st-log");
+    await expect(log).not.toHaveAttribute("lang", /./);
+    await expect(log).toContainText(de.stateQueued);
+  });
+
+  test("the request drawing on /de/contact says it is English", async ({ page }) => {
+    await page.goto("/de/contact");
+
+    await expect(page.locator("pre.tx-body")).toHaveAttribute("lang", "en");
+    // And the panel's accessible name is not in it: that is prose, it arrives
+    // as a prop out of the dictionary, and it is why the attribute is on the
+    // `<pre>` rather than on the `<aside>` around it.
+    await expect(page.locator("aside.tx")).toHaveAttribute("aria-label", de.contactTraceAria);
+  });
 
   // The chrome AROUND the island is still German, which is the point of making
   // it an island rather than giving the page `lang="en"`.
@@ -163,6 +354,24 @@ test.describe("the French route is honest about being English", () => {
 
     expect(countOf(text, en.homeHeadline)).toBe(1);
     expect(countOf(text, de.homeHeadline)).toBe(0);
+  });
+
+  // THE BROKEN CASE, ON A REAL ROUTE AND NOT A FIXTURE. A bundle resolves per
+  // language exactly as the catalogue does, so the page that has German
+  // paragraphs has English ones one segment over — and the `lang="en"` on
+  // `<main>` is what keeps those paragraphs from claiming to be French. This is
+  // the assertion that goes red the day a bundle answers `fr` without anybody
+  // having written French.
+  test("the trajectory on /fr/about is English and the block says so", async ({ page }) => {
+    await page.goto("/fr/about");
+
+    await expect(page.locator("#main")).toHaveAttribute("lang", "en");
+
+    const html = await page.locator("#main").innerHTML();
+    for (const key of STATION_KEYS) {
+      expect(countOf(html, STATION_PROSE_EN[key].body), key).toBe(1);
+      expect(countOf(html, STATION_PROSE_DE[key].body), key).toBe(0);
+    }
   });
 });
 

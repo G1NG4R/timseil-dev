@@ -98,14 +98,14 @@ export function workEntries(
     }
   }
 
-  return systemEntries(body).map((entry) => {
+  return systemEntries(body, locale).map((entry) => {
     const system = bySlug.get(entry.slug) ?? {};
 
     return {
       ...entry,
       here: entry.slug === SITE_SYSTEM_SLUG,
       figure: workFigure(entry.state, system.metrics, messages, locale),
-      logLine: logEntriesLine(logEntriesFor(posts, entry.slug)),
+      logLine: logEntriesLine(logEntriesFor(posts, entry.slug), messages),
       tags: tagsOf(system.stack),
     };
   });

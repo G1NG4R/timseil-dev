@@ -13,28 +13,56 @@
 // and the two lists cannot be merged into one table without one of them lying
 // about its own numbering.
 //
-// WHAT IS HERE AND WHAT IS IN en.ts: ids and titles are nomenclature —
-// LANG.01, "Übersetzt wird Prosa, nicht Nomenklatur" — and a German About page
-// would still read SYS.05.02 WHAT I RUN. The sentence that says why a section
-// is empty is prose, so only its KEY is here.
+// WHAT IS HERE AND WHAT IS A WORD IN A LANGUAGE: the id is the sheet's own
+// notation and never moves; the title and the meta are the two lines a reader
+// reads, so U8a makes them a bundle. The H7 note that stood here — "a German
+// About page would still read SYS.05.02 WHAT I RUN" — is withdrawn rather than
+// carried: C5 of U8a had already translated the homepage's four section titles,
+// which the same argument would have kept English, and ADR 0083's sixth
+// decision settles it in writing. A marker is nomenclature, a heading is a
+// label, and a label is translated.
+//
+// THE SENTENCE THAT SAYS WHY A SECTION IS EMPTY STAYS A CATALOGUE KEY. It is
+// prose, and it was already resolved by the dictionary before this phase — a
+// second route to the same sentence is the drift ADR 0083's eighth decision
+// names.
 
+import { type ContentBundle, resolveContent } from "../i18n/bundle.ts";
 import type { Messages } from "../i18n/messages/en.ts";
+import type { Locale } from "../i18n/routes.ts";
 
-export interface Section {
-  /** The marker, exactly as the sheet writes it. The number is the order. */
-  readonly id: string;
-  /** The section's name. Nomenclature, so it is not a dictionary key. */
+import { SECTION_WORDS_DE } from "./sections.de.ts";
+
+/**
+ * The sub-markers, in the order the page draws them.
+ *
+ * A TUPLE RATHER THAN A LENGTH, for `trajectory.ts`'s reason: both records
+ * below are `Record<SectionId, …>`, so a language that lost a heading does not
+ * compile and the order of the page is written in exactly one place.
+ */
+export const SECTION_IDS = ["SYS.05.01", "SYS.05.02", "SYS.05.03"] as const;
+
+/** One of the three sub-sections. */
+export type SectionId = (typeof SECTION_IDS)[number];
+
+/** The two lines a section head prints. Both are words in a language. */
+export interface SectionWords {
+  /** The section's name. */
   readonly title: string;
   /**
    * The line on the right of the head, or `null` where the sheet draws none.
    *
-   * NOMENCLATURE, AND ONLY WHERE IT DESCRIBES THE PAGE. H2a's rule, kept: a
-   * meta that describes the DRAWING rather than the page is a label for
-   * something absent. The sheet gives TRAJECTORY "SELECT A YEAR · ← → TO STEP ·
-   * DATES ARE PLACEHOLDERS" — three statements about a rail that does not exist
-   * until H7b, so the section carries none until it does.
+   * ONLY WHERE IT DESCRIBES THE PAGE. H2a's rule, kept: a meta that describes
+   * the DRAWING rather than the page is a label for something absent. The sheet
+   * gives TRAJECTORY "SELECT A YEAR · ← → TO STEP · DATES ARE PLACEHOLDERS" —
+   * three statements about a rail that does not exist until H7b, so the section
+   * carries none until it does.
    */
   readonly meta: string | null;
+}
+
+/** What a section answers for, in every language. */
+export interface SectionFacts {
   /**
    * Which sentence says why the section is empty today, or `null` once it is
    * not empty any more. EXACTLY ONE OF THIS AND `owedBy` IS SET — the pair
@@ -47,9 +75,14 @@ export interface Section {
   readonly owedBy: string | null;
 }
 
+/** One section, assembled. */
+export interface Section extends SectionWords, SectionFacts {
+  /** The marker, exactly as the sheet writes it. The number is the order. */
+  readonly id: SectionId;
+}
+
 /**
- * The sub-sections, in the order the About sheet draws them — three of the
- * four it counts.
+ * What the three sections answer for — three of the four the sheet counts.
  *
  * THERE IS NO FIFTH. The hero above and the contact block below carry no
  * `SYS.05.NN`.
@@ -64,9 +97,15 @@ export interface Section {
  * hidden, and sections.test.ts holds the removal against the sheet in writing
  * rather than letting the transcription quietly shrink.
  */
-export const SECTIONS: readonly Section[] = [
-  {
-    id: "SYS.05.01",
+const FACTS: Readonly<Record<SectionId, SectionFacts>> = {
+  "SYS.05.01": { reasonKey: null, owedBy: null },
+  "SYS.05.02": { reasonKey: null, owedBy: null },
+  "SYS.05.03": { reasonKey: null, owedBy: null },
+};
+
+/** The two lines of each head, in English. */
+export const SECTION_WORDS_EN: Readonly<Record<SectionId, SectionWords>> = {
+  "SYS.05.01": {
     title: "TRAJECTORY",
     // BUILT IN H7b, AND THE META ARRIVED WITH THE CONTROL IT DESCRIBES. H7a
     // carried none because the sheet's line — "SELECT A YEAR · ← → TO STEP ·
@@ -76,11 +115,8 @@ export const SECTIONS: readonly Section[] = [
     // stops. The arrows are the sheet's own and they are literal — a radio
     // group answers them natively.
     meta: "SELECT A STATION · ← → TO STEP",
-    reasonKey: null,
-    owedBy: null,
   },
-  {
-    id: "SYS.05.02",
+  "SYS.05.02": {
     title: "WHAT I RUN",
     // `[SPEC]` IS GONE FROM THIS LINE ON PURPOSE, AND THE HOST HAS CHANGED
     // UNDER IT. The sheet writes "ONE VPS · [SPEC] · ADMINISTERED BY ME", and
@@ -95,20 +131,44 @@ export const SECTIONS: readonly Section[] = [
     // that a section title must not be squeezed into two lines by its own meta
     // was written with this line as the worst case on the site. It no longer
     // is, and the comment there says so.
+    //
+    // AND IT IS THE ONE LINE OF THIS PAGE THAT READS THE SAME IN GERMAN. A
+    // system name and the word for metal you can touch — sections.de.ts says
+    // why it is in the bundle anyway rather than left out of it.
     meta: "TALOS-PROD · BARE METAL",
-    reasonKey: null,
-    owedBy: null,
   },
-  {
-    id: "SYS.05.03",
+  "SYS.05.03": {
     title: "HOW I WORK",
     // The sheet draws no meta here, and it is right not to: four principles are
     // not a count anybody needs above them.
     meta: null,
-    reasonKey: null,
-    owedBy: null,
   },
-];
+};
+
+/** The heads of SYS.05, per language. Registered in lib/i18n/complete.ts. */
+export const ABOUT_SECTIONS: ContentBundle<Readonly<Record<SectionId, SectionWords>>> = {
+  en: SECTION_WORDS_EN,
+  de: SECTION_WORDS_DE,
+};
+
+/** The three sections, in one language, in `SECTION_IDS`' order. */
+export function sectionsWith(
+  words: Readonly<Record<SectionId, SectionWords>>,
+): readonly Section[] {
+  return SECTION_IDS.map((id) => ({ id, ...FACTS[id], ...words[id] }));
+}
+
+/** The three sections in the route's language, and the language they are in. */
+export function sectionsFor(locale: Locale): {
+  readonly sections: readonly Section[];
+  readonly resolved: Locale;
+} {
+  const { value, resolved } = resolveContent(ABOUT_SECTIONS, locale);
+  return { sections: sectionsWith(value), resolved };
+}
+
+/** The three, in English. */
+export const SECTIONS: readonly Section[] = sectionsWith(SECTION_WORDS_EN);
 
 /**
  * The ordinal a marker carries, or `null` if it is not one of this page's.
@@ -144,7 +204,12 @@ export function subMarkerNumber(id: string): number | null {
  * sections.test.ts builds the broken case itself rather than waiting for one to
  * appear. ADR 0057 is the form; the training log's left join is where the same
  * trap was caught one stage earlier.
+ *
+ * IT TAKES THE FACTS AND NOT A WHOLE SECTION, since U8a made `id` one of three
+ * literals: the broken case the test builds has a marker no page draws, and a
+ * predicate that reads neither the id nor the headings has no business
+ * demanding them.
  */
-export function accountedFor(section: Section): boolean {
+export function accountedFor(section: SectionFacts): boolean {
   return (section.reasonKey === null) === (section.owedBy === null);
 }

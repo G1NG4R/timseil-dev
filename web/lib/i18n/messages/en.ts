@@ -44,6 +44,12 @@ export const en = {
   themeAria: "Colour scheme",
   altLabel: "ALT",
 
+  // IT WAS `csSource` UNTIL U8a, and it moved because three more lines read it.
+  // The spec rail says `SOURCE` over an endpoint; `systemsMeta`, `trainingMeta`
+  // and the contribution line say it over theirs. One word, one key — a second
+  // one with the same value is how two spellings of one thing start.
+  sourceLabel: "SOURCE",
+
   // The state words, and the one that is missing from this list.
   //
   // STATE.05 settles the rule these six follow: "LABEL WIRD ÜBERSETZT,
@@ -108,7 +114,6 @@ export const en = {
   // the meta bar has translated it since G5.
   csYear: "YEAR",
   csStatus: "STATUS",
-  csSource: "SOURCE",
   csProblem: "PROBLEM",
   csConstraints: "CONSTRAINTS",
   csErrorRate: "ERROR RATE",
@@ -398,7 +403,9 @@ export const en = {
   // eyebrow `SYS.02 — SYSTEMS`, the stat-rail label `SYSTEMS`, the counter's
   // `SHOWING nn OF nn · FIGURES FROM /api/systems` and the three state words
   // are all absent: the first three are nomenclature, which stays English and
-  // stays where it is rendered — `systemsMeta` already writes `SYSTEMS` inline
+  // stays where it is rendered — `systemsMeta` wrote `SYSTEMS` inline for the
+  // same reason until U8a, and now reads `systemOther` because the German plural
+  // is `SYSTEME`; the stat-rail label follows in the same phase
   // one page over — and the state words come from `MARKS`, which is the one
   // table allowed to spell them.
   workTitle: "Selected work",
@@ -470,7 +477,6 @@ export const en = {
   workLegendInBuild: "means it runs, but not yet for anyone else.",
   workLegendQueued: "means specified, not written.",
   workLegendRule: "Nothing is promoted without the figure to back it.",
-  workTrainingLog: "TRAINING LOG",
 
   // ROUTES GAP #06, AND THE SHEET CLOSED IT WITH THE WRONG TWO THINGS. The
   // Routes matrix marks `/work → /contact` as a content cross-reference that
@@ -490,13 +496,24 @@ export const en = {
 
   // ── H7 · /about ─────────────────────────────────────────────────────────
   //
-  // WHAT IS NOT HERE, and it is most of the sheet. `SYS.05`, `OPERATOR`,
-  // `TRAJECTORY`, `WHAT I RUN`, `HOW I WORK`, the card's `NAME`, `ROLE`,
-  // `BASE`, `PRIMARY`, `ROUTE`, `TOOLING` and `MAIL`, and the tiles' `BASE`,
-  // `NETWORK`, `EDGE`, `DELIVERY`, `DATA` and `WATCH` are nomenclature — LANG.01, "Übersetzt wird
-  // Prosa, nicht Nomenklatur" — and a German About page would still read
-  // SYS.05.02 WHAT I RUN. So they live in lib/about/, where a test can hold
-  // their order, and the prose lives here.
+  // WHAT IS NOT HERE, and it is most of the sheet: the section heads
+  // `TRAJECTORY`, `WHAT I RUN` and `HOW I WORK`, the card's seven labels, the
+  // tiles' six axes and the four principles. They are in lib/about/, where a
+  // test can hold their order — and SINCE U8a THEY ARE TRANSLATED THERE, in a
+  // bundle beside the table each one belongs to.
+  //
+  // THE REASON THIS NOTE USED TO GIVE WAS WRONG, and it is worth keeping the
+  // correction rather than the sentence. It read: they "are nomenclature —
+  // LANG.01, 'Übersetzt wird Prosa, nicht Nomenklatur' — and a German About
+  // page would still read SYS.05.02 WHAT I RUN." ADR 0083's sixth decision
+  // answers the other way: "die Beschriftung wird übersetzt, der Datenwert und
+  // der Metrikname nicht." A heading over content is a label. C5 of U8a found
+  // the same claim about the homepage's four section titles and found German
+  // for two of them already sitting in this file, read on a different page.
+  //
+  // `SYS.05` AND `OPERATOR` ARE THE TWO THAT REALLY ARE NOMENCLATURE, and they
+  // are in the markup where they are drawn: one is a marker, the other names
+  // the system this page is.
   //
   // `OFF-SYSTEM`, `SERVICES` AND `PIPELINE` LEFT THIS LIST IN U4 rather than
   // moving anywhere: the section and the two tiles are gone (ADR 0079). A list
@@ -552,6 +569,11 @@ export const en = {
   // costs is written down where it comes due: U8 has to decide what `/de` does
   // with the About page's prose, and the answer is the same for all three
   // tables rather than special to this one.
+  //
+  // U8a GAVE THAT ANSWER AND IT IS THE SAME FOR ALL THREE: each table keeps its
+  // English where it is, and gains a `*.de.ts` beside it holding exactly the
+  // words that are words — registered in lib/i18n/complete.ts, so a missing one
+  // takes the whole language back to English rather than half a page.
 
   // THREE KEYS STOOD HERE UNTIL U4 AND ALL THREE ARE GONE, for two different
   // reasons that are worth keeping apart.
@@ -703,7 +725,6 @@ export const en = {
   blogRead: "READ",
   blogContents: "CONTENTS",
   blogSummary: "SUMMARY",
-  blogRunsIn: "RUNS IN",
   blogEditSource: "EDIT ON GITHUB",
 
   // The foot. `PREVIOUS` is the older entry and `NEXT ENTRY` the newer one —
@@ -851,7 +872,6 @@ export const en = {
   notFoundCvHint: "The CV is not a route — type cv in the terminal on /.",
 
   notFoundReturn: "RETURN TO ROOT",
-  notFoundSelectedWork: "SELECTED WORK",
 
   // H10b. The one control on this page that does not navigate, and the one
   // whose words say what happens rather than where you go. It IS a string
@@ -863,6 +883,135 @@ export const en = {
   // sentence has to be true of an empty frame: it says what the panel will be,
   // and the state chip beside it says it is not that yet.
   notFoundBudgetLede: "While you are here — serve the requests.",
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // U8a · the lines lib/api/ composes
+  //
+  // ONE BLOCK, BECAUSE THEY ARRIVED AS ONE PHASE — and because they are the
+  // first keys in this file that are SENTENCES WITH HOLES rather than labels.
+  // lib/i18n/fill.ts carries the reason for the hole: German declines the noun,
+  // so "8 von 91 TagEN gemessen" and "über 367 Tage" cannot share one `csDays`
+  // the way the operation strip's caption could.
+  //
+  // THE FOUR EVIDENCE PREFIXES ARE FOUR WORDS, AND THE SHEET OFFERS ONE.
+  // LANG.01 translates `SHIPPED IN` as `LÄUFT IN`, and `LÄUFT IN` has been the
+  // German for `RUNS IN` in this file since H9 — as `blogRunsIn`, which the blog
+  // rail still draws and which is now this same key. Three of the four prefixes
+  // say what the evidence MAKES the track, and a reader who meets one word for
+  // three of them meets one kind of evidence. So `RUNS IN` keeps the word it
+  // owns and the other three get their own. Fourth named divergence from the
+  // sheet, after `[FOLGT]`, `ts.lang` and `uptime`; ADR 0083's addendum.
+  evidenceRunsIn: "RUNS IN",
+  evidenceShippedIn: "SHIPPED IN",
+  evidenceRunningIn: "RUNNING IN",
+  evidencePlannedIn: "PLANNED IN",
+
+  // What stands where a system would, and the prefix for a row whose state this
+  // build cannot name. lib/api/training.ts says why the second one is neutral.
+  evidenceNone: "NO SYSTEM YET",
+  evidenceLabel: "EVIDENCE",
+
+  // The noun `trainingMeta` and `systemsMeta` count. TWO KEYS AND NOT A
+  // PLURALISER: English and German both have exactly these two forms, and
+  // fill.ts names French as the line where that stops being true. `SYSTEM` is
+  // the same word in German, so messages.test.ts has to be TOLD about it — it
+  // cannot tell a deliberate match from a forgotten one.
+  systemOne: "SYSTEM",
+  systemOther: "SYSTEMS",
+
+  trainingSelfTracked: "SELF-TRACKED",
+  trainingTracks: "{count} TRACKS",
+
+  // The second line under the uptime figure. A sentence a reader can hold
+  // against the grid beneath it, which is why it is not "8.8 % coverage".
+  csCoverage: "{measured} of {window} days measured",
+
+  // THE CONTRIBUTION LINE, AND THE ONE WORD IN IT THAT DOES NOT MOVE.
+  // `CONTRIBUTIONS` is GitHub's term for the thing it counts; `Beitrag` is this
+  // file's word for a log ENTRY (ADR 0083's glossary), and spending it twice
+  // would make two different things one. The frame around it is German and the
+  // total takes the German grouping, so `1.247 CONTRIBUTIONS · LETZTE 367 TAGE`.
+  contributionsTotal: "{total} CONTRIBUTIONS",
+  contributionsDays: "LAST {days} DAYS",
+  contributionsAge: "{age} OLD",
+
+  // The name the calendar carries for a screen reader, and the one it carries
+  // when there is nothing to count. Sentence case because it is read aloud and
+  // not drawn — components/home/ContributionGraph.tsx says why 367 cells have
+  // one name between them.
+  contributionsGraph: "{total} contributions over {days} days, {from} to {to}",
+  contributionsGraphEmpty: "Contribution calendar {state}",
+
+  // U8a · the counters and the lines that name a source
+  //
+  // `workShowing` AND `blogShowing` ARE TWO KEYS FOR ONE ENGLISH SENTENCE, and
+  // German is the reason. "ZEIGT 03 VON 12" needs nothing after it; put the noun
+  // in and it takes the dative — "ZEIGT 03 VON 12 BEITRÄGEN", where
+  // `blogIndexEntries` right above says `BEITRÄGE`. One key per sentence is what
+  // lets both be right at once.
+  workShowing: "SHOWING {shown} OF {total}",
+  blogShowing: "SHOWING {shown} OF {total} ENTRIES",
+
+  // `FIGURES FROM`, NOT `SOURCE:`, and lib/work/counts.ts carries the reason:
+  // SYS.02's head names where the LIST came from, this line stands over rows
+  // whose operating numbers came from the same place.
+  workFigures: "FIGURES FROM /api/systems",
+
+  // The log row's own count. The noun is `blogEntry`/`blogIndexEntries` — the
+  // two that were already in this file — rather than a third spelling of the
+  // same word.
+  logCount: "{count} {entries} IN THE LOG",
+  homeLogLatest: "LATEST {count}",
+
+  // `TAG:` stays where it is rendered, for the reason `blogTags` is in
+  // messages.test.ts's nomenclature list: it is the same word in German. `SEARCH`
+  // is not.
+  blogFilterSearch: 'SEARCH: "{q}"',
+
+  // U8a · the words that were drawn in the markup
+  //
+  // THE HOMEPAGE WAS THE STRAGGLER AND THE CATALOGUE HAD ALREADY DECIDED. Two of
+  // these were in this file before U8a and were read on other pages only:
+  // `workTrainingLog` on /work's legend and `notFoundSelectedWork` on the 404.
+  // The homepage drew both as JSX attributes, so /de said `TRAININGS-LOG` on
+  // /de/work and `TRAINING LOG` on /de — one word, two spellings, same site,
+  // same language. They are renamed here rather than copied: the page that reads
+  // a word should not have to be the page it was named after.
+  //
+  // AND THE COMMENT IN THE /work BLOCK ABOVE SAID THE OPPOSITE. It claimed
+  // LANG.01 puts the four section names in the nomenclature set and that "a
+  // German homepage still reads SYS.02 SELECTED WORK". The sheet's own matrix row
+  // for `Sektionstitel` translates `TRAINING LOG` as `TRAININGS-LOG`, and this
+  // catalogue had already done it. Corrected there, recorded here.
+  selectedWork: "SELECTED WORK",
+  trainingLog: "TRAINING LOG",
+
+  // `UPLINK` IS THE SAME WORD IN GERMAN and is read from here anyway, for the
+  // reason `navLog` is: a decision a reviewer can see beats one that looks like
+  // an oversight. Its meta line is a sentence and moves.
+  uplink: "UPLINK",
+  uplinkMeta: "TWO BLOCKS · EACH NAMES ITS SOURCE",
+
+  // SYS.06's head. `channel` beside it is the hero's verb phrase — "OPEN A
+  // CHANNEL" — and this is the section's name, which German spells `KANAL`.
+  channelSection: "CHANNEL",
+
+  // The two station labels the Trajectory rail draws. The /about block above
+  // calls them "the sheet's own labels", which is where they came from and not a
+  // reason to leave them English.
+  trajectoryPickedUp: "PICKED UP",
+  trajectoryShipped: "SHIPPED",
+
+  // The two sentinel chips. `ALL` and `ANY` are the only words in either filter
+  // row that are not a state word or a tag's own name.
+  workAnyStack: "ANY",
+  blogAllTags: "ALL",
+
+  // Two accessible names that were in the markup. A screen reader on /de heard
+  // `Main` and `Request preview` in English until U8a — the class of word no
+  // `>TEXT<` grep finds, which is the same lesson U8 learnt from a template.
+  navMainAria: "Main",
+  contactTraceAria: "Request preview",
 
   based: "BASED IN LUXEMBOURG",
   privacy: "PRIVACY",

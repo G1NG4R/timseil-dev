@@ -8,6 +8,8 @@
 // changes when H9 gives the log a renderer.
 
 import { padTwo } from "../api/values.ts";
+import { fill } from "../i18n/fill.ts";
+import type { Messages } from "../i18n/messages/en.ts";
 import { postsOrNull, type PostMeta, type PostRead } from "../content/posts.ts";
 import { NO_DATA } from "../state/words.ts";
 
@@ -49,10 +51,14 @@ export function logEntries(read: PostRead | null, limit: number = LOG_ROWS): rea
  * section above — "jeder nennt seine Quelle" — does not care that this source
  * has no port.
  */
-export function logMeta(read: PostRead | null): string {
-  const source = "SOURCE: content/posts";
+export type LogMetaWords = Pick<Messages, "sourceLabel" | "homeLogLatest">;
+
+export function logMeta(read: PostRead | null, words: LogMetaWords): string {
+  const source = `${words.sourceLabel}: content/posts`;
   if (read === null) return `${NO_DATA} · ${source}`;
-  return `LATEST ${padTwo(logEntries(read).length)} · ${source}`;
+
+  const latest = fill(words.homeLogLatest, { count: padTwo(logEntries(read).length) });
+  return `${latest} · ${source}`;
 }
 
 /**

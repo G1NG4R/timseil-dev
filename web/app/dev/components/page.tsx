@@ -121,7 +121,7 @@ const GALLERY_MODULES: readonly ModuleView[] = modules({
     },
     { no: "02", title: "Backend", tracks: [] },
   ],
-} as never);
+} as never, en);
 
 /**
  * The two systems the seed holds, plus the state it no longer produces.
@@ -620,7 +620,12 @@ export default function GalleryPage() {
           {CONTACT_STATE_KEYS.map((state) => (
             <div className="gal-case" key={state}>
               <span className="gal-case-label">{state}</span>
-              <TxTrace body={galleryBody(state)} lines={galleryLog(state)} state={state} />
+              <TxTrace
+                body={galleryBody(state)}
+                lines={galleryLog(state)}
+                state={state}
+                aria={en.contactTraceAria}
+              />
             </div>
           ))}
         </div>
@@ -944,7 +949,7 @@ export default function GalleryPage() {
           list is in the document at all.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <Systems read={readOk(GALLERY_SYSTEMS)} messages={en} />
+          <Systems read={readOk(GALLERY_SYSTEMS)} messages={en} locale="en" />
         </div>
       </section>
 
@@ -1212,7 +1217,7 @@ export default function GalleryPage() {
           were cut for.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph read={readOk(GALLERY_CALENDAR)} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR)} messages={en} locale="en" />
         </div>
         <p className="gal-states">
           The second one begins on a Wednesday, which no live answer has yet
@@ -1221,7 +1226,7 @@ export default function GalleryPage() {
           nothing on `/` would look wrong enough to notice.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph read={readOk(GALLERY_CALENDAR_OFFSET)} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR_OFFSET)} messages={en} locale="en" />
         </div>
         <p className="gal-states">
           The third is old. The api answers with the last good calendar and its
@@ -1232,9 +1237,9 @@ export default function GalleryPage() {
           replied, which is the only one that makes a claim about the endpoint.
         </p>
         <div className="gal-demo" style={{ display: "block" }}>
-          <ContributionGraph read={readOk(GALLERY_CALENDAR_STALE)} messages={en} />
-          <ContributionGraph read={WAITING} messages={en} />
-          <ContributionGraph read={DOWN} messages={en} />
+          <ContributionGraph read={readOk(GALLERY_CALENDAR_STALE)} messages={en} locale="en" />
+          <ContributionGraph read={WAITING} messages={en} locale="en" />
+          <ContributionGraph read={DOWN} messages={en} locale="en" />
         </div>
       </section>
 
@@ -1303,6 +1308,7 @@ export default function GalleryPage() {
           <TrajectoryRail
             name="gal-tl"
             labelledBy="gal-tl-name"
+            stations={STATIONS}
             panels={STATIONS.map((station) => {
               // THE GALLERY ASKS THE PAGE'S QUESTION, NOT ITS OWN. This built
               // the path by hand until U5, which was the same answer only while
@@ -1311,7 +1317,7 @@ export default function GalleryPage() {
               // study, and a hand-built path would have drawn this gallery a
               // link into a 404 — a state the site itself cannot produce, which
               // is the one thing a fixture must never do.
-              const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug);
+              const study = station.shipped === null ? null : caseStudyFor(station.shipped.slug, "en");
               return (
                 <TrajectoryPanel
                   key={station.key}

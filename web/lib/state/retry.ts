@@ -6,6 +6,11 @@
 // with "accept and measure", so a failed call becomes a missing value rather
 // than a second attempt.
 //
+// THE LINE IS PART OF A LOG AND STAYS ENGLISH WITH IT. `retry in 30s · 2/5` is
+// a counter and an interval, drawn inside the one `<ul>` `ErrorPanel` marks
+// `lang="en"` — ADR 0083's second decision, and lib/state/lines.ts says the
+// rest. There is nothing to translate here while there is nothing to count.
+//
 // SO THIS PHASE BUILDS THE FORMATTING AND NOT THE BEHAVIOUR. `ErrorPanel` takes
 // the line as an OPTIONAL prop; a caller with nothing to retry passes nothing
 // and no counter appears. A counter over a page that never tries again would be

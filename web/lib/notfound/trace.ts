@@ -5,6 +5,14 @@
 // and the page holds the rest, but every decision below is reachable from
 // `node --test`.
 //
+// NO ISLAND HERE, AND THAT IS NOT AN OVERSIGHT. The other four log modules are
+// drawn inside a translated document, so the block around them carries
+// `lang="en"` (ADR 0083, decision 2). This one is drawn by
+// app/global-not-found.tsx, which sets `<html lang="en">` on the whole document
+// — it renders outside every layout and has no dictionary to read. The entire
+// page is the island, so a second attribute inside it would say nothing, and a
+// catalogue key here would be a translation nobody could ever reach.
+//
 // THE SHEET CALLS THIS PANEL THE ARGUMENT OF THE PAGE, and it is worth quoting
 // because it is the difference between a trace and a decoration: "Die Seite
 // bleibt in der Erzählung: Router-Trace zeigt, dass die Anfrage ankam und nur

@@ -105,7 +105,7 @@ export default async function Home() {
   // of /work/[slug] and the only list of which systems have a page, so asking it
   // is the same question the route asks — and `null` here is a head with no link
   // rather than a link to a 404.
-  const study = caseStudyFor(SITE_SYSTEM_SLUG);
+  const study = caseStudyFor(SITE_SYSTEM_SLUG, locale);
 
   // One object, handed to both the fallback and the answer. Two calls would give
   // the waiting page and the answered page two links that merely agree.
@@ -145,9 +145,9 @@ export default async function Home() {
     "SYS.02": (
       <Suspense
         key="SYS.02"
-        fallback={<Systems read={WAITING} exit={systemsExit} messages={messages} />}
+        fallback={<Systems read={WAITING} exit={systemsExit} messages={messages} locale={locale} />}
       >
-        <SystemsLive exit={systemsExit} messages={messages} />
+        <SystemsLive exit={systemsExit} messages={messages} locale={locale} />
       </Suspense>
     ),
 
@@ -158,10 +158,11 @@ export default async function Home() {
     // three states rather than two: only the read that FAILED says so.
     "SYS.03": (
       <Uplink
+        messages={messages}
         key="SYS.03"
         graph={
-          <Suspense fallback={<ContributionGraph read={WAITING} messages={messages} />}>
-            <ContributionGraphLive messages={messages} />
+          <Suspense fallback={<ContributionGraph read={WAITING} messages={messages} locale={locale} />}>
+            <ContributionGraphLive messages={messages} locale={locale} />
           </Suspense>
         }
         strip={

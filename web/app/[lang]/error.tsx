@@ -34,7 +34,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { ErrorPanel } from "@/components/state/ErrorPanel";
-import { ERROR_WORDS } from "@/lib/errors/words";
+import { errorWordsFor } from "@/lib/errors/words";
 import { localeHref, localeOf } from "@/lib/i18n/routes";
 
 /**
@@ -69,6 +69,13 @@ export default function RenderError({
 
   const locale = localeOf(usePathname());
 
+  // THE WORDS ARE RESOLVED HERE AND NOWHERE ELSE, because this page has no
+  // server parent to hand them in — the file's head says why that is a property
+  // of `error.js` rather than a shortcut. `lib/i18n/bundle.ts` is the module
+  // that makes it affordable: it imports one type, so reading a bundle from a
+  // client component costs the bundle and not three catalogues.
+  const { value: words, resolved } = errorWordsFor(locale);
+
   // THE STATUS IS READ, NOT DECLARED, and it is the one number here a careless
   // version would have invented. "500" is what an error page wants to say; on
   // this site it is usually false — Cache Components streams a shell first, so
@@ -83,10 +90,14 @@ export default function RenderError({
   const status = measuredStatus();
 
   return (
-    <section className="er">
+    // THE ATTRIBUTE IS THE FALLBACK, WRITTEN AS ONE LINE. `undefined` when the
+    // sentences are in the route's own language — `getDictionary`'s idiom,
+    // exactly — and `lang="en"` on `/fr`, where this bundle has no French and
+    // the block says so itself rather than letting `<html lang="fr">` claim it.
+    <section className="er" lang={resolved === locale ? undefined : resolved}>
       <h1 className="er-head">RENDER FAILED</h1>
 
-      <p className="er-lede">{ERROR_WORDS.lede}</p>
+      <p className="er-lede">{words.lede}</p>
 
       {/* The page's one alert moment. STATE.05: "Rot nur hier — pro Seite ein
           Alert-Moment", and the footer's own state marks are not alerts, so
@@ -98,8 +109,8 @@ export default function RenderError({
         digest={error.digest ?? null}
       />
 
-      <p className="er-note">{ERROR_WORDS.digestNote}</p>
-      <p className="er-note">{ERROR_WORDS.correlationNote}</p>
+      <p className="er-note">{words.digestNote}</p>
+      <p className="er-note">{words.correlationNote}</p>
 
       <div className="er-actions">
         {/* A real button: it changes nothing about where you are. The same
@@ -112,12 +123,12 @@ export default function RenderError({
             retry();
           }}
         >
-          {ERROR_WORDS.retry}
+          {words.retry}
         </button>
 
         {/* An anchor wearing the button's clothes, because it navigates. */}
         <Link className="btn" data-variant="secondary" href={localeHref(locale, "/")}>
-          {ERROR_WORDS.home}
+          {words.home}
         </Link>
       </div>
     </section>

@@ -59,7 +59,7 @@ export async function SiteHeader() {
         <Wordmark />
         <span className="head-spacer" />
         <div className="nav-desktop">
-          <NavLinks labels={labels} hasLog={hasEntries} />
+          <NavLinks labels={labels} hasLog={hasEntries} mainAria={messages.navMainAria} />
           <span className="head-rule" aria-hidden="true" />
           <LangMenu
             strings={{
@@ -79,6 +79,7 @@ export async function SiteHeader() {
           hasLog={hasEntries}
           strings={{
             menuAria: messages.menuAria,
+            mainAria: messages.navMainAria,
             closeAria: messages.menuCloseAria,
             close: messages.menuClose,
             langLabel: messages.langLabel,

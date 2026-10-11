@@ -20,8 +20,16 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+import { ERROR_WORDS } from "../lib/errors/words";
+import { ERROR_WORDS_DE } from "../lib/errors/words.de";
+
 import { TAGS, carriedRules } from "./axe";
 import { ERROR_BEFORE_FIRST_BYTE, ERROR_IN_A_HOLE } from "./widths";
+
+/** The same drill, one language segment over. Built from the constant rather
+ *  than typed again, so the drill's path stays in one place. */
+const GERMAN_HOLE = `/de${ERROR_IN_A_HOLE}`;
+const FRENCH_HOLE = `/fr${ERROR_IN_A_HOLE}`;
 
 test("a failure before the first byte answers 500", async ({ page }) => {
   const response = await page.goto(ERROR_BEFORE_FIRST_BYTE);
@@ -145,4 +153,50 @@ test("the 500 has no accessibility violations of its own", async ({ page }) => {
     .join("\n");
 
   expect(violations, `\n${report}\n`).toEqual([]);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// U8a · the page that has to resolve its own language
+
+// THE LAST BLOCK OF ENGLISH PROSE INSIDE A GERMAN DOCUMENT, closed. This page
+// cannot be handed its words — Next renders it with `error` and `retry` and
+// nothing else — so it reads a bundle, and the `<section>` carries the result
+// of that read. Here the read succeeds, so there is no attribute at all: the
+// absence IS the assertion, exactly as it is for `<main>` in de.spec.ts.
+test("the German 500 is German, and corrects nothing", async ({ page }) => {
+  await page.goto(GERMAN_HOLE);
+
+  await expect(page.locator(".er-head")).toHaveText("RENDER FAILED");
+  await expect(page.locator(".er")).not.toHaveAttribute("lang", /./);
+
+  await expect(page.locator(".er-lede")).toHaveText(ERROR_WORDS_DE.lede);
+  await expect(page.getByRole("button", { name: ERROR_WORDS_DE.retry })).toBeVisible();
+  await expect(page.getByRole("link", { name: ERROR_WORDS_DE.home })).toBeVisible();
+});
+
+// AND THE PANEL INSIDE IT STAYS ENGLISH, which is ADR 0083's second decision
+// rather than an untranslated string: an error panel is a log, and a log is the
+// machine's voice. The line is the same one the English test above reads.
+test("the German 500 keeps the machine's voice in English", async ({ page }) => {
+  await page.goto(GERMAN_HOLE);
+
+  await expect(page.locator('[data-tone="alert"] ul.st-log')).toHaveAttribute("lang", "en");
+
+  const lines = page.locator('[data-tone="alert"] .st-log > li');
+  await expect(lines.nth(0)).toHaveText("web: 200 render failed");
+  await expect(lines.nth(1)).toHaveText("last good measurement: — NO DATA");
+});
+
+// THE BROKEN CASE, ON A ROUTE THAT EXISTS. French is empty on purpose, so this
+// page serves English sentences inside `<html lang="fr">` — and the one line
+// this phase added is what keeps that honest. It goes red the day the bundle
+// answers `fr` without anybody having written French.
+test("the French 500 is English and the block says so", async ({ page }) => {
+  await page.goto(FRENCH_HOLE);
+
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+  await expect(page.locator(".er")).toHaveAttribute("lang", "en");
+
+  await expect(page.locator(".er-lede")).toHaveText(ERROR_WORDS.lede);
+  await expect(page.getByRole("button", { name: ERROR_WORDS.retry })).toBeVisible();
 });

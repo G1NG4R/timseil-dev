@@ -21,6 +21,7 @@ import { describe, it } from "node:test";
 import {
   BUNDLES,
   type ContentBundle,
+  bundleShapes,
   bundlesComplete,
   isComplete,
   languageComplete,
@@ -109,10 +110,80 @@ describe("resolveContent", () => {
   });
 });
 
+describe("a language can be present and still be the wrong shape", () => {
+  // THE REGISTER AS IT SHIPS. Empty today because BUNDLES is; it is the
+  // assertion that stops being free the moment U8a registers the first bundle.
+  it("every registered bundle has the same shape in every language it carries", () => {
+    assert.deepEqual(bundleShapes(), []);
+  });
+
+  // THE CASE `Record` ALREADY CATCHES, stated anyway because the next bundle
+  // might not be keyed. Five of six stations: present, resolvable, and a page
+  // with a hole in it.
+  it("five stations against six is a shape complaint, not a finished language", () => {
+    const six: ContentBundle<Record<string, string>> = {
+      en: { s1: "a", s2: "b", s3: "c", s4: "d", s5: "e", s6: "f" },
+      de: { s1: "a", s2: "b", s3: "c", s4: "d", s5: "e" },
+    };
+
+    assert.deepEqual(bundleShapes([six]), ["[0].de: missing s6"]);
+    // AND THE OTHER PREDICATE STILL SAYS YES, which is the whole point of there
+    // being two: German is there, so the language is finished.
+    assert.equal(bundlesComplete("de", [six]), true);
+  });
+
+  // THE CASE NOTHING ELSE CATCHES. `readonly string[]` has no length in the type
+  // system, so four constraints against five type-check and drop a line.
+  it("four constraints against five is a shape complaint", () => {
+    const study: ContentBundle<{ constraints: readonly string[] }> = {
+      en: { constraints: ["a", "b", "c", "d", "e"] },
+      de: { constraints: ["a", "b", "c", "d"] },
+    };
+
+    assert.deepEqual(bundleShapes([study]), ["[0].de.constraints: 4 of 5"]);
+  });
+
+  it("a nested object that lost a key says where", () => {
+    const nested: ContentBundle<{ hero: { title: string; body: string } }> = {
+      en: { hero: { title: "t", body: "b" } },
+      de: { hero: { title: "t" } as { title: string; body: string } },
+    };
+
+    assert.deepEqual(bundleShapes([nested]), ["[0].de.hero: missing body"]);
+  });
+
+  // FRENCH IS ABSENT, NOT MISSHAPEN, and the two must not be the same complaint:
+  // an empty language is ADR 0083's first decision and has to stay silent here.
+  it("a language that is not there is not a shape complaint", () => {
+    const only: ContentBundle<string> = { en: "station", de: "Station" };
+
+    assert.deepEqual(bundleShapes([only]), []);
+  });
+});
+
 describe("the dictionary follows the whole predicate", () => {
   it("serves German on /de and English on /fr today", () => {
     assert.equal(resolveMessages("de").resolved, "de");
     assert.equal(resolveMessages("fr").resolved, "en");
+  });
+
+  // THE GENERAL FORM OF WHAT trajectory.test.ts ASSERTS FOR ONE BUNDLE, and the
+  // reason `languageComplete` reads both halves. A page puts catalogue strings
+  // and bundle strings inside one `<main>` under one `lang`; if the two ever
+  // resolved differently, that attribute would be wrong about half of what it
+  // covers. This holds every registered bundle against the dictionary at once,
+  // so a bundle added later cannot miss the question.
+  it("every registered bundle resolves to the language the catalogue does", () => {
+    for (const locale of LOCALES) {
+      const expected = resolveMessages(locale).resolved;
+      for (const [index, bundle] of BUNDLES.entries()) {
+        assert.equal(
+          resolveContent(bundle, locale).resolved,
+          expected,
+          `BUNDLES[${String(index)}] disagrees with the catalogue about ${locale}`,
+        );
+      }
+    }
   });
 });
 
@@ -168,12 +239,20 @@ describe("the bundle register has no holes", () => {
       for (const value of Object.values(bundle)) registered.add(value);
     }
 
+    // THE ROOT IS CARRIED BACK IN, and U8a is the phase that found out why.
+    // `translationModules` answers relative to the root it was handed, which is
+    // what lets the fixture above assert one bare filename — so the import here
+    // has to put `lib/` or `content/` back in front of it. Registering the first
+    // real bundle turned that into `ERR_MODULE_NOT_FOUND`; with an empty list
+    // the loop never ran and the mistake was invisible.
     const orphans: string[] = [];
-    for (const path of [...translationModules("lib"), ...translationModules("content")]) {
-      const loaded = (await import(`../../${path}`)) as Record<string, unknown>;
-      const exported = Object.values(loaded);
+    for (const root of ["lib", "content"]) {
+      for (const path of translationModules(root)) {
+        const loaded = (await import(`../../${root}/${path}`)) as Record<string, unknown>;
+        const exported = Object.values(loaded);
 
-      if (!exported.some((value) => registered.has(value))) orphans.push(path);
+        if (!exported.some((value) => registered.has(value))) orphans.push(`${root}/${path}`);
+      }
     }
 
     assert.deepEqual(

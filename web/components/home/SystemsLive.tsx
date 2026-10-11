@@ -1,6 +1,7 @@
 import { Systems } from "@/components/home/Systems";
 import { systemsNow } from "@/lib/api/readers";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
 import { DOWN, readOk } from "@/lib/state/read";
 
 /**
@@ -19,10 +20,19 @@ import { DOWN, readOk } from "@/lib/state/read";
 export async function SystemsLive({
   exit,
   messages,
+  locale,
 }: {
   exit: { href: string; label: string } | null;
   messages: Messages;
+  locale: Locale;
 }) {
   const body = await systemsNow();
-  return <Systems read={body === null ? DOWN : readOk(body)} exit={exit} messages={messages} />;
+  return (
+    <Systems
+      read={body === null ? DOWN : readOk(body)}
+      exit={exit}
+      messages={messages}
+      locale={locale}
+    />
+  );
 }

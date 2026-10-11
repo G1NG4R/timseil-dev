@@ -19,15 +19,27 @@ import { bodyBytes, traceLines } from "@/lib/contact/trace";
  *
  * NO `'use client'` OF ITS OWN. It is imported by one, which is enough; a
  * directive here would say this file is a boundary, and it is not one.
+ *
+ * TWO BLOCKS IN HERE CARRY `lang="en"`, AND THE PANEL ITSELF DOES NOT. The
+ * drawn request and the log under it are the machine's voice — a request line,
+ * header names, a byte count, a measured duration — and ADR 0083's second
+ * decision leaves them in English in every language. What is NOT in them is the
+ * panel's accessible name, which arrives as a prop out of the dictionary; that
+ * is why the attribute sits on the `<pre>` and the `<ul>` rather than on the
+ * `<aside>` around both.
  */
 export function TxTrace({
   body,
   lines: log,
   state,
+  aria,
 }: {
   body: ContactRequest | null;
   lines: readonly LogLine[];
   state: ContactStateKey;
+  /** The panel's accessible name. The lines inside it stay English — a log is
+   *  the machine's voice — and the block says so with its own `lang`. */
+  aria: string;
 }) {
   const mark = CONTACT_MARKS[state];
 
@@ -45,7 +57,7 @@ export function TxTrace({
     // resting state it has no lines at all — an empty bordered box on a phone
     // would be a component announcing that it has nothing to say. layout.css
     // reads the attribute; the count is not a design value.
-    <aside className="tx" aria-label="Request preview" data-log={log.length > 0 ? "" : undefined}>
+    <aside className="tx" aria-label={aria} data-log={log.length > 0 ? "" : undefined}>
       {/* THE TONE IS ON THE HEAD AND NOT ON A WRAPPER INSIDE IT. state.css sets
           `--st-color` from `[data-tone]` on any element and `.st-dot` and
           `.st-word` paint with it, so the dot can stay where the sheet draws it
@@ -87,7 +99,7 @@ export function TxTrace({
           between the headers and the body gets its height from contact.css
           instead, which is the layer that owns heights. Measured before it was
           changed: the separator was 20.34px of newline. */}
-      <pre className="tx-body">
+      <pre className="tx-body" lang="en">
         {lines === null
           ? "waiting for input"
           : lines.map((line, index) => (
@@ -109,7 +121,7 @@ export function TxTrace({
           well would read the same event twice, once as prose and once as a
           transcript. */}
       {log.length === 0 ? null : (
-        <ul className="st-log tx-log">
+        <ul className="st-log tx-log" lang="en">
           {log.map((line, index) => (
             <li data-dir={line.dir} key={index}>
               {line.text}

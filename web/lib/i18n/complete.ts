@@ -31,10 +31,21 @@
 // maintain, and the thing it would assert is already assertable on the
 // delivered page.
 
+import { TIMSEIL_DEV_WORDS } from "../../content/case-studies/timseil-dev.ts";
+import { ABOUT } from "../about/content.ts";
+import { ABOUT_SECTIONS } from "../about/sections.ts";
+import { TRAJECTORY } from "../about/trajectory.ts";
+import { ERRORS } from "../errors/words.ts";
+
+import {
+  type ContentBundle,
+  type ResolvedContent,
+  resolveContent,
+} from "./bundle.ts";
 import { de } from "./messages/de.ts";
 import { en, type Messages } from "./messages/en.ts";
 import { fr } from "./messages/fr.ts";
-import type { Locale } from "./routes.ts";
+import { LOCALES, type Locale } from "./routes.ts";
 
 /** The three overlays, keyed by language. English is its own overlay and
  *  trivially complete; it is in the table so that nothing has to special-case
@@ -58,29 +69,36 @@ export function isComplete(overlay: Partial<Messages>): boolean {
   });
 }
 
-/**
- * A block of page content in as many languages as have been written.
- *
- * ENGLISH IS REQUIRED AND EVERY OTHER LANGUAGE IS OPTIONAL, which is the type
- * doing two jobs at once: French stays legally empty — ADR 0083's first
- * decision — and a typo in a language key (`ger:`, `de_DE:`) is a compiler
- * error rather than a bundle that silently never resolves.
- */
-export type ContentBundle<T> = { readonly en: T } & Partial<Record<Locale, T>>;
+// THE THREE BUNDLE NAMES LIVE IN `bundle.ts` AND ARE RE-EXPORTED HERE, so that
+// a caller does not have to know the split exists. The split is a byte count, not
+// a taste: this file imports all three catalogues, and `app/[lang]/error.tsx` is a
+// client component that reads one bundle. `bundle.ts` says the rest.
+export { type ContentBundle, type ResolvedContent, resolveContent };
 
 /**
  * Every bundle a page reads its words from.
  *
- * IT IS EMPTY IN U8, AND IT IS HERE ANYWAY. The mechanism has to be green
- * before the first translation leans on it: `complete.test.ts` proves the
- * missing-bundle case against a fixture today, and U8a registers About, the
- * case study and the scattered lines against the same list.
+ * IT WAS EMPTY IN U8 AND IT WAS HERE ANYWAY. The mechanism had to be green
+ * before the first translation leaned on it: `complete.test.ts` proved the
+ * missing-bundle case against a fixture, and U8a is the phase that fills the
+ * list.
+ *
+ * ONE ENTRY IS ONE COMMIT, AND THAT IS NOT A STYLE RULE. A bundle registered
+ * here without a `de` makes `languageComplete("de")` false, which sends every
+ * word on /de back to English — the whole page, not the untranslated part. So a
+ * module arrives in this list in the same commit that finishes it.
  *
  * `unknown` RATHER THAN A UNION, because this list exists to be counted and
  * walked, never to be read through. A page imports its own bundle and knows its
  * own type; `languageComplete` only asks whether a key is there.
  */
-export const BUNDLES: readonly ContentBundle<unknown>[] = [];
+export const BUNDLES: readonly ContentBundle<unknown>[] = [
+  TRAJECTORY,
+  ABOUT,
+  ABOUT_SECTIONS,
+  TIMSEIL_DEV_WORDS,
+  ERRORS,
+];
 
 /** Does every registered bundle carry this language? */
 export function bundlesComplete(
@@ -88,6 +106,85 @@ export function bundlesComplete(
   bundles: readonly ContentBundle<unknown>[] = BUNDLES,
 ): boolean {
   return bundles.every((bundle) => bundle[locale] !== undefined);
+}
+
+/**
+ * Where a bundle has a different SHAPE in one language than it has in English.
+ *
+ * `bundlesComplete` asks whether a language is there. This asks whether what is
+ * there is the same thing — and the two questions have different answers to the
+ * same defect. A `Record<StationKey, Prose>` cannot be short, because the
+ * compiler counts its keys; a `readonly string[]` can. `problem` has three
+ * paragraphs and `constraints` has five, and a German bundle with four of them
+ * type-checks, resolves, and quietly drops a paragraph off the page.
+ *
+ * IT IS NOT PART OF `languageComplete`, ON PURPOSE. A missing language is a
+ * translation that has not happened, and the honest answer to it is to serve
+ * English. A shape that disagrees is a programming error, and the honest answer
+ * to that is a red test — not a page that silently reverts to English and leaves
+ * somebody wondering why German stopped working.
+ *
+ * Values are never compared, only structure: keys, array lengths and the kind of
+ * thing at each position. Complaints come back as paths, the same shape
+ * complete.test.ts already uses for its orphans, because a list of places is
+ * readable and a thrown first failure is not.
+ */
+export function bundleShapes(
+  bundles: readonly ContentBundle<unknown>[] = BUNDLES,
+): readonly string[] {
+  const complaints: string[] = [];
+
+  bundles.forEach((bundle, index) => {
+    for (const locale of LOCALES) {
+      if (locale === "en") continue;
+      const translated = bundle[locale];
+      if (translated === undefined) continue;
+      compareShape(bundle.en, translated, `[${String(index)}].${locale}`, complaints);
+    }
+  });
+
+  return complaints;
+}
+
+function compareShape(en: unknown, other: unknown, path: string, out: string[]): void {
+  if (Array.isArray(en)) {
+    if (!Array.isArray(other)) {
+      out.push(`${path}: ${typeof other} where English has a list`);
+      return;
+    }
+    if (other.length !== en.length) {
+      out.push(`${path}: ${String(other.length)} of ${String(en.length)}`);
+      return;
+    }
+    en.forEach((item, index) => {
+      compareShape(item, other[index], `${path}[${String(index)}]`, out);
+    });
+    return;
+  }
+
+  if (typeof en === "object" && en !== null) {
+    if (typeof other !== "object" || other === null || Array.isArray(other)) {
+      out.push(`${path}: ${typeof other} where English has an object`);
+      return;
+    }
+    const mine = Object.keys(en);
+    const theirs = Object.keys(other);
+    const missing = mine.filter((key) => !theirs.includes(key));
+    const extra = theirs.filter((key) => !mine.includes(key));
+    if (missing.length > 0) out.push(`${path}: missing ${missing.join(" · ")}`);
+    if (extra.length > 0) out.push(`${path}: unknown ${extra.join(" · ")}`);
+    for (const key of mine.filter((name) => theirs.includes(name))) {
+      compareShape(
+        (en as Record<string, unknown>)[key],
+        (other as Record<string, unknown>)[key],
+        `${path}.${key}`,
+        out,
+      );
+    }
+    return;
+  }
+
+  if (typeof en !== typeof other) out.push(`${path}: ${typeof other} where English has ${typeof en}`);
 }
 
 /**
@@ -101,26 +198,4 @@ export function languageComplete(
   bundles: readonly ContentBundle<unknown>[] = BUNDLES,
 ): boolean {
   return isComplete(OVERLAYS[locale]) && bundlesComplete(locale, bundles);
-}
-
-/** What a bundle resolves to, and which language that was. The shape
- *  `resolveMessages` returns, for the same reason: the second value is what a
- *  block puts on its `lang` attribute. */
-export interface ResolvedContent<T> {
-  readonly value: T;
-  readonly resolved: Locale;
-}
-
-/**
- * Read one bundle in the route's language, or in English.
- *
- * IT DOES NOT ASK `languageComplete`. A page that calls this is already being
- * rendered in a language the dictionary resolved; asking a second time would be
- * a second answer that can disagree with the first. What this guards is the
- * narrower case: a bundle registered after the dictionary was read, or read
- * directly by a test.
- */
-export function resolveContent<T>(bundle: ContentBundle<T>, locale: Locale): ResolvedContent<T> {
-  const value = bundle[locale];
-  return value === undefined ? { value: bundle.en, resolved: "en" } : { value, resolved: locale };
 }

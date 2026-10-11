@@ -15,6 +15,7 @@ import test from "node:test";
 
 import { NAV } from "../chrome.ts";
 import { isComplete } from "./complete.ts";
+import { placeholdersIn } from "./fill.ts";
 import { de } from "./messages/de.ts";
 import { en, type Messages } from "./messages/en.ts";
 import { fr } from "./messages/fr.ts";
@@ -55,8 +56,8 @@ void test("German is translated, serves German and carries no lang attribute", (
 // EVERY KEY, NOT A SAMPLE OF THEM. The two assertions above name four strings;
 // this one is the whole catalogue, and it is the test that would catch a German
 // value that was left as its English original by accident rather than on
-// purpose. The twelve that ARE identical are nomenclature and are named — a
-// thirteenth has to be argued for here before it can ship.
+// purpose. The ones that ARE identical are nomenclature and are named — a new
+// one has to be argued for here before it can ship, and U8a argued for two.
 void test("German differs from English everywhere except the named nomenclature", () => {
   const SAME = [
     "navLog",
@@ -71,6 +72,20 @@ void test("German differs from English everywhere except the named nomenclature"
     "blogTags",
     "blogIndexFeed",
     "blogIndexSystem",
+
+    // U8a. `SYSTEM` is the same word in German and the plural beside it is not,
+    // which is why `systemOther` is not in this list — the pair is what proves
+    // the match was read rather than missed.
+    "systemOne",
+    // `CONTRIBUTIONS` is GitHub's term for the thing it counts, and `Beiträge`
+    // belongs to a log ENTRY in ADR 0083's glossary. The frame around this key
+    // DOES move — `contributionsDays` and `contributionsAge` are not here — so
+    // the line reads `1.247 CONTRIBUTIONS · LETZTE 367 TAGE` on /de.
+    "contributionsTotal",
+    // `UPLINK` is the same word in German. It is read from the catalogue anyway,
+    // for the reason `navLog` is: a decision a reviewer can see beats one that
+    // looks like an oversight, and the homepage drew it in the markup until U8a.
+    "uplink",
   ];
 
   const identical = Object.keys(en).filter(
@@ -78,6 +93,35 @@ void test("German differs from English everywhere except the named nomenclature"
   );
 
   assert.deepEqual(identical.sort(), [...SAME].sort());
+});
+
+// A SENTENCE WITH A HOLE IN IT HAS TO HAVE THE SAME HOLES IN EVERY LANGUAGE.
+// U8a gave the catalogue templates — `{measured} von {window} Tagen gemessen` —
+// and `fill` throws on a value nobody asked for. So a translator who drops
+// `{window}` from the German sentence does not ship a sentence missing a number;
+// it takes the page down at build time. This test is the earlier, cheaper place
+// to find that out, and it reads both sides rather than trusting one.
+//
+// THE SET AND NOT THE ORDER, because reordering is the whole reason templates
+// exist: German may put the window first.
+void test("every German value carries the placeholders its English original does", () => {
+  const drifted = Object.keys(en).filter((key) => {
+    const english = [...placeholdersIn(en[key as keyof typeof en])].sort();
+    const german = [...placeholdersIn(de[key as keyof Messages])].sort();
+    return english.join("·") !== german.join("·");
+  });
+
+  assert.deepEqual(drifted, []);
+});
+
+// THE BROKEN CASE, BUILT RATHER THAN WAITED FOR. Today every value in the
+// catalogue is a finished string, so the test above passes without having been
+// exercised — and a test that has never been red is a test nobody has read.
+void test("a translation that lost a placeholder is found, not filled in", () => {
+  const english = "{measured} of {window} days measured";
+  const german = "{measured} von 91 Tagen gemessen";
+
+  assert.notDeepEqual([...placeholdersIn(english)].sort(), [...placeholdersIn(german)].sort());
 });
 
 void test("English resolves to English", () => {

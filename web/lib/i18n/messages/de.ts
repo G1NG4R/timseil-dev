@@ -71,15 +71,24 @@ export const de: Messages = {
   uptime: "VERFÜGBARKEIT",
   cvHint: "CV → TERMINAL AUF / : cv",
   // THE SHEET'S WORD, AND IT IS THE ONE WORD IN THIS FILE WORTH A SECOND LOOK.
-  // `THEMA` is what the German table draws over the seven swatches; read on its
-  // own it is the German for "topic" rather than for a colour scheme, which is
-  // why `themeAria` beside it says `Farbschema` in full. The drawing wins here
-  // because the row is three characters wide in the footer and the sheet is the
-  // authority on its own chrome — but it is a wording call, not a measurement,
-  // and it is the first line to change if it reads wrong on the page.
-  themeLabel: "THEMA",
+  // `FARBE`, AND THE LINE ABOVE IS THE ONE THAT SAID SO. U8 wrote: "`THEMA` is
+  // what the German table draws over the seven swatches; read on its own it is
+  // the German for 'topic' rather than for a colour scheme … it is a wording
+  // call, not a measurement, and it is the first line to change if it reads
+  // wrong on the page." It read wrong on the page. `/de/blog` filters BY TOPIC,
+  // with `TAG:` and `ALLE` over a row of subjects, so a footer saying `THEMA`
+  // over seven colours makes one word mean two things on one site — ADR 0083's
+  // eighth decision calls that a find, not a nuance.
+  //
+  // FIVE CHARACTERS LIKE `THEME`, which is what keeps this a wording change and
+  // not a layout one: the footer row at 390 was measured for the English word
+  // and `FARBE` is the same length. `themeAria` still says `Farbschema` in
+  // full, because an accessible name has room to be exact.
+  themeLabel: "FARBE",
   themeAria: "Farbschema",
   altLabel: "ALT",
+
+  sourceLabel: "QUELLE",
 
   // STATE.05's rule, applied: the label is German and the data value in the api
   // stays `live`, `in_build`, `queued`. `LIVE` and `OFFLINE` are the two words a
@@ -108,7 +117,6 @@ export const de: Messages = {
 
   csYear: "JAHR",
   csStatus: "STATUS",
-  csSource: "QUELLE",
   csProblem: "PROBLEM",
   csConstraints: "RANDBEDINGUNGEN",
   csErrorRate: "FEHLERRATE",
@@ -232,7 +240,6 @@ export const de: Messages = {
   workLegendInBuild: "heißt: läuft, aber noch nicht für andere.",
   workLegendQueued: "heißt: spezifiziert, nicht geschrieben.",
   workLegendRule: "Nichts wird hochgestuft ohne die Zahl, die es belegt.",
-  workTrainingLog: "TRAININGS-LOG",
   workContact:
     "Nichts hier genau das, was du suchst? Ich erkläre dir gern, wie eines " +
     "dieser Systeme gebaut ist.",
@@ -285,7 +292,6 @@ export const de: Messages = {
   blogRead: "LESEZEIT",
   blogContents: "INHALT",
   blogSummary: "ZUSAMMENFASSUNG",
-  blogRunsIn: "LÄUFT IN",
   blogEditSource: "AUF GITHUB BEARBEITEN",
   // THE TWO FOOT LABELS ARE SYMMETRIC IN GERMAN AND ASYMMETRIC IN ENGLISH, and
   // that is grammar rather than a liberty: `PREVIOUS` is a complete label in
@@ -348,9 +354,75 @@ export const de: Messages = {
   notFoundRouteContact: "Kanal öffnen",
   notFoundCvHint: "Der CV ist keine Route — tippe cv im Terminal auf /.",
   notFoundReturn: "ZURÜCK ZUR WURZEL",
-  notFoundSelectedWork: "AUSGEWÄHLTE ARBEITEN",
   notFoundReplay: "GLITCH WIEDERHOLEN",
   notFoundBudgetLede: "Solange du hier bist — beantworte die Anfragen.",
+
+  // U8a. Die Wörter stehen in ADR 0083; was hier zählt, ist `SPUR` für `track`
+  // und `BELEG` für `evidence` — zweimal anders geschrieben wäre ein Fund.
+  evidenceRunsIn: "LÄUFT IN",
+  evidenceShippedIn: "AUSGELIEFERT IN",
+  evidenceRunningIn: "IM EINSATZ IN",
+  evidencePlannedIn: "GEPLANT FÜR",
+  evidenceNone: "NOCH KEIN SYSTEM",
+  evidenceLabel: "BELEG",
+
+  // `SYSTEM` ist auf Deutsch dasselbe Wort, der Plural nicht.
+  systemOne: "SYSTEM",
+  systemOther: "SYSTEME",
+
+  trainingSelfTracked: "SELBST ERFASST",
+  trainingTracks: "{count} SPUREN",
+
+  // Dativ, und genau deshalb ist der ganze Satz der Schlüssel: `Tage` stünde
+  // hier falsch und in `contributionsGraph` richtig.
+  csCoverage: "{measured} von {window} Tagen gemessen",
+
+  // `CONTRIBUTIONS` bleibt GitHubs Wort — `Beiträge` gehört dem Log-Eintrag.
+  contributionsTotal: "{total} CONTRIBUTIONS",
+  contributionsDays: "LETZTE {days} TAGE",
+  contributionsAge: "{age} ALT",
+
+  // Vorgelesen, nicht gezeichnet. `Contributions` groß, weil es im Deutschen
+  // ein Substantiv ist, und Akkusativ: `über 367 Tage`.
+  contributionsGraph: "{total} Contributions über {days} Tage, {from} bis {to}",
+  contributionsGraphEmpty: "Contribution-Kalender {state}",
+
+  // U8a. `ZEIGT … VON … BEITRÄGEN` ist Dativ, und genau deshalb steht der ganze
+  // Satz im Schlüssel: `BEITRÄGE` wäre hier falsch und ist in
+  // `blogIndexEntries` richtig.
+  workShowing: "ZEIGT {shown} VON {total}",
+  blogShowing: "ZEIGT {shown} VON {total} BEITRÄGEN",
+  workFigures: "ZAHLEN AUS /api/systems",
+  logCount: "{count} {entries} IM LOG",
+  // `LETZTE` AND NOT `NEUESTE`, FOR THE REASON ABOVE ONE BLOCK UP. The
+  // catalogue already says `LETZTE {days} TAGE` under the contribution graph on
+  // this same page; two words for "the most recent n" is the drift ADR 0083's
+  // eighth decision is about. Flagged at the C5 checkpoint as the one of three
+  // German choices that was simply the wrong word.
+  homeLogLatest: "LETZTE {count}",
+  blogFilterSearch: 'SUCHE: "{q}"',
+
+  // U8a. `AUSGEWÄHLTE ARBEITEN` und `TRAININGS-LOG` standen schon hier — unter
+  // `notFoundSelectedWork` und `workTrainingLog`, und die Startseite zeichnete
+  // beide englisch ins Markup. Ein Wort, zwei Schreibweisen, dieselbe Sprache.
+  selectedWork: "AUSGEWÄHLTE ARBEITEN",
+  trainingLog: "TRAININGS-LOG",
+
+  // `UPLINK` ist auf Deutsch dasselbe Wort; die Zeile darunter ist ein Satz.
+  uplink: "UPLINK",
+  uplinkMeta: "ZWEI BLÖCKE · JEDER NENNT SEINE QUELLE",
+
+  channelSection: "KANAL",
+
+  trajectoryPickedUp: "AUFGENOMMEN",
+  trajectoryShipped: "AUSGELIEFERT",
+
+  workAnyStack: "BELIEBIG",
+  blogAllTags: "ALLE",
+
+  // Vorgelesen, nicht gezeichnet.
+  navMainAria: "Hauptnavigation",
+  contactTraceAria: "Vorschau der Anfrage",
 
   based: "MIT SITZ IN LUXEMBURG",
   privacy: "DATENSCHUTZ",

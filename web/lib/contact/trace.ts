@@ -17,6 +17,14 @@
 // A PURE FUNCTION AND NOT MARKUP, for the reason lib/state/retry.ts gives: the
 // byte count is a number in the UI, and a number in the UI that no test
 // recalculates is what invariant 1 is about.
+//
+// IT IS NOT TRANSLATED, AND U8a IS WHERE THAT STOPPED BEING FREE. Every line
+// here is a request line, a header name, a byte count or the note beside the
+// honeypot — the machine's voice, which ADR 0083's second decision keeps in
+// English in every language. A German `Inhaltstyp:` over a header that really
+// reads `content-type` would be a drawing of a request rather than the request,
+// which is the one thing the head of this file says it must never be. So the
+// words stay and `TxTrace` marks the `<pre>` `lang="en"`.
 
 import { SITE_URL } from "../site.ts";
 

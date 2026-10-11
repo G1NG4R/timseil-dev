@@ -123,7 +123,7 @@ function sourceHref(post: PostMeta): string {
  *  nowhere — invariant 5, decided once in content/case-studies/index.ts. */
 function systemLink(post: PostMeta, locale: Locale): string | null {
   if (post.systemId === null) return null;
-  const study = caseStudyFor(post.systemId);
+  const study = caseStudyFor(post.systemId, locale);
   return study === null ? null : localeHref(locale, caseStudyPath(study));
 }
 

@@ -62,7 +62,7 @@ export function PostRail({
 
       {systemHref === null || systemLabel === null ? null : (
         <div className="post-runs-in">
-          <p className="post-rail-label">{messages.blogRunsIn}</p>
+          <p className="post-rail-label">{messages.evidenceRunsIn}</p>
           <Link href={systemHref}>{systemLabel} →</Link>
         </div>
       )}

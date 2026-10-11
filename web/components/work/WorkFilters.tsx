@@ -35,7 +35,8 @@ import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/state/EmptyState";
 import { FilterChip } from "@/components/work/FilterChip";
-import { workCount } from "@/lib/work/counts";
+import type { Messages } from "@/lib/i18n/messages/en";
+import { type WorkCountWords, workCount } from "@/lib/work/counts";
 import type { StateWord } from "@/lib/state/words";
 import {
   ANY_STACK,
@@ -99,7 +100,7 @@ export function WorkFilters({
     noMatchHead: string;
     noMatchReason: string;
     reset: string;
-  };
+  } & WorkCountWords & Pick<Messages, "workAnyStack">;
 }) {
   const [axis, setAxis] = useState<Axis>(NO_FILTER);
   // Stable across the server pass and hydration, which a counter in this file
@@ -153,7 +154,7 @@ export function WorkFilters({
 
             <div className="work-chips" role="group" aria-labelledby={`${id}-stack`}>
               <FilterChip
-                label="ANY"
+                label={strings.workAnyStack}
                 pressed={axis.stack === ANY_STACK}
                 sentinel
                 onPress={() => {
@@ -182,7 +183,7 @@ export function WorkFilters({
           reader who cannot see the list shorten is otherwise told nothing by a
           press that changed everything below it. */}
       <p className="work-count" aria-live="polite">
-        {workCount(rows.length, shown.length)}
+        {workCount(rows.length, shown.length, strings)}
       </p>
 
       {shown.length === 0 ? (

@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-import { OPERATOR } from "@/lib/about/content";
+import type { OperatorRow } from "@/lib/about/content";
 
 /**
  * The right column of the hero: the same spec grammar the case study uses.
@@ -26,8 +26,14 @@ import { OPERATOR } from "@/lib/about/content";
  *
  * `LANGUAGES` IS NOT A ROW, and lib/about/content.ts carries the argument: the
  * sheet's value for it is `[LANGUAGES]`.
+ *
+ * THE ROWS COME IN AS A PROP SINCE U8a. Six of the seven values are data and
+ * stand in one place for every language; what moves is every label and the one
+ * value that is a sentence, and the page is what knows which language it is in.
+ * `OPERATOR` is the kicker above the grid and is not one of them — it names the
+ * system this page is, like `SYS.05` beside it.
  */
-export function OperatorCard() {
+export function OperatorCard({ rows }: { rows: readonly OperatorRow[] }) {
   return (
     <div className="op-card marks">
       <p className="op-kicker">OPERATOR</p>
@@ -36,8 +42,8 @@ export function OperatorCard() {
           the columns line up across rows, and a box that exists only to be
           removed from the box tree is a box that should not have been added. */}
       <dl className="op-grid">
-        {OPERATOR.map((row) => (
-          <Fragment key={row.label}>
+        {rows.map((row) => (
+          <Fragment key={row.key}>
             <dt className="op-label">{row.label}</dt>
             {/* `data-accent` is presence and not a value — `false` would render
                 `data-accent="false"` and match `[data-accent]`, which is the

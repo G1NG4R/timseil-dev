@@ -1,4 +1,4 @@
-import { PRINCIPLES, stationNumber } from "@/lib/about/content";
+import { type Principle, stationNumber } from "@/lib/about/content";
 
 /**
  * SYS.05.03 — four principles, numbered by their position.
@@ -18,12 +18,17 @@ import { PRINCIPLES, stationNumber } from "@/lib/about/content";
  * outline for a section whose own name is not a heading either — SectionHead
  * says why it renders a `<div>`, and M2's a11y audit owns the question of
  * whether these sections deserve a visible outline at all.
+ *
+ * THE FOUR COME IN AS A PROP SINCE U8a, because they are prose and prose has a
+ * language. The key is the position rather than the title for the same reason:
+ * a translated title is a different string, and a React key that changes with
+ * the language is a key that was never identifying the row.
  */
-export function Principles() {
+export function Principles({ principles }: { principles: readonly Principle[] }) {
   return (
     <ol className="prin-grid">
-      {PRINCIPLES.map((item, index) => (
-        <li className="prin" key={item.title}>
+      {principles.map((item, index) => (
+        <li className="prin" key={stationNumber(index)}>
           <span className="prin-no" aria-hidden="true">
             {stationNumber(index)}
           </span>

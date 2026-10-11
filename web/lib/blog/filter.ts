@@ -20,6 +20,8 @@
 // the shape this repository files as #241.
 
 import type { PostMeta } from "../content/posts.ts";
+import { fill } from "../i18n/fill.ts";
+import type { Messages } from "../i18n/messages/en.ts";
 import { tagLabel, type TagChip } from "./tags.ts";
 
 /**
@@ -135,7 +137,13 @@ export function applyFilter<T extends FilterRow>(rows: readonly T[], axis: Axis)
  * THE QUERY IS ECHOED IN QUOTES AND NOT UPPER-CASED. It is the reader's string,
  * not our vocabulary, and shouting it back changes what they typed.
  */
-export function activeLabels(axis: Axis, chips: readonly TagChip[]): readonly string[] {
+export type FilterWords = Pick<Messages, "blogFilterSearch">;
+
+export function activeLabels(
+  axis: Axis,
+  chips: readonly TagChip[],
+  words: FilterWords,
+): readonly string[] {
   const labels: string[] = [];
 
   if (axis.tag !== ALL_TAGS) {
@@ -143,9 +151,12 @@ export function activeLabels(axis: Axis, chips: readonly TagChip[]): readonly st
     // key it drew. Printing the raw tag beats printing nothing: a panel that
     // named one filter instead of two explains the emptiness with half its cause.
     const chip = chips.find((one) => one.key === axis.tag);
+    // `TAG:` STAYS WHERE IT IS RENDERED, for the reason messages.test.ts keeps
+    // `blogTags` in its nomenclature list: it is the same word in German. The
+    // word beside it is a tag's own name and was never ours to translate.
     labels.push(`TAG: ${chip?.label ?? tagLabel(axis.tag)}`);
   }
-  if (axis.q !== "") labels.push(`SEARCH: "${axis.q}"`);
+  if (axis.q !== "") labels.push(fill(words.blogFilterSearch, { q: axis.q }));
 
   return labels;
 }

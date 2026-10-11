@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import type { ReactNode } from "react";
 
-import { STATIONS, restingStation } from "@/lib/about/trajectory";
+import { type Station, restingStation } from "@/lib/about/trajectory";
 
 /**
  * SYS.05.01 — the one control on this page, and it ships no JavaScript.
@@ -38,10 +38,17 @@ import { STATIONS, restingStation } from "@/lib/about/trajectory";
  * stylesheet owns which panel that reveals; this component does not render the
  * panels itself, so a change to what a panel contains never touches the control.
  * That is the seam ADR 0064 drew for the work index, kept without the island.
+ *
+ * AND SINCE U8a THE STATIONS COME IN THE SAME WAY, for the reason the panels do
+ * and one more: the caption under each dot is prose, so it has a language. A
+ * rail that imported `STATIONS` would draw the English captions under German
+ * panels and nothing would be red — the page knows which language it is in, and
+ * it is the page that hands both halves over.
  */
 export function TrajectoryRail({
   name,
   labelledBy,
+  stations,
   panels,
 }: {
   /** The radio group's name. Unique per rail in the document. */
@@ -49,7 +56,10 @@ export function TrajectoryRail({
   /** The id of the heading that names this group — the section title already on
    *  the screen, exactly as `WorkFilters` names its two chip rows. */
   labelledBy: string;
-  /** `<TrajectoryPanel>` per station, in STATIONS' order, rendered by the page. */
+  /** The six, in the route's language. The rail reads three of their fields:
+   *  the key, the label over the dot and the caption under it. */
+  stations: readonly Station[];
+  /** `<TrajectoryPanel>` per station, in `stations`' order, rendered by the page. */
   panels: readonly ReactNode[];
 }) {
   const resting = restingStation();
@@ -62,7 +72,7 @@ export function TrajectoryRail({
           component's to maintain, with no script to maintain it. The visible
           section title is the name, so no second sentence is invented for it. */}
       <div className="tl-rail" role="group" aria-labelledby={labelledBy}>
-        {STATIONS.map((station, index) => (
+        {stations.map((station, index) => (
           <Fragment key={station.key}>
             <input
               className="tl-input"
@@ -92,7 +102,7 @@ export function TrajectoryRail({
 
       <div className="tl-panels">
         {panels.map((panel, index) => (
-          <Fragment key={STATIONS[index].key}>{panel}</Fragment>
+          <Fragment key={stations[index].key}>{panel}</Fragment>
         ))}
       </div>
     </div>

@@ -7,6 +7,7 @@ import { SectionHead } from "@/components/ui/SectionHead";
 import { type SystemList, systemsMeta } from "@/lib/api/systems";
 import { systemEntries } from "@/lib/home/systems";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
 import { readData, type Read } from "@/lib/state/read";
 import { NO_DATA } from "@/lib/state/words";
 
@@ -20,7 +21,7 @@ const WAIT_SOURCE = "ops-api /api/systems";
  * THE HEAD IS INSIDE THE STREAMED REGION for TrainingLog's reason one section
  * up. The sheet puts `02 SYSTEMS` in the head, that is the answer's own count,
  * and a head rendered before the answer would either carry no meta or need a
- * second pass for one line. `systemsMeta(null)` writes `— NO DATA SYSTEMS` and
+ * second pass for one line. `systemsMeta(null, messages)` writes `— NO DATA SYSTEMS` and
  * keeps `SOURCE: /api/systems`, so the waiting head names what it waits for.
  *
  * THE LIST IS AN `<ol>` BECAUSE THE NUMBER IS THE ORDER. `01`, `02` are display
@@ -62,22 +63,26 @@ export function Systems({
   read,
   exit = null,
   messages,
+  locale,
 }: {
   read: Read<SystemList>;
   /** The way out of the empty state. `null` in the gallery, where there is a list. */
   exit?: { href: string; label: string } | null;
   messages: Messages;
+  /** For the one sentence in a row that is not the api's: the case study's
+   *  `blurb`, which exists in three languages since U8a. */
+  locale: Locale;
 }) {
   const body = readData(read);
-  const entries = systemEntries(body);
+  const entries = systemEntries(body, locale);
 
   return (
     <section className="home-section sys" aria-labelledby="sec-sys-02">
       <SectionHead
         id="SYS.02"
-        title="SELECTED WORK"
+        title={messages.selectedWork}
         titleId="sec-sys-02"
-        meta={systemsMeta(body)}
+        meta={systemsMeta(body, messages)}
       />
 
       {entries.length === 0 ? (

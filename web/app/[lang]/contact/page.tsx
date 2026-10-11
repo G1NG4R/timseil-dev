@@ -55,7 +55,7 @@ export default async function Page() {
   return (
     <>
       <section className="contact" aria-labelledby={TITLE_ID}>
-        <SectionHead id="SYS.06" title="CHANNEL" titleId={TITLE_ID} />
+        <SectionHead id="SYS.06" title={messages.channelSection} titleId={TITLE_ID} />
 
         <h1 className="contact-headline">{messages.contactHeadline}</h1>
 
@@ -72,6 +72,7 @@ export default async function Page() {
         <ContactForm
           copy={{
             emailHint: messages.contactEmailHint,
+            tracePreview: messages.contactTraceAria,
             sending: messages.contactSending,
             accepted: messages.contactAccepted,
             invalid: messages.contactInvalid,

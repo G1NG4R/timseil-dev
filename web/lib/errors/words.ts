@@ -12,18 +12,32 @@
 // in the app, or holding this page's five sentences where only this page reads
 // them. This is the second one, and it costs about 400 bytes.
 //
-// WHICH MAKES THIS PAGE ENGLISH, and app/global-not-found.tsx already pays the
-// same price for the same kind of reason ("THE SHELL IS ENGLISH, AND IT HAS TO
-// BE"). Today that costs nothing a visitor can see: the German and French
-// overlays are empty, so every page on this site already serves English text
-// (lib/i18n/messages.ts, "KEINE HALBEN SEITEN"). When P6 fills a language it
-// will cost something, and the backlog says so rather than this file pretending
-// otherwise. A dictionary key that no reader could ever translate through would
-// have been the dishonest version of the same limitation.
+// THAT MADE THIS PAGE ENGLISH UNTIL U8a, and the note it carried said what the
+// bill would be: "When P6 fills a language it will cost something, and the
+// backlog says so rather than this file pretending otherwise." U8 filled German
+// and the bill arrived. It is paid here rather than in the dictionary — the
+// five sentences get a second language the same way the About page's prose
+// does, as a bundle, and `lib/i18n/bundle.ts` exists precisely so that a client
+// component can resolve one without importing a catalogue.
+//
+// THIS PAGE RESOLVES ON ITS OWN, AND THAT IS THE ONE SEAM WORTH KNOWING ABOUT.
+// Every server-rendered page asks `languageComplete`, which reads the catalogue
+// AND every registered bundle; this one can only ask `resolveContent` about the
+// bundle in front of it. The two could disagree — a German that is complete
+// here and incomplete there — and what keeps them together is not code but a
+// test: complete.test.ts asserts `languageComplete("de")` is true, so a bundle
+// that lost its German is a red suite rather than a page in two languages. The
+// day somebody takes a bundle out of `BUNDLES` to save bytes, this is the file
+// that goes quietly wrong, and the addendum to ADR 0083 says so.
 //
 // WHAT IS NOT HERE, the split H10 made: `500`, `ERROR`, `DIGEST` and
 // `REQUEST ID` are nomenclature (LANG.01) and lib/state/lines.ts composes the
 // panel, because an error panel is a log and a log is the machine's voice.
+
+import { type ContentBundle, type ResolvedContent, resolveContent } from "../i18n/bundle.ts";
+import type { Locale } from "../i18n/routes.ts";
+
+import { ERROR_WORDS_DE } from "./words.de.ts";
 
 export const ERROR_WORDS = {
   // THE LEDE SAYS WHERE THE DAMAGE STOPS, and it may say that because it was
@@ -54,3 +68,21 @@ export const ERROR_WORDS = {
   retry: "TRY AGAIN",
   home: "RETURN TO ROOT",
 } as const;
+
+/** The five sentences, as a shape a second language has to fill. */
+export type ErrorWords = { readonly [K in keyof typeof ERROR_WORDS]: string };
+
+/** The error page's words, per language. Registered in lib/i18n/complete.ts. */
+export const ERRORS: ContentBundle<ErrorWords> = { en: ERROR_WORDS, de: ERROR_WORDS_DE };
+
+/**
+ * The words for a route, and the language they came back in.
+ *
+ * THE SECOND HALF IS WHAT THE BLOCK PUTS IN ITS `lang`. On `/fr` these are
+ * English sentences inside a French document, and an attribute is the only
+ * honest way to say so — the same one `getDictionary` hangs on `<main>`, set
+ * here by the one page that has no server parent to set it.
+ */
+export function errorWordsFor(locale: Locale): ResolvedContent<ErrorWords> {
+  return resolveContent(ERRORS, locale);
+}

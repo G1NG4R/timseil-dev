@@ -24,6 +24,8 @@
 // bytes, and ADR 0035's overlapping start puts a real case behind the
 // difference.
 
+import { fill, plural } from "../i18n/fill.ts";
+import type { Messages } from "../i18n/messages/en.ts";
 import { NO_DATA, TRACK_MARKS, isTrackState, type TrackState } from "../state/words.ts";
 
 import type { GetBody } from "./client.ts";
@@ -41,7 +43,8 @@ export type Training = GetBody<"/api/training">;
  * split it again to draw it.
  */
 export interface EvidenceLine {
-  /** `RUNS IN`, `SHIPPED IN`, `RUNNING IN`, `PLANNED IN`, `NO SYSTEM YET`. */
+  /** `LÄUFT IN`, `AUSGELIEFERT IN`, `IM EINSATZ IN`, `GEPLANT FÜR`,
+   *  `NOCH KEIN SYSTEM` — in the language of the route, since U8a. */
   readonly prefix: string;
   /**
    * The systems, or the note that stands in for them, or `null`.
@@ -92,26 +95,30 @@ export interface ModuleView {
  * `RUNNING IN` is the one kept — `TOUCHED IN` describes how much of the system
  * the track accounts for, which is a judgement no column carries. Recorded as a
  * sheet finding rather than settled quietly.
+ *
+ * AND THE GERMAN SIDE OF THAT SAME PROBLEM IS WHY THIS IS A TABLE OF KEYS NOW.
+ * LANG.01 translates `SHIPPED IN` as `LÄUFT IN`, which messages/de.ts has spelt
+ * for `RUNS IN` since H9. Taking the sheet at its word would have given three of
+ * these four one German word — three kinds of evidence that read as one, which
+ * is the defect the paragraph above is about, in the other language. The words
+ * are in the catalogue and the reason is in ADR 0083's addendum.
  */
-const PREFIX: Record<TrackState, string> = {
-  core: "RUNS IN",
-  applied: "SHIPPED IN",
-  learning: "RUNNING IN",
-  queued: "PLANNED IN",
+const PREFIX_KEY: Record<TrackState, keyof Messages> = {
+  core: "evidenceRunsIn",
+  applied: "evidenceShippedIn",
+  learning: "evidenceRunningIn",
+  queued: "evidencePlannedIn",
 };
-
-/** What the line says when the array is empty, whatever the state. */
-const NO_EVIDENCE = "NO SYSTEM YET";
 
 /**
  * The prefix for a row that has systems but a state this build cannot name.
  *
  * Neutral on purpose. The four in `PREFIX` each say what the evidence MAKES the
  * track, and that is the half a newer contract has taken away; this one says
- * only what the rows are. `NO SYSTEM YET` would be plainly false about a row
+ * only what the rows are. `evidenceNone` would be plainly false about a row
  * that names two.
  */
-const UNKNOWN_PREFIX = "EVIDENCE";
+const UNKNOWN_PREFIX_KEY = "evidenceLabel" satisfies keyof Messages;
 
 /**
  * One evidence row, spelled the way the sheet spells it.
@@ -147,7 +154,7 @@ function evidenceRow(row: unknown): string | null {
  * TIMSEIL-DEV` — and the day that happens the mobile artboard wants it
  * abbreviated. That is not this phase's problem and it is written down.
  */
-export function evidenceLine(track: unknown): EvidenceLine {
+export function evidenceLine(track: unknown, messages: Messages): EvidenceLine {
   const raw = (track ?? {}) as Record<string, unknown>;
   const rows = Array.isArray(raw.evidence) ? raw.evidence : [];
   const state = isTrackState(raw.state) ? raw.state : null;
@@ -158,14 +165,17 @@ export function evidenceLine(track: unknown): EvidenceLine {
     // The note is the api's word for what stands in place of a system, and the
     // contract sets it only in this branch. Absent, the prefix stands alone.
     const note = nonEmpty(raw.note);
-    return { prefix: NO_EVIDENCE, text: note === null ? null : note.toUpperCase() };
+    return { prefix: messages.evidenceNone, text: note === null ? null : note.toUpperCase() };
   }
 
-  return { prefix: state === null ? UNKNOWN_PREFIX : PREFIX[state], text: systems.join(" · ") };
+  return {
+    prefix: messages[state === null ? UNKNOWN_PREFIX_KEY : PREFIX_KEY[state]],
+    text: systems.join(" · "),
+  };
 }
 
 /** One track, read defensively. `null` when the row has no name to show. */
-export function trackView(track: unknown): TrackView | null {
+export function trackView(track: unknown, messages: Messages): TrackView | null {
   const raw = (track ?? {}) as Record<string, unknown>;
   const name = nonEmpty(raw.name);
   if (name === null) return null;
@@ -176,7 +186,7 @@ export function trackView(track: unknown): TrackView | null {
     name,
     state,
     steps: state === null ? 0 : TRACK_MARKS[state].steps,
-    evidence: evidenceLine(track),
+    evidence: evidenceLine(track, messages),
   };
 }
 
@@ -189,7 +199,7 @@ export function trackView(track: unknown): TrackView | null {
  * because DevOps has six tracks and that balances the row; on this page the
  * number is the order, the same rule HOME.01 states for the sections above.
  */
-export function modules(body: Training | null): readonly ModuleView[] {
+export function modules(body: Training | null, messages: Messages): readonly ModuleView[] {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
   const list = Array.isArray(raw.modules) ? raw.modules : [];
 
@@ -203,7 +213,7 @@ export function modules(body: Training | null): readonly ModuleView[] {
     if (no === null || title === null) continue;
 
     const tracks = (Array.isArray(card.tracks) ? card.tracks : [])
-      .map(trackView)
+      .map((track) => trackView(track, messages))
       .filter((track): track is TrackView => track !== null);
 
     // A module with no tracks keeps its card. ADR 0018 kept it in the answer
@@ -235,11 +245,15 @@ export function modules(body: Training | null): readonly ModuleView[] {
  * the class of number this whole site is an argument against. The sheet means
  * the `updated` field of its own `progress.json` draft, and no column holds it.
  *
- * The words are nomenclature and stay English — the same call `lib/home/
- * sections.ts` makes for `SYS.02 SELECTED WORK`, and the reason no count on
- * this page has ever been a dictionary key.
+ * THE WORDS WERE NOMENCLATURE UNTIL U8a AND THREE OF THE FOUR WERE NOT. This
+ * comment used to point at `lib/home/sections.ts` and say that no count on this
+ * page had ever been a dictionary key. `SELF-TRACKED` is a claim about how the
+ * log is kept, `TRACKS` is the noun ADR 0083 spells `SPUR`, and `EVIDENCE` is
+ * `BELEG` — three labels over numbers, which is exactly the set STATE.05 moves.
+ * What stays is the endpoint, and `padTwo` with it: two digits are a column
+ * width, not a grouped number.
  */
-export function trainingMeta(body: Training | null): string {
+export function trainingMeta(body: Training | null, messages: Messages): string {
   const raw = (body ?? {}) as unknown as Record<string, unknown>;
 
   // `finiteNumber` and not a guard written here: lib/api/values.ts exists
@@ -249,14 +263,15 @@ export function trainingMeta(body: Training | null): string {
   const tracks = finiteNumber(raw.trackCount);
   const systems = finiteNumber(raw.evidenceSystems);
 
-  const parts = ["SELF-TRACKED"];
-  parts.push(tracks === null ? `${NO_DATA} TRACKS` : `${String(tracks)} TRACKS`);
-  parts.push(
+  const counted =
     systems === null
-      ? `EVIDENCE: ${NO_DATA}`
-      : `EVIDENCE: ${padTwo(systems)} ${systems === 1 ? "SYSTEM" : "SYSTEMS"}`,
-  );
-  parts.push("SOURCE: /api/training");
+      ? NO_DATA
+      : `${padTwo(systems)} ${plural(systems, messages.systemOne, messages.systemOther)}`;
+
+  const parts = [messages.trainingSelfTracked];
+  parts.push(fill(messages.trainingTracks, { count: tracks === null ? NO_DATA : String(tracks) }));
+  parts.push(`${messages.evidenceLabel}: ${counted}`);
+  parts.push(`${messages.sourceLabel}: /api/training`);
 
   return parts.join(" · ");
 }

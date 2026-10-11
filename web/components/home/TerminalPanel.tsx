@@ -32,6 +32,14 @@ import { SOON, stateLabel, type StateKey } from "@/lib/state/words";
  * from CSS, which is the prompt this frame needs and is the reason the prefix
  * is in no string: out of the accessibility tree, out of anything a visitor
  * copies, and in one declaration rather than in every producer.
+ *
+ * AND IT IS THE ONE `.st-log` ON THIS SITE WITHOUT `lang="en"` — the find that
+ * stopped U8a's C10 from being a selector. The other three carry nothing but
+ * the machine's voice; this one draws `stateLabel(…, messages)`, so on /de two
+ * of its four lines read `api LIVE` and `terminal GEPLANT`. An island here
+ * would be an attribute saying English over a German word. The keys beside them
+ * (`api`, `terminal`) are field names and read the same in every language,
+ * which is why they are not in the dictionary either.
  */
 export function TerminalPanel({
   status,

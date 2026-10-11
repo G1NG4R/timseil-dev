@@ -48,7 +48,18 @@ const PROBES: readonly Probe[] = [
  *  not. The rig has no api, so `/de/work` draws `workListDown` and
  *  `/de/blog` draws its own empty state — which is exactly where the longest
  *  German strings in the catalogue end up. */
-const ROUTES = ["/de", "/de/work", "/de/blog", "/de/contact", "/de/work/timseil-dev"];
+const ROUTES = [
+  "/de",
+  "/de/work",
+  "/de/blog",
+  "/de/contact",
+  "/de/work/timseil-dev",
+  // U8a PUTS PROSE ON THIS ROUTE AND THAT IS WHY IT IS HERE. The rail is six
+  // captions in one row — `Bare-Metal-Cluster` is the longest of them — and a
+  // caption that outgrows its column does it at one particular width, which is
+  // the one thing the seven checked widths in about.spec.ts cannot see.
+  "/de/about",
+];
 
 /**
  * One overflow this file found and did not cause, carried by name.

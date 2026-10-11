@@ -1,4 +1,4 @@
-import { STACK } from "@/lib/about/content";
+import type { StackTile } from "@/lib/about/content";
 
 /**
  * SYS.05.02 — six tiles, one per axis of the cluster this page's role rests on.
@@ -24,12 +24,18 @@ import { STACK } from "@/lib/about/content";
  * resolved to timseil.dev — a different system from the one being shown, which
  * is invariant 5 pointing somewhere real and still wrong. U9 brings the strip
  * back when the sentence is true again, about the machine it will then name.
+ *
+ * THE TILES COME IN AS A PROP SINCE U8a, and only their labels move: the axis
+ * over the names is a heading over data, which ADR 0083's sixth decision
+ * translates, and the names underneath are the twelve `stack.yaml` carries.
+ * `EDGE` is the one label that reads the same in German, and content.de.ts
+ * says why.
  */
-export function StackTiles() {
+export function StackTiles({ tiles }: { tiles: readonly StackTile[] }) {
   return (
     <ul className="run-grid">
-      {STACK.map((tile) => (
-        <li className="run-tile" key={tile.label}>
+      {tiles.map((tile) => (
+        <li className="run-tile" key={tile.key}>
           {/* The dot is the sheet's 5px mark and says nothing — it is not a
               `.st-dot`, because `.st-dot` is the geometry of a STATE and these
               six axes have none. state.css's split, kept honest in the other

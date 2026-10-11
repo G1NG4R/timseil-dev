@@ -150,6 +150,13 @@ export function BlogList({
           noMatchHead: messages.blogNoMatchHead,
           noMatchReason: messages.blogNoMatchReason,
           reset: messages.blogReset,
+          // The counter and the filter chips are built in the island, which is
+          // the only place that knows what survived the two axes. Three strings
+          // cross the boundary, not the dictionary.
+          blogShowing: messages.blogShowing,
+          sourceLabel: messages.sourceLabel,
+          blogFilterSearch: messages.blogFilterSearch,
+          blogAllTags: messages.blogAllTags,
         }}
       />
     </>

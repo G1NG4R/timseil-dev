@@ -18,7 +18,12 @@
 // AND NOT IN content/case-studies' SHAPE EITHER. That directory exists because
 // there is one file per system. There is one homepage.
 //
-// WHAT IS HERE AND WHAT IS IN en.ts: the ids and the titles are nomenclature —
+// WHAT IS HERE AND WHAT IS IN en.ts: THE TITLE IS THE CATALOGUE'S SINCE U8a.
+// `title` below is still the table a test can hold the order against, but the
+// word a reader sees comes from `selectedWork`, `trainingLog`, `navLog` and
+// `uplink` — the four heads drew English literals in the markup until then, while
+// this catalogue already spelt two of them German for other pages. The ids are
+// nomenclature —
 // LANG.01, "Übersetzt wird Prosa, nicht Nomenklatur" — and a German homepage
 // would still read SYS.02 SELECTED WORK. The sentence that says why a section
 // is empty is prose, so only its KEY is here.

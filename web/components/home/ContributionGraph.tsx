@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/state/EmptyState";
 import { LoadingLines } from "@/components/state/LoadingLines";
 import { contributionsMeta, graphLabel, graphView, type Contributions } from "@/lib/api/contributions";
 import type { Messages } from "@/lib/i18n/messages/en";
+import type { Locale } from "@/lib/i18n/routes";
 import { readData, type Read } from "@/lib/state/read";
 import { NO_DATA } from "@/lib/state/words";
 
@@ -49,9 +50,11 @@ const WAIT_SOURCE = "ops-api /api/contributions";
 export function ContributionGraph({
   read,
   messages,
+  locale,
 }: {
   read: Read<Contributions>;
   messages: Messages;
+  locale: Locale;
 }) {
   const view = graphView(readData(read));
 
@@ -74,7 +77,7 @@ export function ContributionGraph({
       <div
         className="upl-cols"
         role="img"
-        aria-label={graphLabel(view)}
+        aria-label={graphLabel(view, messages, locale)}
         style={{ "--cols": view.columns } as CSSProperties}
       >
         {view.cells.map((cell) => (
@@ -93,7 +96,7 @@ export function ContributionGraph({
       </div>
 
       <figcaption className="upl-head">
-        <span className="upl-label">{contributionsMeta(view)}</span>
+        <span className="upl-label">{contributionsMeta(view, messages, locale)}</span>
 
         {/* LESS ▢▢▢▢▢ MORE — the only place the five steps are named, and they
             are named by position rather than by number, because what the reader

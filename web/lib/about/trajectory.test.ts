@@ -10,12 +10,33 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { caseStudyFor } from "../../content/case-studies/index.ts";
+import { resolveMessages } from "../i18n/messages.ts";
+import { LOCALES } from "../i18n/routes.ts";
 import { placeholders } from "./content.ts";
-import { STATIONS, fillPercent, restingStation } from "./trajectory.ts";
+import {
+  STATIONS,
+  STATION_KEYS,
+  type Station,
+  fillPercent,
+  restingStation,
+  stationsFor,
+} from "./trajectory.ts";
+
+/**
+ * The rail in every language that has one.
+ *
+ * READ THROUGH `stationsFor` AND NOT OFF THE GERMAN MODULE, because the bundle
+ * is the thing under test: a `trajectory.de.ts` that exists and is not wired to
+ * `TRAJECTORY` would pass every assertion below while the page drew English.
+ */
+const RAILS: readonly { readonly language: string; readonly stations: readonly Station[] }[] = [
+  { language: "en", stations: STATIONS },
+  { language: "de", stations: stationsFor("de").stations },
+];
 
 /** Every string a station prints, flattened. */
-function shipped(): readonly string[] {
-  return STATIONS.flatMap((station) => [
+function shipped(stations: readonly Station[]): readonly string[] {
+  return stations.flatMap((station) => [
     station.label,
     station.caption,
     station.title,
@@ -41,7 +62,11 @@ function clusterComponents(): readonly string[] {
 
 void test("nothing the rail prints is a bracketed placeholder", () => {
   // The sheet carries `[Y1]`–`[Y5]` in the labels and `[LANGUAGE]` in a tag row.
-  assert.deepEqual(placeholders(shipped()), []);
+  // Both languages, because U8a's own precedent for this is `[FOLGT]`: a
+  // translation in progress is exactly where a bracket gets parked.
+  for (const rail of RAILS) {
+    assert.deepEqual(placeholders(shipped(rail.stations)), [], rail.language);
+  }
 });
 
 // THE REFUSAL THIS COMPONENT IS BUILT AROUND, AND SINCE U5 IT COVERS THE PROSE.
@@ -50,17 +75,10 @@ void test("nothing the rail prints is a bracketed placeholder", () => {
 // were empty. Now there are six paragraphs, and a paragraph is where a year
 // walks back in — "since 2021", "for three years" — wearing ordinary sentence
 // clothes. Every field is checked rather than the one that used to be the risk.
-void test("no field of any station carries a year", () => {
-  for (const station of STATIONS) {
-    for (const value of [
-      station.label,
-      station.caption,
-      station.title,
-      station.body,
-      ...station.tags,
-      station.shipped?.label ?? "",
-    ]) {
-      assert.equal(/\d{4}/.test(value), false, `${station.key}: ${value}`);
+void test("no field of any station carries a year, in any language", () => {
+  for (const rail of RAILS) {
+    for (const value of shipped(rail.stations)) {
+      assert.equal(/\d{4}/.test(value), false, `${rail.language}: ${value}`);
     }
   }
 });
@@ -98,16 +116,87 @@ void test("two stations shipped a system, and exactly one has a page", () => {
     ["timseil-dev", "talos-prod"],
   );
 
-  assert.notEqual(caseStudyFor("timseil-dev"), null, "timseil.dev has a case study");
-  assert.equal(caseStudyFor("talos-prod"), null, "the cluster has none, and the cell says so");
+  assert.notEqual(caseStudyFor("timseil-dev", "en"), null, "timseil.dev has a case study");
+  assert.equal(
+    caseStudyFor("talos-prod", "en"),
+    null,
+    "the cluster has none, and the cell says so",
+  );
 });
 
 // U5 IS THE PHASE THAT WROTE THEM, so this replaces H7b's count of one. The
 // type already refuses `null`; what it cannot refuse is an empty string, which
 // renders as a panel with a heading and nothing under it.
 void test("every station has prose, and none of it is empty", () => {
-  for (const station of STATIONS) {
-    assert.notEqual(station.body.trim(), "", station.key);
+  for (const rail of RAILS) {
+    for (const station of rail.stations) {
+      for (const value of [station.caption, station.title, station.body]) {
+        assert.notEqual(value.trim(), "", `${rail.language}: ${station.key}`);
+      }
+    }
+  }
+});
+
+// THE ORDER IS THE TUPLE'S AND THE COUNT IS THE TUPLE'S. `Record<StationKey, …>`
+// makes a language with five paragraphs a compile error, which is the half the
+// compiler can do; what it cannot do is notice that `stationsWith` stopped
+// reading `STATION_KEYS` and started reading `Object.keys` of whatever it was
+// handed — at which point the rail's order would come from a translator's
+// editor. Both languages, because both go through the same assembly.
+void test("the rail is the key tuple, in the tuple's order", () => {
+  assert.equal(STATION_KEYS.length, 6);
+
+  for (const rail of RAILS) {
+    assert.deepEqual(
+      rail.stations.map((station) => station.key),
+      [...STATION_KEYS],
+      rail.language,
+    );
+  }
+});
+
+// NOMENCLATURE STANDS ONCE, AND THIS IS WHAT THAT MEANS ON THE PAGE. The label
+// over the dot, the tags and the shipped cell come from `MARKS`, so a German
+// rail prints the same `PROXMOX` and the same `02 timseil.dev` as the English
+// one — and the three prose fields are the only ones that may differ. A
+// translation that moved a tag would be a second spelling of a component name,
+// which is the drift U3's acceptance found a page over.
+void test("German translates the prose and nothing else", () => {
+  const english = STATIONS;
+  const german = stationsFor("de").stations;
+
+  for (const [index, station] of german.entries()) {
+    assert.equal(station.label, english[index].label, station.key);
+    assert.deepEqual(station.tags, english[index].tags, station.key);
+    assert.deepEqual(station.shipped, english[index].shipped, station.key);
+
+    assert.notEqual(station.body, english[index].body, `${station.key} body`);
+  }
+
+  // `Homelab` and `Helpdesk` are the same word in both languages — the reason
+  // is in trajectory.de.ts's head — so the captions are asserted as a set
+  // rather than as six inequalities. Four of six move; the two that do not are
+  // named here so a reviewer sees a decision instead of an oversight.
+  const same = german.filter((station, index) => station.caption === english[index].caption);
+  assert.deepEqual(
+    same.map((station) => station.caption),
+    ["Homelab", "Helpdesk"],
+  );
+});
+
+// THE HALF `languageComplete` EXISTS FOR, READ OFF BOTH SIDES. The catalogue and
+// this bundle resolve separately — one through `resolveMessages`, one through
+// `resolveContent` — and the page puts their output in the same `<main>` under
+// one `lang`. If they ever disagreed, `/de` would carry a German label over an
+// English paragraph and claim German for both. `BUNDLES` is what ties them, and
+// `/fr` is the live case: empty, so both come back English.
+void test("the paragraphs and the catalogue resolve to the same language", () => {
+  for (const locale of LOCALES) {
+    assert.equal(
+      stationsFor(locale).resolved,
+      resolveMessages(locale).resolved,
+      locale,
+    );
   }
 });
 
