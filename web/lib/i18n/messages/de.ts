@@ -71,13 +71,20 @@ export const de: Messages = {
   uptime: "VERFÜGBARKEIT",
   cvHint: "CV → TERMINAL AUF / : cv",
   // THE SHEET'S WORD, AND IT IS THE ONE WORD IN THIS FILE WORTH A SECOND LOOK.
-  // `THEMA` is what the German table draws over the seven swatches; read on its
-  // own it is the German for "topic" rather than for a colour scheme, which is
-  // why `themeAria` beside it says `Farbschema` in full. The drawing wins here
-  // because the row is three characters wide in the footer and the sheet is the
-  // authority on its own chrome — but it is a wording call, not a measurement,
-  // and it is the first line to change if it reads wrong on the page.
-  themeLabel: "THEMA",
+  // `FARBE`, AND THE LINE ABOVE IS THE ONE THAT SAID SO. U8 wrote: "`THEMA` is
+  // what the German table draws over the seven swatches; read on its own it is
+  // the German for 'topic' rather than for a colour scheme … it is a wording
+  // call, not a measurement, and it is the first line to change if it reads
+  // wrong on the page." It read wrong on the page. `/de/blog` filters BY TOPIC,
+  // with `TAG:` and `ALLE` over a row of subjects, so a footer saying `THEMA`
+  // over seven colours makes one word mean two things on one site — ADR 0083's
+  // eighth decision calls that a find, not a nuance.
+  //
+  // FIVE CHARACTERS LIKE `THEME`, which is what keeps this a wording change and
+  // not a layout one: the footer row at 390 was measured for the English word
+  // and `FARBE` is the same length. `themeAria` still says `Farbschema` in
+  // full, because an accessible name has room to be exact.
+  themeLabel: "FARBE",
   themeAria: "Farbschema",
   altLabel: "ALT",
 
@@ -387,7 +394,12 @@ export const de: Messages = {
   blogShowing: "ZEIGT {shown} VON {total} BEITRÄGEN",
   workFigures: "ZAHLEN AUS /api/systems",
   logCount: "{count} {entries} IM LOG",
-  homeLogLatest: "NEUESTE {count}",
+  // `LETZTE` AND NOT `NEUESTE`, FOR THE REASON ABOVE ONE BLOCK UP. The
+  // catalogue already says `LETZTE {days} TAGE` under the contribution graph on
+  // this same page; two words for "the most recent n" is the drift ADR 0083's
+  // eighth decision is about. Flagged at the C5 checkpoint as the one of three
+  // German choices that was simply the wrong word.
+  homeLogLatest: "LETZTE {count}",
   blogFilterSearch: 'SUCHE: "{q}"',
 
   // U8a. `AUSGEWÄHLTE ARBEITEN` und `TRAININGS-LOG` standen schon hier — unter

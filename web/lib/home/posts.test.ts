@@ -55,7 +55,10 @@ describe("the head names its count and its source", () => {
   });
 
   it("says it in the language of the route", () => {
-    assert.equal(logMeta(FOURTEEN, de), "NEUESTE 03 · QUELLE: content/posts");
+    // `LETZTE` is the word the catalogue already uses for "the most recent n",
+    // one line under the contribution graph on this same page. C11 corrected
+    // `NEUESTE` to it — ADR 0083's eighth decision, two words for one idea.
+    assert.equal(logMeta(FOURTEEN, de), "LETZTE 03 · QUELLE: content/posts");
   });
 
   it("says 00 for a directory that read and held nothing", () => {
