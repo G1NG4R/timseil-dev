@@ -12,6 +12,114 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Wo wir stehen — 11.10.2026, U8a gemergt: `v0.47.0`, und die Abnahme findet ein Wort, das 2.437 Tests nicht gefunden haben
+
+`main` = `d34a81b`, Produktion = `d34a81b`, **`v0.47.1`**, `status ok`.
+**Damit ist U8 abgenommen** — beide Hälften, die Mechanik aus U8 und die Prosa
+aus U8a.
+
+### Vier Merges, zwei Kerben, drei Tausche
+
+| | Squash | was |
+|---|---|---|
+| 1 | `474a4a3` | `chore`: next 16.3.6 → 16.3.8 (#426) |
+| 2 | `e145043` | `chore`: Go 1.26.9 und sharp 0.35.5 (#433) |
+| 3 | `5a5d8fa` | **`feat`: U8a (#432) → `v0.47.0`** |
+| 4 | `d2384c1` | `test`: der Insel-Test liest einmal statt elementweise (#435) |
+| 5 | `d34a81b` | **`fix`: die Uplink-Kachel nannte ihre Quelle englisch (#436) → `v0.47.1`** |
+
+Drei Container-Tausche statt fünf: nach #426 brach `publish` an Trivy ab und
+`deploy` wurde übersprungen, nach dem U8a-Merge sperrte ein roter `e2e` das
+Gatter. **Beide Male hat die Pipeline gehalten, was sie verspricht** — es ging
+nichts halb Fertiges hinaus.
+
+### Der Zeuge, dreimal, und dreimal nichts
+
+| Tausch | Fenster | Anfragen je Pfad | Nicht-200 |
+|---|---|---|---|
+| `e145043` (Abhängigkeiten) | 829 s | 829 | **0** |
+| `d2384c1` (U8a) | 1.118 s | 1.118 | **0** |
+| `d34a81b` (Uplink-Fix) | 1.137 s | 1.137 | **0** |
+
+Jeder vor dem Merge **während `e2e`** gestartet, nicht danach — `--until-sha`
+braucht die SHA **und** einen neuen Prozess, zu spät gestartet ist er rot. Für
+**#304** sind das die Tausche neun bis elf; zehn von elf ohne eine Nicht-200.
+
+Uhr beim letzten: `lastDeploy.at` 17:01:32Z, `durationSec` **1111** — wieder die
+Pipeline und nicht der Tausch (#242). `startedAt` 17:01:46,878Z, also **14,9 s**
+nach der gemeldeten Deploy-Zeit; die Reihe davor war 5,4 · 11,8 · 12,3 · 12,6 ·
+14,9 · 13,0 s. Siebte Beobachtung, nichts Neues.
+
+### Gegen Produktion gezählt, nicht behauptet
+
+`grep -o … | wc -l`, nie `grep -c`. **2** heißt Markup plus Flight-Payload
+(ADR 0082), nicht zweimal auf der Seite.
+
+| Route | englisch | deutsch |
+|---|---|---|
+| `/de` | `SHIPPED IN` 0 · `SELF-TRACKED` 0 · `SELECTED WORK` 0 · `TRAINING LOG` 0 · `LATEST` 0 · `SOURCE:` 0 | `AUSGELIEFERT IN` 16 · `SELBST ERFASST` 4 · `AUSGEWÄHLTE ARBEITEN` 4 · `TRAININGS-LOG` 4 · `LETZTE` 4 · `QUELLE:` 10 |
+| `/de/about` | `Read the source…` 0 · `Self-taught…` 0 · `WHAT I RUN` 0 · `PRIMARY` 0 | `Erst den Quellcode…` 2 · `Autodidakt, vom Labor aus` 2 · `WAS ICH BETREIBE` 2 · `SCHWERPUNKT` 2 |
+| `/de/work/timseil-dev` | `This site is the system…` 0 · `of 91 days measured` 0 | `Diese Seite ist das System…` 2 · `von 91 Tagen gemessen` 2 |
+| `/de/work` | `This site as a system` 0 | `Diese Seite als System` **2** |
+
+Die letzte Zeile ist die, die kein e2e-Test zeigen konnte: der `blurb` braucht
+eine antwortende API, und das Rig hat keine. Hier steht sie.
+
+**Die Zeile unter dem Graphen, wörtlich von der Seite:**
+
+    1.820 CONTRIBUTIONS · LETZTE 365 TAGE · QUELLE: /api/contributions · 54M ALT
+
+Rahmen deutsch, Tausenderpunkt deutsch, `CONTRIBUTIONS` als GitHubs Begriff
+stehen geblieben — Entscheidung 1 der Phase, auf der laufenden Seite.
+
+**Und was `Luxembourg · UTC+1` auf `/de/about` beweist:** 2 Vorkommen,
+unübersetzt. Das ist die andere Hälfte von ADR 0083s sechster Entscheidung —
+die Beschriftung bewegt sich, der Datenwert nicht.
+
+### Die Attribute, über zehn Routen gezählt
+
+| Route | `<html>` | Inseln darin |
+|---|---|---|
+| `/` | `en` | 4 × `.st-log` |
+| `/de` | `de` | 4 × `.st-log` — **sonst nichts** |
+| `/fr` | `fr` | `.skip`, Kopf, `<main>`, Fuß **und** 4 × `.st-log` |
+| `/de/about` · `/de/blog` | `de` | **keine** |
+| `/de/work` · `/de/work/timseil-dev` | `de` | 1 bzw. 2 × `.st-log` |
+| `/de/contact` | `de` | `.tx-body` |
+| `/de/privacy` · `/de/imprint` | `de` | `.lg` |
+
+Das Terminal trägt keine Insel, weil es deutsch spricht. Genau die Liste, die
+ADR 0083s Nachtrag beschreibt, und keine zweite.
+
+### Bytes, als Differenz
+
+185.382 → **185.683 B** gzip über neun Skripte, derselbe Baum, `.next` beide
+Male entfernt: **+301 B** für ganz U8a client-seitig. Davon 268 B die deutsche
+Fehlerseite und 33 B die drei Insel-Attribute im Kontakt-Chunk. `make
+bundle-size` verweigert weiter (#301), die Zahl ist jedes `<script src>` des
+gelieferten Dokuments, gzippt und summiert — vergleichbar ist nur die Differenz.
+
+### Gefunden · die Abnahme war das Einzige, das das englische `SOURCE:` gesehen hat
+
+Steht unten ausführlich. Die Kurzfassung ist die Lehre: **2.437 e2e-Tests waren
+grün, `make check` war grün, und auf `/de` stand ein englisches Wort.** Eine
+Abnahme, die die gelieferte Seite zählt, ist nicht die Wiederholung der Tests
+mit anderen Mitteln — sie ist die einzige Prüfung, die nicht weiß, wonach sie
+suchen soll, und genau deshalb findet sie, was niemand als Testfall
+aufgeschrieben hat.
+
+### Gefunden · ein PR ohne Checks ist kein PR, der noch anläuft
+
+#436 hing zwanzig Minuten mit **null** Checks da — nicht rot, gar keine. Der
+Branch war von einem veralteten `origin/main` abgezweigt, also
+`mergeStateStatus: DIRTY`, und **GitHub legt für einen `pull_request`-Lauf gar
+keinen Job an, wenn es den Merge-Commit nicht bilden kann.** Das sieht aus wie
+„läuft noch" und ist „läuft nie". Dieselbe Wurzel wie die Regel, vor dem Push
+`origin/main` zu holen — nur ist die Folge hier kein Dublett-PR, sondern
+Stille.
+
+---
+
 ## Wo wir stehen — 04.10.2026, U8 gemergt: `v0.46.0`, der achte bezeugte Tausch, und drei Trennzeichen in den Bytes
 
 `main` = `5fbcf0c`, Produktion = `5fbcf0c`, `v0.46.0`, `status ok`.
