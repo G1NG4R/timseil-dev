@@ -58,16 +58,33 @@ export const AUTHOR = {
  */
 export const REPO_URL = "https://github.com/G1NG4R/timseil-dev";
 
-/** The one sentence this site says about itself.
+/** The one sentence this site says about itself, in English.
  *
- *  IT LIVES HERE BECAUSE FIVE THINGS READ IT: the `<meta name="description">`
- *  in the layout, three fields in lib/seo/pages.ts (`og:description`,
- *  `twitter:description`, the OG alt text), the JSON-LD `WebSite`, the RSS
- *  channel in lib/seo/feed.ts, and the social card. It said three until U1.
+ *  SINCE #431 THIS IS THE COPY FOR THE READERS THAT HAVE NO LANGUAGE TO SPEAK,
+ *  and there are three of them, all outside `app/[lang]/`: the RSS channel in
+ *  lib/seo/feed.ts, one line above its own `<language>en</language>`; the
+ *  social card drawn at build time in app/og.png/route.tsx; and the alt text
+ *  in lib/seo/pages.ts that transcribes that card. lib/i18n/routes.ts keeps
+ *  all three out of the language tree on purpose.
  *
- *  Not translated, and that is G5's rule rather than an omission: the German
- *  and French dictionaries are empty until P6, and a German description over an
- *  English page is exactly the half page the sheet forbids.
+ *  THE READERS THAT DO HAVE A LANGUAGE READ THE CATALOGUE instead, through
+ *  `siteDescription()` in lib/i18n/messages.ts: the `<meta name="description">`
+ *  in the layout, `og:description`, `twitter:description`, and the JSON-LD
+ *  `WebSite`. The English value there is this string, transcribed, and
+ *  messages.test.ts refuses the two drifting apart.
+ *
+ *  WHAT USED TO STAND HERE WAS TRUE AND IS NOT ANY MORE. The reason was "the
+ *  German and French dictionaries are empty until P6", which U8a ended for
+ *  German; the field was then the last one on `/de` still answering in English
+ *  under `<html lang="de">`. ADR 0083 §7 named it rather than leaving it as a
+ *  silent gap.
+ *
+ *  ONE RESIDUE, AND IT IS NAMED RATHER THAN HIDDEN: on `/fr` the English
+ *  sentence still stands under `<html lang="fr">`. It is the same shape of
+ *  defect, narrower — the whole French page is English and says so on four
+ *  blocks, and no `og:locale` claims otherwise — and it is not fixable until
+ *  French exists. It will need no edit when it does: `resolveMessages` already
+ *  decides it.
  *
  *  There is no SITE_TITLE beside it. `SITE_NAME` is the same string and the
  *  same claim — the `<title>` of this site is its name, and will stay so until

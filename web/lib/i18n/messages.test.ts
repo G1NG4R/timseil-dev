@@ -14,12 +14,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { NAV } from "../chrome.ts";
+import { SITE_DESCRIPTION } from "../site.ts";
 import { isComplete } from "./complete.ts";
 import { placeholdersIn } from "./fill.ts";
 import { de } from "./messages/de.ts";
 import { en, type Messages } from "./messages/en.ts";
 import { fr } from "./messages/fr.ts";
-import { resolveMessages } from "./messages.ts";
+import { resolveMessages, siteDescription } from "./messages.ts";
 
 /** A language that has been translated in full — built from English so that a
  *  key added to en.ts cannot leave this fixture behind. */
@@ -165,4 +166,33 @@ void test("the nav labels are the same four words in both files", () => {
     [en.navWork, en.navLog, en.navAbout, en.navContact],
     NAV.map((entry) => entry.label as string),
   );
+});
+
+// THE SENTENCE THIS SITE SAYS ABOUT ITSELF — #431, and the three tests below
+// are one decision each rather than three angles on one.
+//
+// lib/site.ts keeps the English copy for the three readers that have no
+// language (the RSS channel, the social card, the alt that transcribes it) and
+// the catalogue keeps it for the four that do. Two copies on purpose, for the
+// reason the nav labels are two copies: a file of literals is what a
+// translator reads. What is refused is the two drifting.
+void test("the site's one sentence is the same string in both files", () => {
+  assert.equal(en.siteDescription, SITE_DESCRIPTION);
+});
+
+void test("the sentence follows the language the page will be read in", () => {
+  assert.equal(siteDescription("en"), en.siteDescription);
+  assert.equal(siteDescription("de"), de.siteDescription);
+  assert.notEqual(siteDescription("de"), en.siteDescription);
+});
+
+// THE BROKEN CASE, AND IT IS BROKEN IN THE DIRECTION THAT MATTERS. A German
+// sentence under `<html lang="fr">` would be the defect #431 fixed, moved one
+// segment over. Nothing in siteDescription() decides this: `resolveMessages`
+// serves English whole for an incomplete language, and this function hands
+// back what it is given. The day French is written, the assertion changes
+// because the data did — not because a rule was edited.
+void test("French gets the English sentence, from the derivation and not a rule", () => {
+  assert.equal(siteDescription("fr"), en.siteDescription);
+  assert.notEqual(siteDescription("fr"), de.siteDescription);
 });

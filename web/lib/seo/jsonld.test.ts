@@ -4,6 +4,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { de } from "../i18n/messages/de.ts";
+import { en } from "../i18n/messages/en.ts";
 import { AUTHOR, SITE_URL } from "../site.ts";
 import { aboutLd, collectionLd, personLd, serializeLd, siteLd, webSiteLd } from "./jsonld.ts";
 
@@ -75,12 +77,25 @@ void test("the graph claims no search, no photograph, no address", () => {
 });
 
 // inLanguage is the language the TEXT is in, not the language the route is
-// named after. Today all three routes serve English, and the graph has to say
-// so — a `/de` page claiming `de` while showing English is the half page the
-// sheet forbids, restated for a machine.
-void test("inLanguage is whatever it is handed, so it can follow the strings", () => {
+// named after. It said `en` for all three routes until U8; German is
+// translated now and `/fr` still reaches this function as `en`, because the
+// caller hands it `resolved`. A `/de` page claiming `de` while showing English
+// is the half page the sheet forbids, restated for a machine.
+//
+// THE DESCRIPTION IS ASSERTED IN THE SAME TEST, AND THAT IS THE POINT — #431.
+// Both fields come from the one argument, so the only way to see that they
+// cannot disagree is to read them together. Apart, each would look correct
+// while the node claimed one language and spoke another.
+void test("inLanguage is whatever it is handed, and the description speaks it", () => {
   assert.equal(webSiteLd("en").inLanguage, "en");
+  assert.equal(webSiteLd("en").description, en.siteDescription);
+
   assert.equal(webSiteLd("de").inLanguage, "de");
+  assert.equal(webSiteLd("de").description, de.siteDescription);
+
+  // `/fr` arrives here as `en` — app/[lang]/page.tsx passes `resolved`, not the
+  // route's own language — so the first pair above is already its case.
+  assert.notEqual(webSiteLd("en").description, de.siteDescription);
 });
 
 // ── H7 · the profile block on /about ───────────────────────────────────────

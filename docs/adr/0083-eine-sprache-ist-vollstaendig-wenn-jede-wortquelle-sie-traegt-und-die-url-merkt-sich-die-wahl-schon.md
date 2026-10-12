@@ -2,7 +2,7 @@
 
 **Status:** Angenommen
 **Datum:** 2026-10-03
-**Betrifft:** U8, U8a, ADR 0046, ADR 0047, ADR 0050, #221, #237, #320
+**Betrifft:** U8, U8a, ADR 0046, ADR 0047, ADR 0050, #221, #237, #320, #431
 **Invarianten:** 1 (keine erfundenen Zahlen), 8 (Tokens), 9 (zwei localStorage-Keys)
 
 ## Kontext
@@ -355,10 +355,10 @@ Go-API, und `reasonFor()` rendert beide in denselben Slot. Deutsch wäre die ein
 Hälfte und englisch die andere — für denselben Fehler im denselben Feld. Das
 geht nur mit einer Contract-Änderung, also in einer eigenen Phase.
 
-**`SITE_DESCRIPTION`.** Steht auf `/de` in sechs Metafeldern englisch unter
-`<html lang="de">`. `app/[lang]/layout.tsx` exportiert `metadata` statisch und
-kann ohne `generateMetadata` keine Sprache kennen. Eigenes Issue statt einer
-stillen Lücke.
+**`SITE_DESCRIPTION`.** Stand auf `/de` englisch unter `<html lang="de">`,
+weil `app/[lang]/layout.tsx` `metadata` statisch exportierte und ein statischer
+Export `[lang]` nicht lesen kann. Eigenes Issue statt einer stillen Lücke, und
+das Issue ist **#431, erledigt** — Nachtrag unten.
 
 **Die Rechtstexte.** 1.842 Wörter, `/de/privacy` und `/de/imprint` bleiben eine
 englische Insel mit `lang="en"` auf `.lg` (Entscheidung 2). Eigene Phase, mit
@@ -398,3 +398,60 @@ aus Entscheidung 6; `docs/design/INDEX.md` für die veraltete `[FOLGT]`-Zeile;
 Build-Plan Kapitel U8 und „was Stufe U von K1 vorwegnimmt"; ADR 0046
 (Routen ohne Präfix für EN), ADR 0047 (was nie eine Sprache bekommt), ADR 0050
 (Bundle-Budget); Designkorrektur #6 (`[SOON]`, `— NO DATA`); #221, #237, #320.
+
+## Nachtrag vom 12.10.2026 — #431, und warum sechs Felder vier sind
+
+§7 oben hat `SITE_DESCRIPTION` als „sechs Metafelder" notiert. Beim Umbau waren
+es **vier**, und die Differenz ist keine Zählfehler-Korrektur, sondern eine
+Entscheidung:
+
+| Feld | Folgt der Sprache |
+|---|---|
+| `<meta name="description">` (Layout) | ja |
+| `og:description` | ja |
+| `twitter:description` | ja |
+| JSON-LD `WebSite.description` | ja |
+| `og:image:alt`, zweimal gelesen (`seoFor`, `seoForPost`) | **nein** |
+| RSS-Kanal (`lib/seo/feed.ts`) | nein, war nie im Umfang |
+
+Die zwei `og:image:alt` sind **eine** Konstante, und sie transkribiert
+`/og.png` — einen Route-Handler an der Wurzel, der den englischen Satz zur
+Bauzeit als Bild zeichnet und nach ADR 0047 nie eine Sprache bekommt. Der
+Kommentar daneben sagt seit U1, dass der Alt beschreibt, *was das Bild sagt*.
+Ein deutscher Alt würde behaupten, das Bild sage Deutsch. Die Lösung wäre eine
+Karte pro Sprache; bis dahin ist die Transkription ehrlich, und die Abweichung
+steht als Kommentar in `lib/seo/pages.ts` und als eigener Test, damit sie nicht
+wie ein Übersehen aussieht.
+
+### Die Form: eine Ableitung, nicht eine zweite Regel
+
+`siteDescription(locale)` in `lib/i18n/messages.ts`, auf `resolveMessages`
+gebaut. Damit bekommt `/fr` den englischen Satz **aus derselben Ableitung**,
+die `lang="en"` an seine Blöcke hängt — kein Sonderfall, keine zweite Stelle,
+die jemand pflegen muss. Entscheidung 1 bleibt unangetastet: **kein
+französischer Schlüssel.** Er wäre toter Code, solange `fr` unvollständig ist,
+und er würde den Test „French is empty, serves English and admits it" als
+Beschreibung falsch machen, während er grün bleibt.
+
+`webSiteLd` löst innen auf, bei unveränderter Signatur. Der Kopf von
+`jsonld.ts` verlangt, dass `inLanguage` abgeleitet ist; kommen Sprache und
+Beschreibung aus **einem** Argument, können sie nicht auseinanderlaufen. Preis:
+das Modul ist nicht mehr auf Wertebene i18n-frei.
+
+### Der Rest-Mangel, benannt statt versteckt
+
+Auf `/fr` steht der englische Satz unter `<html lang="fr">` — dieselbe Form von
+Defekt, enger: die ganze Seite ist englisch und sagt es an vier Blöcken, und
+kein `og:locale` behauptet etwas anderes. Nicht behebbar, solange Französisch
+nicht existiert, und behoben ohne Edit an dem Tag, an dem es existiert. Steht
+im Doc-Kommentar von `lib/site.ts`, wo der nächste Leser die Entscheidung
+findet statt der Lücke.
+
+### Was das Werkzeug nicht prüfen konnte
+
+`npm test` liest `lib/**` und `styles/**`; `app/**` hat keinen Unit-Test. Die
+Umstellung des Layouts auf `generateMetadata` ist deshalb **nur** am
+ausgelieferten `<head>` zu sehen, und genau dort prüft `e2e/de.spec.ts` sie —
+auf `/de` und auf `/fr`, pro Feld. Das ist der zweite Preis aus „Was das
+kostet", noch einmal eingelöst: diese Lücke wird durch Lesen geschlossen, nicht
+durch ein Werkzeug.

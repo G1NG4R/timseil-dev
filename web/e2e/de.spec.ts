@@ -50,6 +50,37 @@ async function mainText(page: Page): Promise<string> {
   return (await page.locator("#main").innerText()).replace(/\s+/g, " ");
 }
 
+/** The three metadata fields that say what this site is. Read off the delivered
+ *  `<head>`, which is the only place the layout's `generateMetadata` can be
+ *  observed: `npm test` globs `lib/**` and `styles/**`, so nothing under
+ *  `app/` has a unit test. #431. */
+const DESCRIPTION_FIELDS = [
+  'head meta[name="description"]',
+  'head meta[property="og:description"]',
+  'head meta[name="twitter:description"]',
+] as const;
+
+/** The `WebSite` node's description, off the delivered graph.
+ *
+ *  `textContent` AND NOT `innerText`, and NOT `head script` — about.spec.ts
+ *  paid for both halves of that: the block is a `<script>`, so `innerText`
+ *  answers with the empty string, and React leaves it in `<body>` because it
+ *  carries `dangerouslySetInnerHTML`.
+ *
+ *  PARSED RATHER THAN COUNTED, which is the one place this file departs from
+ *  its own "count occurrences" idiom. `serializeLd` escapes `<`, `>` and `&`
+ *  on the way out, so a substring search over the raw text is a search over a
+ *  string that has been rewritten. The field is what the claim is about. */
+async function webSiteDescription(page: Page): Promise<unknown> {
+  const block = await page
+    .locator('script[type="application/ld+json"]')
+    .evaluate((el) => el.textContent);
+  const graph = (JSON.parse(block) as { "@graph": Record<string, unknown>[] })["@graph"];
+  const node = graph.find((entry) => entry["@type"] === "WebSite");
+  if (node === undefined) throw new Error("no WebSite node in the graph");
+  return node.description;
+}
+
 test.describe("the German route is German", () => {
   test("the document declares German and no block corrects it", async ({ page }) => {
     await page.goto("/de");
@@ -248,6 +279,29 @@ test.describe("the German route is German", () => {
   // against the seeded answer instead, and counted on the delivered page in the
   // production acceptance, where the api answers.
 
+  // THE SENTENCE THE SITE SAYS ABOUT ITSELF — #431, and it is here rather than
+  // in a unit test because the layout is the one word source `npm test` cannot
+  // reach. Four fields, three in the `<head>` and one inside the JSON-LD graph,
+  // and until U8a all four answered in English under `<html lang="de">`.
+  //
+  // THE ALT IS DELIBERATELY NOT ASSERTED AWAY. `og:image:alt` still carries the
+  // English sentence, because it transcribes a language-free picture, so a test
+  // that asked for "no English sentence in the head of /de" would be false by
+  // design. Each field is asked for by name instead.
+  test("the one sentence about this site is German in every field that has a language", async ({
+    page,
+  }) => {
+    await page.goto("/de");
+
+    for (const selector of DESCRIPTION_FIELDS) {
+      await expect(page.locator(selector)).toHaveAttribute("content", de.siteDescription);
+    }
+
+    // The `WebSite` node, which is on the homepage alone: `webSiteLd` sits in
+    // `siteLd`, and `aboutLd`/`contactLd` only reference its `@id`.
+    expect(await webSiteDescription(page)).toBe(de.siteDescription);
+  });
+
   test("the principles and the stack axes are German on /de/about", async ({ page }) => {
     await page.goto("/de/about");
     const text = await mainText(page);
@@ -393,6 +447,24 @@ test.describe("the French route is honest about being English", () => {
 
     expect(countOf(text, en.homeHeadline)).toBe(1);
     expect(countOf(text, de.homeHeadline)).toBe(0);
+  });
+
+  // THE MIRROR OF #431's GERMAN TEST, and the residue lib/site.ts names: these
+  // fields are English under `<html lang="fr">`. That is narrower than the
+  // defect #431 fixed — the whole page is English and says so on four blocks —
+  // and it is what `resolveMessages` decides for a language nobody has written.
+  // A GERMAN sentence here would be the real regression, so it is asserted
+  // absent rather than left to the English one's presence.
+  test("the sentence about this site is the English one, and not the German one", async ({
+    page,
+  }) => {
+    await page.goto("/fr");
+
+    for (const selector of DESCRIPTION_FIELDS) {
+      await expect(page.locator(selector)).toHaveAttribute("content", en.siteDescription);
+    }
+
+    expect(await webSiteDescription(page)).toBe(en.siteDescription);
   });
 
   // THE BROKEN CASE, ON A REAL ROUTE AND NOT A FIXTURE. A bundle resolves per

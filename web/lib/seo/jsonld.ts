@@ -26,9 +26,16 @@
 // started saying `de` by itself on the day the dictionary filled up. Writing
 // `de` here would have been the graph claiming a translation the page did not
 // have; `/fr` still says `en`, and still for that reason.
+//
+// SINCE #431 THE `WebSite` DESCRIPTION IS DRAWN FROM THAT SAME VALUE, so this
+// module is no longer i18n-free at the value level: it imports one function
+// from lib/i18n/messages.ts. That is the price of making the agreement
+// structural instead of conventional, and it is paid in one import rather
+// than in a second parameter the caller has to keep in step.
 
+import { siteDescription } from "../i18n/messages.ts";
 import type { Locale } from "../i18n/routes.ts";
-import { AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "../site.ts";
+import { AUTHOR, SITE_NAME, SITE_URL } from "../site.ts";
 
 /** Stable fragment identities, so the two nodes can point at each other and a
  *  future page can point at either without repeating them. */
@@ -53,7 +60,13 @@ export function webSiteLd(inLanguage: Locale): Record<string, unknown> {
     "@id": WEBSITE_ID,
     name: SITE_NAME,
     url: `${SITE_URL}/`,
-    description: SITE_DESCRIPTION,
+    // THE DESCRIPTION IS DRAWN FROM THE SAME VALUE AS THE TAG BELOW IT, and
+    // that is the whole reason it is resolved here rather than handed in. The
+    // header's rule is that `inLanguage` is derived; a caller that passed the
+    // sentence separately would be handing one fact in twice and owning the
+    // agreement. One argument in, and the node cannot claim German while
+    // saying English. #431.
+    description: siteDescription(inLanguage),
     inLanguage,
     author: { "@id": PERSON_ID },
     publisher: { "@id": PERSON_ID },

@@ -12,6 +12,97 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## #431 · 12.10.2026 — Der eine Satz über diese Seite, und warum sechs Felder vier sind
+
+**Stand:** `chore/site-description-follows-the-language`, **nicht gemergt**.
+`siteDescription(locale)` in `lib/i18n/messages.ts`, das `[lang]`-Layout von
+`metadata` auf `generateMetadata` umgestellt, **973 Unit-Tests** (gegen 968 auf
+`main` gezählt, im selben Baum: drei in `messages.test.ts`, zwei in
+`pages.test.ts`; die Tests an `jsonld` und am Alt-Text wurden **erweitert**,
+nicht hinzugefügt), `make check` grün. ADR 0083 bekommt einen
+Nachtrag vom 12.10. und **kein eigenes ADR daneben**, zum zweiten Mal aus
+demselben Grund: `check-adrs` liest diese Datei mit, und eine Nummer, die hier
+steht, bevor die Datei existiert, macht `make check` rot.
+
+Was offen ist: der PR, und die vier Felder nach dem Merge gegen **Produktion**
+gezählt statt gegen den lokalen Bau.
+
+### Gemessen · die vier Felder am ausgelieferten Dokument, lokaler Produktionsbau
+
+`next start` auf 3200 (nicht 3100 — das gehört dem e2e-Rig), `curl`, aus dem
+HTML gelesen:
+
+| Route | `html lang` | die vier Felder | `og:image:alt` | JSON-LD `inLanguage` |
+|---|---|---|---|---|
+| `/` | `en` | englisch | englisch | `en` |
+| `/de` | `de` | **deutsch** | englisch *(Entscheidung)* | `de` |
+| `/fr` | `fr` | englisch | englisch | `en` |
+
+e2e: `de.spec.ts` + `notfound.spec.ts` **282 passed**, und die zwei neuen Tests
+einzeln nachgezogen — **14 passed** über alle sieben Prüfbreiten. Der Bau
+bleibt statisch: 57 Seiten, jede `[lang]`-Route `◐` (Partial Prerender),
+einzige `ƒ`-Route ist `/healthz` wie vorher.
+
+### Gemessen · `/es` antwortet weiter 404, und das war der Handgriff mit dem Risiko
+
+`asLocale` **wirft**, und `generateMetadata` des Layouts läuft jetzt für jede
+Route im Baum — auch für eine, die gleich 404 antwortet. Next fängt bei der
+Metadaten-Auflösung nur den HTTP-Access-Fallback-Fehler und wirft alles andere
+aus dem `MetadataOutlet` weiter. Dagegen stand, dass `getDictionary()` →
+`notFound()` im Layout-Körper vor jedem Nachfahren läuft. **Gemessen statt
+angenommen:** `notfound.spec.ts` **117 passed**, `/es/about` grün auf allen
+sieben Breiten. Der vorbereitete Rückfall (`isLocale(lang) ? lang :
+DEFAULT_LOCALE`) war nicht nötig und steht nicht im Code.
+
+### Gefunden · die „sechs Felder" des Issues sind vier, und die zwei anderen sind eine Konstante
+
+Das Issue zählt sechs Leser von `SITE_DESCRIPTION`. Übersetzbar sind **vier**:
+`<meta name="description">`, `og:description`, `twitter:description` und das
+JSON-LD `WebSite`. Die beiden übrigen sind **ein** `OG_ALT`, zweimal gelesen
+(`seoFor` und `seoForPost`) — und es transkribiert `/og.png`, einen
+Route-Handler an der Wurzel, der den englischen Satz zur Bauzeit als Bild
+zeichnet und nach ADR 0047 nie eine Sprache bekommt. Sein Kommentar sagt seit
+U1, dass der Alt beschreibt, *was das Bild sagt*; ein deutscher Alt würde
+behaupten, das Bild sage Deutsch.
+
+Die Abweichung steht jetzt dreifach da, damit sie keine Auslassung ist: im
+Kommentar an `OG_ALT`, in einem eigenen Test, der den Alt in **allen drei**
+Sprachen als denselben englischen String behauptet, und im ADR-Nachtrag. Und
+der e2e-Test prüft **pro Feld** — „kein englischer Satz im `head` von `/de`"
+wäre eine Behauptung, die nach dieser Entscheidung falsch ist.
+
+### Gefunden · `innerText` auf einem `<script>` ist leer, und es stand schon aufgeschrieben
+
+Der erste Entwurf des neuen e2e-Tests las den JSON-LD-Block mit `innerText()`.
+`about.spec.ts` hält seit H7 fest, warum das nicht geht: der Block wird nie
+gerendert, `innerText` ist über das definiert, was ein Mensch sieht, und
+antwortet mit dem leeren String — `JSON.parse` wirft darauf. Gefunden durch
+Lesen, bevor der Test lief, nicht durch den roten Lauf.
+
+Zwei Dinge daran sind der Fund und nicht die Anekdote. Erstens steht in
+`blog-index.spec.ts:248` ein `blocks.innerText()`, das grün ist — eine Zeile,
+die funktioniert, obwohl die Begründung daneben sagt, dass sie es nicht
+könnte. Zweitens liest der neue Test den Graphen jetzt **geparst statt
+gezählt**, was in dieser Datei die Ausnahme ist: `serializeLd` ersetzt `<`,
+`>` und `&` durch Escapes, also sucht eine Teilstring-Suche über den Rohtext in
+einem String, der umgeschrieben wurde.
+
+### Gefunden · ein Testkommentar behauptete, alle drei Routen seien englisch
+
+`lib/seo/jsonld.test.ts` schrieb über dem `inLanguage`-Test: „Today all three
+routes serve English." Seit U8 ist das für `/de` falsch. Korrigiert statt
+gelöscht — derselbe Handgriff wie bei den zwei Katalog-Kommentaren in U8a, und
+dieselbe Sorte Satz: eine Begründung, die einmal stimmte, altert still, weil
+kein Werkzeug Kommentare liest.
+
+### Idee · eine Social-Karte pro Sprache
+
+`/og.png` zeichnet einen Satz, den vier Felder daneben inzwischen übersetzt
+ausliefern. Würde die Karte je Sprache gezeichnet, folgte der Alt-Text ohne
+eine weitere Entscheidung. **Bewusst kein Issue** — niemand hat gemessen, dass
+eine geteilte Karte auf `/de` jemanden stört, und die Regel für neue Arbeit in
+diesem Repository ist ein Fehler, den man benennen kann.
+
 ## Wo wir stehen — 11.10.2026, U8a gemergt: `v0.47.0`, und die Abnahme findet ein Wort, das 2.437 Tests nicht gefunden haben
 
 `main` = `d34a81b`, Produktion = `d34a81b`, **`v0.47.1`**, `status ok`.
