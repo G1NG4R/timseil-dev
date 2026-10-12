@@ -25,6 +25,7 @@ import type { Metadata } from "next";
 import { caseStudyPaths } from "../../content/case-studies/index.ts";
 import { hasLog, postPath, postsOrNull, type PostRead } from "../content/posts.ts";
 import { alternatesFor } from "../i18n/alternates.ts";
+import { siteDescription } from "../i18n/messages.ts";
 import { type Locale, localeHref } from "../i18n/routes.ts";
 import { AUTHOR, SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
 
@@ -147,7 +148,17 @@ const FEED = "/feed.xml";
 
 /** The alt text for the social image. It describes what the image SAYS, not
  *  what it looks like — a reader who gets the alt instead of the picture is
- *  owed the sentence, not a description of the typography. */
+ *  owed the sentence, not a description of the typography.
+ *
+ *  AND THAT IS WHY IT STAYS ENGLISH WHILE THE TWO DESCRIPTIONS BELOW DO NOT.
+ *  #431 translated the sentence this site says about itself; this line is not
+ *  that sentence, it is a transcription of a picture. `/og.png` is one route
+ *  handler at the root (app/og.png/route.tsx), it draws the English words at
+ *  build time, and it has no language to take — lib/i18n/routes.ts keeps it
+ *  out of the language tree on purpose. A German alt would claim the picture
+ *  says German. The real fix is a card per language, at which point this
+ *  follows for free; until then the transcription is honest and the
+ *  divergence is this comment rather than an oversight. */
 const OG_ALT = `${SITE_NAME} — ${SITE_DESCRIPTION}`;
 
 function entryFor(path: string): PageEntry {
@@ -185,6 +196,7 @@ export function indexablePaths(): readonly string[] {
 export function seoFor(locale: Locale, path: string): Metadata {
   const { indexable } = entryFor(path);
   const url = localeHref(locale, path);
+  const description = siteDescription(locale);
 
   return {
     alternates: {
@@ -201,13 +213,13 @@ export function seoFor(locale: Locale, path: string): Metadata {
       // (generate-metadata.md:1405-1418). Left out, the card would carry no
       // title at all rather than falling back to the document's.
       title: SITE_NAME,
-      description: SITE_DESCRIPTION,
+      description,
       images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
     },
     twitter: {
       card: "summary_large_image",
       title: SITE_NAME,
-      description: SITE_DESCRIPTION,
+      description,
       images: [OG_IMAGE],
     },
     // Present only while the page is a stub, so that it disappears together

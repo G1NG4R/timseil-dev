@@ -14,6 +14,19 @@
 // seven routes are `[SOON]` stubs; stage H fills them and brings its own keys.
 
 export const en = {
+  // THE ONE SENTENCE THIS SITE SAYS ABOUT ITSELF, and the only key in this
+  // file that nothing on the page renders: four metadata fields read it and a
+  // visitor never sees it as text. It is prose about the site rather than a
+  // datum, so LANG.01's rule puts it here — and ADR 0083's predicate counts a
+  // metadata field as a word source like any other.
+  //
+  // TRANSCRIBED FROM lib/site.ts, NOT IMPORTED, for the reason the nav labels
+  // below are: this file holds literals, so a translator reads one file and
+  // nothing else. site.ts keeps the same sentence for the three readers that
+  // have no language to speak — the RSS channel, the social card, and the alt
+  // that transcribes that card. messages.test.ts refuses the two drifting.
+  siteDescription: "Junior DevOps portfolio — Kubernetes on bare metal, Luxembourg.",
+
   skip: "SKIP TO CONTENT",
 
   // The four nav labels. lib/chrome.ts holds the same four as the sheet's

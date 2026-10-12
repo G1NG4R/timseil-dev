@@ -4,8 +4,9 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ThemeScript } from "@/components/ThemeScript";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { LOCALES } from "@/lib/i18n/routes";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { siteDescription } from "@/lib/i18n/messages";
+import { asLocale, LOCALES } from "@/lib/i18n/routes";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 import { fontVariables } from "../fonts";
 
@@ -111,14 +112,42 @@ export function generateStaticParams() {
   return LOCALES.map((locale) => ({ lang: locale }));
 }
 
-export const metadata: Metadata = {
-  // Every `canonical` and every `hreflang` on this site is resolved against
-  // this. lib/site.ts explains why it is a constant and not an environment
-  // variable: it is a claim about which address is the real one.
-  metadataBase: new URL(SITE_URL),
-  title: SITE_NAME,
-  description: SITE_DESCRIPTION,
-};
+// A FUNCTION AND NOT AN OBJECT SINCE #431, because `description` is the one
+// field here that has to know which language the document is in. A static
+// `metadata` export cannot read `[lang]` — it is evaluated once for the
+// segment, not once per parameter — so the sentence this site says about
+// itself was served in English under `<html lang="de">` from G5 until U8a
+// filled the dictionary and left this field behind. The two cannot stand side
+// by side: "You cannot export both the `metadata` object and
+// `generateMetadata` function from the same route segment"
+// (generate-metadata.md:111).
+//
+// `params`, NOT `next/root-params`. The nine `generateMetadata` functions in
+// `app/[lang]/` all destructure it, `LayoutProps<"/[lang]">` types it for a
+// layout by name (generate-metadata.md:104), and the root-param getters are
+// documented for Server Components — a route-segment export is not one. The
+// parameter is already here; root params exist to avoid drilling, and there is
+// nothing to drill.
+//
+// READING IT COSTS NOTHING STATIC. `params` is part of the URL and therefore
+// part of the prerender, which is the same line `headers()` would cross and
+// does not — the distinction app/global-not-found.tsx writes down, and the one
+// the body below depends on too.
+export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await params;
+
+  return {
+    // Every `canonical` and every `hreflang` on this site is resolved against
+    // this. lib/site.ts explains why it is a constant and not an environment
+    // variable: it is a claim about which address is the real one.
+    metadataBase: new URL(SITE_URL),
+    // THE TITLE STAYS HERE AND STAYS UNTRANSLATED. It is the site's name, not
+    // a sentence about it, and app/global-not-found.tsx records that every
+    // page on this site inherits it from this one export.
+    title: SITE_NAME,
+    description: siteDescription(asLocale(lang)),
+  };
+}
 
 // NO `openGraph` AND NO `alternates` HERE, and that is the trap this phase
 // walked into rather than around. Next merges these two FLAT: a page that sets
@@ -127,6 +156,11 @@ export const metadata: Metadata = {
 // `og:title` (generate-metadata.md:1405-1418). Every page names its own
 // canonical, so anything social put here would be dropped by all seven of them
 // while looking perfectly correct in this file. lib/seo/pages.ts carries it.
+//
+// THE CONVERSION ABOVE DID NOT MOVE THIS TRAP. `generateMetadata` merges
+// exactly as `metadata` did — the rule is about the layout/page boundary, not
+// about which of the two exports a segment uses — so `og:description` is
+// still lib/seo/pages.ts's to translate, and it does.
 
 export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
   // THE ROUTE CARRIES THE LANGUAGE, NOT THE HEADER, and that is the one

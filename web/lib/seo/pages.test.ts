@@ -11,6 +11,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { NAV } from "../chrome.ts";
+import { de } from "../i18n/messages/de.ts";
 import { LOCALES } from "../i18n/routes.ts";
 import { SITE_DESCRIPTION, SITE_NAME } from "../site.ts";
 import { CASE_STUDIES, caseStudyPath } from "../../content/case-studies/index.ts";
@@ -236,8 +237,49 @@ void test("every page carries a social image with its dimensions and an alt", ()
     },
   ];
   for (const { path } of PAGES) {
-    assert.deepEqual(seoFor("en", path).openGraph?.images, expected, path);
+    for (const locale of LOCALES) {
+      // THE SAME ENGLISH ALT IN ALL THREE, and the divergence from the test
+      // below it is the decision rather than an oversight: that one asserts
+      // the three DESCRIPTIONS follow the language. This line transcribes a
+      // picture, `/og.png` is one language-free route handler, and it draws
+      // the English words. A German alt would claim the picture says German.
+      // #431; pages.ts carries the reasoning next to OG_ALT.
+      assert.deepEqual(seoFor(locale, path).openGraph?.images, expected, `${locale} ${path}`);
+    }
   }
+});
+
+// THE CARD'S WORDS FOLLOW THE PAGE, THE CARD'S PICTURE DOES NOT — #431.
+//
+// Looping the table rather than naming one route is what keeps a route added
+// later from missing this: a new row gets its descriptions asserted in three
+// languages without anybody remembering to come back here.
+//
+// `fr` IS THE INTERESTING THIRD OF THIS LOOP. It is expected to equal the
+// ENGLISH sentence, and no code in pages.ts arranges that — `resolveMessages`
+// serves an incomplete language English whole, which is the same derivation
+// that puts `lang="en"` on the blocks of `/fr`. The test asserts the delivered
+// consequence, not the mechanism.
+void test("the card speaks the language of the page it is on", () => {
+  for (const { path } of PAGES) {
+    for (const locale of LOCALES) {
+      const expected = locale === "de" ? de.siteDescription : SITE_DESCRIPTION;
+      const meta = seoFor(locale, path);
+
+      assert.equal(meta.openGraph?.description, expected, `og ${locale} ${path}`);
+      assert.equal(meta.twitter?.description, expected, `twitter ${locale} ${path}`);
+    }
+  }
+});
+
+// THE BROKEN CASE, STATED AS ITS OWN ASSERTION rather than left implicit in the
+// loop above. A German sentence where `resolved` is `en` is the defect #431
+// fixed, served at an address that declares another language. This goes red the
+// day `languageComplete` answers `true` for a language nobody wrote.
+void test("a German sentence never appears on a route that serves English", () => {
+  assert.notEqual(seoFor("fr", "/").openGraph?.description, de.siteDescription);
+  assert.notEqual(seoFor("fr", "/").twitter?.description, de.siteDescription);
+  assert.notEqual(seoFor("en", "/").openGraph?.description, de.siteDescription);
 });
 
 // The two tables are separate files and must not drift: a nav entry pointing at

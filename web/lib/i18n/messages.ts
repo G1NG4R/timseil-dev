@@ -66,3 +66,27 @@ export function navLabels(messages: Messages): Record<NavId, string> {
     contact: messages.navContact,
   };
 }
+
+/** The one sentence this site says about itself, in the language it will
+ *  actually be read in.
+ *
+ *  IT TAKES A LOCALE AND NOT A `Messages`, which is the opposite of
+ *  `navLabels` above and is what the callers need: the four metadata fields
+ *  that read it are resolved in `generateMetadata` and in lib/seo/, where
+ *  there is no dictionary in hand — only the language off the route. So the
+ *  resolution happens here, once, on the same `resolveMessages` every page
+ *  body goes through.
+ *
+ *  THAT IS ALSO HOW `/fr` GETS ENGLISH, and it is worth being explicit that no
+ *  second rule does it: French is empty, `resolveMessages` serves English
+ *  whole, and this function hands back what it was given. The day French is
+ *  written, these fields follow with no edit here.
+ *
+ *  IDEMPOTENT ON AN ALREADY-RESOLVED LOCALE — `siteDescription("en")` is
+ *  English, so a caller that already holds `resolved` rather than the route's
+ *  own language may pass it straight in. lib/seo/jsonld.ts does exactly that,
+ *  which is what keeps a `WebSite` node's `inLanguage` and its `description`
+ *  from being able to disagree. */
+export function siteDescription(locale: Locale): string {
+  return resolveMessages(locale).messages.siteDescription;
+}

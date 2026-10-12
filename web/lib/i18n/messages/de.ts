@@ -41,6 +41,17 @@
 import type { Messages } from "./en.ts";
 
 export const de: Messages = {
+  // THREE CHOICES, THREE PRECEDENTS, none of them taste.
+  // `Junior-DevOps-Portfolio` hyphenates the way `homeEyebrow` below does.
+  // `auf eigener Hardware` is the German PROSE for *bare metal* — the same
+  // words `homeBio` and `aboutLede` use, and the station in
+  // lib/about/trajectory.de.ts; `BARE METAL` appears only as an upper-case
+  // meta line, where it is the same word in both languages, so it is
+  // nomenclature and this is not. `Luxemburg` follows `based`, while the
+  // operator card keeps `Luxembourg` because that one is a datum tied to the
+  // imprint's spelling.
+  siteDescription: "Junior-DevOps-Portfolio — Kubernetes auf eigener Hardware, Luxemburg.",
+
   skip: "ZUM INHALT SPRINGEN",
 
   navWork: "ARBEIT",
