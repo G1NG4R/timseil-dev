@@ -12,6 +12,131 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Abhängigkeiten · 14.10.2026 — sechs offene PRs, und einer davon ist eine Entscheidung
+
+**Stand: nichts gemergt, nichts gepusht.** Zwei PRs sind merge-fertig wie sie
+sind, zwei haben einen vorbereiteten Commit auf ihrem Branch, und zwei werden
+nicht gemergt. Die Reihenfolge ist einzeln, wie am 07.09.: jeder Merge tauscht
+Container, und eine Zeile im Verlauf, die drei Ursachen haben kann, ist keine.
+
+| PR | Inhalt | Zustand bei der Prüfung | Handgriff |
+|---|---|---|---|
+| #425 | `prom/prometheus` v3.13.3 → v3.13.4 | `CLEAN`, alles grün | keiner |
+| #439 | `traefik`-Digest in `compose.lab.yaml` | `CLEAN`, grün | ein Commit: der Kommentar war falsch, siehe unten |
+| #441 | actions-Gruppe, 5 Bumps | `CLEAN`, grün | keiner, aber die SHAs nachgeschlagen |
+| #424 | `grafana/alloy` v1.19.2 → v1.20.1 | `check` **rot**: `stack.gen.json` | `make gen`, eine Zeile |
+| #442 | web-development, 5 Updates | nur `title` rot | geteilt, drei von fünf per Hand |
+| #440 | `next` 16.3.8 → 16.4.0 | `title`, `check` **und** `e2e` rot | wird geschlossen, die Linie steht jetzt in `dependabot.yml` |
+
+### Entschieden · die 16.3-Linie von Next wird gehalten, und die Begründung ist gemessen
+
+#440 ist für Dependabot eine Minor. Hier ist sie das zum **vierten** Mal nicht —
+dieselbe Form wie Go (#174) und Prometheus (#176), und diesmal mit einer Messung
+statt einer Sorge: der `e2e`-Lauf des PRs war **7 failed, 2.437 passed, 348
+skipped**, und die sieben sind **ein** Test auf jeder Prüfbreite,
+`error.spec.ts:44`.
+
+| | 16.3.8 | 16.4.0 |
+|---|---|---|
+| Status vor dem ersten Byte | 500 | 500 |
+| Körper | `Internal Server Error`, 21 Bytes | `<html id="__next_error__">` mit `<meta name="robots" content="noindex">` |
+
+**Der Status ist gleich geblieben, der Körper nicht.** Und der Nachbartest —
+„der gestreamte Fehler trägt kein `id="__next_error__"`" — blieb grün: 16.4.0
+ändert genau die Antwort *vor* dem ersten Byte, nicht die im Loch. ADR 0078 und
+`web/e2e/error.spec.ts` führen diese Antwort als gemessene Eigenschaft, also
+schreibt das Heben der Linie einen Test und ein ADR mit um. Das ist eine Phase,
+kein Bump.
+
+**Drei Namen, nicht einer.** `@next/mdx` und `eslint-config-next` tragen die
+Version von `next`, liegen aber in `devDependencies` — sie kommen also in einem
+*anderen* PR als das Framework. #442 bot genau dieses Paar auf 16.4.0 an, und
+`check` **und** `e2e` waren grün: `stack.yaml` liest `dependencies.next`, die
+anderen zwei liest nichts, also hätte hier kein Tor den Versionsversatz
+gefangen. Die drei `ignore`-Zeilen stehen deshalb namentlich und nicht per `*`.
+
+Der Preis steht in derselben Sprache in der Datei wie der der Go-Zeile:
+**nichts erinnert uns mehr daran, dass 16.4 existiert.** 16.3.x kommt weiter,
+und das ist die Hälfte mit den Sicherheitsfixes.
+
+### Gefunden · der Labor-Traefik-Digest ist v3.7.14, und der Kommentar sagte v3.7.13
+
+Über dem Pin in `compose.lab.yaml` steht die Version als Kommentar — von Hand,
+und **kein Werkzeug liest ihn**: `check-compose` prüft den Digest und den
+Bildnamen. Beide Manifeste gelesen statt geschätzt:
+
+```
+24841fe…  org.opencontainers.image.version: v3.7.13
+575fa15…  org.opencontainers.image.version: v3.7.14
+```
+
+Der Kommentar ist auf dem Branch nachgezogen. #341 hat denselben Pin bewegt und
+den Kommentar mitgenommen; das hält es wahr. Dieselbe Prüfung an #425: der
+Digest dort **ist** 3.13.4, selbst ausgeführt (`prometheus, version 3.13.4`) —
+Tag und Digest sagen dasselbe.
+
+### Gemessen · Alloy 1.20.1 trägt unsere Konfiguration, und die Hälfte, die zählt, ist Loki
+
+Vor dem Merge lokal belegt, nicht nach dem Merge gehofft. Collector kommt mit
+`ops/alloy/config.alloy` healthy hoch (`alloy, version v1.20.1`), und danach
+kennt Loki **drei Dienste**: `alloy`, `loki`, `prometheus`. Das ist die zweite
+Hälfte aus #275 und die einzige, die etwas beweist — ein Collector, der läuft
+und nichts weiterreicht, sieht von außen aus wie einer, der arbeitet.
+
+Die eine Warnung im Log (`max_distinct_labels was adjusted up to … 10000` an
+`loki.process.json_lines`) ist **nicht neu**: 1.19.2 gibt sie mit derselben
+Konfiguration genauso aus — gegengemessen, statt sie dem Bump zuzuschreiben.
+
+### Gefunden · die Sonde aus dem Runbook löst auf dieser Maschine keinen Dienstnamen auf
+
+`docs/runbooks/observability.md` prüft die stille Pipeline aus dem
+prometheus-Container heraus: `exec prometheus wget -qO- 'http://loki:3100/…'`.
+Hier antwortet das mit `wget: bad address 'loki:3100'` — für beide Namen, auch
+`timseil-loki`.
+
+Drei Messungen, damit die Zuordnung steht und nicht geraten ist: über die
+Container-IP antwortet Loki sofort; ein Wegwerf-`busybox` auf demselben Netz
+löst `loki` **auf** und bekommt dieselbe Antwort; `wget` im prometheus-Container
+funktioniert (`http://127.0.0.1:9090/-/healthy`). Der Netz-DNS ist also in
+Ordnung — der Sonden-Container ist es nicht. Die Messung lief über die IP, und
+die Sonde im Runbook braucht diesen Rückfall, sonst liest der nächste Leser ein
+„bad address" als „die Pipeline ist tot". **Issue-Kandidat für die Triage nach
+U9.**
+
+### Gemessen · die acht Dev-Advisories sind dieselben acht wie auf `main`
+
+`npm audit --omit=dev`: **0** — die Aussage „nichts Hohes in dem, was
+ausgeliefert wird" steht. Mit Dev-Abhängigkeiten sind es **8 hohe**, alle
+indirekt und alle aus derselben Klasse (CPU-Erschöpfung in Glob- und
+YAML-Hilfspaketen). Gegen `main`s eigene `package-lock.json` gezählt, nicht
+angenommen: **dort sind es dieselben acht.** Der Bump bringt keines mit, und
+Redocly 2.63.0 nimmt keines weg.
+
+### Gefunden · die Titel-Arithmetik hat zweimal zugeschlagen, und beide Male vor dem Merge
+
+Dependabot schreibt lange Titel, und der Squash hängt ` (#N)` an:
+
+| PR | Titel | auf `main` | Urteil |
+|---|---|---|---|
+| #440 | 74 | **81** | rot |
+| #442 | 71 | **78** | rot |
+
+Das Tor aus #351/#354 hat beide gefangen, bevor ein Release daran scheitern
+konnte. Für #442 war das der **einzige** rote Check — der Grund, aus dem der PR
+trotzdem nicht gemergt wird, steht oben und hat nichts mit dem Titel zu tun.
+
+### Verschoben
+
+- **Die Tauschzahlen fehlen noch**, weil nichts gemergt ist: je Merge ein Zeuge
+  während `e2e`, und je Lauf eine Zeile für die Ruhezustands-Zählung, die seit
+  H7a läuft. Fortschreiben, nicht neu beginnen.
+- **`docs/dependabot-wave-october` (`4364d06`, 02.10.) liegt ungepusht und ist
+  nicht auf `main`.** Der Eintrag vom 03.10. hat seinen Inhalt größtenteils
+  aufgesogen — der 01.10.-Abschnitt selbst fehlt auf `main`. Entweder löschen
+  oder den Rest nachziehen; liegen bleiben ist die eine Antwort, die nichts
+  entscheidet.
+- Die Triage der Stufe H und aller offenen Issues läuft weiter nach **U9**.
+
 ## #431 · 12.10.2026 — Der eine Satz über diese Seite, und warum sechs Felder vier sind
 
 **Stand:** gemergt als `3d12e7c` (#443), **`v0.47.2`**, Produktion läuft es,
