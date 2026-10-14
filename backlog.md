@@ -14,7 +14,8 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ## #431 · 12.10.2026 — Der eine Satz über diese Seite, und warum sechs Felder vier sind
 
-**Stand:** `chore/site-description-follows-the-language`, **nicht gemergt**.
+**Stand:** gemergt als `3d12e7c` (#443), **`v0.47.2`**, Produktion läuft es,
+`status ok`. **Damit ist #431 abgenommen.**
 `siteDescription(locale)` in `lib/i18n/messages.ts`, das `[lang]`-Layout von
 `metadata` auf `generateMetadata` umgestellt, **973 Unit-Tests** (gegen 968 auf
 `main` gezählt, im selben Baum: drei in `messages.test.ts`, zwei in
@@ -24,8 +25,54 @@ Nachtrag vom 12.10. und **kein eigenes ADR daneben**, zum zweiten Mal aus
 demselben Grund: `check-adrs` liest diese Datei mit, und eine Nummer, die hier
 steht, bevor die Datei existiert, macht `make check` rot.
 
-Was offen ist: der PR, und die vier Felder nach dem Merge gegen **Produktion**
-gezählt statt gegen den lokalen Bau.
+### Gegen Produktion gezählt, nicht behauptet
+
+`curl https://timseil.dev{,/de,/fr}`, nach dem Tausch:
+
+| Route | `html lang` | die vier Felder | `og:image:alt` | JSON-LD `inLanguage` |
+|---|---|---|---|---|
+| `/` | `en` | englisch | englisch | `en` |
+| `/de` | `de` | **deutsch** | englisch *(Entscheidung)* | `de` |
+| `/fr` | `fr` | englisch | englisch | `en` |
+
+Auf `/de` steht jetzt *Junior-DevOps-Portfolio — Kubernetes auf eigener
+Hardware, Luxemburg.* in `<meta name="description">`, `og:description`,
+`twitter:description` und im JSON-LD `WebSite`, unter `<html lang="de">`.
+`check-deployed`: **8 Ansprüche, 1 hier nicht gefragt** (die Digests der
+laufenden Container sieht nur der Host).
+
+### Der dreizehnte bezeugte Tausch, und er hat kein Loch
+
+Zeuge um den Tausch gestartet (19:25:26 UTC, während `e2e`), `--until-restart`:
+
+| | |
+|---|---|
+| `/` | **872 Anfragen, 872 × 200** |
+| `/api/health` | **872 Anfragen, 872 × 200** |
+| Fenster | 872 s, davon 5 s ohne Stichprobe |
+| Urteil | ✓ jede Antwort war 200 |
+
+Der Tausch selbst: `ok, 894 s, 19:39:30 UTC`, von der Seite über sich selbst
+berichtet. Kein #304 diesmal — **eine** saubere Stichprobe, und das ist genau
+so viel, wie sie wert ist: #304 bleibt offen, weil zwei Stichproben nicht sagen
+können, wie oft es passiert, und drei auch nicht.
+
+### Gefunden · `gh pr create --fill` hätte das Release verschluckt
+
+Bei **zwei** Commits nimmt `--fill` den Titel nicht aus dem ersten Commit,
+sondern aus dem **Branch-Namen**: der PR hieß `chore/site description follows
+the language` — kein Doppelpunkt, kein Conventional Commit. Der Squash macht den
+PR-Titel zum Commit auf `main`, also hätte `tools/release.sh` keinen Typ
+gefunden und **kein Release gegeben**; `v0.47.2` wäre nicht entstanden. Genau
+der #338-Fall, für den `pr-title.yml` gebaut wurde — und der Workflow hat ihn
+auch gefangen: PR geöffnet 18:55:56 UTC, `title` rot um 18:56:07 — **11
+Sekunden**, und grün um 18:57:19, nachdem der Titel stand.
+
+Zweiter Teil desselben Funds: der *korrigierte* Titel war beim ersten Versuch
+**70 Zeichen** und wurde abgewiesen. `check-pr-title.sh` misst die sieben
+Zeichen ` (#443)` mit, die der Squash anhängt — 77 gegen ein Limit von 72. Die
+#351/#354-Lektion, gehalten von dem Tor, das für sie gebaut wurde. Der Titel,
+der steht, ist 65 + 7 = **72**.
 
 ### Gemessen · die vier Felder am ausgelieferten Dokument, lokaler Produktionsbau
 
