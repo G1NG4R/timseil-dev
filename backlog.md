@@ -57,6 +57,62 @@ berichtet. Kein #304 diesmal — **eine** saubere Stichprobe, und das ist genau
 so viel, wie sie wert ist: #304 bleibt offen, weil zwei Stichproben nicht sagen
 können, wie oft es passiert, und drei auch nicht.
 
+### Der vierzehnte bezeugte Tausch ist sauber, und das rote Urteil ist der Ruhezustand
+
+Der Doku-Merge (#444, `4763ce2`) deployt wie jeder andere, also ein zweites
+Fenster gratis. Zeuge um 19:09:42 UTC gestartet, `--until-restart`:
+
+```
+/           1–28  200 · 29  no connection · 33–1181  200
+/api/health 1–1181  200
+✗ this run does not show a clean deploy
+```
+
+**Das Urteil gilt für den ganzen Lauf, nicht für das Deploy-Fenster** — dieselbe
+Lektion wie beim siebten Tausch. In Wanduhrzeit:
+
+| | Wanduhr | Lage |
+|---|---|---|
+| Zeuge-Start | 19:09:42 | |
+| **rote Sekunde 29** | **19:10:10** | **18 min 42 s VOR dem Tausch** |
+| Image gebaut | 19:10:50 | 40 s *nach* dem Abbruch |
+| Tausch / Neustart | 19:28:52 | |
+| Deploy über sich selbst | `ok, 1164 s, 19:28:57` | |
+
+`/` antwortet von Sekunde 33 bis 1181 durchgehend 200, und das deckt das ganze
+Tauschfenster; `/api/health` ist 1181 × 200 ohne Lücke. **Der Tausch selbst war
+sauber.** Das Urteil des Werkzeugs ungeprüft übernommen hätte einen
+#304-Befund in die Abnahme geschrieben, den die Arithmetik abweist.
+
+Was es stattdessen ist: **ein weiterer Abbruch im Ruhezustand**, und damit eine
+Zeile in der Zählung, die seit H7a läuft — jedes Mal auf **einem** Pfad, jedes
+Mal im Ruhezustand, **nie im Tausch**:
+
+| Lauf | Anfragen | Ausfälle | Abstand zum Tausch |
+|---|---|---|---|
+| H7a `a813cca` | 2 120 | 1 (`/about`) | 7 min davor |
+| H8a `89d4062` | 2 992 | 1 (`/`) | 10:38 davor |
+| H8a-Abnahme `ca7b6e0` | 2 928 | 1 (`/contact`) | 11:15 davor |
+| H8b `2b3dce0` | 4 556 | 2 (`/contact`, `/api/health`) | 8:02 / 7:18 davor |
+| #332 `b044ca4` | 3 558 | **0** | — |
+| #331 `6f58455` | 2 037 | **0** | — |
+| **#443 `3d12e7c`** | **872** | **0** | — |
+| **#444 `4763ce2`** | **1 181** | **1 (`/`)** | **18:42 davor** |
+
+Also **6 Ausfälle auf rund 20 200 Anfragen**, in fünf von acht Läufen. Das
+Eskalationskriterium der Zählung ist unverändert nicht erfüllt: ein Issue wäre
+es, wenn ein Lauf **zwei** Ausfälle auf **einem** Pfad zeigt oder einer in den
+Tausch fällt. Hier ist es einer, auf einem Pfad, 18 Minuten vom Tausch entfernt
+— während `/api/health` in derselben Sekunde durchhält.
+
+Alle Messungen kommen weiter von derselben Maschine über dasselbe Netz, also
+ist Ursprung von Leitung hier nicht zu trennen, und die Notiz sagt das statt
+einen Verdacht zu behaupten.
+
+Damit stehen zwei bezeugte Tausche aus dieser Arbeit, **beide sauber**, und
+#304 hat **keine** neue Evidenz. Das ist das ehrliche Ergebnis, nicht das
+enttäuschende.
+
 ### Gefunden · `gh pr create --fill` hätte das Release verschluckt
 
 Bei **zwei** Commits nimmt `--fill` den Titel nicht aus dem ersten Commit,
