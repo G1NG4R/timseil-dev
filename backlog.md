@@ -12,129 +12,169 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
-## Abhängigkeiten · 14.10.2026 — sechs offene PRs, und einer davon ist eine Entscheidung
+## Abhängigkeiten · 14.10.2026 — sechs PRs, sechs Tausche, und einer war eine Entscheidung
 
-**Stand: nichts gemergt, nichts gepusht.** Zwei PRs sind merge-fertig wie sie
-sind, zwei haben einen vorbereiteten Commit auf ihrem Branch, und zwei werden
-nicht gemergt. Die Reihenfolge ist einzeln, wie am 07.09.: jeder Merge tauscht
-Container, und eine Zeile im Verlauf, die drei Ursachen haben kann, ist keine.
+**Stand: die Welle ist abgeräumt.** Vier Dependabot-PRs gemergt, einer durch
+einen eigenen Ersatz-PR abgelöst, einer durch eine Regel beendet — und beide
+abgelösten hat Dependabot **selbst** geschlossen, bevor jemand es von Hand tat.
 
-| PR | Inhalt | Zustand bei der Prüfung | Handgriff |
+| PR | Inhalt | Ausgang | `main` |
 |---|---|---|---|
-| #425 | `prom/prometheus` v3.13.3 → v3.13.4 | `CLEAN`, alles grün | keiner |
-| #439 | `traefik`-Digest in `compose.lab.yaml` | `CLEAN`, grün | ein Commit: der Kommentar war falsch, siehe unten |
-| #441 | actions-Gruppe, 5 Bumps | `CLEAN`, grün | keiner, aber die SHAs nachgeschlagen |
-| #424 | `grafana/alloy` v1.19.2 → v1.20.1 | `check` **rot**: `stack.gen.json` | `make gen`, eine Zeile |
-| #442 | web-development, 5 Updates | nur `title` rot | geteilt, drei von fünf per Hand |
-| #440 | `next` 16.3.8 → 16.4.0 | `title`, `check` **und** `e2e` rot | wird geschlossen, die Linie steht jetzt in `dependabot.yml` |
+| #425 | `prom/prometheus` v3.13.3 → v3.13.4 | gemergt | `dc72668` |
+| #441 | actions-Gruppe, 5 Bumps | gemergt | `f58f4d9` |
+| #439 | `traefik`-Digest im Labor-Overlay | gemergt, **mit korrigiertem Kommentar** | `166c1c7` |
+| #424 | `grafana/alloy` v1.19.2 → v1.20.1 | gemergt, **mit `make gen`** | `73b8824` |
+| #442 | web-development, 5 Updates | **geschlossen**, ersetzt durch #446 | `51f9197` |
+| #440 | `next` 16.3.8 → 16.4.0 | **geschlossen**, Linie festgeschrieben in #445 | `59fc9c7` |
 
-### Entschieden · die 16.3-Linie von Next wird gehalten, und die Begründung ist gemessen
+Einzeln gemergt, wie entschieden: sechs Tausche, sechs Zeugen, und jede Zeile im
+Verlauf nennt genau eine Ursache.
 
-#440 ist für Dependabot eine Minor. Hier ist sie das zum **vierten** Mal nicht —
-dieselbe Form wie Go (#174) und Prometheus (#176), und diesmal mit einer Messung
-statt einer Sorge: der `e2e`-Lauf des PRs war **7 failed, 2.437 passed, 348
-skipped**, und die sieben sind **ein** Test auf jeder Prüfbreite,
-`error.spec.ts:44`.
+### Die Regel hat sich in sieben Sekunden selbst bewiesen
 
-| | 16.3.8 | 16.4.0 |
-|---|---|---|
-| Status vor dem ersten Byte | 500 | 500 |
-| Körper | `Internal Server Error`, 21 Bytes | `<html id="__next_error__">` mit `<meta name="robots" content="noindex">` |
+Der Beleg für die `ignore`-Zeilen war für den nächsten Montagslauf vorgesehen.
+Er kam früher: der Merge von #445 um **22:27:22** löst Dependabots eigene
+npm-Auswertung aus, und um **22:27:29** zieht sie #440 zurück —
 
-**Der Status ist gleich geblieben, der Körper nicht.** Und der Nachbartest —
-„der gestreamte Fehler trägt kein `id="__next_error__"`" — blieb grün: 16.4.0
-ändert genau die Antwort *vor* dem ersten Byte, nicht die im Loch. ADR 0078 und
-`web/e2e/error.spec.ts` führen diese Antwort als gemessene Eigenschaft, also
-schreibt das Heben der Linie einen Test und ein ADR mit um. Das ist eine Phase,
-kein Bump.
+> „Looks like next is no longer being updated by Dependabot, so this is no
+> longer needed."
 
-**Drei Namen, nicht einer.** `@next/mdx` und `eslint-config-next` tragen die
-Version von `next`, liegen aber in `devDependencies` — sie kommen also in einem
-*anderen* PR als das Framework. #442 bot genau dieses Paar auf 16.4.0 an, und
-`check` **und** `e2e` waren grün: `stack.yaml` liest `dependencies.next`, die
-anderen zwei liest nichts, also hätte hier kein Tor den Versionsversatz
-gefangen. Die drei `ignore`-Zeilen stehen deshalb namentlich und nicht per `*`.
+**#442 fiel schon vorher**, um 22:14:27, und aus dem anderen Grund: *„updatable
+in another way"*. Der Merge von #446 hatte die Gruppe unter ihm neu aufgelöst —
+dasselbe Muster wie #344 → #351, diesmal ohne Ersatz-PR, weil die Gruppe nichts
+mehr anzubieten hat. Zwei Schließungen, zwei verschiedene Mechanismen, und
+keine davon von Hand.
 
-Der Preis steht in derselben Sprache in der Datei wie der der Go-Zeile:
-**nichts erinnert uns mehr daran, dass 16.4 existiert.** 16.3.x kommt weiter,
-und das ist die Hälfte mit den Sicherheitsfixes.
+### Sechs Tausche, fünf bezeugt, einer unbeobachtet — und null Ausfälle
+
+| Tausch | `main` | Deploy (UTC) | Zeuge je Pfad | Nicht-200 | Versatz `startedAt` |
+|---|---|---|---|---|---|
+| 15. | `dc72668` | 20:56:33 | 1 036 × 200 | 0 | 8,9 s |
+| 16. | `f58f4d9` | 21:17:08 | 1 173 × 200 | 0 | 12,2 s |
+| — | `166c1c7` | 21:49:17 | 1 800 × 200 **+** 32 × 200 | 0 | 12,2 s |
+| 17. | `73b8824` | 22:11:03 | 1 250 × 200 | 0 | 11,1 s |
+| 18. | `51f9197` | 22:26:38 | 899 × 200 | 0 | 12,2 s |
+| 19. | `59fc9c7` | 22:45:31 | 1 046 × 200 | 0 | 15,9 s |
+
+**7 236 Anfragen je Pfad an einem Abend, keine einzige Nicht-200.** Für die
+Ruhezustands-Zählung sind das sechs Läufe mit null Ausfällen; die laufende
+Tabelle dazu steht im #431-Eintrag.
+
+**Der dritte ist kein bezeugter Tausch, und das ist der Fund des Abends.** Der
+Zeuge lief um 21:19 an, der `e2e`-Job startete aber erst um **21:30:33** — elf
+Minuten Runner-Warteschlange —, also lief der Zeuge um 21:49:07 in seine
+1 800-s-Grenze, zweiundzwanzig Sekunden **vor** dem Tausch. Ein zweiter, sofort
+gestarteter Zeuge fand den neuen Prozess bereits vor. In Wanduhrzeit:
+
+| | |
+|---|---|
+| erster Zeuge bis | 21:49:07 |
+| `lastDeploy.at` | **21:49:17** |
+| api-`startedAt` | **21:49:29,2** |
+| zweiter Zeuge ab | 21:49:30 |
+
+Rund **20 Sekunden hat niemand gemessen**, beide Fenster drumherum sind
+lückenlos 200. Für #304 ist das **keine** Evidenz, in keiner Richtung — und es
+wird hier als Fehlmessung geführt und nicht als sauberer Tausch.
+
+**Die Reparatur ist gemessen, nicht beabsichtigt:** von Zyklus 4 an hängt der
+Zeugenstart an einer Bedingung statt an einer Uhrzeit — ein Wächter wartet, bis
+der `e2e`-Job wirklich `in_progress` meldet, und startet ihn dann. Ergebnis in
+derselben Einheit: **1 s ohne Stichprobe** statt 20 unbeobachteter Sekunden.
+Beim ersten Versuch hat dieser Wächter auf einen Teilstring gematcht und den
+Zeugen eine Minute zu früh gestartet; abgebrochen und mit exaktem Vergleich neu
+gesetzt. Und die Lebendprüfung danach fand `pgrep -f` sich selbst — die Falle,
+die genau dafür aufgeschrieben ist.
+
+### `quickstart` war rot, und die Wurzel lag nicht im Baum
+
+Im `main`-Lauf nach #441: `npm ci` im `Dockerfile.dev`-Build endet nach 20,3 s
+mit `npm error code ECONNRESET`, `errno -104`. Dieselbe Wurzel wie am
+04.09.2026, wo der Satz dazu schon steht — *dort ist nichts zu reparieren* —
+und wo auch steht, dass ein rotes `quickstart` keinen Deploy aufhält: `deploy`
+hängt an `[check, db, e2e, publish]`. Der Neulauf des Jobs war grün, kein Code
+angefasst. **Kein Fix für einen Transient**, und damit auch keine neue Regel.
+
+### Alloy 1.20.1 — Teil 1 belegt, Teil 2 nicht erreichbar
+
+Die zweiteilige Abnahme aus #275, und die Hälften haben ungleiche Kosten.
+
+**Teil 1, Collector oben und keine Restart-Schleife** — über den Inspect der
+Panel-API, zweimal gelesen:
+
+```
+image         grafana/alloy:v1.20.1@sha256:2aa2099…   ← der gepinnte Digest läuft
+startedAt     22:11:48,3Z   (beide Lesungen identisch)
+restartCount  0
+```
+
+Zweite Lesung 4 min 48 s nach dem Start. Damit ist belegt, dass der Digest aus
+`compose.yaml` auch der ist, der in Produktion läuft — eine Aussage, die vorher
+niemand gegen die laufende Maschine geprüft hatte.
+
+**Teil 2, Zeilen in Loki mit Zeitstempel nach dem Deploy: nicht gemessen.** Loki
+hat nach den Sicherheitsregeln keinen Port und keinen Router nach außen, die
+Panel-API hat keinen Log- oder Query-Endpunkt, und der Lesepfad in das
+Docker-Netz braucht eine Shell auf dem Host. **Die Lücke steht hier, statt dass
+Teil 1 als ganze Abnahme gelesen wird** — der Grund dafür ist #275 selbst: ein
+Collector, der läuft und nichts weiterreicht, sieht von außen aus wie einer, der
+arbeitet. Vor dem Merge lokal gegengeprüft war beides: mit derselben
+`config.alloy` kommt 1.20.1 hoch, und danach kennt Loki drei Dienste.
 
 ### Gefunden · der Labor-Traefik-Digest ist v3.7.14, und der Kommentar sagte v3.7.13
 
 Über dem Pin in `compose.lab.yaml` steht die Version als Kommentar — von Hand,
-und **kein Werkzeug liest ihn**: `check-compose` prüft den Digest und den
-Bildnamen. Beide Manifeste gelesen statt geschätzt:
+und **kein Werkzeug liest ihn**: `check-compose` prüft Digest und Bildnamen.
+Beide Manifeste gelesen statt geschätzt:
 
 ```
 24841fe…  org.opencontainers.image.version: v3.7.13
 575fa15…  org.opencontainers.image.version: v3.7.14
 ```
 
-Der Kommentar ist auf dem Branch nachgezogen. #341 hat denselben Pin bewegt und
-den Kommentar mitgenommen; das hält es wahr. Dieselbe Prüfung an #425: der
-Digest dort **ist** 3.13.4, selbst ausgeführt (`prometheus, version 3.13.4`) —
-Tag und Digest sagen dasselbe.
+Der Kommentar ist mit demselben PR nachgezogen. Dieselbe Prüfung an #425: dort
+**ist** der Digest 3.13.4, selbst ausgeführt (`prometheus, version 3.13.4`).
+Und an #424 beweist es jetzt der Inspect aus Produktion.
 
-### Gemessen · Alloy 1.20.1 trägt unsere Konfiguration, und die Hälfte, die zählt, ist Loki
-
-Vor dem Merge lokal belegt, nicht nach dem Merge gehofft. Collector kommt mit
-`ops/alloy/config.alloy` healthy hoch (`alloy, version v1.20.1`), und danach
-kennt Loki **drei Dienste**: `alloy`, `loki`, `prometheus`. Das ist die zweite
-Hälfte aus #275 und die einzige, die etwas beweist — ein Collector, der läuft
-und nichts weiterreicht, sieht von außen aus wie einer, der arbeitet.
-
-Die eine Warnung im Log (`max_distinct_labels was adjusted up to … 10000` an
-`loki.process.json_lines`) ist **nicht neu**: 1.19.2 gibt sie mit derselben
-Konfiguration genauso aus — gegengemessen, statt sie dem Bump zuzuschreiben.
-
-### Gefunden · die Sonde aus dem Runbook löst auf dieser Maschine keinen Dienstnamen auf
+### Gefunden · die Sonde aus dem Runbook löst keinen Dienstnamen auf
 
 `docs/runbooks/observability.md` prüft die stille Pipeline aus dem
-prometheus-Container heraus: `exec prometheus wget -qO- 'http://loki:3100/…'`.
-Hier antwortet das mit `wget: bad address 'loki:3100'` — für beide Namen, auch
-`timseil-loki`.
+prometheus-Container: `exec prometheus wget -qO- 'http://loki:3100/…'`. Lokal
+antwortet das mit `wget: bad address 'loki:3100'`, für beide Namen.
 
-Drei Messungen, damit die Zuordnung steht und nicht geraten ist: über die
-Container-IP antwortet Loki sofort; ein Wegwerf-`busybox` auf demselben Netz
-löst `loki` **auf** und bekommt dieselbe Antwort; `wget` im prometheus-Container
-funktioniert (`http://127.0.0.1:9090/-/healthy`). Der Netz-DNS ist also in
-Ordnung — der Sonden-Container ist es nicht. Die Messung lief über die IP, und
-die Sonde im Runbook braucht diesen Rückfall, sonst liest der nächste Leser ein
-„bad address" als „die Pipeline ist tot". **Issue-Kandidat für die Triage nach
-U9.**
+Drei Messungen, damit die Zuordnung steht: über die Container-IP antwortet Loki
+sofort, ein Wegwerf-`busybox` auf demselben Netz löst `loki` **auf**, und `wget`
+im prometheus-Container funktioniert gegen `127.0.0.1:9090`. Der Netz-DNS ist in
+Ordnung, der Sonden-Container ist es nicht. Die Messung lief über die IP. Der
+Runbook braucht diesen Rückfall, sonst liest der nächste Leser ein „bad address"
+als „die Pipeline ist tot". **Issue-Kandidat für die Triage nach U9.**
 
-### Gemessen · die acht Dev-Advisories sind dieselben acht wie auf `main`
-
-`npm audit --omit=dev`: **0** — die Aussage „nichts Hohes in dem, was
-ausgeliefert wird" steht. Mit Dev-Abhängigkeiten sind es **8 hohe**, alle
-indirekt und alle aus derselben Klasse (CPU-Erschöpfung in Glob- und
-YAML-Hilfspaketen). Gegen `main`s eigene `package-lock.json` gezählt, nicht
-angenommen: **dort sind es dieselben acht.** Der Bump bringt keines mit, und
-Redocly 2.63.0 nimmt keines weg.
-
-### Gefunden · die Titel-Arithmetik hat zweimal zugeschlagen, und beide Male vor dem Merge
-
-Dependabot schreibt lange Titel, und der Squash hängt ` (#N)` an:
+### Gefunden · die Titel-Arithmetik hat zweimal zugeschlagen, beide Male vor dem Merge
 
 | PR | Titel | auf `main` | Urteil |
 |---|---|---|---|
 | #440 | 74 | **81** | rot |
 | #442 | 71 | **78** | rot |
 
-Das Tor aus #351/#354 hat beide gefangen, bevor ein Release daran scheitern
-konnte. Für #442 war das der **einzige** rote Check — der Grund, aus dem der PR
-trotzdem nicht gemergt wird, steht oben und hat nichts mit dem Titel zu tun.
+Das Tor aus #351/#354 hat beide gefangen. Für #442 war der Titel der **einzige**
+rote Check — und trotzdem nicht der Grund, aus dem er nicht gemergt wurde.
+
+### Gemessen · die acht Dev-Advisories sind dieselben acht wie auf `main`
+
+`npm audit --omit=dev`: **0** — die Aussage „nichts Hohes in dem, was
+ausgeliefert wird" steht. Mit Dev-Abhängigkeiten sind es acht hohe, alle
+indirekt und alle aus derselben Klasse (CPU-Erschöpfung in Glob- und
+YAML-Hilfspaketen), und gegen `main`s eigene `package-lock.json` gezählt sind es
+**dort dieselben acht**. Redocly 2.63.0 nimmt keines weg und bringt keines mit.
 
 ### Verschoben
 
-- **Die Tauschzahlen fehlen noch**, weil nichts gemergt ist: je Merge ein Zeuge
-  während `e2e`, und je Lauf eine Zeile für die Ruhezustands-Zählung, die seit
-  H7a läuft. Fortschreiben, nicht neu beginnen.
 - **`docs/dependabot-wave-october` (`4364d06`, 02.10.) liegt ungepusht und ist
   nicht auf `main`.** Der Eintrag vom 03.10. hat seinen Inhalt größtenteils
-  aufgesogen — der 01.10.-Abschnitt selbst fehlt auf `main`. Entweder löschen
-  oder den Rest nachziehen; liegen bleiben ist die eine Antwort, die nichts
-  entscheidet.
+  aufgesogen — der 01.10.-Abschnitt selbst fehlt. Entweder löschen oder den Rest
+  nachziehen; liegen bleiben entscheidet nichts.
+- **Teil 2 der Alloy-Abnahme**, ein Befehl im Docker-Netz, sobald ein Lesepfad
+  dorthin offen ist.
 - Die Triage der Stufe H und aller offenen Issues läuft weiter nach **U9**.
 
 ## #431 · 12.10.2026 — Der eine Satz über diese Seite, und warum sechs Felder vier sind
