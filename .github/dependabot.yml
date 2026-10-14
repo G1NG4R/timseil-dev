@@ -85,6 +85,32 @@
 #
 # ---------------------------------------------------------------------------
 #
+# THE FOURTH DECISION, and this one arrived with a measurement rather than a
+# worry: **next 16.4.0 is not a minor here either.** #440 offered 16.3.8 ->
+# 16.4.0, and the 16.3 line is the claim CLAUDE.md makes and `make gen` prints
+# on a page as "Next.js 16.3".
+#
+# What the bump actually changed is in the e2e run, red on all seven widths: a
+# failure BEFORE the first byte answered with 21 bytes of `Internal Server
+# Error` on 16.3.8 and answers with Next's `<html id="__next_error__">`
+# document on 16.4.0. The status stays 500. ADR 0078 and web/e2e/error.spec.ts
+# hold that answer as a measured property, so lifting the line rewrites a test
+# and an ADR with it. That is a phase somebody argues for, not a bump.
+#
+# THREE NAMES, not one. @next/mdx and eslint-config-next carry next's own
+# version, and they sit in the development group while next sits in production
+# — so the pair arrives in a different pull request from the one that would
+# move the framework. #442 offered exactly that pair with `check` and `e2e`
+# green: nothing in this repository would have caught the skew, because
+# stack.yaml reads `dependencies.next` and nothing reads the other two.
+#
+# The cost is the Go line's cost, and it is named the same way: nothing will
+# remind us that 16.4 exists. web/package.json decides that, and it is a file
+# somebody reads. What still arrives is 16.3.x — the patches, which is the half
+# that carries security fixes.
+#
+# ---------------------------------------------------------------------------
+#
 # A RED DEPENDABOT PR IS NOT ALWAYS A REFUSAL, and #176 is the example. Versions
 # are resolved at `make gen` time (ADR 0012) and check-contract compares the
 # committed result against a fresh one. Dependabot cannot run `make gen`, so
@@ -144,6 +170,14 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # #440. The Next LTS line IS the minor, and the three move together.
+      # Reason in THE FOURTH DECISION above; 16.3.x patches still arrive.
+      - dependency-name: "next"
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: "@next/mdx"
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-minor"]
     groups:
       web-production:
         dependency-type: production

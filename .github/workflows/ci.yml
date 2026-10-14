@@ -137,7 +137,7 @@ jobs:
           go-version-file: api/go.mod
           cache-dependency-path: api/go.sum
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # Same argument, and there is a second one here: tools/check-node.sh
           # compares the RUNNING node major against .nvmrc. Reading the same
@@ -213,7 +213,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -264,7 +264,7 @@ jobs:
       # rig landed and nothing has ever collected what it writes. A red run in a
       # browser nobody can open is a red run nobody can explain, and the trace is
       # the whole difference between the two.
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: e2e-trace
@@ -846,7 +846,7 @@ jobs:
 
       # npm audit reads package-lock.json and needs no node_modules, so there
       # is no `npm ci` here — the lockfile is the input.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
 
@@ -1038,7 +1038,7 @@ jobs:
           go-version-file: api/go.mod
           cache-dependency-path: api/go.sum
 
-      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           languages: ${{ matrix.language }}
           # security-and-quality over the default: this repository already runs
@@ -1050,9 +1050,9 @@ jobs:
           # the rule (#182).
           config-file: ./.github/codeql/config.yml
 
-      - uses: github/codeql-action/autobuild@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      - uses: github/codeql-action/autobuild@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
 
-      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           category: /language:${{ matrix.language }}
 
@@ -1085,7 +1085,7 @@ jobs:
           go-version-file: api/go.mod
           cache-dependency-path: api/go.sum
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
 
