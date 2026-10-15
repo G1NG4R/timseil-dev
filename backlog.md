@@ -167,6 +167,48 @@ indirekt und alle aus derselben Klasse (CPU-Erschöpfung in Glob- und
 YAML-Hilfspaketen), und gegen `main`s eigene `package-lock.json` gezählt sind es
 **dort dieselben acht**. Redocly 2.63.0 nimmt keines weg und bringt keines mit.
 
+### Nachtrag 15.10. — der letzte Tausch, und der Wächter, der auf sich selbst wartete
+
+Die zwei Doku-PRs liefen nach 00:00 UTC, also nach dem `docker-cleanup`-Fenster,
+und nicht vorher: ein Merge um 23:32 hätte den Tausch auf ~23:52 gelegt.
+
+- **#447 `0ac5e99`**, Deploy 00:17:47 — Zeuge **814 × 200** je Pfad, 3 s ohne
+  Stichprobe, Versatz **3,9 s** und damit der kürzeste der Reihe.
+- **#448 `13899c4`**: `e2e` auf `main` **rot**, und damit `deploy` übersprungen.
+  `touch-targets.coarse.spec.ts:207` erwartet 2 interaktive Elemente in `<main>`
+  auf `/` und zählt 1 — der Zähl-Test gegen U7s Wartetafel, derselbe Mechanismus
+  wie #429, nur eine andere Zeile als am 01.10. (168 → 207, weil U2 und SYS.04
+  die Erwartung auf 6/2 gespalten haben). 1 failed, 2 457 passed. Neulauf mit
+  `--failed` grün, Deploy 01:22:22, **kein Code angefasst**.
+
+**Und dieser letzte Tausch ist unbeobachtet, diesmal durch einen eigenen
+Fehler.** Der verkettete Wächter sollte warten, bis der alte Zeuge aus ist, und
+prüfte das mit `ps -eo cmd= | grep "[t]ools/witness.sh"` — ein Muster, das in
+**seinem eigenen** Kommandotext steht. Er hat auf sich selbst gewartet, bis er
+abgeschossen wurde. Dieselbe Falle wie `pgrep -f`, eine Ebene höher: dort
+beruhigt sie falsch, hier blockiert sie. Was eine Lebendprüfung über einen
+Prozess tun muss, ist ihn an der PID zu greifen, die man beim Starten schon in
+der Hand hatte.
+
+Das Fenster davor zählt trotzdem: **1 799 × 200** je Pfad, 11 s ohne Stichprobe,
+kein neuer Prozess — das Urteil `✗` sagt dort korrekt „dieses Fenster ist nicht
+der Deploy", weil `deploy` ja gesperrt war.
+
+### Gefunden · `p95` im Health-Endpunkt ist bis zu zehn Minuten alt
+
+Nach dem Tausch stand dort **950 ms**, und die Zahl daneben sagt, warum:
+
+```
+generatedAt 01:37:01   p95 950 ms     measuredAt 01:27:37
+generatedAt 01:38:16   p95  22,8 ms   measuredAt 01:37:37
+```
+
+`measuredAt` lag **9,4 Minuten** vor `generatedAt`, und die Messung selbst fiel
+fünf Minuten nach den Neustart. Wer nur `p95` liest, meldet eine Regression, die
+vorher ein Neustart war — die Lektion vom 07.09. („sieben Regressionen an einem
+Nachmittag"), diesmal mit dem Grund daneben: nicht die Messung ist langsam, der
+Wert ist alt, und `measuredAt` ist das Feld, das es verrät.
+
 ### Verschoben
 
 - **`docs/dependabot-wave-october` (`4364d06`, 02.10.) liegt ungepusht und ist
@@ -270,8 +312,9 @@ Mal im Ruhezustand, **nie im Tausch**:
 | #446 `51f9197` | 899 | **0** | — |
 | #445 `59fc9c7` | 1 046 | **0** | — |
 | #447 `0ac5e99` | 814 | **0** | — |
+| #448 `13899c4` (Fenster ohne Deploy) | 1 799 | **0** | kein Tausch im Fenster |
 
-Also **6 Ausfälle auf rund 28 300 Anfragen**, in fünf von fünfzehn Läufen —
+Also **6 Ausfälle auf rund 30 100 Anfragen**, in fünf von sechzehn Läufen —
 die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null. Die
 längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass sieben
 Läufe hintereinander keinen zeigen.
