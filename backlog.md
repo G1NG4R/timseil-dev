@@ -12,6 +12,103 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## #451 · 16.10.2026 — Zwei rote Gründe, beide echt, und ein Fenster, das zu früh zumacht
+
+`goose` 3.28.0 → 3.29.0 in `/api`, gemergt als **`3b990e5`**. Der PR war an
+**zwei** Stellen rot, und keine davon war ein Flake:
+
+| Check | Ursache | Handgriff |
+|---|---|---|
+| `check` | `api/internal/seed/stack.gen.json` liest die goose-Version aus `api/go.mod` und stand eine Minor zurück | `make gen`, eine Zeile — dieselbe Form wie #424 |
+| `title` | Dependabots Titel war **85** Zeichen, und der Squash hängt ` (#451)` an | gekürzt auf 61 + 7 = **68** von 72, vorher mit `tools/check-pr-title.sh` gemessen |
+
+Der Zweig hing außerdem drei Commits hinter `main` — `gh pr update-branch`, also
+ein Merge und kein Rebase. `go.sum` verliert dabei die OTel-Hashes: nachgesehen,
+nicht angenommen, denn `api/internal/traceparent/traceparent.go` sagt im Kopf,
+dass das SDK **bewusst** noch keine Abhängigkeit ist (F6 liegt nach dem Launch).
+Es sind alte transitive Hashes der vorigen grpc-Version, kein Verlust.
+
+### Der Tausch, und der größte Versatz der Reihe
+
+| | |
+|---|---|
+| `e2e` auf `main` | 22:15:39Z → 22:28:19Z |
+| `deploy` | 22:28:22Z → 22:29:02Z, 40 s |
+| `ops.lastDeploy.at` | 22:28:59Z, `result ok`, `sha 3b990e5` |
+| `api`-Prozess `startedAt` | 22:29:17,556Z |
+| **Versatz** (`lastDeploy.at` → `startedAt`) | **18,6 s** |
+
+**18,6 s ist der größte Versatz der Reihe** — bisher stand das Maximum bei
+15,9 s (#445) und das Minimum bei 3,9 s (#447). Die Seite berichtet
+`v0.47.2-11-g3b990e5`, `status ok`, p95 **73,9 ms** bei `measuredAt`
+22:29:17,563Z: das ist die erste Messung des neuen Prozesses und keine alte,
+also diesmal **kein** Fall der #452-Notiz über das minutenalte `p95`.
+
+### Der Fund: `e2e` auf `main` dauert 12:40 bis 17:38, nicht 17 bis 30 Minuten
+
+Der Zeuge wurde zehn Minuten nach `e2e`-Start angeworfen, weil „`e2e` dauert
+17–30 min" als Erfahrungswert im Kopf stand. Nachgezählt an den letzten sechs
+`ci`-Läufen auf `main`:
+
+| Lauf | `e2e` |
+|---|---|
+| `3b990e5` | 12:40 |
+| `aa6c757` | 13:23 |
+| `13899c4` | 14:36 |
+| `0ac5e99` | 12:41 |
+| `59fc9c7` | **17:38** |
+| `51f9197` | 14:10 |
+
+**Die Spanne ist 12:40 bis 17:38, im Mittel rund 14 Minuten.** Nach den zehn
+Minuten Warten blieben heute **2:40** Rest; bei einem Lauf wie `0ac5e99` wäre
+der Tausch **verpasst** worden. Die Regel war also knapp daneben, und zwar in
+die gefährliche Richtung.
+
+**Die richtige Regel ist die einfachere:** anwerfen, **sobald `e2e`
+`in_progress` ist**, nicht N Minuten danach. Die Reißleine des Zeugen liegt bei
+1 800 s und deckt damit die längste gemessene `e2e` plus Deploy (17:38 + 0:40 ≈
+18,5 min) mit Abstand. Der #439-Fehlgriff kam **nicht** vom zu frühen Start,
+sondern vom Start **vor** dem `e2e`-Start — dort lagen noch elf Minuten
+Runner-Warteschlange davor, die keine Reißleine überbrückt.
+
+### Der Zeuge ist sauber, und das Fenster schließt 3,4 s nach dem Prozess
+
+| | |
+|---|---|
+| Zeugenstart | 22:26:25Z |
+| neuer Prozess gesehen (der **Zwilling**) | ≈ 22:28:51Z — Laufende minus 30 s Nachlauf |
+| Zeugenende | 22:29:21Z |
+| `/` | **176 × 200** |
+| `/api/health` | **176 × 200** |
+| Nicht-200 | **0** |
+
+Je Pfad eine Sekunde ohne Stichprobe — der Lauf sagt das selbst, statt sie
+glattzubügeln. Die Zeile in der Ruhezustands-Tabelle oben ist die **kürzeste**
+der Reihe und wiegt entsprechend wenig: 176 Anfragen je Pfad sind ein Beleg
+über den Tausch, keiner über den Ruhezustand.
+
+**Und damit zum fünften Mal die Notiz, die nie ein Issue wurde.** Der Nachlauf
+hängt am **ersten** neuen `api`-Prozess, und das ist im Rollout der Zwilling; ab
+`seen_at` wird die Identität nicht mehr gelesen (`tools/witness.sh:324`,
+`tools/witness.sh:334`). Das Fenster lief **3,4 s** nach dem Anlaufen des
+Prozesses aus, der die Seite jetzt ausliefert — die zwei belastbaren
+#304-Beobachtungen liegen bei **+12 s** und **+12,9 s** nach `startedAt` und
+damit **außerhalb**. Das `✓ every answer was 200` ist wahr und enger, als es
+sich liest; genau die Form, von der der Kopf dieser Datei sagt, dass ein
+Instrument sie nicht haben darf.
+
+Die Notiz steht seit H5c, als dritte und vierte gezählt am 03. und 04.09.2026
+(`backlog.md:6965`, `backlog.md:6607`, Aufgabe ausformuliert in
+`backlog.md:7204`). **Jetzt #453**, damit sie nicht ein sechstes Mal gefunden
+wird.
+
+### Offen aus diesem Lauf
+
+- **#450** (web-development-Gruppe, `e2e` rot) ist nicht angesehen worden.
+- **#453** ist neu.
+
+---
+
 ## Abhängigkeiten · 14.10.2026 — sechs PRs, sechs Tausche, und einer war eine Entscheidung
 
 **Stand: die Welle ist abgeräumt.** Vier Dependabot-PRs gemergt, einer durch
@@ -313,11 +410,13 @@ Mal im Ruhezustand, **nie im Tausch**:
 | #445 `59fc9c7` | 1 046 | **0** | — |
 | #447 `0ac5e99` | 814 | **0** | — |
 | #448 `13899c4` (Fenster ohne Deploy) | 1 799 | **0** | kein Tausch im Fenster |
+| **#451 `3b990e5`** | **176** | **0** | — |
 
-Also **6 Ausfälle auf rund 30 100 Anfragen**, in fünf von sechzehn Läufen —
+Also **6 Ausfälle auf rund 30 270 Anfragen**, in fünf von siebzehn Läufen —
 die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null. Die
-längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass sieben
-Läufe hintereinander keinen zeigen.
+längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass **acht**
+Tausch-Läufe hintereinander keinen zeigen — das Fenster ohne Deploy zählt in
+dieser Reihe nicht mit.
 Das Eskalationskriterium der Zählung ist unverändert nicht erfüllt: ein Issue wäre
 es, wenn ein Lauf **zwei** Ausfälle auf **einem** Pfad zeigt oder einer in den
 Tausch fällt. Hier ist es einer, auf einem Pfad, 18 Minuten vom Tausch entfernt
