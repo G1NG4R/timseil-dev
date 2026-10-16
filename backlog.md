@@ -102,10 +102,67 @@ Die Notiz steht seit H5c, als dritte und vierte gezählt am 03. und 04.09.2026
 `backlog.md:7204`). **Jetzt #453**, damit sie nicht ein sechstes Mal gefunden
 wird.
 
+### Nachtrag #454 — der Nachlauf ist 30 s **minus** dem Zwilling, und das ist zweimal gemessen
+
+`50bd9cc`, der Doku-Merge dieses Eintrags, hat selbst zwei Messungen geliefert
+und die Aufgabe aus #453 geschärft.
+
+**`e2e` auf `main` war rot, und es war wieder der Zähl-Test.**
+`touch-targets.coarse.spec.ts:211` bei `coarse-390` erwartet 2 interaktive
+Elemente in `<main>` auf `/` und zählt 1 — 1 failed, 348 skipped, **2 457
+passed**, dieselbe Zeile und dieselbe Zahl wie bei #448. Der #429-Mechanismus,
+also die **eine** erlaubte Wiederholung ohne Codeänderung: `gh run rerun
+--failed`, grün, **kein Code angefasst**. Die Spanne von oben hält sich dabei
+auf die Sekunde: Versuch 1 **13:35**, Versuch 2 **17:38** — derselbe Wert wie
+das bisherige Maximum.
+
+**Zwei Fenster, zwei Zeilen in der Ruhezustands-Tabelle:**
+
+| Fenster | Anfragen je Pfad | Nicht-200 | |
+|---|---|---|---|
+| 23:00 – 23:29:56, Zeuge bis an die Reißleine | **1 800 × 200** | **0** | `deploy` war durch das rote `e2e` gesperrt, also korrekt `✗ this window is not the deploy` |
+| 23:30:25 – 23:32:44, um den Tausch | **140 × 200** | **0** | `✓ every answer was 200` |
+
+Je Pfad 9 s bzw. 1 s ohne Stichprobe. Der Tausch: `ops.lastDeploy.at`
+**23:32:18Z**, `api`-Prozess `startedAt` **23:32:29,559Z**, Versatz **11,6 s**
+und damit wieder im gewohnten Band. Die Seite berichtet
+`v0.47.2-12-g50bd9cc`, p95 **73,3 ms**.
+
+**Und jetzt die Zahl, die #453 trägt.** Der Nachlauf ist nicht 30 s über dem
+Tausch, sondern **30 s minus dem Abstand zwischen Zwilling und endgültigem
+Prozess** — zweimal an einem Abend gemessen:
+
+| Tausch | Zwilling gesehen | endgültiger Prozess | Abstand | **Deckung danach** |
+|---|---|---|---|---|
+| `3b990e5` | ≈ 22:28:51 | 22:29:17,556 | 26,6 s | **3,4 s** |
+| `50bd9cc` | ≈ 23:32:14 | 23:32:29,559 | 15,6 s | **14,4 s** |
+
+Das erste Fenster deckt die zwei bekannten #304-Abstände (+12 s, +12,9 s)
+**nicht** ab, das zweite **gerade eben**. Die Deckung ist also keine Eigenschaft
+des Instruments, sondern ein Rest — sie hängt daran, wie lange der Rollout
+zwischen Zwilling und Aufräumen braucht, und das ist nichts, was der Zeuge
+kennt oder garantiert. Genau deshalb steht #453 offen und nicht als Notiz.
+
+**Gefunden · `pkill -f` trifft sich selbst, wie `pgrep -f`**
+
+Die Wachhund-Schleife für das Deploy-Fenster sollte mit
+`pkill -f "deploy-window-guard" ; kill <pid>` beendet werden. Das Muster steht
+im **eigenen** Kommandotext der Zeile, also hat `pkill` die eigene Shell
+abgeschossen, bevor das `kill <pid>` dran war — Exit 144, und die zweite Hälfte
+des Befehls lief nie. Dieselbe Familie wie die `pgrep -f`-Falle vom 23.09. und
+wie der Wächter vom 15.10., der auf sich selbst wartete; diesmal als
+Bedienfehler, obwohl die Notiz dazu dastand. **Die PID, die man in der Hand
+hat, zuerst benutzen** — nicht nach einem Muster suchen, in dem man selbst
+vorkommt. Der Zeuge hat es überlebt, weil er nicht auf das Muster passte.
+
 ### Offen aus diesem Lauf
 
 - **#450** (web-development-Gruppe, `e2e` rot) ist nicht angesehen worden.
 - **#453** ist neu.
+- **Dieser Nachtrag wartet auf seinen Merge.** Geschrieben um 23:33 UTC, und
+  eine CI von rund 18 Minuten hätte den Tausch auf ~23:52 gelegt — mitten in
+  Dokploys Aufräumfenster. Gemessen mit `date -u`, nicht geschätzt. Merge nach
+  00:00 UTC, so wie #452 am 15.10. aus demselben Grund gewartet hat.
 
 ---
 
@@ -411,12 +468,14 @@ Mal im Ruhezustand, **nie im Tausch**:
 | #447 `0ac5e99` | 814 | **0** | — |
 | #448 `13899c4` (Fenster ohne Deploy) | 1 799 | **0** | kein Tausch im Fenster |
 | **#451 `3b990e5`** | **176** | **0** | — |
+| **#454** (Fenster ohne Deploy) | **1 800** | **0** | kein Tausch im Fenster |
+| **#454 `50bd9cc`** | **140** | **0** | — |
 
-Also **6 Ausfälle auf rund 30 270 Anfragen**, in fünf von siebzehn Läufen —
+Also **6 Ausfälle auf rund 32 210 Anfragen**, in fünf von neunzehn Läufen —
 die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null. Die
-längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass **acht**
-Tausch-Läufe hintereinander keinen zeigen — das Fenster ohne Deploy zählt in
-dieser Reihe nicht mit.
+längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass **neun**
+Tausch-Läufe hintereinander keinen zeigen — die zwei Fenster ohne Deploy
+zählen in dieser Reihe nicht mit.
 Das Eskalationskriterium der Zählung ist unverändert nicht erfüllt: ein Issue wäre
 es, wenn ein Lauf **zwei** Ausfälle auf **einem** Pfad zeigt oder einer in den
 Tausch fällt. Hier ist es einer, auf einem Pfad, 18 Minuten vom Tausch entfernt
