@@ -22,7 +22,7 @@
       "Go 1.26",
       "pgx 5.11",
       "sqlc 1.30",
-      "goose 3.28",
+      "goose 3.29",
       "PostgreSQL 18.6",
       "Node 24",
       "Prometheus 3.13",
