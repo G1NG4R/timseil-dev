@@ -12,6 +12,84 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## #459 · 17.10.2026 — Das Loch liegt zwölf Sekunden nach dem Prozess, und es war nur sichtbar, weil der Rest groß genug war
+
+**Die erste Nicht-200 der Nacht, nach rund 42 500 gemessenen Anfragen.** Der
+Tausch zu `206df65` zeigt auf `/` eine **503**, während `/api/health` durch
+dieselbe Sekunde 200 hält. Das ist Evidenz für **#304**, und zwar die vierte.
+
+| | |
+|---|---|
+| `e2e` | 04:56:10 → 05:13:44, **17:34**, grün |
+| `deploy` | 05:13:47 → 05:14:15 |
+| `ops.lastDeploy.at` | 05:14:11Z |
+| `startedAt` (5 × gezählt) | **05:14:25,711Z** |
+| Versatz | **+14,7 s** |
+| **rote Sekunde** | **1104 → ≈ 05:14:37Z** |
+| **Abstand zu `startedAt`** | **+11,3 bis +13,3 s** |
+| `/` | 1 107 Anfragen, **1 106 × 200, 1 × 503** |
+| `/api/health` | 1 107 Anfragen, **1 107 × 200** |
+
+Die Sekundennummer ist **Wanduhrzeit, kein Index** — `elapsed=$(( now - start +
+1 ))` in `tools/witness.sh:316`. Deshalb ist die Sekunde auf ±1 s festgenagelt;
+die Spanne kommt allein daher, dass `witness.sh` seine eigene Uhr ein bis zwei
+Sekunden nach der Logzeile des Runners nimmt. **In Wanduhrzeit umgerechnet, wie
+die Regel es verlangt** — und diesmal liegt die rote Sekunde wirklich im
+Tauschfenster, anders als beim vierzehnten Tausch, wo dieselbe Arithmetik einen
+Fund abgewiesen hat.
+
+**Dreimal dieselbe Form, und jetzt ein Cluster statt dreier Punkte:**
+
+- **503, kein 404.** Der Router steht, der Dienst hat keinen gesunden Endpunkt.
+- **`/api/health` hält durch.** Nur der Container, der die Seite ausliefert,
+  zeigt das Loch — das vierte Mal.
+- **Das Loch liegt nach dem Anlaufen des neuen `api`-Prozesses**, nicht im
+  `deploy`-Job. Die drei belastbaren Abstände sind jetzt **+11,3…13,3**, **+12**
+  und **+12,9 s** — also rund **12 s**, und nicht drei verstreute Werte.
+
+### Und der eigentliche Satz: gesehen wurde es nur, weil der Rest groß genug war
+
+Dieses Fenster deckte **15,3 s** über das Anlaufen des ausliefernden Prozesses
+hinaus. Dasselbe Werkzeug deckte beim `3b990e5`-Tausch derselben Nacht **3,4 s**
+— der Nachlauf ist 30 s **ab dem Zwilling**, nicht ab dem endgültigen Prozess.
+Ein Loch bei +12 s ist für einen Rest von 3,4 s unsichtbar.
+
+| Tausch | Deckung | hätte +12 s gesehen? |
+|---|---|---|
+| `3b990e5` | 3,4 s | **nein** |
+| `50bd9cc` | 14,4 s | ja |
+| `944a1e4` | 13,3 s | ja |
+| `592da9d` | 13,7 s | ja |
+| `d0bdd76` | ≈ 21,2 s | ja |
+| **`206df65`** | **15,3 s** | **ja — und hat** |
+
+**#453 ist damit keine Aufräumarbeit.** Es ist der Unterschied zwischen „dieser
+Defekt ist gemessen" und „dieser Defekt ist nicht gemessen", und die Nacht hat
+beide Ausgänge geliefert. Eins von sechs Fenstern hätte die 503 verschluckt.
+
+### Das Eskalationskriterium ist erfüllt — zum ersten Mal
+
+Die Zählung sagt es wörtlich: „ein Issue wäre es, wenn ein Lauf **zwei**
+Ausfälle auf **einem** Pfad zeigt **oder einer in den Tausch fällt**." Dieser
+fällt in den Tausch. Also ist das Kriterium **erfüllt**, und zwar erstmals seit
+H7a — alle sechs Ausfälle davor lagen im Ruhezustand, sieben bis achtzehn
+Minuten vom Tausch entfernt.
+
+Was es verlangt, existiert schon: **#304**, und dort steht die Beobachtung jetzt
+mit der Arithmetik daneben. Kein neues Issue, aber auch nicht die Zeile „nicht
+erfüllt", die hier beinahe gestanden hätte.
+
+### Offen
+
+- **#304** hat jetzt vier Beobachtungen und einen Cluster bei rund 12 s.
+- **#453** offen, und durch diesen Lauf begründet statt nur begründbar.
+- **#323** offen, Klausel 1 braucht eine Entscheidung.
+- **#359** ist als nächste Einheit gewählt: der einzige offene Bug mit
+  vollständigem Abnahmekriterium und **ohne** offene Entscheidung. Geplant, nicht
+  begonnen.
+
+---
+
 ## #458 · 17.10.2026 — Ein Zeuge pro `e2e`-Versuch, und zwanzig Sekunden, die eine Messung kosteten
 
 Der erste **Code**-Fix dieser Nacht: `bundle-size.sh` nennt jetzt den Clean statt
@@ -744,19 +822,25 @@ Mal im Ruhezustand, **nie im Tausch**:
 | **#456 `a60f44c`** | **2 359** | **0** | — |
 | **#457** (Fenster ohne Deploy) | **2 700** | **0** | `e2e` rot, `deploy` gesperrt |
 | **#458 `d0bdd76`** | **934** | **0** | — |
+| **#459 `206df65`** | **1 107** | **1 (`/`, 503)** | **im Tausch, +11,3…13,3 s nach `startedAt`** |
 
-Also **6 Ausfälle auf rund 41 430 Anfragen**, in fünf von fünfundzwanzig
-Läufen — die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null.
-Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht gefolgt von
-`#457` mit 2 700 und `a60f44c` mit 2 359; neu ist, dass **dreizehn**
-Tausch-Läufe hintereinander keinen zeigen — die vier Fenster ohne Deploy
-zählen in dieser Reihe nicht mit. Ein fünftes Fenster wurde **verworfen**: es
-lief nach dem verpassten `f0e5998`-Tausch an, hatte keinen Deploy mehr vor
-sich und wurde beendet, damit der nächste Zeuge nicht daneben läuft.
-Das Eskalationskriterium der Zählung ist unverändert nicht erfüllt: ein Issue wäre
-es, wenn ein Lauf **zwei** Ausfälle auf **einem** Pfad zeigt oder einer in den
-Tausch fällt. Hier ist es einer, auf einem Pfad, 18 Minuten vom Tausch entfernt
-— während `/api/health` in derselben Sekunde durchhält.
+Also **7 Ausfälle auf rund 42 540 Anfragen**, in sechs von sechsundzwanzig
+Läufen. Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht
+gefolgt von `#457` mit 2 700 und `a60f44c` mit 2 359. Die Serie von dreizehn
+ausfallfreien Tausch-Läufen **endet mit `206df65`** — und sie endet anders als
+alle sechs Ausfälle davor: **im Tausch**, nicht im Ruhezustand. Die vier
+Fenster ohne Deploy zählen in dieser Reihe nicht mit; ein fünftes wurde
+**verworfen**, weil es nach dem verpassten `f0e5998`-Tausch anlief und keinen
+Deploy mehr vor sich hatte.
+Das Kriterium lautet: ein Issue wäre es, wenn ein Lauf **zwei** Ausfälle auf
+**einem** Pfad zeigt **oder einer in den Tausch fällt**.
+
+- Für `4763ce2` (#444) war es **nicht** erfüllt: einer, auf einem Pfad,
+  18 Minuten vom Tausch entfernt — während `/api/health` in derselben Sekunde
+  durchhält.
+- Für `206df65` ist es **erfüllt**, und zwar erstmals: der Ausfall fällt in den
+  Tausch. Das verlangte Issue existiert schon — **#304**, wo die Beobachtung
+  mit ihrer Arithmetik steht.
 
 Alle Messungen kommen weiter von derselben Maschine über dasselbe Netz, also
 ist Ursprung von Leitung hier nicht zu trennen, und die Notiz sagt das statt
