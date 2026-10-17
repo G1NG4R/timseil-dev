@@ -67,6 +67,40 @@ Ein Loch bei +12 s ist für einen Rest von 3,4 s unsichtbar.
 Defekt ist gemessen" und „dieser Defekt ist nicht gemessen", und die Nacht hat
 beide Ausgänge geliefert. Eins von sechs Fenstern hätte die 503 verschluckt.
 
+### Nachtrag `72f6a8e` — sauber, und diesmal heißt das etwas
+
+Der Tausch direkt nach der 503 ist **1 103 × 200 je Pfad**, null Nicht-200. Das
+ist nur deshalb eine Aussage, weil das Fenster weit genug reichte: **15,2 s**
+über das Anlaufen des ausliefernden Prozesses hinaus (`startedAt`
+05:54:19,795Z, `lastDeploy.at` 05:54:05Z, Versatz **+14,8 s**). Ein Loch im
+gemessenen Band +11,3…13,3 s hätte also drinnen gelegen. Es war nicht da.
+
+**Damit hat #304 erstmals eine begrenzte Zahl statt zweier Vorkommen:**
+
+| Tausch | Deckung | konnte ein ~12-s-Loch sehen | Ergebnis |
+|---|---|---|---|
+| `3b990e5` | 3,4 s | **nein** | blind |
+| `50bd9cc` | 14,4 s | ja | sauber |
+| `944a1e4` | 13,3 s | knapp | sauber |
+| `592da9d` | 13,7 s | ja | sauber |
+| `d0bdd76` | ≈ 21,2 s | ja | sauber |
+| **`206df65`** | **15,3 s** | **ja** | **1 × 503** |
+| `72f6a8e` | 15,2 s | ja | sauber |
+
+**Rund ein Tausch von sechs**, gezählt nur über die Fenster, die es überhaupt
+sehen konnten. Zwei Vorbehalte bleiben ausdrücklich stehen: die 13,3 s von
+`944a1e4` liegen genau auf der Bandobergrenze, und die Deckung von `d0bdd76` ist
+**hergeleitet**, nicht gelesen — der Runner hatte dort den `printf`-Fehler mit
+dem führenden `-`. Beide machen den **Nenner** weicher, nicht den Zähler: die
+503 selbst ist gelesen.
+
+Die Tabelle steht mit derselben Arithmetik als Kommentar an **#304**.
+
+**Dieser Eintrag wartet auf seinen Merge** — er wurde um 05:55 geschrieben, und
+sein eigener Merge erzeugt den nächsten Tausch, den dann wieder jemand bezeugen
+müsste. Die Schleife endet hier, also endet sie mit einem geschriebenen Fund und
+einem offenen PR, nicht mit einem Fund in einer Chat-Nachricht.
+
 ### Das Eskalationskriterium ist erfüllt — zum ersten Mal
 
 Die Zählung sagt es wörtlich: „ein Issue wäre es, wenn ein Lauf **zwei**
@@ -823,8 +857,9 @@ Mal im Ruhezustand, **nie im Tausch**:
 | **#457** (Fenster ohne Deploy) | **2 700** | **0** | `e2e` rot, `deploy` gesperrt |
 | **#458 `d0bdd76`** | **934** | **0** | — |
 | **#459 `206df65`** | **1 107** | **1 (`/`, 503)** | **im Tausch, +11,3…13,3 s nach `startedAt`** |
+| **#460 `72f6a8e`** | **1 103** | **0** | Deckung 15,2 s, also aussagekräftig |
 
-Also **7 Ausfälle auf rund 42 540 Anfragen**, in sechs von sechsundzwanzig
+Also **7 Ausfälle auf rund 43 640 Anfragen**, in sechs von siebenundzwanzig
 Läufen. Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht
 gefolgt von `#457` mit 2 700 und `a60f44c` mit 2 359. Die Serie von dreizehn
 ausfallfreien Tausch-Läufen **endet mit `206df65`** — und sie endet anders als
