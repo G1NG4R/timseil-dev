@@ -12,6 +12,114 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## #450 · 17.10.2026 — Eine Lesung ist keine Identität, und `e2e` ist doppelt so lang wie behauptet
+
+Die Dependabot-Warteschlange ist leer. `592da9d` (#450) hat `@next/mdx` und
+`eslint-config-next` von 16.3.6 auf 16.3.8 gezogen, transitiv
+`@next/eslint-plugin-next` — drei Pakete, alle `dev: true`, keine
+Produktions-Abhängigkeit. Davor `944a1e4` (#455), der Eintrag, der auf das Ende
+von Dokploys Aufräumfenster gewartet hat; gemergt um 00:04:28 UTC, gemessen.
+
+**Die Prämisse stand in der Config, nicht im Kopf.** `.github/dependabot.yml`
+sperrt `next`, `@next/mdx` und `eslint-config-next` nur für **semver-minor**;
+16.3.x-Patches sollen ankommen. #450 ist ein Patch *innerhalb* der mit #445
+festgeschriebenen Linie und zieht die beiden Pakete auf das `next` 16.3.8, das
+`main` schon trug. Der PR steht nicht gegen die Entscheidung, er vollzieht sie.
+
+**Das rote `e2e` vom 14.10. war der Zähl-Test, und diesmal brauchte es keine
+Wiederholung.** `touch-targets.coarse.spec.ts:207`, der #429-Mechanismus. Nach
+`gh pr update-branch` lief die frische CI **von selbst grün** — die eine
+erlaubte Wiederholung ohne Codeänderung blieb ungenutzt.
+
+### Korrektur: `e2e` auf `main` ist 12:40 bis **34:57**, nicht bis 17:38
+
+Im Eintrag darüber steht die Spanne 12:40–17:38, aus sechs Stichproben. Sie ist
+falsch, und zwar an der Obergrenze um den Faktor zwei:
+
+| `main` | `e2e` | |
+|---|---|---|
+| `944a1e4` | **34:57** | grün |
+| `592da9d` | 17:24 | grün |
+
+**34:57 und grün** — lang heißt also nicht rot. Die alte Notiz koppelte die
+29,5 min vom 01.10. an einen roten Lauf und legte den Verdacht nahe, eine lange
+`e2e` sei eine mit Wiederholungen. Dieser Lauf widerlegt das.
+
+**Die Regel „sofort bei `in_progress` starten" hält** — sie ist der einzige
+Weg, der auch bei 34:57 noch Vorlauf hat. Was nicht hält, ist die
+**Reißleine**: 1 800 s decken eine 35-Minuten-`e2e` nicht. Beide Zeugen danach
+liefen mit `WITNESS_MAX_SEC=2700`.
+
+**Und der erste Zeuge lief tatsächlich leer**, 1 800 × 200 je Pfad ohne einen
+neuen Prozess. Ein **verketteter** zweiter übernahm mit **4 s Lücke** und
+schrieb die Identität vor seinem Start mit — `23:32:29,559Z`, unverändert. Also
+ist belegt und nicht bloß gehofft, dass in der Lücke nichts getauscht wurde.
+Die Lebendprüfung hing an der **Ergebnisdatei**, nicht an einem Prozessmuster.
+
+### Der Fund: eine einzelne Lesung von `/api/health` kann einen Prozess melden, der schon weg ist
+
+Um 00:40:17, neun Sekunden nach dem `deploy`, meldete `/api/health`
+`startedAt 00:39:53,604Z` — **vor** `ops.lastDeploy.at` (00:40:04Z). Das wäre
+der erste **negative** Versatz der Reihe gewesen, ein Tausch, bei dem der
+Prozess vor seiner eigenen Meldung anläuft.
+
+Er war es nicht. Acht Stichproben später:
+
+| | |
+|---|---|
+| erste Lesung, 00:40:17 | `00:39:53,604Z` — ein **Zwilling**, der schon abgeräumt wird |
+| 8 × gelesen, 00:40:40 ff. | `00:40:16,706Z`, stabil |
+| `ops.lastDeploy.at` | 00:40:04Z |
+| **Versatz, richtig** | **+12,7 s** — mitten im bekannten Band |
+
+Im Rollout ist `/api/health` über **zwei** Prozesse lastverteilt, also ist eine
+Lesung eine Stichprobe und keine Identität. Wer einmal liest, liest mit
+Wahrscheinlichkeit den Prozess, der in Sekunden verschwindet. Eine erfundene
+Zahl wäre das Ergebnis gewesen — und zwar eine spektakuläre, weil ein negativer
+Versatz nach einem Befund aussieht. **Identität wird gezählt, nicht gelesen:
+mehrfach abfragen, bis der Wert stabil ist.**
+
+Derselbe Familienname wie die `p95`-Notiz von #452: dort ist die Zahl alt, hier
+ist der Prozess alt. Beides sieht nach Zustand aus und ist eine Stichprobe.
+
+### Zwei bezeugte Tausche, beide sauber
+
+| Tausch | `main` | `ops.lastDeploy.at` | `startedAt` (gezählt) | Versatz | Zeuge je Pfad |
+|---|---|---|---|---|---|
+| — | `944a1e4` | 00:40:04Z | 00:40:16,706Z | **+12,7 s** | **339 × 200** |
+| — | `592da9d` | 00:59:07Z | 00:59:19,327Z | **+12,3 s** | **1 087 × 200** |
+
+Null Nicht-200 in beiden, 0 bzw. 4 s ohne Stichprobe. Die Seite berichtet
+`v0.47.2-14-g592da9d`, `status ok`, p95 **72,3 ms**, `uptime90d` 78,88 %,
+`systemsLive` 1 von 2.
+
+### #453 hat jetzt vier Datenpunkte, und das Muster hält
+
+Deckung nach dem Anlaufen des ausliefernden Prozesses = **30 s minus dem
+Abstand Zwilling → endgültiger Prozess**:
+
+| Tausch | Abstand | Deckung |
+|---|---|---|
+| `3b990e5` | 26,6 s | **3,4 s** |
+| `50bd9cc` | 15,6 s | 14,4 s |
+| `944a1e4` | 16,7 s | 13,3 s |
+| `592da9d` | 16,3 s | 13,7 s |
+
+Drei von vier liegen knapp über den bekannten #304-Abständen (+12 s, +12,9 s),
+einer klar darunter. Vier Punkte sagen: der Normalfall ist ein Abstand um 16 s,
+und der Ausreißer bei 26,6 s ist der, der das Fenster zumacht. Die Deckung
+bleibt ein Rest, kein Versprechen — #453 unverändert offen.
+
+### Offen
+
+- **Dependabot ist leer.** Die nächste Einheit kommt aus Rangfolge (b), der
+  nächsten Phase ab Stufe I.
+- **#453** offen, vier Datenpunkte.
+- **#304** hat aus dieser Nacht **keine** neue Evidenz: vier bezeugte Tausche,
+  alle sauber.
+
+---
+
 ## #451 · 16.10.2026 — Zwei rote Gründe, beide echt, und ein Fenster, das zu früh zumacht
 
 `goose` 3.28.0 → 3.29.0 in `/api`, gemergt als **`3b990e5`**. Der PR war an
@@ -470,11 +578,14 @@ Mal im Ruhezustand, **nie im Tausch**:
 | **#451 `3b990e5`** | **176** | **0** | — |
 | **#454** (Fenster ohne Deploy) | **1 800** | **0** | kein Tausch im Fenster |
 | **#454 `50bd9cc`** | **140** | **0** | — |
+| **#455** (Fenster ohne Deploy) | **1 800** | **0** | kein Tausch im Fenster |
+| **#455 `944a1e4`** | **339** | **0** | — |
+| **#450 `592da9d`** | **1 087** | **0** | — |
 
-Also **6 Ausfälle auf rund 32 210 Anfragen**, in fünf von neunzehn Läufen —
-die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null. Die
-längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass **neun**
-Tausch-Läufe hintereinander keinen zeigen — die zwei Fenster ohne Deploy
+Also **6 Ausfälle auf rund 35 440 Anfragen**, in fünf von zweiundzwanzig Läufen
+— die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null. Die
+längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass **elf**
+Tausch-Läufe hintereinander keinen zeigen — die drei Fenster ohne Deploy
 zählen in dieser Reihe nicht mit.
 Das Eskalationskriterium der Zählung ist unverändert nicht erfüllt: ein Issue wäre
 es, wenn ein Lauf **zwei** Ausfälle auf **einem** Pfad zeigt oder einer in den
