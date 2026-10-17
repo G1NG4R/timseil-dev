@@ -12,6 +12,114 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## #458 · 17.10.2026 — Ein Zeuge pro `e2e`-Versuch, und zwanzig Sekunden, die eine Messung kosteten
+
+Der erste **Code**-Fix dieser Nacht: `bundle-size.sh` nennt jetzt den Clean statt
+den Build, wenn `.next` nicht weichen will. `d0bdd76`, und weil der Typ `fix`
+ist, hat `release.sh` daraus **`v0.47.3`** geschnitten — die erste Freigabe der
+Nacht, nach sechs Merges mit `chore` und `docs`, die korrekt keine gaben.
+
+### Der Fix, und wie er geprüft ist
+
+`rm -rf .next && npm run build` meldete den Grund des Builds für beide Fälle.
+`make dev` lässt root-eigene Dateien in `.next/dev`, `rm` kommt nicht dran, und
+der Lauf endete auf `npm run build failed` für einen Build, der **nie begonnen
+hatte** — zweihundert Zeilen `Permission denied` darüber, und die Meldung zeigte
+auf die falsche Hälfte. Vier Sichtungen, je eine Viertelstunde (#323).
+
+Jetzt sind es zwei Befehle. Beide Richtungen echt reproduziert, nicht behauptet:
+
+| Fall | Meldung |
+|---|---|
+| Clean scheitert | `✗ could not remove …/web/.next — the build never started` + die echte `rm`-Zeile + der Ausweg |
+| Clean gelingt, Build scheitert | `✗ npm run build failed` — unverändert |
+
+`bundle-size.sh` stand **gar nicht** in der Kopierliste von `selftest.sh`, hatte
+also keine Abdeckung. Jetzt ein `refuses`-Fall: ein nicht schreibbares
+Verzeichnis ist dieselbe Weigerung von `rm`, ohne dass ein Container dafür
+gebraucht wird. **Ohne den Fix geht er rot** (`rejected, but not for 'the build
+never started'`) — geprüft, indem die Datei auf `HEAD` zurückgesetzt wurde. Und
+er lief **in CI** um 03:55:11, die `id -u`-Sperre hat ihn dort nicht
+stillschweigend übersprungen.
+
+**#323 bleibt offen.** Klausel 1 — `make dev`, dann `make bundle-size`, ohne von
+Hand zu löschen — braucht die Entscheidung, die das Issue benennt und nicht
+trifft: Dev-Container als `node`, oder Build-Ausgabe aus `.next` heraus.
+
+### Der Fund: der Zeuge gehört an den `e2e`-**Versuch**, nicht an den Lauf
+
+`f0e5998` ist **unbezeugt**, und die Ursache ist die Zeitplanung, nicht der Host:
+
+| | |
+|---|---|
+| Zeuge an, während `e2e`-Versuch 1 lief | 03:01:06 |
+| `e2e`-Versuch 1 | 28:48, **rot** → `deploy` übersprungen |
+| Reißleine 2 700 s ausgelaufen | **03:46:06** |
+| `e2e`-Versuch 2 nach Neulauf | 14:56, grün, fertig 03:46:23 |
+| `deploy` begann | **03:46:26** |
+
+**Zwanzig Sekunden.** Die Reißleine verbrannte in einem Fenster, in dem `deploy`
+per Definition nicht liegen konnte — ein roter `e2e` sperrt ihn. Ein zweiter
+Zeuge lief um 03:51 an und maß, was längst vorbei war.
+
+Die Regel, die bisher fehlte: **ein Zeuge pro `e2e`-Versuch.** Der Runner prüft
+nach jedem Fenster, ob die Ziel-`sha` ausliefert, und armiert sonst neu. Beim
+nächsten Tausch hat das gleich funktioniert — Start 04:13:34, zwölf Sekunden
+nach `e2e`.
+
+### Der bezeugte Tausch
+
+| | |
+|---|---|
+| `e2e` | 04:13:22 → 04:28:15, **14:53**, grün |
+| `deploy` | 04:28:17 → 04:28:39 |
+| `ops.lastDeploy.at` | 04:28:37Z |
+| `startedAt` (5 × gezählt) | 04:28:52,755Z |
+| **Versatz** | **+15,8 s** |
+| Zeuge je Pfad | **934 × 200**, 6 s ohne Stichprobe |
+
+Null Nicht-200. #453 bekommt einen sechsten Datenpunkt, **hergeleitet statt
+gelesen**: Spanne ≈ 940 s ab 04:13:34, also Ende ≈ 04:29:14, Zwilling-Abstand
+≈ 8,8 s, Deckung ≈ 21,2 s. Hergeleitet, weil mein eigener Runner die Endzeit
+nicht aufschrieb — siehe unten.
+
+### `p95` las 241,2 ms, und das ist die #452-Notiz, nicht eine Regression
+
+`measuredAt 04:33:52` liegt **fünf Minuten nach** dem Start des Prozesses
+(04:28:52) und 74 s vor `generatedAt`. Dieselbe Form wie am 15.10., als 950 ms
+gelesen wurden und die nächste Messung 22,8 ms ergab: die Messung, die kurz nach
+einem Neustart fällt, misst die Aufwärmphase. Wer sie als Zustand nimmt, meldet
+eine Regression, die es nicht gibt. **Nicht als Zustand notiert.**
+
+**Und eine eigene zweite Messung liegt nicht vor.** Um 04:35 und um 04:38
+gelesen, beide Male dieselbe `measuredAt` — die Momentaufnahme war noch nicht
+erneuert. Die Einordnung stützt sich also auf den Vorfall vom 15.10. und auf
+die Zeitarithmetik, nicht auf einen zweiten Wert von hier. Das ist der
+Unterschied zwischen „ist erklärt" und „ist widerlegt".
+
+### Zwei eigene Werkzeugfehler, beide aus derselben Familie
+
+- **`kill` kam mit 0 zurück und traf den Zeugen nicht.** PID 1065495 war nur das
+  Wrapper-Skript; der Zeuge war 1065510 und maß weiter. Erst das Nachzählen der
+  Prozesse zeigte es. Ein Rückgabewert ist kein Beweis — dieselbe Wurzel wie die
+  `pkill`-Falle, einen Stock höher.
+- **`printf '--- witness exit …'` schrieb nichts.** Eine Formatzeichenkette, die
+  mit `-` beginnt, wird als Option gelesen — genau die Portabilitätsfalle, die
+  im Kopf von `witness.sh` für `echo` steht. Deshalb fehlt die Endzeit oben und
+  die Deckung ist hergeleitet. Der nächste Runner stellt ein Zeichen davor.
+
+### Offen
+
+- **#323** offen, Klausel 1 braucht eine Entscheidung.
+- **#429** hat jetzt eine **gemessene Rate**: der Zähl-Test fiel in **3 von 12**
+  `e2e`-Läufen dieser Nacht (25 %), jedes Mal mit identischen Zahlen, und
+  **zwei** davon auf `main`, wo `deploy` dadurch übersprungen wird. Steht als
+  Kommentar am Issue, nicht hier.
+- **#453** offen, sechs Datenpunkte.
+- **I1** geplant, gesperrt an drei Entscheidungen (Tokens, Lenis/GSAP, Ambient-Ebene).
+
+---
+
 ## #450 · 17.10.2026 — Eine Lesung ist keine Identität, und `e2e` ist doppelt so lang wie behauptet
 
 Die Dependabot-Warteschlange ist leer. `592da9d` (#450) hat `@next/mdx` und
@@ -634,12 +742,17 @@ Mal im Ruhezustand, **nie im Tausch**:
 | **#455 `944a1e4`** | **339** | **0** | — |
 | **#450 `592da9d`** | **1 087** | **0** | — |
 | **#456 `a60f44c`** | **2 359** | **0** | — |
+| **#457** (Fenster ohne Deploy) | **2 700** | **0** | `e2e` rot, `deploy` gesperrt |
+| **#458 `d0bdd76`** | **934** | **0** | — |
 
-Also **6 Ausfälle auf rund 37 800 Anfragen**, in fünf von dreiundzwanzig Läufen
-— die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null. Die
-längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht gefolgt von
-`a60f44c` mit 2 359; neu ist, dass **zwölf** Tausch-Läufe hintereinander
-keinen zeigen — die drei Fenster ohne Deploy zählen in dieser Reihe nicht mit.
+Also **6 Ausfälle auf rund 41 430 Anfragen**, in fünf von fünfundzwanzig
+Läufen — die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null.
+Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht gefolgt von
+`#457` mit 2 700 und `a60f44c` mit 2 359; neu ist, dass **dreizehn**
+Tausch-Läufe hintereinander keinen zeigen — die vier Fenster ohne Deploy
+zählen in dieser Reihe nicht mit. Ein fünftes Fenster wurde **verworfen**: es
+lief nach dem verpassten `f0e5998`-Tausch an, hatte keinen Deploy mehr vor
+sich und wurde beendet, damit der nächste Zeuge nicht daneben läuft.
 Das Eskalationskriterium der Zählung ist unverändert nicht erfüllt: ein Issue wäre
 es, wenn ein Lauf **zwei** Ausfälle auf **einem** Pfad zeigt oder einer in den
 Tausch fällt. Hier ist es einer, auf einem Pfad, 18 Minuten vom Tausch entfernt
