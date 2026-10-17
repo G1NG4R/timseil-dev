@@ -110,13 +110,65 @@ einer klar darunter. Vier Punkte sagen: der Normalfall ist ein Abstand um 16 s,
 und der Ausreißer bei 26,6 s ist der, der das Fenster zumacht. Die Deckung
 bleibt ein Rest, kein Versprechen — #453 unverändert offen.
 
-### Offen
+### Nachtrag `a60f44c` — die erhöhte Reißleine hat sich in achteinhalb Minuten bezahlt
 
-- **Dependabot ist leer.** Die nächste Einheit kommt aus Rangfolge (b), der
-  nächsten Phase ab Stufe I.
-- **#453** offen, vier Datenpunkte.
-- **#304** hat aus dieser Nacht **keine** neue Evidenz: vier bezeugte Tausche,
-  alle sauber.
+Der Merge dieses Eintrags lief in eine `e2e` von **38:30** — grün, und damit
+wieder ein neues Maximum. Die von mir veröffentlichte Obergrenze war heute
+Nacht **zweimal** zu klein: 17:38, überholt von 34:57, überholt von 38:30.
+
+**Das ist der Beleg für die Reißleine, und er ist knapp.** Der Zeuge lief um
+01:19:26 an, mit `WITNESS_MAX_SEC=2700`:
+
+| | |
+|---|---|
+| Zeugenstart | 01:19:26Z |
+| alte Reißleine (1 800 s) wäre ausgelaufen | **01:49:26Z** |
+| `deploy` | 01:57:53Z → 01:58:15Z |
+| Zeugenende | 01:58:45Z, nach **2 359 s** |
+
+**Achteinhalb Minuten** zwischen der alten Grenze und dem Tausch. Mit 1 800 s
+wäre diese Messung verloren gewesen — derselbe Ausgang wie bei #439, nur aus
+einem anderen Grund: dort lag die Runner-Warteschlange davor, hier ist die
+`e2e` selbst länger als die Reißleine.
+
+**Die Lehre ist nicht die Spanne, sondern das Misstrauen gegen sie.** Eine aus
+Stichproben geschätzte Obergrenze ist in einer einzigen Nacht zweimal überholt
+worden.
+Richtig ist: **sofort bei `in_progress` starten** und die Reißleine **großzügig**
+setzen, weil ein zu früher Start nichts kostet und ein zu kurzes Fenster die
+ganze Messung.
+
+| Tausch | `main` | `ops.lastDeploy.at` | `startedAt` (10 × gezählt) | Versatz | Zeuge je Pfad |
+|---|---|---|---|---|---|
+| — | `a60f44c` | 01:58:13Z | 01:58:28,779Z | **+15,8 s** | **2 359 × 200** |
+
+Null Nicht-200, 9 s ohne Stichprobe. `v0.47.2-15-ga60f44c`, p95 **67,8 ms**.
+Die Identität wurde zehnmal gelesen und war zehnmal gleich — nach dem Fund von
+oben wird hier nicht mehr einmal gelesen.
+
+**#453, fünfter Datenpunkt:** Abstand Zwilling → endgültiger Prozess 13,8 s,
+Deckung danach **16,2 s**. Damit deckt dieses Fenster die bekannten
+#304-Abstände (+12 s, +12,9 s) ab. Vier von fünf tun das; der Ausreißer bleibt
+`3b990e5` mit 3,4 s.
+
+### Offen — und warum die Schleife hier hält
+
+- **I1 · Boot-Sequenz** ist die nächste Einheit und **geplant**, aber nicht
+  begonnen. Sie hängt an drei Entscheidungen, die mir nicht gehören:
+  **(1)** sechs neue `--d-boot-*`-Tokens in `tokens.css` — die Offsets
+  (80/340/640/1040/1200/2400) dürfen nicht als `animation-delay` hart im CSS
+  stehen, `tools/check-tokens.sh:80` fängt das, und seine Meldung nennt die
+  neun bestehenden Dauern. `--d-decode: 540ms` **existiert** und ist genau die
+  Decode-Dauer des Blattes.
+  **(2)** Lenis und GSAP ScrollTrigger für **I2** — zwei neue Abhängigkeiten
+  gegen #237 (143 KB von 150 KB), und der Plan nennt I2 ausdrücklich *ein*
+  Integrationsproblem.
+  **(3)** Die **Ambient-Ebene** steht in der Spec-Tabelle des Blattes
+  (1900 ms, opacity .06), der Build-Plan schiebt sie nach **I3, nach Launch**.
+  Zwei Quellen, ein Widerspruch.
+- **#453** offen, fünf Datenpunkte.
+- **#304**: fünf bezeugte Tausche in dieser Nacht, **alle sauber**, keine neue
+  Evidenz.
 
 ---
 
@@ -581,12 +633,13 @@ Mal im Ruhezustand, **nie im Tausch**:
 | **#455** (Fenster ohne Deploy) | **1 800** | **0** | kein Tausch im Fenster |
 | **#455 `944a1e4`** | **339** | **0** | — |
 | **#450 `592da9d`** | **1 087** | **0** | — |
+| **#456 `a60f44c`** | **2 359** | **0** | — |
 
-Also **6 Ausfälle auf rund 35 440 Anfragen**, in fünf von zweiundzwanzig Läufen
+Also **6 Ausfälle auf rund 37 800 Anfragen**, in fünf von dreiundzwanzig Läufen
 — die sieben Zeilen der Oktober-Welle vom 14./15.10. sind **alle** null. Die
-längste ausfallfreie Einzelzeile bleibt #332 mit 3 558; neu ist, dass **elf**
-Tausch-Läufe hintereinander keinen zeigen — die drei Fenster ohne Deploy
-zählen in dieser Reihe nicht mit.
+längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht gefolgt von
+`a60f44c` mit 2 359; neu ist, dass **zwölf** Tausch-Läufe hintereinander
+keinen zeigen — die drei Fenster ohne Deploy zählen in dieser Reihe nicht mit.
 Das Eskalationskriterium der Zählung ist unverändert nicht erfüllt: ein Issue wäre
 es, wenn ein Lauf **zwei** Ausfälle auf **einem** Pfad zeigt oder einer in den
 Tausch fällt. Hier ist es einer, auf einem Pfad, 18 Minuten vom Tausch entfernt
