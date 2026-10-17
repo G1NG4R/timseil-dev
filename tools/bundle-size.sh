@@ -54,7 +54,24 @@ done
 
 # ---------------------------------------------------------------- the build
 printf '  building (this is not cached, on purpose)\n'
-( cd "$web" && rm -rf .next && NEXT_TELEMETRY_DISABLED=1 npm run build >/dev/null 2>&1 ) \
+
+# THE CLEAN AND THE BUILD ARE TWO COMMANDS BECAUSE THEY FAIL FOR TWO REASONS.
+# `rm -rf .next && npm run build` reported the build's reason for both: `make
+# dev` runs its container as root, so what it leaves in .next/dev is root-owned,
+# `rm` cannot unlink it, and the run ended on "npm run build failed" for a build
+# that had never started. Two hundred lines of Permission denied sat above the
+# message, and the message pointed at the wrong half. #323, four times over.
+if ! rm_err=$( cd "$web" && rm -rf .next 2>&1 ); then
+  printf '  ✗ %s\n' "could not remove $next — the build never started"
+  printf '%s\n' "$rm_err" | head -3 | sed 's/^/    /'
+  say "the dev container writes .next/dev as root. Remove it from a container"
+  say "of the same origin — not with sudo:"
+  say "  docker run --rm --user 0:0 -v \"\$PWD/web/.next:/x\" \\"
+  say "    timseil-dev-web:latest sh -c 'rm -rf /x/dev'"
+  exit 1
+fi
+
+( cd "$web" && NEXT_TELEMETRY_DISABLED=1 npm run build >/dev/null 2>&1 ) \
   || die "npm run build failed — run it yourself to see why"
 
 # `/` never has a document of its own: proxy.ts rewrites it onto `/en`, because

@@ -77,7 +77,8 @@ cp "$root/tools/check-repo.sh" "$root/tools/check-todo.sh" "$root/tools/check-no
    "$root/tools/prune-registry.sh" "$root/tools/witness.sh" \
    "$root/tools/rollout.sh" "$root/tools/release.sh" \
    "$root/tools/check-rollout.sh" "$root/tools/check-tokens.sh" \
-   "$root/tools/check-vuln.sh" "$root/tools/check-pr-title.sh" "$tmp/tools/"
+   "$root/tools/check-vuln.sh" "$root/tools/check-pr-title.sh" \
+   "$root/tools/bundle-size.sh" "$tmp/tools/"
 cp "$root/.cosign-image" "$tmp/"
 cp "$root/.githooks/pre-commit" "$root/.githooks/commit-msg" "$root/.githooks/pre-push" "$tmp/.githooks/"
 cp "$root/Makefile" "$tmp/"
@@ -2019,6 +2020,23 @@ rm -f w.out
 
 kill "$NOOP_PID" 2>/dev/null
 rm -rf noop
+
+# BUNDLE SIZE BLAMED THE BUILD FOR THE CLEAN'S FAILURE — #323, a quarter of an
+# hour four times over. An unwritable directory is the refusal `rm` gives on the
+# root-owned files `make dev` leaves, without needing a container to make one.
+#
+# SKIPPED AS ROOT: root ignores the mode bits, so the rm would succeed and the
+# case would go red for a missing package.json instead.
+if [ "$(id -u)" -ne 0 ]; then
+  mkdir -p bs/web/node_modules bs/web/.next/dev
+  : > bs/web/.next/dev/chunk.js
+  chmod 500 bs/web/.next/dev
+  refuses "bundle-size names the clean, not the build, when .next cannot go" \
+    "the build never started" tools/bundle-size.sh bs
+  # `cleanup` is `rm -rf "$tmp"` and would trip over this same mode.
+  chmod 700 bs/web/.next/dev
+  rm -rf bs
+fi
 
 # THE REFUSALS, and this is the incident that bought them. On 2026-08-30 at 21:28
 # the deploy of 28a2c63 was rolled back and the log said "the site is down". The
