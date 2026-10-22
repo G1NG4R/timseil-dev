@@ -12,6 +12,167 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## #461–#466 · 22.10.2026 — Vier Dependabot-PRs, sechs bezeugte Fenster, und das grüne Häkchen war zwei Tage alt
+
+Die Welle ist in der vorgegebenen Folge abgearbeitet, einer pro Durchlauf. Was
+sie gekostet hat, stand in keinem der vier Diffs: **#465 war mit dreizehn grünen
+Checks `CLEAN` und derselbe Commit war auf `main` sofort rot.**
+
+| PR | Inhalt | Ausgang | `main` | `deploy` | Zeuge je Pfad | Nicht-200 | Versatz | Deckung |
+|---|---|---|---|---|---|---|---|---|
+| **#465** | `codeql-action` v4.38.3 → v4.39.0, dreimal | gemergt, **Lauf rot** | `3737b55` | **ausgefallen** | Fenster verworfen | — | — | — |
+| **#466** | Go 1.26.10 — `api/go.mod` + `api/Dockerfile` | gemergt, grün | `5602f62` | 20:47:01 → 20:47:31 | **1 104** | **0** | +15,9 s | **12,1 s** |
+| **#463** | traefik `575fa15` → `0f61502` + Versionskommentar | gemergt, **`deploy` rot → Rollback** | `0e0fdf3` | 21:29:24 → 21:30:43 | **1 195** | **1 × 503** (`/contact`) | — | **−29,0 s** |
+| **#463** | derselbe Commit, `deploy` neu gestartet | grün | `0e0fdf3` | 21:36:16 → 21:36:46 | **62** | **0** | +4,3 s | **14,7 s** |
+| **#464** | `@axe-core/playwright` 4.14.0 · `@playwright/test` 1.64.1 · `@redocly/cli` 2.64.0 | gemergt, grün | `2402235` | 22:14:05 → 22:15:08 | **1 011** | **0** | +10,9 s | **12,1 s** |
+| **#462** | `react` + `react-dom` 19.3.1 | gemergt, grün | `e85d54b` | 22:36:30 → 22:37:03 | **955** | **1 × no connection** (`/api/health`) | +14,3 s | **11,7 s** |
+| **#461** | der wartende Backlog-Eintrag, mit frischem Lauf | gemergt, grün | `02aa1cf` | 05:51:40 → 05:52:11 | **1 152** | **0** | +15,0 s | **13,0 s** |
+
+Jeder `startedAt`-Wert zehnmal gelesen, zehnmal identisch — eine einzelne
+Lesung ist im Rollout eine Stichprobe und keine Identität. Produktion lief beim
+Schreiben dieses Eintrags `02aa1cf`, Prozess seit **05:52:22,977Z**; der Merge
+dieses Eintrags tauscht sie wie jeder andere.
+
+### Der stärkste Fund: ein Dependabot-Grün ist so alt wie sein Lauf
+
+`3737b55` (#465) ging um 19:22:13Z raus und der Lauf auf `main` war in
+dreiundvierzig Sekunden rot — **zwei Jobs, eine Ursache:**
+
+| Job | Schritt | Befund |
+|---|---|---|
+| `scan` | `make check-vuln` | govulncheck: **GO-2026-6809**, `crypto/x509@go1.26.9`, erreichbar |
+| `publish` | Trivy auf dem api-Image | **CVE-2026-111943** HIGH, `stdlib v1.26.9`, fixed in 1.26.10 |
+
+Der erreichbare Pfad, den govulncheck druckt, ist
+`internal/httpx/gen.go:2389:19` — `io.Copy` aus dem generierten OpenAPI-Handler
+nach `x509.Certificate.Verify`.
+
+**Die Lücke ist zeitlich, nicht in der Abdeckung.** Der PR-Lauf von #465 war
+`39203685873` vom **19.10. 05:16Z**: `scan` grün um 05:16:59, `images` — und
+damit Trivy auf api- **und** web-Image — grün um 05:19:06. Go 1.26.10 erschien
+am **20.10.** Beide Scanner fragen eine lebende Datenbank, also ist derselbe
+Baum an einem Tag grün und am nächsten rot, ohne dass sich eine Zeile bewegt.
+Einmal falsch vermutet und hier korrigiert: `images` hat
+`if: github.event_name == 'pull_request'` und läuft auf **jedem** PR; auf `main`
+ist `images` übersprungen und `publish` macht denselben Scan. Es fehlt kein Job.
+
+`CLEAN` heißt nicht aktuell: ohne „require branches up to date" meldet GitHub
+auch einen zwei Tage alten Lauf als mergebereit. **Die drei verbliebenen PRs
+haben deshalb vor dem Merge `gh pr update-branch` bekommen** — ein Merge, kein
+Rebase — und erst deren Grün ist eine Aussage über heute. Für #462 hat
+Dependabot den Branch selbst neu gesetzt, nachdem #464 gelandet war.
+
+Der Fix ist #466 und sind zwei Zeilen, dieselben wie bei #433: `api/go.mod` auf
+1.26.10 und der Build-Digest in `api/Dockerfile`. **Der Digest ist nicht vom Tag
+kopiert** — über die Registry-API aufgelöst, der amd64-Config-Blob von
+`9ce231b2` trägt `GOLANG_VERSION=1.26.10`, erstellt 2026-10-20.
+`tools/check-versions.sh` vergleicht nur major.minor, `1.26` und der Patch in
+`go.mod` bleiben also einig.
+
+### Zwei Löcher im Deploy-Gate, und das zweite lobt sich selbst — #467 und #468
+
+`0e0fdf3` wurde deployt, **kam hoch** und wurde trotzdem zurückgerollt.
+
+| Zeit | was |
+|---|---|
+| 21:29:33,3Z | dokploy hat angenommen; `verify` startet, Grundlinie `20:47:43,907Z` |
+| 21:30:28,3Z | der `0e0fdf3`-Prozess läuft an — **55,0 s** in ein 60-s-Budget |
+| 21:30:34Z | **`witness.sh` sieht ihn** |
+| 21:30:35,2Z | `verify` gibt auf: „60s elapsed and the deploy did not come up" |
+| 21:30:39Z | Rollback bestellt, neue Grundlinie gelesen: **`21:30:28,341Z`** |
+| 21:30:41Z | Rollback-`verify` besteht: „✓ a new process, up since **20:47:43,907Z**" |
+| 21:31:33Z | der echte Rollback-Prozess läuft an |
+
+**#468** ist die erste Hälfte: `verify-deploy.sh:139` hat 60 s Budget bei
+`INTERVAL_SEC=3`, und im Rollout ist `/api/health` über zwei Prozesse
+lastverteilt. Nach 55,0 s blieben zwei, drei Stichproben, jede ein Münzwurf,
+und alle trafen den Zwilling. Derselbe Tausch, zwei Instrumente: der Zeuge mit
+einer Anfrage pro Sekunde sah den neuen Prozess um 21:30:34, `verify` mit 3 s
+Takt sah ihn nie. **Eine Sekunde Unterschied im Urteil, Faktor drei im Takt.**
+
+**#467** ist die zweite und die schärfere: `verify-deploy.sh:189` wartet auf
+eine Stichprobe, deren `startedAt` **ungleich** der Grundlinie ist — nicht
+**neuer**. `deploy-gate.sh:183` liest die Grundlinie bewusst direkt vor dem
+Rollback und erwischt dabei den eben angelaufenen neuen Prozess. Jeder noch
+lebende ältere Prozess ist dann „ungleich" und besteht. Das Gate druckte `✓ a
+new process` neben einen Zeitstempel, der **43 Minuten älter** war als seine
+eigene Grundlinie, und für 52 Sekunden danach lieferte Produktion den Build
+aus, den das Gate gerade für gescheitert erklärt hatte.
+
+Der Neulauf des `deploy`-Jobs — **ohne Codeänderung, auf Entscheidung, nicht
+als Flake-Abtun** — brachte `0e0fdf3` in 30 s live, mit +4,3 s Versatz und
+14,7 s Deckung. Die Hälfte der Ursache ist damit auch belegt: derselbe Baum,
+dasselbe Gate, einmal verloren und einmal gewonnen.
+
+### Was Dependabot nicht mitbewegt: den Versionskommentar
+
+`compose.lab.yaml:85` bekam den neuen Digest und darüber stand weiter
+`# traefik v3.7.14`. Gemessen, nicht geraten: `575fa15` trägt
+`org.opencontainers.image.version=v3.7.14` (06.10.), `0f61502` trägt
+**v3.7.15** (15.10.). **Keine Prüfung fängt das** — `check-pins.sh` liest
+`.cosign-image` und `tools/*.sh`, `check-compose.sh` Regel 8b verlangt einen
+Digest, keine Version daneben. Die Zeile ist mit dem Bump korrigiert; der
+Zustand, vor dem `check-pins.sh` selbst warnt, war genau eingetreten: „a bare
+hash is unreadable six months later".
+
+### react 19.3.1 bewegt das Bundle um null Byte
+
+`make bundle-size` bricht ab — `static/chunks/2p5y--z8cofcj.js holds framework
+and our own modules`. Das ist **#301** und nicht der Build: das Werkzeug kann
+einen gemischten Chunk nicht **zuordnen**, und die **Summe** hängt nicht an der
+Zuordnung. Also von Hand, mit denselben Eingaben wie `bundle-size.sh` — jedes
+`<script src>` aus `.next/server/app/en.html` ohne Polyfills, `gzip -9`:
+
+| Baum | Dateien | Initial JS |
+|---|---|---|
+| `main` `2402235` | 8 | **146 387 B** |
+| #462, react 19.3.1 | 8 | **146 387 B** |
+
+**Byte für Byte identisch**, 3 613 B unter dem Budget von 150 000 B. Beide im
+selben Arbeitsbaum gebaut, nicht in einem Worktree. Und keine Drift: `make
+check` grün und `git status` leer, `stack.gen.json` trägt major.minor, also
+bleibt „React 19.3" stehen — geprüft, nicht angenommen.
+
+### Ruhezustands-Zählung, fortgeschrieben
+
+**Sechs neue Zeilen in der Tabelle oben**, eine je bezeugtem Fenster. Das
+Fenster um `3737b55` ist **verworfen**: `publish` war rot, `deploy` fiel aus,
+also konnte es per Definition keinen Tausch enthalten — dasselbe Urteil wie
+beim fünften Fenster ohne Tausch, das deshalb verworfen wurde. Dieses ist das
+sechste solche Fenster und das zweite verworfene.
+
+Nachgerechnet über alle Zeilen: **33 Läufe, 49 117 Anfragen, 9 Ausfälle in
+8 Läufen.** Der Stand vor dieser Welle war 27 Zeilen, 43 638 Anfragen,
+7 Ausfälle in 6 Läufen; dazu kommen 5 479 Anfragen und 2 Ausfälle. Nachgezählt,
+nicht übernommen — die Textsumme vor #460 („rund 42 540") prüft sich als
+42 535 über 26 Zeilen.
+
+**Und die Deckung des Rollback-Fensters ist negativ: −29,0 s.** Der
+Rollback-Prozess lief erst 21:31:33Z an, das Fenster schloss 21:31:04Z. Es hat
+den Tausch, zu dem es gehörte, nicht zu Ende bezeugt — #453 in Reinform,
+diesmal nicht am Zwilling, sondern an einem Rollback, den der 30-s-Nachlauf
+nicht mehr erreicht. Die 503 liegt deshalb **im** Tausch und sagt über die
+**Lage** im Tausch nichts; als Beleg steht sie an #304.
+
+Die Deckungen sind nachgerechnet, nicht gerundet: Sekunde N liegt bei
+`start + N - 1` (`witness.sh:316`), die Deckung ist also letzte Sekunde minus
+`startedAt`. Was die fünf sauberen Fenster über #304 sagen können, ist
+deswegen **unterschiedlich viel**:
+
+| Tausch | Deckung | hätte ein Loch gesehen bei |
+|---|---|---|
+| `0e0fdf3` (Neulauf) | **14,7 s** | +11,3 · +12 · +12,9 · +13,3 — das ganze Band |
+| `02aa1cf` | **13,0 s** | +11,3 · +12 · +12,9 — **nicht** +13,3 |
+| `5602f62` | **12,1 s** | +11,3 · +12 — **nicht** +12,9 und darüber |
+| `2402235` | **12,1 s** | +11,3 · +12 — **nicht** +12,9 und darüber |
+| `e85d54b` | **11,7 s** | +11,3 — **nicht** +12 und darüber |
+
+Ein sauberes Fenster ist also nur so breit wie seine Deckung, und vier dieser
+fünf reichen nicht über das Band hinaus. Das ist #453, und es ist der Grund,
+warum „fünf saubere Tausche" hier **nicht** „#304 tritt nicht auf" heißt.
+
+---
+
 ## #459 · 17.10.2026 — Das Loch liegt zwölf Sekunden nach dem Prozess, und es war nur sichtbar, weil der Rest groß genug war
 
 **Die erste Nicht-200 der Nacht, nach rund 42 500 gemessenen Anfragen.** Der
@@ -858,10 +1019,16 @@ Mal im Ruhezustand, **nie im Tausch**:
 | **#458 `d0bdd76`** | **934** | **0** | — |
 | **#459 `206df65`** | **1 107** | **1 (`/`, 503)** | **im Tausch, +11,3…13,3 s nach `startedAt`** |
 | **#460 `72f6a8e`** | **1 103** | **0** | Deckung 15,2 s, also aussagekräftig |
+| **#466 `5602f62`** | **1 104** | **0** | Deckung 12,1 s |
+| **#463 `0e0fdf3`** (1. Versuch) | **1 195** | **1 (`/contact`, 503)** | **im Rollback-Tausch**, 21:31:03Z |
+| **#463 `0e0fdf3`** (Neulauf) | **62** | **0** | Deckung 14,7 s |
+| **#464 `2402235`** | **1 011** | **0** | Deckung 12,1 s |
+| **#462 `e85d54b`** | **955** | **1 (`/api/health`, no connection)** | **5:12 davor**, 22:31:18Z |
+| **#461 `02aa1cf`** | **1 152** | **0** | Deckung 13,0 s |
 
-Also **7 Ausfälle auf rund 43 640 Anfragen**, in sechs von siebenundzwanzig
-Läufen. Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht
-gefolgt von `#457` mit 2 700 und `a60f44c` mit 2 359. Die Serie von dreizehn
+Also **9 Ausfälle auf 49 117 Anfragen**, in acht von dreiunddreißig Läufen.
+Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht gefolgt von
+`#457` mit 2 700 und `a60f44c` mit 2 359. Die Serie von dreizehn
 ausfallfreien Tausch-Läufen **endet mit `206df65`** — und sie endet anders als
 alle sechs Ausfälle davor: **im Tausch**, nicht im Ruhezustand. Die vier
 Fenster ohne Deploy zählen in dieser Reihe nicht mit; ein fünftes wurde
@@ -876,6 +1043,13 @@ Das Kriterium lautet: ein Issue wäre es, wenn ein Lauf **zwei** Ausfälle auf
 - Für `206df65` ist es **erfüllt**, und zwar erstmals: der Ausfall fällt in den
   Tausch. Das verlangte Issue existiert schon — **#304**, wo die Beobachtung
   mit ihrer Arithmetik steht.
+- Für `e85d54b` (#462) war es **nicht** erfüllt: einer, auf `/api/health`,
+  5:12 vor dem Start des `deploy`-Jobs, während `/` und `/contact` durch
+  dieselbe Sekunde halten.
+- Für `0e0fdf3` (#463, erster Versuch) ist es **erfüllt**, zum zweiten Mal:
+  die 503 auf `/contact` liegt im Tausch — nur im **Rollback**, 24 s nach
+  seiner Bestellung. Auch sie steht an **#304**, mit der Einschränkung, dass
+  das Fenster 29 s vor dem Prozess schloss und über die Lage nichts sagt.
 
 Alle Messungen kommen weiter von derselben Maschine über dasselbe Netz, also
 ist Ursprung von Leitung hier nicht zu trennen, und die Notiz sagt das statt
