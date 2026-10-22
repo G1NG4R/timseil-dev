@@ -28,9 +28,10 @@ Checks `CLEAN` und derselbe Commit war auf `main` sofort rot.**
 | **#462** | `react` + `react-dom` 19.3.1 | gemergt, grün | `e85d54b` | 22:36:30 → 22:37:03 | **955** | **1 × no connection** (`/api/health`) | +14,3 s | **11,7 s** |
 | **#461** | der wartende Backlog-Eintrag, mit frischem Lauf | gemergt, grün | `02aa1cf` | 05:51:40 → 05:52:11 | **1 152** | **0** | +15,0 s | **13,0 s** |
 
-Jeder `startedAt`-Wert zehnmal gelesen, zehnmal identisch — nach
-`identity-is-counted-not-read` ist eine einzelne Lesung eine Stichprobe und
-keine Identität. Produktion läuft `e85d54b`, Prozess seit 22:37:14,300Z.
+Jeder `startedAt`-Wert zehnmal gelesen, zehnmal identisch — eine einzelne
+Lesung ist im Rollout eine Stichprobe und keine Identität. Produktion lief beim
+Schreiben dieses Eintrags `02aa1cf`, Prozess seit **05:52:22,977Z**; der Merge
+dieses Eintrags tauscht sie wie jeder andere.
 
 ### Der stärkste Fund: ein Dependabot-Grün ist so alt wie sein Lauf
 
@@ -137,7 +138,8 @@ bleibt „React 19.3" stehen — geprüft, nicht angenommen.
 **Sechs neue Zeilen in der Tabelle oben**, eine je bezeugtem Fenster. Das
 Fenster um `3737b55` ist **verworfen**: `publish` war rot, `deploy` fiel aus,
 also konnte es per Definition keinen Tausch enthalten — dasselbe Urteil wie
-beim fünften verworfenen Fenster, und damit das sechste.
+beim fünften Fenster ohne Tausch, das deshalb verworfen wurde. Dieses ist das
+sechste solche Fenster und das zweite verworfene.
 
 Nachgerechnet über alle Zeilen: **33 Läufe, 49 117 Anfragen, 9 Ausfälle in
 8 Läufen.** Der Stand vor dieser Welle war 27 Zeilen, 43 638 Anfragen,
@@ -1024,8 +1026,9 @@ Mal im Ruhezustand, **nie im Tausch**:
 | **#462 `e85d54b`** | **955** | **1 (`/api/health`, no connection)** | **5:12 davor**, 22:31:18Z |
 | **#461 `02aa1cf`** | **1 152** | **0** | Deckung 13,0 s |
 
-Also **9 Ausfälle auf 49 117 Anfragen**, in acht von dreiunddreißig Läufen. Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht
-gefolgt von `#457` mit 2 700 und `a60f44c` mit 2 359. Die Serie von dreizehn
+Also **9 Ausfälle auf 49 117 Anfragen**, in acht von dreiunddreißig Läufen.
+Die längste ausfallfreie Einzelzeile bleibt #332 mit 3 558, dicht gefolgt von
+`#457` mit 2 700 und `a60f44c` mit 2 359. Die Serie von dreizehn
 ausfallfreien Tausch-Läufen **endet mit `206df65`** — und sie endet anders als
 alle sechs Ausfälle davor: **im Tausch**, nicht im Ruhezustand. Die vier
 Fenster ohne Deploy zählen in dieser Reihe nicht mit; ein fünftes wurde
