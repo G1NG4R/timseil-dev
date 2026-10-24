@@ -20,7 +20,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { HOME_REGIONS, settled } from "./streaming";
-import { HAS_LOG, HOME, MOBILE_BREAKPOINT } from "./widths";
+import { HAS_LOG, HOME, HOME_LOG_ROWS, MOBILE_BREAKPOINT } from "./widths";
 
 /** The width this project is running at. */
 function widthOf(page: Page): number {
@@ -149,12 +149,14 @@ test.describe("SYS.04, the log", () => {
   // assertions are about rows, and rows come back with the first entry.
   test.skip(() => !HAS_LOG, "the log holds no entries — U2, ADR 0079");
 
-  test("draws the three newest entries, newest first", async ({ page }) => {
+  const LATEST = String(HOME_LOG_ROWS).padStart(2, "0");
+
+  test("draws the newest entries, newest first", async ({ page }) => {
     const rows = page.locator(".log-row");
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(HOME_LOG_ROWS);
 
     const dates = await page.locator(".log-date").allInnerTexts();
-    expect(dates).toHaveLength(3);
+    expect(dates).toHaveLength(HOME_LOG_ROWS);
     for (const date of dates) expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     // Descending, and the tie-break matters: several posts share a day, so a
     // sort on the date alone would leave these three to readdir order.
@@ -163,7 +165,7 @@ test.describe("SYS.04, the log", () => {
     // Every cell the row draws has something in it. H5a's finding was a column
     // that computed to zero pixels wide, and the reason nothing caught it was
     // that nothing looked at a row at all.
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < HOME_LOG_ROWS; i++) {
       const row = rows.nth(i);
       await expect(row.locator(".log-title")).not.toBeEmpty();
       await expect(row.locator(".log-deck")).not.toBeEmpty();
@@ -173,7 +175,7 @@ test.describe("SYS.04, the log", () => {
   test("names its source and counts the rows it drew", async ({ page }) => {
     const meta = page.locator(".log .sec-meta");
     // The count is `logEntries().length`, not the sheet's drawn `LATEST 03`.
-    await expect(meta).toHaveText("LATEST 03 · SOURCE: content/posts");
+    await expect(meta).toHaveText(`LATEST ${LATEST} · SOURCE: content/posts`);
   });
 
   // THE DoD TEST OF THIS PHASE, and it is still written as a count because a
@@ -271,8 +273,8 @@ test.describe("SYS.04, the log", () => {
   // interactive browser has already run the swap by the time anyone looks.
   test("its rows are in the document before anything streams", async ({ page }) => {
     const html = await (await page.request.get("/")).text();
-    expect(html).toContain("LATEST 03 · SOURCE: content/posts");
-    expect(html.match(/class="log-row"/g) ?? []).toHaveLength(3);
+    expect(html).toContain(`LATEST ${LATEST} · SOURCE: content/posts`);
+    expect(html.match(/class="log-row"/g) ?? []).toHaveLength(HOME_LOG_ROWS);
   });
 });
 

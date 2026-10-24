@@ -14,7 +14,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { ERROR_IN_A_HOLE, HAS_LOG, NOT_FOUND } from "./widths";
+import { ERROR_IN_A_HOLE, HAS_LOG, HOME_LOG_ROWS, NOT_FOUND } from "./widths";
 
 /** WCAG 2.2 AA asks for 24. This project's rule is 44, and 44 is what is checked. */
 const MIN = 44;
@@ -204,11 +204,17 @@ test.describe("targets a finger has to hit", () => {
   // is still asserted rather than loosened to "more than none", because that is
   // what makes it notice the day a row stops being a link; it just has two
   // values now, one per state of the log.
+  //
+  // THE ROWS ARE COUNTED, NOT TYPED: the two that stand without a log, the
+  // head's `CASE STUDY →`, and one link per row SYS.04 draws. The six was the
+  // three rows the corpus happened to hold, and the first entry after U2 is one.
   test("the homepage's own controls are at least 44 x 44", async ({ page }) => {
     await page.goto("/");
     const targets = await measure(page, "main");
 
-    expect(targets.length, "no interactive element found on the homepage").toBe(HAS_LOG ? 6 : 2);
+    expect(targets.length, "no interactive element found on the homepage").toBe(
+      HAS_LOG ? 3 + HOME_LOG_ROWS : 2,
+    );
     expect(tooSmall(targets), report(targets)).toEqual([]);
   });
 
