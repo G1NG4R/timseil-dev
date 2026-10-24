@@ -4,6 +4,11 @@ Entries in this directory are written by Tim and by nobody else — not a draft,
 not on request. ADR 0079 carries the reason: a log that explains what someone
 learned cannot have been written by something else. Spelling help is fine.
 
+The one exception is a post-mortem that carries only what a system measured:
+timeline, measurements, cause, fix. Claude Code may write that one, Tim reviews
+it, and the commit's `Co-Authored-By` records it (ADR 0079, addendum of
+2026-10-24).
+
 One entry is one file, named `NNN-slug.mdx`. The filename **is** the slug: it is
 the string `incidents.post_slug` points at, the address `/blog/<slug>` answers
 to, and the number the entry's eyebrow prints. `lib/content/posts.ts` reads the
