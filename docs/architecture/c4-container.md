@@ -22,7 +22,7 @@ flowchart TB
 
         subgraph net ["nur im Docker-Netz — keine ports:, keine Traefik-Labels"]
             direction TB
-            web["web — Next.js 16.3<br/><i>Seiten, MDX-Blog.<br/>Keine Datenlogik.</i>"]
+            web["web — Next.js 16.4<br/><i>Seiten, MDX-Blog.<br/>Keine Datenlogik.</i>"]
             api["api — Go 1.26<br/><i>Datenmodell, Ableitungen,<br/>Contract, Mail, Snapshots</i>"]
             db[("db — PostgreSQL 18.6<br/><i>Named Volume</i>")]
             alloy["alloy<br/><i>der eine Collector</i>"]
@@ -75,7 +75,7 @@ behauptet einen Betrieb, den es am Launch-Tag nicht gibt.
 | Container | Sprache · Basis | Verantwortung | Von außen |
 |---|---|---|---|
 | **proxy** | Traefik, von Dokploy | TLS, Routing, Rate-Limit, Metrik-Endpoint | **ja** — 80, 443 |
-| **web** | Next.js 16.3, `node:24-alpine`, non-root | Seiten, Rendering, MDX-Blog. Keine Datenlogik | nein |
+| **web** | Next.js 16.4, `node:24-alpine`, non-root | Seiten, Rendering, MDX-Blog. Keine Datenlogik | nein |
 | **api** | Go 1.26, `distroless/static:nonroot`, read-only rootfs | Postgres, Ableitungen, Contract, Validierung, Mail, Snapshots | nein |
 | **migrate**, **seed** | dasselbe api-Image, andere Unterbefehle | Init-Container: Schema (`timseil_migrate`), dann Inhalt (`timseil_app`). Laufen durch und enden | **nie** |
 | **db** | PostgreSQL 18.6 | Systeme, Tracks, Belege, Vorfälle, Deploys, Snapshots | **nie** |

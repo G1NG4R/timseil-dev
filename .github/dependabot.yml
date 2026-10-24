@@ -105,9 +105,14 @@
 # stack.yaml reads `dependencies.next` and nothing reads the other two.
 #
 # The cost is the Go line's cost, and it is named the same way: nothing will
-# remind us that 16.4 exists. web/package.json decides that, and it is a file
-# somebody reads. What still arrives is 16.3.x — the patches, which is the half
-# that carries security fixes.
+# remind us that the next minor exists. web/package.json decides that, and it is
+# a file somebody reads. What still arrives is the patches of the current line.
+#
+# THE LINE IS 16.4 SINCE 2026-10-24, and the reason is the cost above coming due.
+# Two critical RCE advisories were fixed in 16.4.1 with no 16.3 backport, so "the
+# patches carry the security fixes" held only while a fix had a patch to ride.
+# The answer to that is `scan`, not this file: it went red on the advisory, and
+# that is how it was found. The e2e change and ADR 0078's addendum went with it.
 #
 # ---------------------------------------------------------------------------
 #
