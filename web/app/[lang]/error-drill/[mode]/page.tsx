@@ -10,15 +10,17 @@
 // phase rather than a convenience. Measured against a production build:
 //
 //   /error-drill/render   throws before the first byte
-//                         → 500, body is the 21 characters "Internal Server
-//                           Error", and the designed page NEVER appears
+//                         → 500, Next's `__next_error__` document, and the
+//                           designed page only after hydration (16.3.8 sent
+//                           the 21 characters "Internal Server Error" and no
+//                           page at all)
 //   /error-drill/stream   throws inside a Suspense hole, which is what every
 //                         real page on this site does with its data
 //                         → 200, the real document with <header> and <footer>,
 //                           and app/[lang]/error.tsx renders inside it
 //
-// So on this site the 500 STATUS and the 500 PAGE are mutually exclusive, and
-// a drill with only one mode would have proved whichever half its author
+// So the two shapes answer with different statuses and different bytes, and a
+// drill with only one mode would have proved whichever half its author
 // happened to build. ADR 0078.
 //
 // WHY THE MODE IS A ROUTE PARAMETER AND NOT A FLAG. Two reasons, both measured.
