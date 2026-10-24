@@ -132,7 +132,7 @@ export default defineConfig({
     // ONE FLAG, TWO SHAPES. The mode is the route rather than the value,
     // because this object can hold one value per run and the phase needs both
     // failures in one: `/error-drill/render` throws before the first byte
-    // (500, no page at all) and `/error-drill/stream` throws in a Suspense
+    // (500, Next's error document) and `/error-drill/stream` throws in a Suspense
     // hole the way every real page on this site would (200, page inside the
     // chrome).
     env: { DEV_GALLERY: "1", DEV_ERROR_DRILL: "1" },

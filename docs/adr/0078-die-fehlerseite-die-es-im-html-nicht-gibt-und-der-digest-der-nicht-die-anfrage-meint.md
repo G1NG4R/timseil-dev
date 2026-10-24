@@ -76,6 +76,19 @@ Das ist kein Mangel, den H13 behebt. Es ist eine Eigenschaft, und sie steht
 hier, weil `docs/systemhandbuch.md` die Deploy-Abnahme Nicht-200 zählen lässt
 statt 5xx — diese Zeile erklärt, warum das die richtige Wahl war.
 
+**Nachtrag vom 24.10.2026 — Zeile eins hat sich mit Next 16.4 geändert.** Der
+Sprung von 16.3.8 auf 16.4.3 kam wegen zweier kritischer RCE-Advisories, für die
+es keinen 16.3-Backport gibt. Gemessen gegen den Produktionsbuild, gleiche Route:
+
+| Wo der Wurf landet | Status | Bytes | gestaltete Seite |
+|---|---|---|---|
+| vor dem ersten Byte | **500** | `__next_error__`-Dokument, 13 453 B | clientseitig, **in der Chrome** |
+
+Status und Seite schließen sich damit nicht mehr aus. Unverändert gilt: die
+gestaltete Seite steht nicht in den Bytes, und die Fehlermeldung auch nicht. Im
+Dokument steht nur der Digest. Zeilen zwei und drei sind unverändert.
+`web/e2e/error.spec.ts` hält die neue Zeile.
+
 ### 3. `error.tsx` im Segment, nicht nur `global-error.tsx`
 
 `error.js` umschließt `loading`, `not-found`, `page` und *geschachtelte*

@@ -37,16 +37,25 @@ test("a failure before the first byte answers 500", async ({ page }) => {
   expect(response?.status()).toBe(500);
 });
 
-// THE BROKEN CASE, and it is broken in the way nobody expects: the status is
-// right and there is no page at all. 21 characters of plain text, no document,
-// no chrome, nothing to hydrate. Written down as a test so that it is a
-// measured property rather than a surprise during an incident.
-test("and it has no page in it, only a line of text", async ({ page }) => {
+// THE BROKEN CASE. Up to 16.3.8 this answer was 21 characters of plain text and
+// no page at all. Since 16.4 it is Next's `__next_error__` document, which
+// hydrates into the designed page. What has to hold either way: the designed
+// page is not in the bytes, and neither is the error's own message.
+test("its bytes are Next's error document, with nothing of the failure in them", async ({ page }) => {
   const response = await page.goto(ERROR_BEFORE_FIRST_BYTE);
   const body = await (response?.text() ?? Promise.resolve(""));
 
-  expect(body.trim()).toBe("Internal Server Error");
+  expect(body).toContain('id="__next_error__"');
   expect(body).not.toContain("RENDER FAILED");
+  expect(body).not.toContain("deliberate failure");
+});
+
+test("and the browser still draws the designed 500 inside the real chrome", async ({ page }) => {
+  await page.goto(ERROR_BEFORE_FIRST_BYTE);
+
+  await expect(page.locator(".er-head")).toHaveText("RENDER FAILED");
+  await expect(page.locator("header")).toBeVisible();
+  await expect(page.locator("footer")).toBeVisible();
 });
 
 // The shape every real page on this site has, because every real page reads its
