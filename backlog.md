@@ -12,6 +12,36 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Gefunden · 24.10.2026 — fünf rote Zellen, drei Ereignisse, und zwei davon stehen nirgends
+
+`/api/systems/timseil-dev?window=91`, abgefragt 23.10.2026 22:10Z: `ok 57`,
+`nodata 29`, `outage 5`, `incidents: []`. `uptime-log.txt` auf `ops-data` hat
+dazu genau drei `down`/`up`-Paare — zwei davon überqueren Mitternacht UTC und
+färben deshalb je zwei Zellen.
+
+| Zellen | `downSec` | `down` → `up` (UTC) | Grund der Sonde | Stand |
+|---|---|---|---|---|
+| 05.09. | 16 348 | 01:10:23 → 05:42:51 | `http 4xx` | erklärt, oben unter 05.09. |
+| 25.09. + 26.09. | 5 400 + 2 529 | 22:28:40 → 00:45:49 | `probe failed` | **nicht notiert** |
+| 10.10. + 11.10. | 6 600 + 3 178 | 22:06:52 → 00:54:50 | `http 4xx` | **nicht notiert** |
+
+- **Die Dauer ist in beiden neuen Fällen eine Kadenzlücke.** Zwischen dem
+  `down`- und dem `up`-Lauf hat `probe.yml` **gar nicht** gelaufen:
+  `36196883804` → `36206021695` (2 h 17 min) und `38090181603` → `38100026694`
+  (2 h 48 min). Derselbe Befund wie am 05.09. („der Replay macht aus der
+  Kadenzlücke eine Dauer"), zweimal wiederholt — und am 05.09. selbst lief
+  dazwischen ebenfalls **kein** Sondenlauf (`33935340257` → `33947920204`).
+  #180 ist geschlossen; die Grammatik-Hälfte ist jetzt #505 (M1).
+- **25.09. fällt in einen Tausch.** `lastDeploy.at` von `a66c2f0` (#412, ein
+  reiner Backlog-PR) ist 22:28:30Z, die Sonde fragt um 22:28:40Z und bekommt
+  keine Verbindung — innerhalb des Versatzes `lastDeploy.at` → `startedAt`, den
+  die Zeugen-Reihe misst. Kein Zeuge lief dort. Plausibel, nicht bewiesen.
+- **10.10.: an diesem Abend gab es keinen Deploy und keinen Commit.** Ein `4xx`
+  am Eingang, wie am 05.09. Ursache gegen den Host prüfen, Ergebnis nicht hier.
+- Keines der drei hat ein Post-Mortem, also steht keins in `incidents`.
+
+---
+
 ## #461–#466 · 22.10.2026 — Vier Dependabot-PRs, sechs bezeugte Fenster, und das grüne Häkchen war zwei Tage alt
 
 Die Welle ist in der vorgegebenen Folge abgearbeitet, einer pro Durchlauf. Was
