@@ -24,7 +24,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { BLOG, HAS_LOG } from "./widths";
+import { BLOG, HAS_LOG, OLDEST_POST } from "./widths";
 
 // SKIPPED WHILE THE LOG IS EMPTY, AND THE SPEC STAYS IN THE TREE. U2 removed the
 // twenty-five entries this file was written against (ADR 0079); the renderer it
@@ -158,7 +158,11 @@ test("the year separators go when anything narrows, and come back", async ({ pag
 test("the search narrows on what is typed, and not on the date", async ({ page }) => {
   const field = page.locator(".blog-search-input");
 
-  await field.fill("witness");
+  // A tag of an entry that exists, because tags are one of the three fields
+  // lib/blog/filter.ts searches. A typed word outlives the corpus it came from.
+  const term = OLDEST_POST?.tags[0];
+  if (term === undefined) throw new Error("the oldest entry carries no tag to search for");
+  await field.fill(term);
   const hits = await page.locator(".post-card").count();
   expect(hits).toBeGreaterThan(0);
   expect((await shown(page)).shown).toBe(hits);

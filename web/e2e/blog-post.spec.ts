@@ -3,9 +3,10 @@
  *
  * THE RIG HAS NO API AND THIS PAGE DOES NOT WANT ONE. Every stage-H page before
  * it reads an endpoint, so a rig without one measures an outage panel; this
- * route reads twenty-one files that are in the image. What is on the screen here
- * is what is on the screen in production, which makes this the second page after
- * `/contact` whose e2e can assert content rather than emptiness.
+ * route reads the files in content/posts, which are in the image. What is on the
+ * screen here is what is on the screen in production, which makes this the
+ * second page after `/contact` whose e2e can assert content rather than
+ * emptiness.
  *
  * THE ANCHOR ORACLE LIVES HERE, and it is the reason this file exists rather
  * than being three assertions in the sheet spec. lib/content/toc.ts derives the
@@ -17,7 +18,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 
-import { BLOG_POST, HAS_LOG } from "./widths";
+import { BLOG_POST, HAS_LOG, OLDEST_POST, POST_COUNT } from "./widths";
 
 // SKIPPED WHILE THE LOG IS EMPTY, AND THE SPEC STAYS IN THE TREE. U2 removed the
 // twenty-five entries this file was written against (ADR 0079); the renderer it
@@ -48,7 +49,7 @@ test.beforeEach(async ({ page }) => {
 test("the entry has exactly one h1, and it is the title", async ({ page }) => {
   const h1 = page.locator("main h1");
   await expect(h1).toHaveCount(1);
-  await expect(h1).toHaveText("Zero-downtime, measured instead of claimed");
+  await expect(h1).toHaveText(OLDEST_POST?.title ?? "");
 });
 
 // THE BROKEN CASE FOR THE RAIL. Every link in the contents list has to land on
@@ -109,7 +110,7 @@ test("the source link points at the file this page was rendered from", async ({ 
   const link = page.locator(".post-source a");
   await expect(link).toHaveAttribute(
     "href",
-    /\/blob\/main\/web\/content\/posts\/001-zero-downtime-measured-not-claimed\.mdx$/,
+    new RegExp(`/blob/main/web/content/posts/${OLDEST_POST?.slug ?? ""}\\.mdx$`),
   );
 });
 
@@ -117,6 +118,8 @@ test("the source link points at the file this page was rendered from", async ({ 
 // row never disappears — "ein fehlendes Element liest sich als Fehler, ein
 // benanntes nicht" — so what is asserted is that the cell is THERE and says so.
 test("the oldest entry keeps its PREVIOUS cell and names the absence", async ({ page }) => {
+  test.skip(POST_COUNT < 2, "one entry is both ends of the chain — both neighbour cells are empty");
+
   const cells = page.locator(".post-neighbour");
   await expect(cells).toHaveCount(2);
 
@@ -133,6 +136,8 @@ test("the oldest entry keeps its PREVIOUS cell and names the absence", async ({ 
 // entry", which was wrong within one pull request of being written — this phase
 // adds a post, and the post it named stopped being the newest.
 test("the log is one unbroken chain, and only its ends are empty", async ({ page }) => {
+  test.skip(POST_COUNT < 2, "one entry is both ends of the chain — there is no step to walk");
+
   const seen: string[] = [];
 
   // `:visible`, AND IT IS NOT DEFENSIVE — IT IS `<Activity>`. next.config.ts

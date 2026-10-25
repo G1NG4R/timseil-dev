@@ -151,6 +151,22 @@ Der Grund für die alte Regel bleibt wahr — die Zahlen verfallen nicht, die
 Erinnerung daran, *warum* jede so aussieht, schon —, nur der Ablageort war
 falsch gewählt.
 
+**Nachtrag vom 24.10.2026 — ein Post-Mortem ist kein Lern-Beitrag.** Das
+Raster stand mit fünf roten Zellen und `incidents: []` da. Invariante 4 verlangt
+für jede Kerbe einen Beitrag, und Tim hat entschieden, die Post-Mortems nicht
+selbst zu schreiben. Die Grenze verläuft deshalb jetzt nach Textsorte, nicht
+nach Verzeichnis:
+
+- **Ein Post-Mortem darf Claude Code schreiben**, wenn es nur trägt, was ein
+  System belegt: Zeitleiste, Messungen, Ursache, Behebung, offene Punkte. Keine
+  Ich-Form und kein „was ich gelernt habe". Tim prüft und gibt frei. Der Beitrag
+  steht unter seinem Namen, und `Co-Authored-By` im Commit belegt die Mitarbeit.
+  Ein sichtbares Etikett gibt es nicht, aus demselben Grund wie in §3.
+- **Jeder andere Beitrag bleibt Tims Text**, aus dem Grund, der oben steht.
+
+Der Satz unter „Invariante 4 bleibt", die Post-Mortems könne ausschließlich Tim
+schreiben, gilt damit nicht mehr.
+
 ### 5. Das Training Log trägt nur, was ein System belegt
 
 22 Tracks werden 14, in sechs Modulen. Es fällt weg, was keinen Beleg hat oder

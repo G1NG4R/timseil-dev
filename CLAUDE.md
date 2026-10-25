@@ -82,6 +82,9 @@ steht (ADR 0079).
   keine Entwürfe, auch nicht auf Zuruf. Rechtschreibung auf Bitte ist erlaubt.
   Ein Log, das erklärt, was ich gelernt habe, kann nicht von etwas anderem
   geschrieben sein (ADR 0079).
+  **Ausnahme: Post-Mortems.** Die schreibt Claude, wenn sie nur Belegtes
+  tragen: Zeitleiste, Messungen, Ursache, Behebung. Keine Ich-Form, kein Etikett
+  im Text, ich gebe frei (ADR 0079, Nachtrag 24.10.2026).
 - `docs/adr/` · `docs/runbooks/` · `docs/threat-model.md`
 
 ## Prüfbreiten
@@ -185,7 +188,7 @@ deshalb alle einen **Auslöser** statt eines guten Vorsatzes:
 - **Vor jedem Werkzeug: sieht das jemand?** Werkzeug, das nur Werkzeug prüft,
   wird gegen die Zeit abgewogen, die es dem Inhalt wegnimmt. Im Zweifel Inhalt.
 - **Jede Stufe schreibt ihren stärksten Fund auf, solange er frisch ist** —
-  in `backlog.md` unter *Gefunden*. Log-Beiträge schreibt nur Tim (ADR 0079).
+  in `backlog.md` unter *Gefunden*. Log-Beiträge schreibt nur Tim, außer Post-Mortems (ADR 0079).
   Die Zahlen verfallen nicht, die Erinnerung daran, *warum* jede so aussieht,
   schon.
 

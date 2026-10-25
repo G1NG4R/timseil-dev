@@ -25,7 +25,7 @@
 import { expect, test } from "@playwright/test";
 
 import { HEIGHT, STEP, at, edges, moved, type Probe } from "./sweep";
-import { HOME_SWITCHES, WIDTHS } from "./widths";
+import { HAS_LOG, HOME_SWITCHES, WIDTHS } from "./widths";
 
 /** The homepage's probes, transcribed from home.sweep.spec.ts.
  *
@@ -41,6 +41,9 @@ const PROBES: readonly Probe[] = [
   { key: "head", kind: "computed", selector: ".head", prop: "height" },
   { key: "nav", kind: "computed", selector: ".nav-desktop", prop: "display" },
   { key: "button", kind: "computed", selector: ".nav-button", prop: "display" },
+  ...(HAS_LOG
+    ? [{ key: "logRow", kind: "computed", selector: ".log-row-link", prop: "display" } as const]
+    : []),
 ];
 
 /** The routes a long German label can break, and one of them is the reason the

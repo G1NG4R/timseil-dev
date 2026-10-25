@@ -301,6 +301,55 @@ SELECT system_id, day, down_sec FROM ops_days
 
 ---
 
+## Ein Post-Mortem eintragen
+
+Kein Endpoint, kein Seed und kein Werkzeug schreibt in `incidents` (ADR 0013,
+ADR 0038). Die Kerbe ist ein Handgriff, und das ist er.
+
+**Erst der Beitrag, dann die Zeile.** `web/content/posts/<post_slug>.mdx` ist
+gemergt und deployt, `/blog/<post_slug>` antwortet 200. Andersherum zeigt die
+Kerbe auf einen Beleg, den es noch nicht gibt. Die Seite zeigt den Slug dann
+nur als Text, und kein Test fängt das: `TestEveryIncidentNamesAPostMortemThatExists`
+sieht nur Migrationen und Seed, keine Zeile, die von Hand in Produktion steht.
+
+**`duration_sec` ist die Summe der `down_sec` der Tage, die die Kerbe trägt.**
+So lässt sich die Zahl im Log am Raster nachzählen. War die Dauer keine
+Ausfallzeit, sagt das `cause`. Die Zahl wird dafür nicht geschätzt.
+
+```sql
+SELECT day, down_sec FROM ops_days
+ WHERE system_id = (SELECT id FROM systems WHERE slug = 'timseil-dev')
+   AND state = 'outage' AND incident_id IS NULL ORDER BY day;
+```
+
+Eintragen als `timseil_app` (DML, keine DDL), im db-Container (Name über
+`docker ps`, siehe `docs/runbooks/dokploy.md`), in **einer** Transaktion:
+
+```bash
+docker exec -i <db-container> psql -U timseil_app -d timseil -v ON_ERROR_STOP=1 <<'SQL'
+BEGIN;
+INSERT INTO incidents (id, system_id, started_at, duration_sec, cause, fix, post_slug)
+SELECT 'INC-00N', id, '<down aus uptime-log.txt>', <Summe down_sec>,
+       '<cause>', '<fix>', '<NNN-slug>'
+  FROM systems WHERE slug = 'timseil-dev';
+UPDATE ops_days SET incident_id = 'INC-00N'
+ WHERE system_id = (SELECT id FROM systems WHERE slug = 'timseil-dev')
+   AND day IN ('<tag>') AND state = 'outage';
+COMMIT;
+SQL
+```
+
+Erwartet: `INSERT 0 1`, und `UPDATE n` mit n = Zahl der Tage. Steht dort eine
+andere Zahl, ist der Tag falsch oder nicht `outage`. Dann `ROLLBACK` statt
+`COMMIT` und nachsehen.
+
+Danach müssen beide Abfragen aus „Eine Kerbe hängt am falschen Tag“ null Zeilen
+liefern, und `/api/systems/timseil-dev` trägt die Kerbe nach Ablauf von
+`Cache-Control`. Die Kerbe gilt erst als eingetragen, wenn sie auf
+`/work/timseil-dev` angeklickt ist und am Log-Eintrag landet.
+
+---
+
 ## Die vier Zahlen
 
 Sie stehen als Konstanten in `api/internal/ops/ops.go`, nicht in der Umgebung.

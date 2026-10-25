@@ -12,8 +12,9 @@
  * 1080, which is a switch layout.css owns rather than a frame the sheet owes.
  *
  * NO `ready`. Like About and Contact, this page reads no endpoint. Unlike them
- * it reads twenty-one files that are in the image, so the rig sees the same
- * words a visitor does — there is no streamed region and nothing to wait for.
+ * it reads the files in content/posts, which are in the image, so the rig sees
+ * the same words a visitor does — there is no streamed region and nothing to
+ * wait for.
  *
  * THIRTEEN OF THE THIRTY-FOUR DIVERGE, and one class is new: `heading-scale`.
  * The sheet sets both the section headings and the pull quote at 21px, which is
@@ -31,7 +32,13 @@ import { test } from "@playwright/test";
 
 import generated from "./oracle/blog-post.gen.json";
 import { runSheetOracle, type Oracle } from "./sheet";
-import { BLOG_POST, BLOG_POST_DRAWN_WIDTHS, HAS_LOG } from "./widths";
+import {
+  BLOG_POST,
+  BLOG_POST_DRAWN_WIDTHS,
+  BLOG_POST_HAS_QUOTE,
+  HAS_LOG,
+  POST_COUNT,
+} from "./widths";
 
 // SKIPPED WHILE THE LOG IS EMPTY, AND THE SPEC STAYS IN THE TREE. U2 removed the
 // twenty-five entries this file was written against (ADR 0079); the renderer it
@@ -52,4 +59,11 @@ runSheetOracle({
   // of the page: an entry is a file in the image, so there is nothing an api
   // could fail to answer.
   minimumEntries: 34,
+  // TWO OF THEM MEASURE WHAT AN AUTHOR WROTE, NOT WHAT THE RENDERER DRAWS: a
+  // blockquote exists when the entry has one, and a neighbour's meta when there
+  // is a neighbour. `home.sheet.spec.ts` drops `home-log-*` for the same reason,
+  // and `minimumEntries` still counts all 34.
+  applies: (entry) =>
+    (entry.id !== "post-quote-size" || BLOG_POST_HAS_QUOTE) &&
+    (entry.id !== "post-neighbour-meta-size" || POST_COUNT > 1),
 });

@@ -1,4 +1,6 @@
-import { POSTS_DIR, readPosts } from "../lib/content/posts";
+import { bodyOf, proseLines } from "../lib/content/body";
+import { POSTS_DIR, postSource, readPosts } from "../lib/content/posts";
+import { LOG_ROWS } from "../lib/home/posts";
 
 /**
  * The seven widths, in one place, because they are one list.
@@ -35,12 +37,18 @@ export function heightFor(width: Width): number {
  *
  * WHAT ACTUALLY FORCED IT is U2: the constant named
  * `001-zero-downtime-measured-not-claimed`, and ADR 0079 deleted that file along
- * with the other twenty-four. A hard-coded slug in a repository whose log is
- * empty is not a fact that went stale, it is an address that cannot exist. The
- * older finding above — `BLOG_POST_NEWEST` was wrong before its own branch
- * merged — is why this reads the OLDEST rather than "the newest": a constant
- * that says "the newest" is a fact about the corpus written where the corpus
- * cannot reach it, and that is still true.
+ * with the other twenty-four. A hard-coded slug for a file that was deleted is
+ * not a fact that went stale, it is an address that cannot exist. The older
+ * finding below — `BLOG_POST_NEWEST` was wrong before its own branch merged — is
+ * why this reads the OLDEST rather than "the newest": a constant that says "the
+ * newest" is a fact about the corpus written where the corpus cannot reach it,
+ * and that is still true.
+ *
+ * AND THE FIRST ENTRY AFTER U2 FOUND THE REST OF THEM (#506). The route was
+ * read, but six specs still typed the old corpus — its title, its slug, a word
+ * to search for, three rows, a pull quote, a neighbour — and went red at once
+ * against `001-the-probe-slept-through-its-outages`. Everything below is what
+ * those specs need to know about the log, read from the files the build reads.
  *
  * THE OLDEST, NOT THE NEWEST, for the reason it was always the oldest: `001-…`
  * has no previous entry, so its foot draws the sheet's one empty state without
@@ -48,11 +56,32 @@ export function heightFor(width: Width): number {
  */
 const POSTS = readPosts(POSTS_DIR).posts;
 
+export const POST_COUNT = POSTS.length;
+
 /** Whether the specs that need an entry have one. `test.skip` reads it. */
-export const HAS_LOG = POSTS.length > 0;
+export const HAS_LOG = POST_COUNT > 0;
+
+/** The oldest entry, or `null` while nobody has written one. */
+export const OLDEST_POST = POSTS.at(-1) ?? null;
 
 /** The oldest entry's route, or `null` while nobody has written one. */
-export const BLOG_POST = POSTS.length === 0 ? null : `/blog/${POSTS[POSTS.length - 1].slug}`;
+export const BLOG_POST = OLDEST_POST === null ? null : `/blog/${OLDEST_POST.slug}`;
+
+/** How many rows SYS.04 draws: the sheet's three, or fewer while fewer exist. */
+export const HOME_LOG_ROWS = Math.min(LOG_ROWS, POST_COUNT);
+
+/**
+ * Whether the oldest entry writes a blockquote, which is the only thing the
+ * sheet's `post-quote-size` can be measured on. A pull quote is something an
+ * author chooses, not something the renderer owes every page.
+ */
+export const BLOG_POST_HAS_QUOTE = OLDEST_POST !== null && hasBlockquote(OLDEST_POST.slug);
+
+function hasBlockquote(slug: string): boolean {
+  const raw = postSource(slug);
+  if (raw === null) throw new Error(`content/posts/${slug}.mdx was listed and cannot be read`);
+  return proseLines(bodyOf(raw)).some((line) => /^ {0,3}>/.test(line));
+}
 
 // THERE IS NO `BLOG_POST_NEWEST`, AND THE FIRST DRAFT OF THIS FILE HAD ONE. It
 // named `021-…`, and the phase that wrote it shipped `022-…` in the same pull
