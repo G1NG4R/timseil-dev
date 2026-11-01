@@ -38,7 +38,20 @@ färben deshalb je zwei Zellen.
   die Zeugen-Reihe misst. Kein Zeuge lief dort. Plausibel, nicht bewiesen.
 - **10.10.: an diesem Abend gab es keinen Deploy und keinen Commit.** Ein `4xx`
   am Eingang, wie am 05.09. Ursache gegen den Host prüfen, Ergebnis nicht hier.
-- Keines der drei hat ein Post-Mortem, also steht keins in `incidents`.
+- Keines der drei hatte ein Post-Mortem. **Erledigt am 01.11.2026:** #506 ist der
+  Beitrag, und INC-001 bis INC-003 stehen in `incidents`, eingetragen nach dem
+  Runbook-Abschnitt aus #506. `/api/systems/timseil-dev` trägt sie an allen fünf
+  Tagen, und auf `/work/timseil-dev` führt die Kerbe bis zum Log-Eintrag.
+- **Der erste Beitrag seit #403 machte `e2e` rot: 61 Fehlschläge** (#506, Lauf
+  `40118359888`). Die Blog- und SYS.04-Tests übersprangen sich bei leerem
+  `content/posts` und liefen dann wieder, aber gegen den alten Korpus aus 25
+  Beiträgen. Sie erwarteten den Titel `001-zero-downtime-…`, mindestens zwei
+  oder drei Einträge, ein Pull-Quote und Nachbarn. **Behoben in #506 selbst**
+  (`3d51171`): `e2e/widths.ts` liest jetzt Anzahl, ältesten Beitrag,
+  SYS.04-Zeilen und Pull-Quote aus `content/posts`. Die zwei Nachbar-Tests
+  überspringen sich mit benanntem Grund, solange ein Beitrag beide Enden ist.
+  Die Lehre für K2 (#483) bleibt: ein Test, der den Korpus abtippt, wird vom
+  nächsten Beitrag rot. *(24.10.2026, behoben 25.10.2026)*
 
 ---
 
