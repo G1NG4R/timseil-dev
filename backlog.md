@@ -12,6 +12,35 @@ und eine unvollständige Wegbeschreibung für jemand anderen.
 
 ---
 
+## Triage · 24.10.2026 — der Plan steht im Tracker, und jedes offene Issue hat eine Phase
+
+Jede verbleibende Phase des Build-Plans hat jetzt ihr eigenes Issue (Label
+`phase`): Launch-Pfad #477–#496 (H13, I1–I2, J1–J2, K1–K2, L2–L8, M1–M6),
+nach dem Launch #497–#504 (F6–F11, H11, I3). U9 bleibt bei #470–#474. Das Issue
+zeigt auf die Zeile im Plan und trägt das Abnahmekriterium als Checkliste — **der
+Plan bleibt die Quelle für Umfang und Begründung, das Issue trägt den Stand.**
+Der Phasen-PR schließt es mit `Closes #N`.
+
+- **63 Issues einer Phase zugeordnet**, jedes mit einem Kommentar, der den Grund
+  nennt. Dabei auch die neun, die in Milestones bereits gebauter Phasen lagen.
+- **Sechs bewusst ohne Phase**, mit Begründung am Issue: #46 (Datum 28.10.),
+  #71 und #97 (Sammlungen mit Auslösern), #188 (erster Cross-Origin-Aufrufer),
+  #145 und #291 (`selftest.sh`-Reparaturen).
+- **Geschlossen:** #193 (der Post ist seit U2 weg, #403), #381 (alle dreizehn
+  haben eine Phase; die Wiederholung verhindert der Abschnitt *Before
+  acceptance* in jedem Phasen-Issue).
+- **15 leere Milestones gebauter Phasen geschlossen** (E1–E5, F2–F5, G1, G3, G4,
+  G7, H8, L1), wie vorher schon C1–D3.
+
+**Zwei Widersprüche im Plan, beim Anlegen gefunden und ins Issue geschrieben:**
+
+- **L2 (#484):** Stufe L sagt „alle im Launch-Pfad", die Tabelle in „Zwei Pfade"
+  und P0 führen das Threat Model als „danach". Vor dem Bau entscheiden.
+- **M6 (#496):** U9 wartet auf den Cutover in einem anderen Repository, und der
+  Plan sagt nicht, ob der Launch auf U9 wartet.
+
+---
+
 ## Gefunden · 24.10.2026 — fünf rote Zellen, drei Ereignisse, und zwei davon stehen nirgends
 
 `/api/systems/timseil-dev?window=91`, abgefragt 23.10.2026 22:10Z: `ok 57`,
@@ -52,6 +81,96 @@ färben deshalb je zwei Zellen.
   überspringen sich mit benanntem Grund, solange ein Beitrag beide Enden ist.
   Die Lehre für K2 (#483) bleibt: ein Test, der den Korpus abtippt, wird vom
   nächsten Beitrag rot. *(24.10.2026, behoben 25.10.2026)*
+
+---
+
+## Triage · 24.10.2026 — Stufe U steht im Tracker, und die fünf Pflichten von U9 standen in keinem Issue
+
+Gesucht über **alle** Zustände: kein Issue nannte `U9`, `cutover` oder `talos`,
+und von 27 Milestones hieß keiner nach einer U-Phase. Die Pflichten von U9 lagen
+auf drei Ebenen — eine davon meldet sich selbst, zwei nicht:
+
+| Ebene | wo | hält es jemand? |
+|---|---|---|
+| selbstmeldend | `about.sheet.spec.ts:45-50` (drei `NOT_DRAWN_TODAY`-Ids, `minimumEntries: 61`), `about.css:182-191`, `en.ts:598-604`, `seed.sql:38-48` · `:51-59` | ja — der Lauf wird rot oder der Kommentar steht am Verbrauchsort |
+| Plan und ADR | `build-plan.md:1307-1308`, ADR 0079 | nur ein Leser |
+| **nur Prosa hier** | fünf Zeilen über 15.099 | **niemand** |
+
+Die dritte Ebene war die Lücke, und sie war strukturell: die Regel im Kopf
+dieser Datei sagt, dass am Ende der Stufe **geleert** wird. Derselbe Fehler wie
+bei der F5-Abnahme, nur spiegelbildlich — damals stand der Fund im Tracker und
+hier behauptete der Notizblock, ihn allein zu tragen.
+
+### Angelegt — Milestone `U9`, fünf Issues
+
+| # | was | blockiert durch |
+|---|---|---|
+| **#470** | `talos-prod` auf `live` — und heute **messt es nichts** | Cutover |
+| **#471** | die geteilten Belege sind nach dem Cutover **eine Maschine, zweimal gezählt** | Cutover |
+| **#472** | der Schlussstreifen auf `/about` kommt zurück, über eine andere Maschine | Cutover |
+| **#473** | die VPS-Aussagen auf Seite und README überleben den Cutover | Cutover |
+| **#474** | der `vat-check`-DELETE kann weg | **nur die Entscheidung** |
+
+**Zwei Funde beim Schreiben, keiner davon aus dem Plan:**
+
+- **#471 ist eine Entscheidung, kein Abschreiben.** `build-plan.md:1308` will die
+  Cluster-Tracks auf `applied`, ADR 0079 sagt „kein einziger auf `core`, bis der
+  Cutover zwei laufende Systeme unter denselben Track stellt". Nach dem Cutover
+  sind **beide** Systeme `live`, also leiten die **fünf** geteilten Tracks
+  (`Ingress & TLS`, `Metrics & alerts`, `PostgreSQL`, `Backups`,
+  `AI-assisted engineering`) `core` von selbst ab — die Abnahme oben ist nur
+  erfüllt, wenn die Zeilen vorher fallen. Wird die Seite **vom** Cluster
+  bedient, heißt „zwei laufende Systeme" aber eine Maschine, zweimal gezählt.
+  Will einen eigenen ADR.
+- **#474s Bedingung ist schon erfüllt.** „Löschbar, wenn die Produktion den Seed
+  einmal gelaufen ist" — `/api/systems` liefert heute genau `talos-prod` (01) und
+  `timseil-dev` (02), die Zeile ist dort weg. Der DELETE wartet also nicht auf
+  den Cutover, sondern auf die Abwägung: ein alter Datenbestand ohne U3-Seed
+  scheitert danach **laut** an `system_no UNIQUE` statt still zu divergieren —
+  und genau diesen Fehlschlag nennt die Datei selbst „the one worth having".
+
+### Angelegt — zwei Reste aus U3, ohne Milestone
+
+*Seitdem M4 (#475) und K1 (#476), zugeordnet von der Triage darüber.*
+
+- **#475** — die Komponenten-Galerie schreibt vier Versionen ab, die gewandert
+  sind. Heute gemessen, nicht vom 25.09. übernommen: `React 19.2` → 19.3.1,
+  `pgx 5.10` → v5.11.0, `goose 3.27` → **v3.29.0** (der Backlog sagte 3.28),
+  `Alloy 1.18` → v1.20.1. Die anderen sieben stimmen auf major.minor. Keine
+  Prüfregel liegt dazwischen: `stack.gen.json` trägt **Namen**, keine Versionen.
+  Die React-Zeile gehört #383 und wird dort nicht mitentschieden.
+- **#476** — ADR 0079 nennt `Flannel` und `Cloudflare Tunnel` nicht,
+  `stack.yaml:69` · `:73` führt beide, und `/api/systems` liefert alle zwölf
+  öffentlich. Die Grenze des ADR ist unberührt.
+
+### Bewusst verworfen, mit Begründung
+
+- **Das Kachelraster bei 900 statt 720.** Steht als Entscheidung samt Messung am
+  Verbrauchsort — `layout.css:379-396`, sieben Breiten, der Preis („zwischen 899
+  und 720 zwei Kacheln, wo drei passten") benannt. Ein Issue wäre die Kopie
+  eines Kommentars, den niemand übersehen kann.
+- **Die `reasonKey`-Verzweigung auf `/about`.** Entschieden und am Ort
+  kommentiert; sie bleibt, weil das Paar `reasonKey`/`owedBy` das Gerät aus
+  ADR 0065 §3 ist.
+- **Die Post-Mortems aus ADR 0079.** Kein offener Posten in diesem Sinne:
+  `/api/systems/timseil-dev` liefert `incidents: []`, es hängt also kein
+  `post_slug` ins Leere. Mit der ersten Kerbe wird es fällig, und dann erzwingt
+  es Invariante 4, nicht ein Issue. **Dass die Kerbe selbst geschuldet ist** —
+  fünf rote Zellen ohne eine einzige Incident-Zeile — ist der Eintrag darüber
+  und nicht diese Triage.
+- **Eine Markierung für erledigte Phasen im Build-Plan.** U6 hat genau das schon
+  abgelehnt — eine Konvention erfinden, die es nicht gibt.
+
+### Damit ist Stufe U im Tracker vollständig
+
+U0–U8a sind gebaut, U9 ist die zehnte und letzte Phase. Was danach noch an
+Stufe U hängt, hängt nicht an U9: **114 Issues warten auf die Triage**, die
+seit U1 an sieben Stellen „nach U9" verschoben wurde. Die Issues oben sind die
+Phase; die Triage ist die Stufe.
+
+**Weiter geschuldet:** die Zeile über den Tausch von `1f0c93e` selbst. Ein
+Eintrag kann seinen eigenen Tausch nicht enthalten, und ein eigener Doku-PR
+tauscht nur erneut.
 
 ---
 
